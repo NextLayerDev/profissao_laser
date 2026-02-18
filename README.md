@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Profissão Laser
+
+A business management platform for laser/aesthetic professionals. Built with Next.js, it provides a dashboard to manage products, courses, subscriptions, sales, coupons, and affiliates.
+
+## Tech Stack
+
+- **Framework:** Next.js 16 (App Router, standalone output)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS v4
+- **Database/Auth:** Supabase
+- **Data Fetching:** TanStack React Query + Axios
+- **Icons:** Lucide React
+- **Notifications:** Sonner
+- **Validation:** Zod
+- **Linter/Formatter:** Biome
+- **Git Hooks:** Husky + lint-staged
+
+## Features
+
+- **Dashboard** — stats overview, quick access, alerts, and chat button
+- **Products** — list, search, and manage courses/products; add new courses via modal
+- **Courses** — view active subscriptions and access course content by slug
+- **Subscriptions** — create and manage customer subscription plans
+- **Coupons** — coupon management
+- **Sales** — sales tracking
+- **Reports** — business reports
+- **Affiliates** — partner/affiliate management
+
+## Project Structure
+
+```
+src/
+├── app/              # Next.js App Router pages
+│   ├── page.tsx      # Dashboard
+│   ├── products/     # Products listing and detail
+│   └── course/       # Course listing and content
+├── components/
+│   ├── dashboard/    # Dashboard UI components
+│   └── products/     # Product/course UI components
+├── hooks/            # React Query data hooks
+├── services/         # API service functions
+├── lib/              # Supabase client, fetch helpers
+├── types/            # TypeScript type definitions
+└── utils/            # Constants and format helpers
+```
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node.js 22+
+- A Supabase project
+
+### Environment Variables
+
+Create a `.env.local` file at the root:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_API_URL=your_api_url
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Install & Run
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open [http://localhost:3000](http://localhost:3000) to view the app.
 
-## Learn More
+### Available Scripts
 
-To learn more about Next.js, take a look at the following resources:
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run start` | Start production server |
+| `npm run lint` | Lint and auto-fix with Biome |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Docker
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Build and run the production image:
 
-## Deploy on Vercel
+```bash
+docker build \
+  --build-arg NEXT_PUBLIC_SUPABASE_URL=your_supabase_url \
+  --build-arg NEXT_PUBLIC_API_URL=your_api_url \
+  -t profissao-laser .
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+docker run -p 3000:3000 profissao-laser
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The Dockerfile uses a multi-stage build (deps → builder → runner) with a non-root `nextjs` user.
