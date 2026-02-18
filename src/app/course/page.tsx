@@ -112,13 +112,19 @@ export default function CoursePage() {
 										{statusLabel}
 									</span>
 
-									<Link
-										href={`/course/${plan.slug}`}
-										className="shrink-0 flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg transition-colors"
-									>
-										Acessar
-										<ArrowRight className="w-4 h-4" />
-									</Link>
+									{plan.slug ? (
+										<Link
+											href={`/course/${plan.slug}`}
+											className="shrink-0 flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg transition-colors"
+										>
+											Acessar
+											<ArrowRight className="w-4 h-4" />
+										</Link>
+									) : (
+										<span className="shrink-0 text-xs text-gray-500 px-4 py-2">
+											Indisponível
+										</span>
+									)}
 								</div>
 							);
 						})}
