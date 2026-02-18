@@ -1,13 +1,21 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+let _client: SupabaseClient | null = null;
 
-if (!supabaseAnonKey && !supabaseUrl) {
-	console.log('Env not set for db');
+function getClient(): SupabaseClient {
+	if (!_client) {
+		const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+		const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+		if (!supabaseUrl || !supabaseAnonKey) {
+			throw new Error('Supabase environment variables are not set');
+		}
+		_client = createClient(supabaseUrl, supabaseAnonKey);
+	}
+	return _client;
 }
 
-export const db = createClient(
-	supabaseUrl as string,
-	supabaseAnonKey as string,
-);
+export const db = new Proxy({} as SupabaseClient, {
+	get(_, prop) {
+		return Reflect.get(getClient(), prop);
+	},
+});
