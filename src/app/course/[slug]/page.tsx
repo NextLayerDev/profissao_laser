@@ -1,6 +1,7 @@
 'use client';
 
 import {
+	ArrowLeft,
 	ChevronDown,
 	ChevronRight,
 	Clock,
@@ -10,6 +11,7 @@ import {
 	Play,
 	PlayCircle,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { useCourse } from '@/hooks/use-course';
@@ -245,7 +247,14 @@ export default function CourseSlugPage() {
 		<div className="min-h-screen bg-[#0d0d0f] text-white font-sans flex flex-col">
 			{/* Header */}
 			<header className="bg-[#1a1a1d] border-b border-gray-800 px-6 py-4 shrink-0">
-				<div className="flex items-center justify-between">
+				<div className="flex items-center gap-4">
+					<Link
+						href="/course"
+						className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors shrink-0"
+						title="Meus cursos"
+					>
+						<ArrowLeft className="w-5 h-5" />
+					</Link>
 					<div>
 						<h1 className="font-bold text-lg">{course.name}</h1>
 						<p className="text-xs text-gray-500 mt-0.5">

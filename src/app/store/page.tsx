@@ -3,6 +3,7 @@
 import { Loader2, Search, Store } from 'lucide-react';
 import { useState } from 'react';
 import { StoreProductCard } from '@/components/store/store-product-card';
+import { UserBadge } from '@/components/store/user-badge';
 import { useProducts } from '@/hooks/use-products';
 
 export default function Loja() {
@@ -47,6 +48,8 @@ export default function Loja() {
 							className="w-full bg-[#1a1a1d] border border-gray-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-violet-500/50 transition-colors"
 						/>
 					</div>
+
+					<UserBadge />
 				</div>
 			</header>
 
