@@ -22,7 +22,7 @@ export function useLoginCustomer() {
 		mutationFn: (payload: LoginCustomerPayload) => loginCustomer(payload),
 		onSuccess: ({ token }) => {
 			saveToken('customer', token);
-			router.push('/store');
+			router.push('/course');
 		},
 	});
 }

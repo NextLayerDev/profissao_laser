@@ -1,6 +1,7 @@
 'use client';
 
-import { Loader2, Search, Store } from 'lucide-react';
+import { BookOpen, Loader2, Search, Store } from 'lucide-react';
+import Link from 'next/link';
 import { useState } from 'react';
 import { StoreProductCard } from '@/components/store/store-product-card';
 import { UserBadge } from '@/components/store/user-badge';
@@ -48,6 +49,14 @@ export default function Loja() {
 							className="w-full bg-[#1a1a1d] border border-gray-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-violet-500/50 transition-colors"
 						/>
 					</div>
+
+					<Link
+						href="/course"
+						className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors"
+					>
+						<BookOpen className="w-4 h-4" />
+						Meus Cursos
+					</Link>
 
 					<UserBadge />
 				</div>

@@ -5,26 +5,10 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { getCurrentUser } from '@/lib/auth';
-
-const STATUS_STYLES: Record<string, string> = {
-	active: 'bg-emerald-500/10 text-emerald-400',
-	ativo: 'bg-emerald-500/10 text-emerald-400',
-	inactive: 'bg-gray-700 text-gray-400',
-	canceled: 'bg-red-500/10 text-red-400',
-	cancelado: 'bg-red-500/10 text-red-400',
-	past_due: 'bg-yellow-500/10 text-yellow-400',
-	trialing: 'bg-blue-500/10 text-blue-400',
-};
-
-const STATUS_LABELS: Record<string, string> = {
-	active: 'Ativo',
-	ativo: 'Ativo',
-	inactive: 'Inativo',
-	canceled: 'Cancelado',
-	cancelado: 'Cancelado',
-	past_due: 'Pagamento pendente',
-	trialing: 'Em teste',
-};
+import {
+	COURSE_STATUS_LABELS,
+	COURSE_STATUS_STYLES,
+} from '@/utils/constants/course-status';
 
 export default function CoursePage() {
 	const [email, setEmail] = useState<string | null | undefined>(undefined);
@@ -87,10 +71,10 @@ export default function CoursePage() {
 					</div>
 					<Link
 						href="/store"
-						className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+						className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors"
 					>
 						<Store className="w-4 h-4" />
-						Ver loja
+						Ir para loja
 					</Link>
 				</div>
 			</header>
@@ -122,8 +106,10 @@ export default function CoursePage() {
 
 						{plans.map((plan) => {
 							const statusStyle =
-								STATUS_STYLES[plan.status] ?? 'bg-gray-700 text-gray-400';
-							const statusLabel = STATUS_LABELS[plan.status] ?? plan.status;
+								COURSE_STATUS_STYLES[plan.status] ??
+								'bg-gray-700 text-gray-400';
+							const statusLabel =
+								COURSE_STATUS_LABELS[plan.status] ?? plan.status;
 							const cardClass =
 								'bg-[#1a1a1d] border rounded-2xl p-6 flex items-center gap-5 transition-all duration-200';
 
