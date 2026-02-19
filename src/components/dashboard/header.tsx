@@ -1,8 +1,9 @@
 'use client';
 
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Store } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { UserBadge } from '@/components/store/user-badge';
 import { navItems } from '@/utils/constants/navigation';
 
 export function Header() {
@@ -17,9 +18,15 @@ export function Header() {
 						Controle completo do seu negócio digital
 					</p>
 				</div>
-				<div className="flex items-center gap-2 bg-[#1a1a1d] px-4 py-2 rounded-full border border-gray-800">
-					<span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-					<span className="text-sm font-medium">Sistema Ativo</span>
+				<div className="flex items-center gap-3">
+					<Link
+						href="/store"
+						className="flex items-center gap-2 bg-[#1a1a1d] border border-gray-800 hover:border-violet-500/50 px-3 py-1.5 rounded-xl text-sm text-gray-400 hover:text-white transition-all duration-200"
+					>
+						<Store className="w-4 h-4" />
+						Ver loja
+					</Link>
+					<UserBadge />
 				</div>
 			</div>
 
