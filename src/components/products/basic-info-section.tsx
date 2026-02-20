@@ -66,7 +66,7 @@ export function BasicInfoSection({ product }: BasicInfoSectionProps) {
 			</div>
 
 			{/* Main info */}
-			<div className="bg-[#1a1a1d] border border-gray-800 rounded-xl p-6 space-y-5 flex justify-center gap-25">
+			<div className="bg-[#1a1a1d] border border-gray-800 rounded-xl p-6 space-y-5">
 				<div className="flex items-center gap-2 text-gray-400 mb-2">
 					<Info className="w-4 h-4" />
 					<span className="text-sm font-medium">Detalhes</span>
