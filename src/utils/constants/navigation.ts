@@ -1,11 +1,4 @@
-import {
-	BarChart3,
-	Home,
-	Package,
-	ShoppingCart,
-	Users,
-	Wrench,
-} from 'lucide-react';
+import { BarChart3, Home, Package, ShoppingCart } from 'lucide-react';
 import type { NavItem } from '@/types/navigation';
 
 export const navItems: NavItem[] = [
@@ -18,11 +11,5 @@ export const navItems: NavItem[] = [
 		href: '/reports',
 		hasDropdown: false,
 	},
-	{ name: 'Parcerias', icon: Users, href: '/parcerias', hasDropdown: true },
-	{
-		name: 'Ferramentas',
-		icon: Wrench,
-		href: '/ferramentas',
-		hasDropdown: true,
-	},
+	// { name: 'Parcerias', icon: Users, href: '/partnership', hasDropdown: false },
 ];
