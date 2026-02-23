@@ -1,10 +1,18 @@
 'use client';
 
-import { ArrowRight, BookOpen, Loader2, PackageX, Store } from 'lucide-react';
+import {
+	ArrowRight,
+	BookOpen,
+	LayoutDashboard,
+	Loader2,
+	PackageX,
+	Store,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { UserBadge } from '@/components/store/user-badge';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, getToken } from '@/lib/auth';
 import {
 	COURSE_STATUS_LABELS,
 	COURSE_STATUS_STYLES,
@@ -13,11 +21,13 @@ import {
 export default function CoursePage() {
 	const [email, setEmail] = useState<string | null | undefined>(undefined);
 	const [name, setName] = useState<string>('');
+	const [isAdmin, setIsAdmin] = useState(false);
 
 	useEffect(() => {
 		const user = getCurrentUser();
 		setEmail(user?.email ?? null);
 		setName(user?.name ?? '');
+		setIsAdmin(!!getToken('user') && user?.role != null);
 	}, []);
 
 	const { data: plans, isLoading, isError } = useCustomerPlans(email ?? null);
@@ -69,13 +79,25 @@ export default function CoursePage() {
 							<p className="text-sm text-gray-500 mt-0.5">{name || email}</p>
 						</div>
 					</div>
-					<Link
-						href="/store"
-						className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors"
-					>
-						<Store className="w-4 h-4" />
-						Ir para loja
-					</Link>
+					<div className="flex items-center gap-2">
+						{isAdmin && (
+							<Link
+								href="/"
+								className="flex items-center gap-2 px-4 py-2 bg-[#252528] border border-gray-800 hover:border-violet-500/50 text-gray-300 hover:text-white text-sm font-medium rounded-xl transition-colors"
+							>
+								<LayoutDashboard className="w-4 h-4" />
+								Painel
+							</Link>
+						)}
+						<Link
+							href="/store"
+							className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors"
+						>
+							<Store className="w-4 h-4" />
+							Ir para loja
+						</Link>
+						<UserBadge />
+					</div>
 				</div>
 			</header>
 

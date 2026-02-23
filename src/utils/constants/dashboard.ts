@@ -13,24 +13,28 @@ export const quickAccessItems = [
 		subtitle: 'Acessar agora',
 		icon: Package,
 		iconBg: 'bg-violet-600',
+		href: '/products',
 	},
 	{
 		title: 'Ferramentas',
 		subtitle: 'Acessar agora',
 		icon: Wrench,
 		iconBg: 'bg-amber-600',
+		href: '/sales',
 	},
 	{
 		title: 'Relatórios',
 		subtitle: 'Acessar agora',
 		icon: BarChart3,
 		iconBg: 'bg-blue-600',
+		href: '/reports',
 	},
 	{
 		title: 'Afiliados',
 		subtitle: 'Acessar agora',
 		icon: Users2,
 		iconBg: 'bg-rose-600',
+		href: '/store',
 	},
 ];
 

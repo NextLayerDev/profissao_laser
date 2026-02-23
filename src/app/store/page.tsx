@@ -1,16 +1,30 @@
 'use client';
 
-import { BookOpen, Loader2, Search, Store } from 'lucide-react';
+import {
+	BookOpen,
+	LayoutDashboard,
+	Loader2,
+	Search,
+	Store,
+} from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StoreProductCard } from '@/components/store/store-product-card';
 import { UserBadge } from '@/components/store/user-badge';
 import { useProducts } from '@/hooks/use-products';
+import { getCurrentUser, getToken } from '@/lib/auth';
 
 export default function Loja() {
 	const [search, setSearch] = useState('');
 	const [activeCategory, setActiveCategory] = useState('Todos');
+	const [isAdmin, setIsAdmin] = useState(false);
 	const { products, isLoading, error } = useProducts();
+
+	useEffect(() => {
+		const user = getCurrentUser();
+		// Verifica se tem token de usuário (admin) E se o campo role existe no payload JWT
+		setIsAdmin(!!getToken('user') && user?.role != null);
+	}, []);
 
 	const activeProducts = (products ?? []).filter((p) => p.status === 'ativo');
 
@@ -49,6 +63,16 @@ export default function Loja() {
 							className="w-full bg-[#1a1a1d] border border-gray-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-violet-500/50 transition-colors"
 						/>
 					</div>
+
+					{isAdmin && (
+						<Link
+							href="/"
+							className="flex items-center gap-2 px-4 py-2 bg-[#1a1a1d] border border-gray-800 hover:border-violet-500/50 text-gray-300 hover:text-white text-sm font-medium rounded-xl transition-colors"
+						>
+							<LayoutDashboard className="w-4 h-4" />
+							Painel
+						</Link>
+					)}
 
 					<Link
 						href="/course"

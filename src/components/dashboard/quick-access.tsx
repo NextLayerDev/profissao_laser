@@ -1,4 +1,5 @@
 import { ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 import { quickAccessItems } from '@/utils/constants/dashboard';
 
 export function QuickAccess() {
@@ -9,9 +10,9 @@ export function QuickAccess() {
 			</h3>
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 				{quickAccessItems.map((item) => (
-					<button
-						type="button"
+					<Link
 						key={item.title}
+						href={item.href}
 						className="flex items-center justify-between bg-[#1a1a1d] rounded-2xl p-5 border border-gray-800/50 hover:border-violet-500/50 hover:bg-[#1f1f22] transition-all duration-300 group"
 					>
 						<div className="flex items-center gap-4">
@@ -24,7 +25,7 @@ export function QuickAccess() {
 							</div>
 						</div>
 						<ArrowRight className="w-5 h-5 text-gray-600 group-hover:text-violet-400 group-hover:translate-x-1 transition-all" />
-					</button>
+					</Link>
 				))}
 			</div>
 		</div>
