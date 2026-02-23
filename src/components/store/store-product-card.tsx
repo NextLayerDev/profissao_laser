@@ -16,6 +16,7 @@ interface StoreProductCardProps {
 export function StoreProductCard({ product }: StoreProductCardProps) {
 	const { mutate: purchase, isPending } = usePurchase();
 	const [showLoginModal, setShowLoginModal] = useState(false);
+	const [imgError, setImgError] = useState(false);
 
 	function handleBuy() {
 		if (!getCurrentUser()) {
@@ -38,16 +39,17 @@ export function StoreProductCard({ product }: StoreProductCardProps) {
 			/>
 			<div className="bg-[#1a1a1d] rounded-2xl overflow-hidden border border-gray-800 hover:border-violet-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-violet-500/10 flex flex-col">
 				<div className="relative h-48 bg-linear-to-br from-violet-600 via-purple-600 to-fuchsia-500 flex items-center justify-center">
-					{product.image ? (
+					{product.image && !imgError ? (
 						<Image
 							src={product.image}
 							alt={product.name}
 							fill
 							className="object-cover"
+							onError={() => setImgError(true)}
 						/>
 					) : (
-						<span className="text-8xl font-bold text-white/80">
-							{product.name[0]}
+						<span className="text-sm text-white/70 px-4 text-center">
+							Produto sem imagem
 						</span>
 					)}
 					{product.category && (

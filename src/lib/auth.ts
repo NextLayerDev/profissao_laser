@@ -27,6 +27,7 @@ export interface JwtPayload {
 	email?: string;
 	sub?: string;
 	role?: string;
+	exp?: number;
 }
 
 /** Decodifica o payload do JWT sem verificar assinatura */
@@ -46,9 +47,26 @@ export function decodeJwt(token: string): JwtPayload | null {
 	}
 }
 
-/** Retorna o payload do token ativo, ou null se não logado */
+/** Retorna true se o token existe e ainda não expirou */
+export function isTokenValid(token: string): boolean {
+	const payload = decodeJwt(token);
+	if (!payload) return false;
+	if (!payload.exp) return true; // sem campo exp, considera válido
+	return payload.exp * 1000 > Date.now();
+}
+
+export function clearAllTokens() {
+	clearToken('user');
+	clearToken('customer');
+}
+
+/** Retorna o payload do token ativo, ou null se não logado ou expirado */
 export function getCurrentUser(): JwtPayload | null {
 	const token = getActiveToken();
 	if (!token) return null;
+	if (!isTokenValid(token)) {
+		clearAllTokens();
+		return null;
+	}
 	return decodeJwt(token);
 }

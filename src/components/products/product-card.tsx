@@ -1,26 +1,32 @@
+'use client';
+
 import { Link2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState } from 'react';
 import type { ProductCardProps } from '@/types/components/product-card';
 import { formatCurrency } from '@/utils/format-currency';
 
 export function ProductCard({ product }: ProductCardProps) {
+	const [imgError, setImgError] = useState(false);
+
 	return (
 		<Link
 			href={`/products/${product.id}`}
 			className="bg-[#1a1a1d] rounded-2xl overflow-hidden border border-violet-500/30 hover:border-violet-500/60 transition-all duration-300 hover:scale-[1.02] block"
 		>
 			<div className="relative h-44 bg-linear-to-br from-violet-600 via-purple-600 to-fuchsia-500 flex items-center justify-center">
-				{product.image ? (
+				{product.image && !imgError ? (
 					<Image
 						src={product.image}
 						alt={product.name}
 						fill
 						className="object-cover"
+						onError={() => setImgError(true)}
 					/>
 				) : (
-					<span className="text-7xl font-bold text-white/80">
-						{product.name[0]}
+					<span className="text-sm text-white/70 px-4 text-center">
+						Produto sem imagem
 					</span>
 				)}
 			</div>
