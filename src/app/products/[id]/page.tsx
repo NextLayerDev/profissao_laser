@@ -160,22 +160,6 @@ export default function ProdutoDetalhes() {
 							<Receipt className="w-4 h-4" />
 							Criar Assinatura
 						</button>
-
-						<button
-							type="button"
-							className="flex items-center gap-2 bg-[#252528] hover:bg-[#2a2a2d] px-5 py-3 rounded-xl font-medium transition-colors"
-						>
-							Acessar a gestão do curso
-							<ExternalLink className="w-4 h-4" />
-						</button>
-
-						<button
-							type="button"
-							className="flex items-center gap-2 bg-[#252528] hover:bg-[#2a2a2d] px-5 py-3 rounded-xl font-medium transition-colors"
-						>
-							Trocar Produto
-							<ChevronDown className="w-4 h-4" />
-						</button>
 					</div>
 				</div>
 			</header>
