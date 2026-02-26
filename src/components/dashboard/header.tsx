@@ -26,6 +26,13 @@ export function Header() {
 						<Store className="w-4 h-4" />
 						Ver loja
 					</Link>
+					<Link
+						href="/course"
+						className="flex items-center gap-2 bg-[#1a1a1d] border border-gray-800 hover:border-violet-500/50 px-3 py-1.5 rounded-xl text-sm text-gray-400 hover:text-white transition-all duration-200"
+					>
+						<Store className="w-4 h-4" />
+						Ver cursos
+					</Link>
 					<UserBadge />
 				</div>
 			</div>
