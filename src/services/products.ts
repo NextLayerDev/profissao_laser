@@ -30,3 +30,10 @@ export async function createProduct(
 export async function deleteProduct(id: string): Promise<void> {
 	await api.delete(`/product/${id}`);
 }
+
+export async function updateProductStatus(
+	id: string,
+	active: boolean,
+): Promise<void> {
+	await api.patch(`/product/${id}/status`, { active });
+}

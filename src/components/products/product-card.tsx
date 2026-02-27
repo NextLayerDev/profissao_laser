@@ -29,6 +29,11 @@ export function ProductCard({ product }: ProductCardProps) {
 						Produto sem imagem
 					</span>
 				)}
+				{product.status === 'inativo' && (
+					<span className="absolute top-2 right-2 bg-gray-900/80 text-gray-300 text-xs px-2 py-1 rounded-full">
+						Inativo
+					</span>
+				)}
 			</div>
 
 			<div className="p-4">

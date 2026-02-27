@@ -4,8 +4,6 @@ import {
 	ArrowLeft,
 	Check,
 	CheckCircle2,
-	ChevronDown,
-	ExternalLink,
 	HelpCircle,
 	Loader2,
 	Receipt,
@@ -14,7 +12,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { ChatButton } from '@/components/dashboard/chat-button';
 import { BasicInfoSection } from '@/components/products/basic-info-section';
@@ -22,7 +20,7 @@ import { CourseContentSection } from '@/components/products/course-content-secti
 import { CreateSubscriptionModal } from '@/components/products/create-subscription-modal';
 import { CuponsSection } from '@/components/products/cupons-section';
 import { useProducts } from '@/hooks/use-products';
-import { deleteProduct } from '@/services/products';
+import { deleteProduct, updateProductStatus } from '@/services/products';
 import {
 	productConfigItems,
 	productMenuItems,
@@ -34,9 +32,24 @@ export default function ProdutoDetalhes() {
 	const router = useRouter();
 	const { products, isLoading } = useProducts();
 	const [vendasAtivas, setVendasAtivas] = useState(true);
+	const [togglingStatus, setTogglingStatus] = useState(false);
 	const [activeMenu, setActiveMenu] = useState('painel');
 	const [deleting, setDeleting] = useState(false);
 	const [subscriptionModal, setSubscriptionModal] = useState(false);
+
+	const handleToggleStatus = async () => {
+		const newStatus = !vendasAtivas;
+		setTogglingStatus(true);
+		try {
+			await updateProductStatus(id, newStatus);
+			setVendasAtivas(newStatus);
+			toast.success(newStatus ? 'Vendas ativadas!' : 'Vendas desativadas!');
+		} catch {
+			toast.error('Erro ao atualizar status do produto');
+		} finally {
+			setTogglingStatus(false);
+		}
+	};
 
 	const handleDelete = async () => {
 		if (
@@ -57,6 +70,12 @@ export default function ProdutoDetalhes() {
 	};
 
 	const product = (products ?? []).find((p) => p.id === id);
+
+	useEffect(() => {
+		if (product) {
+			setVendasAtivas(product.status === 'ativo');
+		}
+	}, [product?.status, product]);
 
 	const completedCount = productConfigItems.filter(
 		(item) => item.completed,
@@ -118,8 +137,9 @@ export default function ProdutoDetalhes() {
 
 							<button
 								type="button"
-								onClick={() => setVendasAtivas(!vendasAtivas)}
-								className={`relative w-12 h-6 rounded-full transition-colors ${
+								onClick={handleToggleStatus}
+								disabled={togglingStatus}
+								className={`relative w-12 h-6 rounded-full transition-colors disabled:opacity-50 ${
 									vendasAtivas ? 'bg-emerald-500' : 'bg-gray-600'
 								}`}
 							>

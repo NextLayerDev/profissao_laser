@@ -7,7 +7,7 @@ export const productSchema = z.object({
 	description: z.string().nullable(),
 	image: z.string().nullable(),
 	price: z.number(),
-	status: z.enum(['ativo', 'excluido']),
+	status: z.enum(['ativo', 'inativo', 'excluido']),
 	slug: z.string(),
 	createdAt: z.string(),
 	updatedAt: z.string(),
