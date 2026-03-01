@@ -2,6 +2,7 @@
 
 import {
 	BookOpen,
+	Layers,
 	LayoutDashboard,
 	Loader2,
 	Search,
@@ -9,8 +10,10 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { StoreClassCard } from '@/components/store/store-class-card';
 import { StoreProductCard } from '@/components/store/store-product-card';
 import { UserBadge } from '@/components/store/user-badge';
+import { useClasses } from '@/hooks/use-classes';
 import { useProducts } from '@/hooks/use-products';
 import { getCurrentUser, getToken } from '@/lib/auth';
 
@@ -19,14 +22,15 @@ export default function Loja() {
 	const [activeCategory, setActiveCategory] = useState('Todos');
 	const [isAdmin, setIsAdmin] = useState(false);
 	const { products, isLoading, error } = useProducts();
+	const { classes } = useClasses();
 
 	useEffect(() => {
 		const user = getCurrentUser();
-		// Verifica se tem token de usuário (admin) E se o campo role existe no payload JWT
 		setIsAdmin(!!getToken('user') && user?.role != null);
 	}, []);
 
 	const activeProducts = (products ?? []).filter((p) => p.status === 'ativo');
+	const activeClasses = classes.filter((c) => c.status === 'ativo');
 
 	const categories = [
 		'Todos',
@@ -97,6 +101,25 @@ export default function Loja() {
 					</p>
 				</div>
 
+				{/* Seção de Classes/Planos */}
+				{activeClasses.length > 0 && (
+					<section className="mb-12">
+						<div className="flex items-center gap-2 mb-6">
+							<Layers className="w-5 h-5 text-violet-400" />
+							<h2 className="text-xl font-bold tracking-tight">
+								Nossos Planos
+							</h2>
+						</div>
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+							{activeClasses.map((cls) => (
+								<StoreClassCard key={cls.id} cls={cls} />
+							))}
+						</div>
+						<div className="border-b border-gray-800 mt-12" />
+					</section>
+				)}
+
+				{/* Filtros por categoria */}
 				<div className="flex items-center gap-2 mb-8 flex-wrap">
 					{categories.map((cat) => (
 						<button

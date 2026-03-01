@@ -1,24 +1,44 @@
 'use client';
 
+import { Layers, Package, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { ChatButton } from '@/components/dashboard/chat-button';
 import { Header } from '@/components/dashboard/header';
 import { AddCourseModal } from '@/components/products/add-course-modal';
+import { ClassCard } from '@/components/products/class-card';
+import { CreateClassModal } from '@/components/products/create-class-modal';
 import { ProductGrid } from '@/components/products/product-grid';
 import { SearchBar } from '@/components/products/search-bar';
+import { useClasses } from '@/hooks/use-classes';
 import { useProducts } from '@/hooks/use-products';
+import type { ClassWithProducts } from '@/types/classes';
+
+type Tab = 'produtos' | 'classes';
 
 export default function Produtos() {
+	const [activeTab, setActiveTab] = useState<Tab>('produtos');
 	const [searchQuery, setSearchQuery] = useState('');
-	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+	const [isClassModalOpen, setIsClassModalOpen] = useState(false);
+	const [editingClass, setEditingClass] = useState<ClassWithProducts | null>(
+		null,
+	);
+
 	const { products, isLoading, error } = useProducts();
+	const { classes, isLoading: classesLoading } = useClasses();
 
 	const filteredProducts = (products ?? []).filter((product) =>
 		product.name.toLowerCase().includes(searchQuery.toLowerCase()),
 	);
 
-	function handleAddCourse() {
-		setIsModalOpen(true);
+	function handleEditClass(cls: ClassWithProducts) {
+		setEditingClass(cls);
+		setIsClassModalOpen(true);
+	}
+
+	function handleCloseClassModal() {
+		setIsClassModalOpen(false);
+		setEditingClass(null);
 	}
 
 	return (
@@ -33,22 +53,102 @@ export default function Produtos() {
 					</p>
 				</div>
 
-				<SearchBar
-					value={searchQuery}
-					onChange={setSearchQuery}
-					onAddCourse={handleAddCourse}
-				/>
-				<ProductGrid
-					products={filteredProducts}
-					isLoading={isLoading}
-					error={error}
-				/>
+				{/* Tabs */}
+				<div className="flex items-center gap-2 mb-6">
+					<button
+						type="button"
+						onClick={() => setActiveTab('produtos')}
+						className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+							activeTab === 'produtos'
+								? 'bg-violet-600 text-white'
+								: 'bg-[#1a1a1d] text-gray-400 border border-gray-800 hover:border-gray-700 hover:text-white'
+						}`}
+					>
+						<Package className="w-4 h-4" />
+						Produtos
+					</button>
+					<button
+						type="button"
+						onClick={() => setActiveTab('classes')}
+						className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+							activeTab === 'classes'
+								? 'bg-violet-600 text-white'
+								: 'bg-[#1a1a1d] text-gray-400 border border-gray-800 hover:border-gray-700 hover:text-white'
+						}`}
+					>
+						<Layers className="w-4 h-4" />
+						Classes
+					</button>
+				</div>
+
+				{activeTab === 'produtos' && (
+					<>
+						<SearchBar
+							value={searchQuery}
+							onChange={setSearchQuery}
+							onAddCourse={() => setIsProductModalOpen(true)}
+						/>
+						<ProductGrid
+							products={filteredProducts}
+							isLoading={isLoading}
+							error={error}
+						/>
+					</>
+				)}
+
+				{activeTab === 'classes' && (
+					<>
+						<div className="flex items-center justify-between mb-6">
+							<p className="text-sm text-gray-400">
+								Agrupe seus produtos em classes (Prata, Ouro, Platina) para
+								facilitar a venda.
+							</p>
+							<button
+								type="button"
+								onClick={() => setIsClassModalOpen(true)}
+								className="flex items-center gap-2 bg-violet-600 rounded-xl px-5 py-3 text-sm font-medium hover:bg-violet-700 transition-colors"
+							>
+								<Plus className="w-4 h-4" />
+								Adicionar classe
+							</button>
+						</div>
+
+						{classesLoading ? (
+							<div className="flex items-center justify-center py-20">
+								<div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+							</div>
+						) : classes.length === 0 ? (
+							<div className="text-center py-20">
+								<Layers className="w-10 h-10 text-gray-700 mx-auto mb-4" />
+								<p className="text-gray-400 font-medium">
+									Nenhuma classe criada
+								</p>
+								<p className="text-gray-600 text-sm mt-1">
+									Crie uma classe para agrupar produtos por tier.
+								</p>
+							</div>
+						) : (
+							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+								{classes.map((cls) => (
+									<ClassCard key={cls.id} cls={cls} onEdit={handleEditClass} />
+								))}
+							</div>
+						)}
+					</>
+				)}
 			</main>
 
 			<ChatButton />
+
 			<AddCourseModal
-				isOpen={isModalOpen}
-				onClose={() => setIsModalOpen(false)}
+				isOpen={isProductModalOpen}
+				onClose={() => setIsProductModalOpen(false)}
+			/>
+
+			<CreateClassModal
+				isOpen={isClassModalOpen}
+				onClose={handleCloseClassModal}
+				editing={editingClass}
 			/>
 		</div>
 	);

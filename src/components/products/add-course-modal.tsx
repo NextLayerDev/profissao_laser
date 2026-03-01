@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useCreateProduct } from '@/hooks/use-products';
+import { uploadProductImage } from '@/services/products';
 import type { AddCourseModalProps } from '@/types/components/add-course-modal';
 
 const LANGUAGE_OPTIONS = [
@@ -36,6 +37,7 @@ export function AddCourseModal({ isOpen, onClose }: AddCourseModalProps) {
 	const [language, setLanguage] = useState('pt');
 	const [country, setCountry] = useState('BR');
 	const [coverPreview, setCoverPreview] = useState<string | null>(null);
+	const [coverFile, setCoverFile] = useState<File | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const [paymentType, setPaymentType] = useState<'single' | 'subscription'>(
@@ -55,13 +57,14 @@ export function AddCourseModal({ isOpen, onClose }: AddCourseModalProps) {
 	function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0];
 		if (file) {
-			const url = URL.createObjectURL(file);
-			setCoverPreview(url);
+			setCoverFile(file);
+			setCoverPreview(URL.createObjectURL(file));
 		}
 	}
 
 	function handleRemoveCover() {
 		setCoverPreview(null);
+		setCoverFile(null);
 		if (fileInputRef.current) fileInputRef.current.value = '';
 	}
 
@@ -72,6 +75,7 @@ export function AddCourseModal({ isOpen, onClose }: AddCourseModalProps) {
 		setLanguage('pt');
 		setCountry('BR');
 		setCoverPreview(null);
+		setCoverFile(null);
 		setPaymentType('single');
 		setSubscriptionInterval('month');
 		setPrice('');
@@ -97,11 +101,11 @@ export function AddCourseModal({ isOpen, onClose }: AddCourseModalProps) {
 			paymentType === 'single' ? 'one_time' : subscriptionInterval;
 
 		try {
-			await mutation.mutateAsync({
+			// Passo 1 — cria o produto
+			const created = await mutation.mutateAsync({
 				name,
 				type: 'curso',
 				description,
-				image: '',
 				price: parseFloat(price),
 				interval,
 				slug: slugify(name),
@@ -110,6 +114,12 @@ export function AddCourseModal({ isOpen, onClose }: AddCourseModalProps) {
 				category,
 				refundDays: parseInt(refundDays, 10) || 7,
 			});
+
+			// Passo 2 — faz upload da imagem se foi selecionada
+			if (coverFile) {
+				await uploadProductImage(created.id, coverFile);
+			}
+
 			toast.success('Curso criado com sucesso!');
 			handleClose();
 		} catch {

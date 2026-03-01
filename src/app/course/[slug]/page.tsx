@@ -3,9 +3,13 @@
 import {
 	ArrowLeft,
 	BookOpen,
+	Check,
 	ChevronDown,
 	ChevronRight,
+	ClipboardList,
 	Clock,
+	ExternalLink,
+	FileImage,
 	FileText,
 	Loader2,
 	Lock,
@@ -13,10 +17,12 @@ import {
 	PackageX,
 	Paperclip,
 	Play,
+	RefreshCw,
 	Search,
 	Send,
 	Star,
 	Trophy,
+	X,
 	Zap,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -24,8 +30,267 @@ import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { VideoPlayer } from '@/components/course/video-player';
 import { useCourse } from '@/hooks/use-course';
+import { useMaterials } from '@/hooks/use-materials';
+import { useQuiz } from '@/hooks/use-quiz';
 import type { CourseLesson } from '@/types/course';
+import type { MaterialType } from '@/types/materials';
+import type { Quiz } from '@/types/quiz';
 import { formatDuration } from '@/utils/video';
+
+// ─── Material icon ────────────────────────────────────────────────────────────
+
+function MaterialIcon({ type }: { type: MaterialType }) {
+	if (type === 'image')
+		return <FileImage className="w-5 h-5 text-emerald-400 shrink-0" />;
+	if (type === 'word')
+		return <FileText className="w-5 h-5 text-blue-400 shrink-0" />;
+	return <FileText className="w-5 h-5 text-red-400 shrink-0" />;
+}
+
+// ─── Quiz Player ──────────────────────────────────────────────────────────────
+
+function QuizPlayer({ quiz }: { quiz: Quiz }) {
+	const [answers, setAnswers] = useState<Record<string, string>>({});
+	const [submitted, setSubmitted] = useState(false);
+
+	const sorted = [...quiz.questions].sort((a, b) => a.order - b.order);
+	const allAnswered = sorted.every((q) => answers[q.id]);
+
+	function selectOption(questionId: string, optionId: string) {
+		if (submitted) return;
+		setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
+	}
+
+	function reset() {
+		setAnswers({});
+		setSubmitted(false);
+	}
+
+	const score = submitted
+		? sorted.filter((q) => {
+				const chosen = q.options.find((o) => o.id === answers[q.id]);
+				return chosen?.isCorrect;
+			}).length
+		: 0;
+
+	return (
+		<div className="space-y-6">
+			<div className="flex items-center justify-between">
+				<div>
+					<h3 className="font-bold text-white text-lg">{quiz.title}</h3>
+					<p className="text-slate-400 text-sm mt-0.5">
+						{sorted.length} pergunta{sorted.length !== 1 ? 's' : ''}
+					</p>
+				</div>
+				{submitted && (
+					<div className="text-right">
+						<p
+							className={`text-2xl font-black ${score === sorted.length ? 'text-emerald-400' : score >= sorted.length / 2 ? 'text-yellow-400' : 'text-red-400'}`}
+						>
+							{score}/{sorted.length}
+						</p>
+						<p className="text-xs text-slate-500">acertos</p>
+					</div>
+				)}
+			</div>
+
+			<div className="space-y-5">
+				{sorted.map((question, qIdx) => {
+					const chosenId = answers[question.id];
+					const correctOption = question.options.find((o) => o.isCorrect);
+
+					return (
+						<div
+							key={question.id}
+							className="bg-white/5 border border-white/10 rounded-xl p-5"
+						>
+							<p className="text-sm font-semibold text-white mb-4 leading-snug">
+								<span className="text-slate-500 mr-2">{qIdx + 1}.</span>
+								{question.text}
+							</p>
+							<div className="space-y-2">
+								{question.options.map((opt) => {
+									const isChosen = chosenId === opt.id;
+									const isCorrect = opt.isCorrect;
+
+									let optStyle =
+										'border-white/10 bg-white/[0.03] text-slate-300 hover:border-violet-500/40 hover:bg-violet-500/5';
+									if (submitted) {
+										if (isCorrect)
+											optStyle =
+												'border-emerald-500/60 bg-emerald-500/10 text-emerald-200';
+										else if (isChosen && !isCorrect)
+											optStyle = 'border-red-500/60 bg-red-500/10 text-red-300';
+										else
+											optStyle =
+												'border-white/5 bg-white/[0.02] text-slate-500 opacity-60';
+									} else if (isChosen) {
+										optStyle =
+											'border-violet-500/60 bg-violet-500/10 text-violet-200';
+									}
+
+									return (
+										<button
+											key={opt.id}
+											type="button"
+											onClick={() => selectOption(question.id, opt.id)}
+											disabled={submitted}
+											className={`w-full flex items-center gap-3 px-4 py-3 border rounded-xl text-sm text-left transition-all ${optStyle}`}
+										>
+											<div
+												className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+													submitted && isCorrect
+														? 'border-emerald-400 bg-emerald-400'
+														: submitted && isChosen && !isCorrect
+															? 'border-red-400 bg-red-400'
+															: isChosen
+																? 'border-violet-400 bg-violet-400'
+																: 'border-white/20'
+												}`}
+											>
+												{submitted && isCorrect && (
+													<Check className="w-3 h-3 text-white" />
+												)}
+												{submitted && isChosen && !isCorrect && (
+													<X className="w-3 h-3 text-white" />
+												)}
+												{!submitted && isChosen && (
+													<div className="w-2 h-2 rounded-full bg-white" />
+												)}
+											</div>
+											{opt.text}
+										</button>
+									);
+								})}
+							</div>
+							{submitted && chosenId !== correctOption?.id && (
+								<p className="text-xs text-emerald-400 mt-3 flex items-center gap-1.5">
+									<Check className="w-3.5 h-3.5" />
+									Resposta correta:{' '}
+									<span className="font-medium">{correctOption?.text}</span>
+								</p>
+							)}
+						</div>
+					);
+				})}
+			</div>
+
+			{!submitted ? (
+				<button
+					type="button"
+					onClick={() => setSubmitted(true)}
+					disabled={!allAnswered}
+					className="w-full flex items-center justify-center gap-2 py-3 bg-linear-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 text-white font-semibold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+				>
+					<Trophy className="w-4 h-4" />
+					Verificar respostas
+				</button>
+			) : (
+				<button
+					type="button"
+					onClick={reset}
+					className="w-full flex items-center justify-center gap-2 py-3 bg-white/10 hover:bg-white/15 border border-white/10 text-white font-medium rounded-xl transition-all"
+				>
+					<RefreshCw className="w-4 h-4" />
+					Tentar novamente
+				</button>
+			)}
+		</div>
+	);
+}
+
+// ─── Tab content components ───────────────────────────────────────────────────
+
+function MaterialsTab({ lessonId }: { lessonId: string | null }) {
+	const { data: materials = [], isLoading } = useMaterials(lessonId ?? '');
+
+	if (!lessonId) {
+		return (
+			<div className="flex flex-col items-center justify-center py-10 text-slate-600">
+				<Paperclip className="w-8 h-8 mb-3" />
+				<p className="text-sm">Selecione uma aula para ver os materiais.</p>
+			</div>
+		);
+	}
+
+	if (isLoading) {
+		return (
+			<div className="flex items-center justify-center py-10">
+				<Loader2 className="w-6 h-6 text-violet-400 animate-spin" />
+			</div>
+		);
+	}
+
+	if (materials.length === 0) {
+		return (
+			<div className="flex flex-col items-center justify-center py-10 text-slate-600">
+				<FileText className="w-8 h-8 mb-3" />
+				<p className="text-sm">Nenhum material disponível para esta aula.</p>
+			</div>
+		);
+	}
+
+	return (
+		<div className="space-y-2">
+			{materials.map((mat) => (
+				<a
+					key={mat.id}
+					href={mat.url}
+					target="_blank"
+					rel="noreferrer"
+					className="flex items-center gap-3 p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-violet-500/30 rounded-xl transition-all group"
+				>
+					<MaterialIcon type={mat.type} />
+					<span className="flex-1 text-sm font-medium text-slate-200 group-hover:text-white transition-colors truncate">
+						{mat.name}
+					</span>
+					<ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-violet-400 shrink-0 transition-colors" />
+				</a>
+			))}
+		</div>
+	);
+}
+
+function QuizTab({ lessonId }: { lessonId: string | null }) {
+	const { data: quiz, isLoading } = useQuiz(lessonId ?? '');
+
+	if (!lessonId) {
+		return (
+			<div className="flex flex-col items-center justify-center py-10 text-slate-600">
+				<ClipboardList className="w-8 h-8 mb-3" />
+				<p className="text-sm">Selecione uma aula para ver o quiz.</p>
+			</div>
+		);
+	}
+
+	if (isLoading) {
+		return (
+			<div className="flex items-center justify-center py-10">
+				<Loader2 className="w-6 h-6 text-violet-400 animate-spin" />
+			</div>
+		);
+	}
+
+	if (!quiz) {
+		return (
+			<div className="flex flex-col items-center justify-center py-10 text-slate-600">
+				<ClipboardList className="w-8 h-8 mb-3" />
+				<p className="text-sm">Esta aula não possui quiz.</p>
+			</div>
+		);
+	}
+
+	if (quiz.questions.length === 0) {
+		return (
+			<div className="flex flex-col items-center justify-center py-10 text-slate-600">
+				<ClipboardList className="w-8 h-8 mb-3" />
+				<p className="text-sm">O quiz desta aula ainda não tem perguntas.</p>
+			</div>
+		);
+	}
+
+	return <QuizPlayer quiz={quiz} />;
+}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -36,7 +301,7 @@ export default function CourseSlugPage() {
 	const [search, setSearch] = useState('');
 	const [rating, setRating] = useState(0);
 	const [hoverRating, setHoverRating] = useState(0);
-	const [bottomTab, setBottomTab] = useState<'duvidas' | 'materiais'>(
+	const [bottomTab, setBottomTab] = useState<'duvidas' | 'materiais' | 'quiz'>(
 		'duvidas',
 	);
 	const [question, setQuestion] = useState('');
@@ -83,7 +348,6 @@ export default function CourseSlugPage() {
 		0,
 	);
 
-	// Next lesson after the active one
 	const allLessons = sortedModules.flatMap((m) => m.lessons);
 	const activeIdx = activeLesson
 		? allLessons.findIndex((l) => l.id === activeLesson.id)
@@ -93,7 +357,6 @@ export default function CourseSlugPage() {
 			? allLessons[activeIdx + 1]
 			: null;
 
-	// Search filter
 	const filteredModules = sortedModules.map((mod) => ({
 		...mod,
 		lessons: search
@@ -145,13 +408,12 @@ export default function CourseSlugPage() {
 
 			{/* ── Body ────────────────────────────────────────────────────────── */}
 			<div className="flex flex-1 overflow-hidden">
-				{/* ── Main (video + info) ─────────────────────────────────────── */}
+				{/* ── Main (video + tabs) ──────────────────────────────────────── */}
 				<main className="flex-1 flex flex-col overflow-y-auto bg-[#06040f]">
 					<VideoPlayer lesson={activeLesson} courseName={course.name} />
 
 					{/* Rating + tabs row */}
 					<div className="px-6 py-3 flex items-center justify-between border-b border-white/10">
-						{/* Tabs */}
 						<div className="flex gap-1">
 							<button
 								type="button"
@@ -177,9 +439,20 @@ export default function CourseSlugPage() {
 								<Paperclip className="w-4 h-4" />
 								Materiais
 							</button>
+							<button
+								type="button"
+								onClick={() => setBottomTab('quiz')}
+								className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+									bottomTab === 'quiz'
+										? 'bg-violet-600/20 text-violet-300'
+										: 'text-slate-400 hover:text-white hover:bg-white/5'
+								}`}
+							>
+								<ClipboardList className="w-4 h-4" />
+								Quiz
+							</button>
 						</div>
 
-						{/* Rating */}
 						{activeLesson && (
 							<div className="flex items-center gap-2">
 								<p className="text-slate-500 text-xs">Avalie:</p>
@@ -208,7 +481,6 @@ export default function CourseSlugPage() {
 
 					{/* Tab content */}
 					<div className="px-6 py-6">
-						{/* ── Dúvidas ── */}
 						{bottomTab === 'duvidas' && (
 							<div className="space-y-5">
 								<div className="flex flex-col gap-2">
@@ -238,8 +510,6 @@ export default function CourseSlugPage() {
 										</button>
 									</div>
 								</div>
-
-								{/* Empty state */}
 								<div className="flex flex-col items-center justify-center py-10 text-slate-600">
 									<MessageSquare className="w-8 h-8 mb-3" />
 									<p className="text-sm">Nenhuma dúvida enviada ainda.</p>
@@ -248,17 +518,12 @@ export default function CourseSlugPage() {
 							</div>
 						)}
 
-						{/* ── Materiais ── */}
 						{bottomTab === 'materiais' && (
-							<div className="space-y-3">
-								{/* Empty state */}
-								<div className="flex flex-col items-center justify-center py-10 text-slate-600">
-									<FileText className="w-8 h-8 mb-3" />
-									<p className="text-sm">
-										Nenhum material disponível para esta aula.
-									</p>
-								</div>
-							</div>
+							<MaterialsTab lessonId={activeLesson?.id ?? null} />
+						)}
+
+						{bottomTab === 'quiz' && (
+							<QuizTab lessonId={activeLesson?.id ?? null} />
 						)}
 					</div>
 				</main>
@@ -337,80 +602,64 @@ export default function CourseSlugPage() {
 										</div>
 									</button>
 
-									{/* Lessons + Quiz (collapsible) */}
-									{!isCollapsed && (
-										<>
-											{mod.lessons.map((lesson) => {
-												const isActive = activeLesson?.id === lesson.id;
-												return (
-													<button
-														key={lesson.id}
-														type="button"
-														onClick={() => handleSelectLesson(lesson)}
-														className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-white/5 transition-all relative ${
-															isActive ? 'bg-white/10' : 'hover:bg-white/5'
-														}`}
-													>
-														{isActive && (
-															<div className="absolute left-0 top-0 bottom-0 w-0.5 bg-violet-400 rounded-r" />
-														)}
-
-														<div className="shrink-0">
-															{isActive ? (
-																<div className="w-7 h-7 rounded-full bg-violet-600 flex items-center justify-center">
-																	<Play className="w-3 h-3 fill-current" />
-																</div>
-															) : lesson.isFree ? (
-																<div className="w-7 h-7 rounded-full bg-emerald-600/20 flex items-center justify-center">
-																	<Play className="w-3 h-3 text-emerald-400 fill-current" />
-																</div>
-															) : (
-																<div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center">
-																	<Lock className="w-3 h-3 text-slate-500" />
-																</div>
-															)}
-														</div>
-
-														<div className="flex-1 min-w-0">
-															<p
-																className={`text-sm truncate font-medium leading-tight ${
-																	isActive ? 'text-white' : 'text-slate-300'
-																}`}
-															>
-																{lesson.title}
-															</p>
-															{lesson.duration && (
-																<div className="flex items-center gap-1 mt-0.5 text-slate-500 text-xs">
-																	<Clock className="w-3 h-3" />
-																	<span>{formatDuration(lesson.duration)}</span>
-																</div>
-															)}
-														</div>
-
-														{lesson.isFree && !isActive && (
-															<span className="shrink-0 text-xs px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded">
-																Grátis
-															</span>
-														)}
-														{isActive && (
-															<ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
-														)}
-													</button>
-												);
-											})}
-
-											{/* Quiz button */}
-											<div className="px-3 py-3 border-b border-white/6">
+									{/* Lessons */}
+									{!isCollapsed &&
+										mod.lessons.map((lesson) => {
+											const isActive = activeLesson?.id === lesson.id;
+											return (
 												<button
+													key={lesson.id}
 													type="button"
-													className="w-full flex items-center justify-center gap-2 bg-violet-950/60 hover:bg-violet-900/60 border border-violet-800/40 hover:border-violet-700/50 text-violet-300 hover:text-violet-200 font-semibold py-2.5 rounded-xl text-sm transition-all"
+													onClick={() => handleSelectLesson(lesson)}
+													className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-white/5 transition-all relative ${
+														isActive ? 'bg-white/10' : 'hover:bg-white/5'
+													}`}
 												>
-													<Trophy className="w-4 h-4" />
-													Quiz do Módulo {mod.order}
+													{isActive && (
+														<div className="absolute left-0 top-0 bottom-0 w-0.5 bg-violet-400 rounded-r" />
+													)}
+
+													<div className="shrink-0">
+														{isActive ? (
+															<div className="w-7 h-7 rounded-full bg-violet-600 flex items-center justify-center">
+																<Play className="w-3 h-3 fill-current" />
+															</div>
+														) : lesson.isFree ? (
+															<div className="w-7 h-7 rounded-full bg-emerald-600/20 flex items-center justify-center">
+																<Play className="w-3 h-3 text-emerald-400 fill-current" />
+															</div>
+														) : (
+															<div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center">
+																<Lock className="w-3 h-3 text-slate-500" />
+															</div>
+														)}
+													</div>
+
+													<div className="flex-1 min-w-0">
+														<p
+															className={`text-sm truncate font-medium leading-tight ${isActive ? 'text-white' : 'text-slate-300'}`}
+														>
+															{lesson.title}
+														</p>
+														{lesson.duration && (
+															<div className="flex items-center gap-1 mt-0.5 text-slate-500 text-xs">
+																<Clock className="w-3 h-3" />
+																<span>{formatDuration(lesson.duration)}</span>
+															</div>
+														)}
+													</div>
+
+													{lesson.isFree && !isActive && (
+														<span className="shrink-0 text-xs px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded">
+															Grátis
+														</span>
+													)}
+													{isActive && (
+														<ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
+													)}
 												</button>
-											</div>
-										</>
-									)}
+											);
+										})}
 								</div>
 							);
 						})}

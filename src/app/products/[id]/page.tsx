@@ -10,17 +10,20 @@ import {
 	Trash2,
 	Users2,
 } from 'lucide-react';
+
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+
 import { ChatButton } from '@/components/dashboard/chat-button';
 import { BasicInfoSection } from '@/components/products/basic-info-section';
 import { CourseContentSection } from '@/components/products/course-content-section';
 import { CreateSubscriptionModal } from '@/components/products/create-subscription-modal';
 import { CuponsSection } from '@/components/products/cupons-section';
+import { DeleteProductModal } from '@/components/products/delete-product-modal';
 import { useProducts } from '@/hooks/use-products';
-import { deleteProduct, updateProductStatus } from '@/services/products';
+import { updateProductStatus } from '@/services/products';
 import {
 	productConfigItems,
 	productMenuItems,
@@ -34,7 +37,7 @@ export default function ProdutoDetalhes() {
 	const [vendasAtivas, setVendasAtivas] = useState(true);
 	const [togglingStatus, setTogglingStatus] = useState(false);
 	const [activeMenu, setActiveMenu] = useState('painel');
-	const [deleting, setDeleting] = useState(false);
+	const [showDeleteModal, setShowDeleteModal] = useState(false);
 	const [subscriptionModal, setSubscriptionModal] = useState(false);
 
 	const handleToggleStatus = async () => {
@@ -48,24 +51,6 @@ export default function ProdutoDetalhes() {
 			toast.error('Erro ao atualizar status do produto');
 		} finally {
 			setTogglingStatus(false);
-		}
-	};
-
-	const handleDelete = async () => {
-		if (
-			!confirm(
-				'Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.',
-			)
-		)
-			return;
-		setDeleting(true);
-		try {
-			await deleteProduct(id);
-			toast.success('Produto excluído com sucesso!');
-			router.push('/products');
-		} catch {
-			toast.error('Erro ao excluir produto');
-			setDeleting(false);
 		}
 	};
 
@@ -161,15 +146,10 @@ export default function ProdutoDetalhes() {
 					<div className="flex items-center gap-3">
 						<button
 							type="button"
-							onClick={handleDelete}
-							disabled={deleting}
-							className="p-3 bg-[#252528] rounded-xl text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50"
+							onClick={() => setShowDeleteModal(true)}
+							className="p-3 bg-[#252528] rounded-xl text-gray-400 hover:text-red-400 transition-colors"
 						>
-							{deleting ? (
-								<Loader2 className="w-5 h-5 animate-spin" />
-							) : (
-								<Trash2 className="w-5 h-5" />
-							)}
+							<Trash2 className="w-5 h-5" />
 						</button>
 
 						<button
@@ -351,6 +331,14 @@ export default function ProdutoDetalhes() {
 				<CreateSubscriptionModal
 					stripeProductId={product.stripeProductId ?? ''}
 					onClose={() => setSubscriptionModal(false)}
+				/>
+			)}
+
+			{showDeleteModal && (
+				<DeleteProductModal
+					product={product}
+					onClose={() => setShowDeleteModal(false)}
+					onDeleted={() => router.push('/products')}
 				/>
 			)}
 		</div>

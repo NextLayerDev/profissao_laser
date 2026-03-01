@@ -47,7 +47,7 @@ export const createLessonPayloadSchema = z.object({
 	productId: z.string(),
 	title: z.string(),
 	description: z.string(),
-	videoUrl: z.string(),
+	videoUrl: z.string().nullable(),
 	duration: z.number(),
 	order: z.number(),
 	isFree: z.boolean(),
@@ -58,7 +58,7 @@ export type CreateLessonPayload = z.infer<typeof createLessonPayloadSchema>;
 export const updateLessonPayloadSchema = z.object({
 	title: z.string(),
 	description: z.string(),
-	videoUrl: z.string(),
+	videoUrl: z.string().nullable(),
 	duration: z.number(),
 	order: z.number(),
 	isFree: z.boolean(),

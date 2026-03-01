@@ -10,6 +10,8 @@ import {
 	deleteModule,
 	getLessons,
 	getModules,
+	reorderLessons,
+	reorderModules,
 	type UpdateLessonPayload,
 	type UpdateModulePayload,
 	updateLesson,
@@ -90,6 +92,28 @@ export function useDeleteLesson(productId: string) {
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (id: string) => deleteLesson(id),
+		onSuccess: () => qc.invalidateQueries({ queryKey: key(productId) }),
+	});
+}
+
+export function useReorderModules(productId: string) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (moduleIds: string[]) => reorderModules(productId, moduleIds),
+		onSuccess: () => qc.invalidateQueries({ queryKey: key(productId) }),
+	});
+}
+
+export function useReorderLessons(productId: string) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			moduleId,
+			lessonIds,
+		}: {
+			moduleId: string;
+			lessonIds: string[];
+		}) => reorderLessons(moduleId, lessonIds),
 		onSuccess: () => qc.invalidateQueries({ queryKey: key(productId) }),
 	});
 }

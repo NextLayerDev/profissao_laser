@@ -64,3 +64,29 @@ export async function updateLesson(
 export async function deleteLesson(id: string): Promise<void> {
 	await api.delete(`/lesson/${id}`);
 }
+
+export async function reorderModules(
+	productId: string,
+	moduleIds: string[],
+): Promise<void> {
+	await api.patch('/module/reorder', { productId, moduleIds });
+}
+
+export async function reorderLessons(
+	moduleId: string,
+	lessonIds: string[],
+): Promise<void> {
+	await api.patch('/lesson/reorder', { moduleId, lessonIds });
+}
+
+export async function uploadLessonVideo(
+	id: string,
+	file: File,
+): Promise<Lesson> {
+	const formData = new FormData();
+	formData.append('file', file);
+	const { data } = await api.post(`/lesson/${id}/video`, formData, {
+		headers: { 'Content-Type': undefined },
+	});
+	return data;
+}
