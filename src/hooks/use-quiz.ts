@@ -2,7 +2,6 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-	type CreateQuestionPayload,
 	createLessonQuiz,
 	createQuestion,
 	deleteLessonQuiz,
@@ -10,6 +9,7 @@ import {
 	getLessonQuiz,
 	updateQuestion,
 } from '@/services/quiz';
+import type { CreateQuestionPayload } from '@/types/quiz';
 
 const key = (lessonId: string) => ['quiz', lessonId];
 
