@@ -1,11 +1,13 @@
 'use client';
 
 import { Layers, ShoppingCart, TrendingUp, Users2 } from 'lucide-react';
+import { useProducts } from '@/hooks/use-products';
 import { useSales } from '@/hooks/use-sales';
 import { formatCurrency } from '@/utils/format-currency';
 
 export function StatsOverview() {
 	const { sales, isLoading } = useSales();
+	const { products } = useProducts();
 
 	const today = new Date().toISOString().split('T')[0];
 	const yesterday = new Date(Date.now() - 86_400_000)
@@ -56,8 +58,10 @@ export function StatsOverview() {
 		},
 		{
 			title: 'Produtos Ativos',
-			value: '10',
-			subtitle: '10 Serviços',
+			value: products
+				? String(products.filter((p) => p.status === 'ativo').length)
+				: '...',
+			subtitle: products ? `${products.length} no total` : '',
 			subtitleColor: 'text-gray-400',
 			icon: Layers,
 			iconBg: 'bg-rose-600',
