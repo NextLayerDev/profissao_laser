@@ -101,7 +101,7 @@ export default function Produtos() {
 						<div className="flex items-center justify-between mb-6">
 							<p className="text-sm text-gray-400">
 								Agrupe seus produtos em classes (Prata, Ouro, Platina) para
-								facilitar a venda.
+								facilitar o gerenciamento de acesso de cada curso.
 							</p>
 							<button
 								type="button"

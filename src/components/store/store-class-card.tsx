@@ -1,41 +1,7 @@
 import { Check, X } from 'lucide-react';
-import type { ClassWithProducts } from '@/types/classes';
-
-const TIER_STYLES = {
-	prata: {
-		gradient: 'from-slate-700 via-slate-500 to-slate-400',
-		badge: 'bg-slate-400/20 text-slate-200 border border-slate-400/40',
-		label: 'Prata',
-		glow: 'hover:shadow-slate-500/20',
-		divider: 'border-slate-600/30',
-	},
-	ouro: {
-		gradient: 'from-amber-700 via-yellow-500 to-amber-400',
-		badge: 'bg-amber-400/20 text-amber-200 border border-amber-400/40',
-		label: 'Ouro',
-		glow: 'hover:shadow-amber-500/20',
-		divider: 'border-amber-600/30',
-	},
-	platina: {
-		gradient: 'from-violet-700 via-purple-500 to-cyan-400',
-		badge: 'bg-violet-400/20 text-violet-200 border border-violet-400/40',
-		label: 'Platina',
-		glow: 'hover:shadow-violet-500/20',
-		divider: 'border-violet-600/30',
-	},
-};
-
-const FEATURES = [
-	{ key: 'aula', label: 'Aulas' },
-	{ key: 'chat', label: 'Chat' },
-	{ key: 'vetorizacao', label: 'Vetorização' },
-	{ key: 'suporte', label: 'Suporte' },
-	{ key: 'comunidade', label: 'Comunidade' },
-] as const;
-
-interface StoreClassCardProps {
-	cls: ClassWithProducts;
-}
+import type { StoreClassCardProps } from '@/types/components/store-class-card';
+import { CLASS_FEATURES } from '@/utils/constants/class-features';
+import { TIER_STYLES } from '@/utils/constants/tier-styles';
 
 export function StoreClassCard({ cls }: StoreClassCardProps) {
 	const style = TIER_STYLES[cls.tier];
@@ -68,7 +34,7 @@ export function StoreClassCard({ cls }: StoreClassCardProps) {
 						Funcionalidades
 					</p>
 					<ul className="space-y-2">
-						{FEATURES.map((feat) => {
+						{CLASS_FEATURES.map((feat) => {
 							const enabled = cls[feat.key];
 							return (
 								<li key={feat.key} className="flex items-center gap-2">

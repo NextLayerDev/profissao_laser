@@ -4,30 +4,9 @@ import { Package, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useDeleteClass } from '@/hooks/use-classes';
-import type { ClassWithProducts } from '@/types/classes';
-
-const TIER_STYLES = {
-	prata: {
-		gradient: 'from-slate-600 to-slate-400',
-		badge: 'bg-slate-400/20 text-slate-300 border border-slate-500/40',
-		label: 'Prata',
-	},
-	ouro: {
-		gradient: 'from-amber-600 to-yellow-400',
-		badge: 'bg-amber-400/20 text-amber-300 border border-amber-500/40',
-		label: 'Ouro',
-	},
-	platina: {
-		gradient: 'from-violet-600 to-cyan-400',
-		badge: 'bg-violet-400/20 text-violet-300 border border-violet-500/40',
-		label: 'Platina',
-	},
-};
-
-interface ClassCardProps {
-	cls: ClassWithProducts;
-	onEdit: (cls: ClassWithProducts) => void;
-}
+import type { ClassCardProps } from '@/types/components/class-card';
+import { CLASS_FEATURES } from '@/utils/constants/class-features';
+import { TIER_STYLES } from '@/utils/constants/tier-styles';
 
 export function ClassCard({ cls, onEdit }: ClassCardProps) {
 	const [confirming, setConfirming] = useState(false);
@@ -78,34 +57,16 @@ export function ClassCard({ cls, onEdit }: ClassCardProps) {
 					</p>
 				)}
 
-				{(
-					[
-						{ key: 'aula', label: 'Aulas' },
-						{ key: 'chat', label: 'Chat' },
-						{ key: 'vetorizacao', label: 'Vetorização' },
-						{ key: 'suporte', label: 'Suporte' },
-						{ key: 'comunidade', label: 'Comunidade' },
-					] as const
-				).some((f) => cls[f.key]) && (
+				{CLASS_FEATURES.some((f) => cls[f.key]) && (
 					<div className="flex flex-wrap gap-1.5 mb-3">
-						{(
-							[
-								{ key: 'aula', label: 'Aulas' },
-								{ key: 'chat', label: 'Chat' },
-								{ key: 'vetorizacao', label: 'Vetorização' },
-								{ key: 'suporte', label: 'Suporte' },
-								{ key: 'comunidade', label: 'Comunidade' },
-							] as const
-						)
-							.filter((f) => cls[f.key])
-							.map((f) => (
-								<span
-									key={f.key}
-									className="text-xs px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20"
-								>
-									{f.label}
-								</span>
-							))}
+						{CLASS_FEATURES.filter((f) => cls[f.key]).map((f) => (
+							<span
+								key={f.key}
+								className="text-xs px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20"
+							>
+								{f.label}
+							</span>
+						))}
 					</div>
 				)}
 

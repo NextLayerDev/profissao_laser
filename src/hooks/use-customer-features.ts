@@ -2,15 +2,10 @@
 
 import { useMemo } from 'react';
 import { useClasses } from '@/hooks/use-classes';
+import type { CustomerFeatures } from '@/types/classes';
 import type { CustomerPlan } from '@/types/plans';
 
-export type CustomerFeatures = {
-	aula: boolean;
-	chat: boolean;
-	vetorizacao: boolean;
-	suporte: boolean;
-	comunidade: boolean;
-};
+export type { CustomerFeatures };
 
 export function useCustomerFeatures(
 	plans: CustomerPlan[] | undefined,

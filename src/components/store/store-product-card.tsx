@@ -6,37 +6,10 @@ import { useState } from 'react';
 import { LoginRequiredModal } from '@/components/store/login-required-modal';
 import { usePurchase } from '@/hooks/use-purchase';
 import { getCurrentUser } from '@/lib/auth';
-import type { ClassWithProducts } from '@/types/classes';
-import type { Product } from '@/types/products';
+import type { StoreProductCardProps } from '@/types/components/store-product-card';
+import { CLASS_FEATURES } from '@/utils/constants/class-features';
+import { TIER_STYLES } from '@/utils/constants/tier-styles';
 import { formatCurrency } from '@/utils/format-currency';
-
-const TIER_STYLES = {
-	prata: {
-		badge: 'bg-slate-400/20 text-slate-300 border border-slate-500/30',
-		label: 'Prata',
-	},
-	ouro: {
-		badge: 'bg-amber-400/20 text-amber-300 border border-amber-500/30',
-		label: 'Ouro',
-	},
-	platina: {
-		badge: 'bg-violet-400/20 text-violet-300 border border-violet-500/30',
-		label: 'Platina',
-	},
-};
-
-const FEATURES = [
-	{ key: 'aula', label: 'Aulas' },
-	{ key: 'chat', label: 'Chat' },
-	{ key: 'vetorizacao', label: 'Vetorização' },
-	{ key: 'suporte', label: 'Suporte' },
-	{ key: 'comunidade', label: 'Comunidade' },
-] as const;
-
-interface StoreProductCardProps {
-	product: Product;
-	classInfo?: ClassWithProducts;
-}
 
 export function StoreProductCard({
 	product,
@@ -61,7 +34,7 @@ export function StoreProductCard({
 
 	const tierStyle = classInfo ? TIER_STYLES[classInfo.tier] : null;
 	const enabledFeatures = classInfo
-		? FEATURES.filter((f) => classInfo[f.key])
+		? CLASS_FEATURES.filter((f) => classInfo[f.key])
 		: [];
 
 	return (

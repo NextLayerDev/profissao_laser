@@ -10,19 +10,8 @@ import {
 	useUpdateClass,
 } from '@/hooks/use-classes';
 import { useProducts } from '@/hooks/use-products';
-import type { ClassWithProducts } from '@/types/classes';
-
-const TIER_OPTIONS = [
-	{ value: 'prata', label: 'Prata' },
-	{ value: 'ouro', label: 'Ouro' },
-	{ value: 'platina', label: 'Platina' },
-] as const;
-
-interface CreateClassModalProps {
-	isOpen: boolean;
-	onClose: () => void;
-	editing?: ClassWithProducts | null;
-}
+import type { CreateClassModalProps } from '@/types/components/create-class-modal';
+import { TIER_OPTIONS } from '@/utils/constants/tier-styles';
 
 export function CreateClassModal({
 	isOpen,

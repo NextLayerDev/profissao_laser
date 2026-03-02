@@ -6,13 +6,7 @@ import {
 	PenLine,
 	Play,
 } from 'lucide-react';
-
-export type FeatureKey =
-	| 'aula'
-	| 'chat'
-	| 'vetorizacao'
-	| 'suporte'
-	| 'comunidade';
+import type { FeatureKey } from '@/types/classes';
 
 export type QuickAccessItem = {
 	label: string;
