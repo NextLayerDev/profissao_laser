@@ -1,19 +1,9 @@
-import {
-	FileText,
-	Globe,
-	LayoutDashboard,
-	MonitorPlay,
-	Ticket,
-	Users,
-} from 'lucide-react';
+import { FileText, MonitorPlay, Ticket } from 'lucide-react';
 
 export const productMenuItems = [
-	{ id: 'painel', label: 'Painel', icon: LayoutDashboard },
 	{ id: 'informacoes', label: 'Informações básicas', icon: FileText },
 	{ id: 'conteudo', label: 'Conteúdo do curso', icon: MonitorPlay },
 	{ id: 'cupons', label: 'Cupons', icon: Ticket },
-	{ id: 'membros', label: 'Área de membros', icon: Users },
-	{ id: 'pagina', label: 'Página do produto', icon: Globe },
 ];
 
 export const productConfigItems = [

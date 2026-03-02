@@ -3,7 +3,7 @@ import {
 	BarChart3,
 	Clock,
 	Package,
-	Users2,
+	Phone,
 	Wrench,
 } from 'lucide-react';
 
@@ -30,11 +30,11 @@ export const quickAccessItems = [
 		href: '/reports',
 	},
 	{
-		title: 'Afiliados',
+		title: 'Suporte',
 		subtitle: 'Acessar agora',
-		icon: Users2,
-		iconBg: 'bg-rose-600',
-		href: '/store',
+		icon: Phone,
+		iconBg: 'bg-blue-600',
+		href: '/appointments',
 	},
 ];
 

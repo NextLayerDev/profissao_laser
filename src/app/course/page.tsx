@@ -42,7 +42,17 @@ export default function CoursePage() {
 		setIsAdmin(!!getToken('user') && user?.role != null);
 	}, []);
 
-	const { data: plans, isLoading, isError } = useCustomerPlans(email ?? null);
+	const {
+		data: allPlans,
+		isLoading,
+		isError,
+	} = useCustomerPlans(email ?? null);
+
+	const plans = allPlans?.filter(
+		(plan) =>
+			plan.product_name?.toLowerCase() !== 'unknown' &&
+			plan.status?.toLowerCase() !== 'unknown',
+	);
 
 	if (email === undefined || isLoading) {
 		return (
