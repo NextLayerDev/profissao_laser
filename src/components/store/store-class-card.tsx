@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import type { ClassWithProducts } from '@/types/classes';
 
 const TIER_STYLES = {
@@ -24,6 +24,14 @@ const TIER_STYLES = {
 		divider: 'border-violet-600/30',
 	},
 };
+
+const FEATURES = [
+	{ key: 'aula', label: 'Aulas' },
+	{ key: 'chat', label: 'Chat' },
+	{ key: 'vetorizacao', label: 'Vetorização' },
+	{ key: 'suporte', label: 'Suporte' },
+	{ key: 'comunidade', label: 'Comunidade' },
+] as const;
 
 interface StoreClassCardProps {
 	cls: ClassWithProducts;
@@ -55,11 +63,36 @@ export function StoreClassCard({ cls }: StoreClassCardProps) {
 					)}
 				</div>
 
-				<div className={`border-t pt-4 flex-1 ${style.divider}`}>
+				<div className={`border-t pt-4 mb-4 ${style.divider}`}>
 					<p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-						Incluído neste plano
+						Funcionalidades
 					</p>
-					{cls.products.length > 0 ? (
+					<ul className="space-y-2">
+						{FEATURES.map((feat) => {
+							const enabled = cls[feat.key];
+							return (
+								<li key={feat.key} className="flex items-center gap-2">
+									{enabled ? (
+										<Check className="w-4 h-4 text-emerald-400 shrink-0" />
+									) : (
+										<X className="w-4 h-4 text-gray-600 shrink-0" />
+									)}
+									<span
+										className={`text-sm ${enabled ? 'text-gray-200' : 'text-gray-600'}`}
+									>
+										{feat.label}
+									</span>
+								</li>
+							);
+						})}
+					</ul>
+				</div>
+
+				{cls.products.length > 0 && (
+					<div className={`border-t pt-4 flex-1 ${style.divider}`}>
+						<p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+							Incluído neste plano
+						</p>
 						<ul className="space-y-2">
 							{cls.products.map((product) => (
 								<li key={product.id} className="flex items-start gap-2">
@@ -70,10 +103,8 @@ export function StoreClassCard({ cls }: StoreClassCardProps) {
 								</li>
 							))}
 						</ul>
-					) : (
-						<p className="text-sm text-gray-600">Nenhum produto neste plano</p>
-					)}
-				</div>
+					</div>
+				)}
 			</div>
 		</div>
 	);

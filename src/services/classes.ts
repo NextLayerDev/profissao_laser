@@ -11,6 +11,11 @@ export interface CreateClassPayload {
 	tier: 'prata' | 'ouro' | 'platina';
 	description?: string;
 	status?: 'ativo' | 'inativo';
+	aula?: boolean;
+	chat?: boolean;
+	vetorizacao?: boolean;
+	suporte?: boolean;
+	comunidade?: boolean;
 }
 
 export interface UpdateClassPayload {
@@ -18,6 +23,11 @@ export interface UpdateClassPayload {
 	tier?: 'prata' | 'ouro' | 'platina';
 	description?: string;
 	status?: 'ativo' | 'inativo';
+	aula?: boolean;
+	chat?: boolean;
+	vetorizacao?: boolean;
+	suporte?: boolean;
+	comunidade?: boolean;
 }
 
 export async function getClasses(): Promise<ClassWithProducts[]> {

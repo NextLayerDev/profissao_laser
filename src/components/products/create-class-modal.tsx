@@ -34,6 +34,11 @@ export function CreateClassModal({
 	const [tier, setTier] = useState<'prata' | 'ouro' | 'platina'>('prata');
 	const [description, setDescription] = useState('');
 	const [status, setStatus] = useState<'ativo' | 'inativo'>('ativo');
+	const [aula, setAula] = useState(false);
+	const [chat, setChat] = useState(false);
+	const [vetorizacao, setVetorizacao] = useState(false);
+	const [suporte, setSuporteState] = useState(false);
+	const [comunidade, setComunidade] = useState(false);
 	const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(
 		new Set(),
 	);
@@ -53,6 +58,11 @@ export function CreateClassModal({
 		setTier('prata');
 		setDescription('');
 		setStatus('ativo');
+		setAula(false);
+		setChat(false);
+		setVetorizacao(false);
+		setSuporteState(false);
+		setComunidade(false);
 		setSelectedProductIds(new Set());
 	}, []);
 
@@ -62,6 +72,11 @@ export function CreateClassModal({
 			setTier(editing.tier);
 			setDescription(editing.description ?? '');
 			setStatus(editing.status);
+			setAula(editing.aula);
+			setChat(editing.chat);
+			setVetorizacao(editing.vetorizacao);
+			setSuporteState(editing.suporte);
+			setComunidade(editing.comunidade);
 			setSelectedProductIds(new Set(editing.products.map((p) => p.id)));
 		} else {
 			resetForm();
@@ -94,7 +109,17 @@ export function CreateClassModal({
 			if (isEditing) {
 				await updateMutation.mutateAsync({
 					id: editing.id,
-					payload: { name, tier, description, status },
+					payload: {
+						name,
+						tier,
+						description,
+						status,
+						aula,
+						chat,
+						vetorizacao,
+						suporte,
+						comunidade,
+					},
 				});
 
 				const previousIds = new Set(editing.products.map((p) => p.id));
@@ -121,6 +146,11 @@ export function CreateClassModal({
 					tier,
 					description,
 					status,
+					aula,
+					chat,
+					vetorizacao,
+					suporte,
+					comunidade,
 				});
 
 				await Promise.all(
@@ -250,6 +280,72 @@ export function CreateClassModal({
 											}`}
 										>
 											{s === 'ativo' ? 'Ativo' : 'Inativo'}
+										</button>
+									))}
+								</div>
+							</div>
+
+							<div>
+								<p className="text-sm font-medium text-gray-300 mb-2">
+									Funcionalidades
+								</p>
+								<div className="grid grid-cols-2 gap-2">
+									{(
+										[
+											{
+												key: 'aula',
+												label: 'Aulas',
+												value: aula,
+												setter: setAula,
+											},
+											{
+												key: 'chat',
+												label: 'Chat',
+												value: chat,
+												setter: setChat,
+											},
+											{
+												key: 'vetorizacao',
+												label: 'Vetorização',
+												value: vetorizacao,
+												setter: setVetorizacao,
+											},
+											{
+												key: 'suporte',
+												label: 'Suporte',
+												value: suporte,
+												setter: setSuporteState,
+											},
+											{
+												key: 'comunidade',
+												label: 'Comunidade',
+												value: comunidade,
+												setter: setComunidade,
+											},
+										] as const
+									).map((feat) => (
+										<button
+											key={feat.key}
+											type="button"
+											onClick={() => feat.setter(!feat.value)}
+											className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+												feat.value
+													? 'bg-violet-600/20 border border-violet-500/50 text-violet-300'
+													: 'bg-[#0d0d0f] border border-gray-700 text-gray-400 hover:border-gray-600'
+											}`}
+										>
+											<span
+												className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
+													feat.value
+														? 'bg-violet-600 border-violet-600'
+														: 'border-gray-600'
+												}`}
+											>
+												{feat.value && (
+													<Check className="w-2.5 h-2.5 text-white" />
+												)}
+											</span>
+											{feat.label}
 										</button>
 									))}
 								</div>

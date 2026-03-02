@@ -1,19 +1,47 @@
 'use client';
 
-import { Loader2, ShoppingCart, Star } from 'lucide-react';
+import { Check, Loader2, ShoppingCart, Star } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { LoginRequiredModal } from '@/components/store/login-required-modal';
 import { usePurchase } from '@/hooks/use-purchase';
 import { getCurrentUser } from '@/lib/auth';
+import type { ClassWithProducts } from '@/types/classes';
 import type { Product } from '@/types/products';
 import { formatCurrency } from '@/utils/format-currency';
 
+const TIER_STYLES = {
+	prata: {
+		badge: 'bg-slate-400/20 text-slate-300 border border-slate-500/30',
+		label: 'Prata',
+	},
+	ouro: {
+		badge: 'bg-amber-400/20 text-amber-300 border border-amber-500/30',
+		label: 'Ouro',
+	},
+	platina: {
+		badge: 'bg-violet-400/20 text-violet-300 border border-violet-500/30',
+		label: 'Platina',
+	},
+};
+
+const FEATURES = [
+	{ key: 'aula', label: 'Aulas' },
+	{ key: 'chat', label: 'Chat' },
+	{ key: 'vetorizacao', label: 'Vetorização' },
+	{ key: 'suporte', label: 'Suporte' },
+	{ key: 'comunidade', label: 'Comunidade' },
+] as const;
+
 interface StoreProductCardProps {
 	product: Product;
+	classInfo?: ClassWithProducts;
 }
 
-export function StoreProductCard({ product }: StoreProductCardProps) {
+export function StoreProductCard({
+	product,
+	classInfo,
+}: StoreProductCardProps) {
 	const { mutate: purchase, isPending } = usePurchase();
 	const [showLoginModal, setShowLoginModal] = useState(false);
 	const [imgError, setImgError] = useState(false);
@@ -30,6 +58,11 @@ export function StoreProductCard({ product }: StoreProductCardProps) {
 			recorrencia: 'one_time',
 		});
 	}
+
+	const tierStyle = classInfo ? TIER_STYLES[classInfo.tier] : null;
+	const enabledFeatures = classInfo
+		? FEATURES.filter((f) => classInfo[f.key])
+		: [];
 
 	return (
 		<>
@@ -52,11 +85,20 @@ export function StoreProductCard({ product }: StoreProductCardProps) {
 							Produto sem imagem
 						</span>
 					)}
-					{product.category && (
-						<span className="absolute top-3 left-3 bg-black/60 text-white text-xs font-medium px-2.5 py-1 rounded-full backdrop-blur-sm">
-							{product.category}
-						</span>
-					)}
+					<div className="absolute top-3 left-3 flex items-center gap-2">
+						{product.category && (
+							<span className="bg-black/60 text-white text-xs font-medium px-2.5 py-1 rounded-full backdrop-blur-sm">
+								{product.category}
+							</span>
+						)}
+						{tierStyle && (
+							<span
+								className={`text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm ${tierStyle.badge}`}
+							>
+								{tierStyle.label}
+							</span>
+						)}
+					</div>
 				</div>
 
 				<div className="p-5 flex flex-col flex-1">
@@ -65,9 +107,20 @@ export function StoreProductCard({ product }: StoreProductCardProps) {
 					</h3>
 
 					{product.description && (
-						<p className="text-sm text-gray-400 line-clamp-2 mb-4">
+						<p className="text-sm text-gray-400 line-clamp-2 mb-3">
 							{product.description}
 						</p>
+					)}
+
+					{enabledFeatures.length > 0 && (
+						<div className="mb-4 grid grid-cols-2 gap-x-3 gap-y-1.5">
+							{enabledFeatures.map((feat) => (
+								<div key={feat.key} className="flex items-center gap-1.5">
+									<Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+									<span className="text-xs text-gray-300">{feat.label}</span>
+								</div>
+							))}
+						</div>
 					)}
 
 					<div className="flex items-center gap-1 mb-4">

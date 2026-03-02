@@ -78,6 +78,37 @@ export function ClassCard({ cls, onEdit }: ClassCardProps) {
 					</p>
 				)}
 
+				{(
+					[
+						{ key: 'aula', label: 'Aulas' },
+						{ key: 'chat', label: 'Chat' },
+						{ key: 'vetorizacao', label: 'Vetorização' },
+						{ key: 'suporte', label: 'Suporte' },
+						{ key: 'comunidade', label: 'Comunidade' },
+					] as const
+				).some((f) => cls[f.key]) && (
+					<div className="flex flex-wrap gap-1.5 mb-3">
+						{(
+							[
+								{ key: 'aula', label: 'Aulas' },
+								{ key: 'chat', label: 'Chat' },
+								{ key: 'vetorizacao', label: 'Vetorização' },
+								{ key: 'suporte', label: 'Suporte' },
+								{ key: 'comunidade', label: 'Comunidade' },
+							] as const
+						)
+							.filter((f) => cls[f.key])
+							.map((f) => (
+								<span
+									key={f.key}
+									className="text-xs px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20"
+								>
+									{f.label}
+								</span>
+							))}
+					</div>
+				)}
+
 				<div className="mb-4">
 					<p className="text-xs text-gray-500 mb-2 font-medium">
 						{cls.products.length} produto{cls.products.length !== 1 ? 's' : ''}{' '}

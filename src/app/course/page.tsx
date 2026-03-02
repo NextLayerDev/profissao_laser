@@ -8,6 +8,7 @@ import {
 	GraduationCap,
 	LayoutDashboard,
 	Loader2,
+	Lock,
 	PackageX,
 	Star,
 	Store,
@@ -18,6 +19,7 @@ import {
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { UserBadge } from '@/components/store/user-badge';
+import { useCustomerFeatures } from '@/hooks/use-customer-features';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { getCurrentUser, getToken } from '@/lib/auth';
 import {
@@ -53,6 +55,8 @@ export default function CoursePage() {
 			plan.product_name?.toLowerCase() !== 'unknown' &&
 			plan.status?.toLowerCase() !== 'unknown',
 	);
+
+	const features = useCustomerFeatures(plans);
 
 	if (email === undefined || isLoading) {
 		return (
@@ -275,25 +279,39 @@ export default function CoursePage() {
 							<h2 className="font-bold text-base">Acesso Rápido</h2>
 						</div>
 
-						{quickAccessItems.map(({ label, Icon, gradient }) => (
-							<button
-								key={label}
-								type="button"
-								className="w-full flex items-center justify-between gap-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-violet-500/40 rounded-xl px-4 py-3 transition-all duration-200 group"
-							>
-								<div className="flex items-center gap-3">
-									<div
-										className={`bg-linear-to-br ${gradient} rounded-lg p-2 text-white`}
-									>
-										<Icon className="w-5 h-5" />
+						{quickAccessItems.map(({ label, Icon, gradient, featureKey }) => {
+							const hasAccess = features === null || features[featureKey];
+							return (
+								<button
+									key={label}
+									type="button"
+									disabled={!hasAccess}
+									className={`w-full flex items-center justify-between gap-3 border rounded-xl px-4 py-3 transition-all duration-200 group ${
+										hasAccess
+											? 'bg-white/5 hover:bg-white/10 border-white/10 hover:border-violet-500/40 cursor-pointer'
+											: 'bg-white/[0.02] border-white/5 opacity-50 cursor-not-allowed'
+									}`}
+								>
+									<div className="flex items-center gap-3">
+										<div
+											className={`bg-linear-to-br ${gradient} rounded-lg p-2 text-white ${!hasAccess ? 'grayscale' : ''}`}
+										>
+											<Icon className="w-5 h-5" />
+										</div>
+										<span
+											className={`font-medium text-sm ${hasAccess ? 'text-white' : 'text-slate-500'}`}
+										>
+											{label}
+										</span>
 									</div>
-									<span className="text-white font-medium text-sm">
-										{label}
-									</span>
-								</div>
-								<ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-violet-400 transition-colors" />
-							</button>
-						))}
+									{hasAccess ? (
+										<ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-violet-400 transition-colors" />
+									) : (
+										<Lock className="w-4 h-4 text-slate-600" />
+									)}
+								</button>
+							);
+						})}
 					</div>
 
 					{/* ── Right column — Perfil ─────────────────────────── */}
@@ -342,24 +360,40 @@ export default function CoursePage() {
 						</div>
 
 						{/* Community card */}
-						<div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+						<div
+							className={`border rounded-2xl p-5 transition-all ${features === null || features.comunidade ? 'bg-white/5 border-white/10' : 'bg-white/[0.02] border-white/5 opacity-50'}`}
+						>
 							<div className="flex items-center gap-3 mb-3">
-								<div className="bg-linear-to-br from-violet-500 to-purple-700 rounded-xl p-2.5 text-white">
+								<div
+									className={`bg-linear-to-br from-violet-500 to-purple-700 rounded-xl p-2.5 text-white ${features !== null && !features.comunidade ? 'grayscale' : ''}`}
+								>
 									<Users className="w-6 h-6" />
 								</div>
 								<div>
 									<h3 className="font-bold">Comunidade</h3>
 									<p className="text-slate-400 text-xs">
-										Conecte-se com outros profissionais
+										{features !== null && !features.comunidade
+											? 'Disponível em planos superiores'
+											: 'Conecte-se com outros profissionais'}
 									</p>
 								</div>
 							</div>
 							<button
 								type="button"
-								className="w-full flex items-center justify-center gap-2 bg-linear-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 text-white font-semibold py-2.5 rounded-xl transition-all text-sm"
+								disabled={features !== null && !features.comunidade}
+								className="w-full flex items-center justify-center gap-2 bg-linear-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-xl transition-all text-sm"
 							>
-								<Users className="w-5 h-5" />
-								Acessar
+								{features !== null && !features.comunidade ? (
+									<>
+										<Lock className="w-4 h-4" />
+										Bloqueado
+									</>
+								) : (
+									<>
+										<Users className="w-5 h-5" />
+										Acessar
+									</>
+								)}
 							</button>
 						</div>
 					</div>

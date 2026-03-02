@@ -10,6 +10,11 @@ export const classSchema = z.object({
 	tier: classTierSchema,
 	description: z.string().nullable(),
 	status: z.enum(['ativo', 'inativo']),
+	aula: z.boolean(),
+	chat: z.boolean(),
+	vetorizacao: z.boolean(),
+	suporte: z.boolean(),
+	comunidade: z.boolean(),
 	createdAt: z.string(),
 	updatedAt: z.string(),
 });
