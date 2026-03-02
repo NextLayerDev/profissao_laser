@@ -29,13 +29,6 @@ export const quickAccessItems = [
 		iconBg: 'bg-blue-600',
 		href: '/reports',
 	},
-	{
-		title: 'Suporte',
-		subtitle: 'Acessar agora',
-		icon: Phone,
-		iconBg: 'bg-blue-600',
-		href: '/appointments',
-	},
 ];
 
 export const alerts = [
