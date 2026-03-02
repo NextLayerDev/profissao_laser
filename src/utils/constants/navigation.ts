@@ -1,10 +1,4 @@
-import {
-	BarChart3,
-	CalendarDays,
-	Home,
-	Package,
-	ShoppingCart,
-} from 'lucide-react';
+import { BarChart3, Home, Package, ShoppingCart } from 'lucide-react';
 import type { NavItem } from '@/types/navigation';
 
 export const navItems: NavItem[] = [
