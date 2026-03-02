@@ -17,11 +17,5 @@ export const navItems: NavItem[] = [
 		href: '/reports',
 		hasDropdown: false,
 	},
-	{
-		name: 'Agendamentos',
-		icon: CalendarDays,
-		href: '/appointments',
-		hasDropdown: false,
-	},
 	// { name: 'Parcerias', icon: Users, href: '/partnership', hasDropdown: false },
 ];
