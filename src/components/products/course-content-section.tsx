@@ -213,6 +213,7 @@ function LessonModal({
 	const [videoFile, setVideoFile] = useState<File | null>(null);
 	const [materialFiles, setMaterialFiles] = useState<File[]>([]);
 	const [uploading, setUploading] = useState(false);
+	const [uploadProgress, setUploadProgress] = useState(0);
 	const videoInputRef = useRef<HTMLInputElement>(null);
 	const materialInputRef = useRef<HTMLInputElement>(null);
 
@@ -241,8 +242,14 @@ function LessonModal({
 				});
 				if (videoMode === 'file' && videoFile) {
 					setUploading(true);
-					const uploaded = await uploadLessonVideo(editing.id, videoFile);
+					setUploadProgress(0);
+					const uploaded = await uploadLessonVideo(
+						editing.id,
+						videoFile,
+						setUploadProgress,
+					);
 					setUploading(false);
+					setUploadProgress(0);
 					// atualiza a aula com o videoUrl retornado pelo upload
 					await onUpdate.mutateAsync({
 						id: editing.id,
@@ -279,8 +286,14 @@ function LessonModal({
 				const created = await onCreate.mutateAsync(payload);
 				if (videoMode === 'file' && videoFile) {
 					setUploading(true);
-					const uploaded = await uploadLessonVideo(created.id, videoFile);
+					setUploadProgress(0);
+					const uploaded = await uploadLessonVideo(
+						created.id,
+						videoFile,
+						setUploadProgress,
+					);
 					setUploading(false);
+					setUploadProgress(0);
 					// atualiza a aula com o videoUrl retornado pelo upload
 					await onUpdate.mutateAsync({
 						id: created.id,
@@ -306,6 +319,7 @@ function LessonModal({
 			onClose();
 		} catch {
 			setUploading(false);
+			setUploadProgress(0);
 			toast.error('Erro ao salvar aula');
 		}
 	};
@@ -509,6 +523,20 @@ function LessonModal({
 					</div>
 				</div>
 
+				{uploading && videoMode === 'file' && (
+					<div className="px-5 pb-3">
+						<div className="flex justify-between text-xs text-gray-400 mb-1">
+							<span>Enviando vídeo...</span>
+							<span>{uploadProgress}%</span>
+						</div>
+						<div className="w-full bg-gray-700 rounded-full h-1.5">
+							<div
+								className="bg-violet-500 h-1.5 rounded-full transition-all duration-300"
+								style={{ width: `${uploadProgress}%` }}
+							/>
+						</div>
+					</div>
+				)}
 				<div className="flex justify-end gap-3 p-5 border-t border-gray-700 shrink-0">
 					<button
 						type="button"
@@ -524,11 +552,13 @@ function LessonModal({
 						className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg text-white font-medium transition-colors text-sm disabled:opacity-50"
 					>
 						{isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-						{uploading
-							? 'Enviando vídeo...'
-							: editing
-								? 'Salvar'
-								: 'Criar aula'}
+						{uploading && videoMode === 'file'
+							? `Enviando... ${uploadProgress}%`
+							: uploading
+								? 'Salvando...'
+								: editing
+									? 'Salvar'
+									: 'Criar aula'}
 					</button>
 				</div>
 			</div>

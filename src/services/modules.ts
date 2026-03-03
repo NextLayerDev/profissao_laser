@@ -82,11 +82,18 @@ export async function reorderLessons(
 export async function uploadLessonVideo(
 	id: string,
 	file: File,
+	onProgress?: (percent: number) => void,
 ): Promise<Lesson> {
 	const formData = new FormData();
 	formData.append('file', file);
 	const { data } = await api.post(`/lesson/${id}/video`, formData, {
 		headers: { 'Content-Type': undefined },
+		timeout: 0,
+		onUploadProgress: (e) => {
+			if (onProgress && e.total) {
+				onProgress(Math.round((e.loaded * 100) / e.total));
+			}
+		},
 	});
 	return data;
 }
