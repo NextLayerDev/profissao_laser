@@ -1,11 +1,4 @@
-import {
-	AlertCircle,
-	BarChart3,
-	Clock,
-	Package,
-	Phone,
-	Wrench,
-} from 'lucide-react';
+import { AlertCircle, BarChart3, Clock, Package, Wrench } from 'lucide-react';
 
 export const quickAccessItems = [
 	{
