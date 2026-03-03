@@ -15,6 +15,8 @@ import { useClasses } from '@/hooks/use-classes';
 import { useProducts } from '@/hooks/use-products';
 import { getCurrentUser, getToken } from '@/lib/auth';
 
+const TIER_ORDER: Record<string, number> = { prata: 0, ouro: 1, platina: 2 };
+
 export default function Loja() {
 	const [search, setSearch] = useState('');
 	const [activeCategory, setActiveCategory] = useState('Todos');
@@ -47,12 +49,40 @@ export default function Loja() {
 		),
 	] as string[];
 
-	const filtered = activeProducts.filter((p) => {
-		const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
-		const matchesCategory =
-			activeCategory === 'Todos' || p.category === activeCategory;
-		return matchesSearch && matchesCategory;
-	});
+	const filtered = useMemo(
+		() =>
+			activeProducts.filter((p) => {
+				const matchesSearch = p.name
+					.toLowerCase()
+					.includes(search.toLowerCase());
+				const matchesCategory =
+					activeCategory === 'Todos' || p.category === activeCategory;
+				return matchesSearch && matchesCategory;
+			}),
+		[activeProducts, search, activeCategory],
+	);
+
+	const filteredGroups = useMemo(() => {
+		const map = new Map<
+			string,
+			Array<{
+				product: (typeof activeProducts)[0];
+				classInfo?: (typeof activeClasses)[0];
+			}>
+		>();
+		for (const product of filtered) {
+			const classInfo = productClassMap.get(product.id);
+			if (!map.has(product.name)) map.set(product.name, []);
+			map.get(product.name)?.push({ product, classInfo });
+		}
+		return Array.from(map.values()).map((variants) =>
+			[...variants].sort((a, b) => {
+				const aOrder = a.classInfo ? (TIER_ORDER[a.classInfo.tier] ?? 3) : 3;
+				const bOrder = b.classInfo ? (TIER_ORDER[b.classInfo.tier] ?? 3) : 3;
+				return aOrder - bOrder;
+			}),
+		);
+	}, [filtered, productClassMap]);
 
 	return (
 		<div className="min-h-screen bg-[#0d0d0f] text-white font-sans">
@@ -127,8 +157,8 @@ export default function Loja() {
 					))}
 					{!isLoading && (
 						<span className="ml-auto text-sm text-gray-500">
-							{filtered.length}{' '}
-							{filtered.length === 1 ? 'resultado' : 'resultados'}
+							{filteredGroups.length}{' '}
+							{filteredGroups.length === 1 ? 'resultado' : 'resultados'}
 						</span>
 					)}
 				</div>
@@ -146,13 +176,12 @@ export default function Loja() {
 							Tente novamente mais tarde
 						</p>
 					</div>
-				) : filtered.length > 0 ? (
+				) : filteredGroups.length > 0 ? (
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-						{filtered.map((product) => (
+						{filteredGroups.map((variants) => (
 							<StoreProductCard
-								key={product.id}
-								product={product}
-								classInfo={productClassMap.get(product.id)}
+								key={variants[0].product.name}
+								variants={variants}
 							/>
 						))}
 					</div>

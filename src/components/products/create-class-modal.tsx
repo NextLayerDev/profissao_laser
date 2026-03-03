@@ -1,17 +1,19 @@
 'use client';
 
 import { Check, Loader2, Package, X } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
 	useAddProductToClass,
+	useClasses,
 	useCreateClass,
 	useRemoveProductFromClass,
 	useUpdateClass,
 } from '@/hooks/use-classes';
 import { useProducts } from '@/hooks/use-products';
+import type { ClassTier } from '@/types/classes';
 import type { CreateClassModalProps } from '@/types/components/create-class-modal';
-import { TIER_OPTIONS } from '@/utils/constants/tier-styles';
+import { TIER_OPTIONS, TIER_STYLES } from '@/utils/constants/tier-styles';
 
 export function CreateClassModal({
 	isOpen,
@@ -33,6 +35,7 @@ export function CreateClassModal({
 	);
 
 	const { products } = useProducts();
+	const { classes } = useClasses();
 	const createMutation = useCreateClass();
 	const updateMutation = useUpdateClass();
 	const addProduct = useAddProductToClass();
@@ -72,7 +75,23 @@ export function CreateClassModal({
 		}
 	}, [editing, resetForm]);
 
+	// Mapa produto.id -> tiers de outras classes (exclui a classe em edição)
+	// Deve ficar antes do early return para respeitar a regra dos hooks
+	const productTiersMap = useMemo(() => {
+		const map = new Map<string, ClassTier[]>();
+		for (const cls of classes) {
+			if (editing && cls.id === editing.id) continue;
+			for (const product of cls.products) {
+				if (!map.has(product.id)) map.set(product.id, []);
+				map.get(product.id)?.push(cls.tier);
+			}
+		}
+		return map;
+	}, [classes, editing]);
+
 	if (!isOpen) return null;
+
+	const activeProducts = (products ?? []).filter((p) => p.status === 'ativo');
 
 	function handleClose() {
 		resetForm();
@@ -158,8 +177,6 @@ export function CreateClassModal({
 			);
 		}
 	}
-
-	const activeProducts = (products ?? []).filter((p) => p.status === 'ativo');
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -355,6 +372,8 @@ export function CreateClassModal({
 								<ul className="space-y-2">
 									{activeProducts.map((product) => {
 										const selected = selectedProductIds.has(product.id);
+										const existingTiers = productTiersMap.get(product.id) ?? [];
+										const conflictsCurrentTier = existingTiers.includes(tier);
 										return (
 											<li key={product.id}>
 												<button
@@ -363,7 +382,9 @@ export function CreateClassModal({
 													className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-colors ${
 														selected
 															? 'bg-violet-600/15 border border-violet-500/40'
-															: 'bg-[#0d0d0f] border border-gray-800 hover:border-gray-700'
+															: conflictsCurrentTier
+																? 'bg-amber-500/5 border border-amber-600/30 hover:border-amber-500/50'
+																: 'bg-[#0d0d0f] border border-gray-800 hover:border-gray-700'
 													}`}
 												>
 													<div
@@ -378,9 +399,21 @@ export function CreateClassModal({
 														)}
 													</div>
 													<Package className="w-4 h-4 text-gray-500 shrink-0" />
-													<span className="text-sm text-gray-200 truncate">
+													<span className="text-sm text-gray-200 truncate flex-1">
 														{product.name}
 													</span>
+													{existingTiers.length > 0 && (
+														<div className="flex items-center gap-1 shrink-0">
+															{existingTiers.map((t) => (
+																<span
+																	key={t}
+																	className={`text-xs px-2 py-0.5 rounded-full font-medium ${TIER_STYLES[t].badge}`}
+																>
+																	{TIER_STYLES[t].label}
+																</span>
+															))}
+														</div>
+													)}
 												</button>
 											</li>
 										);

@@ -11,13 +11,14 @@ import { CLASS_FEATURES } from '@/utils/constants/class-features';
 import { TIER_STYLES } from '@/utils/constants/tier-styles';
 import { formatCurrency } from '@/utils/format-currency';
 
-export function StoreProductCard({
-	product,
-	classInfo,
-}: StoreProductCardProps) {
+export function StoreProductCard({ variants }: StoreProductCardProps) {
+	const [selectedIndex, setSelectedIndex] = useState(0);
 	const { mutate: purchase, isPending } = usePurchase();
 	const [showLoginModal, setShowLoginModal] = useState(false);
 	const [imgError, setImgError] = useState(false);
+
+	const { product, classInfo } = variants[selectedIndex];
+	const hasMultipleTiers = variants.length > 1;
 
 	function handleBuy() {
 		if (!getCurrentUser()) {
@@ -32,7 +33,6 @@ export function StoreProductCard({
 		});
 	}
 
-	const tierStyle = classInfo ? TIER_STYLES[classInfo.tier] : null;
 	const enabledFeatures = classInfo
 		? CLASS_FEATURES.filter((f) => classInfo[f.key])
 		: [];
@@ -58,21 +58,42 @@ export function StoreProductCard({
 							Produto sem imagem
 						</span>
 					)}
-					<div className="absolute top-3 left-3 flex items-center gap-2">
-						{product.category && (
+					{product.category && (
+						<div className="absolute top-3 left-3">
 							<span className="bg-black/60 text-white text-xs font-medium px-2.5 py-1 rounded-full backdrop-blur-sm">
 								{product.category}
 							</span>
-						)}
-						{tierStyle && (
-							<span
-								className={`text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm ${tierStyle.badge}`}
-							>
-								{tierStyle.label}
-							</span>
-						)}
-					</div>
+						</div>
+					)}
 				</div>
+
+				{hasMultipleTiers && (
+					<div className="flex gap-2 px-5 pt-4">
+						{variants.map((v, i) => {
+							const style = v.classInfo ? TIER_STYLES[v.classInfo.tier] : null;
+							const label = style?.label ?? 'Padrão';
+							const isActive = i === selectedIndex;
+							return (
+								<button
+									key={v.product.id}
+									type="button"
+									onClick={() => {
+										setSelectedIndex(i);
+										setImgError(false);
+									}}
+									className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-all duration-200 cursor-pointer ${
+										isActive
+											? (style?.badge ??
+												'bg-violet-400/20 text-violet-300 border-violet-500/40')
+											: 'bg-transparent text-gray-500 border-gray-700 hover:border-gray-500 hover:text-gray-300'
+									}`}
+								>
+									{label}
+								</button>
+							);
+						})}
+					</div>
+				)}
 
 				<div className="p-5 flex flex-col flex-1">
 					<h3 className="font-semibold text-white text-lg leading-snug mb-2">
