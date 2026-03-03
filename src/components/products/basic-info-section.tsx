@@ -7,7 +7,9 @@ import {
 	Globe,
 	Image as ImageIcon,
 	Info,
+	Layers,
 	Pencil,
+	Plus,
 	RotateCcw,
 	Tag,
 	X,
@@ -15,8 +17,14 @@ import {
 import Image from 'next/image';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import {
+	useAddProductToClass,
+	useClasses,
+	useRemoveProductFromClass,
+} from '@/hooks/use-classes';
 import { useUpdateProduct } from '@/hooks/use-products';
 import type { Product } from '@/types/products';
+import { TIER_STYLES } from '@/utils/constants/tier-styles';
 import { formatCurrency } from '@/utils/format-currency';
 import { formatDate } from '@/utils/formatDate';
 
@@ -75,8 +83,8 @@ function EditableField({
 	}
 
 	return (
-		<div className="flex items-start justify-between gap-4 py-3 border-b border-white/5 last:border-0">
-			<p className="text-xs font-medium text-gray-500 uppercase tracking-wider w-32 shrink-0 pt-1">
+		<div className="flex items-start justify-between gap-4 py-3 border-b border-slate-200 dark:border-white/5 last:border-0">
+			<p className="text-xs font-medium text-slate-500 dark:text-gray-500 uppercase tracking-wider w-32 shrink-0 pt-1">
 				{label}
 			</p>
 
@@ -88,7 +96,7 @@ function EditableField({
 							value={draft}
 							onChange={(e) => setDraft(e.target.value)}
 							placeholder={placeholder}
-							className="flex-1 bg-white/5 border border-violet-500/50 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-violet-500 resize-none"
+							className="flex-1 bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-violet-500/50 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500 resize-none"
 						/>
 					) : (
 						<input
@@ -96,14 +104,14 @@ function EditableField({
 							value={draft}
 							onChange={(e) => setDraft(e.target.value)}
 							placeholder={placeholder}
-							className="flex-1 bg-white/5 border border-violet-500/50 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-violet-500"
+							className="flex-1 bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-violet-500/50 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500"
 						/>
 					)}
 					<button
 						type="button"
 						onClick={handleSave}
 						disabled={isPending}
-						className="p-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-50 transition-colors shrink-0"
+						className="p-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-50 transition-colors shrink-0 text-white"
 					>
 						<Check size={14} />
 					</button>
@@ -111,16 +119,20 @@ function EditableField({
 						type="button"
 						onClick={handleCancel}
 						disabled={isPending}
-						className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-50 transition-colors shrink-0"
+						className="p-1.5 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 disabled:opacity-50 transition-colors shrink-0 text-slate-600 dark:text-white"
 					>
 						<X size={14} />
 					</button>
 				</div>
 			) : (
 				<div className="flex-1 flex items-start justify-between gap-2">
-					<div className="text-sm text-white">
+					<div className="text-sm text-slate-900 dark:text-white">
 						{display ??
-							(value ? value : <span className="text-gray-600">—</span>)}
+							(value ? (
+								value
+							) : (
+								<span className="text-slate-500 dark:text-gray-600">—</span>
+							))}
 					</div>
 					<button
 						type="button"
@@ -128,7 +140,7 @@ function EditableField({
 							setDraft(value);
 							setEditing(true);
 						}}
-						className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/5 shrink-0 transition-colors"
+						className="p-1.5 rounded-lg text-slate-500 dark:text-gray-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 shrink-0 transition-colors"
 					>
 						<Pencil size={13} />
 					</button>
@@ -146,13 +158,107 @@ function ReadOnlyField({
 	value: React.ReactNode;
 }) {
 	return (
-		<div className="flex items-start gap-4 py-3 border-b border-white/5 last:border-0">
-			<p className="text-xs font-medium text-gray-500 uppercase tracking-wider w-32 shrink-0 pt-1">
+		<div className="flex items-start gap-4 py-3 border-b border-slate-200 dark:border-white/5 last:border-0">
+			<p className="text-xs font-medium text-slate-500 dark:text-gray-500 uppercase tracking-wider w-32 shrink-0 pt-1">
 				{label}
 			</p>
-			<div className="text-sm text-white flex-1">
-				{value ?? <span className="text-gray-600">—</span>}
+			<div className="text-sm text-slate-900 dark:text-white flex-1">
+				{value ?? <span className="text-slate-500 dark:text-gray-600">—</span>}
 			</div>
+		</div>
+	);
+}
+
+function ProductClassesField({
+	productClasses,
+	allClasses,
+	onAdd,
+	onRemove,
+	isAdding,
+	isRemoving,
+}: {
+	productClasses: {
+		id: string;
+		name: string;
+		tier: 'prata' | 'ouro' | 'platina';
+	}[];
+	allClasses: {
+		id: string;
+		name: string;
+		tier: 'prata' | 'ouro' | 'platina';
+	}[];
+	onAdd: (classId: string) => void;
+	onRemove: (classId: string) => void;
+	isAdding: boolean;
+	isRemoving: boolean;
+}) {
+	const [selectedClassId, setSelectedClassId] = useState('');
+	const availableClasses = allClasses.filter(
+		(cls) => !productClasses.some((pc) => pc.id === cls.id),
+	);
+
+	function handleAdd() {
+		if (!selectedClassId) return;
+		onAdd(selectedClassId);
+		setSelectedClassId('');
+	}
+
+	return (
+		<div className="space-y-3">
+			{productClasses.length > 0 && (
+				<div className="flex flex-wrap gap-2">
+					{productClasses.map((cls) => {
+						const style = TIER_STYLES[cls.tier];
+						return (
+							<span
+								key={cls.id}
+								className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${style.badge}`}
+							>
+								{cls.name}
+								<button
+									type="button"
+									onClick={() => onRemove(cls.id)}
+									disabled={isRemoving}
+									className="p-0.5 rounded hover:bg-white/10 transition-colors disabled:opacity-50"
+									aria-label={`Remover de ${cls.name}`}
+								>
+									<X className="w-3 h-3" />
+								</button>
+							</span>
+						);
+					})}
+				</div>
+			)}
+			{productClasses.length === 0 && availableClasses.length === 0 && (
+				<span className="text-sm text-slate-500 dark:text-gray-600">
+					Nenhuma classe. Crie classes na aba Classes.
+				</span>
+			)}
+			{availableClasses.length > 0 && (
+				<div className="flex items-center gap-2">
+					<select
+						value={selectedClassId}
+						onChange={(e) => setSelectedClassId(e.target.value)}
+						className="flex-1 max-w-xs bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-violet-500/50 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500"
+					>
+						<option value="">Adicionar a uma classe...</option>
+						{availableClasses.map((cls) => (
+							<option key={cls.id} value={cls.id}>
+								{cls.name} ({TIER_STYLES[cls.tier].label})
+							</option>
+						))}
+					</select>
+					<button
+						type="button"
+						onClick={handleAdd}
+						disabled={!selectedClassId || isAdding}
+						className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm font-medium transition-colors"
+					>
+						<Plus className="w-3.5 h-3.5" />
+						Adicionar
+					</button>
+				</div>
+			)}
 		</div>
 	);
 }
@@ -162,21 +268,63 @@ export function BasicInfoSection({ product }: BasicInfoSectionProps) {
 	const createdAt = formatDate(product.createdAt);
 	const updatedAt = formatDate(product.updatedAt);
 
+	const { classes } = useClasses();
+	const addProduct = useAddProductToClass();
+	const removeProduct = useRemoveProductFromClass();
+
+	const productClasses = (classes ?? []).filter((cls) =>
+		cls.products.some((p) => p.id === product.id),
+	);
+	const allClassesForSelect = (classes ?? []).map((cls) => ({
+		id: cls.id,
+		name: cls.name,
+		tier: cls.tier,
+	}));
+	const productClassesForDisplay = productClasses.map((cls) => ({
+		id: cls.id,
+		name: cls.name,
+		tier: cls.tier,
+	}));
+
+	function handleAddToClass(classId: string) {
+		addProduct.mutate(
+			{ classId, productId: product.id },
+			{
+				onSuccess: () => toast.success('Produto adicionado à classe'),
+				onError: () => toast.error('Erro ao adicionar à classe'),
+			},
+		);
+	}
+
+	function handleRemoveFromClass(classId: string) {
+		removeProduct.mutate(
+			{ classId, productId: product.id },
+			{
+				onSuccess: () => toast.success('Produto removido da classe'),
+				onError: () => toast.error('Erro ao remover da classe'),
+			},
+		);
+	}
+
 	return (
 		<div className="space-y-6">
 			<div>
-				<h2 className="text-2xl font-bold text-white">Informações básicas</h2>
-				<p className="text-sm text-gray-500 mt-1">Dados gerais do produto</p>
+				<h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+					Informações básicas
+				</h2>
+				<p className="text-sm text-slate-500 dark:text-gray-500 mt-1">
+					Dados gerais do produto
+				</p>
 			</div>
 
 			{/* Image */}
-			<div className="bg-[#1a1a1d] border border-gray-800 rounded-xl p-6">
-				<div className="flex items-center gap-2 text-gray-400 mb-4">
+			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-xl p-6 shadow-sm dark:shadow-none">
+				<div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 mb-4">
 					<ImageIcon className="w-4 h-4" />
 					<span className="text-sm font-medium">Imagem</span>
 				</div>
 				{product.image ? (
-					<div className="relative w-48 h-32 rounded-xl overflow-hidden border border-gray-700">
+					<div className="relative w-48 h-32 rounded-xl overflow-hidden border border-slate-200 dark:border-gray-700">
 						<Image
 							src={product.image}
 							alt={product.name}
@@ -185,15 +333,17 @@ export function BasicInfoSection({ product }: BasicInfoSectionProps) {
 						/>
 					</div>
 				) : (
-					<div className="w-48 h-32 rounded-xl border border-dashed border-gray-700 flex items-center justify-center">
-						<p className="text-sm text-gray-600">Sem imagem</p>
+					<div className="w-48 h-32 rounded-xl border border-dashed border-slate-300 dark:border-gray-700 flex items-center justify-center">
+						<p className="text-sm text-slate-500 dark:text-gray-600">
+							Sem imagem
+						</p>
 					</div>
 				)}
 			</div>
 
 			{/* Detalhes — horizontal grid */}
-			<div className="bg-[#1a1a1d] border border-gray-800 rounded-xl p-6">
-				<div className="flex items-center gap-2 text-gray-400 mb-4">
+			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-xl p-6 shadow-sm dark:shadow-none">
+				<div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 mb-4">
 					<Info className="w-4 h-4" />
 					<span className="text-sm font-medium">Detalhes</span>
 				</div>
@@ -214,7 +364,7 @@ export function BasicInfoSection({ product }: BasicInfoSectionProps) {
 							multiline
 							display={
 								product.description ? (
-									<span className="text-gray-300 leading-relaxed whitespace-pre-line">
+									<span className="text-slate-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
 										{product.description}
 									</span>
 								) : undefined
@@ -228,8 +378,8 @@ export function BasicInfoSection({ product }: BasicInfoSectionProps) {
 							placeholder="ex: laser"
 							display={
 								product.category ? (
-									<span className="inline-flex items-center gap-1">
-										<Tag className="w-3.5 h-3.5 text-gray-500" />
+									<span className="inline-flex items-center gap-1 text-slate-600 dark:text-gray-400">
+										<Tag className="w-3.5 h-3.5 text-slate-500 dark:text-gray-500" />
 										{product.category}
 									</span>
 								) : undefined
@@ -242,7 +392,7 @@ export function BasicInfoSection({ product }: BasicInfoSectionProps) {
 						<ReadOnlyField
 							label="Slug"
 							value={
-								<span className="font-mono text-violet-400">
+								<span className="font-mono text-violet-600 dark:text-violet-400">
 									{product.slug}
 								</span>
 							}
@@ -266,8 +416,8 @@ export function BasicInfoSection({ product }: BasicInfoSectionProps) {
 			</div>
 
 			{/* Preço e localização */}
-			<div className="bg-[#1a1a1d] border border-gray-800 rounded-xl p-6">
-				<div className="flex items-center gap-2 text-gray-400 mb-4">
+			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-xl p-6 shadow-sm dark:shadow-none">
+				<div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 mb-4">
 					<DollarSign className="w-4 h-4" />
 					<span className="text-sm font-medium">Preço e localização</span>
 				</div>
@@ -293,8 +443,8 @@ export function BasicInfoSection({ product }: BasicInfoSectionProps) {
 							placeholder="ex: 7"
 							display={
 								product.refundDays !== null ? (
-									<span className="flex items-center gap-1.5">
-										<RotateCcw className="w-3.5 h-3.5 text-gray-500" />
+									<span className="flex items-center gap-1.5 text-slate-600 dark:text-gray-400">
+										<RotateCcw className="w-3.5 h-3.5 text-slate-500 dark:text-gray-500" />
 										{product.refundDays} dias
 									</span>
 								) : undefined
@@ -306,8 +456,8 @@ export function BasicInfoSection({ product }: BasicInfoSectionProps) {
 						<ReadOnlyField
 							label="Idioma / País"
 							value={
-								<span className="flex items-center gap-1.5">
-									<Globe className="w-3.5 h-3.5 text-gray-500" />
+								<span className="flex items-center gap-1.5 text-slate-600 dark:text-gray-400">
+									<Globe className="w-3.5 h-3.5 text-slate-500 dark:text-gray-500" />
 									{product.language} · {product.country}
 								</span>
 							}
@@ -316,9 +466,29 @@ export function BasicInfoSection({ product }: BasicInfoSectionProps) {
 				</div>
 			</div>
 
+			{/* Classe */}
+			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-xl p-6 shadow-sm dark:shadow-none">
+				<div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 mb-4">
+					<Layers className="w-4 h-4" />
+					<span className="text-sm font-medium">Classe</span>
+				</div>
+				<p className="text-sm text-slate-600 dark:text-gray-400 mb-4">
+					Associe este produto a uma ou mais classes (Prata, Ouro, Platina) para
+					gerenciar o acesso por tier.
+				</p>
+				<ProductClassesField
+					productClasses={productClassesForDisplay}
+					allClasses={allClassesForSelect}
+					onAdd={handleAddToClass}
+					onRemove={handleRemoveFromClass}
+					isAdding={addProduct.isPending}
+					isRemoving={removeProduct.isPending}
+				/>
+			</div>
+
 			{/* Datas */}
-			<div className="bg-[#1a1a1d] border border-gray-800 rounded-xl p-6">
-				<div className="flex items-center gap-2 text-gray-400 mb-4">
+			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-xl p-6 shadow-sm dark:shadow-none">
+				<div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 mb-4">
 					<Calendar className="w-4 h-4" />
 					<span className="text-sm font-medium">Datas</span>
 				</div>

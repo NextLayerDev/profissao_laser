@@ -15,13 +15,13 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-
 import { ChatButton } from '@/components/dashboard/chat-button';
 import { BasicInfoSection } from '@/components/products/basic-info-section';
 import { CourseContentSection } from '@/components/products/course-content-section';
 import { CreateSubscriptionModal } from '@/components/products/create-subscription-modal';
 import { CuponsSection } from '@/components/products/cupons-section';
 import { DeleteProductModal } from '@/components/products/delete-product-modal';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { useProducts } from '@/hooks/use-products';
 import { updateProductStatus } from '@/services/products';
 import {
@@ -71,7 +71,7 @@ export default function ProdutoDetalhes() {
 
 	if (isLoading) {
 		return (
-			<div className="min-h-screen bg-[#0d0d0f] flex items-center justify-center">
+			<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] flex items-center justify-center">
 				<Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
 			</div>
 		);
@@ -79,12 +79,14 @@ export default function ProdutoDetalhes() {
 
 	if (!product) {
 		return (
-			<div className="min-h-screen bg-[#0d0d0f] flex items-center justify-center">
+			<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] flex items-center justify-center">
 				<div className="text-center">
-					<p className="text-gray-400 mb-4">Produto não encontrado.</p>
+					<p className="text-slate-600 dark:text-gray-400 mb-4">
+						Produto não encontrado.
+					</p>
 					<Link
 						href="/products"
-						className="text-violet-400 hover:text-violet-300"
+						className="text-violet-600 dark:text-violet-400 hover:text-violet-500 dark:hover:text-violet-300"
 					>
 						Voltar para produtos
 					</Link>
@@ -94,29 +96,35 @@ export default function ProdutoDetalhes() {
 	}
 
 	return (
-		<div className="min-h-screen bg-[#0d0d0f] text-white font-sans">
+		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] text-slate-900 dark:text-white font-sans">
 			{/* Top Header */}
-			<header className="bg-[#1a1a1d] border-b border-gray-800 px-6 py-4">
+			<header className="bg-white dark:bg-[#1a1a1d] border-b border-slate-200 dark:border-gray-800 px-6 py-4 shadow-sm dark:shadow-none">
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-4">
 						<Link
 							href="/products"
-							className="p-2 text-gray-400 hover:text-white transition-colors"
+							className="p-2 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors"
 						>
 							<ArrowLeft className="w-5 h-5" />
 						</Link>
 
 						<div className="w-12 h-12 bg-violet-600 rounded-xl flex items-center justify-center">
-							<span className="text-xl font-bold">{product.name[0]}</span>
+							<span className="text-xl font-bold text-white">
+								{product.name[0]}
+							</span>
 						</div>
 
 						<div>
-							<h1 className="font-bold text-lg">{product.name}</h1>
-							<p className="text-xs text-gray-500">ID {product.id}</p>
+							<h1 className="font-bold text-lg text-slate-900 dark:text-white">
+								{product.name}
+							</h1>
+							<p className="text-xs text-slate-500 dark:text-gray-500">
+								ID {product.id}
+							</p>
 						</div>
 
 						<div className="flex items-center gap-3 ml-6">
-							<span className="bg-[#252528] text-xs px-3 py-1.5 rounded-full text-gray-300">
+							<span className="bg-slate-100 dark:bg-[#252528] text-xs px-3 py-1.5 rounded-full text-slate-600 dark:text-gray-300">
 								Produtor
 							</span>
 
@@ -125,7 +133,9 @@ export default function ProdutoDetalhes() {
 								onClick={handleToggleStatus}
 								disabled={togglingStatus}
 								className={`relative w-12 h-6 rounded-full transition-colors disabled:opacity-50 ${
-									vendasAtivas ? 'bg-emerald-500' : 'bg-gray-600'
+									vendasAtivas
+										? 'bg-emerald-500'
+										: 'bg-slate-300 dark:bg-gray-600'
 								}`}
 							>
 								<div
@@ -135,7 +145,7 @@ export default function ProdutoDetalhes() {
 								/>
 							</button>
 
-							<span className="text-sm text-gray-400">
+							<span className="text-sm text-slate-600 dark:text-gray-400">
 								Vendas
 								<br />
 								ativas
@@ -144,10 +154,11 @@ export default function ProdutoDetalhes() {
 					</div>
 
 					<div className="flex items-center gap-3">
+						<ThemeToggle />
 						<button
 							type="button"
 							onClick={() => setShowDeleteModal(true)}
-							className="p-3 bg-[#252528] rounded-xl text-gray-400 hover:text-red-400 transition-colors"
+							className="p-3 bg-slate-100 dark:bg-[#252528] rounded-xl text-slate-500 dark:text-gray-400 hover:text-red-400 transition-colors"
 						>
 							<Trash2 className="w-5 h-5" />
 						</button>
@@ -166,7 +177,7 @@ export default function ProdutoDetalhes() {
 
 			<div className="flex">
 				{/* Sidebar */}
-				<aside className="w-64 bg-[#131315] border-r border-gray-800 min-h-[calc(100vh-80px)]">
+				<aside className="w-64 bg-slate-100 dark:bg-[#131315] border-r border-slate-200 dark:border-gray-800 min-h-[calc(100vh-80px)]">
 					<nav className="p-4 space-y-1">
 						{productMenuItems.map((item) => (
 							<button
@@ -175,8 +186,8 @@ export default function ProdutoDetalhes() {
 								onClick={() => setActiveMenu(item.id)}
 								className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
 									activeMenu === item.id
-										? 'bg-violet-600/20 text-white'
-										: 'text-gray-400 hover:text-white hover:bg-[#1a1a1d]'
+										? 'bg-violet-100 dark:bg-violet-600/20 text-violet-700 dark:text-white'
+										: 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-[#1a1a1d]'
 								}`}
 							>
 								<item.icon className="w-5 h-5" />
@@ -200,18 +211,18 @@ export default function ProdutoDetalhes() {
 						<>
 							{/* Success Banner */}
 							<div className="flex items-start gap-4 mb-8">
-								<CheckCircle2 className="w-8 h-8 text-emerald-400 shrink-0" />
+								<CheckCircle2 className="w-8 h-8 text-emerald-500 dark:text-emerald-400 shrink-0" />
 								<div>
-									<h2 className="text-2xl font-bold text-emerald-400">
+									<h2 className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
 										Tudo pronto para suas vendas!
 									</h2>
-									<p className="text-gray-400 mt-1">
+									<p className="text-slate-600 dark:text-gray-400 mt-1">
 										Agora você só precisa divulgar seus Links e começar a
 										vender.
 									</p>
 									<button
 										type="button"
-										className="mt-4 bg-[#252528] hover:bg-[#2a2a2d] px-6 py-3 rounded-lg font-medium text-sm transition-colors border border-gray-700"
+										className="mt-4 bg-slate-100 dark:bg-[#252528] hover:bg-slate-200 dark:hover:bg-[#2a2a2d] px-6 py-3 rounded-lg font-medium text-sm transition-colors border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white"
 									>
 										VER MEUS LINKS
 									</button>
@@ -223,12 +234,12 @@ export default function ProdutoDetalhes() {
 								{productStats.map((stat) => (
 									<div
 										key={stat.label}
-										className="bg-[#1a1a1d] rounded-xl p-5 border border-gray-800"
+										className="bg-white dark:bg-[#1a1a1d] rounded-xl p-5 border border-slate-200 dark:border-gray-800 shadow-sm dark:shadow-none"
 									>
 										<div className={`text-3xl font-bold ${stat.color}`}>
 											{stat.value}
 										</div>
-										<div className="text-sm text-gray-400 mt-1">
+										<div className="text-sm text-slate-500 dark:text-gray-400 mt-1">
 											{stat.label}
 										</div>
 									</div>
@@ -236,15 +247,17 @@ export default function ProdutoDetalhes() {
 							</div>
 
 							{/* Configuration Card */}
-							<div className="bg-[#1a1a1d] rounded-xl p-6 border border-gray-800 mb-8">
+							<div className="bg-white dark:bg-[#1a1a1d] rounded-xl p-6 border border-slate-200 dark:border-gray-800 mb-8 shadow-sm dark:shadow-none">
 								<div className="flex items-center justify-between mb-4">
-									<h3 className="font-semibold">Configuração do Produto</h3>
+									<h3 className="font-semibold text-slate-900 dark:text-white">
+										Configuração do Produto
+									</h3>
 									<span className="text-emerald-400 text-sm font-medium">
 										{progressPercentage}% completo
 									</span>
 								</div>
 
-								<div className="h-1.5 bg-gray-800 rounded-full mb-6 overflow-hidden">
+								<div className="h-1.5 bg-slate-200 dark:bg-gray-800 rounded-full mb-6 overflow-hidden">
 									<div
 										className="h-full bg-linear-to-r from-emerald-500 to-violet-500 rounded-full transition-all duration-500"
 										style={{ width: `${progressPercentage}%` }}
@@ -257,15 +270,17 @@ export default function ProdutoDetalhes() {
 											<div
 												className={`w-5 h-5 rounded-full flex items-center justify-center ${
 													item.completed
-														? 'bg-emerald-500/20 text-emerald-400'
-														: 'bg-gray-700 text-gray-500'
+														? 'bg-emerald-500/20 text-emerald-500 dark:text-emerald-400'
+														: 'bg-slate-200 dark:bg-gray-700 text-slate-500 dark:text-gray-500'
 												}`}
 											>
 												<Check className="w-3 h-3" />
 											</div>
 											<span
 												className={`text-sm ${
-													item.completed ? 'text-emerald-400' : 'text-gray-400'
+													item.completed
+														? 'text-emerald-600 dark:text-emerald-400'
+														: 'text-slate-600 dark:text-gray-400'
 												}`}
 											>
 												{item.label}
@@ -277,24 +292,26 @@ export default function ProdutoDetalhes() {
 
 							{/* Tools Section */}
 							<div className="mb-6">
-								<p className="text-gray-300 mb-4">
+								<p className="text-slate-600 dark:text-gray-300 mb-4">
 									Enquanto isso, aproveite para configurar ferramentas gratuitas
 									que te ajudam a vender mais
 								</p>
 
-								<div className="bg-[#1a1a1d] rounded-xl p-5 border border-gray-800 flex items-center justify-between">
+								<div className="bg-white dark:bg-[#1a1a1d] rounded-xl p-5 border border-slate-200 dark:border-gray-800 flex items-center justify-between shadow-sm dark:shadow-none">
 									<div className="flex items-center gap-4">
-										<div className="w-12 h-12 bg-violet-600/20 rounded-xl flex items-center justify-center">
-											<Users2 className="w-6 h-6 text-violet-400" />
+										<div className="w-12 h-12 bg-violet-100 dark:bg-violet-600/20 rounded-xl flex items-center justify-center">
+											<Users2 className="w-6 h-6 text-violet-600 dark:text-violet-400" />
 										</div>
 										<div>
 											<div className="flex items-center gap-2">
-												<h4 className="font-semibold">Programa de Afiliados</h4>
-												<HelpCircle className="w-4 h-4 text-gray-500" />
+												<h4 className="font-semibold text-slate-900 dark:text-white">
+													Programa de Afiliados
+												</h4>
+												<HelpCircle className="w-4 h-4 text-slate-400 dark:text-gray-500" />
 											</div>
-											<p className="text-sm text-gray-400">
+											<p className="text-sm text-slate-600 dark:text-gray-400">
 												Escolha se seu produto poderá ser{' '}
-												<span className="text-violet-400">
+												<span className="text-violet-600 dark:text-violet-400">
 													promovido por outras pessoas
 												</span>{' '}
 												em troca de comissões.
@@ -303,21 +320,21 @@ export default function ProdutoDetalhes() {
 									</div>
 									<button
 										type="button"
-										className="bg-violet-600 hover:bg-violet-700 px-6 py-3 rounded-xl font-medium transition-colors"
+										className="bg-violet-600 hover:bg-violet-700 px-6 py-3 rounded-xl font-medium transition-colors text-white"
 									>
 										Editar
 									</button>
 								</div>
 
-								<div className="bg-[#1a1a1d] rounded-xl p-5 border border-gray-800 mt-4 flex items-center justify-between opacity-50">
+								<div className="bg-slate-50 dark:bg-[#1a1a1d] rounded-xl p-5 border border-slate-200 dark:border-gray-800 mt-4 flex items-center justify-between opacity-50">
 									<div className="flex items-center gap-4">
-										<div className="w-12 h-12 bg-gray-700/50 rounded-xl" />
+										<div className="w-12 h-12 bg-slate-200 dark:bg-gray-700/50 rounded-xl" />
 										<div>
-											<div className="h-4 bg-gray-700 rounded w-40 mb-2" />
-											<div className="h-3 bg-gray-800 rounded w-64" />
+											<div className="h-4 bg-slate-200 dark:bg-gray-700 rounded w-40 mb-2" />
+											<div className="h-3 bg-slate-100 dark:bg-gray-800 rounded w-64" />
 										</div>
 									</div>
-									<div className="h-10 w-20 bg-gray-700 rounded-xl" />
+									<div className="h-10 w-20 bg-slate-200 dark:bg-gray-700 rounded-xl" />
 								</div>
 							</div>
 						</>

@@ -56,16 +56,22 @@ export function KpiCards({ sales, isLoading }: Props) {
 			{cards.map((card) => (
 				<div
 					key={card.title}
-					className="bg-[#1a1a1d] rounded-2xl p-6 border border-gray-800/50"
+					className="bg-white dark:bg-[#1a1a1d] rounded-2xl p-6 border border-slate-200 dark:border-gray-800/50 shadow-sm dark:shadow-none"
 				>
 					<div className="flex items-start justify-between mb-4">
-						<span className="text-gray-400 text-sm">{card.title}</span>
+						<span className="text-slate-600 dark:text-gray-400 text-sm">
+							{card.title}
+						</span>
 						<div className={`${card.iconBg} p-2.5 rounded-xl`}>
 							<card.icon className="w-5 h-5 text-white" />
 						</div>
 					</div>
-					<div className="text-3xl font-bold mb-1">{card.value}</div>
-					<span className="text-sm text-gray-500">{card.desc}</span>
+					<div className="text-3xl font-bold mb-1 text-slate-900 dark:text-white">
+						{card.value}
+					</div>
+					<span className="text-sm text-slate-500 dark:text-gray-500">
+						{card.desc}
+					</span>
 				</div>
 			))}
 		</div>

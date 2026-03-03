@@ -12,20 +12,22 @@ export default function Vendas() {
 	const { sales, isLoading, error } = useSales();
 
 	return (
-		<div className="min-h-screen bg-[#0d0d0f] text-white font-sans">
+		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] text-slate-900 dark:text-white font-sans">
 			<Header />
 
 			<main className="px-8 py-6">
 				<div className="mb-6">
-					<h2 className="text-2xl font-bold tracking-tight">Vendas</h2>
-					<p className="text-gray-400 mt-1">
+					<h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+						Vendas
+					</h2>
+					<p className="text-slate-600 dark:text-gray-400 mt-1">
 						Lista de todos os usuários que realizaram compras e o que
 						adquiriram.
 					</p>
 				</div>
 
 				{isLoading && (
-					<div className="flex items-center justify-center py-20 text-gray-400">
+					<div className="flex items-center justify-center py-20 text-slate-600 dark:text-gray-400">
 						Carregando vendas...
 					</div>
 				)}
@@ -37,10 +39,10 @@ export default function Vendas() {
 				)}
 
 				{!isLoading && !error && (
-					<div className="rounded-xl border border-white/10 overflow-hidden">
+					<div className="rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden bg-white dark:bg-transparent shadow-sm dark:shadow-none">
 						<table className="w-full text-sm">
 							<thead>
-								<tr className="bg-white/5 text-gray-400 text-left">
+								<tr className="bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-left">
 									<th className="px-4 py-3 font-medium">Usuário</th>
 									<th className="px-4 py-3 font-medium">E-mail</th>
 									<th className="px-4 py-3 font-medium">Produto</th>
@@ -55,7 +57,7 @@ export default function Vendas() {
 									<tr>
 										<td
 											colSpan={7}
-											className="px-4 py-10 text-center text-gray-500"
+											className="px-4 py-10 text-center text-slate-500 dark:text-gray-500"
 										>
 											Nenhuma venda encontrada.
 										</td>
@@ -70,15 +72,17 @@ export default function Vendas() {
 									return (
 										<tr
 											key={sale.id}
-											className="border-t border-white/5 hover:bg-white/2 transition-colors"
+											className="border-t border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/2 transition-colors"
 										>
-											<td className="px-4 py-3 font-medium">
+											<td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
 												{sale.customer.name}
 											</td>
-											<td className="px-4 py-3 text-gray-400">
+											<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
 												{sale.customer.email}
 											</td>
-											<td className="px-4 py-3">{sale.product}</td>
+											<td className="px-4 py-3 text-slate-900 dark:text-white">
+												{sale.product}
+											</td>
 											<td className="px-4 py-3 tabular-nums">
 												{formatCurrency(sale.amount, sale.currency ?? 'BRL')}
 											</td>
@@ -89,7 +93,7 @@ export default function Vendas() {
 													{statusInfo.label}
 												</span>
 											</td>
-											<td className="px-4 py-3 text-gray-400 tabular-nums">
+											<td className="px-4 py-3 text-slate-600 dark:text-gray-400 tabular-nums">
 												{formatDate(sale.date)}
 											</td>
 											<td className="px-4 py-3">
@@ -104,7 +108,9 @@ export default function Vendas() {
 														<ExternalLink size={13} />
 													</a>
 												) : (
-													<span className="text-gray-600">—</span>
+													<span className="text-slate-500 dark:text-gray-600">
+														—
+													</span>
 												)}
 											</td>
 										</tr>

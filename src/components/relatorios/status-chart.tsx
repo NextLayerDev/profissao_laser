@@ -22,17 +22,17 @@ export function StatusChart({ sales, isLoading }: Props) {
 	const currency = sales[0]?.currency ?? 'BRL';
 
 	return (
-		<div className="bg-[#1a1a1d] rounded-2xl p-6 border border-gray-800/50">
-			<h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-6">
+		<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl p-6 border border-slate-200 dark:border-gray-800/50 shadow-sm dark:shadow-none">
+			<h3 className="text-sm font-semibold text-slate-600 dark:text-gray-400 uppercase tracking-wider mb-6">
 				Vendas por Status
 			</h3>
 
 			{isLoading ? (
-				<div className="h-64 flex items-center justify-center text-gray-500 animate-pulse">
+				<div className="h-64 flex items-center justify-center text-slate-500 dark:text-gray-500 animate-pulse">
 					Carregando...
 				</div>
 			) : data.length === 0 ? (
-				<div className="h-64 flex items-center justify-center text-gray-500">
+				<div className="h-64 flex items-center justify-center text-slate-500 dark:text-gray-500">
 					Sem dados no período
 				</div>
 			) : (

@@ -65,23 +65,23 @@ export default function Relatorios() {
 	}
 
 	return (
-		<div className="min-h-screen bg-[#0d0d0f] text-white font-sans">
+		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] text-slate-900 dark:text-white font-sans">
 			<Header />
 
 			<main className="px-8 py-6">
 				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
 					<div>
-						<h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+						<h2 className="text-2xl font-bold tracking-tight flex items-center gap-2 text-slate-900 dark:text-white">
 							<BarChart2 className="w-6 h-6 text-violet-400" />
 							Relatórios
 						</h2>
-						<p className="text-gray-400 mt-1">
+						<p className="text-slate-600 dark:text-gray-400 mt-1">
 							Análise de desempenho das suas vendas.
 						</p>
 					</div>
 
 					<div className="flex items-center gap-3 flex-wrap">
-						<div className="flex items-center gap-1 bg-[#1a1a1d] border border-white/10 rounded-xl p-1">
+						<div className="flex items-center gap-1 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl p-1 shadow-sm dark:shadow-none">
 							{PERIODS.map((p) => (
 								<button
 									key={p.value}
@@ -90,7 +90,7 @@ export default function Relatorios() {
 									className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
 										period === p.value
 											? 'bg-violet-600 text-white'
-											: 'text-gray-400 hover:text-white'
+											: 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
 									}`}
 								>
 									{p.label}
@@ -102,7 +102,7 @@ export default function Relatorios() {
 							type="button"
 							onClick={handleExportCSV}
 							disabled={isLoading || filteredSales.length === 0}
-							className="flex items-center gap-2 px-4 py-2 bg-[#1a1a1d] border border-white/10 hover:border-white/20 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-sm font-medium transition-colors"
+							className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-sm font-medium transition-colors shadow-sm dark:shadow-none"
 						>
 							<FileText className="w-4 h-4" />
 							CSV

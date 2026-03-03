@@ -18,6 +18,7 @@ import {
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { UserBadge } from '@/components/store/user-badge';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { useCustomerFeatures } from '@/hooks/use-customer-features';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { getCurrentUser, getToken } from '@/lib/auth';
@@ -29,7 +30,7 @@ import {
 import { quickAccessItems } from '@/utils/constants/quick-access';
 
 const Background = () => (
-	<div className="fixed inset-0 bg-linear-to-br from-[#12103a] via-[#0d0b1e] to-[#0a0818] pointer-events-none" />
+	<div className="fixed inset-0 bg-linear-to-br from-slate-100 via-white to-slate-50 dark:from-[#12103a] dark:via-[#0d0b1e] dark:to-[#0a0818] pointer-events-none" />
 );
 
 export default function CoursePage() {
@@ -61,7 +62,7 @@ export default function CoursePage() {
 
 	if (email === undefined || isLoading) {
 		return (
-			<div className="min-h-screen bg-[#0d0b1e] flex items-center justify-center">
+			<div className="min-h-screen bg-slate-50 dark:bg-[#0d0b1e] flex items-center justify-center">
 				<Background />
 				<Loader2 className="relative z-10 w-8 h-8 text-violet-500 animate-spin" />
 			</div>
@@ -70,11 +71,13 @@ export default function CoursePage() {
 
 	if (email === null) {
 		return (
-			<div className="min-h-screen bg-[#0d0b1e] flex items-center justify-center">
+			<div className="min-h-screen bg-slate-50 dark:bg-[#0d0b1e] flex items-center justify-center">
 				<Background />
 				<div className="relative z-10 text-center">
-					<BookOpen className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-					<p className="text-gray-400 font-medium">Você não está logado</p>
+					<BookOpen className="w-12 h-12 text-slate-400 dark:text-gray-600 mx-auto mb-4" />
+					<p className="text-slate-600 dark:text-gray-400 font-medium">
+						Você não está logado
+					</p>
 					<Link
 						href="/login"
 						className="mt-4 inline-block px-5 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors"
@@ -87,24 +90,27 @@ export default function CoursePage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-[#0d0b1e] text-white font-sans">
+		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0b1e] text-slate-900 dark:text-white font-sans">
 			<Background />
 
 			{/* Header */}
-			<header className="relative z-10 border-b border-white/10 bg-white/5 backdrop-blur-sm px-8 py-4">
+			<header className="relative z-10 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur-sm px-8 py-4">
 				<div className="max-w-350 mx-auto flex items-center justify-between">
 					<div className="flex items-center gap-3">
 						<div className="bg-linear-to-br from-violet-600 to-purple-700 rounded-lg p-1.5">
 							<BookOpen className="w-5 h-5 text-white" />
 						</div>
-						<h1 className="text-lg font-bold">Meus Cursos</h1>
+						<h1 className="text-lg font-bold text-slate-900 dark:text-white">
+							Meus Cursos
+						</h1>
 					</div>
 
 					<div className="flex items-center gap-2">
+						<ThemeToggle />
 						{isAdmin && (
 							<Link
 								href="/"
-								className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 hover:border-violet-500/50 text-gray-300 hover:text-white text-sm font-medium rounded-xl transition-colors"
+								className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-violet-500/50 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium rounded-xl transition-colors"
 							>
 								<LayoutDashboard className="w-4 h-4" />
 								Painel
@@ -124,7 +130,7 @@ export default function CoursePage() {
 
 			<div className="relative z-10 max-w-350 mx-auto px-6 py-8">
 				{/* Top tag */}
-				<div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-6 text-xs font-semibold text-white uppercase tracking-wider">
+				<div className="inline-flex items-center gap-2 bg-violet-100 dark:bg-white/10 border border-violet-200 dark:border-white/20 rounded-full px-4 py-1.5 mb-6 text-xs font-semibold text-violet-700 dark:text-white uppercase tracking-wider">
 					<Zap className="w-4 h-4" />
 					Comunidade Profissão Laser
 				</div>
@@ -141,35 +147,35 @@ export default function CoursePage() {
 									{name || 'bem-vindo!'}
 								</span>
 							</h2>
-							<p className="text-slate-400 text-base mb-6">
+							<p className="text-slate-600 dark:text-slate-400 text-base mb-6">
 								Continue aprendendo e domine o mercado de produtos
 								personalizados a laser.
 							</p>
 
 							{/* Stats row */}
 							<div className="flex flex-wrap gap-4">
-								<div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3">
+								<div className="flex items-center gap-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 shadow-sm dark:shadow-none">
 									<div className="bg-linear-to-br from-violet-500 to-purple-600 rounded-lg p-2">
 										<BookOpen className="w-5 h-5 text-white" />
 									</div>
 									<div>
-										<p className="text-white font-bold text-lg leading-tight">
+										<p className="text-slate-900 dark:text-white font-bold text-lg leading-tight">
 											{plans?.length ?? 0}
 										</p>
-										<p className="text-slate-400 text-xs">
+										<p className="text-slate-500 dark:text-slate-400 text-xs">
 											Curso{(plans?.length ?? 0) !== 1 ? 's' : ''}
 										</p>
 									</div>
 								</div>
-								<div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3">
+								<div className="flex items-center gap-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 shadow-sm dark:shadow-none">
 									<div className="bg-linear-to-br from-orange-500 to-amber-400 rounded-lg p-2">
 										<Flame className="w-5 h-5 text-white" />
 									</div>
 									<div>
-										<p className="text-white font-bold text-lg leading-tight">
+										<p className="text-slate-900 dark:text-white font-bold text-lg leading-tight">
 											{activePlans.length}
 										</p>
-										<p className="text-slate-400 text-xs">
+										<p className="text-slate-500 dark:text-slate-400 text-xs">
 											Ativo{activePlans.length !== 1 ? 's' : ''}
 										</p>
 									</div>
@@ -178,7 +184,7 @@ export default function CoursePage() {
 						</div>
 
 						{/* Courses list */}
-						<div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+						<div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-sm dark:shadow-none">
 							<div className="flex items-center justify-between mb-6">
 								<div className="flex items-center gap-3">
 									<div className="bg-linear-to-br from-violet-600 to-purple-700 rounded-lg p-2">
@@ -218,7 +224,7 @@ export default function CoursePage() {
 													<BookOpen className="w-5 h-5 text-violet-400" />
 												</div>
 												<div className="flex-1 min-w-0">
-													<h3 className="font-semibold text-white truncate">
+													<h3 className="font-semibold text-slate-900 dark:text-white truncate">
 														{plan.product_name}
 													</h3>
 													<span
@@ -227,7 +233,7 @@ export default function CoursePage() {
 														{statusLabel}
 													</span>
 												</div>
-												<ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
+												<ChevronRight className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
 											</>
 										);
 
@@ -235,14 +241,14 @@ export default function CoursePage() {
 											<Link
 												key={plan.id}
 												href={`/course/${plan.slug}`}
-												className="flex items-center gap-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-violet-500/40 rounded-xl px-4 py-3 transition-all duration-200"
+												className="flex items-center gap-4 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 hover:border-violet-500/40 rounded-xl px-4 py-3 transition-all duration-200 shadow-sm dark:shadow-none"
 											>
 												{cardContent}
 											</Link>
 										) : (
 											<div
 												key={plan.id}
-												className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-xl px-4 py-3 opacity-60 cursor-not-allowed"
+												className="flex items-center gap-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 opacity-60 cursor-not-allowed shadow-sm dark:shadow-none"
 											>
 												{cardContent}
 											</div>
@@ -269,8 +275,8 @@ export default function CoursePage() {
 									key={label}
 									className={`w-full flex items-center justify-between gap-3 rounded-xl px-4 py-3 transition-all duration-200 ${
 										hasAccess
-											? 'bg-white/5 hover:bg-white/10 border border-white/10 hover:border-violet-500/40 group cursor-pointer'
-											: 'bg-white/5 border border-white/10 opacity-60 cursor-not-allowed'
+											? 'bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 hover:border-violet-500/40 group cursor-pointer shadow-sm dark:shadow-none'
+											: 'bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 opacity-60 cursor-not-allowed shadow-sm dark:shadow-none'
 									}`}
 								>
 									<div className="flex items-center gap-3">
@@ -278,7 +284,7 @@ export default function CoursePage() {
 											className={`rounded-lg p-2 ${
 												hasAccess
 													? `bg-linear-to-br ${gradient} text-white`
-													: 'bg-white/10 text-slate-500'
+													: 'bg-slate-200 dark:bg-white/10 text-slate-500'
 											}`}
 										>
 											{hasAccess ? (
@@ -289,7 +295,7 @@ export default function CoursePage() {
 										</div>
 										<div>
 											<span
-												className={`font-medium text-sm ${hasAccess ? 'text-white' : 'text-slate-500'}`}
+												className={`font-medium text-sm ${hasAccess ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}
 											>
 												{label}
 											</span>
@@ -313,11 +319,13 @@ export default function CoursePage() {
 					{/* ── Right column — Perfil ─────────────────────────── */}
 					<div className="space-y-4">
 						{/* Profile card */}
-						<div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
-							<div className="mx-auto w-20 h-20 rounded-2xl bg-linear-to-br from-violet-500 to-purple-700 flex items-center justify-center text-3xl font-black mb-4 shadow-lg shadow-violet-900/50">
+						<div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6 text-center shadow-sm dark:shadow-none">
+							<div className="mx-auto w-20 h-20 rounded-2xl bg-linear-to-br from-violet-500 to-purple-700 flex items-center justify-center text-3xl font-black mb-4 shadow-lg shadow-violet-900/50 text-white">
 								{(name || email || 'U')[0].toUpperCase()}
 							</div>
-							<h3 className="font-bold text-lg">{name || 'Usuário'}</h3>
+							<h3 className="font-bold text-lg text-slate-900 dark:text-white">
+								{name || 'Usuário'}
+							</h3>
 							<p className="text-slate-400 text-xs mb-5 truncate">{email}</p>
 
 							<div className="flex justify-center gap-3">
@@ -335,35 +343,41 @@ export default function CoursePage() {
 
 						{/* Stats mini cards */}
 						<div className="grid grid-cols-2 gap-3">
-							<div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
+							<div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-4 text-center shadow-sm dark:shadow-none">
 								<div className="mx-auto mb-2 w-8 h-8 bg-violet-500/20 rounded-lg flex items-center justify-center text-violet-400">
 									<BookOpen className="w-5 h-5" />
 								</div>
-								<p className="text-3xl font-black">{plans?.length ?? 0}</p>
-								<p className="text-slate-400 text-[10px] uppercase tracking-wider mt-0.5">
+								<p className="text-3xl font-black text-slate-900 dark:text-white">
+									{plans?.length ?? 0}
+								</p>
+								<p className="text-slate-500 dark:text-slate-400 text-[10px] uppercase tracking-wider mt-0.5">
 									Cursos
 								</p>
 							</div>
-							<div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
+							<div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-4 text-center shadow-sm dark:shadow-none">
 								<div className="mx-auto mb-2 w-8 h-8 bg-cyan-500/20 rounded-lg flex items-center justify-center text-cyan-400">
 									<Trophy className="w-5 h-5" />
 								</div>
-								<p className="text-3xl font-black">{activePlans.length}</p>
-								<p className="text-slate-400 text-[10px] uppercase tracking-wider mt-0.5">
+								<p className="text-3xl font-black text-slate-900 dark:text-white">
+									{activePlans.length}
+								</p>
+								<p className="text-slate-500 dark:text-slate-400 text-[10px] uppercase tracking-wider mt-0.5">
 									Ativos
 								</p>
 							</div>
 						</div>
 
 						{/* Community card */}
-						<div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+						<div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm dark:shadow-none">
 							<div className="flex items-center gap-3 mb-3">
 								<div className="bg-linear-to-br from-violet-500 to-purple-700 rounded-xl p-2.5 text-white">
 									<Users className="w-6 h-6" />
 								</div>
 								<div>
-									<h3 className="font-bold">Comunidade</h3>
-									<p className="text-slate-400 text-xs">
+									<h3 className="font-bold text-slate-900 dark:text-white">
+										Comunidade
+									</h3>
+									<p className="text-slate-500 dark:text-slate-400 text-xs">
 										{features?.comunidade
 											? 'Conecte-se com outros profissionais'
 											: upgradeTiers?.comunidade
@@ -373,15 +387,15 @@ export default function CoursePage() {
 								</div>
 							</div>
 							{features?.comunidade ? (
-								<button
-									type="button"
+								<Link
+									href="/comunity"
 									className="w-full flex items-center justify-center gap-2 bg-linear-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 text-white font-semibold py-2.5 rounded-xl transition-all text-sm"
 								>
 									<Users className="w-5 h-5" />
 									Acessar
-								</button>
+								</Link>
 							) : (
-								<div className="w-full flex items-center justify-center gap-2 bg-white/10 border border-white/10 text-slate-500 font-medium py-2.5 rounded-xl text-sm cursor-not-allowed">
+								<div className="w-full flex items-center justify-center gap-2 bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-500 font-medium py-2.5 rounded-xl text-sm cursor-not-allowed">
 									<Lock className="w-5 h-5" />
 									{upgradeTiers?.comunidade
 										? `Disponível no plano ${upgradeTiers.comunidade}`

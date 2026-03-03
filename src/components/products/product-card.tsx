@@ -1,14 +1,15 @@
 'use client';
 
-import { Link2, Trash2 } from 'lucide-react';
+import { Layers, Link2, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import type { ProductCardProps } from '@/types/components/product-card';
+import { TIER_STYLES } from '@/utils/constants/tier-styles';
 import { formatCurrency } from '@/utils/format-currency';
 import { DeleteProductModal } from './delete-product-modal';
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, productClasses }: ProductCardProps) {
 	const [imgError, setImgError] = useState(false);
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -16,7 +17,7 @@ export function ProductCard({ product }: ProductCardProps) {
 		<>
 			<Link
 				href={`/products/${product.id}`}
-				className="bg-[#1a1a1d] rounded-2xl overflow-hidden border border-violet-500/30 hover:border-violet-500/60 transition-all duration-300 hover:scale-[1.02] block"
+				className="bg-white dark:bg-[#1a1a1d] rounded-2xl overflow-hidden border border-slate-200 dark:border-violet-500/30 hover:border-violet-500/60 transition-all duration-300 hover:scale-[1.02] block shadow-sm dark:shadow-none"
 			>
 				<div className="relative h-44 bg-linear-to-br from-violet-600 via-purple-600 to-fuchsia-500 flex items-center justify-center">
 					{product.image && !imgError ? (
@@ -40,23 +41,44 @@ export function ProductCard({ product }: ProductCardProps) {
 				</div>
 
 				<div className="p-4">
-					<h3 className="font-semibold text-white mb-2">{product.name}</h3>
-					<p className="text-sm text-gray-400 mb-4 line-clamp-2">
+					<h3 className="font-semibold text-slate-900 dark:text-white mb-2">
+						{product.name}
+					</h3>
+					{productClasses && productClasses.length > 0 && (
+						<div className="flex flex-wrap gap-1.5 mb-2">
+							{productClasses.map((cls) => {
+								const style = TIER_STYLES[cls.tier];
+								return (
+									<span
+										key={cls.id}
+										className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${style.badge}`}
+										title={cls.name}
+									>
+										<Layers className="w-3 h-3 shrink-0" />
+										{cls.name}
+									</span>
+								);
+							})}
+						</div>
+					)}
+					<p className="text-sm text-slate-600 dark:text-gray-400 mb-4 line-clamp-2">
 						{product.description}
 					</p>
 
-					<div className="border-t border-gray-800 pt-4">
+					<div className="border-t border-slate-200 dark:border-gray-800 pt-4">
 						<div className="flex items-center justify-between">
 							<div className="text-sm">
-								<span className="text-gray-500">Preço: </span>
-								<span className="text-white font-medium">
+								<span className="text-slate-500 dark:text-gray-500">
+									Preço:{' '}
+								</span>
+								<span className="text-slate-900 dark:text-white font-medium">
 									{formatCurrency(product.price, 'BRL')}
 								</span>
 							</div>
 							<div className="flex items-center gap-1">
 								<button
 									type="button"
-									className="p-2 text-gray-500 hover:text-white transition-colors"
+									className="p-2 text-slate-500 dark:text-gray-500 hover:text-slate-900 dark:hover:text-white transition-colors"
 									onClick={(e) => e.stopPropagation()}
 								>
 									<Link2 className="w-4 h-4" />
@@ -68,7 +90,7 @@ export function ProductCard({ product }: ProductCardProps) {
 										e.stopPropagation();
 										setShowDeleteModal(true);
 									}}
-									className="p-2 text-gray-500 hover:text-red-400 transition-colors"
+									className="p-2 text-slate-500 dark:text-gray-500 hover:text-red-400 transition-colors"
 								>
 									<Trash2 className="w-4 h-4" />
 								</button>

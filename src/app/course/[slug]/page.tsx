@@ -28,6 +28,7 @@ import {
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { ContentProtection } from '@/components/antifraud/content-protection';
 import { VideoPlayer } from '@/components/course/video-player';
 import { useCourse } from '@/hooks/use-course';
 import { useCustomerFeaturesForCourse } from '@/hooks/use-customer-features';
@@ -438,149 +439,153 @@ export default function CourseSlugPage() {
 			{/* ── Body ────────────────────────────────────────────────────────── */}
 			<div className="flex flex-1 overflow-hidden">
 				{/* ── Main (video + tabs) ──────────────────────────────────────── */}
-				<main className="flex-1 flex flex-col overflow-y-auto bg-[#06040f]">
-					<VideoPlayer lesson={activeLesson} courseName={course.name} />
+				<ContentProtection className="flex-1 flex flex-col min-w-0 overflow-hidden">
+					<main className="flex-1 flex flex-col overflow-y-auto bg-[#06040f]">
+						<VideoPlayer lesson={activeLesson} courseName={course.name} />
 
-					{/* Rating + tabs row */}
-					<div className="px-6 py-3 flex items-center justify-between border-b border-white/10">
-						<div className="flex gap-1">
-							<button
-								type="button"
-								onClick={() => features?.chat && setBottomTab('duvidas')}
-								className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-									!features?.chat
-										? 'text-slate-500 opacity-60 cursor-not-allowed'
-										: bottomTab === 'duvidas'
+						{/* Rating + tabs row */}
+						<div className="px-6 py-3 flex items-center justify-between border-b border-white/10">
+							<div className="flex gap-1">
+								<button
+									type="button"
+									onClick={() => features?.chat && setBottomTab('duvidas')}
+									className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+										!features?.chat
+											? 'text-slate-500 opacity-60 cursor-not-allowed'
+											: bottomTab === 'duvidas'
+												? 'bg-violet-600/20 text-violet-300'
+												: 'text-slate-400 hover:text-white hover:bg-white/5'
+									}`}
+								>
+									{features?.chat ? (
+										<MessageSquare className="w-4 h-4" />
+									) : (
+										<Lock className="w-4 h-4" />
+									)}
+									Dúvidas
+								</button>
+								<button
+									type="button"
+									onClick={() => setBottomTab('materiais')}
+									className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+										bottomTab === 'materiais'
 											? 'bg-violet-600/20 text-violet-300'
 											: 'text-slate-400 hover:text-white hover:bg-white/5'
-								}`}
-							>
-								{features?.chat ? (
-									<MessageSquare className="w-4 h-4" />
-								) : (
-									<Lock className="w-4 h-4" />
-								)}
-								Dúvidas
-							</button>
-							<button
-								type="button"
-								onClick={() => setBottomTab('materiais')}
-								className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-									bottomTab === 'materiais'
-										? 'bg-violet-600/20 text-violet-300'
-										: 'text-slate-400 hover:text-white hover:bg-white/5'
-								}`}
-							>
-								<Paperclip className="w-4 h-4" />
-								Materiais
-							</button>
-							<button
-								type="button"
-								onClick={() => setBottomTab('quiz')}
-								className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-									bottomTab === 'quiz'
-										? 'bg-violet-600/20 text-violet-300'
-										: 'text-slate-400 hover:text-white hover:bg-white/5'
-								}`}
-							>
-								<ClipboardList className="w-4 h-4" />
-								Quiz
-							</button>
+									}`}
+								>
+									<Paperclip className="w-4 h-4" />
+									Materiais
+								</button>
+								<button
+									type="button"
+									onClick={() => setBottomTab('quiz')}
+									className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+										bottomTab === 'quiz'
+											? 'bg-violet-600/20 text-violet-300'
+											: 'text-slate-400 hover:text-white hover:bg-white/5'
+									}`}
+								>
+									<ClipboardList className="w-4 h-4" />
+									Quiz
+								</button>
+							</div>
+
+							{activeLesson && (
+								<div className="flex items-center gap-2">
+									<p className="text-slate-500 text-xs">Avalie:</p>
+									<div className="flex gap-0.5">
+										{[1, 2, 3, 4, 5].map((star) => (
+											<button
+												key={star}
+												type="button"
+												onClick={() => setRating(star)}
+												onMouseEnter={() => setHoverRating(star)}
+												onMouseLeave={() => setHoverRating(0)}
+											>
+												<Star
+													className={`w-4 h-4 transition-colors ${
+														(hoverRating || rating) >= star
+															? 'text-yellow-400 fill-yellow-400'
+															: 'text-slate-600'
+													}`}
+												/>
+											</button>
+										))}
+									</div>
+								</div>
+							)}
 						</div>
 
-						{activeLesson && (
-							<div className="flex items-center gap-2">
-								<p className="text-slate-500 text-xs">Avalie:</p>
-								<div className="flex gap-0.5">
-									{[1, 2, 3, 4, 5].map((star) => (
-										<button
-											key={star}
-											type="button"
-											onClick={() => setRating(star)}
-											onMouseEnter={() => setHoverRating(star)}
-											onMouseLeave={() => setHoverRating(0)}
+						{/* Tab content */}
+						<div className="px-6 py-6">
+							{bottomTab === 'duvidas' &&
+								(!features?.chat ? (
+									<div className="flex flex-col items-center justify-center py-16 text-slate-500">
+										<Lock className="w-12 h-12 mb-4" />
+										<p className="text-sm font-medium">
+											{upgradeTiers?.chat
+												? `Dúvidas disponível no plano ${upgradeTiers.chat}`
+												: 'Dúvidas disponível no plano Ouro ou Platina'}
+										</p>
+										<p className="text-xs mt-1">
+											Faça upgrade para enviar dúvidas sobre as aulas.
+										</p>
+										<Link
+											href="/store"
+											className="mt-4 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors"
 										>
-											<Star
-												className={`w-4 h-4 transition-colors ${
-													(hoverRating || rating) >= star
-														? 'text-yellow-400 fill-yellow-400'
-														: 'text-slate-600'
-												}`}
-											/>
-										</button>
-									))}
-								</div>
-							</div>
-						)}
-					</div>
-
-					{/* Tab content */}
-					<div className="px-6 py-6">
-						{bottomTab === 'duvidas' &&
-							(!features?.chat ? (
-								<div className="flex flex-col items-center justify-center py-16 text-slate-500">
-									<Lock className="w-12 h-12 mb-4" />
-									<p className="text-sm font-medium">
-										{upgradeTiers?.chat
-											? `Dúvidas disponível no plano ${upgradeTiers.chat}`
-											: 'Dúvidas disponível no plano Ouro ou Platina'}
-									</p>
-									<p className="text-xs mt-1">
-										Faça upgrade para enviar dúvidas sobre as aulas.
-									</p>
-									<Link
-										href="/store"
-										className="mt-4 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors"
-									>
-										Ver planos
-									</Link>
-								</div>
-							) : (
-								<div className="space-y-5">
-									<div className="flex flex-col gap-2">
-										<label
-											htmlFor="question-textarea"
-											className="text-sm font-medium text-slate-300"
-										>
-											Envie sua dúvida sobre esta aula
-										</label>
-										<textarea
-											id="question-textarea"
-											value={question}
-											onChange={(e) => setQuestion(e.target.value)}
-											placeholder="Escreva sua dúvida aqui..."
-											rows={3}
-											className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/60 transition-colors resize-none"
-										/>
-										<div className="flex justify-end">
-											<button
-												type="button"
-												disabled={!question.trim()}
-												onClick={() => setQuestion('')}
-												className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+											Ver planos
+										</Link>
+									</div>
+								) : (
+									<div className="space-y-5">
+										<div className="flex flex-col gap-2">
+											<label
+												htmlFor="question-textarea"
+												className="text-sm font-medium text-slate-300"
 											>
-												<Send className="w-4 h-4" />
-												Enviar dúvida
-											</button>
+												Envie sua dúvida sobre esta aula
+											</label>
+											<textarea
+												id="question-textarea"
+												value={question}
+												onChange={(e) => setQuestion(e.target.value)}
+												placeholder="Escreva sua dúvida aqui..."
+												rows={3}
+												className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/60 transition-colors resize-none"
+											/>
+											<div className="flex justify-end">
+												<button
+													type="button"
+													disabled={!question.trim()}
+													onClick={() => setQuestion('')}
+													className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+												>
+													<Send className="w-4 h-4" />
+													Enviar dúvida
+												</button>
+											</div>
+										</div>
+										<div className="flex flex-col items-center justify-center py-10 text-slate-600">
+											<MessageSquare className="w-8 h-8 mb-3" />
+											<p className="text-sm">Nenhuma dúvida enviada ainda.</p>
+											<p className="text-xs mt-1">
+												Seja o primeiro a perguntar!
+											</p>
 										</div>
 									</div>
-									<div className="flex flex-col items-center justify-center py-10 text-slate-600">
-										<MessageSquare className="w-8 h-8 mb-3" />
-										<p className="text-sm">Nenhuma dúvida enviada ainda.</p>
-										<p className="text-xs mt-1">Seja o primeiro a perguntar!</p>
-									</div>
-								</div>
-							))}
+								))}
 
-						{bottomTab === 'materiais' && (
-							<MaterialsTab lessonId={activeLesson?.id ?? null} />
-						)}
+							{bottomTab === 'materiais' && (
+								<MaterialsTab lessonId={activeLesson?.id ?? null} />
+							)}
 
-						{bottomTab === 'quiz' && (
-							<QuizTab lessonId={activeLesson?.id ?? null} />
-						)}
-					</div>
-				</main>
+							{bottomTab === 'quiz' && (
+								<QuizTab lessonId={activeLesson?.id ?? null} />
+							)}
+						</div>
+					</main>
+				</ContentProtection>
 
 				{/* ── Sidebar ─────────────────────────────────────────────────── */}
 				<aside className="w-75 border-l border-white/6 bg-[#0a0818] flex flex-col shrink-0 overflow-hidden">

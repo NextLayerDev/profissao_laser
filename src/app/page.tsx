@@ -7,7 +7,7 @@ import { WelcomeBanner } from '@/components/dashboard/welcome-banner';
 
 export default function Dashboard() {
 	return (
-		<div className="min-h-screen bg-[#0d0d0f] text-white font-sans">
+		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] text-slate-900 dark:text-white font-sans">
 			<Header />
 
 			<main className="px-8 py-6">

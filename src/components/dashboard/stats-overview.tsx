@@ -70,22 +70,26 @@ export function StatsOverview() {
 
 	return (
 		<section className="mb-8">
-			<h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
+			<h3 className="text-xs font-semibold text-slate-500 dark:text-gray-500 uppercase tracking-wider mb-4">
 				Visão Geral
 			</h3>
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 				{cards.map((card) => (
 					<div
 						key={card.title}
-						className="bg-[#1a1a1d] rounded-2xl p-6 border border-gray-800/50 hover:border-gray-700 transition-all duration-300 group"
+						className="bg-white dark:bg-[#1a1a1d] rounded-2xl p-6 border border-slate-200 dark:border-gray-800/50 hover:border-slate-300 dark:hover:border-gray-700 transition-all duration-300 group shadow-sm dark:shadow-none"
 					>
 						<div className="flex items-start justify-between mb-4">
-							<span className="text-gray-400 text-sm">{card.title}</span>
+							<span className="text-slate-600 dark:text-gray-400 text-sm">
+								{card.title}
+							</span>
 							<div className={`${card.iconBg} p-2.5 rounded-xl`}>
 								<card.icon className="w-5 h-5 text-white" />
 							</div>
 						</div>
-						<div className="text-3xl font-bold mb-1">{card.value}</div>
+						<div className="text-3xl font-bold mb-1 text-slate-900 dark:text-white">
+							{card.value}
+						</div>
 						<span className={`text-sm ${card.subtitleColor}`}>
 							{card.subtitle}
 						</span>

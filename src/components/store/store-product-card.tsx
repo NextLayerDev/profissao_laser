@@ -43,7 +43,7 @@ export function StoreProductCard({ variants }: StoreProductCardProps) {
 				isOpen={showLoginModal}
 				onClose={() => setShowLoginModal(false)}
 			/>
-			<div className="bg-[#1a1a1d] rounded-2xl overflow-hidden border border-gray-800 hover:border-violet-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-violet-500/10 flex flex-col">
+			<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl overflow-hidden border border-slate-200 dark:border-gray-800 hover:border-violet-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-violet-500/10 flex flex-col shadow-sm dark:shadow-none">
 				<div className="relative h-48 bg-linear-to-br from-violet-600 via-purple-600 to-fuchsia-500 flex items-center justify-center">
 					{product.image && !imgError ? (
 						<Image
@@ -85,7 +85,7 @@ export function StoreProductCard({ variants }: StoreProductCardProps) {
 										isActive
 											? (style?.badge ??
 												'bg-violet-400/20 text-violet-300 border-violet-500/40')
-											: 'bg-transparent text-gray-500 border-gray-700 hover:border-gray-500 hover:text-gray-300'
+											: 'bg-transparent text-slate-500 dark:text-gray-500 border-slate-300 dark:border-gray-700 hover:border-slate-400 dark:hover:border-gray-500 hover:text-slate-700 dark:hover:text-gray-300'
 									}`}
 								>
 									{label}
@@ -96,12 +96,12 @@ export function StoreProductCard({ variants }: StoreProductCardProps) {
 				)}
 
 				<div className="p-5 flex flex-col flex-1">
-					<h3 className="font-semibold text-white text-lg leading-snug mb-2">
+					<h3 className="font-semibold text-slate-900 dark:text-white text-lg leading-snug mb-2">
 						{product.name}
 					</h3>
 
 					{product.description && (
-						<p className="text-sm text-gray-400 line-clamp-2 mb-3">
+						<p className="text-sm text-slate-600 dark:text-gray-400 line-clamp-2 mb-3">
 							{product.description}
 						</p>
 					)}
@@ -111,7 +111,9 @@ export function StoreProductCard({ variants }: StoreProductCardProps) {
 							{enabledFeatures.map((feat) => (
 								<div key={feat.key} className="flex items-center gap-1.5">
 									<Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-									<span className="text-xs text-gray-300">{feat.label}</span>
+									<span className="text-xs text-slate-600 dark:text-gray-300">
+										{feat.label}
+									</span>
 								</div>
 							))}
 						</div>
@@ -125,14 +127,18 @@ export function StoreProductCard({ variants }: StoreProductCardProps) {
 								className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400"
 							/>
 						))}
-						<span className="text-xs text-gray-500 ml-1">(4.9)</span>
+						<span className="text-xs text-slate-500 dark:text-gray-500 ml-1">
+							(4.9)
+						</span>
 					</div>
 
-					<div className="mt-auto border-t border-gray-800 pt-4">
+					<div className="mt-auto border-t border-slate-200 dark:border-gray-800 pt-4">
 						<div className="flex items-center justify-between mb-3">
 							<div>
-								<p className="text-xs text-gray-500 mb-0.5">Por apenas</p>
-								<p className="text-2xl font-bold text-white">
+								<p className="text-xs text-slate-500 dark:text-gray-500 mb-0.5">
+									Por apenas
+								</p>
+								<p className="text-2xl font-bold text-slate-900 dark:text-white">
 									{formatCurrency(product.price, 'BRL')}
 								</p>
 							</div>
