@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { ChatButton } from '@/components/dashboard/chat-button';
 import { BasicInfoSection } from '@/components/products/basic-info-section';
+import { CommunitySection } from '@/components/products/community-section';
 import { CourseContentSection } from '@/components/products/course-content-section';
 import { CreateSubscriptionModal } from '@/components/products/create-subscription-modal';
 import { CuponsSection } from '@/components/products/cupons-section';
@@ -201,6 +202,8 @@ export default function ProdutoDetalhes() {
 				<main className="flex-1 p-8">
 					{activeMenu === 'cupons' ? (
 						<CuponsSection product={{ id: product.id, name: product.name }} />
+					) : activeMenu === 'comunidade' ? (
+						<CommunitySection />
 					) : activeMenu === 'conteudo' ? (
 						<CourseContentSection
 							product={{ id: product.id, name: product.name }}

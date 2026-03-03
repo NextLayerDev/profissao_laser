@@ -30,138 +30,55 @@ import {
 	X,
 } from 'lucide-react';
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import {
-	createPost,
-	createProject,
-	getAllChannelMessages,
-	getEvents,
-	getMembers,
-	getPosts,
-	getProjects,
-	getRanking,
-} from '@/services/community';
-import type {
-	ChannelMessage,
-	Event,
-	Member,
-	Post,
-	Project,
-	RankingUser,
-} from '@/types/community';
+	useChannelMessages,
+	useCommunityChannels,
+	useCommunityEvents,
+	useCommunityMembers,
+	useCommunityPosts,
+	useCommunityProjects,
+	useCommunityRanking,
+	useCreateChannel,
+	useCreatePost,
+	useCreateProject,
+	useSendChannelMessage,
+} from '@/hooks/use-community';
+import type { Channel, Project } from '@/types/community';
+import { formatMessageTime } from '@/utils/formatDate';
 
-const CHANNEL_CATEGORIES = [
-	{
-		name: 'GERAL',
-		channels: [
-			{
-				id: 'regras',
-				label: 'regras',
-				icon: Megaphone,
-				description: 'Regras da comunidade',
-			},
-			{
-				id: 'anuncio',
-				label: 'anúncio',
-				icon: Megaphone,
-				description: 'Avisos importantes',
-			},
-		],
-	},
-	{
-		name: 'VETORES & DESIGN',
-		channels: [
-			{
-				id: 'banco-de-vetor',
-				label: 'banco-de-vetor',
-				icon: Folder,
-				description: 'Arquivos vetorizados',
-			},
-			{
-				id: 'equipe-de-vetor',
-				label: 'equipe-de-vetor',
-				icon: Users,
-				description: 'Time de vetorização',
-			},
-		],
-	},
-	{
-		name: 'APRENDIZADO',
-		channels: [
-			{
-				id: 'passo-a-passo',
-				label: 'Passo a Passo 😎',
-				icon: FileText,
-				description: 'Tutoriais guiados',
-			},
-			{
-				id: 'tutoriais',
-				label: 'tutoriais',
-				icon: FileText,
-				description: 'Conteúdos educativos',
-			},
-		],
-	},
-	{
-		name: 'FIBER/UV EZCAD 🔥',
-		channels: [
-			{
-				id: 'chat-fiber',
-				label: 'chat-fiber',
-				icon: MessageSquare,
-				description: 'Discussões Fiber',
-			},
-			{
-				id: 'chat-uv',
-				label: 'chat-uv',
-				icon: MessageSquare,
-				description: 'Discussões UV',
-			},
-			{
-				id: 'duvidas',
-				label: 'dúvidas ❓',
-				icon: HelpCircle,
-				description: 'Tire suas dúvidas',
-			},
-			{
-				id: 'links',
-				label: 'links 🔗',
-				icon: Link2,
-				description: 'Links úteis',
-			},
-			{
-				id: 'parametros-fiber',
-				label: 'parâmetros-fiber',
-				icon: Settings,
-				description: 'Configs Fiber',
-			},
-			{
-				id: 'parametros-uv',
-				label: 'parâmetros-uv',
-				icon: Settings,
-				description: 'Configs UV',
-			},
-		],
-	},
-	{
-		name: 'LIVES 🎤',
-		channels: [
-			{
-				id: 'arquivos-da-live',
-				label: 'arquivos-da-live',
-				icon: Folder,
-				description: 'Materiais das lives',
-			},
-			{
-				id: 'live',
-				label: 'live',
-				icon: Mic,
-				description: 'Canal de voz/live',
-			},
-		],
-	},
-];
+const CHANNEL_ICON_MAP: Record<string, typeof MessageSquare> = {
+	chat: MessageSquare,
+	fiber: MessageSquare,
+	uv: MessageSquare,
+	duvidas: HelpCircle,
+	links: Link2,
+	parametros: Settings,
+	banco: Folder,
+	equipe: Users,
+	passo: FileText,
+	tutoriais: FileText,
+	arquivos: Folder,
+	live: Mic,
+	regras: Megaphone,
+	anuncio: Megaphone,
+};
+const DEFAULT_CHANNEL_ICON = MessageSquare;
+
+function getChannelIcon(channel: Channel) {
+	const id = channel.id.toLowerCase();
+	for (const [key, icon] of Object.entries(CHANNEL_ICON_MAP)) {
+		if (id.includes(key)) return icon;
+	}
+	return DEFAULT_CHANNEL_ICON;
+}
+
+function getRankingGradient(pos: number): string {
+	if (pos === 1) return 'from-amber-300 via-yellow-400 to-amber-500';
+	if (pos === 2) return 'from-slate-300 to-slate-400';
+	return 'from-orange-300 to-amber-400';
+}
 
 interface CommunityViewProps {
 	userName: string;
@@ -197,7 +114,6 @@ export function CommunityView({
 
 	const [postContent, setPostContent] = useState('');
 	const [postImage, setPostImage] = useState<string | null>(null);
-	const [isPosting, setIsPosting] = useState(false);
 
 	const [newProject, setNewProject] = useState({
 		title: '',
@@ -210,42 +126,69 @@ export function CommunityView({
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const projectFileInputRef = useRef<HTMLInputElement>(null);
 
-	const [posts, setPosts] = useState<Post[]>([]);
-	const [projects, setProjects] = useState<Project[]>([]);
-	const [members, setMembers] = useState<Member[]>([]);
-	const [events, setEvents] = useState<Event[]>([]);
-	const [rankingTop, setRankingTop] = useState<RankingUser[]>([]);
-	const [rankingRest, setRankingRest] = useState<
-		Array<{ pos: number; name: string; pts: number }>
-	>([]);
+	const [postPage] = useState(1);
+	const [projectPage] = useState(1);
+	const [rankingPeriod, setRankingPeriod] = useState<
+		'week' | 'month' | undefined
+	>('week');
 
-	const [channelMessages, setChannelMessages] = useState<
-		Record<string, ChannelMessage[]>
-	>({});
+	const { data: posts = [], isLoading: postsLoading } = useCommunityPosts(
+		postPage,
+		20,
+	);
+	const { data: projects = [], isLoading: _projectsLoading } =
+		useCommunityProjects(projectPage, 12);
+	const { data: channels = [], isLoading: channelsLoading } =
+		useCommunityChannels();
+	const { data: members = [], isLoading: _membersLoading } =
+		useCommunityMembers(
+			memberSearch || undefined,
+			memberFilter === 'all' ? undefined : memberFilter,
+		);
+	const { data: events = [], isLoading: _eventsLoading } = useCommunityEvents();
+	const { data: rankingData, isLoading: _rankingLoading } =
+		useCommunityRanking(rankingPeriod);
+	const { data: channelMessages = [], refetch: refetchMessages } =
+		useChannelMessages(activeChannel);
+
+	const createPostMutation = useCreatePost();
+	const createProjectMutation = useCreateProject();
+	const createChannelMutation = useCreateChannel();
+	const sendMessageMutation = useSendChannelMessage(activeChannel);
+
+	const rankingTop = rankingData?.top ?? [];
+	const rankingRest = rankingData?.rest ?? [];
+
+	const channelCategories = useMemo(() => {
+		const byCategory = new Map<string, Channel[]>();
+		for (const ch of channels) {
+			const cat = ch.category || 'GERAL';
+			if (!byCategory.has(cat)) byCategory.set(cat, []);
+			byCategory.get(cat)?.push(ch);
+		}
+		return Array.from(byCategory.entries()).map(([name, chs]) => ({
+			name,
+			channels: chs,
+		}));
+	}, [channels]);
+
+	const activeChannelData = channels.find((c) => c.id === activeChannel);
+	const activeChannelLabel = (() => {
+		const label = activeChannelData?.label ?? activeChannel;
+		if (!label) return 'Canal';
+		const normalized = label.replace(/\s/g, '');
+		if (
+			label === activeChannel ||
+			normalized === (activeChannel ?? '').replace(/\s/g, '')
+		)
+			return 'Canal';
+		if (/^[0-9a-f-]{32,}$/i.test(normalized)) return 'Canal';
+		return label;
+	})();
+
 	const [messageInput, setMessageInput] = useState('');
 	const [newChannelName, setNewChannelName] = useState('');
 	const messagesEndRef = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		getPosts().then(setPosts);
-		getProjects().then(setProjects);
-		getEvents().then(setEvents);
-		getRanking().then(({ top, rest }) => {
-			setRankingTop(top);
-			setRankingRest(rest);
-		});
-	}, []);
-
-	useEffect(() => {
-		getMembers({
-			search: memberSearch,
-			category: memberFilter === 'all' ? undefined : memberFilter,
-		}).then(setMembers);
-	}, [memberSearch, memberFilter]);
-
-	useEffect(() => {
-		getAllChannelMessages().then(setChannelMessages);
-	}, []);
 
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -256,32 +199,24 @@ export function CommunityView({
 		setActiveChannel(channelId);
 	};
 
-	const handleSendMessage = async () => {
+	const handleSendMessage = () => {
 		if (!messageInput.trim() || !activeChannel) return;
-		const newMsg: ChannelMessage = {
-			id: Date.now(),
-			user: userName,
-			avatar: userInitials,
-			content: messageInput,
-			time: new Date().toLocaleTimeString([], {
-				hour: '2-digit',
-				minute: '2-digit',
-			}),
-			isMe: true,
-		};
-		setChannelMessages((prev) => ({
-			...prev,
-			[activeChannel]: [...(prev[activeChannel] || []), newMsg],
-		}));
-		setMessageInput('');
+		sendMessageMutation.mutate(messageInput, {
+			onSuccess: () => {
+				setMessageInput('');
+				refetchMessages();
+			},
+		});
 	};
 
 	const handleCreateChannel = () => {
 		if (!newChannelName.trim()) return;
-		const channelId = newChannelName.toLowerCase().replace(/\s+/g, '-');
-		setChannelMessages((prev) => ({ ...prev, [channelId]: [] }));
-		setNewChannelName('');
-		setShowCreateChannelModal(false);
+		createChannelMutation.mutate(newChannelName, {
+			onSuccess: () => {
+				setNewChannelName('');
+				setShowCreateChannelModal(false);
+			},
+		});
 	};
 
 	const handleViewProfile = (
@@ -318,47 +253,48 @@ export function CommunityView({
 		}
 	};
 
-	const handlePublishPost = async () => {
+	const handlePublishPost = () => {
 		if (!postContent.trim()) return;
-		setIsPosting(true);
-		try {
-			const newPost = await createPost({
-				content: postContent,
-				image: postImage ?? undefined,
-				author: userName,
-				avatar: userInitials,
-			});
-			setPosts((prev) => [newPost, ...prev]);
-			setPostContent('');
-			setPostImage(null);
-		} finally {
-			setIsPosting(false);
-		}
+		createPostMutation.mutate(
+			{ content: postContent, image: postImage ?? undefined },
+			{
+				onSuccess: () => {
+					setPostContent('');
+					setPostImage(null);
+				},
+			},
+		);
 	};
 
-	const handleSubmitProject = async () => {
+	const handleSubmitProject = () => {
 		if (!newProject.title.trim() || !newProject.description.trim()) return;
-		const project = await createProject({
-			title: newProject.title,
-			description: newProject.description,
-			author: userName,
-			img:
-				newProject.image ||
-				'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?q=80&w=2940&auto=format&fit=crop',
-			material: newProject.material || undefined,
-			technique: newProject.technique || undefined,
-		});
-		setProjects((prev) => [project, ...prev]);
-		setNewProject({
-			title: '',
-			description: '',
-			material: '',
-			technique: '',
-			image: null,
-		});
-		setShowSubmitProjectModal(false);
+		createProjectMutation.mutate(
+			{
+				author: userName,
+				title: newProject.title,
+				description: newProject.description,
+				img:
+					newProject.image ||
+					'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?q=80&w=2940&auto=format&fit=crop',
+				material: newProject.material || undefined,
+				technique: newProject.technique || undefined,
+			},
+			{
+				onSuccess: () => {
+					setNewProject({
+						title: '',
+						description: '',
+						material: '',
+						technique: '',
+						image: null,
+					});
+					setShowSubmitProjectModal(false);
+				},
+			},
+		);
 	};
 
+	const isPosting = createPostMutation.isPending;
 	const filteredMembers = members;
 
 	const renderContent = () => {
@@ -423,107 +359,121 @@ export function CommunityView({
 							</div>
 						</div>
 
-						{posts.map((post) => (
-							<div
-								key={post.id}
-								className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden"
-							>
-								<div className="p-4 flex items-start gap-4">
-									<button
-										type="button"
-										className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold cursor-pointer shrink-0"
-										onClick={() =>
-											handleViewProfile(
-												post.author,
-												post.avatar,
-												'Especialista em Personalização Laser',
-											)
-										}
-										onKeyDown={(e) =>
-											e.key === 'Enter' &&
-											handleViewProfile(
-												post.author,
-												post.avatar,
-												'Especialista em Personalização Laser',
-											)
-										}
-									>
-										{post.avatar}
-									</button>
-									<div className="flex-1 min-w-0">
-										<div className="flex items-center justify-between">
-											<div>
+						{postsLoading ? (
+							<div className="flex justify-center py-12">
+								<div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+							</div>
+						) : posts.length === 0 ? (
+							<div className="text-center py-12 text-slate-400">
+								<MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+								<p>Nenhum post ainda. Seja o primeiro a publicar!</p>
+							</div>
+						) : (
+							posts.map((post) => (
+								<div
+									key={post.id}
+									className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden"
+								>
+									<div className="p-4 flex items-start gap-4">
+										<button
+											type="button"
+											className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold cursor-pointer shrink-0"
+											onClick={() =>
+												handleViewProfile(
+													post.author,
+													post.avatar ??
+														post.author.substring(0, 2).toUpperCase(),
+													'Especialista em Personalização Laser',
+												)
+											}
+											onKeyDown={(e) =>
+												e.key === 'Enter' &&
+												handleViewProfile(
+													post.author,
+													post.avatar ??
+														post.author.substring(0, 2).toUpperCase(),
+													'Especialista em Personalização Laser',
+												)
+											}
+										>
+											{post.avatar ?? post.author.substring(0, 2).toUpperCase()}
+										</button>
+										<div className="flex-1 min-w-0">
+											<div className="flex items-center justify-between">
+												<div>
+													<button
+														type="button"
+														onClick={() =>
+															handleViewProfile(
+																post.author,
+																post.avatar ??
+																	post.author.substring(0, 2).toUpperCase(),
+																'Especialista em Personalização Laser',
+															)
+														}
+														className="font-bold text-white hover:text-violet-400 text-sm"
+													>
+														{post.author}
+													</button>
+													<p className="text-xs text-slate-500 flex items-center gap-1">
+														<Clock className="h-3 w-3" /> {post.time}
+													</p>
+												</div>
 												<button
 													type="button"
-													onClick={() =>
-														handleViewProfile(
-															post.author,
-															post.avatar,
-															'Especialista em Personalização Laser',
-														)
-													}
-													className="font-bold text-white hover:text-violet-400 text-sm"
+													className="p-2 text-slate-500 hover:text-white rounded-full"
 												>
-													{post.author}
+													<MoreVertical className="h-4 w-4" />
 												</button>
-												<p className="text-xs text-slate-500 flex items-center gap-1">
-													<Clock className="h-3 w-3" /> {post.time}
-												</p>
 											</div>
-											<button
-												type="button"
-												className="p-2 text-slate-500 hover:text-white rounded-full"
-											>
-												<MoreVertical className="h-4 w-4" />
-											</button>
 										</div>
 									</div>
-								</div>
-								<div className="px-4 pb-4">
-									<p className="text-sm text-slate-300 leading-relaxed">
-										{post.content}
-									</p>
-									{post.image && (
-										<div className="mt-4 rounded-xl overflow-hidden max-h-[400px]">
-											<img
-												src={post.image}
-												alt="Post"
-												className="w-full h-full object-cover"
+									<div className="px-4 pb-4">
+										<p className="text-sm text-slate-300 leading-relaxed">
+											{post.content}
+										</p>
+										{post.image && (
+											<div className="mt-4 rounded-xl overflow-hidden max-h-[400px]">
+												<img
+													src={post.image}
+													alt="Post"
+													className="w-full h-full object-cover"
+												/>
+											</div>
+										)}
+									</div>
+									<div className="border-t border-white/10 p-3 flex gap-2">
+										<button
+											type="button"
+											className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm ${
+												post.liked
+													? 'text-pink-500'
+													: 'text-slate-400 hover:text-white'
+											}`}
+										>
+											<Heart
+												className={`h-4 w-4 ${post.liked ? 'fill-pink-500' : ''}`}
 											/>
-										</div>
-									)}
+											{post.likes}
+										</button>
+										<button
+											type="button"
+											className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-slate-400 hover:text-white text-sm"
+										>
+											<MessageSquare className="h-4 w-4" />
+											{post.comments}
+										</button>
+										<button
+											type="button"
+											className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-slate-400 hover:text-white text-sm"
+										>
+											<Send className="h-4 w-4" />
+											{post.shares}
+										</button>
+									</div>
 								</div>
-								<div className="border-t border-white/10 p-3 flex gap-2">
-									<button
-										type="button"
-										className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm ${
-											post.liked
-												? 'text-pink-500'
-												: 'text-slate-400 hover:text-white'
-										}`}
-									>
-										<Heart
-											className={`h-4 w-4 ${post.liked ? 'fill-pink-500' : ''}`}
-										/>
-										{post.likes}
-									</button>
-									<button
-										type="button"
-										className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-slate-400 hover:text-white text-sm"
-									>
-										<MessageSquare className="h-4 w-4" />
-										{post.comments}
-									</button>
-									<button
-										type="button"
-										className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-slate-400 hover:text-white text-sm"
-									>
-										<Send className="h-4 w-4" />
-										{post.shares}
-									</button>
-								</div>
-							</div>
-						))}
+							))
+						)}
 					</div>
 				);
 
@@ -538,8 +488,32 @@ export function CommunityView({
 								Ranking da Comunidade
 							</h2>
 							<p className="text-slate-400 mt-2">
-								Os profissionais mais engajados desta semana
+								Os profissionais mais engajados
 							</p>
+							<div className="flex justify-center gap-2 mt-4">
+								<button
+									type="button"
+									onClick={() => setRankingPeriod('week')}
+									className={`px-4 py-2 rounded-full text-sm font-medium ${
+										rankingPeriod === 'week'
+											? 'bg-violet-600 text-white'
+											: 'bg-white/5 text-slate-400 hover:text-white'
+									}`}
+								>
+									Semana
+								</button>
+								<button
+									type="button"
+									onClick={() => setRankingPeriod('month')}
+									className={`px-4 py-2 rounded-full text-sm font-medium ${
+										rankingPeriod === 'month'
+											? 'bg-violet-600 text-white'
+											: 'bg-white/5 text-slate-400 hover:text-white'
+									}`}
+								>
+									Mês
+								</button>
+							</div>
 						</div>
 
 						<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -557,7 +531,7 @@ export function CommunityView({
 									}`}
 								>
 									<div
-										className={`h-28 bg-gradient-to-br ${user.gradient} flex items-center justify-center`}
+										className={`h-28 bg-gradient-to-br ${getRankingGradient(user.pos)} flex items-center justify-center`}
 									>
 										<Trophy className="h-14 w-14 text-white drop-shadow-lg" />
 									</div>
@@ -652,7 +626,7 @@ export function CommunityView({
 												{event.date}
 											</span>
 											<span className="text-2xl font-bold text-white mt-1">
-												{event.time}
+												{event.time ?? '—'}
 											</span>
 											<span
 												className={`mt-3 px-3 py-1 rounded-full text-xs font-medium ${
@@ -668,7 +642,9 @@ export function CommunityView({
 											<h3 className="text-xl font-bold text-white mb-2">
 												{event.title}
 											</h3>
-											<p className="text-slate-400 mb-4">{event.description}</p>
+											<p className="text-slate-400 mb-4">
+												{event.description ?? ''}
+											</p>
 											<button
 												type="button"
 												className="flex items-center gap-2 px-6 py-2 bg-violet-600 hover:bg-violet-500 text-white font-medium rounded-full"
@@ -735,7 +711,7 @@ export function CommunityView({
 												{member.name}
 											</h3>
 											<p className="text-sm text-slate-400 mb-3 text-center">
-												{member.specialty}
+												{member.specialty ?? 'Membro da comunidade'}
 											</p>
 											<div className="flex justify-center gap-2 mb-4 flex-wrap">
 												{member.badges.map((badge) => (
@@ -754,8 +730,8 @@ export function CommunityView({
 												handleViewProfile(
 													member.name,
 													member.name[0],
-													member.specialty,
-													member.image,
+													member.specialty ?? 'Membro da comunidade',
+													member.image ?? undefined,
 												)
 											}
 											className="w-full flex items-center justify-center gap-2 py-2 bg-violet-600 hover:bg-violet-500 text-white font-medium rounded-full"
@@ -810,7 +786,10 @@ export function CommunityView({
 								>
 									<div className="aspect-square overflow-hidden">
 										<img
-											src={item.img}
+											src={
+												item.img ??
+												'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?q=80&w=2940&auto=format&fit=crop'
+											}
 											alt={item.title}
 											className="w-full h-full object-cover group-hover:scale-105 transition-transform"
 										/>
@@ -864,7 +843,7 @@ export function CommunityView({
 								</div>
 								<div>
 									<h2 className="font-bold text-lg text-white">
-										{activeChannel ? activeChannel.replace(/-/g, ' ') : 'Canal'}
+										{activeChannelLabel}
 									</h2>
 									<p className="text-xs text-slate-500">
 										Canal de discussão - Profissão Laser
@@ -887,14 +866,14 @@ export function CommunityView({
 						</div>
 
 						<div className="flex-1 overflow-y-auto p-6 space-y-6">
-							{activeChannel && channelMessages[activeChannel]?.length > 0 ? (
-								channelMessages[activeChannel].map((msg) => (
+							{activeChannel && channelMessages.length > 0 ? (
+								channelMessages.map((msg) => (
 									<div
 										key={msg.id}
 										className={`flex gap-4 ${msg.isMe ? 'flex-row-reverse' : ''}`}
 									>
 										<div className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold shrink-0">
-											{msg.avatar}
+											{msg.avatar ?? msg.user.substring(0, 2).toUpperCase()}
 										</div>
 										<div
 											className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'} max-w-[75%]`}
@@ -904,7 +883,7 @@ export function CommunityView({
 													{msg.user}
 												</span>
 												<span className="text-[10px] text-slate-500">
-													{msg.time}
+													{formatMessageTime(msg.time)}
 												</span>
 											</div>
 											<div
@@ -942,7 +921,7 @@ export function CommunityView({
 								</button>
 								<input
 									type="text"
-									placeholder={`Enviar mensagem em #${activeChannel?.replace(/-/g, ' ')}...`}
+									placeholder={`Enviar mensagem em #${activeChannelLabel}...`}
 									value={messageInput}
 									onChange={(e) => setMessageInput(e.target.value)}
 									onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -1358,7 +1337,8 @@ export function CommunityView({
 									const hasEvent = [15, 18, 22].includes(day);
 									return (
 										<button
-											key={day}
+											// biome-ignore lint/suspicious/noArrayIndexKey: calendário estático, ordem fixa
+											key={i}
 											type="button"
 											className={`aspect-square p-2 rounded-lg text-sm font-medium ${
 												!isCurrentMonth ? 'text-slate-600' : 'text-white'
@@ -1395,7 +1375,7 @@ export function CommunityView({
 											</p>
 											<div className="flex items-center gap-2 text-xs text-violet-400 mt-2">
 												<Clock className="h-3 w-3" />
-												{event.time}
+												{event.time ?? event.date}
 											</div>
 										</div>
 									</div>
@@ -1527,7 +1507,7 @@ export function CommunityView({
 											</h5>
 											<div className="flex items-center gap-1 text-[10px] text-violet-400 mt-1">
 												<Clock className="h-2.5 w-2.5" />
-												{event.time}
+												{event.time ?? event.date}
 											</div>
 										</div>
 									</div>
@@ -1550,42 +1530,46 @@ export function CommunityView({
 							</button>
 						</div>
 						<div className="space-y-1">
-							{CHANNEL_CATEGORIES.map((category) => (
-								<div key={category.name} className="space-y-1">
-									<div className="px-4 py-2">
-										<h5 className="text-[10px] font-bold text-violet-500 uppercase">
-											{category.name}
-										</h5>
+							{channelCategories.length > 0 ? (
+								channelCategories.map((category) => (
+									<div key={category.name} className="space-y-1">
+										<div className="px-4 py-2">
+											<h5 className="text-[10px] font-bold text-violet-500 uppercase">
+												{category.name}
+											</h5>
+										</div>
+										{category.channels.map((channel) => {
+											const isActive =
+												activeTab === 'channel' && activeChannel === channel.id;
+											const IconComponent = getChannelIcon(channel);
+											return (
+												<button
+													key={channel.id}
+													type="button"
+													onClick={() => handleChannelClick(channel.id)}
+													title={channel.description ?? undefined}
+													className={`w-full flex items-center gap-2 h-10 px-4 rounded-xl text-sm transition-all ${
+														isActive
+															? 'bg-violet-500/20 text-violet-300'
+															: 'text-slate-400 hover:text-white hover:bg-white/5'
+													}`}
+												>
+													<IconComponent className="h-4 w-4 text-violet-400 shrink-0" />
+													<span className="flex-1 text-left truncate">
+														{channel.label}
+													</span>
+												</button>
+											);
+										})}
 									</div>
-									{category.channels.map((channel) => {
-										const isActive =
-											activeTab === 'channel' && activeChannel === channel.id;
-										const hasMessages = channelMessages[channel.id]?.length > 0;
-										const IconComponent = channel.icon;
-										return (
-											<button
-												key={channel.id}
-												type="button"
-												onClick={() => handleChannelClick(channel.id)}
-												title={channel.description}
-												className={`w-full flex items-center gap-2 h-10 px-4 rounded-xl text-sm transition-all ${
-													isActive
-														? 'bg-violet-500/20 text-violet-300'
-														: 'text-slate-400 hover:text-white hover:bg-white/5'
-												}`}
-											>
-												<IconComponent className="h-4 w-4 text-violet-400 shrink-0" />
-												<span className="flex-1 text-left truncate">
-													{channel.label}
-												</span>
-												{hasMessages && !isActive && (
-													<span className="w-2 h-2 rounded-full bg-violet-500" />
-												)}
-											</button>
-										);
-									})}
+								))
+							) : (
+								<div className="px-4 py-6 text-center text-slate-500 text-sm">
+									{channelsLoading
+										? 'A carregar canais...'
+										: 'Nenhum canal. Crie um novo!'}
 								</div>
-							))}
+							)}
 						</div>
 					</div>
 				</aside>

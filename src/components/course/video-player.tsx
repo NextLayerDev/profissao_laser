@@ -1,5 +1,4 @@
 import { Clock, Lock, PlayCircle } from 'lucide-react';
-import { ContentProtection } from '@/components/antifraud/content-protection';
 import type { CourseLesson } from '@/types/course';
 import { formatDuration, getEmbedUrl } from '@/utils/video';
 
@@ -24,7 +23,7 @@ export function VideoPlayer({ lesson, courseName }: VideoPlayerProps) {
 	const embedUrl = videoUrl ? getEmbedUrl(videoUrl) : null;
 
 	return (
-		<ContentProtection>
+		<>
 			<div className="px-6 pt-6">
 				<div className="relative bg-black rounded-2xl overflow-hidden border border-white/5 w-full aspect-video">
 					{embedUrl ? (
@@ -75,6 +74,6 @@ export function VideoPlayer({ lesson, courseName }: VideoPlayerProps) {
 					</p>
 				)}
 			</div>
-		</ContentProtection>
+		</>
 	);
 }

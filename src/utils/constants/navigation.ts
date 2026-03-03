@@ -1,6 +1,7 @@
 import {
 	BarChart3,
 	Home,
+	MessageSquare,
 	Package,
 	ShieldCheck,
 	ShoppingCart,
@@ -15,6 +16,12 @@ export const navItems: NavItem[] = [
 		name: 'Relatórios',
 		icon: BarChart3,
 		href: '/reports',
+		hasDropdown: false,
+	},
+	{
+		name: 'Comunidade',
+		icon: MessageSquare,
+		href: '/community',
 		hasDropdown: false,
 	},
 	{ name: 'Acessos', icon: ShieldCheck, href: '/acessos', hasDropdown: false },

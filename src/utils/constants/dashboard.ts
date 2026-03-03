@@ -1,4 +1,11 @@
-import { AlertCircle, BarChart3, Clock, Package, Wrench } from 'lucide-react';
+import {
+	AlertCircle,
+	BarChart3,
+	Clock,
+	MessageSquare,
+	Package,
+	Wrench,
+} from 'lucide-react';
 
 export const quickAccessItems = [
 	{
@@ -7,6 +14,13 @@ export const quickAccessItems = [
 		icon: Package,
 		iconBg: 'bg-violet-600',
 		href: '/products',
+	},
+	{
+		title: 'Comunidade',
+		subtitle: 'Gerir canais e chat',
+		icon: MessageSquare,
+		iconBg: 'bg-purple-600',
+		href: '/community',
 	},
 	{
 		title: 'Ferramentas',

@@ -4,7 +4,6 @@ import { Loader2, Lock, Store } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { ContentProtection } from '@/components/antifraud/content-protection';
 import { CommunityView } from '@/components/community/community-view';
 import { useCustomerFeatures } from '@/hooks/use-customer-features';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
@@ -95,24 +94,22 @@ export default function ComunityPage() {
 	return (
 		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0b1e] text-slate-900 dark:text-white font-sans">
 			<Background />
-			<ContentProtection>
-				<CommunityView
-					userName={name || email?.split('@')[0] || 'Você'}
-					userEmail={email}
-					userInitials={
-						name
-							? name
-									.trim()
-									.split(' ')
-									.slice(0, 2)
-									.map((w) => w[0])
-									.join('')
-									.toUpperCase() || (email ?? 'U').substring(0, 2).toUpperCase()
-							: (email ?? 'U').substring(0, 2).toUpperCase()
-					}
-					onBack={() => router.push('/course')}
-				/>
-			</ContentProtection>
+			<CommunityView
+				userName={name || email?.split('@')[0] || 'Você'}
+				userEmail={email}
+				userInitials={
+					name
+						? name
+								.trim()
+								.split(' ')
+								.slice(0, 2)
+								.map((w) => w[0])
+								.join('')
+								.toUpperCase() || (email ?? 'U').substring(0, 2).toUpperCase()
+						: (email ?? 'U').substring(0, 2).toUpperCase()
+				}
+				onBack={() => router.push('/course')}
+			/>
 		</div>
 	);
 }

@@ -1,6 +1,6 @@
-# Rotas de API Necessárias para a Comunidade VIP
+# Rotas de API da Comunidade VIP
 
-Este documento lista todas as rotas de API que precisam ser adicionadas ao backend Profissão Laser para que a funcionalidade da Comunidade VIP funcione integralmente com dados reais.
+Este documento lista todas as rotas de API da Comunidade VIP. **A API já existe no backend** e está integrada no frontend (cliente em `/comunity` e admin em `/products/[id]` → aba Comunidade).
 
 **Base URL**: `NEXT_PUBLIC_API_URL` (configurado em `.env`)
 
@@ -112,6 +112,8 @@ Este documento lista todas as rotas de API que precisam ser adicionadas ao backe
 |----------------------------|-------------------------------------|----------|
 | Feed - listar posts       | getPosts()                          | GET /community/posts |
 | Feed - publicar post      | createPost()                        | POST /community/posts |
+| Sidebar - listar canais   | getChannels()                       | GET /community/channels |
+| Criar canal               | createChannel()                     | POST /community/channels |
 | Chat - mensagens          | getChannelMessages()                | GET /community/channels/{id}/messages |
 | Chat - enviar mensagem    | sendChannelMessage()                | POST /community/channels/{id}/messages |
 | Membros - listar          | getMembers()                       | GET /community/members |
@@ -119,7 +121,6 @@ Este documento lista todas as rotas de API que precisam ser adicionadas ao backe
 | Vitrine - enviar          | createProject()                    | POST /community/projects |
 | Calendário - eventos      | getEvents()                        | GET /community/events |
 | Ranking                   | getRanking()                       | GET /community/ranking |
-| Criar canal               | createChannel()                    | POST /community/channels |
 
 ---
 

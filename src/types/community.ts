@@ -1,10 +1,10 @@
 export interface Post {
-	id: number;
+	id: string;
 	author: string;
-	avatar: string;
+	avatar?: string | null;
 	time: string;
 	content: string;
-	image?: string;
+	image?: string | null;
 	likes: number;
 	comments: number;
 	shares: number;
@@ -12,9 +12,9 @@ export interface Post {
 }
 
 export interface ChannelMessage {
-	id: number;
+	id: string;
 	user: string;
-	avatar: string;
+	avatar?: string | null;
 	content: string;
 	time: string;
 	isMe: boolean;
@@ -23,42 +23,42 @@ export interface ChannelMessage {
 export interface Channel {
 	id: string;
 	label: string;
-	description?: string;
-	messages: ChannelMessage[];
+	description?: string | null;
+	category: string;
 }
 
 export interface Member {
 	name: string;
-	specialty: string;
+	specialty?: string | null;
 	badges: string[];
-	category: string;
-	image?: string;
+	category?: string | null;
+	image?: string | null;
 }
 
 export interface Project {
+	id: string;
 	title: string;
 	author: string;
-	img: string;
-	description?: string;
-	material?: string;
-	technique?: string;
+	img?: string | null;
+	description?: string | null;
+	material?: string | null;
+	technique?: string | null;
 	time?: string;
 	likes?: number;
 	comments?: number;
 }
 
 export interface Event {
-	id: number;
+	id: string;
 	title: string;
 	date: string;
-	time: string;
+	time?: string | null;
 	type: 'workshop' | 'live' | 'qa';
-	description: string;
+	description?: string | null;
 }
 
 export interface RankingUser {
 	pos: number;
 	name: string;
 	pts: number;
-	gradient: string;
 }
