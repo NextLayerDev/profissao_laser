@@ -40,3 +40,5 @@ export type CustomerFeatures = {
 	suporte: boolean;
 	comunidade: boolean;
 };
+
+export type FeatureUpgradeTiers = Record<FeatureKey, string | null>;

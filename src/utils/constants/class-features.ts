@@ -1,4 +1,12 @@
-import type { FeatureKey } from '@/types/classes';
+import type { CustomerFeatures, FeatureKey } from '@/types/classes';
+
+export const FULL_FEATURES: CustomerFeatures = {
+	aula: true,
+	chat: true,
+	vetorizacao: true,
+	suporte: true,
+	comunidade: true,
+};
 
 export const CLASS_FEATURES: { key: FeatureKey; label: string }[] = [
 	{ key: 'aula', label: 'Aulas' },

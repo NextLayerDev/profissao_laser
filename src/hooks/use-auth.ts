@@ -53,7 +53,7 @@ export function useRegisterUser() {
 	return useMutation({
 		mutationFn: (payload: RegisterUserPayload) => registerUser(payload),
 		onSuccess: () => {
-			router.push('/login');
+			router.push('/login/admin');
 		},
 	});
 }

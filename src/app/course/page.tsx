@@ -5,7 +5,6 @@ import {
 	ChevronRight,
 	Flame,
 	Gem,
-	GraduationCap,
 	LayoutDashboard,
 	Loader2,
 	Lock,
@@ -22,6 +21,7 @@ import { UserBadge } from '@/components/store/user-badge';
 import { useCustomerFeatures } from '@/hooks/use-customer-features';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { getCurrentUser, getToken } from '@/lib/auth';
+import { FULL_FEATURES } from '@/utils/constants/class-features';
 import {
 	COURSE_STATUS_LABELS,
 	COURSE_STATUS_STYLES,
@@ -44,19 +44,20 @@ export default function CoursePage() {
 		setIsAdmin(!!getToken('user') && user?.role != null);
 	}, []);
 
-	const {
-		data: allPlans,
-		isLoading,
-		isError,
-	} = useCustomerPlans(email ?? null);
+	const { data: plans, isLoading, isError } = useCustomerPlans(email ?? null);
 
-	const plans = allPlans?.filter(
-		(plan) =>
-			plan.product_name?.toLowerCase() !== 'unknown' &&
-			plan.status?.toLowerCase() !== 'unknown',
+	const activePlans =
+		plans?.filter((p) => p.status === 'active' || p.status === 'ativo') ?? [];
+
+	const customerFeatures = useCustomerFeatures(
+		activePlans.length > 0 ? activePlans : undefined,
 	);
-
-	const features = useCustomerFeatures(plans);
+	const features = isAdmin
+		? FULL_FEATURES
+		: (customerFeatures?.features ?? null);
+	const upgradeTiers = isAdmin
+		? null
+		: (customerFeatures?.upgradeTiers ?? null);
 
 	if (email === undefined || isLoading) {
 		return (
@@ -84,21 +85,6 @@ export default function CoursePage() {
 			</div>
 		);
 	}
-
-	if (isError) {
-		return (
-			<div className="min-h-screen bg-[#0d0b1e] flex items-center justify-center">
-				<Background />
-				<div className="relative z-10 text-center">
-					<PackageX className="w-12 h-12 text-red-400 mx-auto mb-4" />
-					<p className="text-gray-400">Erro ao carregar seus cursos.</p>
-				</div>
-			</div>
-		);
-	}
-
-	const activePlans =
-		plans?.filter((p) => p.status === 'active' || p.status === 'ativo') ?? [];
 
 	return (
 		<div className="min-h-screen bg-[#0d0b1e] text-white font-sans">
@@ -208,17 +194,14 @@ export default function CoursePage() {
 								</Link>
 							</div>
 
-							{!plans || plans.length === 0 ? (
-								<div className="flex flex-col items-center justify-center py-16 text-slate-500">
-									<GraduationCap className="w-10 h-10 mb-4" />
-									<p className="text-sm">Nenhum curso disponível ainda</p>
-									<Link
-										href="/store"
-										className="mt-4 inline-flex items-center gap-2 px-5 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors"
-									>
-										<Store className="w-4 h-4" />
-										Conhecer cursos
-									</Link>
+							{isError || !plans || plans.length === 0 ? (
+								<div className="flex flex-col items-center justify-center py-16 text-center">
+									<PackageX className="w-12 h-12 text-red-400 mx-auto mb-4" />
+									<p className="text-red-400">
+										{isError
+											? 'Erro ao carregar seus cursos.'
+											: 'Nenhum curso disponível ainda.'}
+									</p>
 								</div>
 							) : (
 								<div className="space-y-3">
@@ -280,36 +263,49 @@ export default function CoursePage() {
 						</div>
 
 						{quickAccessItems.map(({ label, Icon, gradient, featureKey }) => {
-							const hasAccess = features === null || features[featureKey];
+							const hasAccess = features?.[featureKey];
 							return (
-								<button
+								<div
 									key={label}
-									type="button"
-									disabled={!hasAccess}
-									className={`w-full flex items-center justify-between gap-3 border rounded-xl px-4 py-3 transition-all duration-200 group ${
+									className={`w-full flex items-center justify-between gap-3 rounded-xl px-4 py-3 transition-all duration-200 ${
 										hasAccess
-											? 'bg-white/5 hover:bg-white/10 border-white/10 hover:border-violet-500/40 cursor-pointer'
-											: 'bg-white/[0.02] border-white/5 opacity-50 cursor-not-allowed'
+											? 'bg-white/5 hover:bg-white/10 border border-white/10 hover:border-violet-500/40 group cursor-pointer'
+											: 'bg-white/5 border border-white/10 opacity-60 cursor-not-allowed'
 									}`}
 								>
 									<div className="flex items-center gap-3">
 										<div
-											className={`bg-linear-to-br ${gradient} rounded-lg p-2 text-white ${!hasAccess ? 'grayscale' : ''}`}
+											className={`rounded-lg p-2 ${
+												hasAccess
+													? `bg-linear-to-br ${gradient} text-white`
+													: 'bg-white/10 text-slate-500'
+											}`}
 										>
-											<Icon className="w-5 h-5" />
+											{hasAccess ? (
+												<Icon className="w-5 h-5" />
+											) : (
+												<Lock className="w-5 h-5" />
+											)}
 										</div>
-										<span
-											className={`font-medium text-sm ${hasAccess ? 'text-white' : 'text-slate-500'}`}
-										>
-											{label}
-										</span>
+										<div>
+											<span
+												className={`font-medium text-sm ${hasAccess ? 'text-white' : 'text-slate-500'}`}
+											>
+												{label}
+											</span>
+											{!hasAccess && (
+												<p className="text-xs text-slate-500 mt-0.5">
+													{upgradeTiers?.[featureKey]
+														? `Disponível no plano ${upgradeTiers[featureKey]}`
+														: 'Faça upgrade para aceder'}
+												</p>
+											)}
+										</div>
 									</div>
-									{hasAccess ? (
+									{hasAccess && (
 										<ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-violet-400 transition-colors" />
-									) : (
-										<Lock className="w-4 h-4 text-slate-600" />
 									)}
-								</button>
+								</div>
 							);
 						})}
 					</div>
@@ -360,41 +356,38 @@ export default function CoursePage() {
 						</div>
 
 						{/* Community card */}
-						<div
-							className={`border rounded-2xl p-5 transition-all ${features === null || features.comunidade ? 'bg-white/5 border-white/10' : 'bg-white/[0.02] border-white/5 opacity-50'}`}
-						>
+						<div className="bg-white/5 border border-white/10 rounded-2xl p-5">
 							<div className="flex items-center gap-3 mb-3">
-								<div
-									className={`bg-linear-to-br from-violet-500 to-purple-700 rounded-xl p-2.5 text-white ${features !== null && !features.comunidade ? 'grayscale' : ''}`}
-								>
+								<div className="bg-linear-to-br from-violet-500 to-purple-700 rounded-xl p-2.5 text-white">
 									<Users className="w-6 h-6" />
 								</div>
 								<div>
 									<h3 className="font-bold">Comunidade</h3>
 									<p className="text-slate-400 text-xs">
-										{features !== null && !features.comunidade
-											? 'Disponível em planos superiores'
-											: 'Conecte-se com outros profissionais'}
+										{features?.comunidade
+											? 'Conecte-se com outros profissionais'
+											: upgradeTiers?.comunidade
+												? `Disponível no plano ${upgradeTiers.comunidade}`
+												: 'Faça upgrade para aceder à comunidade'}
 									</p>
 								</div>
 							</div>
-							<button
-								type="button"
-								disabled={features !== null && !features.comunidade}
-								className="w-full flex items-center justify-center gap-2 bg-linear-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-xl transition-all text-sm"
-							>
-								{features !== null && !features.comunidade ? (
-									<>
-										<Lock className="w-4 h-4" />
-										Bloqueado
-									</>
-								) : (
-									<>
-										<Users className="w-5 h-5" />
-										Acessar
-									</>
-								)}
-							</button>
+							{features?.comunidade ? (
+								<button
+									type="button"
+									className="w-full flex items-center justify-center gap-2 bg-linear-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 text-white font-semibold py-2.5 rounded-xl transition-all text-sm"
+								>
+									<Users className="w-5 h-5" />
+									Acessar
+								</button>
+							) : (
+								<div className="w-full flex items-center justify-center gap-2 bg-white/10 border border-white/10 text-slate-500 font-medium py-2.5 rounded-xl text-sm cursor-not-allowed">
+									<Lock className="w-5 h-5" />
+									{upgradeTiers?.comunidade
+										? `Disponível no plano ${upgradeTiers.comunidade}`
+										: 'Bloqueado'}
+								</div>
+							)}
 						</div>
 					</div>
 				</div>

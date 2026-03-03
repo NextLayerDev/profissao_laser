@@ -6,6 +6,15 @@ import { getCurrentUser } from '@/lib/auth';
 
 const PUBLIC_PATHS = ['/login', '/register', '/store'];
 
+const CUSTOMER_PATHS = ['/store', '/course'];
+
+function getLoginRedirect(pathname: string): string {
+	if (CUSTOMER_PATHS.some((p) => pathname.startsWith(p))) {
+		return '/login';
+	}
+	return '/login/admin';
+}
+
 export function AuthGuard({ children }: { children: React.ReactNode }) {
 	const router = useRouter();
 	const pathname = usePathname();
@@ -15,7 +24,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 		const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 
 		if (!isPublic && !getCurrentUser()) {
-			router.replace('/login');
+			router.replace(getLoginRedirect(pathname));
 			return;
 		}
 

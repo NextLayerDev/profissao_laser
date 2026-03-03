@@ -2,10 +2,12 @@
 
 import { LogOut, User } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { clearToken, getCurrentUser, type JwtPayload } from '@/lib/auth';
 
 export function UserBadge() {
+	const pathname = usePathname();
 	const [user, setUser] = useState<JwtPayload | null>(null);
 
 	useEffect(() => {
@@ -18,10 +20,14 @@ export function UserBadge() {
 		setUser(null);
 	}
 
+	const isCustomerArea =
+		pathname.startsWith('/store') || pathname.startsWith('/course');
+	const loginHref = isCustomerArea ? '/login' : '/login/admin';
+
 	if (!user) {
 		return (
 			<Link
-				href="/login"
+				href={loginHref}
 				className="flex items-center gap-2 bg-[#1a1a1d] border border-gray-800 hover:border-violet-500/50 px-3 py-1.5 rounded-xl text-sm text-gray-400 hover:text-white transition-all duration-200"
 			>
 				<User className="w-4 h-4" />

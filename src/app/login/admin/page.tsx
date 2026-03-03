@@ -4,17 +4,17 @@ import { Loader2, Store } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { useLoginCustomer } from '@/hooks/use-auth';
+import { useLoginUser } from '@/hooks/use-auth';
 
-export default function Login() {
+export default function LoginAdmin() {
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
 
-	const loginCustomer = useLoginCustomer();
+	const loginUser = useLoginUser();
 
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
-		loginCustomer.mutate(
+		loginUser.mutate(
 			{ email, password },
 			{
 				onError: () => toast.error('Email ou senha inválidos'),
@@ -32,9 +32,11 @@ export default function Login() {
 				</div>
 
 				<div className="bg-[#1a1a1d] rounded-2xl border border-gray-800 p-8">
-					<h1 className="text-2xl font-bold text-white mb-1">Entrar</h1>
+					<h1 className="text-2xl font-bold text-white mb-1">
+						Entrar como administrador
+					</h1>
 					<p className="text-gray-400 text-sm mb-6">
-						Acesse sua conta para continuar
+						Acesse o painel de gerenciamento
 					</p>
 
 					<form onSubmit={handleSubmit} className="space-y-4">
@@ -77,10 +79,10 @@ export default function Login() {
 
 						<button
 							type="submit"
-							disabled={loginCustomer.isPending}
+							disabled={loginUser.isPending}
 							className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors duration-200 cursor-pointer mt-2"
 						>
-							{loginCustomer.isPending ? (
+							{loginUser.isPending ? (
 								<>
 									<Loader2 className="w-4 h-4 animate-spin" />
 									Entrando...
@@ -92,19 +94,9 @@ export default function Login() {
 					</form>
 
 					<p className="text-center text-sm text-gray-500 mt-5">
-						Não tem conta?{' '}
+						É aluno?{' '}
 						<Link
-							href="/register"
-							className="text-violet-400 hover:text-violet-300 font-medium"
-						>
-							Cadastre-se
-						</Link>
-					</p>
-
-					<p className="text-center text-sm text-gray-500 mt-3">
-						É administrador?{' '}
-						<Link
-							href="/login/admin"
+							href="/login"
 							className="text-violet-400 hover:text-violet-300 font-medium"
 						>
 							Entre aqui

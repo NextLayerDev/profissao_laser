@@ -27,14 +27,18 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { VideoPlayer } from '@/components/course/video-player';
 import { useCourse } from '@/hooks/use-course';
+import { useCustomerFeaturesForCourse } from '@/hooks/use-customer-features';
+import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { useMaterials } from '@/hooks/use-materials';
 import { useQuiz } from '@/hooks/use-quiz';
+import { getCurrentUser, getToken } from '@/lib/auth';
 import type { CourseLesson } from '@/types/course';
 import type { MaterialType } from '@/types/materials';
 import type { Quiz } from '@/types/quiz';
+import { FULL_FEATURES } from '@/utils/constants/class-features';
 import { formatDuration } from '@/utils/video';
 
 // ─── Material icon ────────────────────────────────────────────────────────────
@@ -296,6 +300,24 @@ function QuizTab({ lessonId }: { lessonId: string | null }) {
 
 export default function CourseSlugPage() {
 	const { slug } = useParams<{ slug: string }>();
+	const [email, setEmail] = useState<string | null | undefined>(undefined);
+	const [isAdmin, setIsAdmin] = useState(false);
+
+	useEffect(() => {
+		const user = getCurrentUser();
+		setEmail(user?.email ?? null);
+		setIsAdmin(!!getToken('user') && user?.role != null);
+	}, []);
+
+	const { data: plans } = useCustomerPlans(email ?? null);
+	const customerFeatures = useCustomerFeaturesForCourse(plans, slug);
+	const features = isAdmin
+		? FULL_FEATURES
+		: (customerFeatures?.features ?? null);
+	const upgradeTiers = isAdmin
+		? null
+		: (customerFeatures?.upgradeTiers ?? null);
+
 	const { data: course, isLoading, isError } = useCourse(slug);
 	const [activeLesson, setActiveLesson] = useState<CourseLesson | null>(null);
 	const [search, setSearch] = useState('');
@@ -308,6 +330,13 @@ export default function CourseSlugPage() {
 	const [collapsedModules, setCollapsedModules] = useState<Set<string>>(
 		new Set(),
 	);
+
+	// Se não tem acesso a chat, mudar para materiais ao carregar features
+	useEffect(() => {
+		if (features && !features.chat && bottomTab === 'duvidas') {
+			setBottomTab('materiais');
+		}
+	}, [features, bottomTab]);
 
 	const toggleModule = (id: string) =>
 		setCollapsedModules((prev) => {
@@ -417,14 +446,20 @@ export default function CourseSlugPage() {
 						<div className="flex gap-1">
 							<button
 								type="button"
-								onClick={() => setBottomTab('duvidas')}
+								onClick={() => features?.chat && setBottomTab('duvidas')}
 								className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-									bottomTab === 'duvidas'
-										? 'bg-violet-600/20 text-violet-300'
-										: 'text-slate-400 hover:text-white hover:bg-white/5'
+									!features?.chat
+										? 'text-slate-500 opacity-60 cursor-not-allowed'
+										: bottomTab === 'duvidas'
+											? 'bg-violet-600/20 text-violet-300'
+											: 'text-slate-400 hover:text-white hover:bg-white/5'
 								}`}
 							>
-								<MessageSquare className="w-4 h-4" />
+								{features?.chat ? (
+									<MessageSquare className="w-4 h-4" />
+								) : (
+									<Lock className="w-4 h-4" />
+								)}
 								Dúvidas
 							</button>
 							<button
@@ -481,42 +516,61 @@ export default function CourseSlugPage() {
 
 					{/* Tab content */}
 					<div className="px-6 py-6">
-						{bottomTab === 'duvidas' && (
-							<div className="space-y-5">
-								<div className="flex flex-col gap-2">
-									<label
-										htmlFor="question-textarea"
-										className="text-sm font-medium text-slate-300"
+						{bottomTab === 'duvidas' &&
+							(!features?.chat ? (
+								<div className="flex flex-col items-center justify-center py-16 text-slate-500">
+									<Lock className="w-12 h-12 mb-4" />
+									<p className="text-sm font-medium">
+										{upgradeTiers?.chat
+											? `Dúvidas disponível no plano ${upgradeTiers.chat}`
+											: 'Dúvidas disponível no plano Ouro ou Platina'}
+									</p>
+									<p className="text-xs mt-1">
+										Faça upgrade para enviar dúvidas sobre as aulas.
+									</p>
+									<Link
+										href="/store"
+										className="mt-4 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors"
 									>
-										Envie sua dúvida sobre esta aula
-									</label>
-									<textarea
-										id="question-textarea"
-										value={question}
-										onChange={(e) => setQuestion(e.target.value)}
-										placeholder="Escreva sua dúvida aqui..."
-										rows={3}
-										className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/60 transition-colors resize-none"
-									/>
-									<div className="flex justify-end">
-										<button
-											type="button"
-											disabled={!question.trim()}
-											onClick={() => setQuestion('')}
-											className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+										Ver planos
+									</Link>
+								</div>
+							) : (
+								<div className="space-y-5">
+									<div className="flex flex-col gap-2">
+										<label
+											htmlFor="question-textarea"
+											className="text-sm font-medium text-slate-300"
 										>
-											<Send className="w-4 h-4" />
-											Enviar dúvida
-										</button>
+											Envie sua dúvida sobre esta aula
+										</label>
+										<textarea
+											id="question-textarea"
+											value={question}
+											onChange={(e) => setQuestion(e.target.value)}
+											placeholder="Escreva sua dúvida aqui..."
+											rows={3}
+											className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/60 transition-colors resize-none"
+										/>
+										<div className="flex justify-end">
+											<button
+												type="button"
+												disabled={!question.trim()}
+												onClick={() => setQuestion('')}
+												className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+											>
+												<Send className="w-4 h-4" />
+												Enviar dúvida
+											</button>
+										</div>
+									</div>
+									<div className="flex flex-col items-center justify-center py-10 text-slate-600">
+										<MessageSquare className="w-8 h-8 mb-3" />
+										<p className="text-sm">Nenhuma dúvida enviada ainda.</p>
+										<p className="text-xs mt-1">Seja o primeiro a perguntar!</p>
 									</div>
 								</div>
-								<div className="flex flex-col items-center justify-center py-10 text-slate-600">
-									<MessageSquare className="w-8 h-8 mb-3" />
-									<p className="text-sm">Nenhuma dúvida enviada ainda.</p>
-									<p className="text-xs mt-1">Seja o primeiro a perguntar!</p>
-								</div>
-							</div>
-						)}
+							))}
 
 						{bottomTab === 'materiais' && (
 							<MaterialsTab lessonId={activeLesson?.id ?? null} />
