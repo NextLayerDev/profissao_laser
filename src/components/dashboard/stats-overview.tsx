@@ -1,6 +1,7 @@
 'use client';
 
 import { Layers, ShoppingCart, TrendingUp, Users2 } from 'lucide-react';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useProducts } from '@/hooks/use-products';
 import { useSales } from '@/hooks/use-sales';
 import { formatCurrency } from '@/utils/format-currency';
@@ -8,6 +9,7 @@ import { formatCurrency } from '@/utils/format-currency';
 export function StatsOverview() {
 	const { sales, isLoading } = useSales();
 	const { products } = useProducts();
+	const { canPrice } = usePermissions();
 
 	const today = new Date().toISOString().split('T')[0];
 	const yesterday = new Date(Date.now() - 86_400_000)
@@ -29,7 +31,7 @@ export function StatsOverview() {
 	const todayStudents = new Set(todaySales.map((s) => s.customer.email)).size;
 	const currency = todaySales[0]?.currency ?? 'BRL';
 
-	const cards = [
+	const allCards = [
 		{
 			title: 'Vendas Hoje',
 			value: isLoading ? '...' : formatCurrency(todayRevenue, currency),
@@ -39,6 +41,7 @@ export function StatsOverview() {
 			subtitleColor: revenueChange >= 0 ? 'text-emerald-500' : 'text-red-500',
 			icon: ShoppingCart,
 			iconBg: 'bg-blue-600',
+			financial: true,
 		},
 		{
 			title: 'Novos Alunos',
@@ -47,6 +50,7 @@ export function StatsOverview() {
 			subtitleColor: 'text-blue-400',
 			icon: Users2,
 			iconBg: 'bg-amber-600',
+			financial: false,
 		},
 		{
 			title: 'Taxa de Conversão',
@@ -55,6 +59,7 @@ export function StatsOverview() {
 			subtitleColor: 'text-gray-400',
 			icon: TrendingUp,
 			iconBg: 'bg-emerald-600',
+			financial: false,
 		},
 		{
 			title: 'Produtos Ativos',
@@ -65,8 +70,11 @@ export function StatsOverview() {
 			subtitleColor: 'text-gray-400',
 			icon: Layers,
 			iconBg: 'bg-rose-600',
+			financial: false,
 		},
 	];
+
+	const cards = canPrice ? allCards : allCards.filter((c) => !c.financial);
 
 	return (
 		<section className="mb-8">

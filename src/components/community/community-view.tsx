@@ -172,7 +172,7 @@ interface CommunityViewProps {
 
 export function CommunityView({
 	userName,
-	userEmail,
+	userEmail: _userEmail,
 	userInitials,
 	onBack,
 }: CommunityViewProps) {
@@ -714,9 +714,9 @@ export function CommunityView({
 
 						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 							{filteredMembers.length > 0 ? (
-								filteredMembers.map((member, i) => (
+								filteredMembers.map((member) => (
 									<div
-										key={i}
+										key={`${member.name}-${member.specialty}`}
 										className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-violet-500/40 transition-all"
 									>
 										<div className="flex flex-col items-center">
@@ -738,9 +738,9 @@ export function CommunityView({
 												{member.specialty}
 											</p>
 											<div className="flex justify-center gap-2 mb-4 flex-wrap">
-												{member.badges.map((badge, j) => (
+												{member.badges.map((badge) => (
 													<span
-														key={j}
+														key={badge}
 														className="px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 text-xs"
 													>
 														{badge}
@@ -801,9 +801,9 @@ export function CommunityView({
 						</div>
 
 						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-							{projects.map((item, i) => (
+							{projects.map((item) => (
 								<button
-									key={i}
+									key={`${item.title}-${item.author}`}
 									type="button"
 									onClick={() => handleViewDetails(item)}
 									className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden text-left hover:border-violet-500/40 transition-all group"
@@ -1358,7 +1358,7 @@ export function CommunityView({
 									const hasEvent = [15, 18, 22].includes(day);
 									return (
 										<button
-											key={i}
+											key={day}
 											type="button"
 											className={`aspect-square p-2 rounded-lg text-sm font-medium ${
 												!isCurrentMonth ? 'text-slate-600' : 'text-white'
@@ -1666,9 +1666,9 @@ export function CommunityView({
 										date: 'Amanhã, 20:00',
 										type: 'workshop',
 									},
-								].map((event, i) => (
+								].map((event) => (
 									<button
-										key={i}
+										key={`${event.title}-${event.date}`}
 										type="button"
 										onClick={() => setShowCalendarModal(true)}
 										className="w-full p-4 bg-white/5 border border-white/10 rounded-xl hover:border-violet-500/40 text-left border-l-4 border-l-violet-500"

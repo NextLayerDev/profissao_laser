@@ -1,15 +1,32 @@
 'use client';
 
 import { ExternalLink } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { ChatButton } from '@/components/dashboard/chat-button';
 import { Header } from '@/components/dashboard/header';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useSales } from '@/hooks/use-sales';
 import { STATUS_LABELS } from '@/utils/constants/status-label';
 import { formatCurrency } from '@/utils/format-currency';
 import { formatDate } from '@/utils/formatDate';
 
 export default function Vendas() {
+	const router = useRouter();
 	const { sales, isLoading, error } = useSales();
+	const { canPrice, isLoading: permissionsLoading } = usePermissions();
+
+	useEffect(() => {
+		if (!permissionsLoading && !canPrice) {
+			router.replace('/');
+		}
+	}, [canPrice, permissionsLoading, router]);
+
+	const colCount = canPrice ? 7 : 5;
+
+	if (!canPrice && !permissionsLoading) {
+		return null;
+	}
 
 	return (
 		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] text-slate-900 dark:text-white font-sans">
@@ -46,17 +63,19 @@ export default function Vendas() {
 									<th className="px-4 py-3 font-medium">Usuário</th>
 									<th className="px-4 py-3 font-medium">E-mail</th>
 									<th className="px-4 py-3 font-medium">Produto</th>
-									<th className="px-4 py-3 font-medium">Valor</th>
+									{canPrice && <th className="px-4 py-3 font-medium">Valor</th>}
 									<th className="px-4 py-3 font-medium">Status</th>
 									<th className="px-4 py-3 font-medium">Data</th>
-									<th className="px-4 py-3 font-medium">Recibo</th>
+									{canPrice && (
+										<th className="px-4 py-3 font-medium">Recibo</th>
+									)}
 								</tr>
 							</thead>
 							<tbody>
 								{(!sales || sales.length === 0) && (
 									<tr>
 										<td
-											colSpan={7}
+											colSpan={colCount}
 											className="px-4 py-10 text-center text-slate-500 dark:text-gray-500"
 										>
 											Nenhuma venda encontrada.
@@ -83,9 +102,11 @@ export default function Vendas() {
 											<td className="px-4 py-3 text-slate-900 dark:text-white">
 												{sale.product}
 											</td>
-											<td className="px-4 py-3 tabular-nums">
-												{formatCurrency(sale.amount, sale.currency ?? 'BRL')}
-											</td>
+											{canPrice && (
+												<td className="px-4 py-3 tabular-nums">
+													{formatCurrency(sale.amount, sale.currency ?? 'BRL')}
+												</td>
+											)}
 											<td className="px-4 py-3">
 												<span
 													className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${statusInfo.color}`}
@@ -96,23 +117,25 @@ export default function Vendas() {
 											<td className="px-4 py-3 text-slate-600 dark:text-gray-400 tabular-nums">
 												{formatDate(sale.date)}
 											</td>
-											<td className="px-4 py-3">
-												{sale.receipt_url ? (
-													<a
-														href={sale.receipt_url}
-														target="_blank"
-														rel="noopener noreferrer"
-														className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors"
-													>
-														Ver
-														<ExternalLink size={13} />
-													</a>
-												) : (
-													<span className="text-slate-500 dark:text-gray-600">
-														—
-													</span>
-												)}
-											</td>
+											{canPrice && (
+												<td className="px-4 py-3">
+													{sale.receipt_url ? (
+														<a
+															href={sale.receipt_url}
+															target="_blank"
+															rel="noopener noreferrer"
+															className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors"
+														>
+															Ver
+															<ExternalLink size={13} />
+														</a>
+													) : (
+														<span className="text-slate-500 dark:text-gray-600">
+															—
+														</span>
+													)}
+												</td>
+											)}
 										</tr>
 									);
 								})}

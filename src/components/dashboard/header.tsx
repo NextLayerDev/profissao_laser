@@ -5,10 +5,18 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { usePermissions } from '@/hooks/use-permissions';
 import { navItems } from '@/utils/constants/navigation';
 
 export function Header() {
 	const pathname = usePathname();
+	const { canAdmin, canPrice } = usePermissions();
+
+	const visibleNavItems = navItems.filter((item) => {
+		if (item.name === 'Acessos') return canAdmin;
+		if (item.name === 'Vendas' || item.name === 'Relatórios') return canPrice;
+		return true;
+	});
 
 	return (
 		<header className="px-8 pt-8 pb-4">
@@ -42,7 +50,7 @@ export function Header() {
 			</div>
 
 			<nav className="flex items-center gap-2 bg-slate-100 dark:bg-[#1a1a1d] p-1.5 rounded-2xl border border-slate-200 dark:border-gray-800/50">
-				{navItems.map((item) => (
+				{visibleNavItems.map((item) => (
 					<Link
 						key={item.name}
 						href={item.href}

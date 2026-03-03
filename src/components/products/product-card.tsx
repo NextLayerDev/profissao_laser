@@ -4,12 +4,14 @@ import { Layers, Link2, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import { usePermissions } from '@/hooks/use-permissions';
 import type { ProductCardProps } from '@/types/components/product-card';
 import { TIER_STYLES } from '@/utils/constants/tier-styles';
 import { formatCurrency } from '@/utils/format-currency';
 import { DeleteProductModal } from './delete-product-modal';
 
 export function ProductCard({ product, productClasses }: ProductCardProps) {
+	const { canPrice } = usePermissions();
 	const [imgError, setImgError] = useState(false);
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -67,14 +69,18 @@ export function ProductCard({ product, productClasses }: ProductCardProps) {
 
 					<div className="border-t border-slate-200 dark:border-gray-800 pt-4">
 						<div className="flex items-center justify-between">
-							<div className="text-sm">
-								<span className="text-slate-500 dark:text-gray-500">
-									Preço:{' '}
-								</span>
-								<span className="text-slate-900 dark:text-white font-medium">
-									{formatCurrency(product.price, 'BRL')}
-								</span>
-							</div>
+							{canPrice ? (
+								<div className="text-sm">
+									<span className="text-slate-500 dark:text-gray-500">
+										Preço:{' '}
+									</span>
+									<span className="text-slate-900 dark:text-white font-medium">
+										{formatCurrency(product.price, 'BRL')}
+									</span>
+								</div>
+							) : (
+								<div />
+							)}
 							<div className="flex items-center gap-1">
 								<button
 									type="button"

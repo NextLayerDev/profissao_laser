@@ -24,6 +24,7 @@ import {
 	useClasses,
 	useRemoveProductFromClass,
 } from '@/hooks/use-classes';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useUpdateProduct, useUploadProductImage } from '@/hooks/use-products';
 import type { Product } from '@/types/products';
 import { TIER_STYLES } from '@/utils/constants/tier-styles';
@@ -266,6 +267,7 @@ function ProductClassesField({
 }
 
 export function BasicInfoSection({ product }: BasicInfoSectionProps) {
+	const { canPrice } = usePermissions();
 	const price = formatCurrency(product.price, 'BRL');
 	const createdAt = formatDate(product.createdAt);
 	const updatedAt = formatDate(product.updatedAt);
@@ -473,56 +475,58 @@ export function BasicInfoSection({ product }: BasicInfoSectionProps) {
 				</div>
 			</div>
 
-			{/* Preço e localização */}
-			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-xl p-6 shadow-sm dark:shadow-none">
-				<div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 mb-4">
-					<DollarSign className="w-4 h-4" />
-					<span className="text-sm font-medium">Preço e localização</span>
-				</div>
+			{/* Preço e localização — oculto para colaboradores */}
+			{canPrice && (
+				<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-xl p-6 shadow-sm dark:shadow-none">
+					<div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 mb-4">
+						<DollarSign className="w-4 h-4" />
+						<span className="text-sm font-medium">Preço e localização</span>
+					</div>
 
-				<div className="grid grid-cols-2 gap-x-10">
-					<div>
-						<EditableField
-							label="Preço"
-							fieldKey="price"
-							productId={product.id}
-							value={String(product.price)}
-							inputType="number"
-							display={price}
-						/>
-						<EditableField
-							label="Reembolso"
-							fieldKey="refundDays"
-							productId={product.id}
-							value={
-								product.refundDays !== null ? String(product.refundDays) : ''
-							}
-							inputType="number"
-							placeholder="ex: 7"
-							display={
-								product.refundDays !== null ? (
+					<div className="grid grid-cols-2 gap-x-10">
+						<div>
+							<EditableField
+								label="Preço"
+								fieldKey="price"
+								productId={product.id}
+								value={String(product.price)}
+								inputType="number"
+								display={price}
+							/>
+							<EditableField
+								label="Reembolso"
+								fieldKey="refundDays"
+								productId={product.id}
+								value={
+									product.refundDays !== null ? String(product.refundDays) : ''
+								}
+								inputType="number"
+								placeholder="ex: 7"
+								display={
+									product.refundDays !== null ? (
+										<span className="flex items-center gap-1.5 text-slate-600 dark:text-gray-400">
+											<RotateCcw className="w-3.5 h-3.5 text-slate-500 dark:text-gray-500" />
+											{product.refundDays} dias
+										</span>
+									) : undefined
+								}
+							/>
+						</div>
+
+						<div>
+							<ReadOnlyField
+								label="Idioma / País"
+								value={
 									<span className="flex items-center gap-1.5 text-slate-600 dark:text-gray-400">
-										<RotateCcw className="w-3.5 h-3.5 text-slate-500 dark:text-gray-500" />
-										{product.refundDays} dias
+										<Globe className="w-3.5 h-3.5 text-slate-500 dark:text-gray-500" />
+										{product.language} · {product.country}
 									</span>
-								) : undefined
-							}
-						/>
-					</div>
-
-					<div>
-						<ReadOnlyField
-							label="Idioma / País"
-							value={
-								<span className="flex items-center gap-1.5 text-slate-600 dark:text-gray-400">
-									<Globe className="w-3.5 h-3.5 text-slate-500 dark:text-gray-500" />
-									{product.language} · {product.country}
-								</span>
-							}
-						/>
+								}
+							/>
+						</div>
 					</div>
 				</div>
-			</div>
+			)}
 
 			{/* Classe */}
 			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-xl p-6 shadow-sm dark:shadow-none">

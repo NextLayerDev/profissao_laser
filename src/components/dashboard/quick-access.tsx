@@ -1,15 +1,25 @@
+'use client';
+
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { usePermissions } from '@/hooks/use-permissions';
 import { quickAccessItems } from '@/utils/constants/dashboard';
 
 export function QuickAccess() {
+	const { canPrice } = usePermissions();
+
+	const visibleItems = quickAccessItems.filter((item) => {
+		if (item.href === '/reports' || item.href === '/sales') return canPrice;
+		return true;
+	});
+
 	return (
 		<div className="lg:col-span-2">
 			<h3 className="text-xs font-semibold text-slate-500 dark:text-gray-500 uppercase tracking-wider mb-4">
 				Acesso Rápido
 			</h3>
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-				{quickAccessItems.map((item) => (
+				{visibleItems.map((item) => (
 					<Link
 						key={item.title}
 						href={item.href}

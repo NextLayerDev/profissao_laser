@@ -1,4 +1,10 @@
-import { BarChart3, Home, Package, ShoppingCart } from 'lucide-react';
+import {
+	BarChart3,
+	Home,
+	Package,
+	ShieldCheck,
+	ShoppingCart,
+} from 'lucide-react';
 import type { NavItem } from '@/types/navigation';
 
 export const navItems: NavItem[] = [
@@ -11,5 +17,5 @@ export const navItems: NavItem[] = [
 		href: '/reports',
 		hasDropdown: false,
 	},
-	// { name: 'Parcerias', icon: Users, href: '/partnership', hasDropdown: false },
+	{ name: 'Acessos', icon: ShieldCheck, href: '/acessos', hasDropdown: false },
 ];

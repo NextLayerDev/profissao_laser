@@ -1,13 +1,15 @@
 'use client';
 
 import { BarChart2, FileText } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChatButton } from '@/components/dashboard/chat-button';
 import { Header } from '@/components/dashboard/header';
 import { KpiCards } from '@/components/relatorios/kpi-cards';
 import { ProductsChart } from '@/components/relatorios/products-chart';
 import { RevenueChart } from '@/components/relatorios/revenue-chart';
 import { StatusChart } from '@/components/relatorios/status-chart';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useSales } from '@/hooks/use-sales';
 import { PERIODS, type Period } from '@/utils/constants/periods';
 import { STATUS_LABELS } from '@/utils/constants/status-label';
@@ -16,7 +18,9 @@ import { formatDate } from '@/utils/formatDate';
 import { filterByDateRange } from '@/utils/sales-analytics';
 
 export default function Relatorios() {
+	const router = useRouter();
 	const { sales, isLoading } = useSales();
+	const { canPrice, isLoading: permissionsLoading } = usePermissions();
 	const [period, setPeriod] = useState<Period>('30d');
 	const contentRef = useRef<HTMLDivElement>(null);
 
@@ -26,6 +30,16 @@ export default function Relatorios() {
 		() => (sales ? filterByDateRange(sales, from, to) : []),
 		[sales, from, to],
 	);
+
+	useEffect(() => {
+		if (!permissionsLoading && !canPrice) {
+			router.replace('/');
+		}
+	}, [canPrice, permissionsLoading, router]);
+
+	if (!canPrice && !permissionsLoading) {
+		return null;
+	}
 
 	function handleExportCSV() {
 		if (!filteredSales || filteredSales.length === 0) return;
