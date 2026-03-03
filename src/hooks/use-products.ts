@@ -8,6 +8,7 @@ import {
 	getProducts,
 	type UpdateProductPayload,
 	updateProduct,
+	uploadProductImage,
 } from '@/services/products';
 import type { Product } from '@/types/products';
 
@@ -50,6 +51,15 @@ export function useUpdateProduct() {
 			id: string;
 			payload: UpdateProductPayload;
 		}) => updateProduct(id, payload),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }),
+	});
+}
+
+export function useUploadProductImage() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({ id, file }: { id: string; file: File }) =>
+			uploadProductImage(id, file),
 		onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }),
 	});
 }

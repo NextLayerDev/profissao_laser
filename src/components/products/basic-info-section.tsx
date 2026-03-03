@@ -6,8 +6,10 @@ import {
 	DollarSign,
 	Globe,
 	Image as ImageIcon,
+	ImagePlus,
 	Info,
 	Layers,
+	Loader2,
 	Pencil,
 	Plus,
 	RotateCcw,
@@ -15,14 +17,14 @@ import {
 	X,
 } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
 	useAddProductToClass,
 	useClasses,
 	useRemoveProductFromClass,
 } from '@/hooks/use-classes';
-import { useUpdateProduct } from '@/hooks/use-products';
+import { useUpdateProduct, useUploadProductImage } from '@/hooks/use-products';
 import type { Product } from '@/types/products';
 import { TIER_STYLES } from '@/utils/constants/tier-styles';
 import { formatCurrency } from '@/utils/format-currency';
@@ -267,10 +269,26 @@ export function BasicInfoSection({ product }: BasicInfoSectionProps) {
 	const price = formatCurrency(product.price, 'BRL');
 	const createdAt = formatDate(product.createdAt);
 	const updatedAt = formatDate(product.updatedAt);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const { classes } = useClasses();
 	const addProduct = useAddProductToClass();
 	const removeProduct = useRemoveProductFromClass();
+	const uploadImage = useUploadProductImage();
+
+	function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0];
+		if (file) {
+			uploadImage.mutate(
+				{ id: product.id, file },
+				{
+					onSuccess: () => toast.success('Imagem atualizada.'),
+					onError: () => toast.error('Erro ao enviar imagem.'),
+				},
+			);
+		}
+		if (fileInputRef.current) fileInputRef.current.value = '';
+	}
 
 	const productClasses = (classes ?? []).filter((cls) =>
 		cls.products.some((p) => p.id === product.id),
@@ -323,21 +341,61 @@ export function BasicInfoSection({ product }: BasicInfoSectionProps) {
 					<ImageIcon className="w-4 h-4" />
 					<span className="text-sm font-medium">Imagem</span>
 				</div>
+				<input
+					id="product-cover-image"
+					ref={fileInputRef}
+					type="file"
+					accept="image/*"
+					onChange={handleFileChange}
+					className="sr-only"
+				/>
 				{product.image ? (
-					<div className="relative w-48 h-32 rounded-xl overflow-hidden border border-slate-200 dark:border-gray-700">
-						<Image
-							src={product.image}
-							alt={product.name}
-							fill
-							className="object-cover"
-						/>
+					<div className="flex flex-col gap-3">
+						<div className="relative w-48 h-32 rounded-xl overflow-hidden border border-slate-200 dark:border-gray-700">
+							<Image
+								src={product.image}
+								alt={product.name}
+								fill
+								className="object-cover"
+							/>
+							{uploadImage.isPending && (
+								<div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+									<Loader2 className="w-8 h-8 text-white animate-spin" />
+								</div>
+							)}
+						</div>
+						<button
+							type="button"
+							onClick={() => fileInputRef.current?.click()}
+							disabled={uploadImage.isPending}
+							className="flex items-center gap-2 w-fit px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm font-medium transition-colors"
+						>
+							{uploadImage.isPending ? (
+								<Loader2 className="w-4 h-4 animate-spin" />
+							) : (
+								<Pencil className="w-4 h-4" />
+							)}
+							Alterar imagem
+						</button>
 					</div>
 				) : (
-					<div className="w-48 h-32 rounded-xl border border-dashed border-slate-300 dark:border-gray-700 flex items-center justify-center">
-						<p className="text-sm text-slate-500 dark:text-gray-600">
-							Sem imagem
-						</p>
-					</div>
+					<button
+						type="button"
+						onClick={() => fileInputRef.current?.click()}
+						disabled={uploadImage.isPending}
+						className="w-full h-40 border-2 border-dashed border-slate-300 dark:border-gray-700 rounded-xl flex flex-col items-center justify-center gap-2 text-slate-500 dark:text-gray-600 hover:border-violet-500/50 hover:text-violet-400 transition-colors disabled:opacity-50"
+					>
+						{uploadImage.isPending ? (
+							<Loader2 className="w-8 h-8 animate-spin" />
+						) : (
+							<ImagePlus className="w-8 h-8" />
+						)}
+						<span className="text-sm">
+							{uploadImage.isPending
+								? 'A enviar...'
+								: 'Clique para fazer upload'}
+						</span>
+					</button>
 				)}
 			</div>
 
