@@ -1,3 +1,4 @@
+import { db } from '@/lib/db';
 import { api } from '@/lib/fetch';
 import type {
 	CreateLessonPayload,
@@ -82,18 +83,28 @@ export async function reorderLessons(
 export async function uploadLessonVideo(
 	id: string,
 	file: File,
-	onProgress?: (percent: number) => void,
+	_onProgress?: (percent: number) => void,
 ): Promise<Lesson> {
-	const formData = new FormData();
-	formData.append('file', file);
-	const { data } = await api.post(`/lesson/${id}/video`, formData, {
-		headers: { 'Content-Type': undefined },
-		timeout: 0,
-		onUploadProgress: (e) => {
-			if (onProgress && e.total) {
-				onProgress(Math.round((e.loaded * 100) / e.total));
-			}
+	// Passo 1: gerar URL assinada
+	const { data: presigned } = await api.post(
+		`/lesson/${id}/video/presigned-url`,
+		{
+			filename: file.name,
 		},
-	});
+	);
+	const { path, token, bucket } = presigned as {
+		path: string;
+		token: string;
+		bucket: string;
+	};
+
+	// Passo 2: upload direto ao Supabase (sem passar pelo proxy)
+	const { error } = await db.storage
+		.from(bucket)
+		.uploadToSignedUrl(path, token, file);
+	if (error) throw error;
+
+	// Passo 3: confirmar no backend
+	const { data } = await api.patch(`/lesson/${id}/video/confirm`, { path });
 	return data;
 }
