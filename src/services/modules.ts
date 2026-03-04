@@ -85,7 +85,6 @@ export async function uploadLessonVideo(
 	file: File,
 	_onProgress?: (percent: number) => void,
 ): Promise<Lesson> {
-	// Passo 1: gerar URL assinada
 	const { data: presigned } = await api.post(
 		`/lesson/${id}/video/presigned-url`,
 		{
@@ -98,13 +97,11 @@ export async function uploadLessonVideo(
 		bucket: string;
 	};
 
-	// Passo 2: upload direto ao Supabase (sem passar pelo proxy)
 	const { error } = await db.storage
 		.from(bucket)
 		.uploadToSignedUrl(path, token, file);
 	if (error) throw error;
 
-	// Passo 3: confirmar no backend
 	const { data } = await api.patch(`/lesson/${id}/video/confirm`, { path });
 	return data;
 }
