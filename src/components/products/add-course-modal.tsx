@@ -41,7 +41,7 @@ export function AddCourseModal({ isOpen, onClose }: AddCourseModalProps) {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const [paymentType, setPaymentType] = useState<'single' | 'subscription'>(
-		'single',
+		'subscription',
 	);
 	const [subscriptionInterval, setSubscriptionInterval] = useState<
 		'month' | 'year' | 'week'
@@ -76,7 +76,7 @@ export function AddCourseModal({ isOpen, onClose }: AddCourseModalProps) {
 		setCountry('BR');
 		setCoverPreview(null);
 		setCoverFile(null);
-		setPaymentType('single');
+		setPaymentType('subscription');
 		setSubscriptionInterval('month');
 		setPrice('');
 		setCategory('');
@@ -288,17 +288,6 @@ export function AddCourseModal({ isOpen, onClose }: AddCourseModalProps) {
 							<div className="flex gap-4">
 								<button
 									type="button"
-									onClick={() => setPaymentType('single')}
-									className={`flex-1 py-3 rounded-xl text-sm font-medium transition-colors ${
-										paymentType === 'single'
-											? 'bg-violet-600'
-											: 'bg-[#0d0d0f] border border-gray-700 hover:border-gray-600'
-									}`}
-								>
-									Pagamento único
-								</button>
-								<button
-									type="button"
 									onClick={() => setPaymentType('subscription')}
 									className={`flex-1 py-3 rounded-xl text-sm font-medium transition-colors ${
 										paymentType === 'subscription'
@@ -307,6 +296,17 @@ export function AddCourseModal({ isOpen, onClose }: AddCourseModalProps) {
 									}`}
 								>
 									Assinatura
+								</button>
+								<button
+									type="button"
+									onClick={() => setPaymentType('single')}
+									className={`flex-1 py-3 rounded-xl text-sm font-medium transition-colors ${
+										paymentType === 'single'
+											? 'bg-violet-600'
+											: 'bg-[#0d0d0f] border border-gray-700 hover:border-gray-600'
+									}`}
+								>
+									Pagamento único
 								</button>
 							</div>
 						</fieldset>

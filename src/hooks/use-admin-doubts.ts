@@ -31,25 +31,13 @@ async function fetchDoubtsByModules(): Promise<ProductWithDoubts[]> {
 	for (const product of cursoProducts) {
 		try {
 			const course = await getCourse(product.slug);
-			const modules: ModuleWithDoubts[] = [];
-
-			for (const mod of course.modules) {
-				const lessonsWithDoubts: LessonWithDoubts[] = await Promise.all(
-					mod.lessons.map(async (lesson) => {
-						try {
-							const doubts = await getLessonDoubts(lesson.id);
-							return { ...lesson, doubts };
-						} catch {
-							return { ...lesson, doubts: [] };
-						}
-					}),
-				);
-
-				modules.push({
-					...mod,
-					lessons: lessonsWithDoubts,
-				});
-			}
+			const modules: ModuleWithDoubts[] = course.modules.map((mod) => ({
+				...mod,
+				lessons: mod.lessons.map((lesson) => ({
+					...lesson,
+					doubts: [] as Doubt[],
+				})),
+			}));
 
 			result.push({ product, course, modules });
 		} catch {
@@ -68,6 +56,32 @@ export function useDoubtsByModules(enabled: boolean) {
 	});
 }
 
+export type ModuleDoubtsMap = Record<string, Doubt[]>;
+
+export async function fetchModuleDoubts(
+	lessonIds: string[],
+): Promise<ModuleDoubtsMap> {
+	if (lessonIds.length === 0) return {};
+	const results = await Promise.all(
+		lessonIds.map(async (id) => {
+			try {
+				return await getLessonDoubts(id);
+			} catch {
+				return [] as Doubt[];
+			}
+		}),
+	);
+	return Object.fromEntries(lessonIds.map((id, i) => [id, results[i]]));
+}
+
+export function useModuleDoubts(lessonIds: string[], enabled: boolean) {
+	return useQuery({
+		queryKey: ['module-doubts', [...lessonIds].sort().join(',')] as const,
+		queryFn: () => fetchModuleDoubts(lessonIds),
+		enabled: enabled && lessonIds.length > 0,
+	});
+}
+
 export function useReplyToDoubt() {
 	const qc = useQueryClient();
 	return useMutation({
@@ -76,6 +90,7 @@ export function useReplyToDoubt() {
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: ['admin-doubts'] });
 			qc.invalidateQueries({ queryKey: ['doubts'] });
+			qc.invalidateQueries({ queryKey: ['module-doubts'] });
 		},
 	});
 }

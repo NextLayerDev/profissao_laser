@@ -7,11 +7,15 @@ import { createDoubt, getLessonDoubts } from '@/services/doubts';
 const key = (lessonId: string, params?: GetDoubtsParams) =>
 	['doubts', lessonId, params?.page, params?.limit] as const;
 
-export function useLessonDoubts(lessonId: string, params?: GetDoubtsParams) {
+export function useLessonDoubts(
+	lessonId: string,
+	params?: GetDoubtsParams,
+	enabled = true,
+) {
 	return useQuery({
 		queryKey: key(lessonId, params),
 		queryFn: () => getLessonDoubts(lessonId, params),
-		enabled: !!lessonId,
+		enabled: !!lessonId && enabled,
 	});
 }
 

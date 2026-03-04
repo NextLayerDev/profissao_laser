@@ -14,6 +14,7 @@ import {
 	type ModuleWithDoubts,
 	type ProductWithDoubts,
 	useDoubtsByModules,
+	useModuleDoubts,
 	useReplyToDoubt,
 } from '@/hooks/use-admin-doubts';
 import type { Doubt } from '@/types/doubts';
@@ -103,14 +104,18 @@ function DoubtItem({
 
 function LessonRow({
 	lesson,
+	doubts,
+	isLoading,
 	onReply,
 }: {
 	lesson: LessonWithDoubts;
+	doubts: Doubt[];
+	isLoading: boolean;
 	onReply: (doubtId: string, content: string) => Promise<void>;
 }) {
 	const [expanded, setExpanded] = useState(false);
-	const count = lesson.doubts.length;
-	const unanswered = lesson.doubts.filter((d) => d.replies.length === 0).length;
+	const count = doubts.length;
+	const unanswered = doubts.filter((d) => d.replies.length === 0).length;
 
 	return (
 		<div className="border-b border-white/5 last:border-0">
@@ -139,17 +144,24 @@ function LessonRow({
 						)}
 					</>
 				) : (
-					<span className="text-xs text-slate-500">Sem dúvidas</span>
+					<span className="text-xs text-slate-500">
+						{isLoading ? 'A carregar...' : 'Sem dúvidas'}
+					</span>
 				)}
 			</button>
 			{expanded && (
 				<div className="px-4 pb-4 space-y-3">
-					{count === 0 ? (
+					{isLoading ? (
+						<div className="flex items-center gap-2 py-4 text-slate-500">
+							<Loader2 className="w-4 h-4 animate-spin" />
+							<span className="text-sm">A carregar dúvidas...</span>
+						</div>
+					) : count === 0 ? (
 						<p className="text-sm text-slate-500 py-4">
 							Nenhuma dúvida nesta aula ainda.
 						</p>
 					) : (
-						lesson.doubts.map((doubt) => (
+						doubts.map((doubt) => (
 							<DoubtItem
 								key={doubt.id}
 								doubt={doubt}
@@ -166,17 +178,25 @@ function LessonRow({
 
 function ProductCard({
 	productWithDoubts: pw,
+	doubtsMap,
+	isLoadingDoubts,
 	onReply,
 }: {
 	productWithDoubts: ProductWithDoubts;
+	doubtsMap: Record<string, Doubt[]>;
+	isLoadingDoubts: boolean;
 	onReply: (doubtId: string, content: string) => Promise<void>;
 }) {
 	const [expanded, setExpanded] = useState(false);
 	const totalModules = pw.modules.length;
-	const totalDoubts = pw.modules.reduce(
-		(acc, m) => acc + m.lessons.reduce((a, l) => a + l.doubts.length, 0),
-		0,
+
+	const courseDoubts = pw.modules.flatMap((m) =>
+		m.lessons.flatMap((l) => doubtsMap[l.id] ?? []),
 	);
+	const courseTotalDoubts = courseDoubts.length;
+	const courseUnanswered = courseDoubts.filter(
+		(d) => d.replies.length === 0,
+	).length;
 
 	return (
 		<div className="bg-white/[0.02] border border-white/5 rounded-xl overflow-hidden">
@@ -194,16 +214,34 @@ function ProductCard({
 				<span className="text-xs text-slate-500">
 					{totalModules} módulo{totalModules !== 1 ? 's' : ''}
 				</span>
-				{totalDoubts > 0 && (
-					<span className="text-xs bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded-full font-medium">
-						{totalDoubts} dúvida{totalDoubts !== 1 ? 's' : ''}
-					</span>
+				{isLoadingDoubts ? (
+					<span className="text-xs text-slate-500">A carregar...</span>
+				) : (
+					courseTotalDoubts > 0 && (
+						<>
+							<span className="text-xs bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded-full font-medium">
+								{courseTotalDoubts} dúvida{courseTotalDoubts !== 1 ? 's' : ''}
+							</span>
+							{courseUnanswered > 0 && (
+								<span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-medium">
+									{courseUnanswered} pendente
+									{courseUnanswered !== 1 ? 's' : ''}
+								</span>
+							)}
+						</>
+					)
 				)}
 			</button>
 			{expanded && (
 				<div className="px-4 pb-4 pt-0 space-y-2">
 					{pw.modules.map((mod) => (
-						<ModuleSection key={mod.id} module={mod} onReply={onReply} />
+						<ModuleSection
+							key={mod.id}
+							module={mod}
+							doubtsMap={doubtsMap}
+							isLoading={isLoadingDoubts}
+							onReply={onReply}
+						/>
 					))}
 				</div>
 			)}
@@ -213,17 +251,20 @@ function ProductCard({
 
 function ModuleSection({
 	module: mod,
+	doubtsMap,
+	isLoading,
 	onReply,
 }: {
 	module: ModuleWithDoubts;
+	doubtsMap: Record<string, Doubt[]>;
+	isLoading: boolean;
 	onReply: (doubtId: string, content: string) => Promise<void>;
 }) {
 	const [expanded, setExpanded] = useState(false);
-	const totalDoubts = mod.lessons.reduce((acc, l) => acc + l.doubts.length, 0);
-	const unanswered = mod.lessons.reduce(
-		(acc, l) => acc + l.doubts.filter((d) => d.replies.length === 0).length,
-		0,
-	);
+
+	const moduleDoubts = mod.lessons.flatMap((l) => doubtsMap[l.id] ?? []);
+	const totalDoubts = moduleDoubts.length;
+	const unanswered = moduleDoubts.filter((d) => d.replies.length === 0).length;
 
 	return (
 		<div className="mb-4">
@@ -257,7 +298,13 @@ function ModuleSection({
 			{expanded && (
 				<div className="mt-2 ml-2 space-y-1">
 					{mod.lessons.map((lesson) => (
-						<LessonRow key={lesson.id} lesson={lesson} onReply={onReply} />
+						<LessonRow
+							key={lesson.id}
+							lesson={lesson}
+							doubts={doubtsMap[lesson.id] ?? []}
+							isLoading={isLoading}
+							onReply={onReply}
+						/>
 					))}
 				</div>
 			)}
@@ -276,6 +323,16 @@ export function DoubtsModal({ open, onClose }: DoubtsModalProps) {
 		isLoading,
 		isError,
 	} = useDoubtsByModules(open);
+
+	const allLessonIds = productsWithDoubts.flatMap((pw) =>
+		pw.modules.flatMap((m) => m.lessons.map((l) => l.id)),
+	);
+	const { data: allDoubtsMap = {}, isLoading: isLoadingDoubts } =
+		useModuleDoubts(
+			allLessonIds,
+			open && !isLoading && productsWithDoubts.length > 0,
+		);
+
 	const replyMutation = useReplyToDoubt();
 
 	async function handleReply(doubtId: string, content: string) {
@@ -328,7 +385,7 @@ export function DoubtsModal({ open, onClose }: DoubtsModalProps) {
 					{isLoading ? (
 						<div className="flex flex-col items-center justify-center py-20">
 							<Loader2 className="w-10 h-10 text-violet-400 animate-spin mb-4" />
-							<p className="text-slate-500">A carregar dúvidas...</p>
+							<p className="text-slate-500">A carregar cursos...</p>
 						</div>
 					) : isError ? (
 						<div className="flex flex-col items-center justify-center py-20 text-red-400">
@@ -345,6 +402,8 @@ export function DoubtsModal({ open, onClose }: DoubtsModalProps) {
 								<ProductCard
 									key={pw.product.id}
 									productWithDoubts={pw}
+									doubtsMap={allDoubtsMap}
+									isLoadingDoubts={isLoadingDoubts}
 									onReply={handleReply}
 								/>
 							))}
