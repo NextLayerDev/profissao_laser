@@ -2,6 +2,7 @@
 
 import {
 	ArrowLeft,
+	Bookmark,
 	BookOpen,
 	Check,
 	ChevronDown,
@@ -26,14 +27,21 @@ import {
 	Zap,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { SavedLessonsModal } from '@/components/course/saved-lessons-modal';
 import { VideoPlayer } from '@/components/course/video-player';
 import { useCourse } from '@/hooks/use-course';
 import { useCustomerFeaturesForCourse } from '@/hooks/use-customer-features';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { useMaterials } from '@/hooks/use-materials';
 import { useQuiz } from '@/hooks/use-quiz';
+import {
+	useRemoveSavedLesson,
+	useSavedLessons,
+	useSaveLesson,
+} from '@/hooks/use-saved-lessons';
 import { getCurrentUser, getToken } from '@/lib/auth';
 import type { CourseLesson } from '@/types/course';
 import type { MaterialType } from '@/types/materials';
@@ -300,8 +308,10 @@ function QuizTab({ lessonId }: { lessonId: string | null }) {
 
 export default function CourseSlugPage() {
 	const { slug } = useParams<{ slug: string }>();
+	const searchParams = useSearchParams();
 	const [email, setEmail] = useState<string | null | undefined>(undefined);
 	const [isAdmin, setIsAdmin] = useState(false);
+	const [savedLessonsModalOpen, setSavedLessonsModalOpen] = useState(false);
 
 	useEffect(() => {
 		const user = getCurrentUser();
@@ -320,6 +330,10 @@ export default function CourseSlugPage() {
 
 	const { data: course, isLoading, isError } = useCourse(slug);
 	const [activeLesson, setActiveLesson] = useState<CourseLesson | null>(null);
+	const isLoggedIn = !!getToken('customer') || !!getToken('user');
+	const { data: savedLessons = [] } = useSavedLessons();
+	const saveLessonMutation = useSaveLesson();
+	const removeSavedLessonMutation = useRemoveSavedLesson();
 	const [search, setSearch] = useState('');
 	const [rating, setRating] = useState(0);
 	const [hoverRating, setHoverRating] = useState(0);
@@ -337,6 +351,17 @@ export default function CourseSlugPage() {
 			setBottomTab('materiais');
 		}
 	}, [features, bottomTab]);
+
+	// Selecionar aula a partir do query ?lesson=
+	useEffect(() => {
+		const lessonId = searchParams.get('lesson');
+		if (course && lessonId) {
+			const lesson = course.modules
+				.flatMap((m) => m.lessons)
+				.find((l) => l.id === lessonId);
+			if (lesson) setActiveLesson(lesson);
+		}
+	}, [course, searchParams]);
 
 	const toggleModule = (id: string) =>
 		setCollapsedModules((prev) => {
@@ -429,17 +454,66 @@ export default function CourseSlugPage() {
 					</div>
 				</div>
 
-				<div className="flex items-center gap-1.5 bg-white/10 border border-white/20 rounded-full px-3 py-1 text-xs font-semibold">
-					<Zap className="w-4 h-4 text-violet-400" />
-					{totalLessons} aulas
+				<div className="flex items-center gap-3">
+					<button
+						type="button"
+						onClick={() => setSavedLessonsModalOpen(true)}
+						className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-sm font-medium transition-colors group"
+					>
+						<div className="rounded-lg p-1 bg-linear-to-r from-orange-500 to-amber-500">
+							<Bookmark className="w-4 h-4 text-white" />
+						</div>
+						<span>Aulas Salvas</span>
+						<ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
+					</button>
+					<div className="flex items-center gap-1.5 bg-white/10 border border-white/20 rounded-full px-3 py-1 text-xs font-semibold">
+						<Zap className="w-4 h-4 text-violet-400" />
+						{totalLessons} aulas
+					</div>
 				</div>
 			</header>
+
+			<SavedLessonsModal
+				isOpen={savedLessonsModalOpen}
+				onClose={() => setSavedLessonsModalOpen(false)}
+			/>
 
 			{/* ── Body ────────────────────────────────────────────────────────── */}
 			<div className="flex flex-1 overflow-hidden">
 				{/* ── Main (video + tabs) ──────────────────────────────────────── */}
 				<main className="flex-1 flex flex-col overflow-y-auto bg-[#06040f]">
-					<VideoPlayer lesson={activeLesson} courseName={course.name} />
+					<VideoPlayer
+						lesson={activeLesson}
+						courseName={course.name}
+						isSaved={
+							!!activeLesson &&
+							savedLessons.some((s) => s.lessonId === activeLesson.id)
+						}
+						onSave={
+							activeLesson && isLoggedIn
+								? () =>
+										saveLessonMutation.mutate(activeLesson.id, {
+											onSuccess: () =>
+												toast.success('Aula guardada nas suas salvas'),
+											onError: () => toast.error('Erro ao guardar aula'),
+										})
+								: undefined
+						}
+						onRemove={
+							activeLesson && isLoggedIn
+								? () =>
+										removeSavedLessonMutation.mutate(activeLesson.id, {
+											onSuccess: () =>
+												toast.success('Aula removida das salvas'),
+											onError: () => toast.error('Erro ao remover aula'),
+										})
+								: undefined
+						}
+						isSaveLoading={
+							saveLessonMutation.isPending ||
+							removeSavedLessonMutation.isPending
+						}
+					/>
 
 					{/* Rating + tabs row */}
 					<div className="px-6 py-3 flex items-center justify-between border-b border-white/10">

@@ -71,12 +71,12 @@ export function useDuplicateProduct() {
 		mutationFn: ({
 			product,
 			classId,
-			price,
+			payment,
 		}: {
 			product: Product;
 			classId: string;
-			price: number;
-		}) => duplicateProduct(product, classId, price),
+			payment: import('@/lib/duplicate-product').DuplicateProductPaymentPayload;
+		}) => duplicateProduct(product, classId, payment),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: ['products'] });
 			qc.invalidateQueries({ queryKey: ['classes'] });

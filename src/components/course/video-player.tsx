@@ -1,13 +1,24 @@
-import { Clock, Lock, PlayCircle } from 'lucide-react';
+import { Bookmark, Clock, Lock, PlayCircle } from 'lucide-react';
 import type { CourseLesson } from '@/types/course';
 import { formatDuration, getEmbedUrl } from '@/utils/video';
 
 interface VideoPlayerProps {
 	lesson: CourseLesson | null;
 	courseName: string;
+	isSaved?: boolean;
+	onSave?: () => void;
+	onRemove?: () => void;
+	isSaveLoading?: boolean;
 }
 
-export function VideoPlayer({ lesson, courseName }: VideoPlayerProps) {
+export function VideoPlayer({
+	lesson,
+	courseName,
+	isSaved = false,
+	onSave,
+	onRemove,
+	isSaveLoading = false,
+}: VideoPlayerProps) {
 	if (!lesson) {
 		return (
 			<div className="px-6 pt-6">
@@ -67,7 +78,30 @@ export function VideoPlayer({ lesson, courseName }: VideoPlayerProps) {
 
 			{/* Lesson info */}
 			<div className="px-6 py-5 border-b border-white/10">
-				<h1 className="text-2xl font-black">{title}</h1>
+				<div className="flex items-start justify-between gap-4">
+					<h1 className="text-2xl font-black flex-1 min-w-0">{title}</h1>
+					{onSave != null && onRemove != null && (
+						<button
+							type="button"
+							onClick={isSaved ? onRemove : onSave}
+							disabled={isSaveLoading}
+							className={`shrink-0 flex items-center justify-center w-10 h-10 rounded-xl transition-all disabled:opacity-50 ${
+								isSaved
+									? 'bg-linear-to-r from-orange-500 to-amber-500 text-white'
+									: 'bg-white/10 hover:bg-white/15 text-slate-400 hover:text-amber-400 border border-white/10'
+							}`}
+							title={isSaved ? 'Remover das salvas' : 'Salvar aula'}
+						>
+							{isSaveLoading ? (
+								<span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+							) : (
+								<Bookmark
+									className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`}
+								/>
+							)}
+						</button>
+					)}
+				</div>
 				{description && (
 					<p className="text-slate-400 text-sm mt-2 leading-relaxed">
 						{description}

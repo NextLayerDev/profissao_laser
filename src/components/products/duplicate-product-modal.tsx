@@ -26,8 +26,18 @@ export function DuplicateProductModal({
 	const { classes } = useClasses();
 	const { mutate: duplicateProduct, isPending } = useDuplicateProduct();
 	const [selectedClassId, setSelectedClassId] = useState<string>('');
+	const [paymentType, setPaymentType] = useState<'single' | 'subscription'>(
+		'single',
+	);
+	const [subscriptionInterval, setSubscriptionInterval] = useState<
+		'month' | 'year' | 'week'
+	>('month');
 	const [price, setPrice] = useState<string>(
 		product.price > 0 ? product.price.toString() : '',
+	);
+	const [category, setCategory] = useState<string>(product.category ?? '');
+	const [refundDays, setRefundDays] = useState<string>(
+		(product.refundDays ?? 7).toString(),
 	);
 
 	const activeClasses = classes.filter((c) => c.status === 'ativo');
@@ -35,6 +45,8 @@ export function DuplicateProductModal({
 	const selectableClasses = activeClasses.filter(
 		(c) => !productClassIds.has(c.id),
 	);
+
+	const interval = paymentType === 'single' ? 'one_time' : subscriptionInterval;
 
 	function handleDuplicate() {
 		if (!selectedClassId) {
@@ -48,7 +60,16 @@ export function DuplicateProductModal({
 		}
 
 		duplicateProduct(
-			{ product, classId: selectedClassId, price: priceNum },
+			{
+				product,
+				classId: selectedClassId,
+				payment: {
+					price: priceNum,
+					interval,
+					category,
+					refundDays: parseInt(refundDays, 10) || 7,
+				},
+			},
 			{
 				onSuccess: () => {
 					toast.success('Produto duplicado com sucesso!');
@@ -64,7 +85,7 @@ export function DuplicateProductModal({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm">
-			<div className="bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-2xl w-full max-w-md mx-4 p-6 shadow-xl">
+			<div className="bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-2xl w-full max-w-lg mx-4 p-6 shadow-xl max-h-[90vh] overflow-y-auto">
 				<div className="flex items-center justify-between mb-5">
 					<div className="flex items-center gap-2 text-violet-500 dark:text-violet-400">
 						<Copy size={18} />
@@ -89,29 +110,123 @@ export function DuplicateProductModal({
 				</p>
 				<p className="text-slate-500 dark:text-gray-500 text-sm mb-4">
 					Módulos, aulas, vídeos (mesmos links) e quizzes serão copiados.
-					Selecione uma classe diferente e defina o valor:
+					Selecione uma classe diferente e configure as informações de
+					pagamento:
 				</p>
 
-				<div className="mb-4">
-					<label
-						htmlFor="duplicate-price"
-						className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2"
-					>
-						Valor do produto (R$)
-					</label>
-					<div className="relative">
-						<span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-500 text-sm">
-							R$
-						</span>
-						<input
-							id="duplicate-price"
-							type="text"
-							inputMode="decimal"
-							value={price}
-							onChange={(e) => setPrice(e.target.value)}
-							placeholder="0,00"
-							className="w-full px-4 py-2.5 pl-10 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl text-slate-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-						/>
+				{/* Informações de pagamento (igual ao AddCourseModal) */}
+				<div className="space-y-4 mb-6">
+					<fieldset>
+						<legend className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
+							Tipo de pagamento
+						</legend>
+						<div className="flex gap-4">
+							<button
+								type="button"
+								onClick={() => setPaymentType('single')}
+								className={`flex-1 py-3 rounded-xl text-sm font-medium transition-colors ${
+									paymentType === 'single'
+										? 'bg-violet-600 text-white'
+										: 'bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 hover:border-slate-300 dark:hover:border-gray-600 text-slate-700 dark:text-gray-300'
+								}`}
+							>
+								Pagamento único
+							</button>
+							<button
+								type="button"
+								onClick={() => setPaymentType('subscription')}
+								className={`flex-1 py-3 rounded-xl text-sm font-medium transition-colors ${
+									paymentType === 'subscription'
+										? 'bg-violet-600 text-white'
+										: 'bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 hover:border-slate-300 dark:hover:border-gray-600 text-slate-700 dark:text-gray-300'
+								}`}
+							>
+								Assinatura
+							</button>
+						</div>
+					</fieldset>
+
+					{paymentType === 'subscription' && (
+						<div>
+							<label
+								htmlFor="duplicate-subscription-interval"
+								className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2"
+							>
+								Intervalo de cobrança
+							</label>
+							<select
+								id="duplicate-subscription-interval"
+								value={subscriptionInterval}
+								onChange={(e) =>
+									setSubscriptionInterval(
+										e.target.value as typeof subscriptionInterval,
+									)
+								}
+								className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+							>
+								<option value="week">Semanal</option>
+								<option value="month">Mensal</option>
+								<option value="year">Anual</option>
+							</select>
+						</div>
+					)}
+
+					<div>
+						<label
+							htmlFor="duplicate-price"
+							className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2"
+						>
+							Valor
+						</label>
+						<div className="relative">
+							<span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-500 text-sm">
+								R$
+							</span>
+							<input
+								id="duplicate-price"
+								type="text"
+								inputMode="decimal"
+								value={price}
+								onChange={(e) => setPrice(e.target.value)}
+								placeholder="0,00"
+								className="w-full px-4 py-2.5 pl-10 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl text-slate-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+							/>
+						</div>
+					</div>
+
+					<div className="grid grid-cols-2 gap-4">
+						<div>
+							<label
+								htmlFor="duplicate-category"
+								className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2"
+							>
+								Categoria (opcional)
+							</label>
+							<input
+								id="duplicate-category"
+								type="text"
+								value={category}
+								onChange={(e) => setCategory(e.target.value)}
+								placeholder="Ex: Tecnologia"
+								className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl text-slate-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+							/>
+						</div>
+						<div>
+							<label
+								htmlFor="duplicate-refund-days"
+								className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2"
+							>
+								Dias de reembolso
+							</label>
+							<input
+								id="duplicate-refund-days"
+								type="number"
+								min={0}
+								value={refundDays}
+								onChange={(e) => setRefundDays(e.target.value)}
+								className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+							/>
+						</div>
 					</div>
 				</div>
 

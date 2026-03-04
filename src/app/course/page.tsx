@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { SavedLessonsModal } from '@/components/course/saved-lessons-modal';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useCustomerFeatures } from '@/hooks/use-customer-features';
@@ -37,6 +38,7 @@ export default function CoursePage() {
 	const [email, setEmail] = useState<string | null | undefined>(undefined);
 	const [name, setName] = useState<string>('');
 	const [isAdmin, setIsAdmin] = useState(false);
+	const [savedLessonsModalOpen, setSavedLessonsModalOpen] = useState(false);
 
 	useEffect(() => {
 		const user = getCurrentUser();
@@ -312,6 +314,18 @@ export default function CoursePage() {
 										? 'bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 hover:border-violet-500/40 group cursor-pointer shadow-sm dark:shadow-none'
 										: 'bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 opacity-60 cursor-not-allowed shadow-sm dark:shadow-none'
 								}`;
+								if (hasAccess && label === 'Aulas Salvas') {
+									return (
+										<button
+											key={label}
+											type="button"
+											onClick={() => setSavedLessonsModalOpen(true)}
+											className={className}
+										>
+											{content}
+										</button>
+									);
+								}
 								return hasAccess && href ? (
 									<Link key={label} href={href} className={className}>
 										{content}
@@ -415,6 +429,11 @@ export default function CoursePage() {
 					</div>
 				</div>
 			</div>
+
+			<SavedLessonsModal
+				isOpen={savedLessonsModalOpen}
+				onClose={() => setSavedLessonsModalOpen(false)}
+			/>
 		</div>
 	);
 }

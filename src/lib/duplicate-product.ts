@@ -23,10 +23,17 @@ function uniqueSlug(original: string): string {
 	return `${base}-copia-${suffix}`;
 }
 
+export interface DuplicateProductPaymentPayload {
+	price: number;
+	interval: 'one_time' | 'month' | 'year' | 'week';
+	category: string;
+	refundDays: number;
+}
+
 export async function duplicateProduct(
 	product: Product,
 	classId: string,
-	price: number,
+	payment: DuplicateProductPaymentPayload,
 ): Promise<Product> {
 	// 1. Buscar módulos e aulas do produto original
 	const modules = await getModules(product.id);
@@ -44,13 +51,13 @@ export async function duplicateProduct(
 		name: product.name,
 		type: 'curso',
 		description: product.description ?? '',
-		price,
-		interval: 'one_time',
+		price: payment.price,
+		interval: payment.interval,
 		slug: uniqueSlug(product.slug),
 		language: product.language,
 		country: product.country,
-		category: product.category ?? '',
-		refundDays: product.refundDays ?? 7,
+		category: payment.category,
+		refundDays: payment.refundDays,
 	});
 
 	// 3. Tentar copiar imagem (pode falhar por CORS)
