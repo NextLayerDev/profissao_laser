@@ -8,12 +8,12 @@ import {
 	PenLine,
 	Store,
 } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { VectorList } from '@/components/vetorizacao/vector-list';
 import { VectorizationUpload } from '@/components/vetorizacao/vectorization-upload';
 import { useCustomerFeatures } from '@/hooks/use-customer-features';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
@@ -54,7 +54,22 @@ export default function VetorizacaoPage() {
 		: (customerFeatures?.upgradeTiers ?? null);
 	const hasVetorizacaoAccess = features?.vetorizacao ?? false;
 
-	const { data: vectors = [], refetch } = useCustomerVectors();
+	const [page, setPage] = useState(1);
+	const [search, setSearch] = useState('');
+	const limit = 20;
+
+	const handleSearchChange = (value: string) => {
+		setSearch(value);
+		setPage(1);
+	};
+
+	const { data: vectorsResponse, refetch } = useCustomerVectors({
+		page,
+		limit,
+		search: search || undefined,
+	});
+	const vectorsData = vectorsResponse?.data ?? [];
+	const vectorsTotal = vectorsResponse?.total ?? 0;
 
 	if (email === undefined || isLoading) {
 		return (
@@ -158,43 +173,22 @@ export default function VetorizacaoPage() {
 					<VectorizationUpload onSuccess={() => refetch()} />
 				</div>
 
-				{vectors.length > 0 && (
-					<div>
-						<h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-							<BookOpen className="w-5 h-5 text-violet-500" />
-							Meus vetores
-						</h2>
-						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-							{vectors.map((v) => (
-								<div
-									key={v.id}
-									className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-4 overflow-hidden"
-								>
-									<div className="aspect-square relative bg-slate-100 dark:bg-white/5 rounded-lg mb-3">
-										<Image
-											src={v.svg_url}
-											alt={v.original_name}
-											fill
-											className="object-contain p-2"
-											unoptimized
-										/>
-									</div>
-									<p className="font-medium text-slate-900 dark:text-white truncate text-sm">
-										{v.original_name}
-									</p>
-									<a
-										href={v.svg_url}
-										target="_blank"
-										rel="noopener noreferrer"
-										className="text-violet-500 hover:text-violet-400 text-xs mt-1 inline-block"
-									>
-										Descarregar SVG
-									</a>
-								</div>
-							))}
-						</div>
-					</div>
-				)}
+				<div>
+					<h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+						<BookOpen className="w-5 h-5 text-violet-500" />
+						Banco de vetores
+					</h2>
+					<VectorList
+						data={vectorsData}
+						total={vectorsTotal}
+						page={page}
+						limit={limit}
+						search={search}
+						onPageChange={setPage}
+						onSearchChange={handleSearchChange}
+						onRefetch={refetch}
+					/>
+				</div>
 			</main>
 		</div>
 	);

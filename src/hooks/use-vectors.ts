@@ -7,16 +7,22 @@ import {
 	deleteCustomerVector,
 	getCustomerVectors,
 	saveVector,
+	updateVector,
 } from '@/services/vectors';
 
 const VECTORS_KEYS = {
-	list: (page?: number, limit?: number) =>
-		['customer', 'vectors', page, limit] as const,
+	list: (page?: number, limit?: number, search?: string) =>
+		['customer', 'vectors', page, limit, search] as const,
 };
 
-export function useCustomerVectors(params?: { page?: number; limit?: number }) {
+export function useCustomerVectors(params?: {
+	page?: number;
+	limit?: number;
+	search?: string;
+	customerId?: string;
+}) {
 	return useQuery({
-		queryKey: VECTORS_KEYS.list(params?.page, params?.limit),
+		queryKey: VECTORS_KEYS.list(params?.page, params?.limit, params?.search),
 		queryFn: () => getCustomerVectors(params),
 	});
 }
@@ -49,6 +55,26 @@ export function useSaveVector() {
 		},
 		onError: () => {
 			toast.error('Erro ao guardar vetor');
+		},
+	});
+}
+
+export function useUpdateVector() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			id,
+			payload,
+		}: {
+			id: string;
+			payload: { originalName?: string; svgContent?: string };
+		}) => updateVector(id, payload),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['customer', 'vectors'] });
+			toast.success('Vetor atualizado!');
+		},
+		onError: () => {
+			toast.error('Erro ao atualizar vetor');
 		},
 	});
 }
