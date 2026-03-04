@@ -26,11 +26,7 @@ export function StoreProductCard({ variants }: StoreProductCardProps) {
 			return;
 		}
 
-		purchase({
-			productId: product.id,
-			amount: product.price,
-			recorrencia: 'one_time',
-		});
+		purchase({ productId: product.id });
 	}
 
 	const enabledFeatures = classInfo
