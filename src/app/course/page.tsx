@@ -16,7 +16,7 @@ import {
 	Zap,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { SavedLessonsModal } from '@/components/course/saved-lessons-modal';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -29,6 +29,8 @@ import {
 	COURSE_STATUS_STYLES,
 } from '@/utils/constants/course-status';
 import { quickAccessItems } from '@/utils/constants/quick-access';
+
+const TIER_ORDER: Record<string, number> = { prata: 0, ouro: 1, platina: 2 };
 
 const Background = () => (
 	<div className="fixed inset-0 bg-linear-to-br from-slate-100 via-white to-slate-50 dark:from-[#12103a] dark:via-[#0d0b1e] dark:to-[#0a0818] pointer-events-none" />
@@ -49,8 +51,39 @@ export default function CoursePage() {
 
 	const { data: plans, isLoading, isError } = useCustomerPlans(email ?? null);
 
+	const uniquePlans = useMemo(() => {
+		if (!plans) return [];
+		const byKey = new Map<string, (typeof plans)[0]>();
+		for (const plan of plans) {
+			const key = plan.slug ?? plan.product_name;
+			const existing = byKey.get(key);
+			if (!existing) {
+				byKey.set(key, plan);
+			} else {
+				const existingTier = existing.tier
+					? (TIER_ORDER[existing.tier] ?? -1)
+					: -1;
+				const currentTier = plan.tier ? (TIER_ORDER[plan.tier] ?? -1) : -1;
+				const existingActive =
+					existing.status === 'active' || existing.status === 'ativo';
+				const currentActive =
+					plan.status === 'active' || plan.status === 'ativo';
+
+				const shouldReplace =
+					currentTier > existingTier ||
+					(currentTier === existingTier && currentActive && !existingActive);
+				if (shouldReplace) byKey.set(key, plan);
+			}
+		}
+		return Array.from(byKey.values());
+	}, [plans]);
+
 	const activePlans =
 		plans?.filter((p) => p.status === 'active' || p.status === 'ativo') ?? [];
+
+	const activeUniqueCount = uniquePlans.filter(
+		(p) => p.status === 'active' || p.status === 'ativo',
+	).length;
 
 	const customerFeatures = useCustomerFeatures(
 		activePlans.length > 0 ? activePlans : undefined,
@@ -162,10 +195,10 @@ export default function CoursePage() {
 									</div>
 									<div>
 										<p className="text-slate-900 dark:text-white font-bold text-lg leading-tight">
-											{plans?.length ?? 0}
+											{uniquePlans.length}
 										</p>
 										<p className="text-slate-500 dark:text-slate-400 text-xs">
-											Curso{(plans?.length ?? 0) !== 1 ? 's' : ''}
+											Curso{uniquePlans.length !== 1 ? 's' : ''}
 										</p>
 									</div>
 								</div>
@@ -175,10 +208,10 @@ export default function CoursePage() {
 									</div>
 									<div>
 										<p className="text-slate-900 dark:text-white font-bold text-lg leading-tight">
-											{activePlans.length}
+											{activeUniqueCount}
 										</p>
 										<p className="text-slate-500 dark:text-slate-400 text-xs">
-											Ativo{activePlans.length !== 1 ? 's' : ''}
+											Ativo{activeUniqueCount !== 1 ? 's' : ''}
 										</p>
 									</div>
 								</div>
@@ -202,7 +235,7 @@ export default function CoursePage() {
 								</Link>
 							</div>
 
-							{isError || !plans || plans.length === 0 ? (
+							{isError || !plans || uniquePlans.length === 0 ? (
 								<div className="flex flex-col items-center justify-center py-16 text-center">
 									<PackageX className="w-12 h-12 text-red-400 mx-auto mb-4" />
 									<p className="text-red-400">
@@ -213,7 +246,7 @@ export default function CoursePage() {
 								</div>
 							) : (
 								<div className="space-y-3">
-									{plans.map((plan) => {
+									{uniquePlans.map((plan) => {
 										const statusStyle =
 											COURSE_STATUS_STYLES[plan.status] ??
 											'bg-gray-700 text-gray-400';
@@ -371,7 +404,7 @@ export default function CoursePage() {
 									<BookOpen className="w-5 h-5" />
 								</div>
 								<p className="text-3xl font-black text-slate-900 dark:text-white">
-									{plans?.length ?? 0}
+									{uniquePlans.length}
 								</p>
 								<p className="text-slate-500 dark:text-slate-400 text-[10px] uppercase tracking-wider mt-0.5">
 									Cursos
@@ -382,7 +415,7 @@ export default function CoursePage() {
 									<Trophy className="w-5 h-5" />
 								</div>
 								<p className="text-3xl font-black text-slate-900 dark:text-white">
-									{activePlans.length}
+									{activeUniqueCount}
 								</p>
 								<p className="text-slate-500 dark:text-slate-400 text-[10px] uppercase tracking-wider mt-0.5">
 									Ativos

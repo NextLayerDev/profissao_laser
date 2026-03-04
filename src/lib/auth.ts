@@ -22,6 +22,11 @@ export function getActiveToken(): string | null {
 	return getToken('user') ?? getToken('customer');
 }
 
+/** Retorna true se o utilizador tem token de admin (user) */
+export function isAdmin(): boolean {
+	return !!getToken('user');
+}
+
 export interface JwtPayload {
 	name?: string;
 	email?: string;
