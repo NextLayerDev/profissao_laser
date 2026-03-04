@@ -208,7 +208,7 @@ function LessonModal({
 	});
 
 	const [videoMode, setVideoMode] = useState<'url' | 'file'>(
-		editing?.videoUrl ? 'url' : 'url',
+		editing?.videoUrl ? 'url' : 'file',
 	);
 	const [videoFile, setVideoFile] = useState<File | null>(null);
 	const [materialFiles, setMaterialFiles] = useState<File[]>([]);
@@ -385,18 +385,6 @@ function LessonModal({
 						<div className="flex gap-2 mb-3">
 							<button
 								type="button"
-								onClick={() => setVideoMode('url')}
-								className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-									videoMode === 'url'
-										? 'bg-violet-600 text-white'
-										: 'bg-[#0d0d0f] border border-gray-700 text-gray-400 hover:border-gray-600'
-								}`}
-							>
-								<Link2 className="w-3.5 h-3.5" />
-								Link
-							</button>
-							<button
-								type="button"
 								onClick={() => setVideoMode('file')}
 								className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
 									videoMode === 'file'
@@ -406,6 +394,18 @@ function LessonModal({
 							>
 								<UploadCloud className="w-3.5 h-3.5" />
 								Arquivo MP4
+							</button>
+							<button
+								type="button"
+								onClick={() => setVideoMode('url')}
+								className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+									videoMode === 'url'
+										? 'bg-violet-600 text-white'
+										: 'bg-[#0d0d0f] border border-gray-700 text-gray-400 hover:border-gray-600'
+								}`}
+							>
+								<Link2 className="w-3.5 h-3.5" />
+								Link
 							</button>
 						</div>
 
