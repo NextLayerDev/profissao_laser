@@ -3,6 +3,7 @@
 import { ChevronDown, Store } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { ChatButton } from '@/components/dashboard/chat-button';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -30,6 +31,7 @@ export function Header() {
 					</p>
 				</div>
 				<div className="flex items-center gap-3">
+					<ChatButton variant="inline" />
 					<ThemeToggle />
 					<Link
 						href="/store"

@@ -3,7 +3,6 @@
 import { ExternalLink } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { ChatButton } from '@/components/dashboard/chat-button';
 import { Header } from '@/components/dashboard/header';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSales } from '@/hooks/use-sales';
@@ -144,8 +143,6 @@ export default function Vendas() {
 					</div>
 				)}
 			</main>
-
-			<ChatButton />
 		</div>
 	);
 }

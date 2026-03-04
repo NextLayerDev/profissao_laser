@@ -155,6 +155,7 @@ export default function ProdutoDetalhes() {
 					</div>
 
 					<div className="flex items-center gap-3">
+						<ChatButton variant="inline" />
 						<ThemeToggle />
 						<button
 							type="button"
@@ -344,8 +345,6 @@ export default function ProdutoDetalhes() {
 					)}
 				</main>
 			</div>
-
-			<ChatButton />
 
 			{subscriptionModal && (
 				<CreateSubscriptionModal

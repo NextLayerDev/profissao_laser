@@ -1,14 +1,16 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createLessonDoubt, getLessonDoubts } from '@/services/doubts';
+import type { GetDoubtsParams } from '@/services/doubts';
+import { createDoubt, getLessonDoubts } from '@/services/doubts';
 
-const key = (lessonId: string) => ['doubts', lessonId];
+const key = (lessonId: string, params?: GetDoubtsParams) =>
+	['doubts', lessonId, params?.page, params?.limit] as const;
 
-export function useDoubts(lessonId: string) {
+export function useLessonDoubts(lessonId: string, params?: GetDoubtsParams) {
 	return useQuery({
-		queryKey: key(lessonId),
-		queryFn: () => getLessonDoubts(lessonId),
+		queryKey: key(lessonId, params),
+		queryFn: () => getLessonDoubts(lessonId, params),
 		enabled: !!lessonId,
 	});
 }
@@ -16,7 +18,9 @@ export function useDoubts(lessonId: string) {
 export function useCreateDoubt(lessonId: string) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (content: string) => createLessonDoubt(lessonId, { content }),
-		onSuccess: () => qc.invalidateQueries({ queryKey: key(lessonId) }),
+		mutationFn: (content: string) => createDoubt(lessonId, content),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ['doubts', lessonId] });
+		},
 	});
 }

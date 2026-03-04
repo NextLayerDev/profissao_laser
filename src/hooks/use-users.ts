@@ -1,7 +1,8 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { deleteUser, getUsers, updateUser } from '@/services/users';
+import { deleteColaborador, updateColaborador } from '@/services/colaboradores';
+import { getUsers } from '@/services/users';
 import type { UpdateUserPayload } from '@/types/users';
 
 export function useUsers() {
@@ -18,14 +19,14 @@ export function useUsers() {
 
 	const updateMutation = useMutation({
 		mutationFn: ({ id, payload }: { id: string; payload: UpdateUserPayload }) =>
-			updateUser(id, payload),
+			updateColaborador(id, payload),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['users'] });
 		},
 	});
 
 	const deleteMutation = useMutation({
-		mutationFn: deleteUser,
+		mutationFn: deleteColaborador,
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['users'] });
 		},

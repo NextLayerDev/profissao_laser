@@ -1,35 +1,41 @@
 import { api } from '@/lib/fetch';
 import type { Doubt } from '@/types/doubts';
 
+export interface GetDoubtsParams {
+	page?: number;
+	limit?: number;
+}
+
 export async function getLessonDoubts(
 	lessonId: string,
-	page = 1,
-	limit = 20,
+	params?: GetDoubtsParams,
 ): Promise<Doubt[]> {
-	const { data } = await api.get<Doubt[]>(
-		`/lesson/${lessonId}/doubts?page=${page}&limit=${limit}`,
-	);
+	const searchParams = new URLSearchParams();
+	if (params?.page) searchParams.set('page', String(params.page));
+	if (params?.limit) searchParams.set('limit', String(params.limit));
+	const query = searchParams.toString();
+	const url = `/lesson/${lessonId}/doubts${query ? `?${query}` : ''}`;
+	const { data } = await api.get<Doubt[]>(url);
 	return Array.isArray(data) ? data : [];
 }
 
-export async function createLessonDoubt(
+export async function createDoubt(
 	lessonId: string,
-	payload: { content: string },
+	content: string,
 ): Promise<Doubt> {
-	const { data } = await api.post<Doubt>(`/lesson/${lessonId}/doubt`, payload);
+	const { data } = await api.post<Doubt>(`/lesson/${lessonId}/doubt`, {
+		content,
+	});
 	return data;
 }
 
 export async function replyToDoubt(
 	doubtId: string,
-	payload: { content: string },
-): Promise<{
-	id: string;
-	content: string;
-	authorName: string;
-	createdAt: string;
-	isInstructor: boolean;
-}> {
-	const { data } = await api.post(`/doubt/${doubtId}/reply`, payload);
+	content: string,
+): Promise<Doubt['replies'][0]> {
+	const { data } = await api.post<Doubt['replies'][0]>(
+		`/doubt/${doubtId}/reply`,
+		{ content },
+	);
 	return data;
 }

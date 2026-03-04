@@ -2,7 +2,6 @@
 
 import { Layers, Package, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { ChatButton } from '@/components/dashboard/chat-button';
 import { Header } from '@/components/dashboard/header';
 import { AddCourseModal } from '@/components/products/add-course-modal';
 import { ClassCard } from '@/components/products/class-card';
@@ -140,8 +139,6 @@ export default function Produtos() {
 					</>
 				)}
 			</main>
-
-			<ChatButton />
 
 			<AddCourseModal
 				isOpen={isProductModalOpen}

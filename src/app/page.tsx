@@ -1,5 +1,4 @@
 import { Alerts } from '@/components/dashboard/alerts';
-import { ChatButton } from '@/components/dashboard/chat-button';
 import { Header } from '@/components/dashboard/header';
 import { QuickAccess } from '@/components/dashboard/quick-access';
 import { StatsOverview } from '@/components/dashboard/stats-overview';
@@ -19,8 +18,6 @@ export default function Dashboard() {
 					<Alerts />
 				</div>
 			</main>
-
-			<ChatButton />
 		</div>
 	);
 }
