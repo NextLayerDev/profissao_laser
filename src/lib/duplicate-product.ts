@@ -15,9 +15,12 @@ import type { Lesson, Module } from '@/types/modules';
 import type { Product } from '@/types/products';
 import type { CreateQuestionPayload } from '@/types/quiz';
 
-function duplicateSlug(original: string): string {
-	const base = original.replace(/-copia(-\d+)?$/, '');
-	return `${base}-copia`;
+function uniqueSlug(original: string): string {
+	const base = original
+		.replace(/-copia(-\d+)?$/, '')
+		.replace(/-[a-f0-9]{8}$/i, '');
+	const suffix = Date.now().toString(36);
+	return `${base}-copia-${suffix}`;
 }
 
 export async function duplicateProduct(
@@ -35,14 +38,15 @@ export async function duplicateProduct(
 			})),
 		);
 
-	// 2. Criar novo produto (nome exato, valor definido pelo utilizador)
+	// 2. Criar novo produto via POST /product (nome exato, valor definido pelo utilizador).
+	// O backend gera novos stripeProductId e stripePriceId. O slug deve ser único para evitar colisão em /course/[slug].
 	const newProduct = await createProduct({
 		name: product.name,
 		type: 'curso',
 		description: product.description ?? '',
 		price,
 		interval: 'one_time',
-		slug: duplicateSlug(product.slug),
+		slug: uniqueSlug(product.slug),
 		language: product.language,
 		country: product.country,
 		category: product.category ?? '',
