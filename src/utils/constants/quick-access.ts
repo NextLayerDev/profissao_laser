@@ -13,6 +13,7 @@ export type QuickAccessItem = {
 	Icon: LucideIcon;
 	gradient: string;
 	featureKey: FeatureKey;
+	href?: string;
 };
 
 export const quickAccessItems: QuickAccessItem[] = [
@@ -39,6 +40,7 @@ export const quickAccessItems: QuickAccessItem[] = [
 		Icon: PenLine,
 		gradient: 'from-violet-600 to-fuchsia-600',
 		featureKey: 'vetorizacao',
+		href: '/vetorizacao',
 	},
 	{
 		label: 'Aulas Salvas',

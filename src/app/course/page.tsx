@@ -268,52 +268,61 @@ export default function CoursePage() {
 							<h2 className="font-bold text-base">Acesso Rápido</h2>
 						</div>
 
-						{quickAccessItems.map(({ label, Icon, gradient, featureKey }) => {
-							const hasAccess = features?.[featureKey];
-							return (
-								<div
-									key={label}
-									className={`w-full flex items-center justify-between gap-3 rounded-xl px-4 py-3 transition-all duration-200 ${
-										hasAccess
-											? 'bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 hover:border-violet-500/40 group cursor-pointer shadow-sm dark:shadow-none'
-											: 'bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 opacity-60 cursor-not-allowed shadow-sm dark:shadow-none'
-									}`}
-								>
-									<div className="flex items-center gap-3">
-										<div
-											className={`rounded-lg p-2 ${
-												hasAccess
-													? `bg-linear-to-br ${gradient} text-white`
-													: 'bg-slate-200 dark:bg-white/10 text-slate-500'
-											}`}
-										>
-											{hasAccess ? (
-												<Icon className="w-5 h-5" />
-											) : (
-												<Lock className="w-5 h-5" />
-											)}
-										</div>
-										<div>
-											<span
-												className={`font-medium text-sm ${hasAccess ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}
+						{quickAccessItems.map(
+							({ label, Icon, gradient, featureKey, href }) => {
+								const hasAccess = features?.[featureKey];
+								const content = (
+									<>
+										<div className="flex items-center gap-3">
+											<div
+												className={`rounded-lg p-2 ${
+													hasAccess
+														? `bg-linear-to-br ${gradient} text-white`
+														: 'bg-slate-200 dark:bg-white/10 text-slate-500'
+												}`}
 											>
-												{label}
-											</span>
-											{!hasAccess && (
-												<p className="text-xs text-slate-500 mt-0.5">
-													{upgradeTiers?.[featureKey]
-														? `Disponível no plano ${upgradeTiers[featureKey]}`
-														: 'Faça upgrade para aceder'}
-												</p>
-											)}
+												{hasAccess ? (
+													<Icon className="w-5 h-5" />
+												) : (
+													<Lock className="w-5 h-5" />
+												)}
+											</div>
+											<div>
+												<span
+													className={`font-medium text-sm ${hasAccess ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}
+												>
+													{label}
+												</span>
+												{!hasAccess && (
+													<p className="text-xs text-slate-500 mt-0.5">
+														{upgradeTiers?.[featureKey]
+															? `Disponível no plano ${upgradeTiers[featureKey]}`
+															: 'Faça upgrade para aceder'}
+													</p>
+												)}
+											</div>
 										</div>
+										{hasAccess && (
+											<ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-violet-400 transition-colors" />
+										)}
+									</>
+								);
+								const className = `w-full flex items-center justify-between gap-3 rounded-xl px-4 py-3 transition-all duration-200 ${
+									hasAccess
+										? 'bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 hover:border-violet-500/40 group cursor-pointer shadow-sm dark:shadow-none'
+										: 'bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 opacity-60 cursor-not-allowed shadow-sm dark:shadow-none'
+								}`;
+								return hasAccess && href ? (
+									<Link key={label} href={href} className={className}>
+										{content}
+									</Link>
+								) : (
+									<div key={label} className={className}>
+										{content}
 									</div>
-									{hasAccess && (
-										<ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-violet-400 transition-colors" />
-									)}
-								</div>
-							);
-						})}
+								);
+							},
+						)}
 					</div>
 
 					{/* ── Right column — Perfil ─────────────────────────── */}
