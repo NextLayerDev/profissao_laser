@@ -27,6 +27,7 @@ import {
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { DoubtsTab } from '@/components/course/doubts-tab';
 import { VideoPlayer } from '@/components/course/video-player';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -414,10 +415,13 @@ export default function CourseSlugPage() {
 		setHoverRating(0);
 	};
 
-	const handleVideoEnded = () => {
-		if (activeLesson) {
-			markWatched(activeLesson.id);
+	const handleVideoEnded = async () => {
+		if (!activeLesson) return;
+		try {
+			await markWatched(activeLesson.id);
 			if (nextLesson) handleSelectLesson(nextLesson);
+		} catch {
+			toast.error('Erro ao marcar aula como assistida. Tente novamente.');
 		}
 	};
 

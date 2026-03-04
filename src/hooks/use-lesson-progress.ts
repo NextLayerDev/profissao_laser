@@ -1,60 +1,48 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { CourseProgress } from '@/services/progress';
+import { getCourseProgress, markLessonComplete } from '@/services/progress';
 
-const STORAGE_PREFIX = 'course-progress-';
-
-function getStorageKey(courseId: string) {
-	return `${STORAGE_PREFIX}${courseId}`;
-}
-
-function loadWatchedIds(courseId: string): Set<string> {
-	if (typeof window === 'undefined') return new Set();
-	try {
-		const raw = localStorage.getItem(getStorageKey(courseId));
-		if (!raw) return new Set();
-		const arr = JSON.parse(raw) as string[];
-		return new Set(Array.isArray(arr) ? arr : []);
-	} catch {
-		return new Set();
-	}
-}
-
-function saveWatchedIds(courseId: string, ids: Set<string>) {
-	if (typeof window === 'undefined') return;
-	try {
-		localStorage.setItem(getStorageKey(courseId), JSON.stringify([...ids]));
-	} catch {
-		// ignore
-	}
-}
+const progressKey = (courseId: string) =>
+	['course-progress', courseId] as const;
 
 export function useLessonProgress(courseId: string | undefined) {
-	const [watchedLessonIds, setWatchedLessonIds] = useState<Set<string>>(() =>
-		courseId ? loadWatchedIds(courseId) : new Set(),
-	);
+	const queryClient = useQueryClient();
 
-	useEffect(() => {
-		if (courseId) {
-			setWatchedLessonIds(loadWatchedIds(courseId));
-		} else {
-			setWatchedLessonIds(new Set());
-		}
-	}, [courseId]);
+	const { data, isLoading } = useQuery({
+		queryKey: progressKey(courseId ?? ''),
+		queryFn: () => getCourseProgress(courseId!),
+		enabled: !!courseId,
+	});
 
-	const markWatched = useCallback(
-		(lessonId: string) => {
+	const mutation = useMutation({
+		mutationFn: (lessonId: string) => markLessonComplete(lessonId),
+		onSuccess: (_, lessonId) => {
 			if (!courseId) return;
-			setWatchedLessonIds((prev) => {
-				if (prev.has(lessonId)) return prev;
-				const next = new Set(prev);
-				next.add(lessonId);
-				saveWatchedIds(courseId, next);
-				return next;
-			});
+			queryClient.setQueryData<CourseProgress>(
+				progressKey(courseId),
+				(prev) => {
+					const ids = prev?.watchedLessonIds ?? [];
+					if (ids.includes(lessonId)) return prev;
+					return { watchedLessonIds: [...ids, lessonId] };
+				},
+			);
+			queryClient.invalidateQueries({ queryKey: progressKey(courseId) });
 		},
-		[courseId],
-	);
+	});
 
-	return { watchedLessonIds, markWatched };
+	const watchedLessonIds = new Set(data?.watchedLessonIds ?? []);
+
+	const markWatched = (lessonId: string) => {
+		if (!courseId) return Promise.resolve();
+		return mutation.mutateAsync(lessonId);
+	};
+
+	return {
+		watchedLessonIds,
+		markWatched,
+		isLoading,
+		isMarkingWatched: mutation.isPending,
+	};
 }
