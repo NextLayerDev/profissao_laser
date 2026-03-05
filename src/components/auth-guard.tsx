@@ -6,7 +6,7 @@ import { getCurrentUser } from '@/lib/auth';
 
 const PUBLIC_PATHS = ['/login', '/register', '/store'];
 
-const CUSTOMER_PATHS = ['/store', '/course', '/comunity'];
+const CUSTOMER_PATHS = ['/store', '/course', '/comunity', '/agendamentos'];
 
 function getLoginRedirect(pathname: string): string {
 	if (CUSTOMER_PATHS.some((p) => pathname.startsWith(p))) {

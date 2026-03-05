@@ -10,6 +10,13 @@ export async function getAppointments(): Promise<Appointment[]> {
 	return appointmentSchema.array().parse(data);
 }
 
+export async function getAppointmentsByCustomer(
+	customerId: string,
+): Promise<Appointment[]> {
+	const { data } = await api.get(`/appointments/${customerId}`);
+	return appointmentSchema.array().parse(data);
+}
+
 export async function createAppointment(
 	payload: CreateAppointmentPayload,
 ): Promise<Appointment> {

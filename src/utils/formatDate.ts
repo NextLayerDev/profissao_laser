@@ -1,3 +1,5 @@
+const SAO_PAULO_TZ = 'America/Sao_Paulo';
+
 export function formatDate(dateStr: string) {
 	return new Intl.DateTimeFormat('pt-BR', {
 		day: '2-digit',
@@ -6,6 +8,27 @@ export function formatDate(dateStr: string) {
 		hour: '2-digit',
 		minute: '2-digit',
 	}).format(new Date(dateStr));
+}
+
+/** Formata data de agendamento (YYYY-MM-DD) no timezone de São Paulo */
+export function formatAppointmentDate(
+	dateStr: string,
+	options: Intl.DateTimeFormatOptions = {
+		day: '2-digit',
+		month: '2-digit',
+		year: 'numeric',
+	},
+): string {
+	try {
+		const d = new Date(`${dateStr}T12:00:00`);
+		if (Number.isNaN(d.getTime())) return dateStr;
+		return new Intl.DateTimeFormat('pt-BR', {
+			...options,
+			timeZone: SAO_PAULO_TZ,
+		}).format(d);
+	} catch {
+		return dateStr;
+	}
 }
 
 /** Formata timestamp de mensagem de chat (ex: "21:45", "Ontem 21:45", "03/03 21:45") */

@@ -12,7 +12,7 @@ export function useLessonProgress(courseId: string | undefined) {
 
 	const { data, isLoading } = useQuery({
 		queryKey: progressKey(courseId ?? ''),
-		queryFn: () => getCourseProgress(courseId!),
+		queryFn: () => getCourseProgress(courseId ?? ''),
 		enabled: !!courseId,
 	});
 

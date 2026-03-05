@@ -3,6 +3,7 @@ import {
 	createAppointment,
 	deleteAppointment,
 	getAppointments,
+	getAppointmentsByCustomer,
 	updateAppointmentStatus,
 } from '@/services/appointments';
 import type { CreateAppointmentPayload } from '@/types/appointments';
@@ -15,6 +16,19 @@ export function useAppointments() {
 	} = useQuery({
 		queryKey: ['appointments'],
 		queryFn: getAppointments,
+	});
+	return { appointments, isLoading, error };
+}
+
+export function useAppointmentsByCustomer(customerId: string | null) {
+	const {
+		data: appointments,
+		isLoading,
+		error,
+	} = useQuery({
+		queryKey: ['appointments', 'customer', customerId],
+		queryFn: () => getAppointmentsByCustomer(customerId ?? ''),
+		enabled: !!customerId,
 	});
 	return { appointments, isLoading, error };
 }
