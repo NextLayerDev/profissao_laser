@@ -192,6 +192,13 @@ export function CommunityView({
 	const [newChannelName, setNewChannelName] = useState('');
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const channelFileInputRef = useRef<HTMLInputElement>(null);
+	const channelMessageTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+	const resizeMessageTextarea = (el: HTMLTextAreaElement | null) => {
+		if (!el) return;
+		el.style.height = 'auto';
+		el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
+	};
 
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -210,6 +217,10 @@ export function CommunityView({
 				onSuccess: () => {
 					setMessageInput('');
 					setMessageFile(null);
+					if (channelFileInputRef.current) {
+						channelFileInputRef.current.value = '';
+					}
+					resizeMessageTextarea(channelMessageTextareaRef.current);
 					refetchMessages();
 				},
 			},
@@ -309,7 +320,7 @@ export function CommunityView({
 			case 'feed':
 				return (
 					<div className="w-full p-6 space-y-6">
-						<div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+						<div className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6">
 							<div className="flex gap-4">
 								<div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold shrink-0">
 									{userInitials}
@@ -319,7 +330,7 @@ export function CommunityView({
 										placeholder="Compartilhe seus projetos, dúvidas sobre personalização a laser ou conquistas..."
 										value={postContent}
 										onChange={(e) => setPostContent(e.target.value)}
-										className="w-full min-h-[100px] p-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 resize-none"
+										className="w-full min-h-[100px] p-4 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 resize-none"
 									/>
 									{postImage && (
 										<div className="relative rounded-xl overflow-hidden">
@@ -371,7 +382,7 @@ export function CommunityView({
 								<div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
 							</div>
 						) : posts.length === 0 ? (
-							<div className="text-center py-12 text-slate-400">
+							<div className="text-center py-12 text-slate-600 dark:text-slate-400">
 								<MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
 								<p>Nenhum post ainda. Seja o primeiro a publicar!</p>
 							</div>
@@ -379,7 +390,7 @@ export function CommunityView({
 							posts.map((post) => (
 								<div
 									key={post.id}
-									className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden"
+									className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden"
 								>
 									<div className="p-4 flex items-start gap-4">
 										<button
@@ -418,7 +429,7 @@ export function CommunityView({
 																'Especialista em Personalização Laser',
 															)
 														}
-														className="font-bold text-white hover:text-violet-400 text-sm"
+														className="font-bold text-slate-900 dark:text-white hover:text-violet-400 text-sm"
 													>
 														{post.author}
 													</button>
@@ -428,7 +439,7 @@ export function CommunityView({
 												</div>
 												<button
 													type="button"
-													className="p-2 text-slate-500 hover:text-white rounded-full"
+													className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-full"
 												>
 													<MoreVertical className="h-4 w-4" />
 												</button>
@@ -436,7 +447,7 @@ export function CommunityView({
 										</div>
 									</div>
 									<div className="px-4 pb-4">
-										<p className="text-sm text-slate-300 leading-relaxed">
+										<p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
 											{post.content}
 										</p>
 										{post.image && (
@@ -455,7 +466,7 @@ export function CommunityView({
 											className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm ${
 												post.liked
 													? 'text-pink-500'
-													: 'text-slate-400 hover:text-white'
+													: 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
 											}`}
 										>
 											<Heart
@@ -491,10 +502,10 @@ export function CommunityView({
 							<div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 mb-4">
 								<Trophy className="h-8 w-8 text-white" />
 							</div>
-							<h2 className="text-3xl font-bold text-white">
+							<h2 className="text-3xl font-bold text-slate-900 dark:text-white">
 								Ranking da Comunidade
 							</h2>
-							<p className="text-slate-400 mt-2">
+							<p className="text-slate-600 dark:text-slate-400 mt-2">
 								Os profissionais mais engajados
 							</p>
 							<div className="flex justify-center gap-2 mt-4">
@@ -504,7 +515,7 @@ export function CommunityView({
 									className={`px-4 py-2 rounded-full text-sm font-medium ${
 										rankingPeriod === 'week'
 											? 'bg-violet-600 text-white'
-											: 'bg-white/5 text-slate-400 hover:text-white'
+											: 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
 									}`}
 								>
 									Semana
@@ -515,7 +526,7 @@ export function CommunityView({
 									className={`px-4 py-2 rounded-full text-sm font-medium ${
 										rankingPeriod === 'month'
 											? 'bg-violet-600 text-white'
-											: 'bg-white/5 text-slate-400 hover:text-white'
+											: 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
 									}`}
 								>
 									Mês
@@ -531,7 +542,7 @@ export function CommunityView({
 									onClick={() =>
 										handleViewProfile(user.name, user.name[0], 'Top Performer')
 									}
-									className={`bg-white/5 border border-white/10 rounded-2xl overflow-hidden text-left hover:border-violet-500/40 transition-all ${
+									className={`bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden text-left hover:border-violet-500/40 transition-all ${
 										user.pos === 1
 											? 'md:-mt-6 z-10 ring-2 ring-amber-500/50'
 											: ''
@@ -543,10 +554,10 @@ export function CommunityView({
 										<Trophy className="h-14 w-14 text-white drop-shadow-lg" />
 									</div>
 									<div className="text-center p-6 -mt-14 relative">
-										<div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-2xl font-bold text-white border-4 border-[#0d0b1e] mb-4">
+										<div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-2xl font-bold text-white border-4 border-slate-50 dark:border-[#0d0b1e] mb-4">
 											{user.name[0]}
 										</div>
-										<h3 className="font-bold text-lg text-white">
+										<h3 className="font-bold text-lg text-slate-900 dark:text-white">
 											{user.name}
 										</h3>
 										<span className="inline-block mt-2 px-3 py-1 rounded-full bg-violet-500/20 text-violet-300 text-xs font-medium">
@@ -557,9 +568,9 @@ export function CommunityView({
 							))}
 						</div>
 
-						<div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-							<div className="p-4 border-b border-white/10">
-								<h3 className="font-bold text-white flex items-center gap-2">
+						<div className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden">
+							<div className="p-4 border-b border-slate-200 dark:border-white/10">
+								<h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
 									<Star className="h-5 w-5 text-cyan-500" />
 									Classificação Geral
 								</h3>
@@ -574,22 +585,26 @@ export function CommunityView({
 										}
 										className="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-white/5 transition-colors text-left"
 									>
-										<span className="font-mono font-bold text-slate-500 w-8">
+										<span className="font-mono font-bold text-slate-600 dark:text-slate-500 w-8">
 											{u.pos}º
 										</span>
 										<div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold">
 											U{u.pos}
 										</div>
 										<div className="flex-1">
-											<p className="font-medium text-white">{u.name}</p>
-											<div className="h-2 bg-slate-800 rounded-full mt-2 max-w-[200px] overflow-hidden">
+											<p className="font-medium text-slate-900 dark:text-white">
+												{u.name}
+											</p>
+											<div className="h-2 bg-slate-200 dark:bg-slate-800 rounded-full mt-2 max-w-[200px] overflow-hidden">
 												<div
 													className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full"
 													style={{ width: `${100 - u.pos * 5}%` }}
 												/>
 											</div>
 										</div>
-										<span className="text-slate-400 text-sm">{u.pts} pts</span>
+										<span className="text-slate-600 dark:text-slate-400 text-sm">
+											{u.pts} pts
+										</span>
 									</button>
 								))}
 							</div>
@@ -602,13 +617,13 @@ export function CommunityView({
 					<div className="w-full p-6 space-y-6">
 						<div className="flex justify-between items-center">
 							<div>
-								<h2 className="text-2xl font-bold text-white flex items-center gap-3">
+								<h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
 									<div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600">
 										<Calendar className="h-6 w-6 text-white" />
 									</div>
 									Agenda de Eventos
 								</h2>
-								<p className="text-slate-400 mt-1">
+								<p className="text-slate-600 dark:text-slate-400 mt-1">
 									Lives, workshops e treinamentos exclusivos
 								</p>
 							</div>
@@ -625,14 +640,14 @@ export function CommunityView({
 							{events.slice(0, 2).map((event) => (
 								<div
 									key={event.id}
-									className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden border-l-4 border-l-cyan-500"
+									className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden border-l-4 border-l-cyan-500"
 								>
 									<div className="md:flex">
 										<div className="md:w-64 p-8 bg-violet-500/10 flex flex-col items-center justify-center text-center">
 											<span className="text-sm font-bold text-violet-400 uppercase">
 												{event.date}
 											</span>
-											<span className="text-2xl font-bold text-white mt-1">
+											<span className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
 												{event.time ?? '—'}
 											</span>
 											<span
@@ -646,10 +661,10 @@ export function CommunityView({
 											</span>
 										</div>
 										<div className="p-8 flex-1">
-											<h3 className="text-xl font-bold text-white mb-2">
+											<h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
 												{event.title}
 											</h3>
-											<p className="text-slate-400 mb-4">
+											<p className="text-slate-600 dark:text-slate-400 mb-4">
 												{event.description ?? ''}
 											</p>
 											<button
@@ -677,13 +692,13 @@ export function CommunityView({
 									placeholder="Buscar membro por nome ou especialidade..."
 									value={memberSearch}
 									onChange={(e) => setMemberSearch(e.target.value)}
-									className="w-full pl-12 h-12 rounded-full bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50"
+									className="w-full pl-12 h-12 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50"
 								/>
 							</div>
 							<select
 								value={memberFilter}
 								onChange={(e) => setMemberFilter(e.target.value)}
-								className="h-12 px-4 rounded-full bg-white/5 border border-white/10 text-white focus:outline-none focus:border-violet-500/50"
+								className="h-12 px-4 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50"
 							>
 								<option value="all">Todos</option>
 								<option value="fiber">Fiber</option>
@@ -700,7 +715,7 @@ export function CommunityView({
 								filteredMembers.map((member) => (
 									<div
 										key={`${member.name}-${member.specialty}`}
-										className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-violet-500/40 transition-all"
+										className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6 hover:border-violet-500/40 transition-all"
 									>
 										<div className="flex flex-col items-center">
 											<div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-2xl font-bold text-white mb-4 overflow-hidden">
@@ -714,10 +729,10 @@ export function CommunityView({
 													member.name[0]
 												)}
 											</div>
-											<h3 className="font-bold text-lg text-white">
+											<h3 className="font-bold text-lg text-slate-900 dark:text-white">
 												{member.name}
 											</h3>
-											<p className="text-sm text-slate-400 mb-3 text-center">
+											<p className="text-sm text-slate-600 dark:text-slate-400 mb-3 text-center">
 												{member.specialty ?? 'Membro da comunidade'}
 											</p>
 											<div className="flex justify-center gap-2 mb-4 flex-wrap">
@@ -749,8 +764,8 @@ export function CommunityView({
 								))
 							) : (
 								<div className="col-span-full text-center py-12">
-									<Users className="h-16 w-16 text-slate-600 mx-auto mb-4" />
-									<p className="text-slate-400">
+									<Users className="h-16 w-16 text-slate-500 dark:text-slate-600 mx-auto mb-4" />
+									<p className="text-slate-600 dark:text-slate-400">
 										Nenhum membro encontrado com esses filtros.
 									</p>
 								</div>
@@ -764,13 +779,13 @@ export function CommunityView({
 					<div className="w-full p-6 space-y-6">
 						<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
 							<div>
-								<h2 className="text-2xl font-bold text-white flex items-center gap-3">
+								<h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
 									<div className="p-2 rounded-xl bg-gradient-to-br from-pink-500 to-purple-600">
 										<Star className="h-6 w-6 text-white" />
 									</div>
 									Vitrine de Projetos
 								</h2>
-								<p className="text-slate-400 mt-1">
+								<p className="text-slate-600 dark:text-slate-400 mt-1">
 									Projetos incríveis da comunidade
 								</p>
 							</div>
@@ -789,7 +804,7 @@ export function CommunityView({
 									key={`${item.title}-${item.author}`}
 									type="button"
 									onClick={() => handleViewDetails(item)}
-									className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden text-left hover:border-violet-500/40 transition-all group"
+									className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden text-left hover:border-violet-500/40 transition-all group"
 								>
 									<div className="aspect-square overflow-hidden">
 										<img
@@ -802,10 +817,10 @@ export function CommunityView({
 										/>
 									</div>
 									<div className="p-5">
-										<h3 className="font-bold text-lg text-white mb-1">
+										<h3 className="font-bold text-lg text-slate-900 dark:text-white mb-1">
 											{item.title}
 										</h3>
-										<p className="text-sm text-slate-400 mb-3">
+										<p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
 											por {item.author}
 										</p>
 										<div className="flex gap-2 mb-4 flex-wrap">
@@ -820,7 +835,7 @@ export function CommunityView({
 												</span>
 											)}
 										</div>
-										<div className="flex items-center gap-4 text-sm text-slate-400">
+										<div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
 											<span className="flex items-center gap-1">
 												<Heart className="h-4 w-4 text-pink-400" />{' '}
 												{item.likes ?? 0}
@@ -843,16 +858,16 @@ export function CommunityView({
 			case 'channel':
 				return (
 					<div className="flex flex-col h-full">
-						<div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#0d0b1e]/80 backdrop-blur-lg sticky top-0 z-10">
+						<div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0d0b1e]/80 backdrop-blur-lg sticky top-0 z-10">
 							<div className="flex items-center gap-4">
 								<div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600">
 									<Hash className="h-5 w-5 text-white" />
 								</div>
 								<div>
-									<h2 className="font-bold text-lg text-white">
+									<h2 className="font-bold text-lg text-slate-900 dark:text-white">
 										{activeChannelLabel}
 									</h2>
-									<p className="text-xs text-slate-500">
+									<p className="text-xs text-slate-600 dark:text-slate-500">
 										Canal de discussão - Profissão Laser
 									</p>
 								</div>
@@ -861,12 +876,12 @@ export function CommunityView({
 								{[1, 2, 3].map((i) => (
 									<div
 										key={i}
-										className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 border-2 border-[#0d0b1e] flex items-center justify-center text-xs font-bold text-white"
+										className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 border-2 border-white dark:border-[#0d0b1e] flex items-center justify-center text-xs font-bold text-white"
 									>
 										U{i}
 									</div>
 								))}
-								<div className="w-9 h-9 rounded-full bg-cyan-500/50 border-2 border-[#0d0b1e] flex items-center justify-center text-[10px] font-bold text-white">
+								<div className="w-9 h-9 rounded-full bg-cyan-500/50 border-2 border-white dark:border-[#0d0b1e] flex items-center justify-center text-[10px] font-bold text-white">
 									+15
 								</div>
 							</div>
@@ -886,10 +901,10 @@ export function CommunityView({
 											className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'} max-w-[75%]`}
 										>
 											<div className="flex items-baseline gap-2 mb-1">
-												<span className="text-sm font-bold text-white">
+												<span className="text-sm font-bold text-slate-900 dark:text-white">
 													{msg.user}
 												</span>
-												<span className="text-[10px] text-slate-500">
+												<span className="text-[10px] text-slate-600 dark:text-slate-500">
 													{formatMessageTime(msg.time)}
 												</span>
 											</div>
@@ -897,10 +912,14 @@ export function CommunityView({
 												className={`p-4 rounded-2xl text-sm space-y-2 ${
 													msg.isMe
 														? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-tr-sm'
-														: 'bg-white/5 border border-white/10 text-slate-200 rounded-tl-sm'
+														: 'bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-200 rounded-tl-sm'
 												}`}
 											>
-												{msg.content && <p>{msg.content}</p>}
+												{msg.content && (
+													<p className="whitespace-pre-wrap break-words">
+														{msg.content}
+													</p>
+												)}
 												{msg.fileUrl && (
 													<a
 														href={msg.fileUrl}
@@ -931,7 +950,7 @@ export function CommunityView({
 									<div className="p-6 rounded-full bg-cyan-500/20 mb-4">
 										<MessageSquare className="h-12 w-12 text-cyan-400" />
 									</div>
-									<p className="text-slate-400">
+									<p className="text-slate-600 dark:text-slate-400">
 										Seja o primeiro a enviar uma mensagem!
 									</p>
 								</div>
@@ -939,7 +958,7 @@ export function CommunityView({
 							<div ref={messagesEndRef} />
 						</div>
 
-						<div className="p-4 border-t border-white/10 bg-[#0d0b1e]/80 backdrop-blur-lg">
+						<div className="p-4 border-t border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0d0b1e]/80 backdrop-blur-lg">
 							<div className="flex gap-3 items-center">
 								<input
 									type="file"
@@ -973,13 +992,22 @@ export function CommunityView({
 										</button>
 									</span>
 								)}
-								<input
-									type="text"
-									placeholder={`Enviar mensagem em #${activeChannelLabel}...`}
+								<textarea
+									ref={channelMessageTextareaRef}
+									placeholder={`Enviar mensagem em #${activeChannelLabel}... (Enter = enviar, Shift+Enter = nova linha)`}
 									value={messageInput}
-									onChange={(e) => setMessageInput(e.target.value)}
-									onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-									className="flex-1 h-12 px-6 rounded-full bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/50"
+									onChange={(e) => {
+										setMessageInput(e.target.value);
+										resizeMessageTextarea(e.target);
+									}}
+									onKeyDown={(e) => {
+										if (e.key === 'Enter' && !e.shiftKey) {
+											e.preventDefault();
+											handleSendMessage();
+										}
+									}}
+									rows={1}
+									className="flex-1 min-h-[44px] max-h-32 py-3 px-6 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/50 resize-none overflow-y-auto"
 								/>
 								<button
 									type="button"
@@ -1037,30 +1065,42 @@ export function CommunityView({
 					<div className="p-6">
 						<div className="h-32 -m-6 mb-0 rounded-t-2xl bg-gradient-to-br from-violet-600 to-purple-600" />
 						<div className="flex flex-col items-center -mt-16">
-							<div className="w-28 h-28 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-3xl font-bold text-white border-4 border-[#12103a]">
+							<div className="w-28 h-28 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-3xl font-bold text-white border-4 border-white dark:border-[#12103a]">
 								{selectedProfile.avatar}
 							</div>
-							<h3 className="text-2xl font-bold text-white mt-4">
+							<h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-4">
 								{selectedProfile.name}
 							</h3>
 							<p className="text-violet-400 font-medium">
 								{selectedProfile.specialty}
 							</p>
 						</div>
-						<div className="flex justify-center gap-6 py-6 border-y border-white/10">
+						<div className="flex justify-center gap-6 py-6 border-y border-slate-200 dark:border-white/10">
 							<div className="text-center">
-								<p className="text-2xl font-bold text-white">127</p>
-								<p className="text-xs text-slate-500">Projetos</p>
+								<p className="text-2xl font-bold text-slate-900 dark:text-white">
+									127
+								</p>
+								<p className="text-xs text-slate-600 dark:text-slate-500">
+									Projetos
+								</p>
 							</div>
-							<div className="w-px h-12 bg-white/10" />
+							<div className="w-px h-12 bg-slate-200 dark:bg-white/10" />
 							<div className="text-center">
-								<p className="text-2xl font-bold text-white">2.4k</p>
-								<p className="text-xs text-slate-500">Seguidores</p>
+								<p className="text-2xl font-bold text-slate-900 dark:text-white">
+									2.4k
+								</p>
+								<p className="text-xs text-slate-600 dark:text-slate-500">
+									Seguidores
+								</p>
 							</div>
-							<div className="w-px h-12 bg-white/10" />
+							<div className="w-px h-12 bg-slate-200 dark:bg-white/10" />
 							<div className="text-center">
-								<p className="text-2xl font-bold text-white">89</p>
-								<p className="text-xs text-slate-500">Seguindo</p>
+								<p className="text-2xl font-bold text-slate-900 dark:text-white">
+									89
+								</p>
+								<p className="text-xs text-slate-600 dark:text-slate-500">
+									Seguindo
+								</p>
 							</div>
 						</div>
 						<div className="flex gap-2 justify-center flex-wrap py-4">
@@ -1078,7 +1118,7 @@ export function CommunityView({
 							<button
 								type="button"
 								onClick={() => setShowProfileModal(false)}
-								className="flex-1 flex items-center justify-center gap-2 py-3 border border-white/10 rounded-full text-slate-300 hover:bg-white/5"
+								className="flex-1 flex items-center justify-center gap-2 py-3 border border-slate-200 dark:border-white/10 rounded-full text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5"
 							>
 								<MessageSquare className="h-4 w-4" /> Mensagem
 							</button>
@@ -1096,7 +1136,7 @@ export function CommunityView({
 			{showDetailsModal && selectedProject && (
 				<ModalOverlay onClose={() => setShowDetailsModal(false)}>
 					<div className="p-6">
-						<h3 className="text-2xl font-bold text-white">
+						<h3 className="text-2xl font-bold text-slate-900 dark:text-white">
 							{selectedProject.title}
 						</h3>
 						<p className="text-violet-400">por {selectedProject.author}</p>
@@ -1109,40 +1149,46 @@ export function CommunityView({
 								/>
 							</div>
 						)}
-						<p className="text-slate-400 mt-4 leading-relaxed">
+						<p className="text-slate-600 dark:text-slate-400 mt-4 leading-relaxed">
 							{selectedProject.description}
 						</p>
 						<div className="grid grid-cols-3 gap-4 p-4 bg-violet-500/10 rounded-xl mt-4">
 							<div className="text-center">
-								<p className="text-xs text-slate-500">Material</p>
-								<p className="font-medium text-white text-sm">
+								<p className="text-xs text-slate-600 dark:text-slate-500">
+									Material
+								</p>
+								<p className="font-medium text-slate-900 dark:text-white text-sm">
 									{selectedProject.material ?? '-'}
 								</p>
 							</div>
 							<div className="text-center">
-								<p className="text-xs text-slate-500">Técnica</p>
-								<p className="font-medium text-white text-sm">
+								<p className="text-xs text-slate-600 dark:text-slate-500">
+									Técnica
+								</p>
+								<p className="font-medium text-slate-900 dark:text-white text-sm">
 									{selectedProject.technique ?? '-'}
 								</p>
 							</div>
 							<div className="text-center">
-								<p className="text-xs text-slate-500">Tempo</p>
-								<p className="font-medium text-white text-sm">
+								<p className="text-xs text-slate-600 dark:text-slate-500">
+									Tempo
+								</p>
+								<p className="font-medium text-slate-900 dark:text-white text-sm">
 									{selectedProject.time ?? '-'}
 								</p>
 							</div>
 						</div>
-						<div className="flex gap-4 pt-4 border-t border-white/10 mt-4">
+						<div className="flex gap-4 pt-4 border-t border-slate-200 dark:border-white/10 mt-4">
 							<button
 								type="button"
-								className="flex items-center gap-2 text-slate-400 hover:text-pink-500"
+								className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-pink-500"
 							>
 								<Heart className="h-5 w-5" /> {selectedProject.likes ?? 234}{' '}
 								curtidas
 							</button>
 							<button
 								type="button"
-								className="flex items-center gap-2 text-slate-400 hover:text-blue-500"
+								className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-blue-500"
 							>
 								<MessageSquare className="h-5 w-5" />{' '}
 								{selectedProject.comments ?? 45} comentários
@@ -1158,16 +1204,16 @@ export function CommunityView({
 						<div className="mx-auto w-16 h-16 rounded-full bg-violet-500/20 flex items-center justify-center mb-4">
 							<Hash className="h-8 w-8 text-violet-400" />
 						</div>
-						<h3 className="text-2xl font-bold text-white text-center">
+						<h3 className="text-2xl font-bold text-slate-900 dark:text-white text-center">
 							Criar Novo Canal
 						</h3>
-						<p className="text-slate-400 text-center mt-1">
+						<p className="text-slate-600 dark:text-slate-400 text-center mt-1">
 							Crie um espaço para discussões sobre personalização laser
 						</p>
 						<div className="mt-6 space-y-2">
 							<label
 								htmlFor="channel-name"
-								className="text-sm font-medium text-white"
+								className="text-sm font-medium text-slate-900 dark:text-white"
 							>
 								Nome do Canal
 							</label>
@@ -1181,7 +1227,7 @@ export function CommunityView({
 									placeholder="nome-do-canal"
 									value={newChannelName}
 									onChange={(e) => setNewChannelName(e.target.value)}
-									className="w-full pl-8 h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50"
+									className="w-full pl-8 h-12 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50"
 								/>
 							</div>
 						</div>
@@ -1203,10 +1249,10 @@ export function CommunityView({
 						<div className="mx-auto w-16 h-16 rounded-full bg-pink-500/20 flex items-center justify-center mb-4">
 							<Star className="h-8 w-8 text-pink-400" />
 						</div>
-						<h3 className="text-2xl font-bold text-white text-center">
+						<h3 className="text-2xl font-bold text-slate-900 dark:text-white text-center">
 							Enviar Projeto
 						</h3>
-						<p className="text-slate-400 text-center mt-1">
+						<p className="text-slate-600 dark:text-slate-400 text-center mt-1">
 							Compartilhe seu trabalho de personalização a laser
 						</p>
 						<div className="mt-6 space-y-4">
@@ -1249,7 +1295,7 @@ export function CommunityView({
 										className="w-full border-2 border-dashed border-white/20 rounded-xl p-8 text-center hover:border-violet-500/50 hover:bg-violet-500/10 transition-colors"
 									>
 										<ImageIcon className="h-10 w-10 text-violet-400 mx-auto mb-2" />
-										<p className="text-sm text-slate-400">
+										<p className="text-sm text-slate-600 dark:text-slate-400">
 											Clique para adicionar uma imagem
 										</p>
 									</button>
@@ -1270,7 +1316,7 @@ export function CommunityView({
 									onChange={(e) =>
 										setNewProject((p) => ({ ...p, title: e.target.value }))
 									}
-									className="w-full h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 px-4"
+									className="w-full h-12 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 px-4"
 								/>
 							</div>
 							<div>
@@ -1290,7 +1336,7 @@ export function CommunityView({
 											description: e.target.value,
 										}))
 									}
-									className="w-full min-h-[80px] rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 p-4 resize-none"
+									className="w-full min-h-[80px] rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 p-4 resize-none"
 								/>
 							</div>
 							<div className="grid grid-cols-2 gap-4">
@@ -1309,7 +1355,7 @@ export function CommunityView({
 										onChange={(e) =>
 											setNewProject((p) => ({ ...p, material: e.target.value }))
 										}
-										className="w-full h-10 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 px-4"
+										className="w-full h-10 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 px-4"
 									/>
 								</div>
 								<div>
@@ -1330,7 +1376,7 @@ export function CommunityView({
 												technique: e.target.value,
 											}))
 										}
-										className="w-full h-10 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 px-4"
+										className="w-full h-10 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 px-4"
 									/>
 								</div>
 							</div>
@@ -1352,26 +1398,28 @@ export function CommunityView({
 			{showCalendarModal && (
 				<ModalOverlay onClose={() => setShowCalendarModal(false)}>
 					<div className="p-6">
-						<h3 className="text-2xl font-bold text-white flex items-center gap-2 mb-4">
+						<h3 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-4">
 							<Calendar className="h-6 w-6 text-violet-500" />
 							Calendário de Eventos
 						</h3>
 						<p className="text-violet-400 mb-6">
 							Workshops, lives e eventos sobre personalização a laser
 						</p>
-						<div className="p-6 bg-violet-500/10 rounded-2xl border border-white/10 mb-6">
+						<div className="p-6 bg-violet-500/10 rounded-2xl border border-slate-200 dark:border-white/10 mb-6">
 							<div className="flex items-center justify-between mb-4">
-								<h4 className="font-bold text-lg text-white">Janeiro 2025</h4>
+								<h4 className="font-bold text-lg text-slate-900 dark:text-white">
+									Janeiro 2025
+								</h4>
 								<div className="flex gap-2">
 									<button
 										type="button"
-										className="p-2 text-violet-400 hover:bg-white/5 rounded-lg"
+										className="p-2 text-violet-400 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg"
 									>
 										<ArrowLeft className="h-4 w-4" />
 									</button>
 									<button
 										type="button"
-										className="p-2 text-violet-400 hover:bg-white/5 rounded-lg"
+										className="p-2 text-violet-400 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg"
 									>
 										<ArrowLeft className="h-4 w-4 rotate-180" />
 									</button>
@@ -1398,7 +1446,9 @@ export function CommunityView({
 											key={i}
 											type="button"
 											className={`aspect-square p-2 rounded-lg text-sm font-medium ${
-												!isCurrentMonth ? 'text-slate-600' : 'text-white'
+												!isCurrentMonth
+													? 'text-slate-500 dark:text-slate-600'
+													: 'text-slate-900 dark:text-white'
 											} ${hasEvent ? 'bg-violet-600 text-white' : 'hover:bg-white/10'}`}
 										>
 											{isCurrentMonth ? day : ''}
@@ -1408,11 +1458,13 @@ export function CommunityView({
 							</div>
 						</div>
 						<div className="space-y-3">
-							<h4 className="font-bold text-white">Próximos Eventos</h4>
+							<h4 className="font-bold text-slate-900 dark:text-white">
+								Próximos Eventos
+							</h4>
 							{events.map((event) => (
 								<div
 									key={event.id}
-									className="p-4 bg-white/5 border border-white/10 rounded-xl hover:border-violet-500/40 transition-colors"
+									className="p-4 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl hover:border-violet-500/40 transition-colors"
 								>
 									<div className="flex gap-3">
 										<div className="w-14 h-14 rounded-xl bg-violet-600 flex flex-col items-center justify-center text-white shrink-0">
@@ -1424,10 +1476,10 @@ export function CommunityView({
 											</span>
 										</div>
 										<div className="flex-1 min-w-0">
-											<h5 className="font-semibold text-white text-sm">
+											<h5 className="font-semibold text-slate-900 dark:text-white text-sm">
 												{event.title}
 											</h5>
-											<p className="text-xs text-slate-400 mt-1">
+											<p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
 												{event.description}
 											</p>
 											<div className="flex items-center gap-2 text-xs text-violet-400 mt-2">
@@ -1536,7 +1588,7 @@ export function CommunityView({
 						<button
 							type="button"
 							onClick={() => setShowCalendarModal(true)}
-							className="w-full flex items-center gap-3 px-4 py-2 text-slate-400 hover:text-violet-400 hover:bg-white/5 rounded-xl"
+							className="w-full flex items-center gap-3 px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-violet-400 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl"
 						>
 							<Calendar className="h-4 w-4" />
 							Ver Calendário
@@ -1547,7 +1599,7 @@ export function CommunityView({
 									key={event.id}
 									type="button"
 									onClick={() => setShowCalendarModal(true)}
-									className="w-full p-3 bg-white/5 border border-white/10 rounded-xl hover:border-violet-500/40 text-left"
+									className="w-full p-3 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl hover:border-violet-500/40 text-left"
 								>
 									<div className="flex gap-2">
 										<div className="w-10 h-10 rounded-lg bg-violet-600 flex flex-col items-center justify-center text-white text-xs shrink-0">
@@ -1559,7 +1611,7 @@ export function CommunityView({
 											</span>
 										</div>
 										<div className="flex-1 min-w-0">
-											<h5 className="font-semibold text-white text-xs truncate">
+											<h5 className="font-semibold text-slate-900 dark:text-white text-xs truncate">
 												{event.title}
 											</h5>
 											<div className="flex items-center gap-1 text-[10px] text-violet-400 mt-1">
@@ -1607,8 +1659,8 @@ export function CommunityView({
 													title={channel.description ?? undefined}
 													className={`w-full flex items-center gap-2 h-10 px-4 rounded-xl text-sm transition-all ${
 														isActive
-															? 'bg-violet-500/20 text-violet-300'
-															: 'text-slate-400 hover:text-white hover:bg-white/5'
+															? 'bg-violet-500/20 text-violet-700 dark:text-violet-300'
+															: 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
 													}`}
 												>
 													<IconComponent className="h-4 w-4 text-violet-400 shrink-0" />
@@ -1643,7 +1695,7 @@ export function CommunityView({
 				{/* Right sidebar - Feed only */}
 				{activeTab === 'feed' && (
 					<aside className="hidden xl:block w-80 border-l border-slate-200 dark:border-white/10 p-6 space-y-6 overflow-y-auto bg-white/50 dark:bg-[#0d0b1e]/60">
-						<div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+						<div className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden">
 							<div className="h-1 bg-gradient-to-r from-amber-500 to-orange-500" />
 							<div className="p-4">
 								<h4 className="font-bold text-amber-400 flex items-center gap-2 text-sm">
@@ -1677,10 +1729,10 @@ export function CommunityView({
 												U{i}
 											</div>
 											<div className="flex-1 min-w-0">
-												<p className="text-sm font-semibold text-white truncate">
+												<p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
 													Usuário Exemplo
 												</p>
-												<p className="text-[10px] text-slate-500">
+												<p className="text-[10px] text-slate-600 dark:text-slate-500">
 													{1500 - i * 100} pts
 												</p>
 											</div>
@@ -1691,7 +1743,7 @@ export function CommunityView({
 						</div>
 
 						<div>
-							<h4 className="font-bold text-sm text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-4">
+							<h4 className="font-bold text-sm text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-4">
 								<Calendar className="h-4 w-4 text-violet-500" />
 								Próximos Eventos
 							</h4>
@@ -1712,7 +1764,7 @@ export function CommunityView({
 										key={`${event.title}-${event.date}`}
 										type="button"
 										onClick={() => setShowCalendarModal(true)}
-										className="w-full p-4 bg-white/5 border border-white/10 rounded-xl hover:border-violet-500/40 text-left border-l-4 border-l-violet-500"
+										className="w-full p-4 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl hover:border-violet-500/40 text-left border-l-4 border-l-violet-500"
 									>
 										<div className="flex justify-between items-start mb-2">
 											<span
@@ -1726,10 +1778,10 @@ export function CommunityView({
 											</span>
 											<Video className="h-4 w-4 text-slate-500" />
 										</div>
-										<h5 className="font-bold text-sm text-white">
+										<h5 className="font-bold text-sm text-slate-900 dark:text-white">
 											{event.title}
 										</h5>
-										<p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
+										<p className="text-xs text-slate-600 dark:text-slate-500 flex items-center gap-1 mt-1">
 											<Clock className="h-3 w-3" /> {event.date}
 										</p>
 									</button>
@@ -1737,13 +1789,13 @@ export function CommunityView({
 							</div>
 						</div>
 
-						<div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+						<div className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden">
 							<div className="p-4 bg-gradient-to-br from-violet-600 to-purple-600 text-white">
 								<Sparkles className="h-8 w-8 mb-2" />
 								<h4 className="font-bold">Dica do Dia</h4>
 							</div>
 							<div className="p-4">
-								<p className="text-sm text-slate-400 leading-relaxed">
+								<p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
 									Sempre faça testes de potência antes de gravar em novos
 									materiais. Isso evita desperdício e garante qualidade
 									profissional!

@@ -40,6 +40,13 @@ export function CommunitySection() {
 	const [messageInput, setMessageInput] = useState('');
 	const [messageFile, setMessageFile] = useState<File | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const messageTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+	const resizeMessageTextarea = (el: HTMLTextAreaElement | null) => {
+		if (!el) return;
+		el.style.height = 'auto';
+		el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
+	};
 
 	const { data: channels = [], isLoading: channelsLoading } =
 		useCommunityChannels();
@@ -71,6 +78,7 @@ export function CommunitySection() {
 					if (fileInputRef.current) {
 						fileInputRef.current.value = '';
 					}
+					resizeMessageTextarea(messageTextareaRef.current);
 				},
 			},
 		);
@@ -203,7 +211,11 @@ export function CommunitySection() {
 														: 'bg-slate-100 dark:bg-[#252528] text-slate-900 dark:text-white'
 												}`}
 											>
-												{msg.content && <p>{msg.content}</p>}
+												{msg.content && (
+													<p className="whitespace-pre-wrap break-words">
+														{msg.content}
+													</p>
+												)}
 												{msg.fileUrl && (
 													<a
 														href={msg.fileUrl}
@@ -266,13 +278,22 @@ export function CommunitySection() {
 										</button>
 									</span>
 								)}
-								<input
-									type="text"
-									placeholder={`Enviar mensagem em #${getChannelDisplayName(selectedChannel?.label ?? undefined, selectedChannelId ?? '')}...`}
+								<textarea
+									ref={messageTextareaRef}
+									placeholder={`Enviar mensagem em #${getChannelDisplayName(selectedChannel?.label ?? undefined, selectedChannelId ?? '')}... (Enter = enviar, Shift+Enter = nova linha)`}
 									value={messageInput}
-									onChange={(e) => setMessageInput(e.target.value)}
-									onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-									className="flex-1 h-11 px-4 rounded-full bg-slate-100 dark:bg-[#252528] border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500"
+									onChange={(e) => {
+										setMessageInput(e.target.value);
+										resizeMessageTextarea(e.target);
+									}}
+									onKeyDown={(e) => {
+										if (e.key === 'Enter' && !e.shiftKey) {
+											e.preventDefault();
+											handleSendMessage();
+										}
+									}}
+									rows={1}
+									className="flex-1 min-h-[44px] max-h-32 py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-[#252528] border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500 resize-none overflow-y-auto"
 								/>
 								<button
 									type="button"

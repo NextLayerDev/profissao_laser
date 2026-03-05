@@ -2,6 +2,7 @@ import {
 	AlertCircle,
 	BarChart3,
 	Clock,
+	HelpCircle,
 	MessageSquare,
 	Package,
 	Wrench,
@@ -14,6 +15,13 @@ export const quickAccessItems = [
 		icon: Package,
 		iconBg: 'bg-violet-600',
 		href: '/products',
+	},
+	{
+		title: 'Categorias de Dúvidas',
+		subtitle: 'Gerir categorias e dúvidas',
+		icon: HelpCircle,
+		iconBg: 'bg-indigo-600',
+		href: '/duvidas-admin',
 	},
 	{
 		title: 'Comunidade',

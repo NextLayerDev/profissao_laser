@@ -28,6 +28,7 @@ export const quickAccessItems: QuickAccessItem[] = [
 		Icon: MessageSquare,
 		gradient: 'from-purple-500 to-indigo-600',
 		featureKey: 'chat',
+		href: '/duvidas',
 	},
 	{
 		label: 'Vetorização',

@@ -102,17 +102,17 @@ function ModuleModal({
 
 	return (
 		<div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-			<div className="bg-[#1a1a1d] border border-gray-700 rounded-xl shadow-2xl w-full max-w-md">
-				<div className="flex items-center justify-between p-5 border-b border-gray-700">
-					<h3 className="text-lg font-bold text-white">
+			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-700 rounded-xl shadow-2xl w-full max-w-md">
+				<div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-gray-700">
+					<h3 className="text-lg font-bold text-slate-900 dark:text-white">
 						{editing ? 'Editar módulo' : 'Novo módulo'}
 					</h3>
 					<button
 						type="button"
 						onClick={onClose}
-						className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors"
+						className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
 					>
-						<X className="w-4 h-4 text-gray-400" />
+						<X className="w-4 h-4 text-slate-500 dark:text-gray-400" />
 					</button>
 				</div>
 
@@ -120,7 +120,7 @@ function ModuleModal({
 					<div>
 						<label
 							htmlFor="module-title"
-							className="text-sm font-medium text-gray-300 mb-1.5 block"
+							className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block"
 						>
 							Título
 						</label>
@@ -130,14 +130,14 @@ function ModuleModal({
 							value={form.title}
 							onChange={(e) => setForm({ ...form, title: e.target.value })}
 							placeholder="Ex: Introdução ao curso"
-							className="w-full px-3 py-2 bg-[#0d0d0f] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-violet-500 focus:outline-none"
+							className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none"
 						/>
 					</div>
 
 					<div>
 						<label
 							htmlFor="module-description"
-							className="text-sm font-medium text-gray-300 mb-1.5 block"
+							className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block"
 						>
 							Descrição (opcional)
 						</label>
@@ -149,16 +149,16 @@ function ModuleModal({
 							}
 							rows={3}
 							placeholder="Descrição do módulo..."
-							className="w-full px-3 py-2 bg-[#0d0d0f] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-violet-500 focus:outline-none resize-none"
+							className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 focus:border-violet-500 focus:outline-none resize-none"
 						/>
 					</div>
 				</div>
 
-				<div className="flex justify-end gap-3 p-5 border-t border-gray-700">
+				<div className="flex justify-end gap-3 p-5 border-t border-slate-200 dark:border-gray-700">
 					<button
 						type="button"
 						onClick={onClose}
-						className="px-4 py-2 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700 transition-colors text-sm"
+						className="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors text-sm"
 					>
 						Cancelar
 					</button>
@@ -326,17 +326,17 @@ function LessonModal({
 
 	return (
 		<div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-			<div className="bg-[#1a1a1d] border border-gray-700 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col">
-				<div className="flex items-center justify-between p-5 border-b border-gray-700 shrink-0">
-					<h3 className="text-lg font-bold text-white">
+			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-700 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col">
+				<div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-gray-700 shrink-0">
+					<h3 className="text-lg font-bold text-slate-900 dark:text-white">
 						{editing ? 'Editar aula' : 'Nova aula'}
 					</h3>
 					<button
 						type="button"
 						onClick={onClose}
-						className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors"
+						className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
 					>
-						<X className="w-4 h-4 text-gray-400" />
+						<X className="w-4 h-4 text-slate-500 dark:text-gray-400" />
 					</button>
 				</div>
 
@@ -344,7 +344,7 @@ function LessonModal({
 					<div>
 						<label
 							htmlFor="lesson-title"
-							className="text-sm font-medium text-gray-300 mb-1.5 block"
+							className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block"
 						>
 							Título
 						</label>
@@ -354,14 +354,14 @@ function LessonModal({
 							value={form.title}
 							onChange={(e) => setForm({ ...form, title: e.target.value })}
 							placeholder="Ex: Introdução ao módulo"
-							className="w-full px-3 py-2 bg-[#0d0d0f] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-violet-500 focus:outline-none"
+							className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none"
 						/>
 					</div>
 
 					<div>
 						<label
 							htmlFor="lesson-description"
-							className="text-sm font-medium text-gray-300 mb-1.5 block"
+							className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block"
 						>
 							Descrição (opcional)
 						</label>
@@ -373,13 +373,13 @@ function LessonModal({
 							}
 							rows={2}
 							placeholder="Descrição da aula..."
-							className="w-full px-3 py-2 bg-[#0d0d0f] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-violet-500 focus:outline-none resize-none"
+							className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 focus:border-violet-500 focus:outline-none resize-none"
 						/>
 					</div>
 
 					{/* Vídeo — toggle URL / Arquivo */}
 					<div>
-						<p className="text-sm font-medium text-gray-300 mb-2">
+						<p className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
 							Vídeo (opcional)
 						</p>
 						<div className="flex gap-2 mb-3">
@@ -389,7 +389,7 @@ function LessonModal({
 								className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
 									videoMode === 'file'
 										? 'bg-violet-600 text-white'
-										: 'bg-[#0d0d0f] border border-gray-700 text-gray-400 hover:border-gray-600'
+										: 'bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-400 hover:border-slate-300 dark:hover:border-gray-600'
 								}`}
 							>
 								<UploadCloud className="w-3.5 h-3.5" />
@@ -401,7 +401,7 @@ function LessonModal({
 								className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
 									videoMode === 'url'
 										? 'bg-violet-600 text-white'
-										: 'bg-[#0d0d0f] border border-gray-700 text-gray-400 hover:border-gray-600'
+										: 'bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-400 hover:border-slate-300 dark:hover:border-gray-600'
 								}`}
 							>
 								<Link2 className="w-3.5 h-3.5" />
@@ -415,14 +415,14 @@ function LessonModal({
 								value={form.videoUrl}
 								onChange={(e) => setForm({ ...form, videoUrl: e.target.value })}
 								placeholder="https://..."
-								className="w-full px-3 py-2 bg-[#0d0d0f] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-violet-500 focus:outline-none"
+								className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none"
 							/>
 						) : (
 							<div>
 								<button
 									type="button"
 									onClick={() => videoInputRef.current?.click()}
-									className="w-full border-2 border-dashed border-gray-700 hover:border-violet-500/50 rounded-xl py-5 flex flex-col items-center gap-2 text-gray-500 hover:text-violet-400 transition-colors"
+									className="w-full border-2 border-dashed border-slate-300 dark:border-gray-700 hover:border-violet-500/50 rounded-xl py-5 flex flex-col items-center gap-2 text-slate-600 dark:text-gray-500 hover:text-violet-400 transition-colors"
 								>
 									<UploadCloud className="w-6 h-6" />
 									<span className="text-sm">
@@ -431,7 +431,7 @@ function LessonModal({
 											: 'Clique para selecionar o vídeo'}
 									</span>
 									{videoFile && (
-										<span className="text-xs text-gray-600">
+										<span className="text-xs text-slate-600 dark:text-gray-600">
 											{(videoFile.size / 1024 / 1024).toFixed(1)} MB
 										</span>
 									)}
@@ -449,13 +449,13 @@ function LessonModal({
 
 					{/* Material de apoio */}
 					<div>
-						<p className="text-sm font-medium text-gray-300 mb-2">
+						<p className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
 							Material de apoio (opcional)
 						</p>
 						<button
 							type="button"
 							onClick={() => materialInputRef.current?.click()}
-							className="w-full border-2 border-dashed border-gray-700 hover:border-amber-500/50 rounded-xl py-4 flex flex-col items-center gap-2 text-gray-500 hover:text-amber-400 transition-colors"
+							className="w-full border-2 border-dashed border-slate-300 dark:border-gray-700 hover:border-amber-500/50 rounded-xl py-4 flex flex-col items-center gap-2 text-slate-600 dark:text-gray-500 hover:text-amber-400 transition-colors"
 						>
 							<Paperclip className="w-5 h-5" />
 							<span className="text-sm">Adicionar PDF ou Word</span>
@@ -477,10 +477,10 @@ function LessonModal({
 								{materialFiles.map((f, i) => (
 									<li
 										key={`${f.name}-${i}`}
-										className="flex items-center gap-2 px-3 py-2 bg-[#0d0d0f] border border-gray-800 rounded-lg"
+										className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-800 rounded-lg"
 									>
 										<FileText className="w-4 h-4 text-amber-400 shrink-0" />
-										<span className="flex-1 text-xs text-gray-300 truncate">
+										<span className="flex-1 text-xs text-slate-700 dark:text-gray-300 truncate">
 											{f.name}
 										</span>
 										<button
@@ -490,7 +490,7 @@ function LessonModal({
 													prev.filter((_, idx) => idx !== i),
 												)
 											}
-											className="text-gray-600 hover:text-red-400 transition-colors"
+											className="text-slate-500 dark:text-gray-600 hover:text-red-400 transition-colors"
 										>
 											<X className="w-3.5 h-3.5" />
 										</button>
@@ -503,7 +503,7 @@ function LessonModal({
 					<div>
 						<label
 							htmlFor="lesson-duration"
-							className="text-sm font-medium text-gray-300 mb-1.5 block"
+							className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block"
 						>
 							Duração (segundos)
 						</label>
@@ -518,18 +518,18 @@ function LessonModal({
 									duration: parseInt(e.target.value, 10) || 1,
 								})
 							}
-							className="w-full px-3 py-2 bg-[#0d0d0f] border border-gray-700 rounded-lg text-white focus:border-violet-500 focus:outline-none"
+							className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-lg text-slate-900 dark:text-white focus:border-violet-500 focus:outline-none"
 						/>
 					</div>
 				</div>
 
 				{uploading && videoMode === 'file' && (
 					<div className="px-5 pb-3">
-						<div className="flex justify-between text-xs text-gray-400 mb-1">
+						<div className="flex justify-between text-xs text-slate-600 dark:text-gray-400 mb-1">
 							<span>Enviando vídeo...</span>
 							<span>{uploadProgress}%</span>
 						</div>
-						<div className="w-full bg-gray-700 rounded-full h-1.5">
+						<div className="w-full bg-slate-200 dark:bg-gray-700 rounded-full h-1.5">
 							<div
 								className="bg-violet-500 h-1.5 rounded-full transition-all duration-300"
 								style={{ width: `${uploadProgress}%` }}
@@ -537,11 +537,11 @@ function LessonModal({
 						</div>
 					</div>
 				)}
-				<div className="flex justify-end gap-3 p-5 border-t border-gray-700 shrink-0">
+				<div className="flex justify-end gap-3 p-5 border-t border-slate-200 dark:border-gray-700 shrink-0">
 					<button
 						type="button"
 						onClick={onClose}
-						className="px-4 py-2 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700 transition-colors text-sm"
+						className="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors text-sm"
 					>
 						Cancelar
 					</button>
@@ -685,8 +685,10 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 			{/* Header */}
 			<div className="flex items-center justify-between">
 				<div>
-					<h2 className="text-2xl font-bold text-white">Conteúdo do curso</h2>
-					<p className="text-sm text-gray-400 mt-1">
+					<h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+						Conteúdo do curso
+					</h2>
+					<p className="text-sm text-slate-600 dark:text-gray-400 mt-1">
 						{modules.length} módulo{modules.length !== 1 ? 's' : ''} ·{' '}
 						{totalLessons} aula{totalLessons !== 1 ? 's' : ''}
 					</p>
@@ -707,12 +709,14 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 					<Loader2 className="w-8 h-8 animate-spin text-violet-500" />
 				</div>
 			) : sortedModules.length === 0 ? (
-				<div className="bg-[#1a1a1d] border border-gray-800 rounded-xl p-12 text-center">
-					<p className="text-gray-400 mb-4">Nenhum módulo cadastrado</p>
+				<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-xl p-12 text-center">
+					<p className="text-slate-600 dark:text-gray-400 mb-4">
+						Nenhum módulo cadastrado
+					</p>
 					<button
 						type="button"
 						onClick={() => setModuleModal({ open: true, editing: null })}
-						className="text-violet-400 hover:text-violet-300 font-medium"
+						className="text-violet-600 dark:text-violet-400 hover:text-violet-500 dark:hover:text-violet-300 font-medium"
 					>
 						Criar primeiro módulo
 					</button>
@@ -728,7 +732,7 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 						return (
 							<div
 								key={mod.id}
-								className="bg-[#1a1a1d] border border-gray-800 rounded-xl overflow-hidden"
+								className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-xl overflow-hidden"
 							>
 								{/* Module Header */}
 								<div className="flex items-center gap-2 px-3 py-3">
@@ -738,9 +742,9 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 											type="button"
 											onClick={() => moveModule(modIdx, -1)}
 											disabled={modIdx === 0 || reorderModules.isPending}
-											className="p-1 hover:bg-gray-700 rounded transition-colors disabled:opacity-20"
+											className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-20"
 										>
-											<MoveUp className="w-3 h-3 text-gray-400" />
+											<MoveUp className="w-3 h-3 text-slate-500 dark:text-gray-400" />
 										</button>
 										<button
 											type="button"
@@ -749,21 +753,21 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 												modIdx === sortedModules.length - 1 ||
 												reorderModules.isPending
 											}
-											className="p-1 hover:bg-gray-700 rounded transition-colors disabled:opacity-20"
+											className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-20"
 										>
-											<MoveDown className="w-3 h-3 text-gray-400" />
+											<MoveDown className="w-3 h-3 text-slate-500 dark:text-gray-400" />
 										</button>
 									</div>
 
 									<button
 										type="button"
 										onClick={() => toggleModule(mod.id)}
-										className="p-1 hover:bg-gray-700 rounded transition-colors"
+										className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors"
 									>
 										{isExpanded ? (
-											<ChevronDown className="w-4 h-4 text-gray-400" />
+											<ChevronDown className="w-4 h-4 text-slate-500 dark:text-gray-400" />
 										) : (
-											<ChevronRight className="w-4 h-4 text-gray-400" />
+											<ChevronRight className="w-4 h-4 text-slate-500 dark:text-gray-400" />
 										)}
 									</button>
 
@@ -772,10 +776,10 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 										onClick={() => toggleModule(mod.id)}
 										className="flex-1 text-left"
 									>
-										<span className="font-semibold text-white">
+										<span className="font-semibold text-slate-900 dark:text-white">
 											{mod.title}
 										</span>
-										<span className="ml-3 text-xs text-gray-500">
+										<span className="ml-3 text-xs text-slate-600 dark:text-gray-500">
 											{lessons.length} aula{lessons.length !== 1 ? 's' : ''}
 										</span>
 									</button>
@@ -800,9 +804,9 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 											onClick={() =>
 												setModuleModal({ open: true, editing: mod })
 											}
-											className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+											className="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
 										>
-											<Edit className="w-4 h-4 text-gray-400" />
+											<Edit className="w-4 h-4 text-slate-500 dark:text-gray-400" />
 										</button>
 										<button
 											type="button"
@@ -816,10 +820,10 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 
 								{/* Lessons */}
 								{isExpanded && (
-									<div className="border-t border-gray-800">
+									<div className="border-t border-slate-200 dark:border-gray-800">
 										{lessons.length === 0 ? (
 											<div className="px-4 py-6 text-center">
-												<p className="text-sm text-gray-500 mb-2">
+												<p className="text-sm text-slate-600 dark:text-gray-500 mb-2">
 													Nenhuma aula neste módulo
 												</p>
 												<button
@@ -831,7 +835,7 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 															editing: null,
 														})
 													}
-													className="text-sm text-violet-400 hover:text-violet-300"
+													className="text-sm text-violet-600 dark:text-violet-400 hover:text-violet-500 dark:hover:text-violet-300"
 												>
 													Adicionar aula
 												</button>
@@ -843,9 +847,9 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 														key={lesson.id}
 														className={`flex items-center gap-2 px-3 py-2.5 ${
 															lessonIdx < lessons.length - 1
-																? 'border-b border-gray-800/60'
+																? 'border-b border-slate-200 dark:border-gray-800/60'
 																: ''
-														} hover:bg-gray-800/30 transition-colors group`}
+														} hover:bg-slate-50 dark:hover:bg-gray-800/30 transition-colors group`}
 													>
 														{/* Reorder arrows */}
 														<div className="flex flex-col gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -857,9 +861,9 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 																disabled={
 																	lessonIdx === 0 || reorderLessons.isPending
 																}
-																className="p-0.5 hover:bg-gray-700 rounded transition-colors disabled:opacity-20"
+																className="p-0.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-20"
 															>
-																<MoveUp className="w-3 h-3 text-gray-400" />
+																<MoveUp className="w-3 h-3 text-slate-500 dark:text-gray-400" />
 															</button>
 															<button
 																type="button"
@@ -870,22 +874,22 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 																	lessonIdx === lessons.length - 1 ||
 																	reorderLessons.isPending
 																}
-																className="p-0.5 hover:bg-gray-700 rounded transition-colors disabled:opacity-20"
+																className="p-0.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-20"
 															>
-																<MoveDown className="w-3 h-3 text-gray-400" />
+																<MoveDown className="w-3 h-3 text-slate-500 dark:text-gray-400" />
 															</button>
 														</div>
 
-														<span className="w-6 h-6 flex items-center justify-center text-xs text-gray-500 font-mono shrink-0">
+														<span className="w-6 h-6 flex items-center justify-center text-xs text-slate-600 dark:text-gray-500 font-mono shrink-0">
 															{lessonIdx + 1}
 														</span>
 
 														<div className="flex-1 min-w-0">
-															<p className="text-sm font-medium text-white truncate">
+															<p className="text-sm font-medium text-slate-900 dark:text-white truncate">
 																{lesson.title}
 															</p>
 															{lesson.duration > 0 && (
-																<p className="text-xs text-gray-500">
+																<p className="text-xs text-slate-600 dark:text-gray-500">
 																	{Math.floor(lesson.duration / 60)}m{' '}
 																	{lesson.duration % 60}s
 																</p>
@@ -909,7 +913,7 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 																	})
 																}
 																title="Material de apoio"
-																className="flex items-center gap-1 px-2 py-1 text-xs text-gray-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-lg transition-colors"
+																className="flex items-center gap-1 px-2 py-1 text-xs text-slate-600 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-300 hover:bg-amber-500/10 rounded-lg transition-colors"
 															>
 																<Paperclip className="w-3.5 h-3.5" />
 																<span className="hidden sm:inline">
@@ -927,7 +931,7 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 																	})
 																}
 																title="Quiz"
-																className="flex items-center gap-1 px-2 py-1 text-xs text-gray-400 hover:text-violet-300 hover:bg-violet-500/10 rounded-lg transition-colors"
+																className="flex items-center gap-1 px-2 py-1 text-xs text-slate-600 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-300 hover:bg-violet-500/10 rounded-lg transition-colors"
 															>
 																<ClipboardList className="w-3.5 h-3.5" />
 																<span className="hidden sm:inline">Quiz</span>
@@ -942,9 +946,9 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 																		editing: lesson,
 																	})
 																}
-																className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors"
+																className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
 															>
-																<Edit className="w-3.5 h-3.5 text-gray-400" />
+																<Edit className="w-3.5 h-3.5 text-slate-500 dark:text-gray-400" />
 															</button>
 															<button
 																type="button"
