@@ -8,6 +8,8 @@ import {
 	Loader2,
 	Plus,
 	Trash2,
+	UserCheck,
+	UserCog,
 	X,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -16,7 +18,10 @@ import {
 	useAppointments,
 	useDeleteAppointment,
 	useUpdateAppointmentStatus,
+	useUpdateAppointmentTechnician,
 } from '@/hooks/use-appointments';
+import { useUsers } from '@/hooks/use-users';
+import { getCurrentUser, getToken } from '@/lib/auth';
 import type { Appointment } from '@/types/appointments';
 import {
 	APPOINTMENT_STATUS_LABELS,
@@ -27,6 +32,7 @@ import { AppointmentsCalendar } from './appointments-calendar';
 import { ClientAppointmentsView } from './client-appointments-view';
 import { CreateAppointmentModal } from './create-appointment-modal';
 import { DeleteAppointmentModal } from './delete-appointment-modal';
+import { TechnicianAppointmentsView } from './technician-appointments-view';
 import { UpdateStatusModal } from './update-status-modal';
 
 const STATUS_FILTERS = [
@@ -44,10 +50,11 @@ interface AppointmentsTableProps {
 export function AppointmentsTable({
 	showCreateButton = true,
 }: AppointmentsTableProps) {
-	const [viewMode, setViewMode] = useState<'tabela' | 'calendario' | 'cliente'>(
-		'tabela',
-	);
+	const [viewMode, setViewMode] = useState<
+		'tabela' | 'calendario' | 'cliente' | 'tecnico'
+	>('tabela');
 	const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
+	const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>('');
 	const [selectedDate, setSelectedDate] = useState<string | null>(null);
 	const [statusFilter, setStatusFilter] = useState<string>('todos');
 	const [showCreateModal, setShowCreateModal] = useState(false);
@@ -58,7 +65,25 @@ export function AppointmentsTable({
 	const [deleteTarget, setDeleteTarget] = useState<Appointment | null>(null);
 
 	const { appointments, isLoading, error } = useAppointments();
+	const { users } = useUsers();
 	const updateStatus = useUpdateAppointmentStatus();
+	const updateTechnician = useUpdateAppointmentTechnician();
+	const currentUser = getCurrentUser();
+	const technicians = useMemo(
+		() =>
+			users.filter(
+				(u) =>
+					u.role?.toLowerCase() === 'tecnico' ||
+					u.role?.toLowerCase() === 'colaborador',
+			),
+		[users],
+	);
+	/** Mostra "Pegar para mim" quando o utilizador logado tem token admin/colaborador (pl_user_token) e tem sub no JWT */
+	const canAssignToSelf = Boolean(getToken('user') && currentUser?.sub);
+	const userNameMap = useMemo(
+		() => Object.fromEntries(users.map((u) => [u.id, u.name])),
+		[users],
+	);
 	const deleteAppointment = useDeleteAppointment();
 
 	const filtered = useMemo(() => {
@@ -99,6 +124,20 @@ export function AppointmentsTable({
 				toast.error('Erro ao excluir agendamento.');
 			},
 		});
+	}
+
+	function handleAssignToMe(apt: Appointment) {
+		if (!currentUser?.sub) return;
+		updateTechnician.mutate(
+			{ id: apt.id, technicianId: currentUser.sub },
+			{
+				onSuccess: () => toast.success('Atendimento atribuído a si.'),
+				onError: () =>
+					toast.error(
+						'Erro ao atribuir. Verifique se o backend suporta esta ação.',
+					),
+			},
+		);
 	}
 
 	if (isLoading) {
@@ -156,6 +195,18 @@ export function AppointmentsTable({
 							}`}
 						>
 							Por cliente
+						</button>
+						<button
+							type="button"
+							onClick={() => setViewMode('tecnico')}
+							className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+								viewMode === 'tecnico'
+									? 'bg-violet-600 text-white'
+									: 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/5'
+							}`}
+						>
+							<UserCog className="w-4 h-4" />
+							Por técnico
 						</button>
 					</div>
 					{viewMode === 'tabela' &&
@@ -217,6 +268,8 @@ export function AppointmentsTable({
 												</p>
 												<p className="text-sm text-slate-600 dark:text-gray-400">
 													{apt.time} — {apt.service}
+													{apt.technicianId &&
+														` · ${userNameMap[apt.technicianId] ?? '—'}`}
 												</p>
 											</div>
 											<span
@@ -228,6 +281,19 @@ export function AppointmentsTable({
 												{APPOINTMENT_STATUS_LABELS[apt.status] ?? apt.status}
 											</span>
 											<div className="flex gap-1">
+												{canAssignToSelf &&
+													apt.status !== 'cancelado' &&
+													apt.status !== 'concluido' && (
+														<button
+															type="button"
+															onClick={() => handleAssignToMe(apt)}
+															disabled={updateTechnician.isPending}
+															className="p-1.5 text-violet-500 hover:bg-violet-500/10 rounded-lg"
+															title="Pegar para mim"
+														>
+															<UserCheck className="w-4 h-4" />
+														</button>
+													)}
 												{apt.status === 'pendente' && (
 													<button
 														type="button"
@@ -301,6 +367,7 @@ export function AppointmentsTable({
 								<th className="px-4 py-3 font-medium">Serviço</th>
 								<th className="px-4 py-3 font-medium">Data</th>
 								<th className="px-4 py-3 font-medium">Hora</th>
+								<th className="px-4 py-3 font-medium">Técnico</th>
 								<th className="px-4 py-3 font-medium">Status</th>
 								<th className="px-4 py-3 font-medium text-right">Ações</th>
 							</tr>
@@ -309,7 +376,7 @@ export function AppointmentsTable({
 							{filtered.length === 0 && (
 								<tr>
 									<td
-										colSpan={8}
+										colSpan={9}
 										className="px-4 py-10 text-center text-slate-500 dark:text-gray-500"
 									>
 										Nenhum agendamento encontrado.
@@ -339,6 +406,11 @@ export function AppointmentsTable({
 									<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
 										{apt.time}
 									</td>
+									<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
+										{apt.technicianId
+											? (userNameMap[apt.technicianId] ?? '—')
+											: '—'}
+									</td>
 									<td className="px-4 py-3">
 										<span
 											className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -351,6 +423,19 @@ export function AppointmentsTable({
 									</td>
 									<td className="px-4 py-3 text-right">
 										<div className="flex items-center justify-end gap-1">
+											{canAssignToSelf &&
+												apt.status !== 'cancelado' &&
+												apt.status !== 'concluido' && (
+													<button
+														type="button"
+														onClick={() => handleAssignToMe(apt)}
+														disabled={updateTechnician.isPending}
+														className="p-2 text-violet-500 hover:bg-violet-500/10 rounded-lg transition-colors"
+														title="Pegar para mim"
+													>
+														<UserCheck className="w-4 h-4" />
+													</button>
+												)}
 											{apt.status === 'pendente' && (
 												<button
 													type="button"
@@ -438,6 +523,34 @@ export function AppointmentsTable({
 							</p>
 						</div>
 					)}
+				</div>
+			)}
+
+			{viewMode === 'tecnico' && (
+				<div className="space-y-4">
+					<div className="flex flex-col sm:flex-row gap-3 max-w-md">
+						<select
+							value={selectedTechnicianId}
+							onChange={(e) => setSelectedTechnicianId(e.target.value)}
+							className="flex-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] px-3 py-2 text-sm text-slate-900 dark:text-white"
+						>
+							<option value="">Selecione o técnico</option>
+							{technicians.map((t) => (
+								<option key={t.id} value={t.id}>
+									{t.name}
+								</option>
+							))}
+						</select>
+						{technicians.length === 0 && (
+							<p className="text-sm text-slate-500 dark:text-gray-500 self-center">
+								Nenhum técnico disponível. Verifique os utilizadores com role
+								&quot;tecnico&quot; ou &quot;colaborador&quot;.
+							</p>
+						)}
+					</div>
+					<TechnicianAppointmentsView
+						technicianId={selectedTechnicianId || null}
+					/>
 				</div>
 			)}
 

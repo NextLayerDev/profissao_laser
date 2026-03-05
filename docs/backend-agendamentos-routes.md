@@ -16,8 +16,10 @@ Este documento resume as rotas de backend para o sistema de agendamentos. O fron
 |--------|------|-----------|------|
 | GET | /appointments | Listar agendamentos | Bearer |
 | GET | /appointments/:id_customer | Listar agendamentos de um cliente (admin only) | Bearer (user) |
+| GET | /appointments/technician/:id | Listar agendamentos de um técnico (admin only) | Bearer (user) |
 | POST | /appointment | Criar agendamento | Bearer (customer ou user) |
 | PATCH | /appointment/:id/status | Atualizar status | Bearer (user/admin) |
+| PATCH | /appointment/:id | Atribuir técnico (body: technicianId) | Bearer (user/admin) |
 | DELETE | /appointment/:id | Excluir agendamento | Bearer (user/admin) |
 
 ---
@@ -44,12 +46,15 @@ Este documento resume as rotas de backend para o sistema de agendamentos. O fron
     "time": "HH:mm",
     "status": "pendente | confirmado | cancelado | concluido",
     "notes": "string | null",
-    "createdAt": "string (ISO 8601)"
+    "createdAt": "string (ISO 8601)",
+    "technicianId": "string (UUID) | null"
   }
 ]
 ```
 
-**Nota**: O backend filtra automaticamente: admin vê todos os agendamentos; cliente vê apenas os seus (via token).
+O campo `technicianId` associa o agendamento ao técnico/colaborador responsável. O nome do técnico é resolvido no frontend via `GET /users`.
+
+O backend filtra automaticamente: admin vê todos os agendamentos; cliente vê apenas os seus (via token).
 
 ---
 
@@ -69,7 +74,8 @@ Este documento resume as rotas de backend para o sistema de agendamentos. O fron
   "service": "string",
   "date": "YYYY-MM-DD",
   "time": "HH:mm",
-  "notes": "string | null (opcional)"
+  "notes": "string | null (opcional)",
+  "technicianId": "string (UUID, opcional)"
 }
 ```
 
@@ -105,13 +111,42 @@ Este documento resume as rotas de backend para o sistema de agendamentos. O fron
 
 ---
 
+### 5. Listar agendamentos por técnico
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| GET | /appointments/technician/:id | Lista agendamentos do técnico com o ID indicado. **Admin only.** |
+
+**Parâmetros**: `id` (UUID) — ID do técnico (utilizador com role `tecnico` ou `colaborador`).
+
+**Resposta**: Array de objetos `Appointment` do técnico.
+
+---
+
+### 6. Atribuir técnico ao agendamento
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| PATCH | /appointment/:id | Atualiza o técnico do agendamento. Body: `{ "technicianId": "string" }`. **Admin/colaborador.** |
+
+**Nota:** Se o backend usar rota diferente (ex: `/appointment/:id/technician`), ajustar em `src/services/appointments.ts`.
+
+### 7. Criar agendamento com técnico
+
+O body do **POST /appointment** aceita opcionalmente `technicianId` para atribuir o técnico na criação.
+
+---
+
 ## Mapeamento Frontend → API
 
 | Componente / Funcionalidade | Serviço (src/services/appointments.ts) | Rota API |
 |----------------------------|--------------------------------------|----------|
 | Admin - listar agendamentos | getAppointments() | GET /appointments |
+| Admin - listar por cliente | getAppointmentsByCustomer() | GET /appointments/:id_customer |
+| Admin - listar por técnico | getAppointmentsByTechnician() | GET /appointments/technician/:id |
 | Cliente - criar agendamento | createAppointment() | POST /appointment |
 | Admin - alterar status | updateAppointmentStatus() | PATCH /appointment/:id/status |
+| Admin - atribuir técnico | updateAppointmentTechnician() | PATCH /appointment/:id |
 | Admin - excluir | deleteAppointment() | DELETE /appointment/:id |
 
 ---

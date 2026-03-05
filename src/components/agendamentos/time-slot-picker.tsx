@@ -20,12 +20,14 @@ interface TimeSlotPickerProps {
 	disabled?: boolean;
 }
 
-function isSlotOccupied(
+const MAX_APPOINTMENTS_PER_SLOT = 3;
+
+function countAppointmentsAtSlot(
 	slot: string,
 	date: string,
 	appointments: Appointment[],
-): boolean {
-	return appointments.some((apt) => {
+): number {
+	return appointments.filter((apt) => {
 		if (apt.date !== date) return false;
 		if (apt.status === 'cancelado' || apt.status === 'concluido') return false;
 		const [aptH, aptM] = apt.time.split(':').map(Number);
@@ -35,7 +37,18 @@ function isSlotOccupied(
 		return (
 			slotStart >= aptStart && slotStart < aptStart + SLOT_DURATION_MINUTES
 		);
-	});
+	}).length;
+}
+
+function isSlotOccupied(
+	slot: string,
+	date: string,
+	appointments: Appointment[],
+): boolean {
+	return (
+		countAppointmentsAtSlot(slot, date, appointments) >=
+		MAX_APPOINTMENTS_PER_SLOT
+	);
 }
 
 export function TimeSlotPicker({

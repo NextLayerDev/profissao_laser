@@ -56,11 +56,16 @@ export async function getChannelMessages(
 
 export async function sendChannelMessage(
 	channelId: string,
-	body: { content: string },
+	payload: { content: string; file?: File },
 ): Promise<ChannelMessage> {
+	const formData = new FormData();
+	formData.append('content', payload.content);
+	if (payload.file) {
+		formData.append('file', payload.file);
+	}
 	const { data } = await api.post<ChannelMessage>(
 		`/community/channels/${encodeURIComponent(channelId)}/messages`,
-		body,
+		formData,
 	);
 	return data as ChannelMessage;
 }

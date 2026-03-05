@@ -1,56 +1,26 @@
 'use client';
 
-import { CalendarPlus, Loader2, Plus } from 'lucide-react';
+import { CalendarPlus, Loader2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import {
-	useAppointments,
-	useAppointmentsByCustomer,
-} from '@/hooks/use-appointments';
-import { useUsers } from '@/hooks/use-users';
+import { useAppointmentsByTechnician } from '@/hooks/use-appointments';
 import {
 	APPOINTMENT_STATUS_LABELS,
 	APPOINTMENT_STATUS_STYLES,
 } from '@/utils/constants/appointment-status';
 import { formatAppointmentDate } from '@/utils/formatDate';
-import { AppointmentForm } from './appointment-form';
-import { AppointmentSuccessModal } from './appointment-success-modal';
 import { AppointmentsCalendar } from './appointments-calendar';
 
-interface ClientAppointmentsViewProps {
-	/** Admin: customer ID para ver agendamentos de um cliente específico. Cliente: undefined = usa GET /appointments */
-	customerId?: string | null;
+interface TechnicianAppointmentsViewProps {
+	technicianId: string | null;
 }
 
-export function ClientAppointmentsView({
-	customerId = null,
-}: ClientAppointmentsViewProps) {
-	const {
-		appointments: appointmentsAll,
-		isLoading: loadingAll,
-		error: errorAll,
-	} = useAppointments();
-	const {
-		appointments: appointmentsByCustomer,
-		isLoading: loadingByCustomer,
-		error: errorByCustomer,
-	} = useAppointmentsByCustomer(customerId);
-	const { users } = useUsers();
+export function TechnicianAppointmentsView({
+	technicianId,
+}: TechnicianAppointmentsViewProps) {
+	const { appointments, isLoading, error } =
+		useAppointmentsByTechnician(technicianId);
 
-	const appointments = customerId ? appointmentsByCustomer : appointmentsAll;
-	const userNameMap = useMemo(
-		() => Object.fromEntries(users.map((u) => [u.id, u.name])),
-		[users],
-	);
-	const isLoading = customerId ? loadingByCustomer : loadingAll;
-	const error = customerId ? errorByCustomer : errorAll;
-
-	const [showForm, setShowForm] = useState(false);
 	const [selectedDate, setSelectedDate] = useState<string | null>(null);
-	const [successData, setSuccessData] = useState<{
-		date: string;
-		time: string;
-		service: string;
-	} | null>(null);
 	const [calendarMonth, setCalendarMonth] = useState(() => ({
 		year: new Date().getFullYear(),
 		month: new Date().getMonth(),
@@ -81,13 +51,14 @@ export function ClientAppointmentsView({
 		[filteredByMonth],
 	);
 
-	function handleFormSuccess(data: {
-		date: string;
-		time: string;
-		service: string;
-	}) {
-		setSuccessData(data);
-		setShowForm(false);
+	if (!technicianId) {
+		return (
+			<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] p-8 text-center">
+				<p className="text-slate-600 dark:text-gray-400">
+					Selecione um técnico acima para visualizar os agendamentos.
+				</p>
+			</div>
+		);
 	}
 
 	if (isLoading && !appointments) {
@@ -101,7 +72,7 @@ export function ClientAppointmentsView({
 	if (error) {
 		return (
 			<div className="text-center py-20 text-red-400">
-				Erro ao carregar agendamentos.
+				Erro ao carregar agendamentos do técnico.
 			</div>
 		);
 	}
@@ -119,23 +90,11 @@ export function ClientAppointmentsView({
 				</div>
 
 				<div className="flex-1 min-w-0">
-					<div className="flex items-center justify-between mb-4">
-						<h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-							{selectedDate
-								? `Agendamentos — ${formatAppointmentDate(selectedDate)}`
-								: 'Agendamentos do mês'}
-						</h3>
-						{!customerId && (
-							<button
-								type="button"
-								onClick={() => setShowForm(true)}
-								className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors"
-							>
-								<Plus className="w-4 h-4" />
-								Novo agendamento
-							</button>
-						)}
-					</div>
+					<h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+						{selectedDate
+							? `Agendamentos — ${formatAppointmentDate(selectedDate)}`
+							: 'Agendamentos do mês'}
+					</h3>
 
 					{(selectedDate ? appointmentsForSelectedDate : sortedAppointments)
 						.length === 0 ? (
@@ -146,16 +105,6 @@ export function ClientAppointmentsView({
 									? 'Nenhum agendamento neste dia.'
 									: 'Nenhum agendamento neste mês.'}
 							</p>
-							{!customerId && (
-								<button
-									type="button"
-									onClick={() => setShowForm(true)}
-									className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors"
-								>
-									<Plus className="w-4 h-4" />
-									Agendar atendimento
-								</button>
-							)}
 						</div>
 					) : (
 						<div className="space-y-3">
@@ -169,7 +118,7 @@ export function ClientAppointmentsView({
 								>
 									<div>
 										<p className="font-medium text-slate-900 dark:text-white">
-											{apt.service}
+											{apt.customerName} — {apt.service}
 										</p>
 										<p className="text-sm text-slate-600 dark:text-gray-400">
 											{formatAppointmentDate(apt.date, {
@@ -177,8 +126,6 @@ export function ClientAppointmentsView({
 												month: 'short',
 											})}{' '}
 											às {apt.time}
-											{apt.technicianId &&
-												` · ${userNameMap[apt.technicianId] ?? '—'}`}
 										</p>
 									</div>
 									<span
@@ -195,34 +142,6 @@ export function ClientAppointmentsView({
 					)}
 				</div>
 			</div>
-
-			{showForm && !customerId && (
-				<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] p-6">
-					<div className="flex items-center justify-between mb-4">
-						<h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-							Novo agendamento
-						</h3>
-						<button
-							type="button"
-							onClick={() => setShowForm(false)}
-							className="text-sm text-slate-500 hover:text-slate-900 dark:hover:text-white"
-						>
-							Fechar
-						</button>
-					</div>
-					<AppointmentForm onSuccess={handleFormSuccess} />
-				</div>
-			)}
-
-			{successData && (
-				<AppointmentSuccessModal
-					isOpen={!!successData}
-					onClose={() => setSuccessData(null)}
-					date={successData.date}
-					time={successData.time}
-					service={successData.service}
-				/>
-			)}
 		</div>
 	);
 }

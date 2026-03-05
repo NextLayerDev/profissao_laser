@@ -97,9 +97,9 @@ export function useChannelMessages(
 export function useSendChannelMessage(channelId: string | null) {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: (content: string) => {
+		mutationFn: (payload: { content: string; file?: File }) => {
 			if (!channelId) return Promise.reject(new Error('Channel ID required'));
-			return sendChannelMessage(channelId, { content });
+			return sendChannelMessage(channelId, payload);
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({

@@ -18,6 +18,7 @@ export interface ChannelMessage {
 	content: string;
 	time: string;
 	isMe: boolean;
+	fileUrl?: string | null;
 }
 
 export interface Channel {

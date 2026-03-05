@@ -4,7 +4,6 @@ import {
 	type LucideIcon,
 	MessageSquare,
 	PenLine,
-	Play,
 } from 'lucide-react';
 import type { FeatureKey } from '@/types/classes';
 
@@ -13,20 +12,16 @@ export type QuickAccessItem = {
 	Icon: LucideIcon;
 	gradient: string;
 	featureKey: FeatureKey;
+	href?: string;
 };
 
 export const quickAccessItems: QuickAccessItem[] = [
-	{
-		label: 'Sala de Aula',
-		Icon: Play,
-		gradient: 'from-violet-600 to-purple-700',
-		featureKey: 'aula',
-	},
 	{
 		label: 'Jornada',
 		Icon: Compass,
 		gradient: 'from-blue-500 to-cyan-600',
 		featureKey: 'aula',
+		href: '/jornada',
 	},
 	{
 		label: 'Dúvidas',

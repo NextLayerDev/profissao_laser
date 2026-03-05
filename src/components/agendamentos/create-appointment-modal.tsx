@@ -1,12 +1,13 @@
 'use client';
 
 import { Loader2, Plus, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
 	useAppointments,
 	useCreateAppointment,
 } from '@/hooks/use-appointments';
+import { useUsers } from '@/hooks/use-users';
 import type { CreateAppointmentPayload } from '@/types/appointments';
 import { APPOINTMENT_SERVICES } from '@/utils/constants/appointment-services';
 import { TimeSlotPicker } from './time-slot-picker';
@@ -22,6 +23,17 @@ export function CreateAppointmentModal({
 }: CreateAppointmentModalProps) {
 	const createMutation = useCreateAppointment();
 	const { appointments } = useAppointments();
+	const { users } = useUsers();
+
+	const technicians = useMemo(
+		() =>
+			users.filter(
+				(u) =>
+					u.role?.toLowerCase() === 'tecnico' ||
+					u.role?.toLowerCase() === 'colaborador',
+			),
+		[users],
+	);
 
 	const [customerName, setCustomerName] = useState('');
 	const [customerEmail, setCustomerEmail] = useState('');
@@ -31,6 +43,7 @@ export function CreateAppointmentModal({
 	const [time, setTime] = useState('');
 	const [times, setTimes] = useState<string[]>([]);
 	const [notes, setNotes] = useState('');
+	const [technicianId, setTechnicianId] = useState<string>('');
 
 	useEffect(() => {
 		if (!isOpen) {
@@ -42,6 +55,7 @@ export function CreateAppointmentModal({
 			setTime('');
 			setTimes([]);
 			setNotes('');
+			setTechnicianId('');
 		}
 	}, [isOpen]);
 
@@ -69,6 +83,7 @@ export function CreateAppointmentModal({
 		};
 		if (customerPhone.trim()) basePayload.customerPhone = customerPhone.trim();
 		if (notes.trim()) basePayload.notes = notes.trim();
+		if (technicianId) basePayload.technicianId = technicianId;
 
 		try {
 			for (const t of slotsToUse) {
@@ -201,6 +216,29 @@ export function CreateAppointmentModal({
 								className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-3 py-2 text-sm text-slate-900 dark:text-white"
 							/>
 						</div>
+						{technicians.length > 0 && (
+							<div>
+								<label
+									htmlFor="create-technician"
+									className="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1"
+								>
+									Técnico
+								</label>
+								<select
+									id="create-technician"
+									value={technicianId}
+									onChange={(e) => setTechnicianId(e.target.value)}
+									className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-3 py-2 text-sm text-slate-900 dark:text-white"
+								>
+									<option value="">Selecione (opcional)</option>
+									{technicians.map((t) => (
+										<option key={t.id} value={t.id}>
+											{t.name}
+										</option>
+									))}
+								</select>
+							</div>
+						)}
 						<div className="sm:col-span-2">
 							<TimeSlotPicker
 								value={times[0] ?? time}

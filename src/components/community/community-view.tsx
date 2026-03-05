@@ -17,6 +17,7 @@ import {
 	MessageSquare,
 	Mic,
 	MoreVertical,
+	Paperclip,
 	Plus,
 	Search,
 	Send,
@@ -187,8 +188,10 @@ export function CommunityView({
 	})();
 
 	const [messageInput, setMessageInput] = useState('');
+	const [messageFile, setMessageFile] = useState<File | null>(null);
 	const [newChannelName, setNewChannelName] = useState('');
 	const messagesEndRef = useRef<HTMLDivElement>(null);
+	const channelFileInputRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -200,13 +203,17 @@ export function CommunityView({
 	};
 
 	const handleSendMessage = () => {
-		if (!messageInput.trim() || !activeChannel) return;
-		sendMessageMutation.mutate(messageInput, {
-			onSuccess: () => {
-				setMessageInput('');
-				refetchMessages();
+		if ((!messageInput.trim() && !messageFile) || !activeChannel) return;
+		sendMessageMutation.mutate(
+			{ content: messageInput.trim(), file: messageFile ?? undefined },
+			{
+				onSuccess: () => {
+					setMessageInput('');
+					setMessageFile(null);
+					refetchMessages();
+				},
 			},
-		});
+		);
 	};
 
 	const handleCreateChannel = () => {
@@ -887,13 +894,34 @@ export function CommunityView({
 												</span>
 											</div>
 											<div
-												className={`p-4 rounded-2xl text-sm ${
+												className={`p-4 rounded-2xl text-sm space-y-2 ${
 													msg.isMe
 														? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-tr-sm'
 														: 'bg-white/5 border border-white/10 text-slate-200 rounded-tl-sm'
 												}`}
 											>
-												{msg.content}
+												{msg.content && <p>{msg.content}</p>}
+												{msg.fileUrl && (
+													<a
+														href={msg.fileUrl}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="block mt-2"
+													>
+														{/\.(jpg|jpeg|png|gif|webp)$/i.test(msg.fileUrl) ? (
+															<img
+																src={msg.fileUrl}
+																alt="Anexo"
+																className="max-w-full max-h-64 rounded-lg object-cover"
+															/>
+														) : (
+															<span className="underline flex items-center gap-1">
+																<ImageIcon className="h-4 w-4" />
+																Ver ficheiro
+															</span>
+														)}
+													</a>
+												)}
 											</div>
 										</div>
 									</div>
@@ -912,13 +940,39 @@ export function CommunityView({
 						</div>
 
 						<div className="p-4 border-t border-white/10 bg-[#0d0b1e]/80 backdrop-blur-lg">
-							<div className="flex gap-3">
+							<div className="flex gap-3 items-center">
+								<input
+									type="file"
+									ref={channelFileInputRef}
+									onChange={(e) => setMessageFile(e.target.files?.[0] ?? null)}
+									accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+									className="hidden"
+								/>
 								<button
 									type="button"
+									onClick={() => channelFileInputRef.current?.click()}
 									className="p-3 text-cyan-400 hover:bg-white/5 rounded-full"
+									title="Anexar ficheiro"
 								>
-									<Plus className="h-5 w-5" />
+									<Paperclip className="h-5 w-5" />
 								</button>
+								{messageFile && (
+									<span className="flex items-center gap-1 text-xs text-slate-400 max-w-[140px]">
+										<span className="truncate">{messageFile.name}</span>
+										<button
+											type="button"
+											onClick={() => {
+												setMessageFile(null);
+												if (channelFileInputRef.current) {
+													channelFileInputRef.current.value = '';
+												}
+											}}
+											className="p-0.5 hover:bg-white/10 rounded"
+										>
+											<X className="h-3 w-3" />
+										</button>
+									</span>
+								)}
 								<input
 									type="text"
 									placeholder={`Enviar mensagem em #${activeChannelLabel}...`}
@@ -930,7 +984,10 @@ export function CommunityView({
 								<button
 									type="button"
 									onClick={handleSendMessage}
-									disabled={!messageInput.trim()}
+									disabled={
+										(!messageInput.trim() && !messageFile) ||
+										sendMessageMutation.isPending
+									}
 									className="h-12 w-12 flex items-center justify-center bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 text-white rounded-full"
 								>
 									<Send className="h-5 w-5" />

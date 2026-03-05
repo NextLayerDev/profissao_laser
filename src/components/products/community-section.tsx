@@ -1,6 +1,15 @@
 'use client';
 
-import { Hash, Loader2, MessageSquare, Plus, Send } from 'lucide-react';
+import {
+	Hash,
+	ImageIcon,
+	Loader2,
+	MessageSquare,
+	Paperclip,
+	Plus,
+	Send,
+	X,
+} from 'lucide-react';
 import { formatMessageTime } from '@/utils/formatDate';
 
 /** Exibe o nome do canal; evita mostrar UUID ou ID técnico como nome */
@@ -13,7 +22,7 @@ function getChannelDisplayName(label: string | undefined, id: string): string {
 	return label;
 }
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
 	useChannelMessages,
 	useCommunityChannels,
@@ -29,6 +38,8 @@ export function CommunitySection() {
 	const [showCreateModal, setShowCreateModal] = useState(false);
 	const [newChannelName, setNewChannelName] = useState('');
 	const [messageInput, setMessageInput] = useState('');
+	const [messageFile, setMessageFile] = useState<File | null>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const { data: channels = [], isLoading: channelsLoading } =
 		useCommunityChannels();
@@ -50,10 +61,19 @@ export function CommunitySection() {
 	};
 
 	const handleSendMessage = () => {
-		if (!messageInput.trim() || !selectedChannelId) return;
-		sendMessageMutation.mutate(messageInput, {
-			onSuccess: () => setMessageInput(''),
-		});
+		if ((!messageInput.trim() && !messageFile) || !selectedChannelId) return;
+		sendMessageMutation.mutate(
+			{ content: messageInput.trim(), file: messageFile ?? undefined },
+			{
+				onSuccess: () => {
+					setMessageInput('');
+					setMessageFile(null);
+					if (fileInputRef.current) {
+						fileInputRef.current.value = '';
+					}
+				},
+			},
+		);
 	};
 
 	const channelCategories = channels.reduce<
@@ -177,13 +197,34 @@ export function CommunitySection() {
 												</span>
 											</div>
 											<div
-												className={`px-4 py-2 rounded-xl text-sm ${
+												className={`px-4 py-2 rounded-xl text-sm space-y-2 ${
 													msg.isMe
 														? 'bg-violet-600 text-white'
 														: 'bg-slate-100 dark:bg-[#252528] text-slate-900 dark:text-white'
 												}`}
 											>
-												{msg.content}
+												{msg.content && <p>{msg.content}</p>}
+												{msg.fileUrl && (
+													<a
+														href={msg.fileUrl}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="block mt-2"
+													>
+														{/\.(jpg|jpeg|png|gif|webp)$/i.test(msg.fileUrl) ? (
+															<img
+																src={msg.fileUrl}
+																alt="Anexo"
+																className="max-w-full max-h-64 rounded-lg object-cover"
+															/>
+														) : (
+															<span className="underline flex items-center gap-1">
+																<ImageIcon className="h-4 w-4" />
+																Ver ficheiro
+															</span>
+														)}
+													</a>
+												)}
 											</div>
 										</div>
 									</div>
@@ -192,7 +233,39 @@ export function CommunitySection() {
 						</div>
 
 						<div className="p-4 border-t border-slate-200 dark:border-gray-800">
-							<div className="flex gap-2">
+							<div className="flex gap-2 items-center">
+								<input
+									type="file"
+									ref={fileInputRef}
+									onChange={(e) => setMessageFile(e.target.files?.[0] ?? null)}
+									accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+									className="hidden"
+								/>
+								<button
+									type="button"
+									onClick={() => fileInputRef.current?.click()}
+									className="p-2.5 rounded-full text-violet-500 hover:bg-violet-100 dark:hover:bg-violet-900/30"
+									title="Anexar ficheiro"
+								>
+									<Paperclip className="h-5 w-5" />
+								</button>
+								{messageFile && (
+									<span className="flex items-center gap-1 text-xs text-slate-500 dark:text-gray-400 max-w-[140px]">
+										<span className="truncate">{messageFile.name}</span>
+										<button
+											type="button"
+											onClick={() => {
+												setMessageFile(null);
+												if (fileInputRef.current) {
+													fileInputRef.current.value = '';
+												}
+											}}
+											className="p-0.5 hover:bg-slate-200 dark:hover:bg-[#252528] rounded"
+										>
+											<X className="h-3 w-3" />
+										</button>
+									</span>
+								)}
 								<input
 									type="text"
 									placeholder={`Enviar mensagem em #${getChannelDisplayName(selectedChannel?.label ?? undefined, selectedChannelId ?? '')}...`}
@@ -205,7 +278,8 @@ export function CommunitySection() {
 									type="button"
 									onClick={handleSendMessage}
 									disabled={
-										!messageInput.trim() || sendMessageMutation.isPending
+										(!messageInput.trim() && !messageFile) ||
+										sendMessageMutation.isPending
 									}
 									className="h-11 px-6 rounded-full bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-medium flex items-center gap-2"
 								>

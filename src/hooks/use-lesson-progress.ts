@@ -12,23 +12,36 @@ export function useLessonProgress(courseId: string | undefined) {
 
 	const { data, isLoading } = useQuery({
 		queryKey: progressKey(courseId ?? ''),
-		queryFn: () => getCourseProgress(courseId ?? ''),
+		queryFn: () =>
+			courseId
+				? getCourseProgress(courseId)
+				: Promise.reject(new Error('No courseId')),
 		enabled: !!courseId,
 	});
 
 	const mutation = useMutation({
 		mutationFn: (lessonId: string) => markLessonComplete(lessonId),
-		onSuccess: (_, lessonId) => {
+		onMutate: async (lessonId) => {
 			if (!courseId) return;
-			queryClient.setQueryData<CourseProgress>(
+			await queryClient.cancelQueries({ queryKey: progressKey(courseId) });
+			const prev = queryClient.getQueryData<CourseProgress>(
 				progressKey(courseId),
-				(prev) => {
-					const ids = prev?.watchedLessonIds ?? [];
-					if (ids.includes(lessonId)) return prev;
-					return { watchedLessonIds: [...ids, lessonId] };
-				},
 			);
+			queryClient.setQueryData<CourseProgress>(progressKey(courseId), (p) => {
+				const ids = p?.watchedLessonIds ?? [];
+				if (ids.includes(lessonId)) return p ?? prev;
+				return { watchedLessonIds: [...ids, lessonId] };
+			});
+			return { prev };
+		},
+		onSuccess: (_, _lessonId) => {
+			if (!courseId) return;
 			queryClient.invalidateQueries({ queryKey: progressKey(courseId) });
+		},
+		onError: (_, __, context) => {
+			if (courseId && context?.prev) {
+				queryClient.setQueryData(progressKey(courseId), context.prev);
+			}
 		},
 	});
 

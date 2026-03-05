@@ -17,6 +17,13 @@ export async function getAppointmentsByCustomer(
 	return appointmentSchema.array().parse(data);
 }
 
+export async function getAppointmentsByTechnician(
+	technicianId: string,
+): Promise<Appointment[]> {
+	const { data } = await api.get(`/appointments/technician/${technicianId}`);
+	return appointmentSchema.array().parse(data);
+}
+
 export async function createAppointment(
 	payload: CreateAppointmentPayload,
 ): Promise<Appointment> {
@@ -34,4 +41,12 @@ export async function updateAppointmentStatus(
 
 export async function deleteAppointment(id: string): Promise<void> {
 	await api.delete(`/appointment/${id}`);
+}
+
+export async function updateAppointmentTechnician(
+	id: string,
+	technicianId: string,
+): Promise<Appointment> {
+	const { data } = await api.patch(`/appointment/${id}`, { technicianId });
+	return appointmentSchema.parse(data);
 }

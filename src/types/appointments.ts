@@ -20,6 +20,7 @@ export const appointmentSchema = z.object({
 	status: appointmentStatusSchema,
 	notes: z.string().nullable(),
 	createdAt: z.string(),
+	technicianId: z.string().uuid().nullable().optional(),
 });
 
 export type Appointment = z.infer<typeof appointmentSchema>;
@@ -32,6 +33,7 @@ export const createAppointmentPayloadSchema = z.object({
 	date: z.string(),
 	time: z.string(),
 	notes: z.string().optional(),
+	technicianId: z.string().uuid().optional(),
 });
 
 export type CreateAppointmentPayload = z.infer<

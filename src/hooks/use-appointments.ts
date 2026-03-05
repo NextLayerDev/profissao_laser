@@ -4,7 +4,9 @@ import {
 	deleteAppointment,
 	getAppointments,
 	getAppointmentsByCustomer,
+	getAppointmentsByTechnician,
 	updateAppointmentStatus,
+	updateAppointmentTechnician,
 } from '@/services/appointments';
 import type { CreateAppointmentPayload } from '@/types/appointments';
 
@@ -29,6 +31,19 @@ export function useAppointmentsByCustomer(customerId: string | null) {
 		queryKey: ['appointments', 'customer', customerId],
 		queryFn: () => getAppointmentsByCustomer(customerId ?? ''),
 		enabled: !!customerId,
+	});
+	return { appointments, isLoading, error };
+}
+
+export function useAppointmentsByTechnician(technicianId: string | null) {
+	const {
+		data: appointments,
+		isLoading,
+		error,
+	} = useQuery({
+		queryKey: ['appointments', 'technician', technicianId],
+		queryFn: () => getAppointmentsByTechnician(technicianId ?? ''),
+		enabled: !!technicianId,
 	});
 	return { appointments, isLoading, error };
 }
@@ -59,6 +74,17 @@ export function useDeleteAppointment() {
 	const queryClient = useQueryClient();
 	return useMutation({
 		mutationFn: (id: string) => deleteAppointment(id),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['appointments'] });
+		},
+	});
+}
+
+export function useUpdateAppointmentTechnician() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({ id, technicianId }: { id: string; technicianId: string }) =>
+			updateAppointmentTechnician(id, technicianId),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['appointments'] });
 		},

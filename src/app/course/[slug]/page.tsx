@@ -25,8 +25,8 @@ import {
 	Zap,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { DoubtsTab } from '@/components/course/doubts-tab';
 import { VideoPlayer } from '@/components/course/video-player';
@@ -240,20 +240,47 @@ function MaterialsTab({ lessonId }: { lessonId: string | null }) {
 		);
 	}
 
+	const borderColors: Record<MaterialType, string> = {
+		image: 'border-l-emerald-500',
+		word: 'border-l-blue-500',
+		pdf: 'border-l-red-500',
+	};
+
 	return (
-		<div className="space-y-2">
+		<div className="space-y-3">
 			{materials.map((mat) => (
 				<a
 					key={mat.id}
 					href={mat.url}
 					target="_blank"
 					rel="noreferrer"
-					className="flex items-center gap-3 p-4 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 hover:border-violet-500/30 rounded-xl transition-all group"
+					className={`flex items-center justify-between p-4 rounded-xl border border-slate-200 dark:border-white/10 border-l-4 ${borderColors[mat.type] ?? 'border-l-violet-500'} hover:bg-slate-50 dark:hover:bg-white/10 transition-all group`}
 				>
-					<MaterialIcon type={mat.type} />
-					<span className="flex-1 text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white transition-colors truncate">
-						{mat.name}
-					</span>
+					<div className="flex items-center gap-4 min-w-0">
+						<div
+							className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+								mat.type === 'image'
+									? 'bg-emerald-100 dark:bg-emerald-950/30 text-emerald-500'
+									: mat.type === 'word'
+										? 'bg-blue-100 dark:bg-blue-950/30 text-blue-500'
+										: 'bg-red-100 dark:bg-red-950/30 text-red-500'
+							}`}
+						>
+							<MaterialIcon type={mat.type} />
+						</div>
+						<div className="min-w-0">
+							<p className="font-semibold text-slate-900 dark:text-white truncate">
+								{mat.name}
+							</p>
+							<p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+								{mat.type === 'pdf'
+									? 'PDF'
+									: mat.type === 'word'
+										? 'Documento'
+										: 'Imagem'}
+							</p>
+						</div>
+					</div>
 					<ExternalLink className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-violet-400 shrink-0 transition-colors" />
 				</a>
 			))}
@@ -306,6 +333,8 @@ function QuizTab({ lessonId }: { lessonId: string | null }) {
 
 export default function CourseSlugPage() {
 	const { slug } = useParams<{ slug: string }>();
+	const searchParams = useSearchParams();
+	const lessonIdFromUrl = searchParams.get('lesson');
 	const [email, setEmail] = useState<string | null | undefined>(undefined);
 	const [isAdmin, setIsAdmin] = useState(false);
 
@@ -326,7 +355,11 @@ export default function CourseSlugPage() {
 
 	const { data: course, isLoading, isError } = useCourse(slug);
 	const [activeLesson, setActiveLesson] = useState<CourseLesson | null>(null);
-	const { watchedLessonIds, markWatched } = useLessonProgress(course?.id);
+	const {
+		watchedLessonIds,
+		markWatched,
+		isLoading: progressLoading,
+	} = useLessonProgress(course?.id);
 
 	// Hooks devem ser chamados sempre na mesma ordem (antes de qualquer early return)
 	const { data: ratingData } = useLessonRating(activeLesson?.id ?? '');
@@ -339,6 +372,19 @@ export default function CourseSlugPage() {
 	const [collapsedModules, setCollapsedModules] = useState<Set<string>>(
 		new Set(),
 	);
+	const [showEndScreen, setShowEndScreen] = useState(false);
+	const [autoPlay, setAutoPlay] = useState(() => {
+		if (typeof window === 'undefined') return false;
+		return localStorage.getItem('lesson-autoplay') === 'true';
+	});
+
+	const toggleAutoPlay = () => {
+		setAutoPlay((prev) => {
+			const next = !prev;
+			localStorage.setItem('lesson-autoplay', String(next));
+			return next;
+		});
+	};
 
 	// Se não tem acesso a chat, mudar para materiais ao carregar features
 	useEffect(() => {
@@ -346,6 +392,38 @@ export default function CourseSlugPage() {
 			setBottomTab('materiais');
 		}
 	}, [features, bottomTab]);
+
+	// Selecionar aula inicial: ?lesson=xxx na URL ou primeira não assistida
+	const hasSetInitialLesson = useRef(false);
+	const prevSlugRef = useRef(slug);
+	if (prevSlugRef.current !== slug) {
+		prevSlugRef.current = slug;
+		hasSetInitialLesson.current = false;
+	}
+	useEffect(() => {
+		if (!course) return;
+		const modules = course.modules
+			.slice()
+			.sort((a, b) => a.order - b.order)
+			.map((m) => ({
+				...m,
+				lessons: m.lessons.slice().sort((a, b) => a.order - b.order),
+			}));
+		const lessons = modules.flatMap((m) => m.lessons);
+
+		if (lessonIdFromUrl) {
+			hasSetInitialLesson.current = true;
+			const lesson = lessons.find((l) => l.id === lessonIdFromUrl);
+			if (lesson) setActiveLesson(lesson);
+			return;
+		}
+
+		// Sem ?lesson= na URL: abrir na próxima aula após a última concluída
+		if (progressLoading || hasSetInitialLesson.current) return;
+		hasSetInitialLesson.current = true;
+		const nextLesson = lessons.find((l) => !watchedLessonIds.has(l.id));
+		setActiveLesson(nextLesson ?? lessons[0] ?? null);
+	}, [course, lessonIdFromUrl, progressLoading, watchedLessonIds]);
 
 	const toggleModule = (id: string) =>
 		setCollapsedModules((prev) => {
@@ -389,6 +467,7 @@ export default function CourseSlugPage() {
 	);
 
 	const allLessons = sortedModules.flatMap((m) => m.lessons);
+
 	const activeIdx = activeLesson
 		? allLessons.findIndex((l) => l.id === activeLesson.id)
 		: -1;
@@ -413,22 +492,60 @@ export default function CourseSlugPage() {
 	const handleSelectLesson = (lesson: CourseLesson) => {
 		setActiveLesson(lesson);
 		setHoverRating(0);
+		setShowEndScreen(false);
 	};
 
-	const handleVideoEnded = async () => {
+	const handleVideoEnded = () => {
+		if (autoPlay) {
+			handleEndScreenAdvance();
+		} else {
+			setShowEndScreen(true);
+		}
+	};
+
+	const handleEndScreenAdvance = () => {
+		if (!activeLesson) return;
+		const lessonToMark = activeLesson.id;
+		const next = nextLesson;
+		// Sair do fullscreen imediatamente (permite avançar mesmo em tela inteira)
+		if (document.fullscreenElement) {
+			document.exitFullscreen().catch(() => {});
+		}
+		setShowEndScreen(false);
+		if (next) handleSelectLesson(next);
+		// Marcar como vista em background (não bloqueia o avanço)
+		markWatched(lessonToMark).catch(() => {
+			toast.error('Erro ao marcar aula como assistida. Tente novamente.');
+		});
+	};
+
+	const handleMarkComplete = async () => {
 		if (!activeLesson) return;
 		try {
 			await markWatched(activeLesson.id);
-			if (nextLesson) handleSelectLesson(nextLesson);
+			toast.success('Aula marcada como concluída!');
 		} catch {
 			toast.error('Erro ao marcar aula como assistida. Tente novamente.');
 		}
 	};
 
+	const handleEndScreenReplay = () => {
+		setShowEndScreen(false);
+	};
+
+	const activeModule = activeLesson
+		? sortedModules.find((m) => m.lessons.some((l) => l.id === activeLesson.id))
+		: null;
+	const watchedCount = watchedLessonIds.size;
+
 	return (
-		<div className="min-h-screen bg-slate-50 dark:bg-[#06040f] text-slate-900 dark:text-white font-sans flex flex-col">
+		<div className="min-h-screen bg-slate-50 dark:bg-[#06040f] text-slate-900 dark:text-white font-sans flex flex-col relative overflow-hidden">
+			{/* Background gradients */}
+			<div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-violet-500/5 via-transparent to-transparent pointer-events-none" />
+			<div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-cyan-500/5 via-transparent to-transparent pointer-events-none" />
+
 			{/* ── Header ──────────────────────────────────────────────────────── */}
-			<header className="h-14 bg-white dark:bg-[#08060f] border-b border-slate-200 dark:border-white/6 flex items-center justify-between px-5 shrink-0">
+			<header className="h-14 bg-white/80 dark:bg-[#08060f]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/6 flex items-center justify-between px-5 shrink-0 sticky top-0 z-20">
 				<div className="flex items-center gap-4">
 					<Link
 						href="/course"
@@ -437,30 +554,48 @@ export default function CourseSlugPage() {
 						<ArrowLeft className="w-4 h-4" />
 						Voltar
 					</Link>
-
-					<div className="flex items-center gap-2">
-						<div className="bg-linear-to-br from-violet-600 to-purple-700 rounded-lg p-1.5">
-							<BookOpen className="w-5 h-5 text-white" />
+					<div className="w-px h-6 bg-slate-200 dark:bg-white/10" />
+					<div className="flex items-center gap-3">
+						<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
+							<BookOpen className="w-4 h-4 text-white" />
 						</div>
 						<div>
 							<p className="font-bold text-sm leading-tight text-slate-900 dark:text-white">
 								{course.name}
 							</p>
 							<p className="text-slate-500 dark:text-slate-400 text-xs">
-								{course.modules.length} módulo
-								{course.modules.length !== 1 ? 's' : ''} · {totalLessons} aula
-								{totalLessons !== 1 ? 's' : ''}
+								{activeModule?.title ?? 'Sala de Aula'}
 							</p>
 						</div>
 					</div>
 				</div>
 
-				<div className="flex items-center gap-2">
-					<div className="flex items-center gap-1.5 bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-full px-3 py-1 text-xs font-semibold text-slate-700 dark:text-white">
-						<Zap className="w-4 h-4 text-violet-400" />
-						{totalLessons} aulas
+				<div className="flex items-center gap-3">
+					<div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/20">
+						<Zap className="w-3.5 h-3.5 text-amber-500" />
+						<span className="text-xs font-medium text-slate-700 dark:text-white">
+							{watchedCount}/{totalLessons} aulas
+						</span>
 					</div>
-					<ThemeToggle />
+					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={toggleAutoPlay}
+							title={
+								autoPlay
+									? 'Auto-play ativado: avança automaticamente'
+									: 'Auto-play desativado: clique para avançar'
+							}
+							className={`p-2.5 rounded-xl border transition-colors ${
+								autoPlay
+									? 'bg-violet-100 dark:bg-violet-600/20 border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400'
+									: 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+							}`}
+						>
+							<Zap className="h-5 w-5" />
+						</button>
+						<ThemeToggle />
+					</div>
 				</div>
 			</header>
 
@@ -472,21 +607,28 @@ export default function CourseSlugPage() {
 						<VideoPlayer
 							lesson={activeLesson}
 							courseName={course.name}
+							moduleLabel={
+								activeModule ? `Módulo ${activeModule.order}` : undefined
+							}
 							onVideoEnded={handleVideoEnded}
+							showEndScreen={showEndScreen}
+							nextLessonTitle={nextLesson?.title ?? null}
+							onEndScreenAdvance={handleEndScreenAdvance}
+							onEndScreenReplay={handleEndScreenReplay}
 						/>
 
 						{/* Rating + tabs row */}
-						<div className="px-6 py-3 flex items-center justify-between border-b border-slate-200 dark:border-white/10">
-							<div className="flex gap-1">
+						<div className="px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/[0.02]">
+							<div className="flex gap-1 border-b border-slate-200 dark:border-white/10 -mb-[1px]">
 								<button
 									type="button"
 									onClick={() => features?.chat && setBottomTab('duvidas')}
-									className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+									className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-semibold transition-all border-b-2 -mb-px ${
 										!features?.chat
-											? 'text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed'
+											? 'text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed border-transparent'
 											: bottomTab === 'duvidas'
-												? 'bg-violet-100 dark:bg-violet-600/20 text-violet-700 dark:text-violet-300'
-												: 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+												? 'text-violet-600 dark:text-violet-400 border-violet-500 bg-transparent'
+												: 'text-slate-600 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
 									}`}
 								>
 									{features?.chat ? (
@@ -499,10 +641,10 @@ export default function CourseSlugPage() {
 								<button
 									type="button"
 									onClick={() => setBottomTab('materiais')}
-									className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+									className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-semibold transition-all border-b-2 -mb-px ${
 										bottomTab === 'materiais'
-											? 'bg-violet-100 dark:bg-violet-600/20 text-violet-700 dark:text-violet-300'
-											: 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+											? 'text-violet-600 dark:text-violet-400 border-violet-500 bg-transparent'
+											: 'text-slate-600 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
 									}`}
 								>
 									<Paperclip className="w-4 h-4" />
@@ -511,10 +653,10 @@ export default function CourseSlugPage() {
 								<button
 									type="button"
 									onClick={() => setBottomTab('quiz')}
-									className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+									className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-semibold transition-all border-b-2 -mb-px ${
 										bottomTab === 'quiz'
-											? 'bg-violet-100 dark:bg-violet-600/20 text-violet-700 dark:text-violet-300'
-											: 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+											? 'text-violet-600 dark:text-violet-400 border-violet-500 bg-transparent'
+											: 'text-slate-600 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
 									}`}
 								>
 									<ClipboardList className="w-4 h-4" />
@@ -522,105 +664,123 @@ export default function CourseSlugPage() {
 								</button>
 							</div>
 
-							{activeLesson && features?.chat && (
-								<div className="flex items-center gap-3">
-									<div className="flex items-center gap-2">
-										<p className="text-slate-500 text-xs">Avalie:</p>
-										<div className="flex gap-0.5">
-											{[1, 2, 3, 4, 5].map((star) => (
-												<button
-													key={star}
-													type="button"
-													onClick={() => submitRating.mutate(star)}
-													onMouseEnter={() => setHoverRating(star)}
-													onMouseLeave={() => setHoverRating(0)}
-													disabled={submitRating.isPending}
-												>
-													<Star
-														className={`w-4 h-4 transition-colors ${
-															(hoverRating || myRating) >= star
-																? 'text-yellow-500 fill-yellow-500 dark:text-yellow-400 dark:fill-yellow-400'
-																: 'text-slate-300 dark:text-slate-600'
-														}`}
-													/>
-												</button>
-											))}
+							<div className="flex items-center gap-4 flex-wrap">
+								{activeLesson && features?.chat && (
+									<div className="flex items-center gap-3">
+										<div className="flex items-center gap-2">
+											<span className="text-slate-500 dark:text-slate-400 text-xs">
+												Avalie:
+											</span>
+											<div className="flex gap-0.5">
+												{[1, 2, 3, 4, 5].map((star) => (
+													<button
+														key={star}
+														type="button"
+														onClick={() => submitRating.mutate(star)}
+														onMouseEnter={() => setHoverRating(star)}
+														onMouseLeave={() => setHoverRating(0)}
+														disabled={submitRating.isPending}
+													>
+														<Star
+															className={`w-5 h-5 transition-colors ${
+																(hoverRating || myRating) >= star
+																	? 'text-amber-400 fill-amber-400 dark:text-amber-400 dark:fill-amber-400'
+																	: 'text-slate-300 dark:text-slate-600'
+															}`}
+														/>
+													</button>
+												))}
+											</div>
 										</div>
+										{totalRatings > 0 && (
+											<p className="text-slate-500 dark:text-slate-400 text-xs">
+												{averageRating.toFixed(1)} ({totalRatings})
+											</p>
+										)}
 									</div>
-									{totalRatings > 0 && (
-										<p className="text-slate-500 text-xs">
-											{averageRating.toFixed(1)} ({totalRatings})
-										</p>
-									)}
-								</div>
-							)}
+								)}
+								{activeLesson && !watchedLessonIds.has(activeLesson.id) && (
+									<button
+										type="button"
+										onClick={handleMarkComplete}
+										className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-700 hover:to-violet-600 text-white shadow-lg shadow-violet-500/20 transition-all"
+									>
+										<Check className="w-4 h-4" />
+										Marcar como concluída
+									</button>
+								)}
+							</div>
 						</div>
 
 						{/* Tab content */}
 						<div className="px-6 py-6">
-							{bottomTab === 'duvidas' &&
-								(!features?.chat ? (
-									<div className="flex flex-col items-center justify-center py-16 text-slate-500 dark:text-slate-500">
-										<Lock className="w-12 h-12 mb-4" />
-										<p className="text-sm font-medium">
-											{upgradeTiers?.chat
-												? `Dúvidas disponível no plano ${upgradeTiers.chat}`
-												: 'Dúvidas disponível no plano Ouro ou Platina'}
-										</p>
-										<p className="text-xs mt-1">
-											Faça upgrade para enviar dúvidas sobre as aulas.
-										</p>
-										<Link
-											href="/store"
-											className="mt-4 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors"
-										>
-											Ver planos
-										</Link>
-									</div>
-								) : (
-									<DoubtsTab
-										lessonId={activeLesson?.id ?? null}
-										hasAccess={!!features?.chat}
-									/>
-								))}
+							<div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 backdrop-blur-sm overflow-hidden min-h-[280px]">
+								<div className="p-6">
+									{bottomTab === 'duvidas' &&
+										(!features?.chat ? (
+											<div className="flex flex-col items-center justify-center py-16 text-slate-500 dark:text-slate-500">
+												<Lock className="w-12 h-12 mb-4" />
+												<p className="text-sm font-medium">
+													{upgradeTiers?.chat
+														? `Dúvidas disponível no plano ${upgradeTiers.chat}`
+														: 'Dúvidas disponível no plano Ouro ou Platina'}
+												</p>
+												<p className="text-xs mt-1">
+													Faça upgrade para enviar dúvidas sobre as aulas.
+												</p>
+												<Link
+													href="/store"
+													className="mt-4 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors"
+												>
+													Ver planos
+												</Link>
+											</div>
+										) : (
+											<DoubtsTab
+												lessonId={activeLesson?.id ?? null}
+												hasAccess={!!features?.chat}
+											/>
+										))}
 
-							{bottomTab === 'materiais' && (
-								<MaterialsTab lessonId={activeLesson?.id ?? null} />
-							)}
+									{bottomTab === 'materiais' && (
+										<MaterialsTab lessonId={activeLesson?.id ?? null} />
+									)}
 
-							{bottomTab === 'quiz' && (
-								<QuizTab lessonId={activeLesson?.id ?? null} />
-							)}
+									{bottomTab === 'quiz' && (
+										<QuizTab lessonId={activeLesson?.id ?? null} />
+									)}
+								</div>
+							</div>
 						</div>
 					</main>
 				</div>
 
 				{/* ── Sidebar ─────────────────────────────────────────────────── */}
-				<aside className="w-75 border-l border-slate-200 dark:border-white/6 bg-white dark:bg-[#0a0818] flex flex-col shrink-0 overflow-hidden">
+				<aside className="w-72 xl:w-[380px] border-l border-slate-200 dark:border-white/6 bg-white/80 dark:bg-[#0a0818]/95 backdrop-blur-sm flex flex-col shrink-0 overflow-hidden">
 					{/* Next lesson banner */}
 					{nextLesson && (
-						<button
-							type="button"
-							onClick={() => handleSelectLesson(nextLesson)}
-							className="bg-linear-to-r from-violet-600 to-cyan-500 p-4 flex items-center gap-3 hover:brightness-110 transition-all w-full text-left shrink-0"
-						>
-							<div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center shrink-0">
-								<Play className="w-5 h-5 fill-current" />
-							</div>
-							<div className="flex-1 min-w-0">
-								<p className="text-white/70 text-[10px] font-semibold uppercase tracking-wider">
-									Próxima aula
-								</p>
-								<p className="text-white font-bold text-sm truncate">
-									{nextLesson.title}
-								</p>
-							</div>
-							<ChevronRight className="w-4 h-4 text-white/70 shrink-0" />
-						</button>
+						<div className="p-4 border-b border-slate-200 dark:border-white/10 bg-gradient-to-r from-violet-600/10 to-cyan-500/10 shrink-0">
+							<button
+								type="button"
+								onClick={() => handleSelectLesson(nextLesson)}
+								className="w-full p-4 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 text-white shadow-lg shadow-violet-500/20 hover:shadow-xl hover:scale-[1.02] transition-all flex items-center gap-3 text-left"
+							>
+								<div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center shrink-0">
+									<Play className="w-6 h-6 fill-current" />
+								</div>
+								<div className="flex-1 min-w-0">
+									<p className="text-white/80 text-xs font-medium">
+										Próxima aula
+									</p>
+									<p className="font-semibold truncate">{nextLesson.title}</p>
+								</div>
+								<ChevronRight className="w-5 h-5 text-white/80 shrink-0" />
+							</button>
+						</div>
 					)}
 
 					{/* Search */}
-					<div className="px-4 py-3 border-b border-slate-200 dark:border-white/10 shrink-0">
+					<div className="px-4 py-4 border-b border-slate-200 dark:border-white/10 shrink-0">
 						<div className="relative">
 							<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
 							<input
@@ -643,10 +803,10 @@ export default function CourseSlugPage() {
 									<button
 										type="button"
 										onClick={() => toggleModule(mod.id)}
-										className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-white/4 border-b border-slate-200 dark:border-white/6 hover:bg-slate-100 dark:hover:bg-white/[0.07] transition-colors"
+										className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-violet-600/10 to-cyan-500/10 dark:from-violet-600/20 dark:to-cyan-500/20 border-b border-slate-200 dark:border-white/6 hover:from-violet-600/15 hover:to-cyan-500/15 transition-colors"
 									>
 										<div className="flex items-center gap-2 min-w-0">
-											<div className="w-6 h-6 bg-linear-to-br from-violet-600 to-purple-700 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0">
+											<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-lg">
 												{mod.order}
 											</div>
 											<span className="font-semibold text-sm truncate text-slate-900 dark:text-white">

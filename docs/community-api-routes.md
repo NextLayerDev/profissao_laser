@@ -55,9 +55,9 @@ Este documento lista todas as rotas de API da Comunidade VIP. **A API já existe
 | Método | Rota                                      | Descrição                    | Body / Params |
 |--------|-------------------------------------------|------------------------------|---------------|
 | GET    | /community/channels/{channelId}/messages | Lista mensagens do canal     | Query: `?before=id&limit=50` |
-| POST   | /community/channels/{channelId}/messages | Enviar mensagem              | `{ content: string }` |
+| POST   | /community/channels/{channelId}/messages | Enviar mensagem (com ficheiro)| `multipart/form-data`: `content` (text), `file` (opcional) |
 
-**Resposta GET**: Array de objetos com `id`, `user`, `avatar`, `content`, `time`, `isMe`.
+**Resposta GET**: Array de objetos com `id`, `user`, `avatar`, `content`, `time`, `isMe`, `fileUrl?`.
 
 **Resposta POST**: Objeto da mensagem criada.
 

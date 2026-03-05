@@ -1,9 +1,10 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useCreateAppointment } from '@/hooks/use-appointments';
+import { useUsers } from '@/hooks/use-users';
 import { getCurrentUser } from '@/lib/auth';
 import type { CreateAppointmentPayload } from '@/types/appointments';
 import { APPOINTMENT_SERVICES } from '@/utils/constants/appointment-services';
@@ -16,6 +17,17 @@ interface AppointmentFormProps {
 export function AppointmentForm({ onSuccess }: AppointmentFormProps) {
 	const user = getCurrentUser();
 	const createMutation = useCreateAppointment();
+	const { users } = useUsers();
+
+	const technicians = useMemo(
+		() =>
+			users.filter(
+				(u) =>
+					u.role?.toLowerCase() === 'tecnico' ||
+					u.role?.toLowerCase() === 'colaborador',
+			),
+		[users],
+	);
 
 	const [customerName, setCustomerName] = useState('');
 	const [customerEmail, setCustomerEmail] = useState('');
@@ -24,6 +36,7 @@ export function AppointmentForm({ onSuccess }: AppointmentFormProps) {
 	const [date, setDate] = useState('');
 	const [time, setTime] = useState('');
 	const [notes, setNotes] = useState('');
+	const [technicianId, setTechnicianId] = useState<string>('');
 
 	useEffect(() => {
 		if (user?.name) setCustomerName(user.name);
@@ -47,6 +60,7 @@ export function AppointmentForm({ onSuccess }: AppointmentFormProps) {
 		};
 		if (customerPhone.trim()) payload.customerPhone = customerPhone.trim();
 		if (notes.trim()) payload.notes = notes.trim();
+		if (technicianId) payload.technicianId = technicianId;
 
 		createMutation.mutate(payload, {
 			onSuccess: () => {
@@ -184,6 +198,29 @@ export function AppointmentForm({ onSuccess }: AppointmentFormProps) {
 						disabled={!date}
 					/>
 				</div>
+				{technicians.length > 0 && (
+					<div>
+						<label
+							htmlFor="technician"
+							className="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1"
+						>
+							Técnico
+						</label>
+						<select
+							id="technician"
+							value={technicianId}
+							onChange={(e) => setTechnicianId(e.target.value)}
+							className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50"
+						>
+							<option value="">Selecione (opcional)</option>
+							{technicians.map((t) => (
+								<option key={t.id} value={t.id}>
+									{t.name}
+								</option>
+							))}
+						</select>
+					</div>
+				)}
 			</div>
 
 			<div className="mt-4">
