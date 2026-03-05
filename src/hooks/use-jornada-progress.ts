@@ -53,8 +53,16 @@ export function useJornadaProgress(plans: CustomerPlan[] | undefined) {
 		(p): p is CustomerPlan & { slug: string } => !!p.slug,
 	);
 
+	// Deduplica por slug para evitar mostrar o mesmo curso várias vezes
+	const seenSlugs = new Set<string>();
+	const uniquePlans = plansWithSlug.filter((p) => {
+		if (seenSlugs.has(p.slug)) return false;
+		seenSlugs.add(p.slug);
+		return true;
+	});
+
 	const queries = useQueries({
-		queries: plansWithSlug.map((plan) => ({
+		queries: uniquePlans.map((plan) => ({
 			queryKey: ['jornada-progress', plan.id, plan.slug],
 			queryFn: async (): Promise<JornadaCourseItem> => {
 				const course = await getCourse(plan.slug);

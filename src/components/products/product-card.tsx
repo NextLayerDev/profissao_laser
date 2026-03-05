@@ -1,6 +1,6 @@
 'use client';
 
-import { Layers, Link2, Trash2 } from 'lucide-react';
+import { Copy, Layers, Link2, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -9,11 +9,13 @@ import type { ProductCardProps } from '@/types/components/product-card';
 import { TIER_STYLES } from '@/utils/constants/tier-styles';
 import { formatCurrency } from '@/utils/format-currency';
 import { DeleteProductModal } from './delete-product-modal';
+import { DuplicateProductModal } from './duplicate-product-modal';
 
 export function ProductCard({ product, productClasses }: ProductCardProps) {
 	const { canPrice } = usePermissions();
 	const [imgError, setImgError] = useState(false);
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
+	const [showDuplicateModal, setShowDuplicateModal] = useState(false);
 
 	return (
 		<>
@@ -94,6 +96,18 @@ export function ProductCard({ product, productClasses }: ProductCardProps) {
 									onClick={(e) => {
 										e.preventDefault();
 										e.stopPropagation();
+										setShowDuplicateModal(true);
+									}}
+									className="p-2 text-slate-500 dark:text-gray-500 hover:text-violet-400 transition-colors"
+									title="Duplicar produto"
+								>
+									<Copy className="w-4 h-4" />
+								</button>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.preventDefault();
+										e.stopPropagation();
 										setShowDeleteModal(true);
 									}}
 									className="p-2 text-slate-500 dark:text-gray-500 hover:text-red-400 transition-colors"
@@ -110,6 +124,14 @@ export function ProductCard({ product, productClasses }: ProductCardProps) {
 				<DeleteProductModal
 					product={product}
 					onClose={() => setShowDeleteModal(false)}
+				/>
+			)}
+
+			{showDuplicateModal && (
+				<DuplicateProductModal
+					product={product}
+					productClasses={productClasses}
+					onClose={() => setShowDuplicateModal(false)}
 				/>
 			)}
 		</>

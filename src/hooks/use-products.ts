@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { duplicateProduct } from '@/lib/duplicate-product';
 import {
 	type CreateProductPayload,
 	createProduct,
@@ -61,5 +62,24 @@ export function useUploadProductImage() {
 		mutationFn: ({ id, file }: { id: string; file: File }) =>
 			uploadProductImage(id, file),
 		onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }),
+	});
+}
+
+export function useDuplicateProduct() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			product,
+			classId,
+			payment,
+		}: {
+			product: Product;
+			classId: string;
+			payment: import('@/lib/duplicate-product').DuplicateProductPaymentPayload;
+		}) => duplicateProduct(product, classId, payment),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ['products'] });
+			qc.invalidateQueries({ queryKey: ['classes'] });
+		},
 	});
 }

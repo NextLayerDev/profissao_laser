@@ -35,7 +35,10 @@ export function UserBadge() {
 	}
 
 	const isCustomerArea =
-		pathname.startsWith('/store') || pathname.startsWith('/course');
+		pathname.startsWith('/store') ||
+		pathname.startsWith('/course') ||
+		pathname.startsWith('/comunity') ||
+		pathname.startsWith('/vetorizacao');
 	const loginHref = isCustomerArea ? '/login' : '/login/admin';
 	const isAdminUser = !!getToken('user');
 

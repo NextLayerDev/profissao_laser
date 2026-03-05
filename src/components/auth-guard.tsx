@@ -2,17 +2,34 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, isAdmin } from '@/lib/auth';
 
 const PUBLIC_PATHS = ['/login', '/register', '/store'];
 
 const CUSTOMER_PATHS = ['/store', '/course', '/comunity', '/agendamentos'];
+
+const ADMIN_PATHS = [
+	'/',
+	'/products',
+	'/sales',
+	'/reports',
+	'/community',
+	'/acessos',
+];
 
 function getLoginRedirect(pathname: string): string {
 	if (CUSTOMER_PATHS.some((p) => pathname.startsWith(p))) {
 		return '/login';
 	}
 	return '/login/admin';
+}
+
+function isAdminPath(pathname: string): boolean {
+	return ADMIN_PATHS.some((p) =>
+		p === '/'
+			? pathname === '/'
+			: pathname === p || pathname.startsWith(`${p}/`),
+	);
 }
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -25,6 +42,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
 		if (!isPublic && !getCurrentUser()) {
 			router.replace(getLoginRedirect(pathname));
+			return;
+		}
+
+		if (!isPublic && getCurrentUser() && !isAdmin() && isAdminPath(pathname)) {
+			router.replace('/store');
 			return;
 		}
 
