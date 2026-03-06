@@ -84,7 +84,8 @@ export function DoubtsList({
 					</div>
 				) : (
 					displayedChats.map((chat) => {
-						const lastMessage = chat.messages[chat.messages.length - 1];
+						const messages = chat.messages ?? [];
+						const lastMessage = messages[messages.length - 1];
 						return (
 							<button
 								key={chat.id}

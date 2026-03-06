@@ -27,13 +27,13 @@ export interface DefaultQuestion {
 export interface DoubtChat {
 	id: string;
 	categoryId: string;
-	categoryName: string;
+	categoryName?: string;
 	technicianId?: string;
 	technicianName?: string;
 	customerId: string;
 	customerName?: string;
 	status: 'pending' | 'answered';
-	messages: ChatMessage[];
+	messages?: ChatMessage[];
 	qualificationAnswers?: Record<string, string>;
 	createdAt: string;
 	updatedAt: string;

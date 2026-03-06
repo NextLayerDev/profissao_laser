@@ -13,14 +13,14 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import type { DoubtCategory } from '@/types/doubt-chat';
 import {
-	addMockCategory,
-	deleteMockCategory,
-	getMockCategories,
-	reorderMockCategories,
-	updateMockCategory,
-} from '@/utils/mock/doubt-chat-mock';
+	useCreateDoubtCategory,
+	useDeleteDoubtCategory,
+	useDoubtCategoriesAdmin,
+	useReorderDoubtCategories,
+	useUpdateDoubtCategory,
+} from '@/hooks/use-doubt-chat-admin';
+import type { DoubtCategory } from '@/types/doubt-chat';
 import { DoubtsByCategory } from './doubts-by-category';
 
 function CategoryModal({
@@ -32,7 +32,11 @@ function CategoryModal({
 	editing: DoubtCategory | null;
 	nextOrder: number;
 	onClose: () => void;
-	onSave: (data: { title: string; description: string; order: number }) => void;
+	onSave: (data: {
+		title: string;
+		description: string;
+		order: number;
+	}) => Promise<void>;
 }) {
 	const [title, setTitle] = useState(editing?.title ?? '');
 	const [description, setDescription] = useState(editing?.description ?? '');
@@ -45,12 +49,11 @@ function CategoryModal({
 		}
 		setSaving(true);
 		try {
-			onSave({
+			await onSave({
 				title: title.trim(),
 				description: description.trim(),
 				order: nextOrder,
 			});
-			toast.success(editing ? 'Categoria atualizada!' : 'Categoria criada!');
 			onClose();
 		} catch {
 			toast.error('Erro ao salvar');
@@ -118,7 +121,7 @@ function CategoryModal({
 					</button>
 					<button
 						type="button"
-						onClick={handleSave}
+						onClick={() => void handleSave()}
 						disabled={saving}
 						className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg text-white font-medium transition-colors text-sm disabled:opacity-50"
 					>
@@ -132,7 +135,12 @@ function CategoryModal({
 }
 
 export function CategoriesSection() {
-	const categories = getMockCategories();
+	const { data: categories = [], isLoading } = useDoubtCategoriesAdmin();
+	const createMutation = useCreateDoubtCategory();
+	const updateMutation = useUpdateDoubtCategory();
+	const deleteMutation = useDeleteDoubtCategory();
+	const reorderMutation = useReorderDoubtCategories();
+
 	const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 	const [modal, setModal] = useState<{
 		open: boolean;
@@ -148,35 +156,57 @@ export function CategoriesSection() {
 		});
 	}
 
-	function handleSave(data: {
+	async function handleSave(data: {
 		title: string;
 		description: string;
 		order: number;
 	}) {
-		if (modal.editing) {
-			updateMockCategory(modal.editing.id, data);
-		} else {
-			addMockCategory(data);
+		try {
+			if (modal.editing) {
+				await updateMutation.mutateAsync({
+					id: modal.editing.id,
+					payload: data,
+				});
+				toast.success('Categoria atualizada!');
+			} else {
+				await createMutation.mutateAsync(data);
+				toast.success('Categoria criada!');
+			}
+			setModal({ open: false, editing: null });
+		} catch {
+			throw new Error('Erro ao salvar');
 		}
-		setModal({ open: false, editing: null });
 	}
 
-	function handleDelete(cat: DoubtCategory) {
+	async function handleDelete(cat: DoubtCategory) {
 		if (!confirm(`Excluir a categoria "${cat.title}"?`)) return;
-		if (deleteMockCategory(cat.id)) {
+		try {
+			await deleteMutation.mutateAsync(cat.id);
 			toast.success('Categoria excluída!');
-		} else {
+		} catch {
 			toast.error('Erro ao excluir');
 		}
 	}
 
-	function moveCategory(idx: number, dir: -1 | 1) {
+	async function moveCategory(idx: number, dir: -1 | 1) {
 		const newIdx = idx + dir;
 		if (newIdx < 0 || newIdx >= categories.length) return;
 		const reordered = [...categories];
 		[reordered[idx], reordered[newIdx]] = [reordered[newIdx], reordered[idx]];
-		reorderMockCategories(reordered.map((c) => c.id));
-		toast.success('Ordem atualizada');
+		try {
+			await reorderMutation.mutateAsync(reordered.map((c) => c.id));
+			toast.success('Ordem atualizada');
+		} catch {
+			toast.error('Erro ao reordenar');
+		}
+	}
+
+	if (isLoading) {
+		return (
+			<div className="flex justify-center py-16">
+				<Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
+			</div>
+		);
 	}
 
 	return (
@@ -226,16 +256,19 @@ export function CategoriesSection() {
 									<div className="flex flex-col gap-0.5 shrink-0">
 										<button
 											type="button"
-											onClick={() => moveCategory(idx, -1)}
-											disabled={idx === 0}
+											onClick={() => void moveCategory(idx, -1)}
+											disabled={idx === 0 || reorderMutation.isPending}
 											className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-20"
 										>
 											<MoveUp className="w-3 h-3 text-slate-500 dark:text-gray-400" />
 										</button>
 										<button
 											type="button"
-											onClick={() => moveCategory(idx, 1)}
-											disabled={idx === categories.length - 1}
+											onClick={() => void moveCategory(idx, 1)}
+											disabled={
+												idx === categories.length - 1 ||
+												reorderMutation.isPending
+											}
 											className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-20"
 										>
 											<MoveDown className="w-3 h-3 text-slate-500 dark:text-gray-400" />
@@ -272,7 +305,7 @@ export function CategoriesSection() {
 									</button>
 									<button
 										type="button"
-										onClick={() => handleDelete(cat)}
+										onClick={() => void handleDelete(cat)}
 										className="p-2 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg transition-colors"
 										aria-label="Excluir"
 									>

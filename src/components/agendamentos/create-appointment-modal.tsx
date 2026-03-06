@@ -9,6 +9,7 @@ import {
 } from '@/hooks/use-appointments';
 import { useUsers } from '@/hooks/use-users';
 import type { CreateAppointmentPayload } from '@/types/appointments';
+import { APPOINTMENT_MACHINES } from '@/utils/constants/appointment-machines';
 import { APPOINTMENT_SERVICES } from '@/utils/constants/appointment-services';
 import { TimeSlotPicker } from './time-slot-picker';
 
@@ -43,7 +44,7 @@ export function CreateAppointmentModal({
 	const [time, setTime] = useState('');
 	const [times, setTimes] = useState<string[]>([]);
 	const [notes, setNotes] = useState('');
-	const [technicianId, setTechnicianId] = useState<string>('');
+	const [machine, setMachine] = useState<string>(APPOINTMENT_MACHINES[0]);
 
 	useEffect(() => {
 		if (!isOpen) {
@@ -51,11 +52,11 @@ export function CreateAppointmentModal({
 			setCustomerEmail('');
 			setCustomerPhone('');
 			setService(APPOINTMENT_SERVICES[0]);
+			setMachine(APPOINTMENT_MACHINES[0]);
 			setDate('');
 			setTime('');
 			setTimes([]);
 			setNotes('');
-			setTechnicianId('');
 		}
 	}, [isOpen]);
 
@@ -65,7 +66,9 @@ export function CreateAppointmentModal({
 		if (
 			!customerName.trim() ||
 			!customerEmail.trim() ||
+			!customerPhone.trim() ||
 			!service ||
+			!machine ||
 			!date ||
 			slotsToUse.length === 0
 		) {
@@ -75,21 +78,27 @@ export function CreateAppointmentModal({
 			return;
 		}
 
-		const basePayload: Omit<CreateAppointmentPayload, 'time'> = {
-			customerName: customerName.trim(),
-			customerEmail: customerEmail.trim(),
-			service,
-			date,
-		};
-		if (customerPhone.trim()) basePayload.customerPhone = customerPhone.trim();
+		const basePayload: Omit<CreateAppointmentPayload, 'time' | 'technicianId'> =
+			{
+				customerName: customerName.trim(),
+				customerEmail: customerEmail.trim(),
+				customerPhone: customerPhone.trim(),
+				service,
+				machine,
+				date,
+			};
 		if (notes.trim()) basePayload.notes = notes.trim();
-		if (technicianId) basePayload.technicianId = technicianId;
 
 		try {
 			for (const t of slotsToUse) {
+				const randomTech =
+					technicians.length > 0
+						? technicians[Math.floor(Math.random() * technicians.length)]
+						: null;
 				await createMutation.mutateAsync({
 					...basePayload,
 					time: t,
+					...(randomTech && { technicianId: randomTech.id }),
 				});
 			}
 			toast.success(
@@ -165,13 +174,14 @@ export function CreateAppointmentModal({
 								htmlFor="create-customerPhone"
 								className="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1"
 							>
-								Telefone
+								Telefone *
 							</label>
 							<input
 								id="create-customerPhone"
 								type="tel"
 								value={customerPhone}
 								onChange={(e) => setCustomerPhone(e.target.value)}
+								required
 								className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-3 py-2 text-sm text-slate-900 dark:text-white"
 							/>
 						</div>
@@ -216,29 +226,27 @@ export function CreateAppointmentModal({
 								className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-3 py-2 text-sm text-slate-900 dark:text-white"
 							/>
 						</div>
-						{technicians.length > 0 && (
-							<div>
-								<label
-									htmlFor="create-technician"
-									className="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1"
-								>
-									Técnico
-								</label>
-								<select
-									id="create-technician"
-									value={technicianId}
-									onChange={(e) => setTechnicianId(e.target.value)}
-									className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-3 py-2 text-sm text-slate-900 dark:text-white"
-								>
-									<option value="">Selecione (opcional)</option>
-									{technicians.map((t) => (
-										<option key={t.id} value={t.id}>
-											{t.name}
-										</option>
-									))}
-								</select>
-							</div>
-						)}
+						<div>
+							<label
+								htmlFor="create-machine"
+								className="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1"
+							>
+								Máquina *
+							</label>
+							<select
+								id="create-machine"
+								value={machine}
+								onChange={(e) => setMachine(e.target.value)}
+								required
+								className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-3 py-2 text-sm text-slate-900 dark:text-white"
+							>
+								{APPOINTMENT_MACHINES.map((m) => (
+									<option key={m} value={m}>
+										{m}
+									</option>
+								))}
+							</select>
+						</div>
 						<div className="sm:col-span-2">
 							<TimeSlotPicker
 								value={times[0] ?? time}

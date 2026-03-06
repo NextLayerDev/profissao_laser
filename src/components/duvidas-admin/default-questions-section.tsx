@@ -5,23 +5,35 @@ import {
 	ChevronRight,
 	Edit,
 	HelpCircle,
+	Loader2,
 	Plus,
 	Trash2,
 	X,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import {
+	useCreateDefaultQuestion,
+	useDefaultQuestions,
+	useDeleteDefaultQuestion,
+	useTechniciansAdmin,
+	useUpdateDefaultQuestion,
+} from '@/hooks/use-doubt-chat-admin';
 import type { DefaultQuestion } from '@/types/doubt-chat';
-import { getMockTechnicians } from '@/utils/mock/doubt-chat-mock';
 
 function QuestionModal({
 	editing,
+	technicianId,
 	onClose,
 	onSave,
 }: {
 	editing: DefaultQuestion | null;
+	technicianId: string;
 	onClose: () => void;
-	onSave: (data: Omit<DefaultQuestion, 'id'>) => void;
+	onSave: (
+		technicianId: string,
+		data: Omit<DefaultQuestion, 'id'>,
+	) => Promise<void>;
 }) {
 	const [text, setText] = useState(editing?.text ?? '');
 	const [type, setType] = useState<DefaultQuestion['type']>(
@@ -30,27 +42,35 @@ function QuestionModal({
 	const [optionsStr, setOptionsStr] = useState(
 		editing?.options?.join(', ') ?? '',
 	);
+	const [saving, setSaving] = useState(false);
 
-	function handleSave() {
+	async function handleSave() {
 		if (!text.trim()) {
 			toast.error('Texto é obrigatório');
 			return;
 		}
-		const options =
-			type === 'select' && optionsStr.trim()
-				? optionsStr
-						.split(',')
-						.map((o) => o.trim())
-						.filter(Boolean)
-				: undefined;
-		onSave({
-			text: text.trim(),
-			type,
-			options,
-			order: editing?.order ?? 0,
-		});
-		toast.success(editing ? 'Pergunta atualizada!' : 'Pergunta adicionada!');
-		onClose();
+		setSaving(true);
+		try {
+			const options =
+				type === 'select' && optionsStr.trim()
+					? optionsStr
+							.split(',')
+							.map((o) => o.trim())
+							.filter(Boolean)
+					: undefined;
+			await onSave(technicianId, {
+				text: text.trim(),
+				type,
+				options,
+				order: editing?.order ?? 0,
+			});
+			toast.success(editing ? 'Pergunta atualizada!' : 'Pergunta adicionada!');
+			onClose();
+		} catch {
+			toast.error('Erro ao salvar');
+		} finally {
+			setSaving(false);
+		}
 	}
 
 	return (
@@ -134,9 +154,11 @@ function QuestionModal({
 					</button>
 					<button
 						type="button"
-						onClick={handleSave}
-						className="px-4 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg text-white font-medium transition-colors text-sm"
+						onClick={() => void handleSave()}
+						disabled={saving}
+						className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg text-white font-medium transition-colors text-sm disabled:opacity-50"
 					>
+						{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
 						Guardar
 					</button>
 				</div>
@@ -146,7 +168,8 @@ function QuestionModal({
 }
 
 export function DefaultQuestionsSection() {
-	const technicians = getMockTechnicians();
+	const { data: technicians = [], isLoading: techniciansLoading } =
+		useTechniciansAdmin();
 	const [expandedId, setExpandedId] = useState<string | null>(null);
 	const [modal, setModal] = useState<{
 		open: boolean;
@@ -154,48 +177,48 @@ export function DefaultQuestionsSection() {
 		editing: DefaultQuestion | null;
 	} | null>(null);
 
-	// Estado local para simular CRUD de perguntas (mock)
-	const [questionsByTech, setQuestionsByTech] = useState<
-		Record<string, DefaultQuestion[]>
-	>(() => {
-		const init: Record<string, DefaultQuestion[]> = {};
-		technicians.forEach((t) => {
-			init[t.id] = [...(t.defaultQuestions ?? [])];
-		});
-		return init;
-	});
+	const { data: questions = [], isLoading: questionsLoading } =
+		useDefaultQuestions(expandedId, !!expandedId);
 
-	function getQuestions(techId: string): DefaultQuestion[] {
-		return questionsByTech[techId] ?? [];
-	}
+	const createMutation = useCreateDefaultQuestion();
+	const updateMutation = useUpdateDefaultQuestion();
+	const deleteMutation = useDeleteDefaultQuestion();
 
-	function handleSave(techId: string, data: Omit<DefaultQuestion, 'id'>) {
-		setQuestionsByTech((prev) => {
-			const list = prev[techId] ?? [];
+	async function handleSave(techId: string, data: Omit<DefaultQuestion, 'id'>) {
+		try {
 			if (modal?.editing) {
-				return {
-					...prev,
-					[techId]: list.map((q) =>
-						q.id === modal.editing?.id ? { ...q, ...data, id: q.id } : q,
-					),
-				};
+				await updateMutation.mutateAsync({
+					id: modal.editing.id,
+					payload: data,
+				});
+			} else {
+				await createMutation.mutateAsync({
+					technicianId: techId,
+					payload: data,
+				});
 			}
-			const newQ: DefaultQuestion = {
-				...data,
-				id: `q-${Date.now()}`,
-			};
-			return { ...prev, [techId]: [...list, newQ] };
-		});
-		setModal(null);
+			setModal(null);
+		} catch {
+			throw new Error('Erro ao salvar');
+		}
 	}
 
-	function handleDelete(techId: string, questionId: string) {
+	async function handleDelete(questionId: string) {
 		if (!confirm('Excluir esta pergunta?')) return;
-		setQuestionsByTech((prev) => ({
-			...prev,
-			[techId]: (prev[techId] ?? []).filter((q) => q.id !== questionId),
-		}));
-		toast.success('Pergunta excluída!');
+		try {
+			await deleteMutation.mutateAsync(questionId);
+			toast.success('Pergunta excluída!');
+		} catch {
+			toast.error('Erro ao excluir');
+		}
+	}
+
+	if (techniciansLoading) {
+		return (
+			<div className="flex justify-center py-16">
+				<Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
+			</div>
+		);
 	}
 
 	return (
@@ -211,10 +234,13 @@ export function DefaultQuestionsSection() {
 
 			<div className="space-y-3">
 				{technicians.map((tech) => {
-					const questions = getQuestions(tech.id).sort(
+					const isExpanded = expandedId === tech.id;
+					const displayQuestions = isExpanded
+						? questions
+						: (tech.defaultQuestions ?? []);
+					const sortedQuestions = [...displayQuestions].sort(
 						(a, b) => a.order - b.order,
 					);
-					const isExpanded = expandedId === tech.id;
 					return (
 						<div
 							key={tech.id}
@@ -238,71 +264,79 @@ export function DefaultQuestionsSection() {
 										{tech.name}
 									</p>
 									<p className="text-sm text-slate-500 dark:text-gray-400">
-										{questions.length} pergunta
-										{questions.length !== 1 ? 's' : ''} de qualificação
+										{sortedQuestions.length} pergunta
+										{sortedQuestions.length !== 1 ? 's' : ''} de qualificação
 									</p>
 								</div>
 							</button>
 							{isExpanded && (
 								<div className="px-4 pb-4 pt-0 border-t border-slate-200 dark:border-gray-700">
-									<div className="mt-3 space-y-2">
-										{questions.map((q) => (
-											<div
-												key={q.id}
-												className="flex items-center justify-between gap-2 p-3 bg-slate-50 dark:bg-white/5 rounded-lg"
-											>
-												<div>
-													<p className="text-sm font-medium text-slate-900 dark:text-white">
-														{q.text}
-													</p>
-													<p className="text-xs text-slate-500 dark:text-gray-400">
-														{q.type}
-														{q.options?.length
-															? ` · ${q.options.join(', ')}`
-															: ''}
-													</p>
-												</div>
-												<div className="flex gap-1">
-													<button
-														type="button"
-														onClick={() =>
-															setModal({
-																open: true,
-																technicianId: tech.id,
-																editing: q,
-															})
-														}
-														className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg transition-colors"
-														aria-label="Editar"
+									{questionsLoading ? (
+										<div className="flex justify-center py-8">
+											<Loader2 className="w-6 h-6 text-violet-500 animate-spin" />
+										</div>
+									) : (
+										<>
+											<div className="mt-3 space-y-2">
+												{sortedQuestions.map((q) => (
+													<div
+														key={q.id}
+														className="flex items-center justify-between gap-2 p-3 bg-slate-50 dark:bg-white/5 rounded-lg"
 													>
-														<Edit className="w-4 h-4 text-slate-500 dark:text-gray-400" />
-													</button>
-													<button
-														type="button"
-														onClick={() => handleDelete(tech.id, q.id)}
-														className="p-2 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg transition-colors"
-														aria-label="Excluir"
-													>
-														<Trash2 className="w-4 h-4 text-red-500 dark:text-red-400" />
-													</button>
-												</div>
+														<div>
+															<p className="text-sm font-medium text-slate-900 dark:text-white">
+																{q.text}
+															</p>
+															<p className="text-xs text-slate-500 dark:text-gray-400">
+																{q.type}
+																{q.options?.length
+																	? ` · ${q.options.join(', ')}`
+																	: ''}
+															</p>
+														</div>
+														<div className="flex gap-1">
+															<button
+																type="button"
+																onClick={() =>
+																	setModal({
+																		open: true,
+																		technicianId: tech.id,
+																		editing: q,
+																	})
+																}
+																className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg transition-colors"
+																aria-label="Editar"
+															>
+																<Edit className="w-4 h-4 text-slate-500 dark:text-gray-400" />
+															</button>
+															<button
+																type="button"
+																onClick={() => void handleDelete(q.id)}
+																className="p-2 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg transition-colors"
+																aria-label="Excluir"
+															>
+																<Trash2 className="w-4 h-4 text-red-500 dark:text-red-400" />
+															</button>
+														</div>
+													</div>
+												))}
 											</div>
-										))}
-									</div>
-									<button
-										type="button"
-										onClick={() =>
-											setModal({
-												open: true,
-												technicianId: tech.id,
-												editing: null,
-											})
-										}
-										className="mt-3 flex items-center gap-2 px-4 py-2 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 rounded-lg transition-colors text-sm font-medium"
-									>
-										<Plus className="w-4 h-4" />
-										Adicionar pergunta
-									</button>
+											<button
+												type="button"
+												onClick={() =>
+													setModal({
+														open: true,
+														technicianId: tech.id,
+														editing: null,
+													})
+												}
+												className="mt-3 flex items-center gap-2 px-4 py-2 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 rounded-lg transition-colors text-sm font-medium"
+											>
+												<Plus className="w-4 h-4" />
+												Adicionar pergunta
+											</button>
+										</>
+									)}
 								</div>
 							)}
 						</div>
@@ -313,8 +347,9 @@ export function DefaultQuestionsSection() {
 			{modal?.open && (
 				<QuestionModal
 					editing={modal.editing}
+					technicianId={modal.technicianId}
 					onClose={() => setModal(null)}
-					onSave={(data) => handleSave(modal.technicianId, data)}
+					onSave={handleSave}
 				/>
 			)}
 		</div>

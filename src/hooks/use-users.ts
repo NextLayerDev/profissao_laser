@@ -5,7 +5,7 @@ import { deleteColaborador, updateColaborador } from '@/services/colaboradores';
 import { getUsers } from '@/services/users';
 import type { UpdateUserPayload } from '@/types/users';
 
-export function useUsers() {
+export function useUsers(enabled = true) {
 	const queryClient = useQueryClient();
 
 	const {
@@ -15,6 +15,7 @@ export function useUsers() {
 	} = useQuery({
 		queryKey: ['users'],
 		queryFn: getUsers,
+		enabled,
 	});
 
 	const updateMutation = useMutation({

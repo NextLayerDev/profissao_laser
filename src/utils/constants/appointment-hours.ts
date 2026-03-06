@@ -1,14 +1,13 @@
 export const APPOINTMENT_HOURS = { start: 8, end: 18 };
-export const SLOT_DURATION_MINUTES = 30;
+export const SLOT_DURATION_MINUTES = 60;
+const LUNCH_START = 12;
+const LUNCH_END = 13;
 
 export function generateTimeSlots(): string[] {
 	const slots: string[] = [];
 	for (let h = APPOINTMENT_HOURS.start; h < APPOINTMENT_HOURS.end; h++) {
-		for (let m = 0; m < 60; m += SLOT_DURATION_MINUTES) {
-			slots.push(
-				`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`,
-			);
-		}
+		if (h >= LUNCH_START && h < LUNCH_END) continue;
+		slots.push(`${h.toString().padStart(2, '0')}:00`);
 	}
 	return slots;
 }

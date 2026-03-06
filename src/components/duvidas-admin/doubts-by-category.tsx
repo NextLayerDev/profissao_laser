@@ -3,11 +3,11 @@
 import { Loader2, MessageSquare, Send } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import type { DoubtChat } from '@/types/doubt-chat';
 import {
-	addMockMessage,
-	getMockChatsByCategory,
-} from '@/utils/mock/doubt-chat-mock';
+	useDoubtChatsAdmin,
+	useReplyToDoubtChat,
+} from '@/hooks/use-doubt-chat-admin';
+import type { DoubtChat } from '@/types/doubt-chat';
 
 function formatDate(iso: string) {
 	try {
@@ -27,7 +27,7 @@ function DoubtItem({
 	onReply,
 }: {
 	doubt: DoubtChat;
-	onReply: (doubtId: string, content: string) => void;
+	onReply: (doubtId: string, content: string) => Promise<void>;
 }) {
 	const [replyText, setReplyText] = useState('');
 	const [replying, setReplying] = useState(false);
@@ -38,19 +38,22 @@ function DoubtItem({
 		if (!content) return;
 		setReplying(true);
 		try {
-			onReply(doubt.id, content);
+			await onReply(doubt.id, content);
 			setReplyText('');
+			toast.success('Resposta enviada!');
+		} catch {
+			toast.error('Erro ao enviar resposta');
 		} finally {
 			setReplying(false);
 		}
 	}
 
-	const lastMessage = doubt.messages[doubt.messages.length - 1];
+	const lastMessage = doubt.messages?.[doubt.messages.length - 1];
 
 	return (
-		<div className="bg-white/5 border border-white/10 rounded-lg p-4 space-y-3">
+		<div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg p-4 space-y-3">
 			<div>
-				<p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+				<p className="text-xs text-slate-600 dark:text-slate-500 mb-1">
 					{doubt.customerName ?? 'Cliente'} ·{' '}
 					{doubt.technicianName ?? 'Sem técnico'}
 				</p>
@@ -59,7 +62,7 @@ function DoubtItem({
 						{lastMessage.content}
 					</p>
 				)}
-				<p className="text-xs text-slate-500 mt-2">
+				<p className="text-xs text-slate-600 dark:text-slate-500 mt-2">
 					{formatDate(doubt.updatedAt)} ·{' '}
 					<span
 						className={
@@ -72,7 +75,7 @@ function DoubtItem({
 					</span>
 				</p>
 			</div>
-			{doubt.messages
+			{(doubt.messages ?? [])
 				.filter((m) => m.isTechnician)
 				.map((r) => (
 					<div key={r.id} className="pl-4 border-l-2 border-violet-500/30 py-2">
@@ -90,7 +93,7 @@ function DoubtItem({
 					value={replyText}
 					onChange={(e) => setReplyText(e.target.value)}
 					placeholder="Responder..."
-					className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50"
+					className="flex-1 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50"
 				/>
 				<button
 					type="submit"
@@ -114,22 +117,21 @@ export interface DoubtsByCategoryProps {
 	categoryName: string;
 }
 
-export function DoubtsByCategory({
-	categoryId,
-	categoryName: _categoryName,
-}: DoubtsByCategoryProps) {
-	const [, setRefresh] = useState(0);
-	const chats = getMockChatsByCategory(categoryId);
+export function DoubtsByCategory({ categoryId }: DoubtsByCategoryProps) {
+	const { data: allChats = [], isLoading } = useDoubtChatsAdmin(
+		categoryId,
+		!!categoryId,
+	);
+	const replyMutation = useReplyToDoubtChat();
 
-	function handleReply(doubtId: string, content: string) {
-		addMockMessage(doubtId, {
-			content,
-			authorId: 'tech-1',
-			authorName: 'Técnico',
-			isTechnician: true,
-		});
-		toast.success('Resposta enviada!');
-		setRefresh((r) => r + 1);
+	const chats = allChats;
+
+	if (isLoading) {
+		return (
+			<div className="flex justify-center py-8">
+				<Loader2 className="w-6 h-6 text-violet-500 animate-spin" />
+			</div>
+		);
 	}
 
 	if (chats.length === 0) {
@@ -144,7 +146,13 @@ export function DoubtsByCategory({
 	return (
 		<div className="space-y-3 mt-3">
 			{chats.map((doubt) => (
-				<DoubtItem key={doubt.id} doubt={doubt} onReply={handleReply} />
+				<DoubtItem
+					key={doubt.id}
+					doubt={doubt}
+					onReply={async (id, content) => {
+						await replyMutation.mutateAsync({ chatId: id, content });
+					}}
+				/>
 			))}
 		</div>
 	);

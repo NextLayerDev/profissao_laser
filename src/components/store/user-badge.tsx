@@ -38,7 +38,8 @@ export function UserBadge() {
 		pathname.startsWith('/store') ||
 		pathname.startsWith('/course') ||
 		pathname.startsWith('/comunity') ||
-		pathname.startsWith('/vetorizacao');
+		pathname.startsWith('/vetorizacao') ||
+		pathname.startsWith('/biblioteca-vetores');
 	const loginHref = isCustomerArea ? '/login' : '/login/admin';
 	const isAdminUser = !!getToken('user');
 

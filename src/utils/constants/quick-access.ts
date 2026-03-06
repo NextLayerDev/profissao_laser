@@ -1,6 +1,7 @@
 import {
 	Bookmark,
 	Compass,
+	FolderOpen,
 	type LucideIcon,
 	MessageSquare,
 	PenLine,
@@ -42,5 +43,12 @@ export const quickAccessItems: QuickAccessItem[] = [
 		Icon: Bookmark,
 		gradient: 'from-orange-500 to-amber-500',
 		featureKey: 'aula',
+	},
+	{
+		label: 'Biblioteca de Vetores',
+		Icon: FolderOpen,
+		gradient: 'from-emerald-500 to-teal-600',
+		featureKey: 'vetorizacao',
+		href: '/biblioteca-vetores',
 	},
 ];

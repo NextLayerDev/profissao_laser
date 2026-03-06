@@ -14,6 +14,7 @@ export interface Post {
 export interface ChannelMessage {
 	id: string;
 	user: string;
+	userName?: string | null;
 	avatar?: string | null;
 	content: string;
 	time: string;
@@ -26,6 +27,7 @@ export interface Channel {
 	label: string;
 	description?: string | null;
 	category: string;
+	adminOnly?: boolean;
 }
 
 export interface Member {
@@ -47,6 +49,16 @@ export interface Project {
 	time?: string;
 	likes?: number;
 	comments?: number;
+	createdAt?: string;
+}
+
+export interface ProjectComment {
+	id: string;
+	projectId: string;
+	author: string;
+	content: string;
+	time: string;
+	isAdmin?: boolean;
 }
 
 export interface Event {

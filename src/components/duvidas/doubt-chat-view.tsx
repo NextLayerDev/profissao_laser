@@ -75,7 +75,7 @@ export function DoubtChatView({
 
 			{/* Messages */}
 			<div className="flex-1 overflow-y-auto space-y-3 min-h-[200px]">
-				{chat.messages.map((msg) => (
+				{(chat.messages ?? []).map((msg) => (
 					<MessageBubble key={msg.id} msg={msg} />
 				))}
 			</div>

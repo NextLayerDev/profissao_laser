@@ -4,7 +4,6 @@ import {
 	Calendar,
 	Check,
 	CheckCircle,
-	LayoutGrid,
 	Loader2,
 	Plus,
 	Trash2,
@@ -35,14 +34,6 @@ import { DeleteAppointmentModal } from './delete-appointment-modal';
 import { TechnicianAppointmentsView } from './technician-appointments-view';
 import { UpdateStatusModal } from './update-status-modal';
 
-const STATUS_FILTERS = [
-	{ value: 'todos', label: 'Todos' },
-	{ value: 'pendente', label: 'Pendentes' },
-	{ value: 'confirmado', label: 'Confirmados' },
-	{ value: 'cancelado', label: 'Cancelados' },
-	{ value: 'concluido', label: 'Concluídos' },
-] as const;
-
 interface AppointmentsTableProps {
 	showCreateButton?: boolean;
 }
@@ -51,12 +42,12 @@ export function AppointmentsTable({
 	showCreateButton = true,
 }: AppointmentsTableProps) {
 	const [viewMode, setViewMode] = useState<
-		'tabela' | 'calendario' | 'cliente' | 'tecnico'
-	>('tabela');
-	const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
+		'calendario' | 'cliente' | 'tecnico'
+	>('calendario');
+	const [selectedCustomerSearch, setSelectedCustomerSearch] =
+		useState<string>('');
 	const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>('');
 	const [selectedDate, setSelectedDate] = useState<string | null>(null);
-	const [statusFilter, setStatusFilter] = useState<string>('todos');
 	const [showCreateModal, setShowCreateModal] = useState(false);
 	const [statusModal, setStatusModal] = useState<{
 		appointment: Appointment;
@@ -85,12 +76,6 @@ export function AppointmentsTable({
 		[users],
 	);
 	const deleteAppointment = useDeleteAppointment();
-
-	const filtered = useMemo(() => {
-		if (!appointments) return [];
-		if (statusFilter === 'todos') return appointments;
-		return appointments.filter((a) => a.status === statusFilter);
-	}, [appointments, statusFilter]);
 
 	const appointmentsForSelectedDate = useMemo(() => {
 		if (!selectedDate || !appointments) return [];
@@ -163,18 +148,6 @@ export function AppointmentsTable({
 					<div className="flex rounded-lg border border-slate-200 dark:border-white/10 p-0.5">
 						<button
 							type="button"
-							onClick={() => setViewMode('tabela')}
-							className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-								viewMode === 'tabela'
-									? 'bg-violet-600 text-white'
-									: 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/5'
-							}`}
-						>
-							<LayoutGrid className="w-4 h-4" />
-							Tabela
-						</button>
-						<button
-							type="button"
 							onClick={() => setViewMode('calendario')}
 							className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
 								viewMode === 'calendario'
@@ -209,21 +182,6 @@ export function AppointmentsTable({
 							Por técnico
 						</button>
 					</div>
-					{viewMode === 'tabela' &&
-						STATUS_FILTERS.map((f) => (
-							<button
-								key={f.value}
-								type="button"
-								onClick={() => setStatusFilter(f.value)}
-								className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-									statusFilter === f.value
-										? 'bg-violet-600 text-white'
-										: 'bg-white dark:bg-[#1a1a1d] text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5'
-								}`}
-							>
-								{f.label}
-							</button>
-						))}
 				</div>
 				{showCreateButton && (
 					<button
@@ -237,7 +195,7 @@ export function AppointmentsTable({
 				)}
 			</div>
 
-			{viewMode === 'calendario' ? (
+			{viewMode === 'calendario' && (
 				<div className="flex flex-col lg:flex-row gap-6">
 					<div className="flex-shrink-0">
 						<AppointmentsCalendar
@@ -268,6 +226,7 @@ export function AppointmentsTable({
 												</p>
 												<p className="text-sm text-slate-600 dark:text-gray-400">
 													{apt.time} — {apt.service}
+													{apt.machine && ` · ${apt.machine}`}
 													{apt.technicianId &&
 														` · ${userNameMap[apt.technicianId] ?? '—'}`}
 												</p>
@@ -356,147 +315,6 @@ export function AppointmentsTable({
 						</div>
 					)}
 				</div>
-			) : (
-				<div className="rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden bg-white dark:bg-transparent shadow-sm dark:shadow-none">
-					<table className="w-full text-sm">
-						<thead>
-							<tr className="bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-left">
-								<th className="px-4 py-3 font-medium">Nome</th>
-								<th className="px-4 py-3 font-medium">E-mail</th>
-								<th className="px-4 py-3 font-medium">Telefone</th>
-								<th className="px-4 py-3 font-medium">Serviço</th>
-								<th className="px-4 py-3 font-medium">Data</th>
-								<th className="px-4 py-3 font-medium">Hora</th>
-								<th className="px-4 py-3 font-medium">Técnico</th>
-								<th className="px-4 py-3 font-medium">Status</th>
-								<th className="px-4 py-3 font-medium text-right">Ações</th>
-							</tr>
-						</thead>
-						<tbody>
-							{filtered.length === 0 && (
-								<tr>
-									<td
-										colSpan={9}
-										className="px-4 py-10 text-center text-slate-500 dark:text-gray-500"
-									>
-										Nenhum agendamento encontrado.
-									</td>
-								</tr>
-							)}
-							{filtered.map((apt) => (
-								<tr
-									key={apt.id}
-									className="border-t border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/2 transition-colors"
-								>
-									<td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
-										{apt.customerName}
-									</td>
-									<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-										{apt.customerEmail}
-									</td>
-									<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-										{apt.customerPhone ?? '—'}
-									</td>
-									<td className="px-4 py-3 text-slate-900 dark:text-white">
-										{apt.service}
-									</td>
-									<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-										{formatAppointmentDate(apt.date)}
-									</td>
-									<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-										{apt.time}
-									</td>
-									<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-										{apt.technicianId
-											? (userNameMap[apt.technicianId] ?? '—')
-											: '—'}
-									</td>
-									<td className="px-4 py-3">
-										<span
-											className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${
-												APPOINTMENT_STATUS_STYLES[apt.status] ??
-												'bg-slate-500/10 text-slate-400'
-											}`}
-										>
-											{APPOINTMENT_STATUS_LABELS[apt.status] ?? apt.status}
-										</span>
-									</td>
-									<td className="px-4 py-3 text-right">
-										<div className="flex items-center justify-end gap-1">
-											{canAssignToSelf &&
-												apt.status !== 'cancelado' &&
-												apt.status !== 'concluido' && (
-													<button
-														type="button"
-														onClick={() => handleAssignToMe(apt)}
-														disabled={updateTechnician.isPending}
-														className="p-2 text-violet-500 hover:bg-violet-500/10 rounded-lg transition-colors"
-														title="Pegar para mim"
-													>
-														<UserCheck className="w-4 h-4" />
-													</button>
-												)}
-											{apt.status === 'pendente' && (
-												<button
-													type="button"
-													onClick={() =>
-														setStatusModal({
-															appointment: apt,
-															newStatus: 'confirmado',
-														})
-													}
-													className="p-2 text-emerald-500 hover:bg-emerald-500/10 rounded-lg transition-colors"
-													title="Confirmar"
-												>
-													<Check className="w-4 h-4" />
-												</button>
-											)}
-											{apt.status !== 'cancelado' &&
-												apt.status !== 'concluido' && (
-													<button
-														type="button"
-														onClick={() =>
-															setStatusModal({
-																appointment: apt,
-																newStatus: 'cancelado',
-															})
-														}
-														className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-														title="Cancelar"
-													>
-														<X className="w-4 h-4" />
-													</button>
-												)}
-											{apt.status === 'confirmado' && (
-												<button
-													type="button"
-													onClick={() =>
-														setStatusModal({
-															appointment: apt,
-															newStatus: 'concluido',
-														})
-													}
-													className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors"
-													title="Concluir"
-												>
-													<CheckCircle className="w-4 h-4" />
-												</button>
-											)}
-											<button
-												type="button"
-												onClick={() => setDeleteTarget(apt)}
-												className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-												title="Excluir"
-											>
-												<Trash2 className="w-4 h-4" />
-											</button>
-										</div>
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
 			)}
 
 			{viewMode === 'cliente' && (
@@ -504,22 +322,25 @@ export function AppointmentsTable({
 					<div className="flex flex-col sm:flex-row gap-3 max-w-md">
 						<input
 							type="text"
-							value={selectedCustomerId}
-							onChange={(e) => setSelectedCustomerId(e.target.value.trim())}
-							placeholder="ID do cliente (UUID)"
+							value={selectedCustomerSearch}
+							onChange={(e) => setSelectedCustomerSearch(e.target.value.trim())}
+							placeholder="E-mail ou telefone do cliente"
 							className="flex-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-500"
 						/>
 						<p className="text-sm text-slate-500 dark:text-gray-500 self-center">
-							Insira o UUID do cliente para ver o calendário de agendamentos.
+							Insira o e-mail ou telefone do cliente para ver o calendário de
+							agendamentos.
 						</p>
 					</div>
-					{selectedCustomerId ? (
-						<ClientAppointmentsView customerId={selectedCustomerId} />
+					{selectedCustomerSearch.trim() ? (
+						<ClientAppointmentsView
+							searchByEmailOrPhone={selectedCustomerSearch.trim()}
+						/>
 					) : (
 						<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] p-8 text-center">
 							<p className="text-slate-600 dark:text-gray-400">
-								Insira o UUID do cliente acima para visualizar o calendário de
-								agendamentos.
+								Insira o e-mail ou telefone do cliente acima para visualizar o
+								calendário de agendamentos.
 							</p>
 						</div>
 					)}

@@ -1,13 +1,14 @@
 'use client';
 
-import { MessageSquare, Plus } from 'lucide-react';
+import { Loader2, MessageSquare, Plus } from 'lucide-react';
 import { useState } from 'react';
-import type { DoubtChat } from '@/types/doubt-chat';
+import { toast } from 'sonner';
 import {
-	addMockMessage,
-	getMockChatById,
-	getMockChatsByCustomer,
-} from '@/utils/mock/doubt-chat-mock';
+	useDoubtChat,
+	useDoubtChats,
+	useSendDoubtMessage,
+} from '@/hooks/use-doubt-chat';
+import type { DoubtChat } from '@/types/doubt-chat';
 import { DoubtChatView } from './doubt-chat-view';
 import { DoubtsList } from './doubts-list';
 import { NewDoubtFlow } from './new-doubt-flow';
@@ -24,15 +25,29 @@ export function DoubtsClientView({
 	hasAccess,
 }: DoubtsClientViewProps) {
 	const [activeTab, setActiveTab] = useState<'pending' | 'answered'>('pending');
-	const [selectedChat, setSelectedChat] = useState<DoubtChat | null>(null);
+	const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 	const [newDoubtOpen, setNewDoubtOpen] = useState(false);
 
-	// Mock: dados em memória (sem API)
-	const chats = getMockChatsByCustomer(customerId, 'all');
+	const { data: chats = [], isLoading: chatsLoading } = useDoubtChats('all');
+	const { data: selectedChat, isLoading: chatLoading } = useDoubtChat(
+		selectedChatId,
+		!!selectedChatId,
+	);
+	const sendMessageMutation = useSendDoubtMessage(selectedChatId);
 
 	function handleChatCreated(chat: DoubtChat) {
-		setSelectedChat(chat);
+		setSelectedChatId(chat.id);
 		setActiveTab('pending');
+	}
+
+	async function handleSendMessage(content: string) {
+		if (!selectedChatId) return;
+		try {
+			await sendMessageMutation.mutateAsync(content);
+			toast.success('Mensagem enviada!');
+		} catch {
+			toast.error('Erro ao enviar mensagem. Tente novamente.');
+		}
 	}
 
 	if (!hasAccess) {
@@ -74,30 +89,33 @@ export function DoubtsClientView({
 			{/* Layout: lista à esquerda, chat à direita (ou full width em mobile) */}
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 				<div className="lg:col-span-1">
-					<DoubtsList
-						chats={chats}
-						activeTab={activeTab}
-						onTabChange={setActiveTab}
-						onSelectChat={setSelectedChat}
-					/>
+					{chatsLoading ? (
+						<div className="flex justify-center py-16">
+							<Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
+						</div>
+					) : (
+						<DoubtsList
+							chats={chats}
+							activeTab={activeTab}
+							onTabChange={setActiveTab}
+							onSelectChat={(chat) => setSelectedChatId(chat.id)}
+						/>
+					)}
 				</div>
 				<div className="lg:col-span-2">
-					{selectedChat ? (
+					{selectedChatId ? (
 						<div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6">
-							<DoubtChatView
-								chat={selectedChat}
-								customerName={customerName}
-								onSendMessage={(content) => {
-									addMockMessage(selectedChat.id, {
-										content,
-										authorId: customerId,
-										authorName: customerName,
-										isTechnician: false,
-									});
-									const updated = getMockChatById(selectedChat.id);
-									if (updated) setSelectedChat({ ...updated });
-								}}
-							/>
+							{chatLoading ? (
+								<div className="flex justify-center py-16">
+									<Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
+								</div>
+							) : selectedChat ? (
+								<DoubtChatView
+									chat={selectedChat}
+									customerName={customerName}
+									onSendMessage={handleSendMessage}
+								/>
+							) : null}
 						</div>
 					) : (
 						<div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-12 flex flex-col items-center justify-center min-h-[300px] text-slate-500 dark:text-slate-600">

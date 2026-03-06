@@ -18,6 +18,7 @@ import {
 	useReplyToDoubt,
 } from '@/hooks/use-admin-doubts';
 import type { Doubt } from '@/types/doubts';
+import { ChatsWithTechniciansTab } from './doubts-modal-chats-tab';
 
 function formatDate(iso: string) {
 	try {
@@ -58,17 +59,23 @@ function DoubtItem({
 	}
 
 	return (
-		<div className="bg-white/5 border border-white/10 rounded-lg p-4 space-y-3">
+		<div className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg p-4 space-y-3">
 			<div>
-				<p className="text-xs text-slate-500 mb-1">{lessonTitle}</p>
-				<p className="text-sm text-white leading-relaxed">{doubt.content}</p>
-				<p className="text-xs text-slate-500 mt-2">
+				<p className="text-xs text-slate-600 dark:text-slate-500 mb-1">
+					{lessonTitle}
+				</p>
+				<p className="text-sm text-slate-900 dark:text-white leading-relaxed">
+					{doubt.content}
+				</p>
+				<p className="text-xs text-slate-600 dark:text-slate-500 mt-2">
 					{doubt.authorName} · {formatDate(doubt.createdAt)}
 				</p>
 			</div>
 			{doubt.replies.map((r) => (
 				<div key={r.id} className="pl-4 border-l-2 border-violet-500/30 py-2">
-					<p className="text-sm text-slate-200">{r.content}</p>
+					<p className="text-sm text-slate-700 dark:text-slate-200">
+						{r.content}
+					</p>
 					<p className="text-xs text-violet-400 mt-1">
 						{r.authorName}
 						{r.isInstructor && ' · Instrutor'}
@@ -83,7 +90,7 @@ function DoubtItem({
 					value={replyText}
 					onChange={(e) => setReplyText(e.target.value)}
 					placeholder="Responder..."
-					className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50"
+					className="flex-1 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50"
 				/>
 				<button
 					type="submit"
@@ -118,18 +125,18 @@ function LessonRow({
 	const unanswered = doubts.filter((d) => d.replies.length === 0).length;
 
 	return (
-		<div className="border-b border-white/5 last:border-0">
+		<div className="border-b border-slate-200 dark:border-white/5 last:border-0">
 			<button
 				type="button"
 				onClick={() => setExpanded((e) => !e)}
-				className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-white/5 transition-colors"
+				className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
 			>
 				{expanded ? (
-					<ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+					<ChevronDown className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
 				) : (
-					<ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
+					<ChevronRight className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
 				)}
-				<span className="flex-1 text-sm font-medium text-slate-200 truncate">
+				<span className="flex-1 text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
 					{lesson.title}
 				</span>
 				{count > 0 ? (
@@ -144,7 +151,7 @@ function LessonRow({
 						)}
 					</>
 				) : (
-					<span className="text-xs text-slate-500">
+					<span className="text-xs text-slate-600 dark:text-slate-500">
 						{isLoading ? 'A carregar...' : 'Sem dúvidas'}
 					</span>
 				)}
@@ -152,12 +159,12 @@ function LessonRow({
 			{expanded && (
 				<div className="px-4 pb-4 space-y-3">
 					{isLoading ? (
-						<div className="flex items-center gap-2 py-4 text-slate-500">
+						<div className="flex items-center gap-2 py-4 text-slate-600 dark:text-slate-500">
 							<Loader2 className="w-4 h-4 animate-spin" />
 							<span className="text-sm">A carregar dúvidas...</span>
 						</div>
 					) : count === 0 ? (
-						<p className="text-sm text-slate-500 py-4">
+						<p className="text-sm text-slate-600 dark:text-slate-500 py-4">
 							Nenhuma dúvida nesta aula ainda.
 						</p>
 					) : (
@@ -199,23 +206,27 @@ function ProductCard({
 	).length;
 
 	return (
-		<div className="bg-white/[0.02] border border-white/5 rounded-xl overflow-hidden">
+		<div className="bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 rounded-xl overflow-hidden">
 			<button
 				type="button"
 				onClick={() => setExpanded((e) => !e)}
-				className="w-full flex items-center gap-2 px-4 py-4 text-left hover:bg-white/[0.03] transition-colors"
+				className="w-full flex items-center gap-2 px-4 py-4 text-left hover:bg-slate-100 dark:hover:bg-white/[0.03] transition-colors"
 			>
 				{expanded ? (
-					<ChevronDown className="w-5 h-5 text-violet-400 shrink-0" />
+					<ChevronDown className="w-5 h-5 text-violet-500 dark:text-violet-400 shrink-0" />
 				) : (
-					<ChevronRight className="w-5 h-5 text-violet-400 shrink-0" />
+					<ChevronRight className="w-5 h-5 text-violet-500 dark:text-violet-400 shrink-0" />
 				)}
-				<span className="flex-1 font-bold text-white">{pw.course.name}</span>
-				<span className="text-xs text-slate-500">
+				<span className="flex-1 font-bold text-slate-900 dark:text-white">
+					{pw.course.name}
+				</span>
+				<span className="text-xs text-slate-600 dark:text-slate-500">
 					{totalModules} módulo{totalModules !== 1 ? 's' : ''}
 				</span>
 				{isLoadingDoubts ? (
-					<span className="text-xs text-slate-500">A carregar...</span>
+					<span className="text-xs text-slate-600 dark:text-slate-500">
+						A carregar...
+					</span>
 				) : (
 					courseTotalDoubts > 0 && (
 						<>
@@ -271,15 +282,17 @@ function ModuleSection({
 			<button
 				type="button"
 				onClick={() => setExpanded((e) => !e)}
-				className="w-full flex items-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/[0.07] rounded-lg transition-colors text-left"
+				className="w-full flex items-center gap-2 px-4 py-3 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/[0.07] rounded-lg transition-colors text-left"
 			>
 				{expanded ? (
-					<ChevronDown className="w-4 h-4 text-violet-400 shrink-0" />
+					<ChevronDown className="w-4 h-4 text-violet-500 dark:text-violet-400 shrink-0" />
 				) : (
-					<ChevronRight className="w-4 h-4 text-violet-400 shrink-0" />
+					<ChevronRight className="w-4 h-4 text-violet-500 dark:text-violet-400 shrink-0" />
 				)}
-				<span className="flex-1 font-semibold text-white">{mod.title}</span>
-				<span className="text-xs text-slate-500">
+				<span className="flex-1 font-semibold text-slate-900 dark:text-white">
+					{mod.title}
+				</span>
+				<span className="text-xs text-slate-600 dark:text-slate-500">
 					{mod.lessons.length} aula{mod.lessons.length !== 1 ? 's' : ''}
 				</span>
 				{totalDoubts > 0 && (
@@ -312,12 +325,59 @@ function ModuleSection({
 	);
 }
 
+type DoubtsModalTab = 'aula' | 'chats';
+
+function DoubtsModalTabs({
+	activeTab,
+	onTabChange,
+	contentByAula,
+	contentChats,
+}: {
+	activeTab: DoubtsModalTab;
+	onTabChange: (tab: DoubtsModalTab) => void;
+	contentByAula: React.ReactNode;
+	contentChats: React.ReactNode;
+}) {
+	return (
+		<div className="flex flex-col flex-1 min-h-0">
+			<div className="flex gap-1 px-6 pt-2 border-b border-slate-200 dark:border-white/10 shrink-0">
+				<button
+					type="button"
+					onClick={() => onTabChange('aula')}
+					className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors ${
+						activeTab === 'aula'
+							? 'bg-violet-100 dark:bg-white/10 text-violet-700 dark:text-white border-b-2 border-violet-500'
+							: 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+					}`}
+				>
+					Por Aula
+				</button>
+				<button
+					type="button"
+					onClick={() => onTabChange('chats')}
+					className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors ${
+						activeTab === 'chats'
+							? 'bg-violet-100 dark:bg-white/10 text-violet-700 dark:text-white border-b-2 border-violet-500'
+							: 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+					}`}
+				>
+					Chats com Técnicos
+				</button>
+			</div>
+			<div className="flex-1 overflow-y-auto p-6">
+				{activeTab === 'aula' ? contentByAula : contentChats}
+			</div>
+		</div>
+	);
+}
+
 export interface DoubtsModalProps {
 	open: boolean;
 	onClose: () => void;
 }
 
 export function DoubtsModal({ open, onClose }: DoubtsModalProps) {
+	const [activeTab, setActiveTab] = useState<DoubtsModalTab>('aula');
 	const {
 		data: productsWithDoubts = [],
 		isLoading,
@@ -349,67 +409,76 @@ export function DoubtsModal({ open, onClose }: DoubtsModalProps) {
 				aria-hidden
 			/>
 			<div
-				className="fixed inset-4 md:inset-8 lg:inset-12 z-50 flex flex-col bg-[#0d0d0f] border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+				className="fixed inset-4 md:inset-8 lg:inset-12 z-50 flex flex-col bg-white dark:bg-[#0d0d0f] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="doubts-modal-title"
 			>
-				<div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
+				<div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-white/10 shrink-0">
 					<div className="flex items-center gap-3">
 						<div className="w-10 h-10 rounded-full bg-violet-600/20 flex items-center justify-center">
-							<MessageSquare className="w-5 h-5 text-violet-400" />
+							<MessageSquare className="w-5 h-5 text-violet-500 dark:text-violet-400" />
 						</div>
 						<div>
 							<h2
 								id="doubts-modal-title"
-								className="text-lg font-bold text-white"
+								className="text-lg font-bold text-slate-900 dark:text-white"
 							>
-								Dúvidas por Módulo
+								Dúvidas
 							</h2>
-							<p className="text-xs text-slate-500">
-								Responda às dúvidas dos alunos por aula
+							<p className="text-xs text-slate-600 dark:text-slate-500">
+								Responda às dúvidas dos alunos
 							</p>
 						</div>
 					</div>
 					<button
 						type="button"
 						onClick={onClose}
-						className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+						className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
 						aria-label="Fechar"
 					>
 						<X className="w-5 h-5" />
 					</button>
 				</div>
 
-				<div className="flex-1 overflow-y-auto p-6">
-					{isLoading ? (
-						<div className="flex flex-col items-center justify-center py-20">
-							<Loader2 className="w-10 h-10 text-violet-400 animate-spin mb-4" />
-							<p className="text-slate-500">A carregar cursos...</p>
-						</div>
-					) : isError ? (
-						<div className="flex flex-col items-center justify-center py-20 text-red-400">
-							<p className="text-sm">Erro ao carregar dúvidas.</p>
-						</div>
-					) : productsWithDoubts.length === 0 ? (
-						<div className="flex flex-col items-center justify-center py-20 text-slate-500">
-							<MessageSquare className="w-12 h-12 mb-4 opacity-50" />
-							<p className="text-sm">Nenhuma dúvida no momento.</p>
-						</div>
-					) : (
-						<div className="space-y-4">
-							{productsWithDoubts.map((pw) => (
-								<ProductCard
-									key={pw.product.id}
-									productWithDoubts={pw}
-									doubtsMap={allDoubtsMap}
-									isLoadingDoubts={isLoadingDoubts}
-									onReply={handleReply}
-								/>
-							))}
-						</div>
-					)}
-				</div>
+				<DoubtsModalTabs
+					activeTab={activeTab}
+					onTabChange={setActiveTab}
+					contentByAula={
+						isLoading ? (
+							<div className="flex flex-col items-center justify-center py-20">
+								<Loader2 className="w-10 h-10 text-violet-500 dark:text-violet-400 animate-spin mb-4" />
+								<p className="text-slate-600 dark:text-slate-500">
+									A carregar cursos...
+								</p>
+							</div>
+						) : isError ? (
+							<div className="flex flex-col items-center justify-center py-20 text-red-500 dark:text-red-400">
+								<p className="text-sm">Erro ao carregar dúvidas.</p>
+							</div>
+						) : productsWithDoubts.length === 0 ? (
+							<div className="flex flex-col items-center justify-center py-20 text-slate-600 dark:text-slate-500">
+								<MessageSquare className="w-12 h-12 mb-4 opacity-50" />
+								<p className="text-sm text-slate-700 dark:text-slate-400">
+									Nenhuma dúvida no momento.
+								</p>
+							</div>
+						) : (
+							<div className="space-y-4">
+								{productsWithDoubts.map((pw) => (
+									<ProductCard
+										key={pw.product.id}
+										productWithDoubts={pw}
+										doubtsMap={allDoubtsMap}
+										isLoadingDoubts={isLoadingDoubts}
+										onReply={handleReply}
+									/>
+								))}
+							</div>
+						)
+					}
+					contentChats={<ChatsWithTechniciansTab />}
+				/>
 			</div>
 		</>
 	);

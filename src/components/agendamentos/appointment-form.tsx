@@ -7,6 +7,7 @@ import { useCreateAppointment } from '@/hooks/use-appointments';
 import { useUsers } from '@/hooks/use-users';
 import { getCurrentUser } from '@/lib/auth';
 import type { CreateAppointmentPayload } from '@/types/appointments';
+import { APPOINTMENT_MACHINES } from '@/utils/constants/appointment-machines';
 import { APPOINTMENT_SERVICES } from '@/utils/constants/appointment-services';
 import { TimeSlotPicker } from './time-slot-picker';
 
@@ -36,7 +37,7 @@ export function AppointmentForm({ onSuccess }: AppointmentFormProps) {
 	const [date, setDate] = useState('');
 	const [time, setTime] = useState('');
 	const [notes, setNotes] = useState('');
-	const [technicianId, setTechnicianId] = useState<string>('');
+	const [machine, setMachine] = useState<string>(APPOINTMENT_MACHINES[0]);
 
 	useEffect(() => {
 		if (user?.name) setCustomerName(user.name);
@@ -46,21 +47,35 @@ export function AppointmentForm({ onSuccess }: AppointmentFormProps) {
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		const email = user?.email ?? customerEmail;
-		if (!customerName.trim() || !email.trim() || !service || !date || !time) {
+		if (
+			!customerName.trim() ||
+			!email.trim() ||
+			!customerPhone.trim() ||
+			!service ||
+			!machine ||
+			!date ||
+			!time
+		) {
 			toast.error('Preencha todos os campos obrigatórios.');
 			return;
 		}
 
+		const randomTech =
+			technicians.length > 0
+				? technicians[Math.floor(Math.random() * technicians.length)]
+				: null;
+
 		const payload: CreateAppointmentPayload = {
 			customerName: customerName.trim(),
 			customerEmail: email.trim(),
+			customerPhone: customerPhone.trim(),
 			service,
+			machine,
 			date,
 			time,
 		};
-		if (customerPhone.trim()) payload.customerPhone = customerPhone.trim();
 		if (notes.trim()) payload.notes = notes.trim();
-		if (technicianId) payload.technicianId = technicianId;
+		if (randomTech) payload.technicianId = randomTech.id;
 
 		createMutation.mutate(payload, {
 			onSuccess: () => {
@@ -71,6 +86,7 @@ export function AppointmentForm({ onSuccess }: AppointmentFormProps) {
 				}
 				setCustomerPhone('');
 				setService(APPOINTMENT_SERVICES[0]);
+				setMachine(APPOINTMENT_MACHINES[0]);
 				setDate('');
 				setTime('');
 				setNotes('');
@@ -135,13 +151,14 @@ export function AppointmentForm({ onSuccess }: AppointmentFormProps) {
 						htmlFor="customerPhone"
 						className="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1"
 					>
-						Telefone
+						Telefone *
 					</label>
 					<input
 						id="customerPhone"
 						type="tel"
 						value={customerPhone}
 						onChange={(e) => setCustomerPhone(e.target.value)}
+						required
 						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50"
 						placeholder="(00) 00000-0000"
 					/>
@@ -191,6 +208,27 @@ export function AppointmentForm({ onSuccess }: AppointmentFormProps) {
 				</div>
 
 				<div>
+					<label
+						htmlFor="machine"
+						className="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1"
+					>
+						Máquina *
+					</label>
+					<select
+						id="machine"
+						value={machine}
+						onChange={(e) => setMachine(e.target.value)}
+						required
+						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50"
+					>
+						{APPOINTMENT_MACHINES.map((m) => (
+							<option key={m} value={m}>
+								{m}
+							</option>
+						))}
+					</select>
+				</div>
+				<div>
 					<TimeSlotPicker
 						value={time}
 						onChange={setTime}
@@ -198,29 +236,6 @@ export function AppointmentForm({ onSuccess }: AppointmentFormProps) {
 						disabled={!date}
 					/>
 				</div>
-				{technicians.length > 0 && (
-					<div>
-						<label
-							htmlFor="technician"
-							className="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1"
-						>
-							Técnico
-						</label>
-						<select
-							id="technician"
-							value={technicianId}
-							onChange={(e) => setTechnicianId(e.target.value)}
-							className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50"
-						>
-							<option value="">Selecione (opcional)</option>
-							{technicians.map((t) => (
-								<option key={t.id} value={t.id}>
-									{t.name}
-								</option>
-							))}
-						</select>
-					</div>
-				)}
 			</div>
 
 			<div className="mt-4">

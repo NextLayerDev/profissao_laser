@@ -119,6 +119,7 @@ export function TechnicianAppointmentsView({
 									<div>
 										<p className="font-medium text-slate-900 dark:text-white">
 											{apt.customerName} — {apt.service}
+											{apt.machine && ` · ${apt.machine}`}
 										</p>
 										<p className="text-sm text-slate-600 dark:text-gray-400">
 											{formatAppointmentDate(apt.date, {

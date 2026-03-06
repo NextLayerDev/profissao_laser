@@ -6,7 +6,13 @@ import { getCurrentUser, isAdmin } from '@/lib/auth';
 
 const PUBLIC_PATHS = ['/login', '/register', '/store'];
 
-const CUSTOMER_PATHS = ['/store', '/course', '/comunity', '/agendamentos'];
+const CUSTOMER_PATHS = [
+	'/store',
+	'/course',
+	'/comunity',
+	'/agendamentos',
+	'/biblioteca-vetores',
+];
 
 const ADMIN_PATHS = [
 	'/',

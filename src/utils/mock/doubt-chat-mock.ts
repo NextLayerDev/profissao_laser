@@ -258,7 +258,7 @@ export function addMockMessage(
 		id: `msg-${Date.now()}`,
 		createdAt: new Date().toISOString(),
 	};
-	chat.messages = [...chat.messages, newMsg];
+	chat.messages = [...(chat.messages ?? []), newMsg];
 	chat.updatedAt = newMsg.createdAt;
 	if (message.isTechnician) {
 		chat.status = 'answered';

@@ -407,10 +407,12 @@ export default function CourseSlugPage() {
 
 	// Selecionar aula inicial: ?lesson=xxx na URL ou primeira não assistida
 	const hasSetInitialLesson = useRef(false);
+	const hasInitializedCollapsed = useRef(false);
 	const prevSlugRef = useRef(slug);
 	if (prevSlugRef.current !== slug) {
 		prevSlugRef.current = slug;
 		hasSetInitialLesson.current = false;
+		hasInitializedCollapsed.current = false;
 	}
 	useEffect(() => {
 		if (!course) return;
@@ -436,6 +438,26 @@ export default function CourseSlugPage() {
 		const nextLesson = lessons.find((l) => !watchedLessonIds.has(l.id));
 		setActiveLesson(nextLesson ?? lessons[0] ?? null);
 	}, [course, lessonIdFromUrl, progressLoading, watchedLessonIds]);
+
+	// Ao entrar na sala de aula, colapsar módulos com todas as aulas completas
+	useEffect(() => {
+		if (!course || progressLoading || hasInitializedCollapsed.current) return;
+		hasInitializedCollapsed.current = true;
+		const modules = course.modules
+			.slice()
+			.sort((a, b) => a.order - b.order)
+			.map((m) => ({
+				...m,
+				lessons: m.lessons.slice().sort((a, b) => a.order - b.order),
+			}));
+		const toCollapse = new Set<string>();
+		for (const mod of modules) {
+			if (mod.lessons.length === 0) continue;
+			const allComplete = mod.lessons.every((l) => watchedLessonIds.has(l.id));
+			if (allComplete) toCollapse.add(mod.id);
+		}
+		setCollapsedModules(toCollapse);
+	}, [course, watchedLessonIds, progressLoading]);
 
 	const toggleModule = (id: string) =>
 		setCollapsedModules((prev) => {

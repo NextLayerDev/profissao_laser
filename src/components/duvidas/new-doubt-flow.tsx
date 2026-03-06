@@ -1,15 +1,23 @@
 'use client';
 
-import { ArrowLeft, ArrowRight, MessageSquare, Send, X } from 'lucide-react';
-import { useState } from 'react';
-import type { DoubtChat } from '@/types/doubt-chat';
 import {
-	addMockChat,
-	addMockMessage,
-	getMockCategories,
-	getMockTechnicianById,
-	getMockTechnicians,
-} from '@/utils/mock/doubt-chat-mock';
+	ArrowLeft,
+	ArrowRight,
+	Loader2,
+	MessageSquare,
+	Send,
+	X,
+} from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import {
+	useCreateDoubtChat,
+	useDoubtCategories,
+	useSendDoubtMessage,
+	useTechnician,
+	useTechnicians,
+} from '@/hooks/use-doubt-chat';
+import type { DoubtChat } from '@/types/doubt-chat';
 import { DoubtChatView } from './doubt-chat-view';
 import { QualificationForm } from './qualification-form';
 import { TechnicianSelector } from './technician-selector';
@@ -27,7 +35,6 @@ const STEPS = ['Categoria', 'Técnico', 'Qualificação', 'Mensagem'] as const;
 export function NewDoubtFlow({
 	isOpen,
 	onClose,
-	customerId,
 	customerName,
 	onChatCreated,
 }: NewDoubtFlowProps) {
@@ -40,12 +47,18 @@ export function NewDoubtFlow({
 	const [initialMessage, setInitialMessage] = useState('');
 	const [createdChat, setCreatedChat] = useState<DoubtChat | null>(null);
 
-	const categories = getMockCategories();
-	const technicians = getMockTechnicians();
-	const selectedTechnician = technicianId
-		? getMockTechnicianById(technicianId)
-		: null;
+	const { data: categories = [], isLoading: categoriesLoading } =
+		useDoubtCategories(isOpen);
+	const { data: technicians = [], isLoading: techniciansLoading } =
+		useTechnicians(isOpen);
+	const { data: selectedTechnician } = useTechnician(
+		technicianId,
+		isOpen && !!technicianId,
+	);
 	const questions = selectedTechnician?.defaultQuestions ?? [];
+
+	const createChatMutation = useCreateDoubtChat();
+	const sendMessageMutation = useSendDoubtMessage(createdChat?.id ?? null);
 
 	function reset() {
 		setStep(0);
@@ -61,76 +74,48 @@ export function NewDoubtFlow({
 		onClose();
 	}
 
-	function handleNext() {
+	async function handleNext() {
 		if (step < STEPS.length - 1) {
 			setStep((s) => s + 1);
-		} else {
-			// Criar chat (mock)
-			const category = categories.find((c) => c.id === categoryId);
-			const tech = technicianId
-				? getMockTechnicianById(technicianId)
-				: undefined;
-			const chat = addMockChat({
-				categoryId: categoryId ?? '',
-				categoryName: category?.title ?? '',
-				technicianId: tech?.id,
-				technicianName: tech?.name,
-				customerId,
-				customerName,
-				status: 'pending',
-				messages: [
-					{
-						id: 'temp',
-						content: initialMessage,
-						authorId: customerId,
-						authorName: customerName,
-						isTechnician: false,
-						createdAt: new Date().toISOString(),
-					},
-				],
+			return;
+		}
+
+		if (!categoryId || !initialMessage.trim()) return;
+
+		try {
+			const chat = await createChatMutation.mutateAsync({
+				categoryId,
+				technicianId: technicianId ?? undefined,
 				qualificationAnswers:
 					Object.keys(qualificationAnswers).length > 0
 						? qualificationAnswers
 						: undefined,
-			});
-			// Remover o temp e adicionar mensagem real via addMockMessage
-			chat.messages = chat.messages.filter((m) => m.id !== 'temp');
-			addMockMessage(chat.id, {
-				content: initialMessage,
-				authorId: customerId,
-				authorName: customerName,
-				isTechnician: false,
+				initialMessage: initialMessage.trim(),
 			});
 			setCreatedChat(chat);
 			onChatCreated(chat);
+			toast.success('Dúvida enviada!');
+		} catch {
+			toast.error('Erro ao enviar dúvida. Tente novamente.');
 		}
 	}
 
-	function handleSendMessage(content: string) {
+	async function handleSendMessage(content: string) {
 		if (!createdChat) return;
-		addMockMessage(createdChat.id, {
-			content,
-			authorId: customerId,
-			authorName: customerName,
-			isTechnician: false,
-		});
-		// Atualizar estado local para refletir nova mensagem
-		setCreatedChat((prev) => {
-			if (!prev) return prev;
-			const newMsg = {
-				id: `msg-${Date.now()}`,
-				content,
-				authorId: customerId,
-				authorName: customerName,
-				isTechnician: false,
-				createdAt: new Date().toISOString(),
-			};
-			return {
-				...prev,
-				messages: [...prev.messages, newMsg],
-				updatedAt: newMsg.createdAt,
-			};
-		});
+		try {
+			const newMessage = await sendMessageMutation.mutateAsync(content);
+			setCreatedChat((prev) =>
+				prev
+					? {
+							...prev,
+							messages: [...(prev.messages ?? []), newMessage],
+						}
+					: null,
+			);
+			toast.success('Mensagem enviada!');
+		} catch {
+			toast.error('Erro ao enviar mensagem. Tente novamente.');
+		}
 	}
 
 	const canProceed =
@@ -138,6 +123,8 @@ export function NewDoubtFlow({
 		(step === 1 && true) ||
 		(step === 2 && true) ||
 		(step === 3 && initialMessage.trim().length > 0);
+
+	const isLoading = createChatMutation.isPending;
 
 	if (!isOpen) return null;
 
@@ -217,40 +204,46 @@ export function NewDoubtFlow({
 									>
 										Escolha a categoria da sua dúvida
 									</legend>
-									<div className="space-y-2">
-										{categories.map((cat) => (
-											<button
-												key={cat.id}
-												type="button"
-												onClick={() => setCategoryId(cat.id)}
-												className={`w-full flex items-center gap-3 p-4 rounded-xl border text-left transition-all ${
-													categoryId === cat.id
-														? 'border-violet-500 bg-violet-500/10 dark:bg-violet-500/20'
-														: 'border-slate-200 dark:border-white/10 hover:border-violet-500/40'
-												}`}
-											>
-												<div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shrink-0">
-													<MessageSquare className="w-5 h-5 text-white" />
-												</div>
-												<div>
-													<p className="font-medium text-slate-900 dark:text-white">
-														{cat.title}
-													</p>
-													{cat.description && (
-														<p className="text-xs text-slate-500 dark:text-slate-400">
-															{cat.description}
+									{categoriesLoading ? (
+										<div className="flex justify-center py-8">
+											<Loader2 className="w-6 h-6 text-violet-500 animate-spin" />
+										</div>
+									) : (
+										<div className="space-y-2">
+											{categories.map((cat) => (
+												<button
+													key={cat.id}
+													type="button"
+													onClick={() => setCategoryId(cat.id)}
+													className={`w-full flex items-center gap-3 p-4 rounded-xl border text-left transition-all ${
+														categoryId === cat.id
+															? 'border-violet-500 bg-violet-500/10 dark:bg-violet-500/20'
+															: 'border-slate-200 dark:border-white/10 hover:border-violet-500/40'
+													}`}
+												>
+													<div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shrink-0">
+														<MessageSquare className="w-5 h-5 text-white" />
+													</div>
+													<div>
+														<p className="font-medium text-slate-900 dark:text-white">
+															{cat.title}
 														</p>
-													)}
-												</div>
-											</button>
-										))}
-									</div>
+														{cat.description && (
+															<p className="text-xs text-slate-500 dark:text-slate-400">
+																{cat.description}
+															</p>
+														)}
+													</div>
+												</button>
+											))}
+										</div>
+									)}
 								</fieldset>
 							)}
 
 							{step === 1 && (
 								<TechnicianSelector
-									technicians={technicians}
+									technicians={techniciansLoading ? [] : technicians}
 									selectedId={technicianId}
 									onSelect={setTechnicianId}
 								/>
@@ -300,18 +293,21 @@ export function NewDoubtFlow({
 						<button
 							type="button"
 							onClick={() => (step > 0 ? setStep((s) => s - 1) : handleClose())}
-							className="flex items-center gap-2 px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+							disabled={isLoading}
+							className="flex items-center gap-2 px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors disabled:opacity-50"
 						>
 							<ArrowLeft className="w-4 h-4" />
 							{step === 0 ? 'Cancelar' : 'Voltar'}
 						</button>
 						<button
 							type="button"
-							onClick={handleNext}
-							disabled={!canProceed}
+							onClick={() => void handleNext()}
+							disabled={!canProceed || isLoading}
 							className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors"
 						>
-							{step === STEPS.length - 1 ? (
+							{isLoading ? (
+								<Loader2 className="w-4 h-4 animate-spin" />
+							) : step === STEPS.length - 1 ? (
 								<>
 									<Send className="w-4 h-4" />
 									Enviar dúvida

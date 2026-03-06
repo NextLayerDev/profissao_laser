@@ -4,6 +4,7 @@ import { MessageCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { DoubtsModal } from '@/components/dashboard/doubts-modal';
 import { useDoubtsByModules } from '@/hooks/use-admin-doubts';
+import { useDoubtChatsAdmin } from '@/hooks/use-doubt-chat-admin';
 import { getToken } from '@/lib/auth';
 
 type ChatButtonVariant = 'inline' | 'floating';
@@ -21,8 +22,9 @@ export function ChatButton({ variant = 'inline' }: ChatButtonProps) {
 	}, []);
 
 	const { data: productsWithDoubts = [] } = useDoubtsByModules(isAdmin);
+	const { data: doubtChats = [] } = useDoubtChatsAdmin(undefined, isAdmin);
 
-	const unansweredCount = productsWithDoubts.reduce((acc, pw) => {
+	const unansweredByAula = productsWithDoubts.reduce((acc, pw) => {
 		for (const mod of pw.modules) {
 			for (const lesson of mod.lessons) {
 				acc += lesson.doubts.filter((d) => d.replies.length === 0).length;
@@ -30,6 +32,9 @@ export function ChatButton({ variant = 'inline' }: ChatButtonProps) {
 		}
 		return acc;
 	}, 0);
+
+	const pendingChats = doubtChats.filter((c) => c.status === 'pending').length;
+	const unansweredCount = unansweredByAula + pendingChats;
 
 	if (!isAdmin) return null;
 

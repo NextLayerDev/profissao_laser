@@ -41,6 +41,7 @@ Este documento resume as rotas de backend para o sistema de agendamentos. O fron
     "customerName": "string",
     "customerEmail": "string",
     "customerPhone": "string | null",
+    "machine": "string | null",
     "service": "string",
     "date": "YYYY-MM-DD",
     "time": "HH:mm",
@@ -70,8 +71,9 @@ O backend filtra automaticamente: admin vê todos os agendamentos; cliente vê a
 {
   "customerName": "string",
   "customerEmail": "string",
-  "customerPhone": "string | null (opcional)",
+  "customerPhone": "string (obrigatório)",
   "service": "string",
+  "machine": "string (obrigatório: Fiber | UV | Diodo | CO2)",
   "date": "YYYY-MM-DD",
   "time": "HH:mm",
   "notes": "string | null (opcional)",

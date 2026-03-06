@@ -1,7 +1,7 @@
 export const APPOINTMENT_SERVICES = [
-	'Assistência técnica',
-	'Ajuste de parâmetros',
-	'Ajuste de lente',
-	'Treinamento',
-	'Eixo rotativo',
+	'Treinamento Inicial',
+	'Eixo Rotativo',
+	'Parametros',
+	'Analise de Identificação do Problema',
+	'Instalação de Softwares',
 ] as const;

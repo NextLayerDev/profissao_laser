@@ -97,6 +97,7 @@ export default function ComunityPage() {
 			<CommunityView
 				userName={name || email?.split('@')[0] || 'Você'}
 				userEmail={email}
+				isAdmin={isAdmin}
 				userInitials={
 					name
 						? name

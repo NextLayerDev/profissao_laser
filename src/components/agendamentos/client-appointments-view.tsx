@@ -17,12 +17,19 @@ import { AppointmentSuccessModal } from './appointment-success-modal';
 import { AppointmentsCalendar } from './appointments-calendar';
 
 interface ClientAppointmentsViewProps {
-	/** Admin: customer ID para ver agendamentos de um cliente específico. Cliente: undefined = usa GET /appointments */
+	/** Admin: customer ID (UUID) para ver agendamentos de um cliente específico */
 	customerId?: string | null;
+	/** Admin: busca por e-mail ou telefone do cliente (filtra agendamentos) */
+	searchByEmailOrPhone?: string | null;
+}
+
+function normalizeForSearch(str: string): string {
+	return str.replace(/\D/g, '').toLowerCase();
 }
 
 export function ClientAppointmentsView({
 	customerId = null,
+	searchByEmailOrPhone = null,
 }: ClientAppointmentsViewProps) {
 	const {
 		appointments: appointmentsAll,
@@ -36,7 +43,29 @@ export function ClientAppointmentsView({
 	} = useAppointmentsByCustomer(customerId);
 	const { users } = useUsers();
 
-	const appointments = customerId ? appointmentsByCustomer : appointmentsAll;
+	const appointments = useMemo(() => {
+		if (customerId) return appointmentsByCustomer ?? [];
+		if (searchByEmailOrPhone?.trim()) {
+			const search = searchByEmailOrPhone.trim().toLowerCase();
+			const searchDigits = normalizeForSearch(search);
+			return (appointmentsAll ?? []).filter((apt) => {
+				if (apt.customerEmail?.toLowerCase().includes(search)) return true;
+				if (
+					searchDigits.length >= 3 &&
+					normalizeForSearch(apt.customerPhone ?? '').includes(searchDigits)
+				)
+					return true;
+				return false;
+			});
+		}
+		return appointmentsAll ?? [];
+	}, [
+		customerId,
+		appointmentsByCustomer,
+		searchByEmailOrPhone,
+		appointmentsAll,
+	]);
+
 	const userNameMap = useMemo(
 		() => Object.fromEntries(users.map((u) => [u.id, u.name])),
 		[users],
@@ -125,7 +154,7 @@ export function ClientAppointmentsView({
 								? `Agendamentos — ${formatAppointmentDate(selectedDate)}`
 								: 'Agendamentos do mês'}
 						</h3>
-						{!customerId && (
+						{!customerId && !searchByEmailOrPhone && (
 							<button
 								type="button"
 								onClick={() => setShowForm(true)}
@@ -146,7 +175,7 @@ export function ClientAppointmentsView({
 									? 'Nenhum agendamento neste dia.'
 									: 'Nenhum agendamento neste mês.'}
 							</p>
-							{!customerId && (
+							{!customerId && !searchByEmailOrPhone && (
 								<button
 									type="button"
 									onClick={() => setShowForm(true)}
@@ -177,6 +206,7 @@ export function ClientAppointmentsView({
 												month: 'short',
 											})}{' '}
 											às {apt.time}
+											{apt.machine && ` · ${apt.machine}`}
 											{apt.technicianId &&
 												` · ${userNameMap[apt.technicianId] ?? '—'}`}
 										</p>
@@ -196,7 +226,7 @@ export function ClientAppointmentsView({
 				</div>
 			</div>
 
-			{showForm && !customerId && (
+			{showForm && !customerId && !searchByEmailOrPhone && (
 				<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] p-6">
 					<div className="flex items-center justify-between mb-4">
 						<h3 className="text-lg font-semibold text-slate-900 dark:text-white">
