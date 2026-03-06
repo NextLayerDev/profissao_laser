@@ -15,6 +15,8 @@ Este documento resume as rotas de backend para o sistema de agendamentos. O fron
 | Método | Rota | Descrição | Auth |
 |--------|------|-----------|------|
 | GET | /appointments | Listar agendamentos | Bearer |
+| GET | /appointments/available-slots?date=YYYY-MM-DD | Slots globalmente livres | Bearer |
+| GET | /appointments/available-slots?date=YYYY-MM-DD&technicianId=UUID | Slots livres para um técnico | Bearer |
 | GET | /appointments/:id_customer | Listar agendamentos de um cliente (admin only) | Bearer (user) |
 | GET | /appointments/technician/:id | Listar agendamentos de um técnico (admin only) | Bearer (user) |
 | POST | /appointment | Criar agendamento | Bearer (customer ou user) |
@@ -83,6 +85,8 @@ O backend filtra automaticamente: admin vê todos os agendamentos; cliente vê a
 
 **Resposta**: Objeto `Appointment` criado (com `id`, `status: "pendente"`, `createdAt`).
 
+**Conflito**: Quando `technicianId` é enviado, o backend verifica conflito apenas para esse técnico (se já tem agendamento no mesmo horário). Retorna 409/400 se indisponível.
+
 ---
 
 ### 3. Atualizar status
@@ -139,6 +143,21 @@ O body do **POST /appointment** aceita opcionalmente `technicianId` para atribui
 
 ---
 
+### 8. Slots disponíveis
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| GET | /appointments/available-slots?date=YYYY-MM-DD | Slots **globalmente livres** — sem nenhum agendamento em qualquer técnico. Usado pelo cliente. |
+| GET | /appointments/available-slots?date=YYYY-MM-DD&technicianId=UUID | Slots livres **para aquele técnico**. Usado pelo admin ao criar para técnico específico. |
+
+**Parâmetros**:
+- `date` (obrigatório): `YYYY-MM-DD`
+- `technicianId` (opcional): UUID do técnico. Se omitido, retorna slots globalmente livres.
+
+**Resposta**: `string[]` — array de horários no formato `HH:mm` (ex.: `["08:00","09:00","10:00",...]`).
+
+---
+
 ## Mapeamento Frontend → API
 
 | Componente / Funcionalidade | Serviço (src/services/appointments.ts) | Rota API |
@@ -146,7 +165,10 @@ O body do **POST /appointment** aceita opcionalmente `technicianId` para atribui
 | Admin - listar agendamentos | getAppointments() | GET /appointments |
 | Admin - listar por cliente | getAppointmentsByCustomer() | GET /appointments/:id_customer |
 | Admin - listar por técnico | getAppointmentsByTechnician() | GET /appointments/technician/:id |
+| Cliente - slots disponíveis | getAvailableSlots(date) | GET /appointments/available-slots?date=X |
+| Admin - slots por técnico | getAvailableSlots(date, technicianId) | GET /appointments/available-slots?date=X&technicianId=UUID |
 | Cliente - criar agendamento | createAppointment() | POST /appointment |
+| Admin - criar agendamento | createAppointment() | POST /appointment |
 | Admin - alterar status | updateAppointmentStatus() | PATCH /appointment/:id/status |
 | Admin - atribuir técnico | updateAppointmentTechnician() | PATCH /appointment/:id |
 | Admin - excluir | deleteAppointment() | DELETE /appointment/:id |

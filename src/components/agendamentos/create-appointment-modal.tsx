@@ -4,7 +4,7 @@ import { Loader2, Plus, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
-	useAppointments,
+	useAvailableSlotsForAnyTechnician,
 	useCreateAppointment,
 } from '@/hooks/use-appointments';
 import { useUsers } from '@/hooks/use-users';
@@ -23,7 +23,6 @@ export function CreateAppointmentModal({
 	onClose,
 }: CreateAppointmentModalProps) {
 	const createMutation = useCreateAppointment();
-	const { appointments } = useAppointments();
 	const { users } = useUsers();
 
 	const technicians = useMemo(
@@ -45,6 +44,10 @@ export function CreateAppointmentModal({
 	const [times, setTimes] = useState<string[]>([]);
 	const [notes, setNotes] = useState('');
 	const [machine, setMachine] = useState<string>(APPOINTMENT_MACHINES[0]);
+
+	const technicianIds = technicians.map((t) => t.id);
+	const { slots: availableSlots, slotToTechnicianIds } =
+		useAvailableSlotsForAnyTechnician(date, technicianIds);
 
 	useEffect(() => {
 		if (!isOpen) {
@@ -89,16 +92,33 @@ export function CreateAppointmentModal({
 			};
 		if (notes.trim()) basePayload.notes = notes.trim();
 
+		if (technicianIds.length > 0) {
+			const slotsWithoutTech = slotsToUse.filter(
+				(slotTime) => (slotToTechnicianIds.get(slotTime) ?? []).length === 0,
+			);
+			if (slotsWithoutTech.length > 0) {
+				toast.error(
+					`Nenhum técnico disponível nos horários: ${slotsWithoutTech.join(', ')}. Selecione outros horários.`,
+				);
+				return;
+			}
+		}
+
 		try {
-			for (const t of slotsToUse) {
-				const randomTech =
-					technicians.length > 0
-						? technicians[Math.floor(Math.random() * technicians.length)]
+			for (const slotTime of slotsToUse) {
+				const availableIds = slotToTechnicianIds.get(slotTime) ?? [];
+				const chosenTech =
+					availableIds.length > 0
+						? technicians.find(
+								(t) =>
+									t.id ===
+									availableIds[Math.floor(Math.random() * availableIds.length)],
+							)
 						: null;
 				await createMutation.mutateAsync({
 					...basePayload,
-					time: t,
-					...(randomTech && { technicianId: randomTech.id }),
+					time: slotTime,
+					...(chosenTech && { technicianId: chosenTech.id }),
 				});
 			}
 			toast.success(
@@ -255,7 +275,7 @@ export function CreateAppointmentModal({
 								onChangeMultiple={setTimes}
 								multiple
 								date={date}
-								appointments={appointments ?? undefined}
+								availableSlotsFromApi={date ? availableSlots : undefined}
 								disabled={!date}
 							/>
 						</div>

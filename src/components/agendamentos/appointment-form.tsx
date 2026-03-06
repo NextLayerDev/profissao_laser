@@ -3,22 +3,40 @@
 import { Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { useCreateAppointment } from '@/hooks/use-appointments';
+import {
+	useAvailableSlots,
+	useCreateAppointment,
+} from '@/hooks/use-appointments';
 import { useUsers } from '@/hooks/use-users';
 import { getCurrentUser } from '@/lib/auth';
 import type { CreateAppointmentPayload } from '@/types/appointments';
+import { getAvailableTechniciansAtSlot } from '@/utils/agendamentos/technician-availability';
 import { APPOINTMENT_MACHINES } from '@/utils/constants/appointment-machines';
 import { APPOINTMENT_SERVICES } from '@/utils/constants/appointment-services';
 import { TimeSlotPicker } from './time-slot-picker';
 
 interface AppointmentFormProps {
 	onSuccess?: (data: { date: string; time: string; service: string }) => void;
+	/** Quando fornecido, filtra slots e atribui apenas a técnicos disponíveis (ex.: admin) */
+	appointments?: import('@/types/appointments').Appointment[] | null;
+	/** IDs dos técnicos. Obrigatório com appointments para filtrar slots. */
+	technicianIds?: string[];
 }
 
-export function AppointmentForm({ onSuccess }: AppointmentFormProps) {
+export function AppointmentForm({
+	onSuccess,
+	appointments = null,
+	technicianIds = [],
+}: AppointmentFormProps) {
 	const user = getCurrentUser();
 	const createMutation = useCreateAppointment();
 	const { users } = useUsers();
+
+	const appointmentsToUse = appointments ?? null;
+	const hasAvailabilityData =
+		appointmentsToUse &&
+		appointmentsToUse.length > 0 &&
+		technicianIds.length > 0;
 
 	const technicians = useMemo(
 		() =>
@@ -38,6 +56,10 @@ export function AppointmentForm({ onSuccess }: AppointmentFormProps) {
 	const [time, setTime] = useState('');
 	const [notes, setNotes] = useState('');
 	const [machine, setMachine] = useState<string>(APPOINTMENT_MACHINES[0]);
+
+	const { slots: availableSlots } = useAvailableSlots(
+		!hasAvailabilityData && date ? date : null,
+	);
 
 	useEffect(() => {
 		if (user?.name) setCustomerName(user.name);
@@ -60,10 +82,25 @@ export function AppointmentForm({ onSuccess }: AppointmentFormProps) {
 			return;
 		}
 
-		const randomTech =
-			technicians.length > 0
-				? technicians[Math.floor(Math.random() * technicians.length)]
-				: null;
+		let chosenTech: (typeof technicians)[number] | null = null;
+		if (technicians.length > 0) {
+			if (hasAvailabilityData && appointmentsToUse) {
+				const availableIds = getAvailableTechniciansAtSlot(
+					time,
+					date,
+					appointmentsToUse,
+					technicianIds,
+				);
+				if (availableIds.length > 0) {
+					const id =
+						availableIds[Math.floor(Math.random() * availableIds.length)];
+					chosenTech = technicians.find((t) => t.id === id) ?? null;
+				}
+			} else {
+				chosenTech =
+					technicians[Math.floor(Math.random() * technicians.length)] ?? null;
+			}
+		}
 
 		const payload: CreateAppointmentPayload = {
 			customerName: customerName.trim(),
@@ -75,7 +112,7 @@ export function AppointmentForm({ onSuccess }: AppointmentFormProps) {
 			time,
 		};
 		if (notes.trim()) payload.notes = notes.trim();
-		if (randomTech) payload.technicianId = randomTech.id;
+		if (chosenTech) payload.technicianId = chosenTech.id;
 
 		createMutation.mutate(payload, {
 			onSuccess: () => {
@@ -91,8 +128,19 @@ export function AppointmentForm({ onSuccess }: AppointmentFormProps) {
 				setTime('');
 				setNotes('');
 			},
-			onError: () => {
-				toast.error('Erro ao criar agendamento. Tente novamente.');
+			onError: (err: unknown) => {
+				const status =
+					err &&
+					typeof err === 'object' &&
+					'response' in err &&
+					(err as { response?: { status?: number } }).response?.status;
+				if (status === 409 || status === 400) {
+					toast.error(
+						'Horário indisponível. Por favor, selecione outro horário.',
+					);
+				} else {
+					toast.error('Erro ao criar agendamento. Tente novamente.');
+				}
 			},
 		});
 	}
@@ -233,6 +281,11 @@ export function AppointmentForm({ onSuccess }: AppointmentFormProps) {
 						value={time}
 						onChange={setTime}
 						date={date}
+						appointments={hasAvailabilityData ? appointmentsToUse : undefined}
+						technicianIds={hasAvailabilityData ? technicianIds : []}
+						availableSlotsFromApi={
+							!hasAvailabilityData && date ? availableSlots : undefined
+						}
 						disabled={!date}
 					/>
 				</div>

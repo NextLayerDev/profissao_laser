@@ -8,7 +8,8 @@ import {
 	Pencil,
 	Trash2,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type {
 	VectorLibraryFile,
 	VectorLibraryFolder,
@@ -44,6 +45,25 @@ export function VectorLibraryTable({
 	onDeleteFile,
 }: VectorLibraryTableProps) {
 	const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+	const [menuPosition, setMenuPosition] = useState<{
+		top: number;
+		left: number;
+	} | null>(null);
+	const menuTriggerRef = useRef<HTMLButtonElement | null>(null);
+
+	useEffect(() => {
+		if (!openMenuId) {
+			setMenuPosition(null);
+			return;
+		}
+		const el = menuTriggerRef.current;
+		if (!el) return;
+		const rect = el.getBoundingClientRect();
+		setMenuPosition({
+			top: rect.bottom + 4,
+			left: Math.max(8, rect.right - 140),
+		});
+	}, [openMenuId]);
 
 	const sortedFolders = [...folders].sort((a, b) =>
 		a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
@@ -125,49 +145,64 @@ export function VectorLibraryTable({
 								<td className="py-3 px-2">
 									<div className="relative">
 										<button
+											ref={(el) => {
+												if (openMenuId === folder.id)
+													menuTriggerRef.current = el;
+											}}
 											type="button"
-											onClick={() =>
+											onClick={(e) => {
+												menuTriggerRef.current = e.currentTarget;
 												setOpenMenuId(
 													openMenuId === folder.id ? null : folder.id,
-												)
-											}
+												);
+											}}
 											className="p-2 rounded-lg text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"
 										>
 											<MoreVertical className="h-4 w-4" />
 										</button>
-										{openMenuId === folder.id && (
-											<>
-												<div
-													className="fixed inset-0 z-10"
-													aria-hidden
-													onClick={() => setOpenMenuId(null)}
-												/>
-												<div className="absolute right-0 top-full mt-1 z-20 py-1 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl shadow-lg min-w-[140px]">
-													<button
-														type="button"
-														onClick={() => {
-															onRenameFolder(folder);
-															setOpenMenuId(null);
+										{openMenuId === folder.id &&
+											menuPosition &&
+											typeof document !== 'undefined' &&
+											createPortal(
+												<>
+													<div
+														className="fixed inset-0 z-[9998]"
+														aria-hidden
+														onClick={() => setOpenMenuId(null)}
+													/>
+													<div
+														className="fixed z-[9999] py-1 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl shadow-lg min-w-[140px]"
+														style={{
+															top: menuPosition.top,
+															left: menuPosition.left,
 														}}
-														className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5"
 													>
-														<Pencil className="h-4 w-4" />
-														Renomear
-													</button>
-													<button
-														type="button"
-														onClick={() => {
-															onDeleteFolder(folder);
-															setOpenMenuId(null);
-														}}
-														className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
-													>
-														<Trash2 className="h-4 w-4" />
-														Excluir
-													</button>
-												</div>
-											</>
-										)}
+														<button
+															type="button"
+															onClick={() => {
+																onRenameFolder(folder);
+																setOpenMenuId(null);
+															}}
+															className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 text-left"
+														>
+															<Pencil className="h-4 w-4 shrink-0" />
+															Renomear
+														</button>
+														<button
+															type="button"
+															onClick={() => {
+																onDeleteFolder(folder);
+																setOpenMenuId(null);
+															}}
+															className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 text-left"
+														>
+															<Trash2 className="h-4 w-4 shrink-0" />
+															Excluir
+														</button>
+													</div>
+												</>,
+												document.body,
+											)}
 									</div>
 								</td>
 							)}
@@ -213,49 +248,64 @@ export function VectorLibraryTable({
 										{isAdmin && onRenameFile && onDeleteFile && (
 											<div className="relative">
 												<button
+													ref={(el) => {
+														if (openMenuId === file.id)
+															menuTriggerRef.current = el;
+													}}
 													type="button"
-													onClick={() =>
+													onClick={(e) => {
+														menuTriggerRef.current = e.currentTarget;
 														setOpenMenuId(
 															openMenuId === file.id ? null : file.id,
-														)
-													}
+														);
+													}}
 													className="p-2 rounded-lg text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"
 												>
 													<MoreVertical className="h-4 w-4" />
 												</button>
-												{openMenuId === file.id && (
-													<>
-														<div
-															className="fixed inset-0 z-10"
-															aria-hidden
-															onClick={() => setOpenMenuId(null)}
-														/>
-														<div className="absolute right-0 top-full mt-1 z-20 py-1 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl shadow-lg min-w-[140px]">
-															<button
-																type="button"
-																onClick={() => {
-																	onRenameFile(file);
-																	setOpenMenuId(null);
+												{openMenuId === file.id &&
+													menuPosition &&
+													typeof document !== 'undefined' &&
+													createPortal(
+														<>
+															<div
+																className="fixed inset-0 z-[9998]"
+																aria-hidden
+																onClick={() => setOpenMenuId(null)}
+															/>
+															<div
+																className="fixed z-[9999] py-1 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl shadow-lg min-w-[140px]"
+																style={{
+																	top: menuPosition.top,
+																	left: menuPosition.left,
 																}}
-																className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5"
 															>
-																<Pencil className="h-4 w-4" />
-																Renomear
-															</button>
-															<button
-																type="button"
-																onClick={() => {
-																	onDeleteFile(file);
-																	setOpenMenuId(null);
-																}}
-																className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
-															>
-																<Trash2 className="h-4 w-4" />
-																Excluir
-															</button>
-														</div>
-													</>
-												)}
+																<button
+																	type="button"
+																	onClick={() => {
+																		onRenameFile(file);
+																		setOpenMenuId(null);
+																	}}
+																	className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 text-left"
+																>
+																	<Pencil className="h-4 w-4 shrink-0" />
+																	Renomear
+																</button>
+																<button
+																	type="button"
+																	onClick={() => {
+																		onDeleteFile(file);
+																		setOpenMenuId(null);
+																	}}
+																	className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 text-left"
+																>
+																	<Trash2 className="h-4 w-4 shrink-0" />
+																	Excluir
+																</button>
+															</div>
+														</>,
+														document.body,
+													)}
 											</div>
 										)}
 									</div>

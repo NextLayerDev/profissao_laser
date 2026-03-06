@@ -10,6 +10,18 @@ export async function getAppointments(): Promise<Appointment[]> {
 	return appointmentSchema.array().parse(data);
 }
 
+export async function getAvailableSlots(
+	date: string,
+	technicianId?: string,
+): Promise<string[]> {
+	const params: Record<string, string> = { date };
+	if (technicianId) params.technicianId = technicianId;
+	const { data } = await api.get('/appointments/available-slots', {
+		params,
+	});
+	return Array.isArray(data) ? data : [];
+}
+
 export async function getAppointmentsByCustomer(
 	customerId: string,
 ): Promise<Appointment[]> {

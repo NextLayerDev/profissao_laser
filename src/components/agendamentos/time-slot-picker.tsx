@@ -2,10 +2,8 @@
 
 import { useMemo } from 'react';
 import type { Appointment } from '@/types/appointments';
-import {
-	generateTimeSlots,
-	SLOT_DURATION_MINUTES,
-} from '@/utils/constants/appointment-hours';
+import { isSlotOccupiedByTechnicians } from '@/utils/agendamentos/technician-availability';
+import { generateTimeSlots } from '@/utils/constants/appointment-hours';
 
 interface TimeSlotPickerProps {
 	value: string;
@@ -17,38 +15,11 @@ interface TimeSlotPickerProps {
 	date: string;
 	/** Admin: appointments to filter occupied slots. Client: undefined = show all */
 	appointments?: Appointment[] | null;
+	/** IDs dos técnicos para verificar disponibilidade por técnico. Obrigatório quando appointments é passado. */
+	technicianIds?: string[];
+	/** Cliente: slots disponíveis da API GET /appointments/available-slots. Usado quando não há appointments. */
+	availableSlotsFromApi?: string[];
 	disabled?: boolean;
-}
-
-const MAX_APPOINTMENTS_PER_SLOT = 3;
-
-function countAppointmentsAtSlot(
-	slot: string,
-	date: string,
-	appointments: Appointment[],
-): number {
-	return appointments.filter((apt) => {
-		if (apt.date !== date) return false;
-		if (apt.status === 'cancelado' || apt.status === 'concluido') return false;
-		const [aptH, aptM] = apt.time.split(':').map(Number);
-		const [slotH, slotM] = slot.split(':').map(Number);
-		const aptStart = aptH * 60 + aptM;
-		const slotStart = slotH * 60 + slotM;
-		return (
-			slotStart >= aptStart && slotStart < aptStart + SLOT_DURATION_MINUTES
-		);
-	}).length;
-}
-
-function isSlotOccupied(
-	slot: string,
-	date: string,
-	appointments: Appointment[],
-): boolean {
-	return (
-		countAppointmentsAtSlot(slot, date, appointments) >=
-		MAX_APPOINTMENTS_PER_SLOT
-	);
 }
 
 export function TimeSlotPicker({
@@ -59,18 +30,31 @@ export function TimeSlotPicker({
 	multiple = false,
 	date,
 	appointments = null,
+	technicianIds = [],
+	availableSlotsFromApi,
 	disabled = false,
 }: TimeSlotPickerProps) {
 	const allSlots = useMemo(() => generateTimeSlots(), []);
 
 	const availableSlots = useMemo(() => {
-		if (!date || !appointments || appointments.length === 0) return allSlots;
-		return allSlots.filter((slot) => !isSlotOccupied(slot, date, appointments));
-	}, [allSlots, date, appointments]);
+		if (!date || !appointments) return allSlots;
+		if (technicianIds.length === 0) return allSlots;
+		return allSlots.filter(
+			(slot) =>
+				!isSlotOccupiedByTechnicians(slot, date, appointments, technicianIds),
+		);
+	}, [allSlots, date, appointments, technicianIds]);
 
-	const slots = appointments ? availableSlots : allSlots;
+	const slots =
+		appointments && technicianIds.length > 0
+			? availableSlots
+			: (availableSlotsFromApi ?? allSlots);
 
-	if (appointments) {
+	const showGrid =
+		(appointments && technicianIds.length > 0) ||
+		(multiple && availableSlotsFromApi);
+
+	if (showGrid) {
 		const selected = multiple ? valueMultiple : value ? [value] : [];
 		const toggleSlot = (slot: string) => {
 			if (multiple && onChangeMultiple) {

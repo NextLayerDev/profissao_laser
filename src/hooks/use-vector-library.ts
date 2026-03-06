@@ -8,7 +8,6 @@ import {
 	deleteFile,
 	deleteFolder,
 	getBreadcrumbPath,
-	getFolderById,
 	getFolderContents,
 	updateFile,
 	updateFolder,
@@ -17,21 +16,12 @@ import {
 const VECTOR_LIBRARY_KEYS = {
 	contents: (parentId: string | null) =>
 		['vector-library', 'contents', parentId] as const,
-	folder: (id: string | null) => ['vector-library', 'folder', id] as const,
 };
 
 export function useVectorLibraryContents(parentId?: string | null) {
 	return useQuery({
 		queryKey: VECTOR_LIBRARY_KEYS.contents(parentId ?? null),
 		queryFn: () => getFolderContents(parentId ?? null),
-	});
-}
-
-export function useVectorLibraryFolder(id: string | null) {
-	return useQuery({
-		queryKey: VECTOR_LIBRARY_KEYS.folder(id),
-		queryFn: () => (id ? getFolderById(id) : Promise.resolve(null)),
-		enabled: !!id,
 	});
 }
 
