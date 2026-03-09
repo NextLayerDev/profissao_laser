@@ -241,16 +241,22 @@ export function CommunityView({
 	const rankingRest = rankingData?.rest ?? [];
 
 	const channelCategories = useMemo(() => {
+		const sorted = [...channels].sort(
+			(a, b) => (a.order ?? 0) - (b.order ?? 0),
+		);
 		const byCategory = new Map<string, Channel[]>();
-		for (const ch of channels) {
+		for (const ch of sorted) {
 			const cat = ch.category || 'GERAL';
 			if (!byCategory.has(cat)) byCategory.set(cat, []);
 			byCategory.get(cat)?.push(ch);
 		}
-		return Array.from(byCategory.entries()).map(([name, chs]) => ({
-			name,
-			channels: chs,
-		}));
+		return Array.from(byCategory.entries())
+			.map(([name, chs]) => ({ name, channels: chs }))
+			.sort(
+				(a, b) =>
+					Math.min(...a.channels.map((c) => c.order ?? 0)) -
+					Math.min(...b.channels.map((c) => c.order ?? 0)),
+			);
 	}, [channels]);
 
 	const activeChannelData = channels.find((c) => c.id === activeChannel);

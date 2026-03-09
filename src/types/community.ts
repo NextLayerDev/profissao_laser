@@ -28,6 +28,7 @@ export interface Channel {
 	description?: string | null;
 	category: string;
 	adminOnly?: boolean;
+	order?: number;
 }
 
 export interface Member {

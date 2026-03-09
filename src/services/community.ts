@@ -36,6 +36,7 @@ export async function getChannels(): Promise<Channel[]> {
 export async function createChannel(body: {
 	name: string;
 	adminOnly?: boolean;
+	order?: number;
 }): Promise<{ id: string }> {
 	const { data } = await api.post<{ id: string }>('/community/channels', {
 		...body,
@@ -46,7 +47,12 @@ export async function createChannel(body: {
 
 export async function updateChannel(
 	channelId: string,
-	body: { name: string; description: string; adminOnly?: boolean },
+	body: {
+		name: string;
+		description: string;
+		adminOnly?: boolean;
+		order?: number;
+	},
 ): Promise<Channel> {
 	const { data } = await api.patch<Channel>(
 		`/community/channels/${encodeURIComponent(channelId)}`,

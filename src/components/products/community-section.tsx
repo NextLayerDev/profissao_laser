@@ -2,6 +2,8 @@
 
 import {
 	Calendar,
+	ChevronDown,
+	ChevronUp,
 	FolderOpen,
 	Hash,
 	ImageIcon,
@@ -55,9 +57,11 @@ export function CommunitySection() {
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 	const [newChannelName, setNewChannelName] = useState('');
 	const [newChannelAdminOnly, setNewChannelAdminOnly] = useState(false);
+	const [newChannelOrder, setNewChannelOrder] = useState(0);
 	const [editChannelName, setEditChannelName] = useState('');
 	const [editChannelDescription, setEditChannelDescription] = useState('');
 	const [editChannelAdminOnly, setEditChannelAdminOnly] = useState(false);
+	const [editChannelOrder, setEditChannelOrder] = useState(0);
 	const [messageInput, setMessageInput] = useState('');
 	const [messageFile, setMessageFile] = useState<File | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -98,11 +102,16 @@ export function CommunitySection() {
 	const handleCreateChannel = () => {
 		if (!newChannelName.trim()) return;
 		createChannelMutation.mutate(
-			{ name: newChannelName.trim(), adminOnly: newChannelAdminOnly },
+			{
+				name: newChannelName.trim(),
+				adminOnly: newChannelAdminOnly,
+				order: newChannelOrder,
+			},
 			{
 				onSuccess: () => {
 					setNewChannelName('');
 					setNewChannelAdminOnly(false);
+					setNewChannelOrder(0);
 					setShowCreateModal(false);
 				},
 			},
@@ -114,6 +123,7 @@ export function CommunitySection() {
 			setEditChannelName(selectedChannel.label);
 			setEditChannelDescription(selectedChannel.description ?? '');
 			setEditChannelAdminOnly(selectedChannel.adminOnly ?? false);
+			setEditChannelOrder(selectedChannel.order ?? 0);
 			setShowEditModal(true);
 		}
 	};
@@ -127,6 +137,7 @@ export function CommunitySection() {
 					name: editChannelName.trim(),
 					description: editChannelDescription.trim(),
 					adminOnly: editChannelAdminOnly,
+					order: editChannelOrder,
 				},
 			},
 			{
@@ -164,14 +175,73 @@ export function CommunitySection() {
 		);
 	};
 
-	const channelCategories = channels.reduce<
-		{ name: string; channels: Channel[] }[]
-	>((acc, ch) => {
-		const existing = acc.find((c) => c.name === ch.category);
-		if (existing) existing.channels.push(ch);
-		else acc.push({ name: ch.category, channels: [ch] });
-		return acc;
-	}, []);
+	const channelCategories = useMemo(() => {
+		const sorted = [...channels].sort(
+			(a, b) => (a.order ?? 0) - (b.order ?? 0),
+		);
+		const byCategory = new Map<string, Channel[]>();
+		for (const ch of sorted) {
+			const cat = ch.category || 'GERAL';
+			if (!byCategory.has(cat)) byCategory.set(cat, []);
+			byCategory.get(cat)?.push(ch);
+		}
+		return Array.from(byCategory.entries())
+			.map(([name, chs]) => ({ name, channels: chs }))
+			.sort(
+				(a, b) =>
+					Math.min(...a.channels.map((c) => c.order ?? 0)) -
+					Math.min(...b.channels.map((c) => c.order ?? 0)),
+			);
+	}, [channels]);
+
+	const sortedChannelsFlat = useMemo(
+		() => channelCategories.flatMap((c) => c.channels),
+		[channelCategories],
+	);
+
+	const handleMoveChannel = async (
+		channel: Channel,
+		direction: 'up' | 'down',
+	) => {
+		const idx = sortedChannelsFlat.findIndex((c) => c.id === channel.id);
+		if (idx < 0) return;
+		const other =
+			direction === 'up'
+				? sortedChannelsFlat[idx - 1]
+				: sortedChannelsFlat[idx + 1];
+		if (!other) return;
+
+		const myOrder = channel.order ?? 0;
+		const otherOrder = other.order ?? 0;
+
+		const updatePayload = (
+			ch: Channel,
+			order: number,
+		): {
+			name: string;
+			description: string;
+			adminOnly?: boolean;
+			order: number;
+		} => ({
+			name: ch.label,
+			description: ch.description ?? '',
+			adminOnly: ch.adminOnly ?? false,
+			order,
+		});
+
+		try {
+			await updateChannelMutation.mutateAsync({
+				channelId: channel.id,
+				data: updatePayload(channel, otherOrder),
+			});
+			await updateChannelMutation.mutateAsync({
+				channelId: other.id,
+				data: updatePayload(other, myOrder),
+			});
+		} catch {
+			// Erro já tratado pelo hook (toast)
+		}
+	};
 
 	return (
 		<div className="space-y-4">
@@ -269,21 +339,70 @@ export function CommunitySection() {
 												{cat.name}
 											</div>
 											<div className="space-y-0.5">
-												{cat.channels.map((ch) => (
-													<button
-														key={ch.id}
-														type="button"
-														onClick={() => setSelectedChannelId(ch.id)}
-														className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-colors ${
-															selectedChannelId === ch.id
-																? 'bg-violet-100 dark:bg-violet-600/20 text-violet-700 dark:text-violet-300'
-																: 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-[#252528]'
-														}`}
-													>
-														<Hash className="h-4 w-4 shrink-0" />
-														<span className="truncate">{ch.label}</span>
-													</button>
-												))}
+												{cat.channels.map((ch) => {
+													const flatIdx = sortedChannelsFlat.findIndex(
+														(c) => c.id === ch.id,
+													);
+													const canMoveUp = flatIdx > 0;
+													const canMoveDown =
+														flatIdx >= 0 &&
+														flatIdx < sortedChannelsFlat.length - 1;
+													return (
+														<div
+															key={ch.id}
+															className={`flex items-center gap-1 rounded-lg group ${
+																selectedChannelId === ch.id
+																	? 'bg-violet-100 dark:bg-violet-600/20'
+																	: 'hover:bg-slate-100 dark:hover:bg-[#252528]'
+															}`}
+														>
+															<button
+																type="button"
+																onClick={() => setSelectedChannelId(ch.id)}
+																className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-colors min-w-0 ${
+																	selectedChannelId === ch.id
+																		? 'text-violet-700 dark:text-violet-300'
+																		: 'text-slate-600 dark:text-gray-400'
+																}`}
+															>
+																<Hash className="h-4 w-4 shrink-0" />
+																<span className="truncate">{ch.label}</span>
+															</button>
+															<div className="flex flex-col shrink-0">
+																<button
+																	type="button"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		handleMoveChannel(ch, 'up');
+																	}}
+																	disabled={
+																		!canMoveUp ||
+																		updateChannelMutation.isPending
+																	}
+																	title="Subir"
+																	className="p-0.5 rounded text-slate-500 hover:text-violet-500 hover:bg-violet-100 dark:hover:bg-violet-900/30 disabled:opacity-30 disabled:cursor-not-allowed"
+																>
+																	<ChevronUp className="h-3.5 w-3.5" />
+																</button>
+																<button
+																	type="button"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		handleMoveChannel(ch, 'down');
+																	}}
+																	disabled={
+																		!canMoveDown ||
+																		updateChannelMutation.isPending
+																	}
+																	title="Descer"
+																	className="p-0.5 rounded text-slate-500 hover:text-violet-500 hover:bg-violet-100 dark:hover:bg-violet-900/30 disabled:opacity-30 disabled:cursor-not-allowed"
+																>
+																	<ChevronDown className="h-3.5 w-3.5" />
+																</button>
+															</div>
+														</div>
+													);
+												})}
 											</div>
 										</div>
 									))}
@@ -543,6 +662,25 @@ export function CommunitySection() {
 										/>
 									</div>
 								</div>
+								<div className="mt-4">
+									<label
+										htmlFor="channel-order"
+										className="text-sm font-medium text-slate-700 dark:text-gray-300"
+									>
+										Ordem (0 = primeiro)
+									</label>
+									<input
+										id="channel-order"
+										type="number"
+										min={-9007199254740991}
+										max={9007199254740991}
+										value={newChannelOrder}
+										onChange={(e) =>
+											setNewChannelOrder(Number(e.target.value) || 0)
+										}
+										className="w-full mt-1 px-4 py-3 rounded-xl bg-slate-50 dark:bg-[#252528] border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white focus:outline-none focus:border-violet-500"
+									/>
+								</div>
 								<label className="flex items-center gap-3 mt-4 cursor-pointer">
 									<input
 										type="checkbox"
@@ -633,6 +771,25 @@ export function CommunitySection() {
 											}
 											rows={3}
 											className="w-full mt-1 px-4 py-3 rounded-xl bg-slate-50 dark:bg-[#252528] border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500 resize-none"
+										/>
+									</div>
+									<div>
+										<label
+											htmlFor="edit-channel-order"
+											className="text-sm font-medium text-slate-700 dark:text-gray-300"
+										>
+											Ordem (0 = primeiro)
+										</label>
+										<input
+											id="edit-channel-order"
+											type="number"
+											min={-9007199254740991}
+											max={9007199254740991}
+											value={editChannelOrder}
+											onChange={(e) =>
+												setEditChannelOrder(Number(e.target.value) || 0)
+											}
+											className="w-full mt-1 px-4 py-3 rounded-xl bg-slate-50 dark:bg-[#252528] border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white focus:outline-none focus:border-violet-500"
 										/>
 									</div>
 									<label className="flex items-center gap-3 cursor-pointer">
