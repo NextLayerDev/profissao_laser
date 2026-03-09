@@ -105,3 +105,95 @@ export async function updateFile(
 export async function deleteFile(id: string): Promise<void> {
 	await api.delete(`/community/vector-library/files/${encodeURIComponent(id)}`);
 }
+
+export type UploadFolderProgress = (
+	done: number,
+	total: number,
+	phase: 'folders' | 'files',
+	current?: string,
+) => void;
+
+export type UploadFolderResult = {
+	foldersCreated: number;
+	filesUploaded: number;
+	filesFailed: { name: string; error: string }[];
+};
+
+/**
+ * Faz upload de uma pasta inteira mantendo a estrutura hierárquica.
+ * Cria pastas por ordem de profundidade e envia cada ficheiro na pasta correta.
+ */
+export async function uploadFolderStructure(
+	files: File[],
+	parentFolderId: string | null,
+	onProgress?: UploadFolderProgress,
+): Promise<UploadFolderResult> {
+	const { getUniqueFolderPaths } = await import(
+		'@/utils/vector-library-folder-upload'
+	);
+
+	const folderPaths = getUniqueFolderPaths(files);
+	const skipPatterns = ['.DS_Store', 'Thumbs.db', 'desktop.ini'];
+	const filesToUpload = files.filter(
+		(f) => !skipPatterns.some((p) => f.name === p || f.name.endsWith(`/${p}`)),
+	);
+	const total = folderPaths.length + filesToUpload.length;
+	let done = 0;
+
+	const folderIdMap = new Map<string, string | null>();
+	folderIdMap.set('', parentFolderId);
+
+	for (const path of folderPaths) {
+		const name = path.includes('/')
+			? path.slice(path.lastIndexOf('/') + 1)
+			: path;
+		const parentPath = path.includes('/')
+			? path.slice(0, path.lastIndexOf('/'))
+			: '';
+		const parentId = folderIdMap.get(parentPath) ?? parentFolderId;
+
+		const folder = await createFolder(name, parentId);
+		folderIdMap.set(path, folder.id);
+		done++;
+		onProgress?.(done, total, 'folders', path);
+	}
+
+	const filesFailed: { name: string; error: string }[] = [];
+	let filesUploaded = 0;
+
+	for (const file of filesToUpload) {
+		const p =
+			(file as File & { webkitRelativePath?: string }).webkitRelativePath ??
+			file.name ??
+			'';
+		const folderPath = p.includes('/') ? p.slice(0, p.lastIndexOf('/')) : '';
+		const folderId = folderIdMap.get(folderPath) ?? parentFolderId;
+
+		try {
+			await createFile(file, folderId ?? null, file.name);
+			filesUploaded++;
+		} catch (err) {
+			const axiosErr = err as {
+				response?: { data?: unknown };
+				message?: string;
+			};
+			const data = axiosErr?.response?.data;
+			let detail = axiosErr?.message ?? String(err);
+			if (typeof data === 'object' && data !== null) {
+				const msg =
+					(data as { message?: string; error?: string }).message ??
+					(data as { error?: string }).error;
+				if (msg) detail = String(msg);
+			}
+			filesFailed.push({ name: file.name, error: detail });
+		}
+		done++;
+		onProgress?.(done, total, 'files', file.name);
+	}
+
+	return {
+		foldersCreated: folderPaths.length,
+		filesUploaded,
+		filesFailed,
+	};
+}

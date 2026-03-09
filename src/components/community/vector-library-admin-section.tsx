@@ -1,7 +1,16 @@
 'use client';
 
-import { FolderOpen, Loader2, Plus, UploadIcon, X } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+	FolderOpen,
+	FolderPlus,
+	Loader2,
+	Plus,
+	UploadIcon,
+	X,
+} from 'lucide-react';
 import { useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { VectorLibraryBreadcrumbs } from '@/components/community/vector-library-breadcrumbs';
 import { VectorLibraryTable } from '@/components/community/vector-library-table';
 import {
@@ -14,13 +23,17 @@ import {
 	useVectorLibraryBreadcrumbs,
 	useVectorLibraryContents,
 } from '@/hooks/use-vector-library';
+import { uploadFolderStructure } from '@/services/vector-library';
 import type {
 	VectorLibraryFile,
 	VectorLibraryFolder,
 } from '@/types/vector-library';
+import { getFilesFromDroppedFolder } from '@/utils/vector-library-folder-upload';
 
 export function VectorLibraryAdminSection() {
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const folderInputRef = useRef<HTMLInputElement>(null);
+	const queryClient = useQueryClient();
 	const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
 	const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
 	const [showUploadModal, setShowUploadModal] = useState(false);
@@ -38,6 +51,22 @@ export function VectorLibraryAdminSection() {
 	} | null>(null);
 	const [uploadFile, setUploadFile] = useState<File | null>(null);
 	const [uploadFileName, setUploadFileName] = useState('');
+	const [showUploadFolderModal, setShowUploadFolderModal] = useState(false);
+	const [uploadFolderState, setUploadFolderState] = useState<
+		'idle' | 'uploading' | 'success' | 'error'
+	>('idle');
+	const [uploadFolderProgress, setUploadFolderProgress] = useState({
+		done: 0,
+		total: 0,
+		phase: 'folders' as 'folders' | 'files',
+		current: '',
+	});
+	const [uploadFolderResult, setUploadFolderResult] = useState<{
+		foldersCreated: number;
+		filesUploaded: number;
+		filesFailed: { name: string; error: string }[];
+	} | null>(null);
+	const [isDragOver, setIsDragOver] = useState(false);
 
 	const { data: contents, isLoading: contentsLoading } =
 		useVectorLibraryContents(currentFolderId);
@@ -149,6 +178,101 @@ export function VectorLibraryAdminSection() {
 		setShowDeleteModal(true);
 	};
 
+	const handleUploadFolder = async (files: FileList | File[] | null) => {
+		const fileArray = files ? Array.from(files) : [];
+		if (fileArray.length === 0) {
+			toast.error('Selecione uma pasta com ficheiros');
+			return;
+		}
+		setShowUploadFolderModal(true);
+		setUploadFolderState('uploading');
+		setUploadFolderProgress({
+			done: 0,
+			total: fileArray.length,
+			phase: 'folders',
+			current: '',
+		});
+		setUploadFolderResult(null);
+
+		try {
+			const result = await uploadFolderStructure(
+				fileArray,
+				currentFolderId,
+				(done, total, phase, current) => {
+					setUploadFolderProgress({
+						done,
+						total,
+						phase,
+						current: current ?? '',
+					});
+				},
+			);
+			setUploadFolderResult(result);
+			setUploadFolderState('success');
+			queryClient.invalidateQueries({ queryKey: ['vector-library'] });
+			if (result.filesFailed.length > 0) {
+				toast.warning(
+					`${result.filesUploaded}/${fileArray.length} ficheiros enviados. ${result.filesFailed.length} falharam.`,
+				);
+			} else {
+				toast.success(
+					`${result.foldersCreated} pastas criadas, ${result.filesUploaded} ficheiros enviados.`,
+				);
+			}
+		} catch (err) {
+			setUploadFolderState('error');
+			const msg = err instanceof Error ? err.message : String(err);
+			toast.error(`Erro ao enviar pasta: ${msg}`);
+		} finally {
+			if (folderInputRef.current) folderInputRef.current.value = '';
+		}
+	};
+
+	const handleFolderDrop = async (e: React.DragEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setIsDragOver(false);
+		if (uploadFolderState === 'uploading') return;
+		const items = e.dataTransfer?.items;
+		if (!items?.length) return;
+		for (let i = 0; i < items.length; i++) {
+			const item = items[i];
+			if (item.kind !== 'file') continue;
+			const entry =
+				item.webkitGetAsEntry?.() ??
+				(
+					item as { getAsEntry?: () => { isDirectory: boolean } }
+				).getAsEntry?.();
+			if (!entry?.isDirectory) continue;
+			try {
+				const files = await getFilesFromDroppedFolder(item);
+				if (files.length > 0) {
+					await handleUploadFolder(files);
+					return;
+				}
+			} catch (_err) {
+				toast.error('Erro ao processar pasta arrastada');
+				return;
+			}
+		}
+		toast.error('Arraste uma pasta (não ficheiros individuais)');
+	};
+
+	const handleFolderDragOver = (e: React.DragEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		e.dataTransfer.dropEffect = 'copy';
+		setIsDragOver(true);
+	};
+
+	const handleFolderDragLeave = (e: React.DragEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+			setIsDragOver(false);
+		}
+	};
+
 	const ModalOverlay = ({
 		onClose,
 		children,
@@ -211,8 +335,59 @@ export function VectorLibraryAdminSection() {
 							<UploadIcon className="h-4 w-4" />
 							Upload ficheiro
 						</button>
+						<button
+							type="button"
+							onClick={() => folderInputRef.current?.click()}
+							disabled={
+								showUploadFolderModal && uploadFolderState === 'uploading'
+							}
+							className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-medium rounded-xl disabled:opacity-50"
+						>
+							<FolderPlus className="h-4 w-4" />
+							Upload pasta
+						</button>
+						<input
+							ref={(el) => {
+								folderInputRef.current = el;
+								if (el) {
+									el.setAttribute('webkitdirectory', '');
+									el.setAttribute('directory', '');
+								}
+							}}
+							type="file"
+							onChange={(e) => handleUploadFolder(e.target.files)}
+							className="hidden"
+						/>
 					</div>
 				</div>
+
+				{/* Zona de drop para pasta */}
+				<button
+					type="button"
+					onClick={() => {
+						if (uploadFolderState !== 'uploading')
+							folderInputRef.current?.click();
+					}}
+					onDrop={handleFolderDrop}
+					onDragOver={handleFolderDragOver}
+					onDragLeave={handleFolderDragLeave}
+					disabled={uploadFolderState === 'uploading'}
+					className={`flex flex-col items-center justify-center w-full border-2 border-dashed rounded-xl p-6 text-center transition-all ${
+						uploadFolderState === 'uploading'
+							? 'border-slate-200 dark:border-gray-700 cursor-not-allowed opacity-60'
+							: isDragOver
+								? 'border-amber-500 bg-amber-500/10 cursor-pointer'
+								: 'border-slate-300 dark:border-gray-600 hover:border-amber-500/50 hover:bg-amber-500/5 cursor-pointer'
+					}`}
+				>
+					<FolderPlus className="h-10 w-10 text-amber-500 mb-2 opacity-80" />
+					<span className="text-sm font-medium text-slate-700 dark:text-gray-300">
+						Arraste uma pasta aqui ou clique para selecionar
+					</span>
+					<span className="text-xs text-slate-500 dark:text-gray-500 mt-1">
+						A estrutura de pastas e ficheiros será mantida
+					</span>
+				</button>
 			</div>
 
 			{contentsLoading ? (
@@ -485,6 +660,130 @@ export function VectorLibraryAdminSection() {
 								Excluir
 							</button>
 						</div>
+					</div>
+				</ModalOverlay>
+			)}
+
+			{/* Modal Upload Pasta */}
+			{showUploadFolderModal && (
+				<ModalOverlay
+					onClose={() => {
+						if (uploadFolderState !== 'uploading') {
+							setShowUploadFolderModal(false);
+							setUploadFolderState('idle');
+							setUploadFolderResult(null);
+						}
+					}}
+				>
+					<div className="p-6">
+						<div className="flex items-center justify-between mb-6">
+							<h3 className="text-lg font-bold text-slate-900 dark:text-white">
+								Upload de pasta
+							</h3>
+							{uploadFolderState !== 'uploading' && (
+								<button
+									type="button"
+									onClick={() => {
+										setShowUploadFolderModal(false);
+										setUploadFolderState('idle');
+										setUploadFolderResult(null);
+									}}
+									className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-[#252528]"
+								>
+									<X className="h-5 w-5" />
+								</button>
+							)}
+						</div>
+
+						{uploadFolderState === 'uploading' && (
+							<div className="space-y-4">
+								<p className="text-sm text-slate-600 dark:text-gray-400">
+									{uploadFolderProgress.phase === 'folders'
+										? `A criar pastas... ${uploadFolderProgress.done}/${uploadFolderProgress.total}`
+										: `A enviar ficheiros... ${uploadFolderProgress.done}/${uploadFolderProgress.total}`}
+								</p>
+								{uploadFolderProgress.current && (
+									<p className="text-xs text-slate-500 dark:text-gray-500 truncate">
+										{uploadFolderProgress.current}
+									</p>
+								)}
+								<div className="h-2 bg-slate-200 dark:bg-gray-700 rounded-full overflow-hidden">
+									<div
+										className="h-full bg-emerald-500 transition-all duration-300"
+										style={{
+											width:
+												uploadFolderProgress.total > 0
+													? `${(uploadFolderProgress.done / uploadFolderProgress.total) * 100}%`
+													: '0%',
+										}}
+									/>
+								</div>
+								<div className="flex justify-center">
+									<Loader2 className="h-8 w-8 text-emerald-500 animate-spin" />
+								</div>
+							</div>
+						)}
+
+						{uploadFolderState === 'success' && uploadFolderResult && (
+							<div className="space-y-4">
+								<div className="text-sm text-slate-600 dark:text-gray-400">
+									<p>
+										{uploadFolderResult.foldersCreated} pastas criadas,{' '}
+										{uploadFolderResult.filesUploaded} ficheiros enviados.
+									</p>
+									{uploadFolderResult.filesFailed.length > 0 && (
+										<div className="mt-3 space-y-1 text-amber-600 dark:text-amber-400 text-sm">
+											<p className="font-medium">
+												{uploadFolderResult.filesFailed.length} ficheiros
+												falharam:
+											</p>
+											<ul className="list-disc list-inside space-y-0.5 max-h-24 overflow-y-auto">
+												{uploadFolderResult.filesFailed.map((f) => (
+													<li key={f.name} title={f.error}>
+														{f.name}
+														{f.error && (
+															<span className="block text-xs text-slate-500 dark:text-gray-500 truncate ml-4">
+																{f.error}
+															</span>
+														)}
+													</li>
+												))}
+											</ul>
+										</div>
+									)}
+								</div>
+								<button
+									type="button"
+									onClick={() => {
+										setShowUploadFolderModal(false);
+										setUploadFolderState('idle');
+										setUploadFolderResult(null);
+									}}
+									className="w-full px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium"
+								>
+									Fechar
+								</button>
+							</div>
+						)}
+
+						{uploadFolderState === 'error' && (
+							<div className="space-y-4">
+								<p className="text-sm text-red-600 dark:text-red-400">
+									Ocorreu um erro ao enviar a pasta. Tente novamente.
+								</p>
+								<button
+									type="button"
+									onClick={() => {
+										setShowUploadFolderModal(false);
+										setUploadFolderState('idle');
+										setUploadFolderResult(null);
+									}}
+									className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-gray-700 text-slate-700 dark:text-gray-300"
+								>
+									Fechar
+								</button>
+							</div>
+						)}
 					</div>
 				</ModalOverlay>
 			)}
