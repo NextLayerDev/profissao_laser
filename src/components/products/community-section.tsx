@@ -12,17 +12,38 @@ import {
 	Paperclip,
 	Pencil,
 	Plus,
+	Search,
 	Send,
 	Star,
 	Trash2,
 	X,
 } from 'lucide-react';
+import type React from 'react';
 import { EventsAdminSection } from '@/components/community/events-admin-section';
 import { ProjectsAdminSection } from '@/components/community/projects-admin-section';
 import { VectorLibraryAdminSection } from '@/components/community/vector-library-admin-section';
 import { formatMessageTime } from '@/utils/formatDate';
 
 type AdminTab = 'channels' | 'events' | 'projects' | 'vectors';
+
+/** Realça o termo de pesquisa no texto */
+function highlightSearchText(text: string, search: string): React.ReactNode {
+	if (!search.trim()) return text;
+	const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
+	return parts.map((part, i) =>
+		part.toLowerCase() === search.toLowerCase().trim() ? (
+			<mark
+				key={`${i}-${part}`}
+				className="bg-violet-200 dark:bg-violet-600/40 rounded px-0.5"
+			>
+				{part}
+			</mark>
+		) : (
+			part
+		),
+	);
+}
 
 /** Exibe o nome do canal; evita mostrar UUID ou ID técnico como nome */
 function getChannelDisplayName(label: string | undefined, id: string): string {
@@ -40,6 +61,7 @@ import {
 	useCommunityChannels,
 	useCreateChannel,
 	useDeleteChannel,
+	useDeleteChannelMessage,
 	useSendChannelMessage,
 	useUpdateChannel,
 } from '@/hooks/use-community';
@@ -55,6 +77,7 @@ export function CommunitySection() {
 	const [showCreateModal, setShowCreateModal] = useState(false);
 	const [showEditModal, setShowEditModal] = useState(false);
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+	const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
 	const [newChannelName, setNewChannelName] = useState('');
 	const [newChannelAdminOnly, setNewChannelAdminOnly] = useState(false);
 	const [newChannelOrder, setNewChannelOrder] = useState(0);
@@ -64,9 +87,13 @@ export function CommunitySection() {
 	const [editChannelOrder, setEditChannelOrder] = useState(0);
 	const [messageInput, setMessageInput] = useState('');
 	const [messageFile, setMessageFile] = useState<File | null>(null);
+	const [chatSearchQuery, setChatSearchQuery] = useState('');
+	const [isSearchOpen, setIsSearchOpen] = useState(false);
+	const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const messageTextareaRef = useRef<HTMLTextAreaElement>(null);
 	const messagesScrollRef = useRef<HTMLDivElement>(null);
+	const matchRefsMap = useRef<Map<number, HTMLDivElement | null>>(new Map());
 
 	const resizeMessageTextarea = (el: HTMLTextAreaElement | null) => {
 		if (!el) return;
@@ -79,7 +106,16 @@ export function CommunitySection() {
 	const { data: messages = [], isLoading: messagesLoading } =
 		useChannelMessages(selectedChannelId);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: selectedChannelId triggers reset on channel switch
 	useEffect(() => {
+		setChatSearchQuery('');
+		setIsSearchOpen(false);
+		setCurrentMatchIndex(0);
+	}, [selectedChannelId]);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: selectedChannelId and messages trigger scroll
+	useEffect(() => {
+		if (chatSearchQuery.trim()) return;
 		const el = messagesScrollRef.current;
 		if (!el) return;
 		const scrollToBottom = () => {
@@ -88,16 +124,41 @@ export function CommunitySection() {
 		scrollToBottom();
 		requestAnimationFrame(scrollToBottom);
 		setTimeout(scrollToBottom, 100);
-	}, []);
+	}, [selectedChannelId, messages, chatSearchQuery]);
 
 	const createChannelMutation = useCreateChannel();
 	const updateChannelMutation = useUpdateChannel();
 	const deleteChannelMutation = useDeleteChannel();
 	const sendMessageMutation = useSendChannelMessage(selectedChannelId);
+	const deleteMessageMutation = useDeleteChannelMessage(selectedChannelId);
 
 	const selectedChannel = channels.find((c) => c.id === selectedChannelId);
 	const { users } = useUsers();
 	const userMap = useMemo(() => buildUserDisplayMap(users), [users]);
+
+	const filteredMessages = useMemo(() => {
+		if (!chatSearchQuery.trim()) return messages;
+		const q = chatSearchQuery.toLowerCase().trim();
+		return messages.filter((m) => m.content?.toLowerCase().includes(q));
+	}, [messages, chatSearchQuery]);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: chatSearchQuery and filteredMessages.length trigger index reset
+	useEffect(() => {
+		setCurrentMatchIndex(0);
+	}, [chatSearchQuery, filteredMessages.length]);
+
+	useEffect(() => {
+		if (!chatSearchQuery.trim() || filteredMessages.length === 0) return;
+		const el = matchRefsMap.current.get(currentMatchIndex);
+		el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+	}, [chatSearchQuery, filteredMessages, currentMatchIndex]);
+
+	const goToPrevMatch = () => {
+		setCurrentMatchIndex((i) => (i <= 0 ? filteredMessages.length - 1 : i - 1));
+	};
+	const goToNextMatch = () => {
+		setCurrentMatchIndex((i) => (i >= filteredMessages.length - 1 ? 0 : i + 1));
+	};
 
 	const handleCreateChannel = () => {
 		if (!newChannelName.trim()) return;
@@ -173,6 +234,19 @@ export function CommunitySection() {
 				},
 			},
 		);
+	};
+
+	const handleDeleteMessage = (messageId: string) => {
+		setMessageToDelete(messageId);
+	};
+
+	const handleConfirmDeleteMessage = () => {
+		if (!messageToDelete) return;
+		deleteMessageMutation.mutate(messageToDelete, {
+			onSuccess: () => {
+				setMessageToDelete(null);
+			},
+		});
 	};
 
 	const channelCategories = useMemo(() => {
@@ -432,6 +506,87 @@ export function CommunitySection() {
 											)}
 										</div>
 										<div className="flex items-center gap-1 shrink-0">
+											{!isSearchOpen ? (
+												<button
+													type="button"
+													onClick={() => {
+														setIsSearchOpen(true);
+														setTimeout(
+															() =>
+																document
+																	.getElementById('admin-chat-search-input')
+																	?.focus(),
+															50,
+														);
+													}}
+													className="p-2 rounded-lg text-slate-500 hover:text-violet-500 hover:bg-violet-100 dark:hover:bg-violet-900/30 transition-colors"
+													title="Pesquisar no chat"
+												>
+													<Search className="h-4 w-4" />
+												</button>
+											) : (
+												<div className="flex items-center gap-2">
+													<div className="relative w-48 sm:w-56">
+														<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 shrink-0" />
+														<input
+															id="admin-chat-search-input"
+															type="text"
+															placeholder="Pesquisar..."
+															value={chatSearchQuery}
+															onChange={(e) =>
+																setChatSearchQuery(e.target.value)
+															}
+															className="w-full pl-8 pr-8 py-1.5 rounded-lg bg-slate-100 dark:bg-[#252528] border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white placeholder:text-slate-500 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30"
+														/>
+														{chatSearchQuery && (
+															<button
+																type="button"
+																onClick={() => setChatSearchQuery('')}
+																className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-slate-500 hover:text-slate-700 dark:hover:text-gray-300"
+																title="Limpar pesquisa"
+															>
+																<X className="h-3.5 w-3.5" />
+															</button>
+														)}
+													</div>
+													{chatSearchQuery.trim() &&
+														filteredMessages.length > 1 && (
+															<div className="flex items-center gap-0.5 shrink-0">
+																<button
+																	type="button"
+																	onClick={goToPrevMatch}
+																	className="p-1.5 rounded-lg text-slate-500 hover:text-violet-500 hover:bg-violet-100 dark:hover:bg-violet-900/30 transition-colors"
+																	title="Resultado anterior"
+																>
+																	<ChevronUp className="h-4 w-4" />
+																</button>
+																<span className="text-xs text-slate-500 dark:text-gray-400 min-w-[3ch] text-center">
+																	{currentMatchIndex + 1}/
+																	{filteredMessages.length}
+																</span>
+																<button
+																	type="button"
+																	onClick={goToNextMatch}
+																	className="p-1.5 rounded-lg text-slate-500 hover:text-violet-500 hover:bg-violet-100 dark:hover:bg-violet-900/30 transition-colors"
+																	title="Próximo resultado"
+																>
+																	<ChevronDown className="h-4 w-4" />
+																</button>
+															</div>
+														)}
+													<button
+														type="button"
+														onClick={() => {
+															setIsSearchOpen(false);
+															setChatSearchQuery('');
+														}}
+														className="p-2 rounded-lg text-slate-500 hover:text-slate-700 dark:hover:text-gray-300 shrink-0"
+														title="Fechar pesquisa"
+													>
+														<X className="h-4 w-4" />
+													</button>
+												</div>
+											)}
 											<button
 												type="button"
 												onClick={handleOpenEditModal}
@@ -466,11 +621,23 @@ export function CommunitySection() {
 											<p>Nenhuma mensagem ainda.</p>
 											<p className="text-sm mt-1">Seja o primeiro a enviar!</p>
 										</div>
+									) : filteredMessages.length === 0 ? (
+										<div className="flex flex-col items-center justify-center h-48 text-center text-slate-500 dark:text-gray-400">
+											<Search className="h-12 w-12 mb-4 opacity-50" />
+											<p>
+												Nenhuma mensagem encontrada para &quot;{chatSearchQuery}
+												&quot;
+											</p>
+										</div>
 									) : (
-										messages.map((msg) => (
+										filteredMessages.map((msg, idx) => (
 											<div
 												key={msg.id}
-												className={`flex gap-3 ${msg.isMe ? 'flex-row-reverse' : ''}`}
+												ref={(el) => {
+													matchRefsMap.current.set(idx, el);
+												}}
+												data-message-id={msg.id}
+												className={`group/message flex gap-3 ${msg.isMe ? 'flex-row-reverse' : ''}`}
 											>
 												<div className="w-10 h-10 rounded-full bg-violet-500 flex items-center justify-center text-white font-bold shrink-0 text-sm">
 													{msg.avatar ??
@@ -490,6 +657,15 @@ export function CommunitySection() {
 														<span className="text-xs text-slate-500 dark:text-gray-500">
 															{formatMessageTime(msg.time)}
 														</span>
+														<button
+															type="button"
+															onClick={() => handleDeleteMessage(msg.id)}
+															disabled={deleteMessageMutation.isPending}
+															className="opacity-30 group-hover/message:opacity-100 p-1 rounded text-slate-500 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+															title="Excluir mensagem"
+														>
+															<Trash2 className="h-3.5 w-3.5" />
+														</button>
 													</div>
 													<div
 														className={`px-4 py-2 rounded-xl text-sm space-y-2 ${
@@ -500,7 +676,10 @@ export function CommunitySection() {
 													>
 														{msg.content && (
 															<p className="whitespace-pre-wrap break-words">
-																{msg.content}
+																{highlightSearchText(
+																	msg.content,
+																	chatSearchQuery.trim(),
+																)}
 															</p>
 														)}
 														{msg.fileUrl && (
@@ -882,6 +1061,63 @@ export function CommunitySection() {
 										className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-medium rounded-xl"
 									>
 										{deleteChannelMutation.isPending ? (
+											<Loader2 className="h-4 w-4 animate-spin" />
+										) : (
+											<>
+												<Trash2 className="h-4 w-4" />
+												Excluir
+											</>
+										)}
+									</button>
+								</div>
+							</div>
+						</div>
+					)}
+
+					{/* Modal Confirmar Exclusão de Mensagem */}
+					{messageToDelete && (
+						<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm">
+							<button
+								type="button"
+								aria-label="Fechar"
+								className="absolute inset-0 cursor-default"
+								onClick={() => setMessageToDelete(null)}
+								onKeyDown={(e) =>
+									e.key === 'Escape' && setMessageToDelete(null)
+								}
+							/>
+							<div
+								role="dialog"
+								className="relative bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-2xl shadow-xl max-w-md w-full p-6"
+								onClick={(e) => e.stopPropagation()}
+								onKeyDown={(e) =>
+									e.key === 'Escape' && setMessageToDelete(null)
+								}
+							>
+								<div className="mx-auto w-14 h-14 rounded-full bg-red-500/20 flex items-center justify-center mb-4">
+									<Trash2 className="h-7 w-7 text-red-500" />
+								</div>
+								<h3 className="text-xl font-bold text-slate-900 dark:text-white text-center">
+									Excluir mensagem?
+								</h3>
+								<p className="text-slate-500 dark:text-gray-400 text-center mt-2 text-sm">
+									Esta ação não pode ser desfeita.
+								</p>
+								<div className="mt-6 flex gap-3">
+									<button
+										type="button"
+										onClick={() => setMessageToDelete(null)}
+										className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-[#252528] font-medium"
+									>
+										Cancelar
+									</button>
+									<button
+										type="button"
+										onClick={handleConfirmDeleteMessage}
+										disabled={deleteMessageMutation.isPending}
+										className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-medium rounded-xl"
+									>
+										{deleteMessageMutation.isPending ? (
 											<Loader2 className="h-4 w-4 animate-spin" />
 										) : (
 											<>

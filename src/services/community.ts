@@ -96,6 +96,15 @@ export async function sendChannelMessage(
 	return data as ChannelMessage;
 }
 
+export async function deleteChannelMessage(
+	channelId: string,
+	messageId: string,
+): Promise<void> {
+	await api.delete(
+		`/community/channels/${encodeURIComponent(channelId)}/messages/${encodeURIComponent(messageId)}`,
+	);
+}
+
 export async function getMembers(params?: {
 	search?: string;
 	category?: string;

@@ -3,6 +3,8 @@
 import {
 	ArrowLeft,
 	Calendar,
+	ChevronDown,
+	ChevronUp,
 	Clock,
 	Eye,
 	FileText,
@@ -93,6 +95,25 @@ function getRankingGradient(pos: number): string {
 	if (pos === 1) return 'from-amber-300 via-yellow-400 to-amber-500';
 	if (pos === 2) return 'from-slate-300 to-slate-400';
 	return 'from-orange-300 to-amber-400';
+}
+
+/** Realça o termo de pesquisa no texto */
+function highlightSearchText(text: string, search: string): React.ReactNode {
+	if (!search.trim()) return text;
+	const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
+	return parts.map((part, i) =>
+		part.toLowerCase() === search.toLowerCase().trim() ? (
+			<mark
+				key={`${i}-${part}`}
+				className="bg-cyan-200 dark:bg-cyan-600/40 rounded px-0.5"
+			>
+				{part}
+			</mark>
+		) : (
+			part
+		),
+	);
 }
 
 function getEventTypeBadge(event: Event): { label: string; className: string } {
@@ -276,9 +297,13 @@ export function CommunityView({
 	const [messageInput, setMessageInput] = useState('');
 	const [messageFile, setMessageFile] = useState<File | null>(null);
 	const [newChannelName, setNewChannelName] = useState('');
+	const [chatSearchQuery, setChatSearchQuery] = useState('');
+	const [isSearchOpen, setIsSearchOpen] = useState(false);
+	const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
 	const channelMessagesScrollRef = useRef<HTMLDivElement>(null);
 	const channelFileInputRef = useRef<HTMLInputElement>(null);
 	const channelMessageTextareaRef = useRef<HTMLTextAreaElement>(null);
+	const matchRefsMap = useRef<Map<number, HTMLDivElement | null>>(new Map());
 
 	const resizeMessageTextarea = (el: HTMLTextAreaElement | null) => {
 		if (!el) return;
@@ -286,7 +311,16 @@ export function CommunityView({
 		el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
 	};
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: activeChannel triggers reset on channel switch
 	useEffect(() => {
+		setChatSearchQuery('');
+		setIsSearchOpen(false);
+		setCurrentMatchIndex(0);
+	}, [activeChannel]);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: activeChannel and channelMessages trigger scroll
+	useEffect(() => {
+		if (chatSearchQuery.trim()) return;
 		const el = channelMessagesScrollRef.current;
 		if (!el) return;
 		const scrollToBottom = () => {
@@ -295,7 +329,35 @@ export function CommunityView({
 		scrollToBottom();
 		requestAnimationFrame(scrollToBottom);
 		setTimeout(scrollToBottom, 150);
-	}, []);
+	}, [activeChannel, channelMessages, chatSearchQuery]);
+
+	const filteredChannelMessages = useMemo(() => {
+		if (!chatSearchQuery.trim()) return channelMessages;
+		const q = chatSearchQuery.toLowerCase().trim();
+		return channelMessages.filter((m) => m.content?.toLowerCase().includes(q));
+	}, [channelMessages, chatSearchQuery]);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: chatSearchQuery and filteredChannelMessages.length trigger index reset
+	useEffect(() => {
+		setCurrentMatchIndex(0);
+	}, [chatSearchQuery, filteredChannelMessages.length]);
+
+	useEffect(() => {
+		if (!chatSearchQuery.trim() || filteredChannelMessages.length === 0) return;
+		const el = matchRefsMap.current.get(currentMatchIndex);
+		el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+	}, [chatSearchQuery, filteredChannelMessages, currentMatchIndex]);
+
+	const goToPrevMatch = () => {
+		setCurrentMatchIndex((i) =>
+			i <= 0 ? filteredChannelMessages.length - 1 : i - 1,
+		);
+	};
+	const goToNextMatch = () => {
+		setCurrentMatchIndex((i) =>
+			i >= filteredChannelMessages.length - 1 ? 0 : i + 1,
+		);
+	};
 
 	const handleChannelClick = (channelId: string) => {
 		setActiveTab('channel');
@@ -1120,31 +1182,114 @@ export function CommunityView({
 			case 'channel':
 				return (
 					<div className="flex flex-col h-full">
-						<div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0d0b1e]/80 backdrop-blur-lg sticky top-0 z-10">
-							<div className="flex items-center gap-4">
-								<div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600">
-									<Hash className="h-5 w-5 text-white" />
-								</div>
-								<div>
-									<h2 className="font-bold text-lg text-slate-900 dark:text-white">
-										{activeChannelLabel}
-									</h2>
-									<p className="text-xs text-slate-600 dark:text-slate-500">
-										Canal de discussão - Profissão Laser
-									</p>
-								</div>
-							</div>
-							<div className="flex -space-x-3">
-								{[1, 2, 3].map((i) => (
-									<div
-										key={i}
-										className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 border-2 border-white dark:border-[#0d0b1e] flex items-center justify-center text-xs font-bold text-white"
-									>
-										U{i}
+						<div className="px-6 py-4 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0d0b1e]/80 backdrop-blur-lg sticky top-0 z-10">
+							<div className="flex items-center justify-between gap-4">
+								<div className="flex items-center gap-4 min-w-0">
+									<div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shrink-0">
+										<Hash className="h-5 w-5 text-white" />
 									</div>
-								))}
-								<div className="w-9 h-9 rounded-full bg-cyan-500/50 border-2 border-white dark:border-[#0d0b1e] flex items-center justify-center text-[10px] font-bold text-white">
-									+15
+									<div className="min-w-0">
+										<h2 className="font-bold text-lg text-slate-900 dark:text-white truncate">
+											{activeChannelLabel}
+										</h2>
+										<p className="text-xs text-slate-600 dark:text-slate-500">
+											Canal de discussão - Profissão Laser
+										</p>
+									</div>
+								</div>
+								<div className="flex items-center gap-2 shrink-0">
+									{!isSearchOpen ? (
+										<button
+											type="button"
+											onClick={() => {
+												setIsSearchOpen(true);
+												setTimeout(
+													() =>
+														document
+															.getElementById('customer-chat-search-input')
+															?.focus(),
+													50,
+												);
+											}}
+											className="p-2 rounded-lg text-slate-500 hover:text-cyan-500 hover:bg-white/5 transition-colors"
+											title="Pesquisar no chat"
+										>
+											<Search className="h-4 w-4" />
+										</button>
+									) : (
+										<div className="flex items-center gap-2">
+											<div className="relative w-40 sm:w-48">
+												<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 shrink-0" />
+												<input
+													id="customer-chat-search-input"
+													type="text"
+													placeholder="Pesquisar..."
+													value={chatSearchQuery}
+													onChange={(e) => setChatSearchQuery(e.target.value)}
+													className="w-full pl-8 pr-8 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30"
+												/>
+												{chatSearchQuery && (
+													<button
+														type="button"
+														onClick={() => setChatSearchQuery('')}
+														className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-slate-500 hover:text-slate-700 dark:hover:text-gray-300"
+														title="Limpar pesquisa"
+													>
+														<X className="h-3.5 w-3.5" />
+													</button>
+												)}
+											</div>
+											{chatSearchQuery.trim() &&
+												filteredChannelMessages.length > 1 && (
+													<div className="flex items-center gap-0.5 shrink-0">
+														<button
+															type="button"
+															onClick={goToPrevMatch}
+															className="p-1.5 rounded-lg text-slate-500 hover:text-cyan-500 hover:bg-white/5 transition-colors"
+															title="Resultado anterior"
+														>
+															<ChevronUp className="h-4 w-4" />
+														</button>
+														<span className="text-xs text-slate-500 dark:text-gray-400 min-w-[3ch] text-center">
+															{currentMatchIndex + 1}/
+															{filteredChannelMessages.length}
+														</span>
+														<button
+															type="button"
+															onClick={goToNextMatch}
+															className="p-1.5 rounded-lg text-slate-500 hover:text-cyan-500 hover:bg-white/5 transition-colors"
+															title="Próximo resultado"
+														>
+															<ChevronDown className="h-4 w-4" />
+														</button>
+													</div>
+												)}
+											<button
+												type="button"
+												onClick={() => {
+													setIsSearchOpen(false);
+													setChatSearchQuery('');
+												}}
+												className="p-2 rounded-lg text-slate-500 hover:text-slate-700 dark:hover:text-gray-300 shrink-0"
+												title="Fechar pesquisa"
+											>
+												<X className="h-4 w-4" />
+											</button>
+										</div>
+									)}
+									<div className="flex -space-x-3">
+										{[1, 2, 3].map((i) => (
+											<div
+												key={i}
+												className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 border-2 border-white dark:border-[#0d0b1e] flex items-center justify-center text-xs font-bold text-white"
+											>
+												U{i}
+											</div>
+										))}
+										<div className="w-9 h-9 rounded-full bg-cyan-500/50 border-2 border-white dark:border-[#0d0b1e] flex items-center justify-center text-[10px] font-bold text-white">
+											+15
+										</div>
+									</div>
 								</div>
 							</div>
 						</div>
@@ -1154,65 +1299,84 @@ export function CommunityView({
 							className="flex-1 overflow-y-auto p-6 space-y-6"
 						>
 							{activeChannel && channelMessages.length > 0 ? (
-								channelMessages.map((msg) => (
-									<div
-										key={msg.id}
-										className={`flex gap-4 ${msg.isMe ? 'flex-row-reverse' : ''}`}
-									>
-										<div className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold shrink-0">
-											{msg.avatar ??
-												getMessageDisplayName(msg, userMap)
-													.substring(0, 2)
-													.toUpperCase()}
-										</div>
+								filteredChannelMessages.length === 0 ? (
+									<div className="flex flex-col items-center justify-center h-64 text-center">
+										<Search className="h-12 w-12 text-cyan-400 mb-4 opacity-50" />
+										<p className="text-slate-600 dark:text-slate-400">
+											Nenhuma mensagem encontrada para &quot;{chatSearchQuery}
+											&quot;
+										</p>
+									</div>
+								) : (
+									filteredChannelMessages.map((msg, idx) => (
 										<div
-											className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'} max-w-[75%]`}
+											key={msg.id}
+											ref={(el) => {
+												matchRefsMap.current.set(idx, el);
+											}}
+											data-message-id={msg.id}
+											className={`flex gap-4 ${msg.isMe ? 'flex-row-reverse' : ''}`}
 										>
-											<div className="flex items-baseline gap-2 mb-1">
-												<span className="text-sm font-bold text-slate-900 dark:text-white">
-													{getMessageDisplayName(msg, userMap)}
-												</span>
-												<span className="text-[10px] text-slate-600 dark:text-slate-500">
-													{formatMessageTime(msg.time)}
-												</span>
+											<div className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold shrink-0">
+												{msg.avatar ??
+													getMessageDisplayName(msg, userMap)
+														.substring(0, 2)
+														.toUpperCase()}
 											</div>
 											<div
-												className={`p-4 rounded-2xl text-sm space-y-2 ${
-													msg.isMe
-														? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-tr-sm'
-														: 'bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-200 rounded-tl-sm'
-												}`}
+												className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'} max-w-[75%]`}
 											>
-												{msg.content && (
-													<p className="whitespace-pre-wrap break-words">
-														{msg.content}
-													</p>
-												)}
-												{msg.fileUrl && (
-													<a
-														href={msg.fileUrl}
-														target="_blank"
-														rel="noopener noreferrer"
-														className="block mt-2"
-													>
-														{/\.(jpg|jpeg|png|gif|webp)$/i.test(msg.fileUrl) ? (
-															<img
-																src={msg.fileUrl}
-																alt="Anexo"
-																className="max-w-full max-h-64 rounded-lg object-cover"
-															/>
-														) : (
-															<span className="underline flex items-center gap-1">
-																<ImageIcon className="h-4 w-4" />
-																Ver ficheiro
-															</span>
-														)}
-													</a>
-												)}
+												<div className="flex items-baseline gap-2 mb-1">
+													<span className="text-sm font-bold text-slate-900 dark:text-white">
+														{getMessageDisplayName(msg, userMap)}
+													</span>
+													<span className="text-[10px] text-slate-600 dark:text-slate-500">
+														{formatMessageTime(msg.time)}
+													</span>
+												</div>
+												<div
+													className={`p-4 rounded-2xl text-sm space-y-2 ${
+														msg.isMe
+															? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-tr-sm'
+															: 'bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-200 rounded-tl-sm'
+													}`}
+												>
+													{msg.content && (
+														<p className="whitespace-pre-wrap break-words">
+															{highlightSearchText(
+																msg.content,
+																chatSearchQuery.trim(),
+															)}
+														</p>
+													)}
+													{msg.fileUrl && (
+														<a
+															href={msg.fileUrl}
+															target="_blank"
+															rel="noopener noreferrer"
+															className="block mt-2"
+														>
+															{/\.(jpg|jpeg|png|gif|webp)$/i.test(
+																msg.fileUrl,
+															) ? (
+																<img
+																	src={msg.fileUrl}
+																	alt="Anexo"
+																	className="max-w-full max-h-64 rounded-lg object-cover"
+																/>
+															) : (
+																<span className="underline flex items-center gap-1">
+																	<ImageIcon className="h-4 w-4" />
+																	Ver ficheiro
+																</span>
+															)}
+														</a>
+													)}
+												</div>
 											</div>
 										</div>
-									</div>
-								))
+									))
+								)
 							) : (
 								<div className="flex flex-col items-center justify-center h-64 text-center">
 									<div className="p-6 rounded-full bg-cyan-500/20 mb-4">

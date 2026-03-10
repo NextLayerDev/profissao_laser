@@ -9,6 +9,7 @@ import {
 	createProject,
 	createProjectComment,
 	deleteChannel,
+	deleteChannelMessage,
 	deleteEvent,
 	deleteProject,
 	getChannelMessages,
@@ -177,6 +178,25 @@ export function useSendChannelMessage(channelId: string | null) {
 		},
 		onError: () => {
 			toast.error('Erro ao enviar mensagem');
+		},
+	});
+}
+
+export function useDeleteChannelMessage(channelId: string | null) {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: (messageId: string) => {
+			if (!channelId) return Promise.reject(new Error('Channel ID required'));
+			return deleteChannelMessage(channelId, messageId);
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: ['community', 'messages', channelId],
+			});
+			toast.success('Mensagem excluída');
+		},
+		onError: () => {
+			toast.error('Erro ao excluir mensagem');
 		},
 	});
 }
