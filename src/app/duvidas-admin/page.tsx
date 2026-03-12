@@ -38,7 +38,7 @@ export default function DuvidasAdminPage() {
 						Esta página é apenas para administradores.
 					</p>
 					<Link
-						href="/"
+						href="/dashboard"
 						className="inline-block px-5 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors"
 					>
 						Voltar ao painel
@@ -55,7 +55,7 @@ export default function DuvidasAdminPage() {
 				<div className="max-w-5xl mx-auto flex items-center justify-between">
 					<div className="flex items-center gap-3">
 						<Link
-							href="/"
+							href="/dashboard"
 							className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors text-sm"
 						>
 							<ArrowLeft className="w-4 h-4" />

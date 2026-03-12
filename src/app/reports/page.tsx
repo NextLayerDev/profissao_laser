@@ -32,7 +32,7 @@ export default function Relatorios() {
 
 	useEffect(() => {
 		if (!permissionsLoading && !canPrice) {
-			router.replace('/');
+			router.replace('/dashboard');
 		}
 	}, [canPrice, permissionsLoading, router]);
 

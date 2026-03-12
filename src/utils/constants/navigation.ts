@@ -10,7 +10,7 @@ import {
 import type { NavItem } from '@/types/navigation';
 
 export const navItems: NavItem[] = [
-	{ name: 'Home', icon: Home, href: '/', hasDropdown: false },
+	{ name: 'Home', icon: Home, href: '/dashboard', hasDropdown: false },
 	{ name: 'Produtos', icon: Package, href: '/products', hasDropdown: false },
 	{ name: 'Vendas', icon: ShoppingCart, href: '/sales', hasDropdown: false },
 	{
