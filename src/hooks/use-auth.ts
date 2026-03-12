@@ -43,7 +43,7 @@ export function useLoginUser() {
 		mutationFn: (payload: LoginUserPayload) => loginUser(payload),
 		onSuccess: ({ token }) => {
 			saveToken('user', token);
-			router.push('/');
+			router.push('/dashboard');
 		},
 	});
 }

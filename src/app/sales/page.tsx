@@ -17,7 +17,7 @@ export default function Vendas() {
 
 	useEffect(() => {
 		if (!permissionsLoading && !canPrice) {
-			router.replace('/');
+			router.replace('/dashboard');
 		}
 	}, [canPrice, permissionsLoading, router]);
 
