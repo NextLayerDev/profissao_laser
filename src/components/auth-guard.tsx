@@ -4,12 +4,18 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { getCurrentUser, isAdmin } from '@/lib/auth';
 
-const PUBLIC_PATHS = ['/login', '/register', '/store'];
+const PUBLIC_PATHS = ['/login', '/register', '/store', '/', '/checkout'];
 
-const CUSTOMER_PATHS = ['/store', '/course', '/comunity'];
+const CUSTOMER_PATHS = [
+	'/store',
+	'/course',
+	'/comunity',
+	'/agendamentos',
+	'/biblioteca-vetores',
+];
 
 const ADMIN_PATHS = [
-	'/',
+	'/dashboard',
 	'/products',
 	'/sales',
 	'/reports',
@@ -28,7 +34,7 @@ function isAdminPath(pathname: string): boolean {
 	return ADMIN_PATHS.some((p) =>
 		p === '/'
 			? pathname === '/'
-			: pathname === p || pathname.startsWith(p + '/'),
+			: pathname === p || pathname.startsWith(`${p}/`),
 	);
 }
 
@@ -38,7 +44,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 	const [ready, setReady] = useState(false);
 
 	useEffect(() => {
-		const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+		const isPublic = PUBLIC_PATHS.some((p) =>
+			p === '/' ? pathname === '/' : pathname.startsWith(p),
+		);
 
 		if (!isPublic && !getCurrentUser()) {
 			router.replace(getLoginRedirect(pathname));

@@ -1,5 +1,6 @@
 import {
 	BarChart3,
+	CalendarClock,
 	Home,
 	MessageSquare,
 	Package,
@@ -9,7 +10,7 @@ import {
 import type { NavItem } from '@/types/navigation';
 
 export const navItems: NavItem[] = [
-	{ name: 'Home', icon: Home, href: '/', hasDropdown: false },
+	{ name: 'Home', icon: Home, href: '/dashboard', hasDropdown: false },
 	{ name: 'Produtos', icon: Package, href: '/products', hasDropdown: false },
 	{ name: 'Vendas', icon: ShoppingCart, href: '/sales', hasDropdown: false },
 	{
@@ -22,6 +23,12 @@ export const navItems: NavItem[] = [
 		name: 'Comunidade',
 		icon: MessageSquare,
 		href: '/community',
+		hasDropdown: false,
+	},
+	{
+		name: 'Agendamentos',
+		icon: CalendarClock,
+		href: '/agendamentos',
 		hasDropdown: false,
 	},
 	{ name: 'Acessos', icon: ShieldCheck, href: '/acessos', hasDropdown: false },

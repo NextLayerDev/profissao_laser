@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react';
 import { CreateUserModal } from '@/components/acessos/create-user-modal';
 import { DeleteUserModal } from '@/components/acessos/delete-user-modal';
 import { EditUserModal } from '@/components/acessos/edit-user-modal';
-import { ChatButton } from '@/components/dashboard/chat-button';
 import { Header } from '@/components/dashboard/header';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useUsers } from '@/hooks/use-users';
@@ -31,7 +30,7 @@ export default function AcessosPage() {
 
 	useEffect(() => {
 		if (!permissionsLoading && !canAdmin) {
-			router.replace('/');
+			router.replace('/dashboard');
 		}
 	}, [canAdmin, permissionsLoading, router]);
 
@@ -186,8 +185,6 @@ export default function AcessosPage() {
 				onDelete={handleDelete}
 				isDeleting={isDeleting}
 			/>
-
-			<ChatButton />
 		</div>
 	);
 }

@@ -6,6 +6,7 @@ import type {
 	Member,
 	Post,
 	Project,
+	ProjectComment,
 	RankingUser,
 } from '@/types/community';
 
@@ -34,9 +35,34 @@ export async function getChannels(): Promise<Channel[]> {
 
 export async function createChannel(body: {
 	name: string;
+	adminOnly?: boolean;
+	order?: number;
 }): Promise<{ id: string }> {
-	const { data } = await api.post<{ id: string }>('/community/channels', body);
+	const { data } = await api.post<{ id: string }>('/community/channels', {
+		...body,
+		adminOnly: body.adminOnly ?? false,
+	});
 	return data as { id: string };
+}
+
+export async function updateChannel(
+	channelId: string,
+	body: {
+		name: string;
+		description: string;
+		adminOnly?: boolean;
+		order?: number;
+	},
+): Promise<Channel> {
+	const { data } = await api.patch<Channel>(
+		`/community/channels/${encodeURIComponent(channelId)}`,
+		body,
+	);
+	return data as Channel;
+}
+
+export async function deleteChannel(channelId: string): Promise<void> {
+	await api.delete(`/community/channels/${encodeURIComponent(channelId)}`);
 }
 
 export async function getChannelMessages(
@@ -56,13 +82,27 @@ export async function getChannelMessages(
 
 export async function sendChannelMessage(
 	channelId: string,
-	body: { content: string },
+	payload: { content: string; file?: File },
 ): Promise<ChannelMessage> {
+	const formData = new FormData();
+	formData.append('content', payload.content);
+	if (payload.file) {
+		formData.append('file', payload.file);
+	}
 	const { data } = await api.post<ChannelMessage>(
 		`/community/channels/${encodeURIComponent(channelId)}/messages`,
-		body,
+		formData,
 	);
 	return data as ChannelMessage;
+}
+
+export async function deleteChannelMessage(
+	channelId: string,
+	messageId: string,
+): Promise<void> {
+	await api.delete(
+		`/community/channels/${encodeURIComponent(channelId)}/messages/${encodeURIComponent(messageId)}`,
+	);
 }
 
 export async function getMembers(params?: {
@@ -78,11 +118,22 @@ export async function getMembers(params?: {
 export async function getProjects(params?: {
 	page?: number;
 	limit?: number;
+	material?: string;
+	technique?: string;
+	search?: string;
+	sort?: 'recent' | 'likes';
 }): Promise<Project[]> {
 	const { data } = await api.get<Project[]>('/community/projects', {
-		params: params ? { page: params.page, limit: params.limit } : undefined,
+		params: params ?? undefined,
 	});
 	return data ?? [];
+}
+
+export async function getProject(projectId: string): Promise<Project> {
+	const { data } = await api.get<Project>(
+		`/community/projects/${encodeURIComponent(projectId)}`,
+	);
+	return data as Project;
 }
 
 export async function createProject(body: {
@@ -97,6 +148,49 @@ export async function createProject(body: {
 	return data as Project;
 }
 
+export async function updateProject(
+	projectId: string,
+	body: {
+		title?: string;
+		description?: string;
+		img?: string;
+		material?: string;
+		technique?: string;
+	},
+): Promise<Project> {
+	const { data } = await api.patch<Project>(
+		`/community/projects/${encodeURIComponent(projectId)}`,
+		body,
+	);
+	return data as Project;
+}
+
+export async function deleteProject(projectId: string): Promise<void> {
+	await api.delete(`/community/projects/${encodeURIComponent(projectId)}`);
+}
+
+export async function getProjectComments(
+	projectId: string,
+	params?: { page?: number; limit?: number },
+): Promise<ProjectComment[]> {
+	const { data } = await api.get<ProjectComment[]>(
+		`/community/projects/${encodeURIComponent(projectId)}/comments`,
+		{ params: params ?? undefined },
+	);
+	return data ?? [];
+}
+
+export async function createProjectComment(
+	projectId: string,
+	body: { content: string },
+): Promise<ProjectComment> {
+	const { data } = await api.post<ProjectComment>(
+		`/community/projects/${encodeURIComponent(projectId)}/comments`,
+		body,
+	);
+	return data as ProjectComment;
+}
+
 export async function getEvents(params?: {
 	from?: string;
 	to?: string;
@@ -105,6 +199,38 @@ export async function getEvents(params?: {
 		params: params ?? undefined,
 	});
 	return data ?? [];
+}
+
+export async function createEvent(body: {
+	title: string;
+	description?: string;
+	date: string;
+	time?: string;
+	type: Event['type'];
+}): Promise<Event> {
+	const { data } = await api.post<Event>('/community/events', body);
+	return data as Event;
+}
+
+export async function updateEvent(
+	eventId: string,
+	data: {
+		title?: string;
+		description?: string;
+		date?: string;
+		time?: string;
+		type?: Event['type'];
+	},
+): Promise<Event> {
+	const { data: result } = await api.patch<Event>(
+		`/community/events/${encodeURIComponent(eventId)}`,
+		data,
+	);
+	return result as Event;
+}
+
+export async function deleteEvent(eventId: string): Promise<void> {
+	await api.delete(`/community/events/${encodeURIComponent(eventId)}`);
 }
 
 export async function getRanking(params?: {

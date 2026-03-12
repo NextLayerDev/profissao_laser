@@ -2,7 +2,6 @@
 
 import { ExternalLink, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
-import { ChatButton } from '@/components/dashboard/chat-button';
 import { Header } from '@/components/dashboard/header';
 import { CommunitySection } from '@/components/products/community-section';
 
@@ -37,8 +36,6 @@ export default function ComunidadeAdmin() {
 
 				<CommunitySection />
 			</main>
-
-			<ChatButton />
 		</div>
 	);
 }

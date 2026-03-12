@@ -1,6 +1,6 @@
 'use client';
 
-import { Bookmark, Clock, Loader2, LogIn, Play, Trash2, X } from 'lucide-react';
+import { Bookmark, Loader2, LogIn, Play, Trash2, X } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import {
@@ -9,7 +9,6 @@ import {
 } from '@/hooks/use-saved-lessons';
 import { getToken } from '@/lib/auth';
 import type { SavedLesson } from '@/types/saved-lessons';
-import { formatDuration } from '@/utils/video';
 
 interface SavedLessonsModalProps {
 	isOpen: boolean;
@@ -39,12 +38,6 @@ function SavedLessonItem({
 			<div className="flex-1 min-w-0">
 				<p className="font-medium text-white truncate">{item.lesson.title}</p>
 				<p className="text-slate-400 text-sm truncate">{item.courseName}</p>
-				{item.lesson.duration != null && (
-					<div className="flex items-center gap-1 mt-1 text-slate-500 text-xs">
-						<Clock className="w-3 h-3" />
-						{formatDuration(item.lesson.duration)}
-					</div>
-				)}
 			</div>
 			<div className="flex items-center gap-2 shrink-0">
 				<Link

@@ -10,6 +10,32 @@ export async function getAppointments(): Promise<Appointment[]> {
 	return appointmentSchema.array().parse(data);
 }
 
+export async function getAvailableSlots(
+	date: string,
+	technicianId?: string,
+): Promise<string[]> {
+	const params: Record<string, string> = { date };
+	if (technicianId) params.technicianId = technicianId;
+	const { data } = await api.get('/appointments/available-slots', {
+		params,
+	});
+	return Array.isArray(data) ? data : [];
+}
+
+export async function getAppointmentsByCustomer(
+	customerId: string,
+): Promise<Appointment[]> {
+	const { data } = await api.get(`/appointments/${customerId}`);
+	return appointmentSchema.array().parse(data);
+}
+
+export async function getAppointmentsByTechnician(
+	technicianId: string,
+): Promise<Appointment[]> {
+	const { data } = await api.get(`/appointments/technician/${technicianId}`);
+	return appointmentSchema.array().parse(data);
+}
+
 export async function createAppointment(
 	payload: CreateAppointmentPayload,
 ): Promise<Appointment> {
@@ -27,4 +53,12 @@ export async function updateAppointmentStatus(
 
 export async function deleteAppointment(id: string): Promise<void> {
 	await api.delete(`/appointment/${id}`);
+}
+
+export async function updateAppointmentTechnician(
+	id: string,
+	technicianId: string,
+): Promise<Appointment> {
+	const { data } = await api.patch(`/appointment/${id}`, { technicianId });
+	return appointmentSchema.parse(data);
 }

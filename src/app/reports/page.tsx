@@ -3,7 +3,6 @@
 import { BarChart2, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChatButton } from '@/components/dashboard/chat-button';
 import { Header } from '@/components/dashboard/header';
 import { KpiCards } from '@/components/relatorios/kpi-cards';
 import { ProductsChart } from '@/components/relatorios/products-chart';
@@ -33,7 +32,7 @@ export default function Relatorios() {
 
 	useEffect(() => {
 		if (!permissionsLoading && !canPrice) {
-			router.replace('/');
+			router.replace('/dashboard');
 		}
 	}, [canPrice, permissionsLoading, router]);
 
@@ -141,8 +140,6 @@ export default function Relatorios() {
 					</div>
 				</div>
 			</main>
-
-			<ChatButton />
 		</div>
 	);
 }

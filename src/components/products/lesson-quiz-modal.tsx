@@ -103,11 +103,11 @@ function QuestionEditor({
 	}
 
 	return (
-		<div className="bg-[#0d0d0f] border border-gray-700 rounded-xl p-4 space-y-4">
+		<div className="bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl p-4 space-y-4">
 			<div>
 				<label
 					htmlFor="question-text"
-					className="text-xs font-medium text-gray-400 mb-1.5 block"
+					className="text-xs font-medium text-slate-600 dark:text-gray-400 mb-1.5 block"
 				>
 					Enunciado
 				</label>
@@ -117,14 +117,14 @@ function QuestionEditor({
 					onChange={(e) => setText(e.target.value)}
 					rows={2}
 					placeholder="Digite a pergunta..."
-					className="w-full px-3 py-2 bg-[#1a1a1d] border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:border-violet-500 focus:outline-none resize-none"
+					className="w-full px-3 py-2 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-700 rounded-lg text-slate-900 dark:text-white text-sm placeholder:text-slate-500 focus:border-violet-500 focus:outline-none resize-none"
 				/>
 			</div>
 
 			<div>
-				<p className="text-xs font-medium text-gray-400 mb-2">
+				<p className="text-xs font-medium text-slate-600 dark:text-gray-400 mb-2">
 					Opções{' '}
-					<span className="text-gray-600">
+					<span className="text-slate-500 dark:text-gray-600">
 						(clique no círculo para marcar a correta)
 					</span>
 				</p>
@@ -137,7 +137,7 @@ function QuestionEditor({
 								className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
 									opt.isCorrect
 										? 'bg-emerald-500 border-emerald-500'
-										: 'border-gray-600 hover:border-gray-400'
+										: 'border-slate-300 dark:border-gray-600 hover:border-slate-400 dark:hover:border-gray-400'
 								}`}
 							>
 								{opt.isCorrect && <Check className="w-3 h-3 text-white" />}
@@ -147,13 +147,13 @@ function QuestionEditor({
 								value={opt.text}
 								onChange={(e) => updateOptionText(idx, e.target.value)}
 								placeholder={`Opção ${idx + 1}`}
-								className="flex-1 px-3 py-1.5 bg-[#1a1a1d] border border-gray-700 rounded-lg text-sm text-white placeholder-gray-600 focus:border-violet-500 focus:outline-none"
+								className="flex-1 px-3 py-1.5 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none"
 							/>
 							<button
 								type="button"
 								onClick={() => removeOption(idx)}
 								disabled={options.length <= 2}
-								className="p-1 text-gray-600 hover:text-red-400 transition-colors disabled:opacity-30"
+								className="p-1 text-slate-500 dark:text-gray-600 hover:text-red-400 transition-colors disabled:opacity-30"
 							>
 								<Trash2 className="w-3.5 h-3.5" />
 							</button>
@@ -164,7 +164,7 @@ function QuestionEditor({
 					<button
 						type="button"
 						onClick={addOption}
-						className="mt-2 flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 transition-colors"
+						className="mt-2 flex items-center gap-1.5 text-xs text-violet-600 dark:text-violet-400 hover:text-violet-500 dark:hover:text-violet-300 transition-colors"
 					>
 						<Plus className="w-3.5 h-3.5" />
 						Adicionar opção
@@ -176,7 +176,7 @@ function QuestionEditor({
 				<button
 					type="button"
 					onClick={onDone}
-					className="px-3 py-1.5 text-sm border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700 transition-colors"
+					className="px-3 py-1.5 text-sm border border-slate-300 dark:border-gray-600 rounded-lg text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors"
 				>
 					Cancelar
 				</button>
@@ -228,16 +228,16 @@ function QuestionItem({ question, lessonId }: QuestionItemProps) {
 	}
 
 	return (
-		<div className="bg-[#0d0d0f] border border-gray-800 rounded-xl p-4 group">
+		<div className="bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-800 rounded-xl p-4 group">
 			<div className="flex items-start justify-between gap-3 mb-3">
-				<p className="text-sm font-medium text-white leading-snug">
+				<p className="text-sm font-medium text-slate-900 dark:text-white leading-snug">
 					{question.text}
 				</p>
 				<div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
 					<button
 						type="button"
 						onClick={() => setEditing(true)}
-						className="px-2.5 py-1 text-xs text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+						className="px-2.5 py-1 text-xs text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
 					>
 						Editar
 					</button>
@@ -245,7 +245,7 @@ function QuestionItem({ question, lessonId }: QuestionItemProps) {
 						type="button"
 						onClick={handleDelete}
 						disabled={deleteQ.isPending}
-						className="p-1.5 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+						className="p-1.5 text-slate-500 dark:text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
 					>
 						<Trash2 className="w-3.5 h-3.5" />
 					</button>
@@ -258,13 +258,17 @@ function QuestionItem({ question, lessonId }: QuestionItemProps) {
 							className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
 								opt.isCorrect
 									? 'bg-emerald-500 border-emerald-500'
-									: 'border-gray-600'
+									: 'border-slate-300 dark:border-gray-600'
 							}`}
 						>
 							{opt.isCorrect && <Check className="w-2.5 h-2.5 text-white" />}
 						</div>
 						<span
-							className={opt.isCorrect ? 'text-emerald-300' : 'text-gray-400'}
+							className={
+								opt.isCorrect
+									? 'text-emerald-600 dark:text-emerald-300'
+									: 'text-slate-600 dark:text-gray-400'
+							}
 						>
 							{opt.text}
 						</span>
@@ -319,21 +323,23 @@ export function LessonQuizModal({
 
 	return (
 		<div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-			<div className="bg-[#1a1a1d] border border-gray-700 rounded-xl shadow-2xl w-full max-w-xl flex flex-col max-h-[90vh]">
+			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-700 rounded-xl shadow-2xl w-full max-w-xl flex flex-col max-h-[90vh]">
 				{/* Header */}
-				<div className="flex items-center justify-between p-5 border-b border-gray-700 shrink-0">
+				<div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-gray-700 shrink-0">
 					<div>
-						<h3 className="text-lg font-bold text-white">Quiz da aula</h3>
-						<p className="text-xs text-gray-500 mt-0.5 truncate max-w-xs">
+						<h3 className="text-lg font-bold text-slate-900 dark:text-white">
+							Quiz da aula
+						</h3>
+						<p className="text-xs text-slate-600 dark:text-gray-500 mt-0.5 truncate max-w-xs">
 							{lessonTitle}
 						</p>
 					</div>
 					<button
 						type="button"
 						onClick={onClose}
-						className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors"
+						className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
 					>
-						<X className="w-4 h-4 text-gray-400" />
+						<X className="w-4 h-4 text-slate-500 dark:text-gray-400" />
 					</button>
 				</div>
 
@@ -345,7 +351,7 @@ export function LessonQuizModal({
 					) : !quiz ? (
 						/* Sem quiz — criar */
 						<div className="text-center py-8 space-y-4">
-							<p className="text-gray-400 text-sm">
+							<p className="text-slate-600 dark:text-gray-400 text-sm">
 								Esta aula ainda não tem quiz.
 							</p>
 							<div className="flex flex-col items-center gap-3 max-w-xs mx-auto">
@@ -354,7 +360,7 @@ export function LessonQuizModal({
 									value={quizTitle}
 									onChange={(e) => setQuizTitle(e.target.value)}
 									placeholder="Título do quiz (ex: Quiz Módulo 1)"
-									className="w-full px-3 py-2.5 bg-[#0d0d0f] border border-gray-700 rounded-lg text-sm text-white placeholder-gray-600 focus:border-violet-500 focus:outline-none"
+									className="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none"
 								/>
 								<button
 									type="button"
@@ -374,8 +380,10 @@ export function LessonQuizModal({
 						<div className="space-y-5">
 							<div className="flex items-center justify-between">
 								<div>
-									<h4 className="font-semibold text-white">{quiz.title}</h4>
-									<p className="text-xs text-gray-500 mt-0.5">
+									<h4 className="font-semibold text-slate-900 dark:text-white">
+										{quiz.title}
+									</h4>
+									<p className="text-xs text-slate-600 dark:text-gray-500 mt-0.5">
 										{quiz.questions.length} pergunta
 										{quiz.questions.length !== 1 ? 's' : ''}
 									</p>
@@ -383,7 +391,7 @@ export function LessonQuizModal({
 								<button
 									type="button"
 									onClick={() => handleDeleteQuiz(quiz)}
-									className="text-xs text-gray-600 hover:text-red-400 transition-colors"
+									className="text-xs text-slate-500 dark:text-gray-600 hover:text-red-400 transition-colors"
 								>
 									Remover quiz
 								</button>
@@ -410,7 +418,7 @@ export function LessonQuizModal({
 								<button
 									type="button"
 									onClick={() => setAddingQuestion(true)}
-									className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-gray-700 hover:border-violet-500/50 rounded-xl text-sm text-gray-400 hover:text-violet-300 transition-colors"
+									className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-slate-300 dark:border-gray-700 hover:border-violet-500/50 rounded-xl text-sm text-slate-600 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-300 transition-colors"
 								>
 									<Plus className="w-4 h-4" />
 									Adicionar pergunta

@@ -2,6 +2,7 @@
 
 import {
 	BookOpen,
+	CalendarClock,
 	ChevronRight,
 	Flame,
 	Gem,
@@ -144,7 +145,7 @@ export default function CoursePage() {
 						<ThemeToggle />
 						{isAdmin && (
 							<Link
-								href="/"
+								href="/dashboard"
 								className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-violet-500/50 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium rounded-xl transition-colors"
 							>
 								<LayoutDashboard className="w-4 h-4" />
@@ -153,10 +154,17 @@ export default function CoursePage() {
 						)}
 						<Link
 							href="/store"
-							className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 text-white text-sm font-medium rounded-xl transition-colors"
+							className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-violet-500/50 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium rounded-xl transition-colors"
 						>
 							<Store className="w-4 h-4" />
 							Ir para loja
+						</Link>
+						<Link
+							href="/agendamentos"
+							className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 text-white text-sm font-medium rounded-xl transition-colors"
+						>
+							<CalendarClock className="w-4 h-4" />
+							Agendamentos
 						</Link>
 						<UserBadge />
 					</div>
@@ -306,6 +314,11 @@ export default function CoursePage() {
 						{quickAccessItems.map(
 							({ label, Icon, gradient, featureKey, href }) => {
 								const hasAccess = features?.[featureKey];
+								const className = `w-full flex items-center justify-between gap-3 rounded-xl px-4 py-3 transition-all duration-200 ${
+									hasAccess
+										? 'bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 hover:border-violet-500/40 group cursor-pointer shadow-sm dark:shadow-none'
+										: 'bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 opacity-60 cursor-not-allowed shadow-sm dark:shadow-none'
+								}`;
 								const content = (
 									<>
 										<div className="flex items-center gap-3">
@@ -342,11 +355,6 @@ export default function CoursePage() {
 										)}
 									</>
 								);
-								const className = `w-full flex items-center justify-between gap-3 rounded-xl px-4 py-3 transition-all duration-200 ${
-									hasAccess
-										? 'bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 hover:border-violet-500/40 group cursor-pointer shadow-sm dark:shadow-none'
-										: 'bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 opacity-60 cursor-not-allowed shadow-sm dark:shadow-none'
-								}`;
 								if (hasAccess && label === 'Aulas Salvas') {
 									return (
 										<button
@@ -359,7 +367,7 @@ export default function CoursePage() {
 										</button>
 									);
 								}
-								return hasAccess && href ? (
+								return href && hasAccess ? (
 									<Link key={label} href={href} className={className}>
 										{content}
 									</Link>

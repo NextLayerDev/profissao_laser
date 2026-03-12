@@ -3,6 +3,8 @@
 import {
 	ArrowLeft,
 	Calendar,
+	ChevronDown,
+	ChevronUp,
 	Clock,
 	Eye,
 	FileText,
@@ -13,10 +15,12 @@ import {
 	Home,
 	ImageIcon,
 	Link2,
+	Lock,
 	Megaphone,
 	MessageSquare,
 	Mic,
 	MoreVertical,
+	Paperclip,
 	Plus,
 	Search,
 	Send,
@@ -43,10 +47,23 @@ import {
 	useCreateChannel,
 	useCreatePost,
 	useCreateProject,
+	useCreateProjectComment,
+	useProjectComments,
 	useSendChannelMessage,
 } from '@/hooks/use-community';
-import type { Channel, Project } from '@/types/community';
-import { formatMessageTime } from '@/utils/formatDate';
+import { useUsers } from '@/hooks/use-users';
+import type { Channel, Event, Project } from '@/types/community';
+import { buildUserDisplayMap, getMessageDisplayName } from '@/utils/community';
+import {
+	formatDate,
+	formatEventDateParts,
+	formatEventDateShort,
+	formatMessageTime,
+	formatMonthYear,
+	getEventDay,
+	getEventMonthYear,
+	parseEventDate,
+} from '@/utils/formatDate';
 
 const CHANNEL_ICON_MAP: Record<string, typeof MessageSquare> = {
 	chat: MessageSquare,
@@ -80,11 +97,44 @@ function getRankingGradient(pos: number): string {
 	return 'from-orange-300 to-amber-400';
 }
 
+/** Realça o termo de pesquisa no texto */
+function highlightSearchText(text: string, search: string): React.ReactNode {
+	if (!search.trim()) return text;
+	const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
+	return parts.map((part, i) =>
+		part.toLowerCase() === search.toLowerCase().trim() ? (
+			<mark
+				key={`${i}-${part}`}
+				className="bg-cyan-200 dark:bg-cyan-600/40 rounded px-0.5"
+			>
+				{part}
+			</mark>
+		) : (
+			part
+		),
+	);
+}
+
+function getEventTypeBadge(event: Event): { label: string; className: string } {
+	switch (event.type) {
+		case 'live':
+			return { label: 'AO VIVO', className: 'bg-red-500/20 text-red-400' };
+		case 'workshop':
+			return { label: 'WORKSHOP', className: 'bg-blue-500/20 text-blue-400' };
+		case 'qa':
+			return { label: 'Q&A', className: 'bg-amber-500/20 text-amber-400' };
+		default:
+			return { label: 'EVENTO', className: 'bg-violet-500/20 text-violet-400' };
+	}
+}
+
 interface CommunityViewProps {
 	userName: string;
 	userEmail: string;
 	userInitials: string;
 	onBack: () => void;
+	isAdmin?: boolean;
 }
 
 export function CommunityView({
@@ -92,6 +142,7 @@ export function CommunityView({
 	userEmail: _userEmail,
 	userInitials,
 	onBack,
+	isAdmin = false,
 }: CommunityViewProps) {
 	const [activeTab, setActiveTab] = useState('feed');
 	const [activeChannel, setActiveChannel] = useState<string | null>(null);
@@ -100,6 +151,10 @@ export function CommunityView({
 	const [showCreateChannelModal, setShowCreateChannelModal] = useState(false);
 	const [showSubmitProjectModal, setShowSubmitProjectModal] = useState(false);
 	const [showCalendarModal, setShowCalendarModal] = useState(false);
+	const [calendarView, setCalendarView] = useState(() => {
+		const now = new Date();
+		return { month: now.getMonth(), year: now.getFullYear() };
+	});
 
 	const [selectedProfile, setSelectedProfile] = useState<{
 		name: string;
@@ -127,17 +182,56 @@ export function CommunityView({
 	const projectFileInputRef = useRef<HTMLInputElement>(null);
 
 	const [postPage] = useState(1);
-	const [projectPage] = useState(1);
+	const [projectPage, setProjectPage] = useState(1);
+	const [projectSort, setProjectSort] = useState<'recent' | 'likes'>('recent');
+	const [projectMaterialFilter, setProjectMaterialFilter] = useState('');
+	const [projectTechniqueFilter, setProjectTechniqueFilter] = useState('');
+	const [projectSearch, setProjectSearch] = useState('');
 	const [rankingPeriod, setRankingPeriod] = useState<
 		'week' | 'month' | undefined
 	>('week');
+
+	const [likedProjectIds, setLikedProjectIds] = useState<Set<string>>(
+		new Set(),
+	);
+	const [projectCommentInput, setProjectCommentInput] = useState('');
+
+	const PROJECTS_PER_PAGE = 12;
+	const { data: projects = [], isLoading: projectsLoading } =
+		useCommunityProjects(1, projectPage * PROJECTS_PER_PAGE, {
+			material: projectMaterialFilter || undefined,
+			technique: projectTechniqueFilter || undefined,
+			search: projectSearch.trim() || undefined,
+			sort: projectSort,
+		});
+	const hasMoreProjects = projects.length >= projectPage * PROJECTS_PER_PAGE;
+	const uniqueMaterials = useMemo(
+		() =>
+			Array.from(
+				new Set(
+					projects
+						.map((p) => p.material)
+						.filter((m): m is string => !!m?.trim()),
+				),
+			).sort(),
+		[projects],
+	);
+	const uniqueTechniques = useMemo(
+		() =>
+			Array.from(
+				new Set(
+					projects
+						.map((p) => p.technique)
+						.filter((t): t is string => !!t?.trim()),
+				),
+			).sort(),
+		[projects],
+	);
 
 	const { data: posts = [], isLoading: postsLoading } = useCommunityPosts(
 		postPage,
 		20,
 	);
-	const { data: projects = [], isLoading: _projectsLoading } =
-		useCommunityProjects(projectPage, 12);
 	const { data: channels = [], isLoading: channelsLoading } =
 		useCommunityChannels();
 	const { data: members = [], isLoading: _membersLoading } =
@@ -150,26 +244,40 @@ export function CommunityView({
 		useCommunityRanking(rankingPeriod);
 	const { data: channelMessages = [], refetch: refetchMessages } =
 		useChannelMessages(activeChannel);
+	const { users } = useUsers(true);
+	const userMap = useMemo(() => buildUserDisplayMap(users), [users]);
 
 	const createPostMutation = useCreatePost();
 	const createProjectMutation = useCreateProject();
 	const createChannelMutation = useCreateChannel();
 	const sendMessageMutation = useSendChannelMessage(activeChannel);
+	const { data: projectComments = [] } = useProjectComments(
+		selectedProject?.id ?? null,
+	);
+	const createCommentMutation = useCreateProjectComment(
+		selectedProject?.id ?? null,
+	);
 
 	const rankingTop = rankingData?.top ?? [];
 	const rankingRest = rankingData?.rest ?? [];
 
 	const channelCategories = useMemo(() => {
+		const sorted = [...channels].sort(
+			(a, b) => (a.order ?? 0) - (b.order ?? 0),
+		);
 		const byCategory = new Map<string, Channel[]>();
-		for (const ch of channels) {
+		for (const ch of sorted) {
 			const cat = ch.category || 'GERAL';
 			if (!byCategory.has(cat)) byCategory.set(cat, []);
 			byCategory.get(cat)?.push(ch);
 		}
-		return Array.from(byCategory.entries()).map(([name, chs]) => ({
-			name,
-			channels: chs,
-		}));
+		return Array.from(byCategory.entries())
+			.map(([name, chs]) => ({ name, channels: chs }))
+			.sort(
+				(a, b) =>
+					Math.min(...a.channels.map((c) => c.order ?? 0)) -
+					Math.min(...b.channels.map((c) => c.order ?? 0)),
+			);
 	}, [channels]);
 
 	const activeChannelData = channels.find((c) => c.id === activeChannel);
@@ -187,12 +295,69 @@ export function CommunityView({
 	})();
 
 	const [messageInput, setMessageInput] = useState('');
+	const [messageFile, setMessageFile] = useState<File | null>(null);
 	const [newChannelName, setNewChannelName] = useState('');
-	const messagesEndRef = useRef<HTMLDivElement>(null);
+	const [chatSearchQuery, setChatSearchQuery] = useState('');
+	const [isSearchOpen, setIsSearchOpen] = useState(false);
+	const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+	const channelMessagesScrollRef = useRef<HTMLDivElement>(null);
+	const channelFileInputRef = useRef<HTMLInputElement>(null);
+	const channelMessageTextareaRef = useRef<HTMLTextAreaElement>(null);
+	const matchRefsMap = useRef<Map<number, HTMLDivElement | null>>(new Map());
+
+	const resizeMessageTextarea = (el: HTMLTextAreaElement | null) => {
+		if (!el) return;
+		el.style.height = 'auto';
+		el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
+	};
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: activeChannel triggers reset on channel switch
+	useEffect(() => {
+		setChatSearchQuery('');
+		setIsSearchOpen(false);
+		setCurrentMatchIndex(0);
+	}, [activeChannel]);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: activeChannel and channelMessages trigger scroll
+	useEffect(() => {
+		if (chatSearchQuery.trim()) return;
+		const el = channelMessagesScrollRef.current;
+		if (!el) return;
+		const scrollToBottom = () => {
+			el.scrollTop = el.scrollHeight;
+		};
+		scrollToBottom();
+		requestAnimationFrame(scrollToBottom);
+		setTimeout(scrollToBottom, 150);
+	}, [activeChannel, channelMessages, chatSearchQuery]);
+
+	const filteredChannelMessages = useMemo(() => {
+		if (!chatSearchQuery.trim()) return channelMessages;
+		const q = chatSearchQuery.toLowerCase().trim();
+		return channelMessages.filter((m) => m.content?.toLowerCase().includes(q));
+	}, [channelMessages, chatSearchQuery]);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: chatSearchQuery and filteredChannelMessages.length trigger index reset
+	useEffect(() => {
+		setCurrentMatchIndex(0);
+	}, [chatSearchQuery, filteredChannelMessages.length]);
 
 	useEffect(() => {
-		messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-	}, []);
+		if (!chatSearchQuery.trim() || filteredChannelMessages.length === 0) return;
+		const el = matchRefsMap.current.get(currentMatchIndex);
+		el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+	}, [chatSearchQuery, filteredChannelMessages, currentMatchIndex]);
+
+	const goToPrevMatch = () => {
+		setCurrentMatchIndex((i) =>
+			i <= 0 ? filteredChannelMessages.length - 1 : i - 1,
+		);
+	};
+	const goToNextMatch = () => {
+		setCurrentMatchIndex((i) =>
+			i >= filteredChannelMessages.length - 1 ? 0 : i + 1,
+		);
+	};
 
 	const handleChannelClick = (channelId: string) => {
 		setActiveTab('channel');
@@ -200,23 +365,34 @@ export function CommunityView({
 	};
 
 	const handleSendMessage = () => {
-		if (!messageInput.trim() || !activeChannel) return;
-		sendMessageMutation.mutate(messageInput, {
-			onSuccess: () => {
-				setMessageInput('');
-				refetchMessages();
+		if ((!messageInput.trim() && !messageFile) || !activeChannel) return;
+		sendMessageMutation.mutate(
+			{ content: messageInput.trim(), file: messageFile ?? undefined },
+			{
+				onSuccess: () => {
+					setMessageInput('');
+					setMessageFile(null);
+					if (channelFileInputRef.current) {
+						channelFileInputRef.current.value = '';
+					}
+					resizeMessageTextarea(channelMessageTextareaRef.current);
+					refetchMessages();
+				},
 			},
-		});
+		);
 	};
 
 	const handleCreateChannel = () => {
 		if (!newChannelName.trim()) return;
-		createChannelMutation.mutate(newChannelName, {
-			onSuccess: () => {
-				setNewChannelName('');
-				setShowCreateChannelModal(false);
+		createChannelMutation.mutate(
+			{ name: newChannelName.trim(), adminOnly: false },
+			{
+				onSuccess: () => {
+					setNewChannelName('');
+					setShowCreateChannelModal(false);
+				},
 			},
-		});
+		);
 	};
 
 	const handleViewProfile = (
@@ -271,8 +447,8 @@ export function CommunityView({
 		createProjectMutation.mutate(
 			{
 				author: userName,
-				title: newProject.title,
-				description: newProject.description,
+				title: newProject.title.trim(),
+				description: newProject.description.trim(),
 				img:
 					newProject.image ||
 					'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?q=80&w=2940&auto=format&fit=crop',
@@ -294,6 +470,27 @@ export function CommunityView({
 		);
 	};
 
+	const handleLikeProject = (projectId: string) => {
+		setLikedProjectIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(projectId)) next.delete(projectId);
+			else next.add(projectId);
+			return next;
+		});
+	};
+
+	const handleAddProjectComment = () => {
+		if (!projectCommentInput.trim() || !selectedProject) return;
+		createCommentMutation.mutate(
+			{ content: projectCommentInput.trim() },
+			{
+				onSuccess: () => {
+					setProjectCommentInput('');
+				},
+			},
+		);
+	};
+
 	const isPosting = createPostMutation.isPending;
 	const filteredMembers = members;
 
@@ -302,7 +499,7 @@ export function CommunityView({
 			case 'feed':
 				return (
 					<div className="w-full p-6 space-y-6">
-						<div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+						<div className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6">
 							<div className="flex gap-4">
 								<div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold shrink-0">
 									{userInitials}
@@ -312,7 +509,7 @@ export function CommunityView({
 										placeholder="Compartilhe seus projetos, dúvidas sobre personalização a laser ou conquistas..."
 										value={postContent}
 										onChange={(e) => setPostContent(e.target.value)}
-										className="w-full min-h-[100px] p-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 resize-none"
+										className="w-full min-h-[100px] p-4 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 resize-none"
 									/>
 									{postImage && (
 										<div className="relative rounded-xl overflow-hidden">
@@ -364,7 +561,7 @@ export function CommunityView({
 								<div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
 							</div>
 						) : posts.length === 0 ? (
-							<div className="text-center py-12 text-slate-400">
+							<div className="text-center py-12 text-slate-600 dark:text-slate-400">
 								<MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
 								<p>Nenhum post ainda. Seja o primeiro a publicar!</p>
 							</div>
@@ -372,7 +569,7 @@ export function CommunityView({
 							posts.map((post) => (
 								<div
 									key={post.id}
-									className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden"
+									className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden"
 								>
 									<div className="p-4 flex items-start gap-4">
 										<button
@@ -411,7 +608,7 @@ export function CommunityView({
 																'Especialista em Personalização Laser',
 															)
 														}
-														className="font-bold text-white hover:text-violet-400 text-sm"
+														className="font-bold text-slate-900 dark:text-white hover:text-violet-400 text-sm"
 													>
 														{post.author}
 													</button>
@@ -421,7 +618,7 @@ export function CommunityView({
 												</div>
 												<button
 													type="button"
-													className="p-2 text-slate-500 hover:text-white rounded-full"
+													className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-full"
 												>
 													<MoreVertical className="h-4 w-4" />
 												</button>
@@ -429,7 +626,7 @@ export function CommunityView({
 										</div>
 									</div>
 									<div className="px-4 pb-4">
-										<p className="text-sm text-slate-300 leading-relaxed">
+										<p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
 											{post.content}
 										</p>
 										{post.image && (
@@ -448,7 +645,7 @@ export function CommunityView({
 											className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm ${
 												post.liked
 													? 'text-pink-500'
-													: 'text-slate-400 hover:text-white'
+													: 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
 											}`}
 										>
 											<Heart
@@ -484,10 +681,10 @@ export function CommunityView({
 							<div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 mb-4">
 								<Trophy className="h-8 w-8 text-white" />
 							</div>
-							<h2 className="text-3xl font-bold text-white">
+							<h2 className="text-3xl font-bold text-slate-900 dark:text-white">
 								Ranking da Comunidade
 							</h2>
-							<p className="text-slate-400 mt-2">
+							<p className="text-slate-600 dark:text-slate-400 mt-2">
 								Os profissionais mais engajados
 							</p>
 							<div className="flex justify-center gap-2 mt-4">
@@ -497,7 +694,7 @@ export function CommunityView({
 									className={`px-4 py-2 rounded-full text-sm font-medium ${
 										rankingPeriod === 'week'
 											? 'bg-violet-600 text-white'
-											: 'bg-white/5 text-slate-400 hover:text-white'
+											: 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
 									}`}
 								>
 									Semana
@@ -508,7 +705,7 @@ export function CommunityView({
 									className={`px-4 py-2 rounded-full text-sm font-medium ${
 										rankingPeriod === 'month'
 											? 'bg-violet-600 text-white'
-											: 'bg-white/5 text-slate-400 hover:text-white'
+											: 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
 									}`}
 								>
 									Mês
@@ -524,7 +721,7 @@ export function CommunityView({
 									onClick={() =>
 										handleViewProfile(user.name, user.name[0], 'Top Performer')
 									}
-									className={`bg-white/5 border border-white/10 rounded-2xl overflow-hidden text-left hover:border-violet-500/40 transition-all ${
+									className={`bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden text-left hover:border-violet-500/40 transition-all ${
 										user.pos === 1
 											? 'md:-mt-6 z-10 ring-2 ring-amber-500/50'
 											: ''
@@ -536,10 +733,10 @@ export function CommunityView({
 										<Trophy className="h-14 w-14 text-white drop-shadow-lg" />
 									</div>
 									<div className="text-center p-6 -mt-14 relative">
-										<div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-2xl font-bold text-white border-4 border-[#0d0b1e] mb-4">
+										<div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-2xl font-bold text-white border-4 border-slate-50 dark:border-[#0d0b1e] mb-4">
 											{user.name[0]}
 										</div>
-										<h3 className="font-bold text-lg text-white">
+										<h3 className="font-bold text-lg text-slate-900 dark:text-white">
 											{user.name}
 										</h3>
 										<span className="inline-block mt-2 px-3 py-1 rounded-full bg-violet-500/20 text-violet-300 text-xs font-medium">
@@ -550,9 +747,9 @@ export function CommunityView({
 							))}
 						</div>
 
-						<div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-							<div className="p-4 border-b border-white/10">
-								<h3 className="font-bold text-white flex items-center gap-2">
+						<div className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden">
+							<div className="p-4 border-b border-slate-200 dark:border-white/10">
+								<h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
 									<Star className="h-5 w-5 text-cyan-500" />
 									Classificação Geral
 								</h3>
@@ -567,22 +764,26 @@ export function CommunityView({
 										}
 										className="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-white/5 transition-colors text-left"
 									>
-										<span className="font-mono font-bold text-slate-500 w-8">
+										<span className="font-mono font-bold text-slate-600 dark:text-slate-500 w-8">
 											{u.pos}º
 										</span>
 										<div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold">
 											U{u.pos}
 										</div>
 										<div className="flex-1">
-											<p className="font-medium text-white">{u.name}</p>
-											<div className="h-2 bg-slate-800 rounded-full mt-2 max-w-[200px] overflow-hidden">
+											<p className="font-medium text-slate-900 dark:text-white">
+												{u.name}
+											</p>
+											<div className="h-2 bg-slate-200 dark:bg-slate-800 rounded-full mt-2 max-w-[200px] overflow-hidden">
 												<div
 													className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full"
 													style={{ width: `${100 - u.pos * 5}%` }}
 												/>
 											</div>
 										</div>
-										<span className="text-slate-400 text-sm">{u.pts} pts</span>
+										<span className="text-slate-600 dark:text-slate-400 text-sm">
+											{u.pts} pts
+										</span>
 									</button>
 								))}
 							</div>
@@ -595,13 +796,13 @@ export function CommunityView({
 					<div className="w-full p-6 space-y-6">
 						<div className="flex justify-between items-center">
 							<div>
-								<h2 className="text-2xl font-bold text-white flex items-center gap-3">
+								<h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
 									<div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600">
 										<Calendar className="h-6 w-6 text-white" />
 									</div>
 									Agenda de Eventos
 								</h2>
-								<p className="text-slate-400 mt-1">
+								<p className="text-slate-600 dark:text-slate-400 mt-1">
 									Lives, workshops e treinamentos exclusivos
 								</p>
 							</div>
@@ -615,46 +816,58 @@ export function CommunityView({
 						</div>
 
 						<div className="space-y-6">
-							{events.slice(0, 2).map((event) => (
-								<div
-									key={event.id}
-									className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden border-l-4 border-l-cyan-500"
-								>
-									<div className="md:flex">
-										<div className="md:w-64 p-8 bg-violet-500/10 flex flex-col items-center justify-center text-center">
-											<span className="text-sm font-bold text-violet-400 uppercase">
-												{event.date}
-											</span>
-											<span className="text-2xl font-bold text-white mt-1">
-												{event.time ?? '—'}
-											</span>
-											<span
-												className={`mt-3 px-3 py-1 rounded-full text-xs font-medium ${
-													event.type === 'live'
-														? 'bg-red-500/20 text-red-400'
-														: 'bg-blue-500/20 text-blue-400'
-												}`}
-											>
-												{event.type === 'live' ? 'AO VIVO' : 'WORKSHOP'}
-											</span>
-										</div>
-										<div className="p-8 flex-1">
-											<h3 className="text-xl font-bold text-white mb-2">
-												{event.title}
-											</h3>
-											<p className="text-slate-400 mb-4">
-												{event.description ?? ''}
-											</p>
-											<button
-												type="button"
-												className="flex items-center gap-2 px-6 py-2 bg-violet-600 hover:bg-violet-500 text-white font-medium rounded-full"
-											>
-												<Video className="h-4 w-4" /> Entrar na Sala de Espera
-											</button>
-										</div>
-									</div>
+							{events.length === 0 ? (
+								<div className="text-center py-16 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl">
+									<Calendar className="h-16 w-16 text-slate-400 dark:text-slate-500 mx-auto mb-4" />
+									<p className="text-slate-600 dark:text-slate-400 font-medium">
+										Nenhum evento agendado
+									</p>
+									<p className="text-sm text-slate-500 dark:text-slate-500 mt-1">
+										Volte em breve para ver lives e workshops
+									</p>
 								</div>
-							))}
+							) : (
+								events.map((event) => {
+									const badge = getEventTypeBadge(event);
+									return (
+										<div
+											key={event.id}
+											className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden border-l-4 border-l-cyan-500"
+										>
+											<div className="md:flex">
+												<div className="md:w-64 p-8 bg-violet-500/10 flex flex-col items-center justify-center text-center">
+													<span className="text-sm font-bold text-violet-400 uppercase">
+														{formatEventDateShort(event.date)}
+													</span>
+													<span className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+														{event.time ?? '—'}
+													</span>
+													<span
+														className={`mt-3 px-3 py-1 rounded-full text-xs font-medium ${badge.className}`}
+													>
+														{badge.label}
+													</span>
+												</div>
+												<div className="p-8 flex-1">
+													<h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+														{event.title}
+													</h3>
+													<p className="text-slate-600 dark:text-slate-400 mb-4">
+														{event.description ?? ''}
+													</p>
+													<button
+														type="button"
+														className="flex items-center gap-2 px-6 py-2 bg-violet-600 hover:bg-violet-500 text-white font-medium rounded-full"
+													>
+														<Video className="h-4 w-4" /> Entrar na Sala de
+														Espera
+													</button>
+												</div>
+											</div>
+										</div>
+									);
+								})
+							)}
 						</div>
 					</div>
 				);
@@ -670,13 +883,13 @@ export function CommunityView({
 									placeholder="Buscar membro por nome ou especialidade..."
 									value={memberSearch}
 									onChange={(e) => setMemberSearch(e.target.value)}
-									className="w-full pl-12 h-12 rounded-full bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50"
+									className="w-full pl-12 h-12 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50"
 								/>
 							</div>
 							<select
 								value={memberFilter}
 								onChange={(e) => setMemberFilter(e.target.value)}
-								className="h-12 px-4 rounded-full bg-white/5 border border-white/10 text-white focus:outline-none focus:border-violet-500/50"
+								className="h-12 px-4 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50"
 							>
 								<option value="all">Todos</option>
 								<option value="fiber">Fiber</option>
@@ -693,7 +906,7 @@ export function CommunityView({
 								filteredMembers.map((member) => (
 									<div
 										key={`${member.name}-${member.specialty}`}
-										className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-violet-500/40 transition-all"
+										className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6 hover:border-violet-500/40 transition-all"
 									>
 										<div className="flex flex-col items-center">
 											<div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-2xl font-bold text-white mb-4 overflow-hidden">
@@ -707,10 +920,10 @@ export function CommunityView({
 													member.name[0]
 												)}
 											</div>
-											<h3 className="font-bold text-lg text-white">
+											<h3 className="font-bold text-lg text-slate-900 dark:text-white">
 												{member.name}
 											</h3>
-											<p className="text-sm text-slate-400 mb-3 text-center">
+											<p className="text-sm text-slate-600 dark:text-slate-400 mb-3 text-center">
 												{member.specialty ?? 'Membro da comunidade'}
 											</p>
 											<div className="flex justify-center gap-2 mb-4 flex-wrap">
@@ -742,8 +955,8 @@ export function CommunityView({
 								))
 							) : (
 								<div className="col-span-full text-center py-12">
-									<Users className="h-16 w-16 text-slate-600 mx-auto mb-4" />
-									<p className="text-slate-400">
+									<Users className="h-16 w-16 text-slate-500 dark:text-slate-600 mx-auto mb-4" />
+									<p className="text-slate-600 dark:text-slate-400">
 										Nenhum membro encontrado com esses filtros.
 									</p>
 								</div>
@@ -757,13 +970,13 @@ export function CommunityView({
 					<div className="w-full p-6 space-y-6">
 						<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
 							<div>
-								<h2 className="text-2xl font-bold text-white flex items-center gap-3">
+								<h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
 									<div className="p-2 rounded-xl bg-gradient-to-br from-pink-500 to-purple-600">
 										<Star className="h-6 w-6 text-white" />
 									</div>
 									Vitrine de Projetos
 								</h2>
-								<p className="text-slate-400 mt-1">
+								<p className="text-slate-600 dark:text-slate-400 mt-1">
 									Projetos incríveis da comunidade
 								</p>
 							</div>
@@ -776,166 +989,478 @@ export function CommunityView({
 							</button>
 						</div>
 
-						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-							{projects.map((item) => (
+						{/* Filtros e ordenação */}
+						<div className="flex flex-col sm:flex-row gap-4 flex-wrap">
+							<div className="relative flex-1 min-w-[200px]">
+								<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+								<input
+									type="text"
+									placeholder="Buscar por título ou autor..."
+									value={projectSearch}
+									onChange={(e) => {
+										setProjectSearch(e.target.value);
+										setProjectPage(1);
+									}}
+									className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50"
+								/>
+							</div>
+							<select
+								value={projectMaterialFilter}
+								onChange={(e) => {
+									setProjectMaterialFilter(e.target.value);
+									setProjectPage(1);
+								}}
+								className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50"
+							>
+								<option value="">Todos os materiais</option>
+								{uniqueMaterials.map((m) => (
+									<option key={m} value={m}>
+										{m}
+									</option>
+								))}
+							</select>
+							<select
+								value={projectTechniqueFilter}
+								onChange={(e) => {
+									setProjectTechniqueFilter(e.target.value);
+									setProjectPage(1);
+								}}
+								className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50"
+							>
+								<option value="">Todas as técnicas</option>
+								{uniqueTechniques.map((t) => (
+									<option key={t} value={t}>
+										{t}
+									</option>
+								))}
+							</select>
+							<div className="flex gap-2">
 								<button
-									key={`${item.title}-${item.author}`}
 									type="button"
-									onClick={() => handleViewDetails(item)}
-									className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden text-left hover:border-violet-500/40 transition-all group"
+									onClick={() => {
+										setProjectSort('recent');
+										setProjectPage(1);
+									}}
+									className={`px-4 py-2 rounded-xl text-sm font-medium ${
+										projectSort === 'recent'
+											? 'bg-violet-600 text-white'
+											: 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+									}`}
 								>
-									<div className="aspect-square overflow-hidden">
-										<img
-											src={
-												item.img ??
-												'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?q=80&w=2940&auto=format&fit=crop'
-											}
-											alt={item.title}
-											className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-										/>
-									</div>
-									<div className="p-5">
-										<h3 className="font-bold text-lg text-white mb-1">
-											{item.title}
-										</h3>
-										<p className="text-sm text-slate-400 mb-3">
-											por {item.author}
-										</p>
-										<div className="flex gap-2 mb-4 flex-wrap">
-											{item.material && (
-												<span className="px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 text-xs">
-													{item.material}
-												</span>
-											)}
-											{item.technique && (
-												<span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-xs">
-													{item.technique}
-												</span>
-											)}
-										</div>
-										<div className="flex items-center gap-4 text-sm text-slate-400">
-											<span className="flex items-center gap-1">
-												<Heart className="h-4 w-4 text-pink-400" />{' '}
-												{item.likes ?? 0}
-											</span>
-											<span className="flex items-center gap-1">
-												<MessageSquare className="h-4 w-4 text-blue-400" />{' '}
-												{item.comments ?? 0}
-											</span>
-										</div>
-										<div className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-violet-600 hover:bg-violet-500 text-white font-medium rounded-full">
-											<Eye className="h-4 w-4" /> Ver Detalhes
-										</div>
-									</div>
+									Mais recentes
 								</button>
-							))}
+								<button
+									type="button"
+									onClick={() => {
+										setProjectSort('likes');
+										setProjectPage(1);
+									}}
+									className={`px-4 py-2 rounded-xl text-sm font-medium ${
+										projectSort === 'likes'
+											? 'bg-violet-600 text-white'
+											: 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+									}`}
+								>
+									Mais curtidos
+								</button>
+							</div>
 						</div>
+
+						{/* Grid de projetos */}
+						{projectsLoading ? (
+							<div className="flex justify-center py-16">
+								<div className="w-10 h-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+							</div>
+						) : projects.length === 0 ? (
+							<div className="flex flex-col items-center justify-center py-16 text-center">
+								<Star className="h-16 w-16 text-slate-400 dark:text-slate-500 mb-4 opacity-50" />
+								<p className="text-lg font-medium text-slate-600 dark:text-slate-400">
+									Nenhum projeto ainda
+								</p>
+								<p className="text-sm text-slate-500 dark:text-slate-500 mt-1">
+									Seja o primeiro a compartilhar seu trabalho!
+								</p>
+								<button
+									type="button"
+									onClick={() => setShowSubmitProjectModal(true)}
+									className="mt-6 flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-medium rounded-full"
+								>
+									<UploadIcon className="h-4 w-4" /> Enviar Projeto
+								</button>
+							</div>
+						) : (
+							<>
+								<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+									{projects.map((item) => (
+										// biome-ignore lint/a11y/useSemanticElements: div necessário pois contém botão interno (like)
+										<div
+											key={item.id}
+											role="button"
+											tabIndex={0}
+											onClick={() => handleViewDetails(item)}
+											onKeyDown={(e) =>
+												e.key === 'Enter' && handleViewDetails(item)
+											}
+											className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden text-left hover:border-violet-500/40 transition-all group cursor-pointer"
+										>
+											<div className="aspect-square overflow-hidden">
+												<img
+													src={
+														item.img ??
+														'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?q=80&w=2940&auto=format&fit=crop'
+													}
+													alt={item.title}
+													className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+												/>
+											</div>
+											<div className="p-5">
+												<h3 className="font-bold text-lg text-slate-900 dark:text-white mb-1">
+													{item.title}
+												</h3>
+												<p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+													por {item.author}
+												</p>
+												<div className="flex gap-2 mb-4 flex-wrap">
+													{item.material && (
+														<span className="px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 text-xs">
+															{item.material}
+														</span>
+													)}
+													{item.technique && (
+														<span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-xs">
+															{item.technique}
+														</span>
+													)}
+												</div>
+												<div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
+													<button
+														type="button"
+														onClick={(e) => {
+															e.preventDefault();
+															e.stopPropagation();
+															handleLikeProject(item.id);
+														}}
+														className="flex items-center gap-1 hover:text-pink-500"
+													>
+														<Heart
+															className={`h-4 w-4 ${
+																likedProjectIds.has(item.id)
+																	? 'fill-pink-500 text-pink-500'
+																	: 'text-pink-400'
+															}`}
+														/>{' '}
+														{item.likes ?? 0}
+													</button>
+													<span className="flex items-center gap-1">
+														<MessageSquare className="h-4 w-4 text-blue-400" />{' '}
+														{item.comments ?? 0}
+													</span>
+												</div>
+												<div className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-violet-600 hover:bg-violet-500 text-white font-medium rounded-full">
+													<Eye className="h-4 w-4" /> Ver Detalhes
+												</div>
+											</div>
+										</div>
+									))}
+								</div>
+								{hasMoreProjects && (
+									<div className="flex justify-center pt-4">
+										<button
+											type="button"
+											onClick={() => setProjectPage((p) => p + 1)}
+											className="px-6 py-2 rounded-full border border-violet-500/50 text-violet-500 hover:bg-violet-500/10 font-medium"
+										>
+											Carregar mais
+										</button>
+									</div>
+								)}
+							</>
+						)}
 					</div>
 				);
 
 			case 'channel':
 				return (
 					<div className="flex flex-col h-full">
-						<div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#0d0b1e]/80 backdrop-blur-lg sticky top-0 z-10">
-							<div className="flex items-center gap-4">
-								<div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600">
-									<Hash className="h-5 w-5 text-white" />
-								</div>
-								<div>
-									<h2 className="font-bold text-lg text-white">
-										{activeChannelLabel}
-									</h2>
-									<p className="text-xs text-slate-500">
-										Canal de discussão - Profissão Laser
-									</p>
-								</div>
-							</div>
-							<div className="flex -space-x-3">
-								{[1, 2, 3].map((i) => (
-									<div
-										key={i}
-										className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 border-2 border-[#0d0b1e] flex items-center justify-center text-xs font-bold text-white"
-									>
-										U{i}
+						<div className="px-6 py-4 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0d0b1e]/80 backdrop-blur-lg sticky top-0 z-10">
+							<div className="flex items-center justify-between gap-4">
+								<div className="flex items-center gap-4 min-w-0">
+									<div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shrink-0">
+										<Hash className="h-5 w-5 text-white" />
 									</div>
-								))}
-								<div className="w-9 h-9 rounded-full bg-cyan-500/50 border-2 border-[#0d0b1e] flex items-center justify-center text-[10px] font-bold text-white">
-									+15
+									<div className="min-w-0">
+										<h2 className="font-bold text-lg text-slate-900 dark:text-white truncate">
+											{activeChannelLabel}
+										</h2>
+										<p className="text-xs text-slate-600 dark:text-slate-500">
+											Canal de discussão - Profissão Laser
+										</p>
+									</div>
+								</div>
+								<div className="flex items-center gap-2 shrink-0">
+									{!isSearchOpen ? (
+										<button
+											type="button"
+											onClick={() => {
+												setIsSearchOpen(true);
+												setTimeout(
+													() =>
+														document
+															.getElementById('customer-chat-search-input')
+															?.focus(),
+													50,
+												);
+											}}
+											className="p-2 rounded-lg text-slate-500 hover:text-cyan-500 hover:bg-white/5 transition-colors"
+											title="Pesquisar no chat"
+										>
+											<Search className="h-4 w-4" />
+										</button>
+									) : (
+										<div className="flex items-center gap-2">
+											<div className="relative w-40 sm:w-48">
+												<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 shrink-0" />
+												<input
+													id="customer-chat-search-input"
+													type="text"
+													placeholder="Pesquisar..."
+													value={chatSearchQuery}
+													onChange={(e) => setChatSearchQuery(e.target.value)}
+													className="w-full pl-8 pr-8 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30"
+												/>
+												{chatSearchQuery && (
+													<button
+														type="button"
+														onClick={() => setChatSearchQuery('')}
+														className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-slate-500 hover:text-slate-700 dark:hover:text-gray-300"
+														title="Limpar pesquisa"
+													>
+														<X className="h-3.5 w-3.5" />
+													</button>
+												)}
+											</div>
+											{chatSearchQuery.trim() &&
+												filteredChannelMessages.length > 1 && (
+													<div className="flex items-center gap-0.5 shrink-0">
+														<button
+															type="button"
+															onClick={goToPrevMatch}
+															className="p-1.5 rounded-lg text-slate-500 hover:text-cyan-500 hover:bg-white/5 transition-colors"
+															title="Resultado anterior"
+														>
+															<ChevronUp className="h-4 w-4" />
+														</button>
+														<span className="text-xs text-slate-500 dark:text-gray-400 min-w-[3ch] text-center">
+															{currentMatchIndex + 1}/
+															{filteredChannelMessages.length}
+														</span>
+														<button
+															type="button"
+															onClick={goToNextMatch}
+															className="p-1.5 rounded-lg text-slate-500 hover:text-cyan-500 hover:bg-white/5 transition-colors"
+															title="Próximo resultado"
+														>
+															<ChevronDown className="h-4 w-4" />
+														</button>
+													</div>
+												)}
+											<button
+												type="button"
+												onClick={() => {
+													setIsSearchOpen(false);
+													setChatSearchQuery('');
+												}}
+												className="p-2 rounded-lg text-slate-500 hover:text-slate-700 dark:hover:text-gray-300 shrink-0"
+												title="Fechar pesquisa"
+											>
+												<X className="h-4 w-4" />
+											</button>
+										</div>
+									)}
+									<div className="flex -space-x-3">
+										{[1, 2, 3].map((i) => (
+											<div
+												key={i}
+												className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 border-2 border-white dark:border-[#0d0b1e] flex items-center justify-center text-xs font-bold text-white"
+											>
+												U{i}
+											</div>
+										))}
+										<div className="w-9 h-9 rounded-full bg-cyan-500/50 border-2 border-white dark:border-[#0d0b1e] flex items-center justify-center text-[10px] font-bold text-white">
+											+15
+										</div>
+									</div>
 								</div>
 							</div>
 						</div>
 
-						<div className="flex-1 overflow-y-auto p-6 space-y-6">
+						<div
+							ref={channelMessagesScrollRef}
+							className="flex-1 overflow-y-auto p-6 space-y-6"
+						>
 							{activeChannel && channelMessages.length > 0 ? (
-								channelMessages.map((msg) => (
-									<div
-										key={msg.id}
-										className={`flex gap-4 ${msg.isMe ? 'flex-row-reverse' : ''}`}
-									>
-										<div className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold shrink-0">
-											{msg.avatar ?? msg.user.substring(0, 2).toUpperCase()}
-										</div>
+								filteredChannelMessages.length === 0 ? (
+									<div className="flex flex-col items-center justify-center h-64 text-center">
+										<Search className="h-12 w-12 text-cyan-400 mb-4 opacity-50" />
+										<p className="text-slate-600 dark:text-slate-400">
+											Nenhuma mensagem encontrada para &quot;{chatSearchQuery}
+											&quot;
+										</p>
+									</div>
+								) : (
+									filteredChannelMessages.map((msg, idx) => (
 										<div
-											className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'} max-w-[75%]`}
+											key={msg.id}
+											ref={(el) => {
+												matchRefsMap.current.set(idx, el);
+											}}
+											data-message-id={msg.id}
+											className={`flex gap-4 ${msg.isMe ? 'flex-row-reverse' : ''}`}
 										>
-											<div className="flex items-baseline gap-2 mb-1">
-												<span className="text-sm font-bold text-white">
-													{msg.user}
-												</span>
-												<span className="text-[10px] text-slate-500">
-													{formatMessageTime(msg.time)}
-												</span>
+											<div className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold shrink-0">
+												{msg.avatar ??
+													getMessageDisplayName(msg, userMap)
+														.substring(0, 2)
+														.toUpperCase()}
 											</div>
 											<div
-												className={`p-4 rounded-2xl text-sm ${
-													msg.isMe
-														? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-tr-sm'
-														: 'bg-white/5 border border-white/10 text-slate-200 rounded-tl-sm'
-												}`}
+												className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'} max-w-[75%]`}
 											>
-												{msg.content}
+												<div className="flex items-baseline gap-2 mb-1">
+													<span className="text-sm font-bold text-slate-900 dark:text-white">
+														{getMessageDisplayName(msg, userMap)}
+													</span>
+													<span className="text-[10px] text-slate-600 dark:text-slate-500">
+														{formatMessageTime(msg.time)}
+													</span>
+												</div>
+												<div
+													className={`p-4 rounded-2xl text-sm space-y-2 ${
+														msg.isMe
+															? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-tr-sm'
+															: 'bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-200 rounded-tl-sm'
+													}`}
+												>
+													{msg.content && (
+														<p className="whitespace-pre-wrap break-words">
+															{highlightSearchText(
+																msg.content,
+																chatSearchQuery.trim(),
+															)}
+														</p>
+													)}
+													{msg.fileUrl && (
+														<a
+															href={msg.fileUrl}
+															target="_blank"
+															rel="noopener noreferrer"
+															className="block mt-2"
+														>
+															{/\.(jpg|jpeg|png|gif|webp)$/i.test(
+																msg.fileUrl,
+															) ? (
+																<img
+																	src={msg.fileUrl}
+																	alt="Anexo"
+																	className="max-w-full max-h-64 rounded-lg object-cover"
+																/>
+															) : (
+																<span className="underline flex items-center gap-1">
+																	<ImageIcon className="h-4 w-4" />
+																	Ver ficheiro
+																</span>
+															)}
+														</a>
+													)}
+												</div>
 											</div>
 										</div>
-									</div>
-								))
+									))
+								)
 							) : (
 								<div className="flex flex-col items-center justify-center h-64 text-center">
 									<div className="p-6 rounded-full bg-cyan-500/20 mb-4">
 										<MessageSquare className="h-12 w-12 text-cyan-400" />
 									</div>
-									<p className="text-slate-400">
+									<p className="text-slate-600 dark:text-slate-400">
 										Seja o primeiro a enviar uma mensagem!
 									</p>
 								</div>
 							)}
-							<div ref={messagesEndRef} />
 						</div>
 
-						<div className="p-4 border-t border-white/10 bg-[#0d0b1e]/80 backdrop-blur-lg">
-							<div className="flex gap-3">
-								<button
-									type="button"
-									className="p-3 text-cyan-400 hover:bg-white/5 rounded-full"
-								>
-									<Plus className="h-5 w-5" />
-								</button>
-								<input
-									type="text"
-									placeholder={`Enviar mensagem em #${activeChannelLabel}...`}
-									value={messageInput}
-									onChange={(e) => setMessageInput(e.target.value)}
-									onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-									className="flex-1 h-12 px-6 rounded-full bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/50"
-								/>
-								<button
-									type="button"
-									onClick={handleSendMessage}
-									disabled={!messageInput.trim()}
-									className="h-12 w-12 flex items-center justify-center bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 text-white rounded-full"
-								>
-									<Send className="h-5 w-5" />
-								</button>
-							</div>
+						<div className="p-4 border-t border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0d0b1e]/80 backdrop-blur-lg">
+							{!isAdmin && activeChannelData?.adminOnly === true ? (
+								<div className="flex items-center justify-center gap-2 py-4 px-4 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 dark:text-gray-400 text-sm">
+									<Lock className="h-4 w-4 shrink-0" />
+									Apenas administradores podem enviar mensagens neste canal
+								</div>
+							) : (
+								<div className="flex gap-3 items-center">
+									<input
+										type="file"
+										ref={channelFileInputRef}
+										onChange={(e) =>
+											setMessageFile(e.target.files?.[0] ?? null)
+										}
+										accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+										className="hidden"
+									/>
+									<button
+										type="button"
+										onClick={() => channelFileInputRef.current?.click()}
+										className="p-3 text-cyan-400 hover:bg-white/5 rounded-full"
+										title="Anexar ficheiro"
+									>
+										<Paperclip className="h-5 w-5" />
+									</button>
+									{messageFile && (
+										<span className="flex items-center gap-1 text-xs text-slate-400 max-w-[140px]">
+											<span className="truncate">{messageFile.name}</span>
+											<button
+												type="button"
+												onClick={() => {
+													setMessageFile(null);
+													if (channelFileInputRef.current) {
+														channelFileInputRef.current.value = '';
+													}
+												}}
+												className="p-0.5 hover:bg-white/10 rounded"
+											>
+												<X className="h-3 w-3" />
+											</button>
+										</span>
+									)}
+									<textarea
+										ref={channelMessageTextareaRef}
+										placeholder={`Enviar mensagem em #${activeChannelLabel}... (Enter = enviar, Shift+Enter = nova linha)`}
+										value={messageInput}
+										onChange={(e) => {
+											setMessageInput(e.target.value);
+											resizeMessageTextarea(e.target);
+										}}
+										onKeyDown={(e) => {
+											if (e.key === 'Enter' && !e.shiftKey) {
+												e.preventDefault();
+												handleSendMessage();
+											}
+										}}
+										rows={1}
+										className="flex-1 min-h-[44px] max-h-32 py-3 px-6 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/50 resize-none overflow-y-auto"
+									/>
+									<button
+										type="button"
+										onClick={handleSendMessage}
+										disabled={
+											(!messageInput.trim() && !messageFile) ||
+											sendMessageMutation.isPending
+										}
+										className="h-12 w-12 flex items-center justify-center bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 text-white rounded-full"
+									>
+										<Send className="h-5 w-5" />
+									</button>
+								</div>
+							)}
 						</div>
 					</div>
 				);
@@ -980,30 +1505,42 @@ export function CommunityView({
 					<div className="p-6">
 						<div className="h-32 -m-6 mb-0 rounded-t-2xl bg-gradient-to-br from-violet-600 to-purple-600" />
 						<div className="flex flex-col items-center -mt-16">
-							<div className="w-28 h-28 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-3xl font-bold text-white border-4 border-[#12103a]">
+							<div className="w-28 h-28 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-3xl font-bold text-white border-4 border-white dark:border-[#12103a]">
 								{selectedProfile.avatar}
 							</div>
-							<h3 className="text-2xl font-bold text-white mt-4">
+							<h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-4">
 								{selectedProfile.name}
 							</h3>
 							<p className="text-violet-400 font-medium">
 								{selectedProfile.specialty}
 							</p>
 						</div>
-						<div className="flex justify-center gap-6 py-6 border-y border-white/10">
+						<div className="flex justify-center gap-6 py-6 border-y border-slate-200 dark:border-white/10">
 							<div className="text-center">
-								<p className="text-2xl font-bold text-white">127</p>
-								<p className="text-xs text-slate-500">Projetos</p>
+								<p className="text-2xl font-bold text-slate-900 dark:text-white">
+									127
+								</p>
+								<p className="text-xs text-slate-600 dark:text-slate-500">
+									Projetos
+								</p>
 							</div>
-							<div className="w-px h-12 bg-white/10" />
+							<div className="w-px h-12 bg-slate-200 dark:bg-white/10" />
 							<div className="text-center">
-								<p className="text-2xl font-bold text-white">2.4k</p>
-								<p className="text-xs text-slate-500">Seguidores</p>
+								<p className="text-2xl font-bold text-slate-900 dark:text-white">
+									2.4k
+								</p>
+								<p className="text-xs text-slate-600 dark:text-slate-500">
+									Seguidores
+								</p>
 							</div>
-							<div className="w-px h-12 bg-white/10" />
+							<div className="w-px h-12 bg-slate-200 dark:bg-white/10" />
 							<div className="text-center">
-								<p className="text-2xl font-bold text-white">89</p>
-								<p className="text-xs text-slate-500">Seguindo</p>
+								<p className="text-2xl font-bold text-slate-900 dark:text-white">
+									89
+								</p>
+								<p className="text-xs text-slate-600 dark:text-slate-500">
+									Seguindo
+								</p>
 							</div>
 						</div>
 						<div className="flex gap-2 justify-center flex-wrap py-4">
@@ -1021,7 +1558,7 @@ export function CommunityView({
 							<button
 								type="button"
 								onClick={() => setShowProfileModal(false)}
-								className="flex-1 flex items-center justify-center gap-2 py-3 border border-white/10 rounded-full text-slate-300 hover:bg-white/5"
+								className="flex-1 flex items-center justify-center gap-2 py-3 border border-slate-200 dark:border-white/10 rounded-full text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5"
 							>
 								<MessageSquare className="h-4 w-4" /> Mensagem
 							</button>
@@ -1036,64 +1573,154 @@ export function CommunityView({
 				</ModalOverlay>
 			)}
 
-			{showDetailsModal && selectedProject && (
-				<ModalOverlay onClose={() => setShowDetailsModal(false)}>
-					<div className="p-6">
-						<h3 className="text-2xl font-bold text-white">
-							{selectedProject.title}
-						</h3>
-						<p className="text-violet-400">por {selectedProject.author}</p>
-						{selectedProject.img && (
-							<div className="rounded-xl overflow-hidden mt-4">
-								<img
-									src={selectedProject.img}
-									alt={selectedProject.title}
-									className="w-full h-64 object-cover"
-								/>
-							</div>
-						)}
-						<p className="text-slate-400 mt-4 leading-relaxed">
-							{selectedProject.description}
-						</p>
-						<div className="grid grid-cols-3 gap-4 p-4 bg-violet-500/10 rounded-xl mt-4">
-							<div className="text-center">
-								<p className="text-xs text-slate-500">Material</p>
-								<p className="font-medium text-white text-sm">
-									{selectedProject.material ?? '-'}
+			{showDetailsModal &&
+				selectedProject &&
+				(() => {
+					const currentProject =
+						projects.find((p) => p.id === selectedProject.id) ??
+						selectedProject;
+					const comments = projectComments;
+					return (
+						<ModalOverlay
+							onClose={() => {
+								setShowDetailsModal(false);
+								setProjectCommentInput('');
+							}}
+						>
+							<div className="p-6 max-h-[90vh] overflow-y-auto">
+								<h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+									{currentProject.title}
+								</h3>
+								<p className="text-violet-400">por {currentProject.author}</p>
+								{currentProject.img && (
+									<div className="rounded-xl overflow-hidden mt-4">
+										<img
+											src={currentProject.img}
+											alt={currentProject.title}
+											className="w-full h-64 object-cover"
+										/>
+									</div>
+								)}
+								<p className="text-slate-600 dark:text-slate-400 mt-4 leading-relaxed">
+									{currentProject.description}
 								</p>
+								<div className="grid grid-cols-3 gap-4 p-4 bg-violet-500/10 rounded-xl mt-4">
+									<div className="text-center">
+										<p className="text-xs text-slate-600 dark:text-slate-500">
+											Material
+										</p>
+										<p className="font-medium text-slate-900 dark:text-white text-sm">
+											{currentProject.material ?? '-'}
+										</p>
+									</div>
+									<div className="text-center">
+										<p className="text-xs text-slate-600 dark:text-slate-500">
+											Técnica
+										</p>
+										<p className="font-medium text-slate-900 dark:text-white text-sm">
+											{currentProject.technique ?? '-'}
+										</p>
+									</div>
+									<div className="text-center">
+										<p className="text-xs text-slate-600 dark:text-slate-500">
+											Tempo
+										</p>
+										<p className="font-medium text-slate-900 dark:text-white text-sm">
+											{currentProject.time
+												? /^\d{4}-\d{2}-\d{2}T/.test(currentProject.time)
+													? formatDate(currentProject.time)
+													: currentProject.time
+												: '-'}
+										</p>
+									</div>
+								</div>
+								<div className="flex gap-4 pt-4 border-t border-slate-200 dark:border-white/10 mt-4">
+									<button
+										type="button"
+										onClick={() => handleLikeProject(selectedProject.id)}
+										className={`flex items-center gap-2 ${
+											likedProjectIds.has(selectedProject.id)
+												? 'text-pink-500'
+												: 'text-slate-600 dark:text-slate-400 hover:text-pink-500'
+										}`}
+									>
+										<Heart
+											className={`h-5 w-5 ${
+												likedProjectIds.has(selectedProject.id)
+													? 'fill-pink-500'
+													: ''
+											}`}
+										/>{' '}
+										{currentProject.likes ?? 0} curtidas
+									</button>
+									<span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+										<MessageSquare className="h-5 w-5" />{' '}
+										{currentProject.comments ?? 0} comentários
+									</span>
+								</div>
+
+								{/* Secção de comentários */}
+								<div className="mt-6 pt-6 border-t border-slate-200 dark:border-white/10">
+									<h4 className="font-semibold text-slate-900 dark:text-white mb-4">
+										Comentários
+									</h4>
+									<div className="space-y-4 max-h-48 overflow-y-auto">
+										{comments.length === 0 ? (
+											<p className="text-sm text-slate-500 dark:text-slate-400">
+												Nenhum comentário ainda. Seja o primeiro!
+											</p>
+										) : (
+											comments.map((c) => (
+												<div
+													key={c.id}
+													className="p-3 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10"
+												>
+													<div className="flex items-center justify-between mb-1">
+														<span className="font-medium text-slate-900 dark:text-white text-sm">
+															{c.author}
+															{c.isAdmin && (
+																<span className="ml-2 text-xs text-violet-400">
+																	(Admin)
+																</span>
+															)}
+														</span>
+														<span className="text-xs text-slate-500">
+															{formatMessageTime(c.time)}
+														</span>
+													</div>
+													<p className="text-sm text-slate-600 dark:text-slate-300">
+														{c.content}
+													</p>
+												</div>
+											))
+										)}
+									</div>
+									<div className="flex gap-2 mt-4">
+										<input
+											type="text"
+											placeholder="Escreva um comentário..."
+											value={projectCommentInput}
+											onChange={(e) => setProjectCommentInput(e.target.value)}
+											onKeyDown={(e) =>
+												e.key === 'Enter' && handleAddProjectComment()
+											}
+											className="flex-1 px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50"
+										/>
+										<button
+											type="button"
+											onClick={handleAddProjectComment}
+											disabled={!projectCommentInput.trim()}
+											className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-medium flex items-center gap-2"
+										>
+											<Send className="h-4 w-4" />
+											Comentar
+										</button>
+									</div>
+								</div>
 							</div>
-							<div className="text-center">
-								<p className="text-xs text-slate-500">Técnica</p>
-								<p className="font-medium text-white text-sm">
-									{selectedProject.technique ?? '-'}
-								</p>
-							</div>
-							<div className="text-center">
-								<p className="text-xs text-slate-500">Tempo</p>
-								<p className="font-medium text-white text-sm">
-									{selectedProject.time ?? '-'}
-								</p>
-							</div>
-						</div>
-						<div className="flex gap-4 pt-4 border-t border-white/10 mt-4">
-							<button
-								type="button"
-								className="flex items-center gap-2 text-slate-400 hover:text-pink-500"
-							>
-								<Heart className="h-5 w-5" /> {selectedProject.likes ?? 234}{' '}
-								curtidas
-							</button>
-							<button
-								type="button"
-								className="flex items-center gap-2 text-slate-400 hover:text-blue-500"
-							>
-								<MessageSquare className="h-5 w-5" />{' '}
-								{selectedProject.comments ?? 45} comentários
-							</button>
-						</div>
-					</div>
-				</ModalOverlay>
-			)}
+						</ModalOverlay>
+					);
+				})()}
 
 			{showCreateChannelModal && (
 				<ModalOverlay onClose={() => setShowCreateChannelModal(false)}>
@@ -1101,16 +1728,16 @@ export function CommunityView({
 						<div className="mx-auto w-16 h-16 rounded-full bg-violet-500/20 flex items-center justify-center mb-4">
 							<Hash className="h-8 w-8 text-violet-400" />
 						</div>
-						<h3 className="text-2xl font-bold text-white text-center">
+						<h3 className="text-2xl font-bold text-slate-900 dark:text-white text-center">
 							Criar Novo Canal
 						</h3>
-						<p className="text-slate-400 text-center mt-1">
+						<p className="text-slate-600 dark:text-slate-400 text-center mt-1">
 							Crie um espaço para discussões sobre personalização laser
 						</p>
 						<div className="mt-6 space-y-2">
 							<label
 								htmlFor="channel-name"
-								className="text-sm font-medium text-white"
+								className="text-sm font-medium text-slate-900 dark:text-white"
 							>
 								Nome do Canal
 							</label>
@@ -1124,7 +1751,7 @@ export function CommunityView({
 									placeholder="nome-do-canal"
 									value={newChannelName}
 									onChange={(e) => setNewChannelName(e.target.value)}
-									className="w-full pl-8 h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50"
+									className="w-full pl-8 h-12 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50"
 								/>
 							</div>
 						</div>
@@ -1146,10 +1773,10 @@ export function CommunityView({
 						<div className="mx-auto w-16 h-16 rounded-full bg-pink-500/20 flex items-center justify-center mb-4">
 							<Star className="h-8 w-8 text-pink-400" />
 						</div>
-						<h3 className="text-2xl font-bold text-white text-center">
+						<h3 className="text-2xl font-bold text-slate-900 dark:text-white text-center">
 							Enviar Projeto
 						</h3>
-						<p className="text-slate-400 text-center mt-1">
+						<p className="text-slate-600 dark:text-slate-400 text-center mt-1">
 							Compartilhe seu trabalho de personalização a laser
 						</p>
 						<div className="mt-6 space-y-4">
@@ -1192,7 +1819,7 @@ export function CommunityView({
 										className="w-full border-2 border-dashed border-white/20 rounded-xl p-8 text-center hover:border-violet-500/50 hover:bg-violet-500/10 transition-colors"
 									>
 										<ImageIcon className="h-10 w-10 text-violet-400 mx-auto mb-2" />
-										<p className="text-sm text-slate-400">
+										<p className="text-sm text-slate-600 dark:text-slate-400">
 											Clique para adicionar uma imagem
 										</p>
 									</button>
@@ -1213,7 +1840,7 @@ export function CommunityView({
 									onChange={(e) =>
 										setNewProject((p) => ({ ...p, title: e.target.value }))
 									}
-									className="w-full h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 px-4"
+									className="w-full h-12 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 px-4"
 								/>
 							</div>
 							<div>
@@ -1233,7 +1860,7 @@ export function CommunityView({
 											description: e.target.value,
 										}))
 									}
-									className="w-full min-h-[80px] rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 p-4 resize-none"
+									className="w-full min-h-[80px] rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 p-4 resize-none"
 								/>
 							</div>
 							<div className="grid grid-cols-2 gap-4">
@@ -1252,7 +1879,7 @@ export function CommunityView({
 										onChange={(e) =>
 											setNewProject((p) => ({ ...p, material: e.target.value }))
 										}
-										className="w-full h-10 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 px-4"
+										className="w-full h-10 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 px-4"
 									/>
 								</div>
 								<div>
@@ -1273,7 +1900,7 @@ export function CommunityView({
 												technique: e.target.value,
 											}))
 										}
-										className="w-full h-10 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 px-4"
+										className="w-full h-10 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 px-4"
 									/>
 								</div>
 							</div>
@@ -1282,7 +1909,9 @@ export function CommunityView({
 							type="button"
 							onClick={handleSubmitProject}
 							disabled={
-								!newProject.title.trim() || !newProject.description.trim()
+								!newProject.title.trim() ||
+								!newProject.description.trim() ||
+								createProjectMutation.isPending
 							}
 							className="w-full mt-6 flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 disabled:opacity-50 text-white font-medium rounded-full"
 						>
@@ -1295,26 +1924,46 @@ export function CommunityView({
 			{showCalendarModal && (
 				<ModalOverlay onClose={() => setShowCalendarModal(false)}>
 					<div className="p-6">
-						<h3 className="text-2xl font-bold text-white flex items-center gap-2 mb-4">
+						<h3 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-4">
 							<Calendar className="h-6 w-6 text-violet-500" />
 							Calendário de Eventos
 						</h3>
 						<p className="text-violet-400 mb-6">
 							Workshops, lives e eventos sobre personalização a laser
 						</p>
-						<div className="p-6 bg-violet-500/10 rounded-2xl border border-white/10 mb-6">
+						<div className="p-6 bg-violet-500/10 rounded-2xl border border-slate-200 dark:border-white/10 mb-6">
 							<div className="flex items-center justify-between mb-4">
-								<h4 className="font-bold text-lg text-white">Janeiro 2025</h4>
+								<h4 className="font-bold text-lg text-slate-900 dark:text-white">
+									{formatMonthYear(calendarView.month, calendarView.year)}
+								</h4>
 								<div className="flex gap-2">
 									<button
 										type="button"
-										className="p-2 text-violet-400 hover:bg-white/5 rounded-lg"
+										onClick={() =>
+											setCalendarView((prev) => {
+												const d = new Date(prev.year, prev.month - 1, 1);
+												return {
+													month: d.getMonth(),
+													year: d.getFullYear(),
+												};
+											})
+										}
+										className="p-2 text-violet-400 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg"
 									>
 										<ArrowLeft className="h-4 w-4" />
 									</button>
 									<button
 										type="button"
-										className="p-2 text-violet-400 hover:bg-white/5 rounded-lg"
+										onClick={() =>
+											setCalendarView((prev) => {
+												const d = new Date(prev.year, prev.month + 1, 1);
+												return {
+													month: d.getMonth(),
+													year: d.getFullYear(),
+												};
+											})
+										}
+										className="p-2 text-violet-400 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg"
 									>
 										<ArrowLeft className="h-4 w-4 rotate-180" />
 									</button>
@@ -1331,56 +1980,120 @@ export function CommunityView({
 								))}
 							</div>
 							<div className="grid grid-cols-7 gap-2">
-								{Array.from({ length: 35 }, (_, i) => {
-									const day = i - 2;
-									const isCurrentMonth = day > 0 && day <= 31;
-									const hasEvent = [15, 18, 22].includes(day);
-									return (
-										<button
-											// biome-ignore lint/suspicious/noArrayIndexKey: calendário estático, ordem fixa
-											key={i}
-											type="button"
-											className={`aspect-square p-2 rounded-lg text-sm font-medium ${
-												!isCurrentMonth ? 'text-slate-600' : 'text-white'
-											} ${hasEvent ? 'bg-violet-600 text-white' : 'hover:bg-white/10'}`}
-										>
-											{isCurrentMonth ? day : ''}
-										</button>
+								{(() => {
+									const firstDay = new Date(
+										calendarView.year,
+										calendarView.month,
+										1,
 									);
-								})}
+									const lastDay = new Date(
+										calendarView.year,
+										calendarView.month + 1,
+										0,
+									);
+									const startOffset = firstDay.getDay();
+									const daysInMonth = lastDay.getDate();
+									const daysWithEvents = new Set(
+										events
+											.filter((e) => {
+												const my = getEventMonthYear(e.date);
+												return (
+													my &&
+													my.month === calendarView.month &&
+													my.year === calendarView.year
+												);
+											})
+											.map((e) => getEventDay(e.date))
+											.filter((d): d is number => d != null),
+									);
+									const totalCells =
+										Math.ceil((startOffset + daysInMonth) / 7) * 7;
+									return Array.from({ length: totalCells }, (_, i) => {
+										const dayNum = i - startOffset + 1;
+										const isCurrentMonth = dayNum > 0 && dayNum <= daysInMonth;
+										const displayDay = isCurrentMonth ? dayNum : '';
+										const hasEvent =
+											isCurrentMonth && daysWithEvents.has(dayNum);
+										return (
+											<button
+												key={`${calendarView.year}-${calendarView.month}-${i}`}
+												type="button"
+												className={`aspect-square p-2 rounded-lg text-sm font-medium ${
+													!isCurrentMonth
+														? 'text-slate-500 dark:text-slate-600'
+														: 'text-slate-900 dark:text-white'
+												} ${hasEvent ? 'bg-violet-600 text-white' : 'hover:bg-white/10'}`}
+											>
+												{displayDay}
+											</button>
+										);
+									});
+								})()}
 							</div>
 						</div>
 						<div className="space-y-3">
-							<h4 className="font-bold text-white">Próximos Eventos</h4>
-							{events.map((event) => (
-								<div
-									key={event.id}
-									className="p-4 bg-white/5 border border-white/10 rounded-xl hover:border-violet-500/40 transition-colors"
-								>
-									<div className="flex gap-3">
-										<div className="w-14 h-14 rounded-xl bg-violet-600 flex flex-col items-center justify-center text-white shrink-0">
-											<span className="text-xs">
-												{event.date.split(' ')[1]}
-											</span>
-											<span className="text-lg font-bold">
-												{event.date.split(' ')[0]}
-											</span>
-										</div>
-										<div className="flex-1 min-w-0">
-											<h5 className="font-semibold text-white text-sm">
-												{event.title}
-											</h5>
-											<p className="text-xs text-slate-400 mt-1">
-												{event.description}
-											</p>
-											<div className="flex items-center gap-2 text-xs text-violet-400 mt-2">
-												<Clock className="h-3 w-3" />
-												{event.time ?? event.date}
+							<h4 className="font-bold text-slate-900 dark:text-white">
+								Próximos Eventos
+							</h4>
+							{(() => {
+								const monthEvents = events
+									.filter((event) => {
+										const my = getEventMonthYear(event.date);
+										return (
+											my &&
+											my.month === calendarView.month &&
+											my.year === calendarView.year
+										);
+									})
+									.sort((a, b) => {
+										const da = parseEventDate(a.date)?.getTime() ?? 0;
+										const db = parseEventDate(b.date)?.getTime() ?? 0;
+										return da - db;
+									})
+									.slice(0, 10);
+								if (events.length === 0) {
+									return (
+										<p className="text-sm text-slate-500 dark:text-slate-400 py-4">
+											Nenhum evento agendado
+										</p>
+									);
+								}
+								if (monthEvents.length === 0) {
+									return (
+										<p className="text-sm text-slate-500 dark:text-slate-400 py-4">
+											Nenhum evento neste mês
+										</p>
+									);
+								}
+								return monthEvents.map((event) => {
+									const { day, month } = formatEventDateParts(event.date);
+									return (
+										<div
+											key={event.id}
+											className="p-4 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl hover:border-violet-500/40 transition-colors"
+										>
+											<div className="flex gap-3">
+												<div className="w-14 h-14 rounded-xl bg-violet-600 flex flex-col items-center justify-center text-white shrink-0">
+													<span className="text-xs">{month}</span>
+													<span className="text-lg font-bold">{day}</span>
+												</div>
+												<div className="flex-1 min-w-0">
+													<h5 className="font-semibold text-slate-900 dark:text-white text-sm">
+														{event.title}
+													</h5>
+													<p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+														{event.description ?? ''}
+													</p>
+													<div className="flex items-center gap-2 text-xs text-violet-400 mt-2">
+														<Clock className="h-3 w-3" />
+														{event.time ?? formatEventDateShort(event.date)}
+													</div>
+												</div>
 											</div>
 										</div>
-									</div>
-								</div>
-							))}
+									);
+								});
+							})()}
 						</div>
 					</div>
 				</ModalOverlay>
@@ -1479,40 +2192,39 @@ export function CommunityView({
 						<button
 							type="button"
 							onClick={() => setShowCalendarModal(true)}
-							className="w-full flex items-center gap-3 px-4 py-2 text-slate-400 hover:text-violet-400 hover:bg-white/5 rounded-xl"
+							className="w-full flex items-center gap-3 px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-violet-400 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl"
 						>
 							<Calendar className="h-4 w-4" />
 							Ver Calendário
 						</button>
 						<div className="space-y-2 mt-4">
-							{events.slice(0, 2).map((event) => (
-								<button
-									key={event.id}
-									type="button"
-									onClick={() => setShowCalendarModal(true)}
-									className="w-full p-3 bg-white/5 border border-white/10 rounded-xl hover:border-violet-500/40 text-left"
-								>
-									<div className="flex gap-2">
-										<div className="w-10 h-10 rounded-lg bg-violet-600 flex flex-col items-center justify-center text-white text-xs shrink-0">
-											<span className="text-[10px]">
-												{event.date.split(' ')[1]}
-											</span>
-											<span className="text-sm font-bold">
-												{event.date.split(' ')[0]}
-											</span>
-										</div>
-										<div className="flex-1 min-w-0">
-											<h5 className="font-semibold text-white text-xs truncate">
-												{event.title}
-											</h5>
-											<div className="flex items-center gap-1 text-[10px] text-violet-400 mt-1">
-												<Clock className="h-2.5 w-2.5" />
-												{event.time ?? event.date}
+							{events.slice(0, 5).map((event) => {
+								const { day, month } = formatEventDateParts(event.date);
+								return (
+									<button
+										key={event.id}
+										type="button"
+										onClick={() => setShowCalendarModal(true)}
+										className="w-full p-3 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl hover:border-violet-500/40 text-left"
+									>
+										<div className="flex gap-2">
+											<div className="w-10 h-10 rounded-lg bg-violet-600 flex flex-col items-center justify-center text-white text-xs shrink-0">
+												<span className="text-[10px]">{month}</span>
+												<span className="text-sm font-bold">{day}</span>
+											</div>
+											<div className="flex-1 min-w-0">
+												<h5 className="font-semibold text-slate-900 dark:text-white text-xs truncate">
+													{event.title}
+												</h5>
+												<div className="flex items-center gap-1 text-[10px] text-violet-400 mt-1">
+													<Clock className="h-2.5 w-2.5" />
+													{event.time ?? formatEventDateShort(event.date)}
+												</div>
 											</div>
 										</div>
-									</div>
-								</button>
-							))}
+									</button>
+								);
+							})}
 						</div>
 					</div>
 
@@ -1521,13 +2233,15 @@ export function CommunityView({
 							<h4 className="text-xs font-bold text-violet-400 uppercase tracking-wider">
 								Canais
 							</h4>
-							<button
-								type="button"
-								onClick={() => setShowCreateChannelModal(true)}
-								className="p-1.5 hover:bg-white/5 rounded-full text-violet-400"
-							>
-								<Plus className="h-4 w-4" />
-							</button>
+							{isAdmin && (
+								<button
+									type="button"
+									onClick={() => setShowCreateChannelModal(true)}
+									className="p-1.5 hover:bg-white/5 rounded-full text-violet-400"
+								>
+									<Plus className="h-4 w-4" />
+								</button>
+							)}
 						</div>
 						<div className="space-y-1">
 							{channelCategories.length > 0 ? (
@@ -1550,8 +2264,8 @@ export function CommunityView({
 													title={channel.description ?? undefined}
 													className={`w-full flex items-center gap-2 h-10 px-4 rounded-xl text-sm transition-all ${
 														isActive
-															? 'bg-violet-500/20 text-violet-300'
-															: 'text-slate-400 hover:text-white hover:bg-white/5'
+															? 'bg-violet-500/20 text-violet-700 dark:text-violet-300'
+															: 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
 													}`}
 												>
 													<IconComponent className="h-4 w-4 text-violet-400 shrink-0" />
@@ -1586,7 +2300,7 @@ export function CommunityView({
 				{/* Right sidebar - Feed only */}
 				{activeTab === 'feed' && (
 					<aside className="hidden xl:block w-80 border-l border-slate-200 dark:border-white/10 p-6 space-y-6 overflow-y-auto bg-white/50 dark:bg-[#0d0b1e]/60">
-						<div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+						<div className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden">
 							<div className="h-1 bg-gradient-to-r from-amber-500 to-orange-500" />
 							<div className="p-4">
 								<h4 className="font-bold text-amber-400 flex items-center gap-2 text-sm">
@@ -1620,10 +2334,10 @@ export function CommunityView({
 												U{i}
 											</div>
 											<div className="flex-1 min-w-0">
-												<p className="text-sm font-semibold text-white truncate">
+												<p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
 													Usuário Exemplo
 												</p>
-												<p className="text-[10px] text-slate-500">
+												<p className="text-[10px] text-slate-600 dark:text-slate-500">
 													{1500 - i * 100} pts
 												</p>
 											</div>
@@ -1634,59 +2348,54 @@ export function CommunityView({
 						</div>
 
 						<div>
-							<h4 className="font-bold text-sm text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-4">
+							<h4 className="font-bold text-sm text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-4">
 								<Calendar className="h-4 w-4 text-violet-500" />
 								Próximos Eventos
 							</h4>
 							<div className="space-y-4">
-								{[
-									{
-										title: 'Live: Personalização UV',
-										date: 'Hoje, 19:00',
-										type: 'live',
-									},
-									{
-										title: 'Workshop Fiber Laser',
-										date: 'Amanhã, 20:00',
-										type: 'workshop',
-									},
-								].map((event) => (
-									<button
-										key={`${event.title}-${event.date}`}
-										type="button"
-										onClick={() => setShowCalendarModal(true)}
-										className="w-full p-4 bg-white/5 border border-white/10 rounded-xl hover:border-violet-500/40 text-left border-l-4 border-l-violet-500"
-									>
-										<div className="flex justify-between items-start mb-2">
-											<span
-												className={`text-[10px] px-2 py-0.5 rounded ${
-													event.type === 'live'
-														? 'bg-red-500/20 text-red-400'
-														: 'bg-blue-500/20 text-blue-400'
-												}`}
+								{events.length === 0 ? (
+									<p className="text-xs text-slate-500 dark:text-slate-400 py-2">
+										Nenhum evento agendado
+									</p>
+								) : (
+									events.slice(0, 5).map((event) => {
+										const badge = getEventTypeBadge(event);
+										return (
+											<button
+												key={event.id}
+												type="button"
+												onClick={() => setShowCalendarModal(true)}
+												className="w-full p-4 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl hover:border-violet-500/40 text-left border-l-4 border-l-violet-500"
 											>
-												{event.type === 'live' ? 'AO VIVO' : 'WORKSHOP'}
-											</span>
-											<Video className="h-4 w-4 text-slate-500" />
-										</div>
-										<h5 className="font-bold text-sm text-white">
-											{event.title}
-										</h5>
-										<p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
-											<Clock className="h-3 w-3" /> {event.date}
-										</p>
-									</button>
-								))}
+												<div className="flex justify-between items-start mb-2">
+													<span
+														className={`text-[10px] px-2 py-0.5 rounded ${badge.className}`}
+													>
+														{badge.label}
+													</span>
+													<Video className="h-4 w-4 text-slate-500" />
+												</div>
+												<h5 className="font-bold text-sm text-slate-900 dark:text-white">
+													{event.title}
+												</h5>
+												<p className="text-xs text-slate-600 dark:text-slate-500 flex items-center gap-1 mt-1">
+													<Clock className="h-3 w-3" />{' '}
+													{event.time ?? formatEventDateShort(event.date)}
+												</p>
+											</button>
+										);
+									})
+								)}
 							</div>
 						</div>
 
-						<div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+						<div className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden">
 							<div className="p-4 bg-gradient-to-br from-violet-600 to-purple-600 text-white">
 								<Sparkles className="h-8 w-8 mb-2" />
 								<h4 className="font-bold">Dica do Dia</h4>
 							</div>
 							<div className="p-4">
-								<p className="text-sm text-slate-400 leading-relaxed">
+								<p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
 									Sempre faça testes de potência antes de gravar em novos
 									materiais. Isso evita desperdício e garante qualidade
 									profissional!

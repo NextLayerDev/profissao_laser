@@ -1,10 +1,10 @@
 import {
 	Bookmark,
 	Compass,
+	FolderOpen,
 	type LucideIcon,
 	MessageSquare,
 	PenLine,
-	Play,
 } from 'lucide-react';
 import type { FeatureKey } from '@/types/classes';
 
@@ -18,22 +18,18 @@ export type QuickAccessItem = {
 
 export const quickAccessItems: QuickAccessItem[] = [
 	{
-		label: 'Sala de Aula',
-		Icon: Play,
-		gradient: 'from-violet-600 to-purple-700',
-		featureKey: 'aula',
-	},
-	{
 		label: 'Jornada',
 		Icon: Compass,
 		gradient: 'from-blue-500 to-cyan-600',
 		featureKey: 'aula',
+		href: '/jornada',
 	},
 	{
 		label: 'Dúvidas',
 		Icon: MessageSquare,
 		gradient: 'from-purple-500 to-indigo-600',
 		featureKey: 'chat',
+		href: '/duvidas',
 	},
 	{
 		label: 'Vetorização',
@@ -47,5 +43,12 @@ export const quickAccessItems: QuickAccessItem[] = [
 		Icon: Bookmark,
 		gradient: 'from-orange-500 to-amber-500',
 		featureKey: 'aula',
+	},
+	{
+		label: 'Biblioteca de Vetores',
+		Icon: FolderOpen,
+		gradient: 'from-emerald-500 to-teal-600',
+		featureKey: 'vetorizacao',
+		href: '/biblioteca-vetores',
 	},
 ];

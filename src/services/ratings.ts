@@ -8,11 +8,10 @@ export async function getLessonRating(lessonId: string): Promise<LessonRating> {
 
 export async function submitLessonRating(
 	lessonId: string,
-	payload: { stars: number },
+	stars: number,
 ): Promise<LessonRating> {
-	const { data } = await api.post<LessonRating>(
-		`/lesson/${lessonId}/rating`,
-		payload,
-	);
+	const { data } = await api.post<LessonRating>(`/lesson/${lessonId}/rating`, {
+		stars,
+	});
 	return data;
 }
