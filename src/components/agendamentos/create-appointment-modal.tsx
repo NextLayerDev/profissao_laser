@@ -4,6 +4,7 @@ import { Loader2, Plus, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
+	useAvailableSlots,
 	useAvailableSlotsForAnyTechnician,
 	useCreateAppointment,
 } from '@/hooks/use-appointments';
@@ -44,10 +45,20 @@ export function CreateAppointmentModal({
 	const [times, setTimes] = useState<string[]>([]);
 	const [notes, setNotes] = useState('');
 	const [machine, setMachine] = useState<string>(APPOINTMENT_MACHINES[0]);
+	const [selectedTechnicianId, setSelectedTechnicianId] = useState('');
 
 	const technicianIds = technicians.map((t) => t.id);
-	const { slots: availableSlots, slotToTechnicianIds } =
-		useAvailableSlotsForAnyTechnician(date, technicianIds);
+
+	const { slots: slotsForOne } = useAvailableSlots(
+		selectedTechnicianId ? date : null,
+		selectedTechnicianId || undefined,
+	);
+	const { slots: slotsForAll, slotToTechnicianIds } =
+		useAvailableSlotsForAnyTechnician(
+			selectedTechnicianId ? null : date,
+			selectedTechnicianId ? [] : technicianIds,
+		);
+	const availableSlots = selectedTechnicianId ? slotsForOne : slotsForAll;
 
 	useEffect(() => {
 		if (!isOpen) {
@@ -60,6 +71,7 @@ export function CreateAppointmentModal({
 			setTime('');
 			setTimes([]);
 			setNotes('');
+			setSelectedTechnicianId('');
 		}
 	}, [isOpen]);
 
@@ -92,7 +104,7 @@ export function CreateAppointmentModal({
 			};
 		if (notes.trim()) basePayload.notes = notes.trim();
 
-		if (technicianIds.length > 0) {
+		if (!selectedTechnicianId && technicianIds.length > 0) {
 			const slotsWithoutTech = slotsToUse.filter(
 				(slotTime) => (slotToTechnicianIds.get(slotTime) ?? []).length === 0,
 			);
@@ -106,19 +118,27 @@ export function CreateAppointmentModal({
 
 		try {
 			for (const slotTime of slotsToUse) {
-				const availableIds = slotToTechnicianIds.get(slotTime) ?? [];
-				const chosenTech =
-					availableIds.length > 0
-						? technicians.find(
-								(t) =>
-									t.id ===
-									availableIds[Math.floor(Math.random() * availableIds.length)],
-							)
-						: null;
+				let technicianId: string | undefined;
+				if (selectedTechnicianId) {
+					technicianId = selectedTechnicianId;
+				} else {
+					const availableIds = slotToTechnicianIds.get(slotTime) ?? [];
+					const chosenTech =
+						availableIds.length > 0
+							? technicians.find(
+									(t) =>
+										t.id ===
+										availableIds[
+											Math.floor(Math.random() * availableIds.length)
+										],
+								)
+							: null;
+					technicianId = chosenTech?.id;
+				}
 				await createMutation.mutateAsync({
 					...basePayload,
 					time: slotTime,
-					...(chosenTech && { technicianId: chosenTech.id }),
+					...(technicianId && { technicianId }),
 				});
 			}
 			toast.success(
@@ -263,6 +283,31 @@ export function CreateAppointmentModal({
 								{APPOINTMENT_MACHINES.map((m) => (
 									<option key={m} value={m}>
 										{m}
+									</option>
+								))}
+							</select>
+						</div>
+						<div className="sm:col-span-2">
+							<label
+								htmlFor="create-technician"
+								className="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1"
+							>
+								Colaborador
+							</label>
+							<select
+								id="create-technician"
+								value={selectedTechnicianId}
+								onChange={(e) => {
+									setSelectedTechnicianId(e.target.value);
+									setTimes([]);
+									setTime('');
+								}}
+								className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-3 py-2 text-sm text-slate-900 dark:text-white"
+							>
+								<option value="">Automático</option>
+								{technicians.map((t) => (
+									<option key={t.id} value={t.id}>
+										{t.name}
 									</option>
 								))}
 							</select>

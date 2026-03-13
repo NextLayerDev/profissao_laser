@@ -11,7 +11,7 @@ import {
 	UserCog,
 	X,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
 	useAppointments,
@@ -49,6 +49,8 @@ export function AppointmentsTable({
 	const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>('');
 	const [selectedDate, setSelectedDate] = useState<string | null>(null);
 	const [showCreateModal, setShowCreateModal] = useState(false);
+	const [assignDropdownId, setAssignDropdownId] = useState<string | null>(null);
+	const assignDropdownRef = useRef<HTMLDivElement>(null);
 	const [statusModal, setStatusModal] = useState<{
 		appointment: Appointment;
 		newStatus: string;
@@ -124,6 +126,32 @@ export function AppointmentsTable({
 			},
 		);
 	}
+
+	function handleAssignTo(apt: Appointment, technicianId: string) {
+		setAssignDropdownId(null);
+		updateTechnician.mutate(
+			{ id: apt.id, technicianId },
+			{
+				onSuccess: () => toast.success('Colaborador atribuído com sucesso.'),
+				onError: () => toast.error('Erro ao atribuir colaborador.'),
+			},
+		);
+	}
+
+	useEffect(() => {
+		function handleClickOutside(e: MouseEvent) {
+			if (
+				assignDropdownRef.current &&
+				!assignDropdownRef.current.contains(e.target as Node)
+			) {
+				setAssignDropdownId(null);
+			}
+		}
+		if (assignDropdownId) {
+			document.addEventListener('mousedown', handleClickOutside);
+		}
+		return () => document.removeEventListener('mousedown', handleClickOutside);
+	}, [assignDropdownId]);
 
 	if (isLoading) {
 		return (
@@ -243,15 +271,58 @@ export function AppointmentsTable({
 												{canAssignToSelf &&
 													apt.status !== 'cancelado' &&
 													apt.status !== 'concluido' && (
-														<button
-															type="button"
-															onClick={() => handleAssignToMe(apt)}
-															disabled={updateTechnician.isPending}
-															className="p-1.5 text-violet-500 hover:bg-violet-500/10 rounded-lg"
-															title="Pegar para mim"
+														<div
+															className="relative"
+															ref={
+																assignDropdownId === apt.id
+																	? assignDropdownRef
+																	: undefined
+															}
 														>
-															<UserCheck className="w-4 h-4" />
-														</button>
+															<button
+																type="button"
+																onClick={() =>
+																	setAssignDropdownId(
+																		assignDropdownId === apt.id ? null : apt.id,
+																	)
+																}
+																disabled={updateTechnician.isPending}
+																className="p-1.5 text-violet-500 hover:bg-violet-500/10 rounded-lg"
+																title="Atribuir colaborador"
+															>
+																<UserCheck className="w-4 h-4" />
+															</button>
+															{assignDropdownId === apt.id && (
+																<div className="absolute right-0 top-full mt-1 z-50 min-w-[160px] rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] shadow-lg py-1">
+																	{currentUser?.sub && (
+																		<button
+																			type="button"
+																			onClick={() => {
+																				handleAssignToMe(apt);
+																				setAssignDropdownId(null);
+																			}}
+																			className="w-full text-left px-3 py-2 text-sm text-violet-500 hover:bg-violet-500/10 font-medium"
+																		>
+																			Pegar para mim
+																		</button>
+																	)}
+																	{technicians.length > 0 &&
+																		currentUser?.sub && (
+																			<div className="border-t border-slate-100 dark:border-white/5 my-1" />
+																		)}
+																	{technicians.map((t) => (
+																		<button
+																			key={t.id}
+																			type="button"
+																			onClick={() => handleAssignTo(apt, t.id)}
+																			className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5"
+																		>
+																			{t.name}
+																		</button>
+																	))}
+																</div>
+															)}
+														</div>
 													)}
 												{apt.status === 'pendente' && (
 													<button
