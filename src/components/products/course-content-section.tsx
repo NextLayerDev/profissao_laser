@@ -317,9 +317,10 @@ function LessonModal({
 				toast.success('Aula criada!');
 			}
 			onClose();
-		} catch {
+		} catch (err) {
 			setUploading(false);
 			setUploadProgress(0);
+			console.error('[handleSave] Erro ao salvar aula:', err);
 			toast.error('Erro ao salvar aula');
 		}
 	};
