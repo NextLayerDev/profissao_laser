@@ -1,18 +1,25 @@
 'use client';
 
-import { ArrowLeft, HelpCircle, Loader2, MessageSquare } from 'lucide-react';
+import {
+	ArrowLeft,
+	BookOpen,
+	HelpCircle,
+	Loader2,
+	MessageSquare,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { CategoriesSection } from '@/components/duvidas-admin/categories-section';
 import { DefaultQuestionsSection } from '@/components/duvidas-admin/default-questions-section';
+import { FAQAdminSection } from '@/components/duvidas-admin/faq-admin-section';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { getToken } from '@/lib/auth';
 
 export default function DuvidasAdminPage() {
 	const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-	const [activeTab, setActiveTab] = useState<'categories' | 'questions'>(
-		'categories',
-	);
+	const [activeTab, setActiveTab] = useState<
+		'faq' | 'categories' | 'questions'
+	>('faq');
 
 	useEffect(() => {
 		setIsAdmin(!!getToken('user'));
@@ -38,7 +45,7 @@ export default function DuvidasAdminPage() {
 						Esta página é apenas para administradores.
 					</p>
 					<Link
-						href="/"
+						href="/dashboard"
 						className="inline-block px-5 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors"
 					>
 						Voltar ao painel
@@ -55,7 +62,7 @@ export default function DuvidasAdminPage() {
 				<div className="max-w-5xl mx-auto flex items-center justify-between">
 					<div className="flex items-center gap-3">
 						<Link
-							href="/"
+							href="/dashboard"
 							className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors text-sm"
 						>
 							<ArrowLeft className="w-4 h-4" />
@@ -75,6 +82,18 @@ export default function DuvidasAdminPage() {
 			<main className="max-w-5xl mx-auto px-6 py-8">
 				{/* Tabs */}
 				<div className="flex gap-1 border-b border-slate-200 dark:border-white/10 mb-6">
+					<button
+						type="button"
+						onClick={() => setActiveTab('faq')}
+						className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-semibold transition-all border-b-2 -mb-px ${
+							activeTab === 'faq'
+								? 'text-violet-600 dark:text-violet-400 border-violet-500 bg-transparent'
+								: 'text-slate-600 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+						}`}
+					>
+						<BookOpen className="w-4 h-4" />
+						Dúvidas Frequentes
+					</button>
 					<button
 						type="button"
 						onClick={() => setActiveTab('categories')}
@@ -101,6 +120,7 @@ export default function DuvidasAdminPage() {
 					</button>
 				</div>
 
+				{activeTab === 'faq' && <FAQAdminSection />}
 				{activeTab === 'categories' && <CategoriesSection />}
 				{activeTab === 'questions' && <DefaultQuestionsSection />}
 			</main>
