@@ -15,6 +15,8 @@ export interface CreateProductPayload {
 	country: string;
 	category: string;
 	refundDays: number;
+	machine?: string;
+	software?: string;
 }
 
 export async function getProducts(): Promise<Product[]> {
@@ -39,6 +41,8 @@ export interface UpdateProductPayload {
 	category?: string;
 	price?: number;
 	refundDays?: number;
+	machine?: string;
+	software?: string;
 }
 
 export async function updateProduct(

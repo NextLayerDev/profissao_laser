@@ -3,6 +3,7 @@
 import {
 	Calendar,
 	Check,
+	Cpu,
 	DollarSign,
 	Globe,
 	Image as ImageIcon,
@@ -10,6 +11,7 @@ import {
 	Info,
 	Layers,
 	Loader2,
+	Monitor,
 	Pencil,
 	Plus,
 	RotateCcw,
@@ -35,7 +37,14 @@ interface BasicInfoSectionProps {
 	product: Product;
 }
 
-type FieldKey = 'name' | 'description' | 'category' | 'price' | 'refundDays';
+type FieldKey =
+	| 'name'
+	| 'description'
+	| 'category'
+	| 'price'
+	| 'refundDays'
+	| 'machine'
+	| 'software';
 
 function EditableField({
 	label,
@@ -441,6 +450,36 @@ export function BasicInfoSection({ product }: BasicInfoSectionProps) {
 									<span className="inline-flex items-center gap-1 text-slate-600 dark:text-gray-400">
 										<Tag className="w-3.5 h-3.5 text-slate-500 dark:text-gray-500" />
 										{product.category}
+									</span>
+								) : undefined
+							}
+						/>
+						<EditableField
+							label="Máquina"
+							fieldKey="machine"
+							productId={product.id}
+							value={product.machine ?? ''}
+							placeholder="ex: CO2 60W"
+							display={
+								product.machine ? (
+									<span className="inline-flex items-center gap-1 text-slate-600 dark:text-gray-400">
+										<Monitor className="w-3.5 h-3.5 text-slate-500 dark:text-gray-500" />
+										{product.machine}
+									</span>
+								) : undefined
+							}
+						/>
+						<EditableField
+							label="Software"
+							fieldKey="software"
+							productId={product.id}
+							value={product.software ?? ''}
+							placeholder="ex: LightBurn"
+							display={
+								product.software ? (
+									<span className="inline-flex items-center gap-1 text-slate-600 dark:text-gray-400">
+										<Cpu className="w-3.5 h-3.5 text-slate-500 dark:text-gray-500" />
+										{product.software}
 									</span>
 								) : undefined
 							}
