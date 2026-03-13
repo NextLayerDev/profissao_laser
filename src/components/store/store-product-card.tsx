@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Loader2, ShoppingCart, Star } from 'lucide-react';
+import { Check, Cpu, Loader2, Monitor, ShoppingCart, Star } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { LoginRequiredModal } from '@/components/store/login-required-modal';
@@ -100,6 +100,23 @@ export function StoreProductCard({ variants }: StoreProductCardProps) {
 						<p className="text-sm text-slate-600 dark:text-gray-400 line-clamp-2 mb-3">
 							{product.description}
 						</p>
+					)}
+
+					{(product.machine || product.software) && (
+						<div className="flex flex-wrap gap-3 mb-3">
+							{product.machine && (
+								<span className="inline-flex items-center gap-1.5 text-xs text-slate-600 dark:text-gray-400 bg-slate-100 dark:bg-white/5 px-2.5 py-1 rounded-full">
+									<Monitor className="w-3.5 h-3.5 text-violet-500" />
+									{product.machine}
+								</span>
+							)}
+							{product.software && (
+								<span className="inline-flex items-center gap-1.5 text-xs text-slate-600 dark:text-gray-400 bg-slate-100 dark:bg-white/5 px-2.5 py-1 rounded-full">
+									<Cpu className="w-3.5 h-3.5 text-violet-500" />
+									{product.software}
+								</span>
+							)}
+						</div>
 					)}
 
 					{enabledFeatures.length > 0 && (

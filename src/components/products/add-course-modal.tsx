@@ -36,6 +36,8 @@ export function AddCourseModal({ isOpen, onClose }: AddCourseModalProps) {
 	const [description, setDescription] = useState('');
 	const [language, setLanguage] = useState('pt');
 	const [country, setCountry] = useState('BR');
+	const [machine, setMachine] = useState('');
+	const [software, setSoftware] = useState('');
 	const [coverPreview, setCoverPreview] = useState<string | null>(null);
 	const [coverFile, setCoverFile] = useState<File | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -74,6 +76,8 @@ export function AddCourseModal({ isOpen, onClose }: AddCourseModalProps) {
 		setDescription('');
 		setLanguage('pt');
 		setCountry('BR');
+		setMachine('');
+		setSoftware('');
 		setCoverPreview(null);
 		setCoverFile(null);
 		setPaymentType('subscription');
@@ -113,6 +117,8 @@ export function AddCourseModal({ isOpen, onClose }: AddCourseModalProps) {
 				country,
 				category,
 				refundDays: parseInt(refundDays, 10) || 7,
+				machine: machine || undefined,
+				software: software || undefined,
 			});
 
 			// Passo 2 — faz upload da imagem se foi selecionada
@@ -231,6 +237,42 @@ export function AddCourseModal({ isOpen, onClose }: AddCourseModalProps) {
 										</option>
 									))}
 								</select>
+							</div>
+						</div>
+
+						<div className="grid grid-cols-2 gap-4">
+							<div>
+								<label
+									htmlFor="course-machine"
+									className="block text-sm font-medium text-gray-300 mb-2"
+								>
+									Máquina
+								</label>
+								<input
+									id="course-machine"
+									type="text"
+									value={machine}
+									onChange={(e) => setMachine(e.target.value)}
+									placeholder="Ex: CO2 60W"
+									className="w-full bg-[#0d0d0f] border border-gray-700 rounded-xl px-4 py-3 text-sm placeholder-gray-500 focus:outline-none focus:border-violet-500/50 transition-colors"
+								/>
+							</div>
+
+							<div>
+								<label
+									htmlFor="course-software"
+									className="block text-sm font-medium text-gray-300 mb-2"
+								>
+									Software
+								</label>
+								<input
+									id="course-software"
+									type="text"
+									value={software}
+									onChange={(e) => setSoftware(e.target.value)}
+									placeholder="Ex: LightBurn"
+									className="w-full bg-[#0d0d0f] border border-gray-700 rounded-xl px-4 py-3 text-sm placeholder-gray-500 focus:outline-none focus:border-violet-500/50 transition-colors"
+								/>
 							</div>
 						</div>
 
