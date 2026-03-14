@@ -41,6 +41,12 @@ const nextConfig: NextConfig = {
 				protocol: 'https',
 				hostname: 'files.stripe.com',
 			},
+			{
+				protocol: 'https',
+				hostname: 'pull-profissao.b-cdn.net',
+				port: '',
+				pathname: '/**',
+			},
 		],
 	},
 	env: {
