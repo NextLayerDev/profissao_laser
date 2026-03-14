@@ -58,6 +58,8 @@ export async function duplicateProduct(
 		country: product.country,
 		category: payment.category,
 		refundDays: payment.refundDays,
+		machine: product.machine ?? undefined,
+		software: product.software ?? undefined,
 	});
 
 	// 3. Tentar copiar imagem (pode falhar por CORS)

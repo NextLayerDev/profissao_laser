@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { Upload as TusUpload } from 'tus-js-client';
 import { api } from '@/lib/fetch';
 import type {
 	CreateLessonPayload,
@@ -83,25 +83,55 @@ export async function reorderLessons(
 export async function uploadLessonVideo(
 	id: string,
 	file: File,
-	_onProgress?: (percent: number) => void,
+	onProgress?: (percent: number) => void,
 ): Promise<Lesson> {
+	// Step 1: Obter credenciais BunnyCDN do backend
 	const { data: presigned } = await api.post(
 		`/lesson/${id}/video/presigned-url`,
-		{
-			filename: file.name,
-		},
+		{ filename: file.name },
 	);
-	const { path, token, bucket } = presigned as {
-		path: string;
-		token: string;
-		bucket: string;
-	};
+	const { videoId, tusEndpoint, authSignature, authExpire, libraryId } =
+		presigned as {
+			videoId: string;
+			tusEndpoint: string;
+			authSignature: string;
+			authExpire: number;
+			libraryId: string;
+		};
 
-	const { error } = await db.storage
-		.from(bucket)
-		.uploadToSignedUrl(path, token, file);
-	if (error) throw error;
+	// Step 2: Upload via TUS para BunnyCDN
+	await new Promise<void>((resolve, reject) => {
+		const upload = new TusUpload(file, {
+			endpoint: tusEndpoint,
+			retryDelays: [0, 3000, 5000, 10000, 20000],
+			storeFingerprintForResuming: false,
+			removeFingerprintOnSuccess: true,
+			headers: {
+				AuthorizationSignature: authSignature,
+				AuthorizationExpire: String(authExpire),
+				VideoId: videoId,
+				LibraryId: libraryId,
+			},
+			metadata: {
+				filetype: file.type,
+				title: file.name,
+			},
+			onError: (error) => {
+				console.error('[TUS] Upload error:', error);
+				reject(error);
+			},
+			onProgress: (bytesUploaded, bytesTotal) => {
+				if (bytesTotal) {
+					const percent = Math.round((bytesUploaded / bytesTotal) * 100);
+					onProgress?.(percent);
+				}
+			},
+			onSuccess: () => resolve(),
+		});
+		upload.start();
+	});
 
-	const { data } = await api.patch(`/lesson/${id}/video/confirm`, { path });
+	// Step 3: Confirmar upload no backend e salvar videoUrl na aula
+	const { data } = await api.patch(`/lesson/${id}/video/confirm`, { videoId });
 	return data;
 }

@@ -17,6 +17,8 @@ export const productSchema = z.object({
 	refundDays: z.number().nullable(),
 	stripeProductId: z.string().nullable(),
 	stripePriceId: z.string().nullable(),
+	machine: z.string().nullable(),
+	software: z.string().nullable(),
 });
 
 export type Product = z.infer<typeof productSchema>;

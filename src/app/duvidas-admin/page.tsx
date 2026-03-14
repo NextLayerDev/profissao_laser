@@ -1,18 +1,25 @@
 'use client';
 
-import { ArrowLeft, HelpCircle, Loader2, MessageSquare } from 'lucide-react';
+import {
+	ArrowLeft,
+	BookOpen,
+	HelpCircle,
+	Loader2,
+	MessageSquare,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { CategoriesSection } from '@/components/duvidas-admin/categories-section';
 import { DefaultQuestionsSection } from '@/components/duvidas-admin/default-questions-section';
+import { FAQAdminSection } from '@/components/duvidas-admin/faq-admin-section';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { getToken } from '@/lib/auth';
 
 export default function DuvidasAdminPage() {
 	const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-	const [activeTab, setActiveTab] = useState<'categories' | 'questions'>(
-		'categories',
-	);
+	const [activeTab, setActiveTab] = useState<
+		'faq' | 'categories' | 'questions'
+	>('faq');
 
 	useEffect(() => {
 		setIsAdmin(!!getToken('user'));
@@ -77,6 +84,18 @@ export default function DuvidasAdminPage() {
 				<div className="flex gap-1 border-b border-slate-200 dark:border-white/10 mb-6">
 					<button
 						type="button"
+						onClick={() => setActiveTab('faq')}
+						className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-semibold transition-all border-b-2 -mb-px ${
+							activeTab === 'faq'
+								? 'text-violet-600 dark:text-violet-400 border-violet-500 bg-transparent'
+								: 'text-slate-600 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+						}`}
+					>
+						<BookOpen className="w-4 h-4" />
+						Dúvidas Frequentes
+					</button>
+					<button
+						type="button"
 						onClick={() => setActiveTab('categories')}
 						className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-semibold transition-all border-b-2 -mb-px ${
 							activeTab === 'categories'
@@ -101,6 +120,7 @@ export default function DuvidasAdminPage() {
 					</button>
 				</div>
 
+				{activeTab === 'faq' && <FAQAdminSection />}
 				{activeTab === 'categories' && <CategoriesSection />}
 				{activeTab === 'questions' && <DefaultQuestionsSection />}
 			</main>

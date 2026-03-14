@@ -1,13 +1,22 @@
 'use client';
 
-import { ArrowLeft, Loader2, Lock, MessageSquare, Store } from 'lucide-react';
+import {
+	ArrowLeft,
+	BookOpen,
+	Loader2,
+	Lock,
+	MessageSquare,
+	Store,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { DoubtsClientView } from '@/components/duvidas/doubts-client-view';
+import { FAQStudentTab } from '@/components/duvidas/faq-student-tab';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useCustomerFeatures } from '@/hooks/use-customer-features';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
+import { useDoubtChats } from '@/hooks/use-doubt-chat';
 import { getCurrentUser, getToken } from '@/lib/auth';
 import { FULL_FEATURES } from '@/utils/constants/class-features';
 
@@ -23,6 +32,7 @@ export default function DuvidasPage() {
 	const [email, setEmail] = useState<string | null | undefined>(undefined);
 	const [name, setName] = useState<string>('');
 	const [isAdmin, setIsAdmin] = useState(false);
+	const [mainTab, setMainTab] = useState<'faq' | 'pending' | 'answered'>('faq');
 
 	useEffect(() => {
 		const user = getCurrentUser();
@@ -44,6 +54,10 @@ export default function DuvidasPage() {
 		? null
 		: (customerFeatures?.upgradeTiers ?? null);
 	const hasAccess = !!features?.chat;
+
+	const { data: allChats = [] } = useDoubtChats('all', hasAccess);
+	const pendingCount = allChats.filter((c) => c.status === 'pending').length;
+	const answeredCount = allChats.filter((c) => c.status === 'answered').length;
 
 	if (email === undefined || !plans) {
 		return (
@@ -133,11 +147,67 @@ export default function DuvidasPage() {
 						</Link>
 					</div>
 				) : (
-					<DoubtsClientView
-						customerId={customerId}
-						customerName={name || 'Utilizador'}
-						hasAccess={hasAccess}
-					/>
+					<div className="space-y-6">
+						{/* Tabs */}
+						<div className="flex gap-1 border-b border-slate-200 dark:border-white/10">
+							<button
+								type="button"
+								onClick={() => setMainTab('faq')}
+								className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-semibold transition-all border-b-2 -mb-px ${
+									mainTab === 'faq'
+										? 'text-violet-600 dark:text-violet-400 border-violet-500 bg-transparent'
+										: 'text-slate-600 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+								}`}
+							>
+								<BookOpen className="w-4 h-4" />
+								Dúvidas Frequentes
+							</button>
+							<button
+								type="button"
+								onClick={() => setMainTab('pending')}
+								className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-semibold transition-all border-b-2 -mb-px ${
+									mainTab === 'pending'
+										? 'text-violet-600 dark:text-violet-400 border-violet-500 bg-transparent'
+										: 'text-slate-600 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+								}`}
+							>
+								Pendentes
+								{pendingCount > 0 && (
+									<span className="ml-1 px-1.5 py-0.5 text-xs font-bold bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-full">
+										{pendingCount}
+									</span>
+								)}
+							</button>
+							<button
+								type="button"
+								onClick={() => setMainTab('answered')}
+								className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-semibold transition-all border-b-2 -mb-px ${
+									mainTab === 'answered'
+										? 'text-violet-600 dark:text-violet-400 border-violet-500 bg-transparent'
+										: 'text-slate-600 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+								}`}
+							>
+								Respondidas
+								{answeredCount > 0 && (
+									<span className="ml-1 px-1.5 py-0.5 text-xs font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-full">
+										{answeredCount}
+									</span>
+								)}
+							</button>
+						</div>
+
+						{/* Conteúdo */}
+						{mainTab === 'faq' && <FAQStudentTab />}
+						{(mainTab === 'pending' || mainTab === 'answered') && (
+							<DoubtsClientView
+								key={mainTab}
+								customerId={customerId}
+								customerName={name || 'Utilizador'}
+								hasAccess={hasAccess}
+								defaultTab={mainTab}
+							/>
+						)}
+					</div>
 				)}
 			</div>
 		</div>

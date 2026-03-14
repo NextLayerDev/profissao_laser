@@ -382,6 +382,9 @@ export function VideoPlayer({
 							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
 							allowFullScreen
 							className="w-full h-full"
+							onLoad={() => {
+								if (videoType === 'bunny') setIsLoading(false);
+							}}
 						/>
 					) : videoUrl ? (
 						<video
@@ -620,8 +623,10 @@ export function VideoPlayer({
 						</div>
 					)}
 
-					{/* Bottom bar for YouTube/Vimeo - pointer-events-none */}
-					{(videoType === 'youtube' || videoType === 'vimeo') && (
+					{/* Bottom bar for YouTube/Vimeo/Bunny - pointer-events-none */}
+					{(videoType === 'youtube' ||
+						videoType === 'vimeo' ||
+						videoType === 'bunny') && (
 						<div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-4 py-3 flex items-center gap-3 pointer-events-none">
 							{displayDuration > 0 && (
 								<span className="flex items-center gap-1 bg-white/20 border border-white/30 rounded-full px-3 py-0.5 text-xs text-white">

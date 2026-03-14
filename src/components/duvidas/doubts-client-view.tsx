@@ -17,14 +17,18 @@ export interface DoubtsClientViewProps {
 	customerId: string;
 	customerName: string;
 	hasAccess: boolean;
+	defaultTab?: 'pending' | 'answered';
 }
 
 export function DoubtsClientView({
 	customerId,
 	customerName,
 	hasAccess,
+	defaultTab = 'pending',
 }: DoubtsClientViewProps) {
-	const [activeTab, setActiveTab] = useState<'pending' | 'answered'>('pending');
+	const [activeTab, setActiveTab] = useState<'pending' | 'answered'>(
+		defaultTab,
+	);
 	const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 	const [newDoubtOpen, setNewDoubtOpen] = useState(false);
 
