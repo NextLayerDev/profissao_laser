@@ -22,6 +22,7 @@ import { CourseContentSection } from '@/components/products/course-content-secti
 import { CreateSubscriptionModal } from '@/components/products/create-subscription-modal';
 import { CuponsSection } from '@/components/products/cupons-section';
 import { DeleteProductModal } from '@/components/products/delete-product-modal';
+import { ProductSystemClassesSection } from '@/components/products/product-system-classes-section';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useProducts } from '@/hooks/use-products';
 import { updateProductStatus } from '@/services/products';
@@ -211,6 +212,8 @@ export default function ProdutoDetalhes() {
 						/>
 					) : activeMenu === 'informacoes' ? (
 						<BasicInfoSection product={product} />
+					) : activeMenu === 'system-classes' ? (
+						<ProductSystemClassesSection productId={product.id} />
 					) : (
 						<>
 							{/* Success Banner */}

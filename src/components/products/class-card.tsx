@@ -1,17 +1,24 @@
 'use client';
 
-import { Package, Pencil, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { Package, Pencil, Settings2, Trash2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useDeleteClass } from '@/hooks/use-classes';
 import type { ClassCardProps } from '@/types/components/class-card';
 import { CLASS_FEATURES } from '@/utils/constants/class-features';
 import { TIER_STYLES } from '@/utils/constants/tier-styles';
 
-export function ClassCard({ cls, onEdit }: ClassCardProps) {
+export function ClassCard({ cls, onEdit, systemClasses }: ClassCardProps) {
 	const [confirming, setConfirming] = useState(false);
 	const { mutate: del, isPending } = useDeleteClass();
 	const style = TIER_STYLES[cls.tier];
+
+	const linkedSystemClasses = useMemo(() => {
+		if (!systemClasses?.length) return [];
+		return systemClasses.filter((sc) =>
+			sc.classes.some((c) => c.id === cls.id),
+		);
+	}, [systemClasses, cls.id]);
 
 	function handleDelete() {
 		if (!confirming) {
@@ -99,6 +106,26 @@ export function ClassCard({ cls, onEdit }: ClassCardProps) {
 						</p>
 					)}
 				</div>
+
+				{linkedSystemClasses.length > 0 && (
+					<div className="mb-4">
+						<p className="text-xs text-slate-500 dark:text-gray-500 mb-2 font-medium">
+							{linkedSystemClasses.length} classe
+							{linkedSystemClasses.length !== 1 ? 's' : ''} de sistema
+						</p>
+						<div className="flex flex-wrap gap-1.5">
+							{linkedSystemClasses.map((sc) => (
+								<span
+									key={sc.id}
+									className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-500 dark:text-purple-400 border border-purple-500/20"
+								>
+									<Settings2 className="w-3 h-3 shrink-0" />
+									{sc.name}
+								</span>
+							))}
+						</div>
+					</div>
+				)}
 
 				<div className="flex items-center gap-2 pt-4 border-t border-slate-200 dark:border-gray-800">
 					<button

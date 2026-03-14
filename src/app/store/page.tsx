@@ -15,6 +15,7 @@ import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useClasses } from '@/hooks/use-classes';
 import { useProducts } from '@/hooks/use-products';
+import { useSystemClasses } from '@/hooks/use-system-classes';
 import { getCurrentUser, getToken } from '@/lib/auth';
 
 const TIER_ORDER: Record<string, number> = { prata: 0, ouro: 1, platina: 2 };
@@ -22,9 +23,11 @@ const TIER_ORDER: Record<string, number> = { prata: 0, ouro: 1, platina: 2 };
 export default function Loja() {
 	const [search, setSearch] = useState('');
 	const [activeCategory, setActiveCategory] = useState('Todos');
+	const [activeCategorySystem, setActiveCategorySystem] = useState('Todos');
 	const [isAdmin, setIsAdmin] = useState(false);
 	const { products, isLoading, error } = useProducts();
 	const { classes } = useClasses();
+	const { systemClasses } = useSystemClasses();
 
 	useEffect(() => {
 		const user = getCurrentUser();
@@ -33,6 +36,9 @@ export default function Loja() {
 
 	const activeProducts = (products ?? []).filter((p) => p.status === 'ativo');
 	const activeClasses = classes.filter((c) => c.status === 'ativo');
+	const activeSystemClasses = systemClasses.filter(
+		(sc) => sc.status === 'ativo',
+	);
 
 	const productClassMap = useMemo(() => {
 		const map = new Map<string, (typeof activeClasses)[0]>();
@@ -44,12 +50,41 @@ export default function Loja() {
 		return map;
 	}, [activeClasses]);
 
+	// Map product.id -> system class names (for filtering)
+	const productSystemClassMap = useMemo(() => {
+		const map = new Map<string, string[]>();
+		for (const sc of activeSystemClasses) {
+			for (const product of sc.products) {
+				if (!map.has(product.id)) map.set(product.id, []);
+				map.get(product.id)?.push(sc.name);
+			}
+		}
+		return map;
+	}, [activeSystemClasses]);
+
+	// Map product.id -> ALL system classes (for card display & selection)
+	const productSystemClassesMap = useMemo(() => {
+		const map = new Map<string, typeof activeSystemClasses>();
+		for (const sc of activeSystemClasses) {
+			for (const product of sc.products) {
+				if (!map.has(product.id)) map.set(product.id, []);
+				map.get(product.id)?.push(sc);
+			}
+		}
+		return map;
+	}, [activeSystemClasses]);
+
 	const categories = [
 		'Todos',
 		...Array.from(
 			new Set(activeProducts.map((p) => p.category).filter(Boolean)),
 		),
 	] as string[];
+
+	const systemClassCategories = [
+		'Todos',
+		...Array.from(new Set(activeSystemClasses.map((sc) => sc.name))),
+	];
 
 	const filtered = useMemo(
 		() =>
@@ -59,9 +94,20 @@ export default function Loja() {
 					.includes(search.toLowerCase());
 				const matchesCategory =
 					activeCategory === 'Todos' || p.category === activeCategory;
-				return matchesSearch && matchesCategory;
+				const matchesSystemClass =
+					activeCategorySystem === 'Todos' ||
+					(productSystemClassMap.get(p.id) ?? []).includes(
+						activeCategorySystem,
+					);
+				return matchesSearch && matchesCategory && matchesSystemClass;
 			}),
-		[activeProducts, search, activeCategory],
+		[
+			activeProducts,
+			search,
+			activeCategory,
+			activeCategorySystem,
+			productSystemClassMap,
+		],
 	);
 
 	const filteredGroups = useMemo(() => {
@@ -70,12 +116,18 @@ export default function Loja() {
 			Array<{
 				product: (typeof activeProducts)[0];
 				classInfo?: (typeof activeClasses)[0];
+				systemClassInfo?: (typeof activeSystemClasses)[0];
+				systemClasses?: typeof activeSystemClasses;
 			}>
 		>();
 		for (const product of filtered) {
 			const classInfo = productClassMap.get(product.id);
+			const allSc = productSystemClassesMap.get(product.id);
+			const systemClassInfo = allSc?.[0];
 			if (!map.has(product.name)) map.set(product.name, []);
-			map.get(product.name)?.push({ product, classInfo });
+			map
+				.get(product.name)
+				?.push({ product, classInfo, systemClassInfo, systemClasses: allSc });
 		}
 		return Array.from(map.values()).map((variants) =>
 			[...variants].sort((a, b) => {
@@ -84,7 +136,7 @@ export default function Loja() {
 				return aOrder - bOrder;
 			}),
 		);
-	}, [filtered, productClassMap]);
+	}, [filtered, productClassMap, productSystemClassesMap]);
 
 	return (
 		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] text-slate-900 dark:text-white font-sans">
@@ -151,7 +203,7 @@ export default function Loja() {
 				</div>
 
 				{/* Filtros por categoria */}
-				<div className="flex items-center gap-2 mb-8 flex-wrap">
+				<div className="flex items-center gap-2 mb-4 flex-wrap">
 					{categories.map((cat) => (
 						<button
 							key={cat}
@@ -173,6 +225,29 @@ export default function Loja() {
 						</span>
 					)}
 				</div>
+
+				{/* Filtros por system class */}
+				{systemClassCategories.length > 1 && (
+					<div className="flex items-center gap-2 mb-8 flex-wrap">
+						<span className="text-xs font-medium text-slate-500 dark:text-gray-500 mr-1">
+							Plano:
+						</span>
+						{systemClassCategories.map((sc) => (
+							<button
+								key={sc}
+								type="button"
+								onClick={() => setActiveCategorySystem(sc)}
+								className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer ${
+									activeCategorySystem === sc
+										? 'bg-purple-600 text-white'
+										: 'bg-white dark:bg-[#1a1a1d] text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-gray-800 hover:border-purple-500/40 hover:text-slate-900 dark:hover:text-white shadow-sm dark:shadow-none'
+								}`}
+							>
+								{sc}
+							</button>
+						))}
+					</div>
+				)}
 
 				{isLoading ? (
 					<div className="flex items-center justify-center py-20">
