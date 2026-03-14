@@ -30,7 +30,7 @@ export default function AcessosPage() {
 
 	useEffect(() => {
 		if (!permissionsLoading && !canAdmin) {
-			router.replace('/');
+			router.replace('/dashboard');
 		}
 	}, [canAdmin, permissionsLoading, router]);
 

@@ -163,7 +163,7 @@ export default function Loja() {
 					<ThemeToggle />
 					{isAdmin && (
 						<Link
-							href="/"
+							href="/dashboard"
 							className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 hover:border-violet-500/50 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium rounded-xl transition-colors shadow-sm dark:shadow-none"
 						>
 							<LayoutDashboard className="w-4 h-4" />

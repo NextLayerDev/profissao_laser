@@ -1,23 +1,54 @@
-import { Alerts } from '@/components/dashboard/alerts';
-import { Header } from '@/components/dashboard/header';
-import { QuickAccess } from '@/components/dashboard/quick-access';
-import { StatsOverview } from '@/components/dashboard/stats-overview';
-import { WelcomeBanner } from '@/components/dashboard/welcome-banner';
+import { CoursesVideoSection } from '@/components/landing/courses-video-section';
+import { FaqSection } from '@/components/landing/faq-section';
+import { FeatureCards } from '@/components/landing/feature-cards';
+import { Hero } from '@/components/landing/hero';
+import { JourneySection } from '@/components/landing/journey-section';
+import { LandingFooter } from '@/components/landing/landing-footer';
+import { NetworkSection } from '@/components/landing/network-section';
+import { PlatformSection } from '@/components/landing/platform-section';
+import { ProductsSection } from '@/components/landing/products-section';
+import { ProfessionalsSection } from '@/components/landing/professionals-section';
+import { RaffleSection } from '@/components/landing/raffle-section';
+import { TargetAudience } from '@/components/landing/target-audience';
+import { TopBar } from '@/components/landing/top-bar';
+import { VideoSection } from '@/components/landing/video-section';
+import { WhatsAppButton } from '@/components/landing/whatsapp-button';
 
-export default function Dashboard() {
+function Divider() {
 	return (
-		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] text-slate-900 dark:text-white font-sans">
-			<Header />
+		<div className="max-w-5xl mx-auto px-6">
+			<div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+		</div>
+	);
+}
 
-			<main className="px-8 py-6">
-				<WelcomeBanner />
-				<StatsOverview />
-
-				<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-					<QuickAccess />
-					<Alerts />
-				</div>
-			</main>
+export default function LandingPage() {
+	return (
+		<div className="min-h-screen bg-[#0d0d0f]">
+			<TopBar />
+			<Hero />
+			<FeatureCards />
+			<Divider />
+			<VideoSection />
+			<Divider />
+			<NetworkSection />
+			<Divider />
+			<PlatformSection />
+			<Divider />
+			<JourneySection />
+			<Divider />
+			<TargetAudience />
+			<Divider />
+			<CoursesVideoSection />
+			<ProductsSection />
+			<Divider />
+			<RaffleSection />
+			<Divider />
+			<ProfessionalsSection />
+			<Divider />
+			<FaqSection />
+			<LandingFooter />
+			<WhatsAppButton />
 		</div>
 	);
 }
