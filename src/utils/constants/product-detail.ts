@@ -1,10 +1,17 @@
-import { FileText, MessageSquare, MonitorPlay, Ticket } from 'lucide-react';
+import {
+	FileText,
+	MessageSquare,
+	MonitorPlay,
+	Settings2,
+	Ticket,
+} from 'lucide-react';
 
 export const productMenuItems = [
 	{ id: 'informacoes', label: 'Informações básicas', icon: FileText },
 	{ id: 'conteudo', label: 'Conteúdo do curso', icon: MonitorPlay },
 	{ id: 'cupons', label: 'Cupons', icon: Ticket },
 	{ id: 'comunidade', label: 'Comunidade', icon: MessageSquare },
+	{ id: 'system-classes', label: 'Classes Sistema', icon: Settings2 },
 ];
 
 export const productConfigItems = [

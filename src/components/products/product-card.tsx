@@ -1,6 +1,6 @@
 'use client';
 
-import { Copy, Layers, Link2, Trash2 } from 'lucide-react';
+import { Copy, Layers, Link2, Settings2, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -11,7 +11,11 @@ import { formatCurrency } from '@/utils/format-currency';
 import { DeleteProductModal } from './delete-product-modal';
 import { DuplicateProductModal } from './duplicate-product-modal';
 
-export function ProductCard({ product, productClasses }: ProductCardProps) {
+export function ProductCard({
+	product,
+	productClasses,
+	productSystemClasses,
+}: ProductCardProps) {
 	const { canPrice } = usePermissions();
 	const [imgError, setImgError] = useState(false);
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -63,6 +67,27 @@ export function ProductCard({ product, productClasses }: ProductCardProps) {
 									</span>
 								);
 							})}
+						</div>
+					)}
+					{productSystemClasses && productSystemClasses.length > 0 && (
+						<div className="mb-2">
+							<div className="flex items-center gap-1 mb-1">
+								<Settings2 className="w-3 h-3 text-purple-400" />
+								<span className="text-[10px] font-medium text-slate-500 dark:text-gray-500 uppercase tracking-wider">
+									Sistema LaserOne
+								</span>
+							</div>
+							<div className="flex flex-wrap gap-1.5">
+								{productSystemClasses.map((sc) => (
+									<span
+										key={sc.id}
+										className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-500 dark:text-purple-400 border border-purple-500/20"
+										title={sc.name}
+									>
+										{sc.name}
+									</span>
+								))}
+							</div>
 						</div>
 					)}
 					<p className="text-sm text-slate-600 dark:text-gray-400 mb-4 line-clamp-2">

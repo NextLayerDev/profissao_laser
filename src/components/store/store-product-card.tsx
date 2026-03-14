@@ -1,6 +1,13 @@
 'use client';
 
-import { Check, Cpu, Monitor, ShoppingCart, Star } from 'lucide-react';
+import {
+	Check,
+	Cpu,
+	Monitor,
+	Settings2,
+	ShoppingCart,
+	Star,
+} from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -9,21 +16,54 @@ import { CLASS_FEATURES } from '@/utils/constants/class-features';
 import { TIER_STYLES } from '@/utils/constants/tier-styles';
 import { formatCurrency } from '@/utils/format-currency';
 
+const SC_TIER_BADGES = [
+	{
+		key: 'prata' as const,
+		label: 'Prata',
+		style: 'bg-slate-400/20 text-slate-300 border border-slate-500/40',
+	},
+	{
+		key: 'gold' as const,
+		label: 'Gold',
+		style: 'bg-amber-400/20 text-amber-300 border border-amber-500/40',
+	},
+	{
+		key: 'platina' as const,
+		label: 'Platina',
+		style: 'bg-violet-400/20 text-violet-300 border border-violet-500/40',
+	},
+];
+
 export function StoreProductCard({ variants }: StoreProductCardProps) {
 	const [selectedIndex, setSelectedIndex] = useState(0);
+	const [selectedScIndex, setSelectedScIndex] = useState(0);
 	const [imgError, setImgError] = useState(false);
 	const router = useRouter();
 
-	const { product, classInfo } = variants[selectedIndex];
+	const { product, classInfo, systemClasses } = variants[selectedIndex];
 	const hasMultipleTiers = variants.length > 1;
+
+	// System class selection
+	const allSystemClasses = systemClasses ?? [];
+	const hasMultipleSystemClasses = allSystemClasses.length > 1;
+	const activeSystemClass =
+		allSystemClasses[selectedScIndex] ?? allSystemClasses[0] ?? null;
 
 	function handleBuy() {
 		const classParam = classInfo ? `?classId=${classInfo.id}` : '';
 		router.push(`/checkout/${product.slug}${classParam}`);
 	}
 
+	// Features: prefer classInfo, fallback to selected system class
 	const enabledFeatures = classInfo
 		? CLASS_FEATURES.filter((f) => classInfo[f.key])
+		: activeSystemClass
+			? CLASS_FEATURES.filter((f) => activeSystemClass[f.key])
+			: [];
+
+	// System class tiers (only when there's a selected system class)
+	const systemTiers = activeSystemClass
+		? SC_TIER_BADGES.filter((t) => activeSystemClass[t.key])
 		: [];
 
 	return (
@@ -49,6 +89,13 @@ export function StoreProductCard({ variants }: StoreProductCardProps) {
 						</span>
 					</div>
 				)}
+				{activeSystemClass && (
+					<div className="absolute top-3 right-3">
+						<span className="bg-purple-600/80 text-white text-xs font-medium px-2.5 py-1 rounded-full backdrop-blur-sm">
+							{activeSystemClass.name}
+						</span>
+					</div>
+				)}
 			</div>
 
 			{hasMultipleTiers && (
@@ -63,6 +110,7 @@ export function StoreProductCard({ variants }: StoreProductCardProps) {
 								type="button"
 								onClick={() => {
 									setSelectedIndex(i);
+									setSelectedScIndex(0);
 									setImgError(false);
 								}}
 								className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-all duration-200 cursor-pointer ${
@@ -76,6 +124,37 @@ export function StoreProductCard({ variants }: StoreProductCardProps) {
 							</button>
 						);
 					})}
+				</div>
+			)}
+
+			{/* System class selector */}
+			{hasMultipleSystemClasses && (
+				<div className="px-5 pt-3">
+					<div className="flex items-center gap-1.5 mb-2">
+						<Settings2 className="w-3 h-3 text-purple-400" />
+						<span className="text-[10px] font-medium text-slate-500 dark:text-gray-500 uppercase tracking-wider">
+							Sistema LaserOne
+						</span>
+					</div>
+					<div className="flex gap-1.5">
+						{allSystemClasses.map((sc, i) => {
+							const isActive = i === selectedScIndex;
+							return (
+								<button
+									key={sc.id}
+									type="button"
+									onClick={() => setSelectedScIndex(i)}
+									className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-all duration-200 cursor-pointer ${
+										isActive
+											? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+											: 'bg-transparent text-slate-500 dark:text-gray-500 border-slate-300 dark:border-gray-700 hover:border-purple-500/30 hover:text-slate-700 dark:hover:text-gray-300'
+									}`}
+								>
+									{sc.name}
+								</button>
+							);
+						})}
+					</div>
 				</div>
 			)}
 
@@ -108,7 +187,7 @@ export function StoreProductCard({ variants }: StoreProductCardProps) {
 				)}
 
 				{enabledFeatures.length > 0 && (
-					<div className="mb-4 grid grid-cols-2 gap-x-3 gap-y-1.5">
+					<div className="mb-3 grid grid-cols-2 gap-x-3 gap-y-1.5">
 						{enabledFeatures.map((feat) => (
 							<div key={feat.key} className="flex items-center gap-1.5">
 								<Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
@@ -116,6 +195,19 @@ export function StoreProductCard({ variants }: StoreProductCardProps) {
 									{feat.label}
 								</span>
 							</div>
+						))}
+					</div>
+				)}
+
+				{systemTiers.length > 0 && (
+					<div className="flex flex-wrap gap-1.5 mb-3">
+						{systemTiers.map((t) => (
+							<span
+								key={t.key}
+								className={`text-xs px-2 py-0.5 rounded-full ${t.style}`}
+							>
+								{t.label}
+							</span>
 						))}
 					</div>
 				)}
