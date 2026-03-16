@@ -6,12 +6,14 @@ import {
 	Loader2,
 	Lock,
 	MessageSquare,
+	MessagesSquare,
 	Store,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { DoubtsClientView } from '@/components/duvidas/doubts-client-view';
 import { FAQStudentTab } from '@/components/duvidas/faq-student-tab';
+import { ForumTab } from '@/components/duvidas/forum-tab';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useCustomerFeatures } from '@/hooks/use-customer-features';
@@ -32,7 +34,9 @@ export default function DuvidasPage() {
 	const [email, setEmail] = useState<string | null | undefined>(undefined);
 	const [name, setName] = useState<string>('');
 	const [isAdmin, setIsAdmin] = useState(false);
-	const [mainTab, setMainTab] = useState<'faq' | 'pending' | 'answered'>('faq');
+	const [mainTab, setMainTab] = useState<
+		'faq' | 'forum' | 'pending' | 'answered'
+	>('faq');
 
 	useEffect(() => {
 		const user = getCurrentUser();
@@ -164,6 +168,18 @@ export default function DuvidasPage() {
 							</button>
 							<button
 								type="button"
+								onClick={() => setMainTab('forum')}
+								className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-semibold transition-all border-b-2 -mb-px ${
+									mainTab === 'forum'
+										? 'text-violet-600 dark:text-violet-400 border-violet-500 bg-transparent'
+										: 'text-slate-600 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+								}`}
+							>
+								<MessagesSquare className="w-4 h-4" />
+								Fórum
+							</button>
+							<button
+								type="button"
 								onClick={() => setMainTab('pending')}
 								className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-semibold transition-all border-b-2 -mb-px ${
 									mainTab === 'pending'
@@ -198,6 +214,7 @@ export default function DuvidasPage() {
 
 						{/* Conteúdo */}
 						{mainTab === 'faq' && <FAQStudentTab />}
+						{mainTab === 'forum' && <ForumTab currentUserId={customerId} />}
 						{(mainTab === 'pending' || mainTab === 'answered') && (
 							<DoubtsClientView
 								key={mainTab}

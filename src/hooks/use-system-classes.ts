@@ -32,7 +32,7 @@ export function useSystemClasses() {
 export function useSystemClass(id: string | null) {
 	const { data, error, isLoading } = useQuery({
 		queryKey: [...QUERY_KEY, id],
-		queryFn: () => getSystemClass(id!),
+		queryFn: () => getSystemClass(id as string),
 		enabled: !!id,
 	});
 
