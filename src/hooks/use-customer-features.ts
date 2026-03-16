@@ -59,15 +59,35 @@ export function useCustomerFeatures(
 	return useMemo(() => {
 		if (!plans || classes.length === 0) return null;
 
-		const userSlugs = new Set(
-			plans.map((p) => p.slug).filter((s): s is string => s !== null),
-		);
+		// Build a map: slug → highest tier order the customer has for it
+		const slugTierOrder = new Map<string, number>();
+		for (const plan of plans) {
+			if (plan.slug === null) continue;
+			const order =
+				plan.tier !== undefined ? (TIER_ORDER[plan.tier] ?? 99) : 99;
+			const existing = slugTierOrder.get(plan.slug);
+			if (existing === undefined || order > existing) {
+				slugTierOrder.set(plan.slug, order);
+			}
+		}
+
+		if (slugTierOrder.size === 0) return null;
 
 		const userClasses = classes.filter((cls) =>
-			cls.products.some((p) => userSlugs.has(p.slug)),
+			cls.products.some((p) => {
+				const tierOrder = slugTierOrder.get(p.slug);
+				return (
+					tierOrder !== undefined && (TIER_ORDER[cls.tier] ?? 99) <= tierOrder
+				);
+			}),
 		);
 
 		if (userClasses.length === 0) return null;
+
+		// For upgrade hints, use all classes for the customer's products
+		const allUserClasses = classes.filter((cls) =>
+			cls.products.some((p) => slugTierOrder.has(p.slug)),
+		);
 
 		const features: CustomerFeatures = {
 			aula: userClasses.some((c) => c.aula),
@@ -77,7 +97,7 @@ export function useCustomerFeatures(
 			comunidade: userClasses.some((c) => c.comunidade),
 		};
 
-		const upgradeTiers = computeUpgradeTiers(userClasses, features);
+		const upgradeTiers = computeUpgradeTiers(allUserClasses, features);
 
 		return { features, upgradeTiers };
 	}, [plans, classes]);
@@ -99,14 +119,27 @@ export function useCustomerFeaturesForCourse(
 		)
 			return null;
 
-		const hasPlanForCourse = plans.some((p) => p.slug === courseSlug);
-		if (!hasPlanForCourse) return null;
+		const planForCourse = plans.find((p) => p.slug === courseSlug);
+		if (!planForCourse) return null;
 
-		const userClasses = classes.filter((cls) =>
-			cls.products.some((p) => p.slug === courseSlug),
+		const customerTierOrder =
+			planForCourse.tier !== undefined
+				? (TIER_ORDER[planForCourse.tier] ?? 99)
+				: 99; // 99 = no restriction (backward-compatible fallback)
+
+		// Classes at the customer's tier or below
+		const userClasses = classes.filter(
+			(cls) =>
+				cls.products.some((p) => p.slug === courseSlug) &&
+				(TIER_ORDER[cls.tier] ?? 99) <= customerTierOrder,
 		);
 
 		if (userClasses.length === 0) return null;
+
+		// For upgrade hints, use ALL classes for the product (not tier-filtered)
+		const allClassesForCourse = classes.filter((cls) =>
+			cls.products.some((p) => p.slug === courseSlug),
+		);
 
 		const features: CustomerFeatures = {
 			aula: userClasses.some((c) => c.aula),
@@ -116,7 +149,7 @@ export function useCustomerFeaturesForCourse(
 			comunidade: userClasses.some((c) => c.comunidade),
 		};
 
-		const upgradeTiers = computeUpgradeTiers(userClasses, features);
+		const upgradeTiers = computeUpgradeTiers(allClassesForCourse, features);
 
 		return { features, upgradeTiers };
 	}, [plans, courseSlug, classes]);
