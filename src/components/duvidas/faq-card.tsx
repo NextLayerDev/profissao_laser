@@ -47,7 +47,7 @@ export function FAQCard({ faq }: { faq: PLFAQ }) {
 					<img
 						src={faq.imageUrl}
 						alt={faq.question}
-						className="w-full h-48 object-cover transition-transform hover:scale-105"
+						className="w-full object-contain transition-transform hover:scale-105"
 					/>
 				</div>
 			)}

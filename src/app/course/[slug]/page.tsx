@@ -349,10 +349,10 @@ export default function CourseSlugPage() {
 	useEffect(() => {
 		const user = getCurrentUser();
 		setEmail(user?.email ?? null);
-		setIsAdmin(!!getToken('user') && user?.role != null);
+		setIsAdmin(!!getToken('user'));
 	}, []);
 
-	const { data: plans } = useCustomerPlans(email ?? null);
+	const { data: plans } = useCustomerPlans(isAdmin ? null : (email ?? null));
 	const customerFeatures = useCustomerFeaturesForCourse(plans, slug);
 	const features = isAdmin
 		? FULL_FEATURES

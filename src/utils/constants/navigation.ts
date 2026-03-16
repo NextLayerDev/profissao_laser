@@ -1,6 +1,7 @@
 import {
 	BarChart3,
 	CalendarClock,
+	HelpCircle,
 	Home,
 	MessageSquare,
 	Package,
@@ -23,6 +24,12 @@ export const navItems: NavItem[] = [
 		name: 'Comunidade',
 		icon: MessageSquare,
 		href: '/community',
+		hasDropdown: false,
+	},
+	{
+		name: 'Fórum',
+		icon: HelpCircle,
+		href: '/forum',
 		hasDropdown: false,
 	},
 	{
