@@ -303,9 +303,9 @@ function AdminChatViewPanel({
 	const { data: chat, isLoading } = useDoubtChat(chatId, !!chatId);
 	const replyMutation = useReplyToDoubtChat();
 
-	async function handleSendMessage(content: string) {
+	async function handleSendMessage(content: string, file?: File) {
 		try {
-			await replyMutation.mutateAsync({ chatId, content });
+			await replyMutation.mutateAsync({ chatId, content, file });
 			toast.success('Resposta enviada!');
 		} catch {
 			toast.error('Erro ao enviar resposta');

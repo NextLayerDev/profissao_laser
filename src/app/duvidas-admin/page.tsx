@@ -6,19 +6,21 @@ import {
 	HelpCircle,
 	Loader2,
 	MessageSquare,
+	MessagesSquare,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { CategoriesSection } from '@/components/duvidas-admin/categories-section';
 import { DefaultQuestionsSection } from '@/components/duvidas-admin/default-questions-section';
 import { FAQAdminSection } from '@/components/duvidas-admin/faq-admin-section';
+import { ForumCategoriesSection } from '@/components/duvidas-admin/forum-categories-section';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { getToken } from '@/lib/auth';
 
 export default function DuvidasAdminPage() {
 	const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 	const [activeTab, setActiveTab] = useState<
-		'faq' | 'categories' | 'questions'
+		'faq' | 'categories' | 'questions' | 'forum-categories'
 	>('faq');
 
 	useEffect(() => {
@@ -96,6 +98,18 @@ export default function DuvidasAdminPage() {
 					</button>
 					<button
 						type="button"
+						onClick={() => setActiveTab('forum-categories')}
+						className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-semibold transition-all border-b-2 -mb-px ${
+							activeTab === 'forum-categories'
+								? 'text-violet-600 dark:text-violet-400 border-violet-500 bg-transparent'
+								: 'text-slate-600 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+						}`}
+					>
+						<MessagesSquare className="w-4 h-4" />
+						Categorias do Fórum
+					</button>
+					<button
+						type="button"
 						onClick={() => setActiveTab('categories')}
 						className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-semibold transition-all border-b-2 -mb-px ${
 							activeTab === 'categories'
@@ -121,6 +135,7 @@ export default function DuvidasAdminPage() {
 				</div>
 
 				{activeTab === 'faq' && <FAQAdminSection />}
+				{activeTab === 'forum-categories' && <ForumCategoriesSection />}
 				{activeTab === 'categories' && <CategoriesSection />}
 				{activeTab === 'questions' && <DefaultQuestionsSection />}
 			</main>

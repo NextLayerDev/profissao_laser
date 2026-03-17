@@ -21,6 +21,7 @@ const ADMIN_PATHS = [
 	'/reports',
 	'/community',
 	'/acessos',
+	'/forum',
 ];
 
 function getLoginRedirect(pathname: string): string {

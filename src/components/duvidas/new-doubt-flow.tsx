@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import {
 	ArrowLeft,
 	ArrowRight,
@@ -14,13 +15,10 @@ import {
 	useCreateDoubtChat,
 	useDoubtCategories,
 	useSendDoubtMessage,
-	useTechnician,
-	useTechnicians,
 } from '@/hooks/use-doubt-chat';
+import { assignRandomTechnician } from '@/services/doubt-chat';
 import type { DoubtChat } from '@/types/doubt-chat';
 import { DoubtChatView } from './doubt-chat-view';
-import { QualificationForm } from './qualification-form';
-import { TechnicianSelector } from './technician-selector';
 
 export interface NewDoubtFlowProps {
 	isOpen: boolean;
@@ -30,7 +28,7 @@ export interface NewDoubtFlowProps {
 	onChatCreated: (chat: DoubtChat) => void;
 }
 
-const STEPS = ['Categoria', 'Técnico', 'Qualificação', 'Mensagem'] as const;
+const STEPS = ['Categoria', 'Mensagem'] as const;
 
 export function NewDoubtFlow({
 	isOpen,
@@ -40,31 +38,19 @@ export function NewDoubtFlow({
 }: NewDoubtFlowProps) {
 	const [step, setStep] = useState(0);
 	const [categoryId, setCategoryId] = useState<string | null>(null);
-	const [technicianId, setTechnicianId] = useState<string | null>(null);
-	const [qualificationAnswers, setQualificationAnswers] = useState<
-		Record<string, string>
-	>({});
 	const [initialMessage, setInitialMessage] = useState('');
 	const [createdChat, setCreatedChat] = useState<DoubtChat | null>(null);
 
 	const { data: categories = [], isLoading: categoriesLoading } =
 		useDoubtCategories(isOpen);
-	const { data: technicians = [], isLoading: techniciansLoading } =
-		useTechnicians(isOpen);
-	const { data: selectedTechnician } = useTechnician(
-		technicianId,
-		isOpen && !!technicianId,
-	);
-	const questions = selectedTechnician?.defaultQuestions ?? [];
 
+	const qc = useQueryClient();
 	const createChatMutation = useCreateDoubtChat();
 	const sendMessageMutation = useSendDoubtMessage(createdChat?.id ?? null);
 
 	function reset() {
 		setStep(0);
 		setCategoryId(null);
-		setTechnicianId(null);
-		setQualificationAnswers({});
 		setInitialMessage('');
 		setCreatedChat(null);
 	}
@@ -85,13 +71,14 @@ export function NewDoubtFlow({
 		try {
 			const chat = await createChatMutation.mutateAsync({
 				categoryId,
-				technicianId: technicianId ?? undefined,
-				qualificationAnswers:
-					Object.keys(qualificationAnswers).length > 0
-						? qualificationAnswers
-						: undefined,
 				initialMessage: initialMessage.trim(),
 			});
+			try {
+				await assignRandomTechnician(chat.id);
+				await qc.invalidateQueries({ queryKey: ['doubt-chat'] });
+			} catch {
+				// falha silenciosa — o chat foi criado, apenas o técnico não foi atribuído
+			}
 			setCreatedChat(chat);
 			onChatCreated(chat);
 			toast.success('Dúvida enviada!');
@@ -100,10 +87,13 @@ export function NewDoubtFlow({
 		}
 	}
 
-	async function handleSendMessage(content: string) {
+	async function handleSendMessage(content: string, file?: File) {
 		if (!createdChat) return;
 		try {
-			const newMessage = await sendMessageMutation.mutateAsync(content);
+			const newMessage = await sendMessageMutation.mutateAsync({
+				content,
+				file,
+			});
 			setCreatedChat((prev) =>
 				prev
 					? {
@@ -120,9 +110,7 @@ export function NewDoubtFlow({
 
 	const canProceed =
 		(step === 0 && categoryId) ||
-		(step === 1 && true) ||
-		(step === 2 && true) ||
-		(step === 3 && initialMessage.trim().length > 0);
+		(step === 1 && initialMessage.trim().length > 0);
 
 	const isLoading = createChatMutation.isPending;
 
@@ -242,31 +230,6 @@ export function NewDoubtFlow({
 							)}
 
 							{step === 1 && (
-								<TechnicianSelector
-									technicians={techniciansLoading ? [] : technicians}
-									selectedId={technicianId}
-									onSelect={setTechnicianId}
-								/>
-							)}
-
-							{step === 2 && (
-								<div>
-									{questions.length > 0 ? (
-										<QualificationForm
-											questions={questions}
-											answers={qualificationAnswers}
-											onAnswersChange={setQualificationAnswers}
-										/>
-									) : (
-										<p className="text-sm text-slate-500 dark:text-slate-400">
-											Este técnico não tem perguntas de qualificação. Avance
-											para escrever a sua dúvida.
-										</p>
-									)}
-								</div>
-							)}
-
-							{step === 3 && (
 								<div className="space-y-3">
 									<label
 										htmlFor="initial-message"

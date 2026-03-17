@@ -47,10 +47,14 @@ export default function CoursePage() {
 		const user = getCurrentUser();
 		setEmail(user?.email ?? null);
 		setName(user?.name ?? '');
-		setIsAdmin(!!getToken('user') && user?.role != null);
+		setIsAdmin(!!getToken('user'));
 	}, []);
 
-	const { data: plans, isLoading, isError } = useCustomerPlans(email ?? null);
+	const {
+		data: plans,
+		isLoading,
+		isError,
+	} = useCustomerPlans(isAdmin ? null : (email ?? null));
 
 	const uniquePlans = useMemo(() => {
 		if (!plans) return [];

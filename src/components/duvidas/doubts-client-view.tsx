@@ -44,10 +44,10 @@ export function DoubtsClientView({
 		setActiveTab('pending');
 	}
 
-	async function handleSendMessage(content: string) {
+	async function handleSendMessage(content: string, file?: File) {
 		if (!selectedChatId) return;
 		try {
-			await sendMessageMutation.mutateAsync(content);
+			await sendMessageMutation.mutateAsync({ content, file });
 			toast.success('Mensagem enviada!');
 		} catch {
 			toast.error('Erro ao enviar mensagem. Tente novamente.');

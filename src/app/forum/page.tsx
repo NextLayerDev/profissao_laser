@@ -1,0 +1,41 @@
+'use client';
+
+import { ExternalLink, HelpCircle } from 'lucide-react';
+import Link from 'next/link';
+import { ForumSection } from '@/components/dashboard/forum-section';
+import { Header } from '@/components/dashboard/header';
+
+export default function ForumAdminPage() {
+	return (
+		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] text-slate-900 dark:text-white font-sans">
+			<Header />
+
+			<main className="px-8 py-6">
+				<div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+					<div>
+						<h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
+							<div className="p-2 rounded-xl bg-violet-600">
+								<HelpCircle className="h-6 w-6 text-white" />
+							</div>
+							Fórum
+						</h2>
+						<p className="text-slate-600 dark:text-gray-400 mt-1">
+							Visualize e responda às dúvidas dos alunos no fórum.
+						</p>
+					</div>
+					<Link
+						href="/duvidas"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 hover:border-violet-500/50 rounded-xl text-sm text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+					>
+						<ExternalLink className="h-4 w-4" />
+						Ver fórum (aluno)
+					</Link>
+				</div>
+
+				<ForumSection />
+			</main>
+		</div>
+	);
+}
