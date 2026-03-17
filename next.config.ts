@@ -52,6 +52,8 @@ const nextConfig: NextConfig = {
 	env: {
 		NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
 		NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+		NEXT_PUBLIC_PROVISIONING_SECRET:
+			process.env.NEXT_PUBLIC_PROVISIONING_SECRET,
 	},
 };
 

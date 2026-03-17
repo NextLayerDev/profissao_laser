@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const purchasePayloadSchema = z.object({
 	productId: z.string().uuid(),
+	companyName: z.string().min(1).optional(),
 });
 
 export type PurchasePayload = z.infer<typeof purchasePayloadSchema>;
