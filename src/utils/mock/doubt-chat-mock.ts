@@ -77,6 +77,7 @@ const mockMessages1: ChatMessage[] = [
 		authorId: 'customer-1',
 		authorName: 'João Silva',
 		isTechnician: false,
+		fileUrl: null,
 		createdAt: '2026-03-04T10:00:00.000Z',
 	},
 	{
@@ -86,6 +87,7 @@ const mockMessages1: ChatMessage[] = [
 		authorId: 'tech-1',
 		authorName: 'Miguel Santos',
 		isTechnician: true,
+		fileUrl: null,
 		createdAt: '2026-03-04T10:15:00.000Z',
 	},
 	{
@@ -94,6 +96,7 @@ const mockMessages1: ChatMessage[] = [
 		authorId: 'customer-1',
 		authorName: 'João Silva',
 		isTechnician: false,
+		fileUrl: null,
 		createdAt: '2026-03-04T10:30:00.000Z',
 	},
 ];
@@ -106,6 +109,7 @@ const mockMessages2: ChatMessage[] = [
 		authorId: 'customer-1',
 		authorName: 'João Silva',
 		isTechnician: false,
+		fileUrl: null,
 		createdAt: '2026-03-05T09:00:00.000Z',
 	},
 ];
