@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Building2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
@@ -31,6 +31,7 @@ export default function CheckoutPage() {
 	const { classes, isLoading: classesLoading } = useClasses();
 	const [isAuthenticated, setIsAuthenticated] = useState(!!getCurrentUser());
 	const [isPurchasing, setIsPurchasing] = useState(false);
+	const [companyName, setCompanyName] = useState('');
 
 	const isLoading = productsLoading || classesLoading;
 
@@ -88,19 +89,25 @@ export default function CheckoutPage() {
 	const handleAuthenticatedPurchase = useCallback(async () => {
 		if (!selectedVariant) return;
 
+		if (!companyName.trim()) {
+			toast.error('Informe o nome da empresa.');
+			return;
+		}
+
 		setIsPurchasing(true);
 		setIsAuthenticated(true);
 
 		try {
 			const { checkoutUrl } = await createPurchase({
 				productId: selectedVariant.product.id,
+				companyName: companyName.trim(),
 			});
 			window.location.href = checkoutUrl;
 		} catch {
 			toast.error('Erro ao processar compra. Tente novamente.');
 			setIsPurchasing(false);
 		}
-	}, [selectedVariant]);
+	}, [selectedVariant, companyName]);
 
 	if (isLoading) {
 		return (
@@ -161,8 +168,38 @@ export default function CheckoutPage() {
 						onSelectIndex={setSelectedIndex}
 					/>
 
-					{/* Right: Auth or Confirm */}
+					{/* Right: Company name + Auth or Confirm */}
 					<div className="space-y-6">
+						{/* Company name field */}
+						<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl border border-slate-200 dark:border-gray-800 p-6">
+							<div className="flex items-center gap-2 mb-1">
+								<Building2 className="w-4 h-4 text-violet-400" />
+								<h3 className="text-lg font-bold text-slate-900 dark:text-white">
+									Dados da empresa
+								</h3>
+							</div>
+							<p className="text-sm text-slate-500 dark:text-gray-400 mb-4">
+								Informe o nome da empresa para configuracao do sistema
+							</p>
+							<div>
+								<label
+									htmlFor="company-name"
+									className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1"
+								>
+									Nome da empresa
+								</label>
+								<input
+									id="company-name"
+									type="text"
+									value={companyName}
+									onChange={(e) => setCompanyName(e.target.value)}
+									required
+									placeholder="Nome da sua empresa"
+									className="w-full bg-white dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-violet-500/50 transition-colors"
+								/>
+							</div>
+						</div>
+
 						{isPurchasing ? (
 							<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl border border-slate-200 dark:border-gray-800 p-6 flex flex-col items-center justify-center min-h-[200px]">
 								<Loader2 className="w-8 h-8 text-violet-400 animate-spin mb-3" />
@@ -171,7 +208,10 @@ export default function CheckoutPage() {
 								</p>
 							</div>
 						) : isAuthenticated && getCurrentUser() ? (
-							<CheckoutConfirmButton productId={selectedVariant.product.id} />
+							<CheckoutConfirmButton
+								productId={selectedVariant.product.id}
+								companyName={companyName.trim() || undefined}
+							/>
 						) : (
 							<CheckoutAuthForm onAuthenticated={handleAuthenticatedPurchase} />
 						)}

@@ -7,17 +7,22 @@ import { getCurrentUser } from '@/lib/auth';
 
 interface CheckoutConfirmButtonProps {
 	productId: string;
+	companyName?: string;
 }
 
 export function CheckoutConfirmButton({
 	productId,
+	companyName,
 }: CheckoutConfirmButtonProps) {
 	const { mutate: purchase, isPending } = usePurchase();
 	const user = getCurrentUser();
 
 	function handlePurchase() {
 		purchase(
-			{ productId },
+			{
+				productId,
+				...(companyName ? { companyName } : {}),
+			},
 			{
 				onError: () => {
 					toast.error('Erro ao processar compra. Tente novamente.');
