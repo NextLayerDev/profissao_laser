@@ -166,8 +166,15 @@ export function useDoubtChatsAdmin(categoryId?: string | null, enabled = true) {
 export function useReplyToDoubtChat() {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ chatId, content }: { chatId: string; content: string }) =>
-			sendDoubtChatMessage(chatId, content),
+		mutationFn: ({
+			chatId,
+			content,
+			file,
+		}: {
+			chatId: string;
+			content: string;
+			file?: File;
+		}) => sendDoubtChatMessage(chatId, content, file),
 		onSuccess: (_data, variables) => {
 			qc.invalidateQueries({ queryKey: QUERY_KEY });
 			qc.invalidateQueries({

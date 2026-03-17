@@ -42,6 +42,7 @@ export interface DoubtChat {
 export interface ChatMessage {
 	id: string;
 	content: string;
+	fileUrl: string | null;
 	authorId: string;
 	authorName: string;
 	isTechnician: boolean;

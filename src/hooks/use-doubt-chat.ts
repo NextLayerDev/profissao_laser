@@ -77,9 +77,9 @@ export function useCreateDoubtChat() {
 export function useSendDoubtMessage(chatId: string | null) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (content: string) => {
+		mutationFn: ({ content, file }: { content: string; file?: File }) => {
 			if (!chatId) throw new Error('Chat ID required');
-			return sendDoubtChatMessage(chatId, content);
+			return sendDoubtChatMessage(chatId, content, file);
 		},
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: QUERY_KEY });

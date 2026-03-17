@@ -87,10 +87,13 @@ export function NewDoubtFlow({
 		}
 	}
 
-	async function handleSendMessage(content: string) {
+	async function handleSendMessage(content: string, file?: File) {
 		if (!createdChat) return;
 		try {
-			const newMessage = await sendMessageMutation.mutateAsync(content);
+			const newMessage = await sendMessageMutation.mutateAsync({
+				content,
+				file,
+			});
 			setCreatedChat((prev) =>
 				prev
 					? {

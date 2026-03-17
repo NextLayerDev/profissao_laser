@@ -160,7 +160,18 @@ export async function getDoubtChat(id: string): Promise<DoubtChat> {
 export async function sendDoubtChatMessage(
 	chatId: string,
 	content: string,
+	file?: File,
 ): Promise<ChatMessage> {
+	if (file) {
+		const fd = new FormData();
+		if (content) fd.append('content', content);
+		fd.append('file', file);
+		const { data } = await api.post<ChatMessage>(
+			`/doubt-chats/${chatId}/messages`,
+			fd,
+		);
+		return data;
+	}
 	const { data } = await api.post<ChatMessage>(
 		`/doubt-chats/${chatId}/messages`,
 		{ content },
