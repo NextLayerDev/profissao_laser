@@ -55,11 +55,11 @@ export function PlatformSection() {
 
 				{/* Screenshots */}
 				<div className="relative mb-10">
-					<div className="flex gap-4 overflow-hidden justify-center">
+					<div className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-3 -mx-2 px-2 sm:overflow-hidden sm:justify-center">
 						{screenshots.map((shot, i) => (
 							<div
 								key={shot.alt}
-								className={`relative w-64 h-44 rounded-2xl overflow-hidden border border-white/10 flex-shrink-0 shadow-xl transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+								className={`relative w-[75vw] sm:w-64 h-44 rounded-2xl overflow-hidden border border-white/10 flex-shrink-0 snap-center shadow-xl transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
 								style={{
 									transitionDelay: `${300 + i * 150}ms`,
 								}}

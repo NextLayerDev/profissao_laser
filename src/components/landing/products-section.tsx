@@ -97,8 +97,7 @@ function ProductCard({
 			: null;
 
 	function handleBuy() {
-		const classParam = classInfo ? `?classId=${classInfo.id}` : '';
-		router.push(`/checkout/${product.slug}${classParam}`);
+		router.push(`/checkout/${product.slug}?productId=${product.id}`);
 	}
 
 	const ownershipStatus = ownedPlans
@@ -118,7 +117,7 @@ function ProductCard({
 
 	return (
 		<div
-			className={`group relative rounded-3xl overflow-hidden transition-all duration-500 flex flex-col ${
+			className={`flex flex-col w-full sm:flex-1 sm:min-w-[165px] rounded-2xl border p-4 transition-all duration-200 ${
 				featured
 					? 'bg-gradient-to-b from-[#1e1e22] to-[#141416] border-2 border-[#f2295b]/60 shadow-2xl shadow-[#f2295b]/10 md:-mt-4 md:mb-4'
 					: 'bg-[#16161a] border border-white/[0.06] hover:border-white/10'
@@ -345,7 +344,6 @@ function ProductCard({
 
 				{/* Divider + Price */}
 				<div className="border-t border-white/[0.06] pt-5 mt-auto">
-					{/* Guarantee */}
 					{product.refundDays && (
 						<div className="flex items-center gap-2 mb-4">
 							<Shield className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -356,7 +354,6 @@ function ProductCard({
 						</div>
 					)}
 
-					{/* Price */}
 					<div className="flex items-end justify-between mb-4">
 						<div>
 							<p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1">
@@ -370,7 +367,6 @@ function ProductCard({
 						</div>
 					</div>
 
-					{/* CTA */}
 					{ownershipStatus === 'owned' ? (
 						<button
 							type="button"
