@@ -19,19 +19,21 @@ import {
 	X,
 	Zap,
 } from 'lucide-react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useClasses } from '@/hooks/use-classes';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { useProducts } from '@/hooks/use-products';
 import { useSystemClasses } from '@/hooks/use-system-classes';
 import { getCurrentUser } from '@/lib/auth';
-import type { ClassWithProducts } from '@/types/classes';
+import type { ClassWithProducts, FeatureKey } from '@/types/classes';
 import type { CustomerPlan } from '@/types/plans';
 import type { Product } from '@/types/products';
 import type { SystemClassWithRelations } from '@/types/system-classes';
-import { CLASS_FEATURES } from '@/utils/constants/class-features';
+import {
+	CLASS_FEATURES,
+	SYSTEM_EXTRA_FEATURES,
+} from '@/utils/constants/class-features';
 import { TIER_STYLES } from '@/utils/constants/tier-styles';
 import { formatCurrency } from '@/utils/format-currency';
 import { resolveOwnership, TIER_ORDER } from '@/utils/ownership';
@@ -42,6 +44,9 @@ const FEATURE_ICONS: Record<string, typeof BookOpen> = {
 	vetorizacao: Pen,
 	suporte: Zap,
 	comunidade: Users,
+	sistemaGerenciamento: Sparkles,
+	iaPrevias: Sparkles,
+	iaWhatsappPrevias: Sparkles,
 };
 
 const FEATURE_DESCRIPTIONS: Record<string, string> = {
@@ -50,7 +55,12 @@ const FEATURE_DESCRIPTIONS: Record<string, string> = {
 	vetorizacao: 'Serviço de vetorização profissional para seus projetos',
 	suporte: 'Suporte técnico especializado via WhatsApp e acesso remoto',
 	comunidade: 'Acesso ao grupo exclusivo de profissionais do mercado laser',
+	sistemaGerenciamento: 'Sistema de gerenciamento integrado à plataforma',
+	iaPrevias: 'Geração de prévias automáticas com Inteligência Artificial',
+	iaWhatsappPrevias: 'Envio de prévias via WhatsApp com IA integrada',
 };
+
+const ALL_COMPARISON_FEATURES = [...CLASS_FEATURES, ...SYSTEM_EXTRA_FEATURES];
 
 interface ProductVariant {
 	product: Product;
@@ -64,60 +74,83 @@ interface ProductGroup {
 	variants: ProductVariant[];
 }
 
-/* ─── Individual product card ─── */
+/* ─── Helpers ─── */
 
-function ProductCard({
-	variants,
+const CLASS_FEATURE_KEY_SET = new Set<string>(CLASS_FEATURES.map((f) => f.key));
+
+function isFeatureEnabled(key: string, variant: ProductVariant): boolean {
+	const { classInfo, systemClasses } = variant;
+	const sc = systemClasses?.[0] ?? null;
+	if (CLASS_FEATURE_KEY_SET.has(key)) {
+		if (classInfo) {
+			// Standard course features → from classInfo when present
+			return Boolean((classInfo as Record<string, unknown>)[key]);
+		}
+		// No class tier, but has a system class → course content is included
+		return sc != null;
+	}
+	// System class extra features → from systemClasses[0]
+	if (!sc) return false;
+	return Boolean((sc as Record<string, unknown>)[key]);
+}
+
+function computeActiveFeatureKeys(variants: ProductVariant[]) {
+	const hasAnyClassInfo = variants.some((v) => v.classInfo != null);
+	const hasAnySystemClass = variants.some(
+		(v) => (v.systemClasses?.length ?? 0) > 0,
+	);
+	return ALL_COMPARISON_FEATURES.filter((feat) => {
+		if (CLASS_FEATURE_KEY_SET.has(feat.key as FeatureKey))
+			return hasAnyClassInfo || hasAnySystemClass;
+		return hasAnySystemClass;
+	});
+}
+
+/* ─── Variant column card ─── */
+
+function VariantColumn({
+	variant,
+	activeFeatureKeys,
 	featured,
 	ownedPlans,
 }: {
-	variants: ProductVariant[];
-	featured?: boolean;
-	ownedPlans?: CustomerPlan[];
+	variant: ProductVariant;
+	activeFeatureKeys: typeof ALL_COMPARISON_FEATURES;
+	featured: boolean;
+	ownedPlans: CustomerPlan[];
 }) {
-	const [selectedIndex, setSelectedIndex] = useState(() => {
-		if (variants.length <= 1) return 0;
-		const ouroIdx = variants.findIndex((v) => v.classInfo?.tier === 'ouro');
-		return ouroIdx >= 0 ? ouroIdx : 0;
-	});
-	const [selectedScIndex, setSelectedScIndex] = useState<number | null>(() => {
-		const sc = variants[0].systemClasses ?? [];
-		return sc.length > 0 ? 0 : null;
-	});
-	const [imgError, setImgError] = useState(false);
 	const router = useRouter();
+	const { product, classInfo, systemClasses } = variant;
 
-	const { product, classInfo } = variants[selectedIndex];
-	const hasMultipleTiers = variants.length > 1;
+	/* Label / badge */
+	const tierStyle = classInfo ? TIER_STYLES[classInfo.tier] : null;
+	const columnLabel =
+		tierStyle?.label ?? systemClasses?.[0]?.name ?? 'Sem plano';
+	const columnSubtitle = classInfo
+		? `Curso + ${tierStyle?.label ?? classInfo.tier}`
+		: systemClasses?.[0]
+			? `Curso + ${systemClasses[0].name}`
+			: 'Apenas o curso';
 
-	const allSystemClasses = variants[selectedIndex].systemClasses ?? [];
-	const activeSystemClass =
-		selectedScIndex !== null
-			? (allSystemClasses[selectedScIndex] ?? null)
-			: null;
+	const badgeClass = classInfo
+		? classInfo.tier === 'prata'
+			? 'bg-slate-400/20 text-slate-200 border border-slate-500/40'
+			: classInfo.tier === 'ouro'
+				? 'bg-amber-400/20 text-amber-200 border border-amber-500/40'
+				: 'bg-violet-400/20 text-violet-200 border border-violet-500/40'
+		: 'bg-white/10 text-gray-200 border border-white/20';
 
 	function handleBuy() {
 		router.push(`/checkout/${product.slug}?productId=${product.id}`);
 	}
 
-	const ownershipStatus = ownedPlans
-		? resolveOwnership(ownedPlans, variants, selectedIndex)
+	const ownershipStatus = ownedPlans.length
+		? resolveOwnership(ownedPlans, [variant], 0)
 		: 'none';
-
-	const enabledFeatures = classInfo
-		? CLASS_FEATURES.filter((f) => classInfo[f.key])
-		: activeSystemClass
-			? CLASS_FEATURES.filter((f) => activeSystemClass[f.key])
-			: [];
-	const disabledFeatures = classInfo
-		? CLASS_FEATURES.filter((f) => !classInfo[f.key])
-		: activeSystemClass
-			? CLASS_FEATURES.filter((f) => !activeSystemClass[f.key])
-			: CLASS_FEATURES;
 
 	return (
 		<div
-			className={`flex flex-col w-full sm:flex-1 sm:min-w-[165px] rounded-2xl border p-4 transition-all duration-200 ${
+			className={`relative flex flex-col flex-1 min-w-[240px] rounded-2xl border p-5 transition-all duration-200 ${
 				featured
 					? 'bg-gradient-to-b from-[#1e1e22] to-[#141416] border-2 border-[#f2295b]/60 shadow-2xl shadow-[#f2295b]/10 md:-mt-4 md:mb-4'
 					: 'bg-[#16161a] border border-white/[0.06] hover:border-white/10'
@@ -125,194 +158,29 @@ function ProductCard({
 		>
 			{/* Featured badge */}
 			{featured && (
-				<div className="absolute top-5 right-5 z-20">
-					<div className="flex items-center gap-1.5 bg-[#f2295b] text-white text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full shadow-lg shadow-[#f2295b]/30">
-						<Sparkles className="w-3 h-3" />
-						Mais popular
-					</div>
+				<div className="flex items-center gap-1.5 bg-[#f2295b] text-white text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full shadow-lg shadow-[#f2295b]/30 self-start mb-4">
+					<Sparkles className="w-3 h-3" />
+					Mais popular
 				</div>
 			)}
 
-			{/* Image / Visual header */}
-			<div className="relative h-52 overflow-hidden">
-				{product.image && !imgError ? (
-					<>
-						<Image
-							src={product.image}
-							alt={product.name}
-							fill
-							className="object-cover transition-transform duration-700 group-hover:scale-105"
-							onError={() => setImgError(true)}
-						/>
-						<div className="absolute inset-0 bg-gradient-to-t from-[#16161a] via-[#16161a]/40 to-transparent" />
-					</>
-				) : (
-					<div className="absolute inset-0 bg-gradient-to-br from-violet-900/50 via-purple-900/30 to-[#16161a]">
-						<div className="absolute inset-0 flex items-center justify-center">
-							<GraduationCap className="w-16 h-16 text-white/10" />
-						</div>
-					</div>
-				)}
-
-				{/* Category pill */}
-				{product.category && (
-					<div className="absolute top-4 left-4 z-10">
-						<span className="bg-white/10 backdrop-blur-md text-white/90 text-[11px] font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full border border-white/10">
-							{product.category}
-						</span>
-					</div>
-				)}
-
-				{/* System class badge */}
-				{activeSystemClass && !featured && (
-					<div className="absolute top-4 right-4 z-10">
-						<span className="bg-purple-500/80 backdrop-blur-md text-white text-[11px] font-semibold px-3 py-1.5 rounded-full border border-purple-400/30">
-							{activeSystemClass.name}
-						</span>
-					</div>
-				)}
-
-				{/* Title overlay at bottom of image */}
-				<div className="absolute bottom-0 left-0 right-0 p-5 z-10">
-					<h3 className="text-xl font-bold text-white leading-tight drop-shadow-lg">
-						{product.name}
-					</h3>
+			{/* Tier badge + subtitle */}
+			<div className="mb-4">
+				<div
+					className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full mb-2 ${badgeClass}`}
+				>
+					<GraduationCap className="w-3.5 h-3.5" />
+					{columnLabel}
 				</div>
+				<p className="text-[12px] text-gray-400">{columnSubtitle}</p>
 			</div>
 
-			{/* Body */}
-			<div className="p-5 pt-3 flex flex-col flex-1">
-				{/* Description */}
-				{product.description ? (
-					<p className="text-[13px] text-gray-400 leading-relaxed mb-5 line-clamp-3">
-						{product.description}
-					</p>
-				) : (
-					<p className="text-[13px] text-gray-500 leading-relaxed mb-5">
-						Curso profissional completo com conteúdo exclusivo para dominar o
-						mercado de gravação a laser.
-					</p>
-				)}
-
-				{/* Tier selector */}
-				{hasMultipleTiers && (
-					<div className="mb-5">
-						<p className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold mb-2.5">
-							Nível de acesso
-						</p>
-						<div className="grid grid-cols-3 gap-1.5 bg-white/[0.03] p-1 rounded-xl">
-							{variants.map((v, i) => {
-								const style = v.classInfo
-									? TIER_STYLES[v.classInfo.tier]
-									: null;
-								const label = style?.label ?? 'Padrão';
-								const isActive = i === selectedIndex;
-								return (
-									<button
-										key={v.product.id}
-										type="button"
-										onClick={() => {
-											setSelectedIndex(i);
-											const sc = variants[i].systemClasses ?? [];
-											setSelectedScIndex(sc.length > 0 ? 0 : null);
-											setImgError(false);
-										}}
-										className={`relative py-2 text-xs font-semibold rounded-lg transition-all duration-300 cursor-pointer ${
-											isActive
-												? 'bg-white/10 text-white shadow-sm'
-												: 'text-gray-500 hover:text-gray-300'
-										}`}
-									>
-										{label}
-										{isActive && (
-											<div
-												className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full ${
-													v.classInfo?.tier === 'prata'
-														? 'bg-slate-400'
-														: v.classInfo?.tier === 'ouro'
-															? 'bg-amber-400'
-															: v.classInfo?.tier === 'platina'
-																? 'bg-violet-400'
-																: 'bg-white'
-												}`}
-											/>
-										)}
-									</button>
-								);
-							})}
-						</div>
-					</div>
-				)}
-
-				{/* System class selector - mini cards */}
-				{allSystemClasses.length >= 1 && (
-					<div className="mb-5">
-						<p className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold mb-2.5">
-							Plano do sistema
-						</p>
-						<div className="grid grid-cols-2 gap-2">
-							{allSystemClasses.map((sc, i) => {
-								const isActive = selectedScIndex === i;
-								const scFeatures = CLASS_FEATURES.filter((f) => sc[f.key]);
-								return (
-									<button
-										key={sc.id}
-										type="button"
-										onClick={() => setSelectedScIndex(i)}
-										className={`text-left p-3 rounded-xl border transition-all duration-200 cursor-pointer ${
-											isActive
-												? 'bg-purple-500/15 border-purple-500/50'
-												: 'bg-white/[0.03] border-white/[0.06] hover:border-white/15'
-										}`}
-									>
-										<p
-											className={`text-xs font-bold mb-1.5 ${isActive ? 'text-white' : 'text-gray-400'}`}
-										>
-											{sc.name}
-										</p>
-										<div className="flex flex-wrap gap-1">
-											{scFeatures.map((f) => (
-												<span
-													key={f.key}
-													className={`inline-flex items-center gap-0.5 text-[10px] ${isActive ? 'text-emerald-400' : 'text-gray-600'}`}
-												>
-													<Check className="w-2.5 h-2.5" />
-													{f.label}
-												</span>
-											))}
-										</div>
-									</button>
-								);
-							})}
-							{/* Sem plano */}
-							<button
-								type="button"
-								onClick={() => setSelectedScIndex(null)}
-								className={`text-left p-3 rounded-xl border transition-all duration-200 cursor-pointer ${
-									selectedScIndex === null
-										? 'bg-white/[0.08] border-white/20'
-										: 'bg-white/[0.03] border-white/[0.06] hover:border-white/15'
-								}`}
-							>
-								<p
-									className={`text-xs font-bold mb-1.5 flex items-center gap-1 ${selectedScIndex === null ? 'text-white' : 'text-gray-400'}`}
-								>
-									<X className="w-3 h-3" />
-									Sem plano
-								</p>
-								<p className="text-[10px] text-gray-600">Apenas o curso</p>
-							</button>
-						</div>
-					</div>
-				)}
-
-				{/* Features — show enabled with details */}
-				<div className="space-y-2.5 mb-5 flex-1">
-					<p className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold mb-1">
-						O que está incluso
-					</p>
-					{enabledFeatures.map((feat) => {
-						const Icon = FEATURE_ICONS[feat.key] ?? Check;
+			{/* Feature list */}
+			<div className="space-y-2.5 mb-5 flex-1">
+				{activeFeatureKeys.map((feat) => {
+					const enabled = isFeatureEnabled(feat.key, variant);
+					const Icon = FEATURE_ICONS[feat.key] ?? Check;
+					if (enabled) {
 						return (
 							<div key={feat.key} className="flex items-start gap-2.5">
 								<div className="w-5 h-5 rounded-md bg-emerald-500/10 flex items-center justify-center mt-0.5 shrink-0">
@@ -328,8 +196,8 @@ function ProductCard({
 								</div>
 							</div>
 						);
-					})}
-					{disabledFeatures.map((feat) => (
+					}
+					return (
 						<div
 							key={feat.key}
 							className="flex items-center gap-2.5 opacity-40"
@@ -339,60 +207,51 @@ function ProductCard({
 							</div>
 							<p className="text-sm text-gray-600 line-through">{feat.label}</p>
 						</div>
-					))}
-				</div>
+					);
+				})}
+			</div>
 
-				{/* Divider + Price */}
-				<div className="border-t border-white/[0.06] pt-5 mt-auto">
-					{product.refundDays && (
-						<div className="flex items-center gap-2 mb-4">
-							<Shield className="w-4 h-4 text-emerald-400 shrink-0" />
-							<span className="text-xs text-emerald-400/80 font-medium">
-								Garantia incondicional de {product.refundDays} dias — sem
-								perguntas
-							</span>
-						</div>
-					)}
-
-					<div className="flex items-end justify-between mb-4">
-						<div>
-							<p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1">
-								Investimento
-							</p>
-							<div className="flex items-baseline gap-1">
-								<span className="text-3xl font-black text-white tracking-tight">
-									{formatCurrency(product.price, 'BRL')}
-								</span>
-							</div>
-						</div>
+			{/* Bottom: guarantee + price + CTA */}
+			<div className="border-t border-white/[0.06] pt-4 mt-auto">
+				{product.refundDays && (
+					<div className="flex items-center gap-2 mb-3">
+						<Shield className="w-4 h-4 text-emerald-400 shrink-0" />
+						<span className="text-xs text-emerald-400/80 font-medium">
+							Garantia de {product.refundDays} dias
+						</span>
 					</div>
+				)}
 
-					{ownershipStatus === 'owned' ? (
-						<button
-							type="button"
-							disabled
-							className="w-full flex items-center justify-center gap-2.5 font-bold py-4 rounded-2xl text-[15px] bg-white/[0.05] text-gray-500 cursor-not-allowed"
-						>
-							<CheckCircle className="w-4 h-4" />
-							Já possui
-						</button>
-					) : (
-						<button
-							type="button"
-							onClick={handleBuy}
-							className={`w-full flex items-center justify-center gap-2.5 font-bold py-4 rounded-2xl transition-all duration-300 cursor-pointer text-[15px] ${
-								featured
-									? 'bg-[#f2295b] hover:bg-[#e0214f] text-white shadow-lg shadow-[#f2295b]/20 hover:shadow-[#f2295b]/30'
-									: 'bg-white/[0.07] hover:bg-white/[0.12] text-white'
-							}`}
-						>
-							{ownershipStatus === 'upgrade'
-								? 'Fazer upgrade'
-								: 'Começar agora'}
-							<ArrowRight className="w-4 h-4" />
-						</button>
-					)}
-				</div>
+				<p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1">
+					Investimento
+				</p>
+				<p className="text-3xl font-black text-white tracking-tight mb-4">
+					{formatCurrency(product.price, 'BRL')}
+				</p>
+
+				{ownershipStatus === 'owned' ? (
+					<button
+						type="button"
+						disabled
+						className="w-full flex items-center justify-center gap-2.5 font-bold py-3.5 rounded-2xl text-[14px] bg-white/[0.05] text-gray-500 cursor-not-allowed"
+					>
+						<CheckCircle className="w-4 h-4" />
+						Já possui
+					</button>
+				) : (
+					<button
+						type="button"
+						onClick={handleBuy}
+						className={`w-full flex items-center justify-center gap-2.5 font-bold py-3.5 rounded-2xl transition-all duration-300 cursor-pointer text-[14px] ${
+							featured
+								? 'bg-[#f2295b] hover:bg-[#e0214f] text-white shadow-lg shadow-[#f2295b]/20'
+								: 'bg-white/[0.07] hover:bg-white/[0.12] text-white'
+						}`}
+					>
+						{ownershipStatus === 'upgrade' ? 'Fazer upgrade' : 'Começar agora'}
+						<ArrowRight className="w-4 h-4" />
+					</button>
+				)}
 			</div>
 		</div>
 	);
@@ -449,6 +308,7 @@ export function ProductsSection() {
 
 	const [selectedMachine, setSelectedMachine] = useState('');
 	const [selectedSoftware, setSelectedSoftware] = useState('');
+	const hasAutoSelected = useRef(false);
 
 	const isLoading = productsLoading || classesLoading || systemClassesLoading;
 
@@ -471,6 +331,22 @@ export function ProductsSection() {
 			softwares: Array.from(softwareSet).sort(),
 		};
 	}, [activeProducts]);
+
+	/* Auto-select Fiber + EZCAD on first data load */
+	useEffect(() => {
+		if (
+			!productsLoading &&
+			machines.length > 0 &&
+			softwares.length > 0 &&
+			!hasAutoSelected.current
+		) {
+			hasAutoSelected.current = true;
+			const fiber = machines.find((m) => m.toLowerCase().includes('fiber'));
+			const ezcad = softwares.find((s) => s.toLowerCase().includes('ezcad'));
+			if (fiber) setSelectedMachine(fiber);
+			if (ezcad) setSelectedSoftware(ezcad);
+		}
+	}, [productsLoading, machines, softwares]);
 
 	const hasFilters = selectedMachine !== '' || selectedSoftware !== '';
 
@@ -496,10 +372,20 @@ export function ProductsSection() {
 	}, [activeSystemClasses]);
 
 	const productGroups: ProductGroup[] = useMemo(() => {
-		/* Filter products by machine/software before grouping */
 		const filtered = activeProducts.filter((p) => {
-			if (selectedMachine && p.machine !== selectedMachine) return false;
-			if (selectedSoftware && p.software !== selectedSoftware) return false;
+			// Products without machine/software are universal — never filtered out
+			if (
+				selectedMachine &&
+				p.machine !== null &&
+				p.machine !== selectedMachine
+			)
+				return false;
+			if (
+				selectedSoftware &&
+				p.software !== null &&
+				p.software !== selectedSoftware
+			)
+				return false;
 			return true;
 		});
 
@@ -567,7 +453,7 @@ export function ProductsSection() {
 			<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-[#f2295b]/[0.03] rounded-full blur-3xl pointer-events-none" />
 
 			<div className="relative max-w-6xl mx-auto">
-				{/* Section header — estilo da seção de planos */}
+				{/* Section header */}
 				<div className="text-center mb-16">
 					<p className="text-[#f2295b] uppercase tracking-widest text-sm font-bold text-center mb-3">
 						Nossos cursos
@@ -588,7 +474,6 @@ export function ProductsSection() {
 				{(machines.length > 0 || softwares.length > 0) && (
 					<div className="mb-16">
 						<div className="relative bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/[0.08] rounded-3xl p-6 md:p-8 backdrop-blur-sm">
-							{/* Glow accent */}
 							<div className="absolute -top-px left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-[#f2295b]/60 to-transparent" />
 
 							<div className="flex items-center gap-3 mb-5">
@@ -630,6 +515,7 @@ export function ProductsSection() {
 										onClick={() => {
 											setSelectedMachine('');
 											setSelectedSoftware('');
+											hasAutoSelected.current = false;
 										}}
 										className="flex items-center justify-center gap-2 text-gray-400 hover:text-white text-sm font-medium px-5 py-4 rounded-2xl border border-white/[0.08] hover:border-white/20 transition-all duration-300 cursor-pointer sm:w-auto"
 									>
@@ -699,31 +585,58 @@ export function ProductsSection() {
 							</div>
 						)}
 
-						{/* Product grid */}
-						<div
-							className={`grid gap-6 items-start ${
-								groups.length === 1
-									? 'grid-cols-1 max-w-lg mx-auto'
-									: groups.length === 2
-										? 'grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto'
-										: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-							}`}
-						>
-							{groups.map((group, idx) => (
-								<ProductCard
-									key={group.name}
-									variants={group.variants}
-									featured={
-										groups.length >= 3 && idx === Math.floor(groups.length / 2)
-									}
-									ownedPlans={ownedPlans ?? []}
-								/>
-							))}
-						</div>
+						{/* Product groups */}
+						{groups.map((group) => {
+							const activeFeatureKeys = computeActiveFeatureKeys(
+								group.variants,
+							);
+							return (
+								<div key={group.name} className="mb-16 last:mb-0">
+									{/* Group header — shown when there are multiple variants */}
+									{group.variants.length > 1 && (
+										<div className="text-center mb-8">
+											<h3 className="text-xl font-bold text-white mb-2">
+												{group.name}
+											</h3>
+											{(group.variants[0].product.machine ||
+												group.variants[0].product.software) && (
+												<div className="flex items-center justify-center gap-3 flex-wrap">
+													{group.variants[0].product.machine && (
+														<span className="inline-flex items-center gap-1.5 text-xs text-gray-400 bg-white/[0.05] px-3 py-1.5 rounded-full border border-white/[0.08]">
+															<Monitor className="w-3.5 h-3.5 text-violet-400" />
+															{group.variants[0].product.machine}
+														</span>
+													)}
+													{group.variants[0].product.software && (
+														<span className="inline-flex items-center gap-1.5 text-xs text-gray-400 bg-white/[0.05] px-3 py-1.5 rounded-full border border-white/[0.08]">
+															<Cpu className="w-3.5 h-3.5 text-violet-400" />
+															{group.variants[0].product.software}
+														</span>
+													)}
+												</div>
+											)}
+										</div>
+									)}
+
+									{/* Variant columns */}
+									<div className="flex flex-col sm:flex-row gap-6 items-start justify-center max-w-5xl mx-auto">
+										{group.variants.map((variant, i) => (
+											<VariantColumn
+												key={variant.product.id}
+												variant={variant}
+												activeFeatureKeys={activeFeatureKeys}
+												featured={i === group.variants.length - 1}
+												ownedPlans={ownedPlans ?? []}
+											/>
+										))}
+									</div>
+								</div>
+							);
+						})}
 					</div>
 				))}
 
-				{/* Trust badges — estilo da seção de planos */}
+				{/* Trust badges */}
 				<div className="flex items-center justify-center gap-6 mt-10">
 					<div className="flex items-center gap-2 text-gray-500 text-sm">
 						<div className="w-5 h-5 bg-emerald-500/20 rounded-full flex items-center justify-center">
