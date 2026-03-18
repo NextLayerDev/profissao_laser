@@ -57,6 +57,42 @@ export function CoursesVideoSection() {
 							</div>
 						</div>
 					</div>
+
+					{/* Instructors overlay */}
+					<div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
+						<div className="flex items-center gap-6">
+							<div className="flex items-center gap-3">
+								<Image
+									src="/img/fernando-nucci_lw-min.jpg"
+									alt="Fernando Nucci"
+									width={44}
+									height={44}
+									className="rounded-xl object-cover"
+								/>
+								<div>
+									<p className="text-white text-sm font-bold leading-tight">
+										Fernando Nucci
+									</p>
+									<p className="text-gray-400 text-[11px]">Instrutor</p>
+								</div>
+							</div>
+							<div className="flex items-center gap-3">
+								<Image
+									src="/img/giovani-meinhardt-min.jpg"
+									alt="Giovani Meinhardt"
+									width={44}
+									height={44}
+									className="rounded-xl object-cover"
+								/>
+								<div>
+									<p className="text-white text-sm font-bold leading-tight">
+										Giovani Meinhardt
+									</p>
+									<p className="text-gray-400 text-[11px]">Instrutor</p>
+								</div>
+							</div>
+						</div>
+					</div>
 				</a>
 			</div>
 		</section>

@@ -18,7 +18,7 @@ export function TopBar() {
 
 	const scrollToVideo = () => {
 		document
-			.getElementById('cursos')
+			.getElementById('video-compra')
 			?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 	};
 

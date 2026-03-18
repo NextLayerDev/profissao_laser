@@ -4,6 +4,7 @@ import {
 	ArrowRight,
 	BookOpen,
 	Check,
+	CheckCircle,
 	ChevronDown,
 	Cpu,
 	GraduationCap,
@@ -20,7 +21,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useClasses } from '@/hooks/use-classes';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { useProducts } from '@/hooks/use-products';
@@ -31,8 +32,9 @@ import type { CustomerPlan } from '@/types/plans';
 import type { Product } from '@/types/products';
 import type { SystemClassWithRelations } from '@/types/system-classes';
 import { CLASS_FEATURES } from '@/utils/constants/class-features';
-import { SC_OPTIONS } from '@/utils/constants/system-class-options';
+import { TIER_STYLES } from '@/utils/constants/tier-styles';
 import { formatCurrency } from '@/utils/format-currency';
+import { resolveOwnership, TIER_ORDER } from '@/utils/ownership';
 
 const FEATURE_ICONS: Record<string, typeof BookOpen> = {
 	aula: BookOpen,
@@ -40,9 +42,6 @@ const FEATURE_ICONS: Record<string, typeof BookOpen> = {
 	vetorizacao: Pen,
 	suporte: Zap,
 	comunidade: Users,
-	sistemaGerenciamento: Shield,
-	iaPrevias: Sparkles,
-	iaWhatsappPrevias: MessageCircle,
 };
 
 const FEATURE_DESCRIPTIONS: Record<string, string> = {
@@ -51,9 +50,6 @@ const FEATURE_DESCRIPTIONS: Record<string, string> = {
 	vetorizacao: 'Serviço de vetorização profissional para seus projetos',
 	suporte: 'Suporte técnico especializado via WhatsApp e acesso remoto',
 	comunidade: 'Acesso ao grupo exclusivo de profissionais do mercado laser',
-	sistemaGerenciamento: 'Acesso completo ao sistema de gerenciamento',
-	iaPrevias: 'Geração de prévias automáticas com Inteligência Artificial',
-	iaWhatsappPrevias: 'Envio de prévias via WhatsApp com IA integrada',
 };
 
 interface ProductVariant {
@@ -68,56 +64,69 @@ interface ProductGroup {
 	variants: ProductVariant[];
 }
 
-/* ─── Pricing column inside parent card ─── */
+/* ─── Individual product card ─── */
 
-function PricingColumn({
-	variant,
+function ProductCard({
+	variants,
 	featured,
 	ownedPlans,
 }: {
-	variant: ProductVariant;
+	variants: ProductVariant[];
 	featured?: boolean;
 	ownedPlans?: CustomerPlan[];
 }) {
+	const [selectedIndex, setSelectedIndex] = useState(() => {
+		if (variants.length <= 1) return 0;
+		const ouroIdx = variants.findIndex((v) => v.classInfo?.tier === 'ouro');
+		return ouroIdx >= 0 ? ouroIdx : 0;
+	});
+	const [selectedScIndex, setSelectedScIndex] = useState<number | null>(() => {
+		const sc = variants[0].systemClasses ?? [];
+		return sc.length > 0 ? 0 : null;
+	});
+	const [imgError, setImgError] = useState(false);
 	const router = useRouter();
-	const { product, classInfo, systemClasses } = variant;
-	const systemClass: SystemClassWithRelations | null =
-		systemClasses?.[0] ?? null;
-	const hasSc = systemClass !== null;
-	const classFeatures = CLASS_FEATURES.filter((f) => classInfo?.[f.key]);
+
+	const { product, classInfo } = variants[selectedIndex];
+	const hasMultipleTiers = variants.length > 1;
+
+	const allSystemClasses = variants[selectedIndex].systemClasses ?? [];
+	const activeSystemClass =
+		selectedScIndex !== null
+			? (allSystemClasses[selectedScIndex] ?? null)
+			: null;
 
 	function handleBuy() {
 		router.push(`/checkout/${product.slug}?productId=${product.id}`);
 	}
 
+	const ownershipStatus = ownedPlans
+		? resolveOwnership(ownedPlans, variants, selectedIndex)
+		: 'none';
+
+	const enabledFeatures = classInfo
+		? CLASS_FEATURES.filter((f) => classInfo[f.key])
+		: activeSystemClass
+			? CLASS_FEATURES.filter((f) => activeSystemClass[f.key])
+			: [];
+	const disabledFeatures = classInfo
+		? CLASS_FEATURES.filter((f) => !classInfo[f.key])
+		: activeSystemClass
+			? CLASS_FEATURES.filter((f) => !activeSystemClass[f.key])
+			: CLASS_FEATURES;
+
 	return (
 		<div
 			className={`flex flex-col w-full sm:flex-1 sm:min-w-[165px] rounded-2xl border p-4 transition-all duration-200 ${
 				featured
-					? 'border-[#f2295b]/50 bg-gradient-to-b from-[#f2295b]/[0.08] to-transparent shadow-lg shadow-[#f2295b]/10'
-					: hasSc
-						? 'border-purple-500/30 bg-purple-500/[0.06]'
-						: 'border-white/[0.07] bg-white/[0.03]'
+					? 'bg-gradient-to-b from-[#1e1e22] to-[#141416] border-2 border-[#f2295b]/60 shadow-2xl shadow-[#f2295b]/10 md:-mt-4 md:mb-4'
+					: 'bg-[#16161a] border border-white/[0.06] hover:border-white/10'
 			}`}
 		>
-			{/* Plan badge */}
-			<div className="mb-3">
-				{featured && (
-					<div className="flex items-center gap-1 mb-2">
-						<Sparkles className="w-3 h-3 text-[#f2295b]" />
-						<span className="text-[10px] font-bold uppercase tracking-wider text-[#f2295b]">
-							Mais popular
-						</span>
-					</div>
-				)}
-				{hasSc ? (
-					<span
-						className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border ${
-							featured
-								? 'bg-[#f2295b]/20 text-[#f2295b] border-[#f2295b]/30'
-								: 'bg-purple-500/15 text-purple-300 border-purple-500/30'
-						}`}
-					>
+			{/* Featured badge */}
+			{featured && (
+				<div className="absolute top-5 right-5 z-20">
+					<div className="flex items-center gap-1.5 bg-[#f2295b] text-white text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full shadow-lg shadow-[#f2295b]/30">
 						<Sparkles className="w-3 h-3" />
 						{systemClass.name}
 					</span>
@@ -210,58 +219,16 @@ function PricingColumn({
 							Garantia de {product.refundDays} dias
 						</span>
 					</div>
-				)}
-				<p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">
-					Investimento
-				</p>
-				<p className="text-2xl font-black text-white tracking-tight mb-3">
-					{formatCurrency(product.price, 'BRL')}
-				</p>
-				<button
-					type="button"
-					onClick={handleBuy}
-					className={`w-full flex items-center justify-center gap-2 font-bold py-3 rounded-xl transition-all duration-300 cursor-pointer text-sm ${
-						featured
-							? 'bg-[#f2295b] hover:bg-[#e0214f] text-white shadow-lg shadow-[#f2295b]/20'
-							: hasSc
-								? 'bg-purple-600/80 hover:bg-purple-600 text-white'
-								: 'bg-white/[0.07] hover:bg-white/[0.12] text-white'
-					}`}
-				>
-					Começar agora
-					<ArrowRight className="w-4 h-4" />
-				</button>
-			</div>
-		</div>
-	);
-}
+				</div>
+			)}
 
-/* ─── Parent product card (shared header + pricing columns) ─── */
-
-function ProductCard({ group }: { group: ProductGroup }) {
-	const [imgError, setImgError] = useState(false);
-
-	// Sort by price ascending
-	const sorted = [...group.variants].sort(
-		(a, b) => a.product.price - b.product.price,
-	);
-	const primaryProduct = sorted[0].product;
-
-	// Featured = most expensive plan with a SC (last SC variant after price sort)
-	const featuredIndex = sorted.reduce((best, v, i) => {
-		if (!v.systemClasses?.[0]) return best;
-		return i;
-	}, -1);
-
-	return (
-		<div className="group relative rounded-3xl overflow-hidden border border-white/[0.06] hover:border-white/10 bg-[#16161a] transition-all duration-500">
-			{/* Shared image header */}
+			{/* Image / Visual header */}
 			<div className="relative h-52 overflow-hidden">
-				{primaryProduct.image && !imgError ? (
+				{product.image && !imgError ? (
 					<>
 						<Image
-							src={primaryProduct.image}
-							alt={primaryProduct.name}
+							src={product.image}
+							alt={product.name}
 							fill
 							className="object-cover transition-transform duration-700 group-hover:scale-105"
 							onError={() => setImgError(true)}
@@ -275,44 +242,96 @@ function ProductCard({ group }: { group: ProductGroup }) {
 						</div>
 					</div>
 				)}
-				{primaryProduct.category && (
+
+				{/* Category pill */}
+				{product.category && (
 					<div className="absolute top-4 left-4 z-10">
 						<span className="bg-white/10 backdrop-blur-md text-white/90 text-[11px] font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full border border-white/10">
-							{primaryProduct.category}
+							{product.category}
 						</span>
 					</div>
 				)}
+
+				{/* System class badge */}
+				{activeSystemClass && !featured && (
+					<div className="absolute top-4 right-4 z-10">
+						<span className="bg-purple-500/80 backdrop-blur-md text-white text-[11px] font-semibold px-3 py-1.5 rounded-full border border-purple-400/30">
+							{activeSystemClass.name}
+						</span>
+					</div>
+				)}
+
+				{/* Title overlay at bottom of image */}
 				<div className="absolute bottom-0 left-0 right-0 p-5 z-10">
 					<h3 className="text-xl font-bold text-white leading-tight drop-shadow-lg">
-						{primaryProduct.name}
+						{product.name}
 					</h3>
 				</div>
 			</div>
 
-			{/* Shared body info */}
-			<div className="px-5 pt-3 pb-2">
-				{primaryProduct.description && (
-					<p className="text-[13px] text-gray-400 leading-relaxed line-clamp-2 mb-3">
-						{primaryProduct.description}
+			{/* Body */}
+			<div className="p-5 pt-3 flex flex-col flex-1">
+				{/* Description */}
+				{product.description ? (
+					<p className="text-[13px] text-gray-400 leading-relaxed mb-5 line-clamp-3">
+						{product.description}
+					</p>
+				) : (
+					<p className="text-[13px] text-gray-500 leading-relaxed mb-5">
+						Curso profissional completo com conteúdo exclusivo para dominar o
+						mercado de gravação a laser.
 					</p>
 				)}
-				{(primaryProduct.machine || primaryProduct.software) && (
-					<div className="flex flex-wrap gap-2">
-						{primaryProduct.machine && (
-							<span className="inline-flex items-center gap-1.5 text-xs text-gray-400 bg-white/[0.05] px-2.5 py-1 rounded-full">
-								<Monitor className="w-3.5 h-3.5 text-violet-400" />
-								{primaryProduct.machine}
-							</span>
-						)}
-						{primaryProduct.software && (
-							<span className="inline-flex items-center gap-1.5 text-xs text-gray-400 bg-white/[0.05] px-2.5 py-1 rounded-full">
-								<Cpu className="w-3.5 h-3.5 text-violet-400" />
-								{primaryProduct.software}
-							</span>
-						)}
+
+				{/* Tier selector */}
+				{hasMultipleTiers && (
+					<div className="mb-5">
+						<p className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold mb-2.5">
+							Nível de acesso
+						</p>
+						<div className="grid grid-cols-3 gap-1.5 bg-white/[0.03] p-1 rounded-xl">
+							{variants.map((v, i) => {
+								const style = v.classInfo
+									? TIER_STYLES[v.classInfo.tier]
+									: null;
+								const label = style?.label ?? 'Padrão';
+								const isActive = i === selectedIndex;
+								return (
+									<button
+										key={v.product.id}
+										type="button"
+										onClick={() => {
+											setSelectedIndex(i);
+											const sc = variants[i].systemClasses ?? [];
+											setSelectedScIndex(sc.length > 0 ? 0 : null);
+											setImgError(false);
+										}}
+										className={`relative py-2 text-xs font-semibold rounded-lg transition-all duration-300 cursor-pointer ${
+											isActive
+												? 'bg-white/10 text-white shadow-sm'
+												: 'text-gray-500 hover:text-gray-300'
+										}`}
+									>
+										{label}
+										{isActive && (
+											<div
+												className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full ${
+													v.classInfo?.tier === 'prata'
+														? 'bg-slate-400'
+														: v.classInfo?.tier === 'ouro'
+															? 'bg-amber-400'
+															: v.classInfo?.tier === 'platina'
+																? 'bg-violet-400'
+																: 'bg-white'
+												}`}
+											/>
+										)}
+									</button>
+								);
+							})}
+						</div>
 					</div>
 				)}
-			</div>
 
 			{/* Pricing columns — sorted by price asc */}
 			<div className="flex flex-col sm:flex-row gap-3 px-4 sm:px-5 pb-5 pt-3 sm:overflow-x-auto">
@@ -388,6 +407,7 @@ export function ProductsSection() {
 		(sc) => sc.status === 'ativo',
 	);
 
+	/* Extract unique machine and software values */
 	const { machines, softwares } = useMemo(() => {
 		const machineSet = new Set<string>();
 		const softwareSet = new Set<string>();
@@ -400,19 +420,6 @@ export function ProductsSection() {
 			softwares: Array.from(softwareSet).sort(),
 		};
 	}, [activeProducts]);
-
-	/* Pre-select Fiber Laser + EZCAD once data loads */
-	useEffect(() => {
-		if (isLoading || machines.length === 0 || selectedMachine !== '') return;
-		setSelectedMachine(
-			machines.includes('Fiber Laser') ? 'Fiber Laser' : machines[0],
-		);
-	}, [isLoading, machines, selectedMachine]);
-
-	useEffect(() => {
-		if (isLoading || softwares.length === 0 || selectedSoftware !== '') return;
-		setSelectedSoftware(softwares.includes('EZCAD') ? 'EZCAD' : softwares[0]);
-	}, [isLoading, softwares, selectedSoftware]);
 
 	const hasFilters = selectedMachine !== '' || selectedSoftware !== '';
 
@@ -438,9 +445,15 @@ export function ProductsSection() {
 	}, [activeSystemClasses]);
 
 	const productGroups: ProductGroup[] = useMemo(() => {
-		// 1. Group ALL active products by name (no machine/software filter yet)
+		/* Filter products by machine/software before grouping */
+		const filtered = activeProducts.filter((p) => {
+			if (selectedMachine && p.machine !== selectedMachine) return false;
+			if (selectedSoftware && p.software !== selectedSoftware) return false;
+			return true;
+		});
+
 		const map = new Map<string, ProductVariant[]>();
-		for (const product of activeProducts) {
+		for (const product of filtered) {
 			if (!map.has(product.name)) map.set(product.name, []);
 			map.get(product.name)?.push({
 				product,
@@ -449,36 +462,20 @@ export function ProductsSection() {
 			});
 		}
 
-		// 2. Sort variants within each group (base first, then by SC name)
-		const allGroups: ProductGroup[] = [];
+		const groups: ProductGroup[] = [];
 		for (const [name, variants] of map) {
 			const sorted = [...variants].sort((a, b) => {
-				const aHasSc = (a.systemClasses ?? []).length > 0;
-				const bHasSc = (b.systemClasses ?? []).length > 0;
-				if (!aHasSc && bHasSc) return -1;
-				if (aHasSc && !bHasSc) return 1;
-				const aName = a.systemClasses?.[0]?.name ?? '';
-				const bName = b.systemClasses?.[0]?.name ?? '';
-				return aName.localeCompare(bName);
+				const aOrder = a.classInfo ? (TIER_ORDER[a.classInfo.tier] ?? 3) : 3;
+				const bOrder = b.classInfo ? (TIER_ORDER[b.classInfo.tier] ?? 3) : 3;
+				return aOrder - bOrder;
 			});
-			allGroups.push({
+			groups.push({
 				name,
 				category: sorted[0].product.category,
 				variants: sorted,
 			});
 		}
-
-		// 3. Filter groups at group level: keep if any variant matches machine/software
-		if (!selectedMachine && !selectedSoftware) return allGroups;
-		return allGroups.filter((group) =>
-			group.variants.some((v) => {
-				const machineOk =
-					!selectedMachine || v.product.machine === selectedMachine;
-				const softwareOk =
-					!selectedSoftware || v.product.software === selectedSoftware;
-				return machineOk && softwareOk;
-			}),
-		);
+		return groups;
 	}, [
 		activeProducts,
 		selectedMachine,
@@ -515,10 +512,11 @@ export function ProductsSection() {
 			id="cursos"
 			className="relative bg-[#0d0d0f] py-20 md:py-32 px-6 overflow-hidden scroll-mt-20"
 		>
+			{/* Subtle background glow */}
 			<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-[#f2295b]/[0.03] rounded-full blur-3xl pointer-events-none" />
 
 			<div className="relative max-w-6xl mx-auto">
-				{/* Section header */}
+				{/* Section header — estilo da seção de planos */}
 				<div className="text-center mb-16">
 					<p className="text-[#f2295b] uppercase tracking-widest text-sm font-bold text-center mb-3">
 						Nossos cursos
@@ -539,6 +537,7 @@ export function ProductsSection() {
 				{(machines.length > 0 || softwares.length > 0) && (
 					<div className="mb-16">
 						<div className="relative bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/[0.08] rounded-3xl p-6 md:p-8 backdrop-blur-sm">
+							{/* Glow accent */}
 							<div className="absolute -top-px left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-[#f2295b]/60 to-transparent" />
 
 							<div className="flex items-center gap-3 mb-5">
@@ -589,6 +588,7 @@ export function ProductsSection() {
 								)}
 							</div>
 
+							{/* Result message */}
 							{hasFilters && (
 								<div className="mt-5 flex items-center gap-3 bg-[#f2295b]/[0.08] border border-[#f2295b]/20 rounded-2xl px-5 py-3.5">
 									<Sparkles className="w-5 h-5 text-[#f2295b] shrink-0" />
@@ -631,9 +631,10 @@ export function ProductsSection() {
 
 				{/* Products by category */}
 				{categories.map(([categoryName, groups]) => (
-					<div key={categoryName} className="mb-16 last:mb-0">
+					<div key={categoryName} className="mb-20 last:mb-0">
+						{/* Category header */}
 						{categories.length > 1 && (
-							<div className="flex items-center gap-4 mb-8">
+							<div className="flex items-center gap-4 mb-10">
 								<div className="flex items-center gap-3">
 									<div className="w-1 h-8 rounded-full bg-[#f2295b]" />
 									<h3 className="text-2xl font-bold text-white">
@@ -647,15 +648,31 @@ export function ProductsSection() {
 							</div>
 						)}
 
-						<div className="flex flex-col gap-8">
-							{groups.map((group) => (
-								<ProductCard key={group.name} group={group} />
+						{/* Product grid */}
+						<div
+							className={`grid gap-6 items-start ${
+								groups.length === 1
+									? 'grid-cols-1 max-w-lg mx-auto'
+									: groups.length === 2
+										? 'grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto'
+										: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+							}`}
+						>
+							{groups.map((group, idx) => (
+								<ProductCard
+									key={group.name}
+									variants={group.variants}
+									featured={
+										groups.length >= 3 && idx === Math.floor(groups.length / 2)
+									}
+									ownedPlans={ownedPlans ?? []}
+								/>
 							))}
 						</div>
 					</div>
 				))}
 
-				{/* Trust badges */}
+				{/* Trust badges — estilo da seção de planos */}
 				<div className="flex items-center justify-center gap-6 mt-10">
 					<div className="flex items-center gap-2 text-gray-500 text-sm">
 						<div className="w-5 h-5 bg-emerald-500/20 rounded-full flex items-center justify-center">

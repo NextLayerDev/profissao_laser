@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Play } from 'lucide-react';
 import Image from 'next/image';
 import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 
@@ -9,7 +9,7 @@ export function VideoSection() {
 
 	const scrollToVideo = () => {
 		document
-			.getElementById('cursos')
+			.getElementById('video-compra')
 			?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 	};
 
@@ -50,16 +50,20 @@ export function VideoSection() {
 					</span>
 				</p>
 
-				{/* Embedded YouTube video */}
-				<div className="relative aspect-video rounded-3xl overflow-hidden mb-5 border border-white/10 shadow-2xl shadow-violet-900/20">
-					<iframe
-						src="https://www.youtube.com/embed/EHI-vDIjUk4"
-						title="Aprenda a personalizar com gravação a laser"
-						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-						allowFullScreen
-						className="absolute inset-0 w-full h-full"
+				{/* Video with poster - opens YouTube */}
+				<a
+					href="https://www.youtube.com/PLACEHOLDER_VIDEO_ID"
+					target="_blank"
+					rel="noopener noreferrer"
+					className="relative block aspect-video rounded-3xl overflow-hidden mb-8 border border-white/10 group cursor-pointer shadow-2xl shadow-violet-900/20"
+				>
+					<Image
+						src="/img/thumbnail-youtube-min.png"
+						alt="Vídeo da comunidade"
+						fill
+						className="object-cover group-hover:scale-105 transition-transform duration-700"
 					/>
-				</div>
+					<div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors duration-300" />
 
 				{/* Instructors */}
 				<div className="flex flex-wrap items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
@@ -78,22 +82,43 @@ export function VideoSection() {
 							<p className="text-gray-500 text-[11px]">Instrutor</p>
 						</div>
 					</div>
-					<div className="flex items-center gap-3">
-						<Image
-							src="/img/GIOVANI01.jpeg"
-							alt="Giovani Meinhardt"
-							width={44}
-							height={44}
-							className="rounded-xl object-cover"
-						/>
-						<div>
-							<p className="text-white text-sm font-bold leading-tight">
-								Giovani Meinhardt
-							</p>
-							<p className="text-gray-500 text-[11px]">Instrutor</p>
+
+					{/* Instructor names overlay */}
+					<div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
+						<div className="flex items-center gap-6">
+							<div className="flex items-center gap-3">
+								<Image
+									src="/img/fernando-nucci_lw-min.jpg"
+									alt="Fernando Nucci"
+									width={48}
+									height={48}
+									className="rounded-xl object-cover"
+								/>
+								<div>
+									<p className="text-white text-sm font-bold leading-tight">
+										Fernando Nucci
+									</p>
+									<p className="text-gray-400 text-[11px]">Instrutor</p>
+								</div>
+							</div>
+							<div className="flex items-center gap-3">
+								<Image
+									src="/img/giovani-meinhardt-min.jpg"
+									alt="Giovani Meinhardt"
+									width={48}
+									height={48}
+									className="rounded-xl object-cover"
+								/>
+								<div>
+									<p className="text-white text-sm font-bold leading-tight">
+										Giovani Meinhardt
+									</p>
+									<p className="text-gray-400 text-[11px]">Instrutor</p>
+								</div>
+							</div>
 						</div>
 					</div>
-				</div>
+				</a>
 
 				<button
 					type="button"
