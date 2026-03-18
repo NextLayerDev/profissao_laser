@@ -6,13 +6,13 @@ import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 const professionals = [
 	{
 		name: 'Fernando Nucci',
-		image: '/img/IMG_8061_fernando-nucci-min.jpg',
-		bio: 'Sou Fernando Nucci e trabalho no mercado de maquinas de gravacao a laser a mais de 10 anos. Atualmente sou socio de 5 empresas que faturam mais de 10 milhoes de reais por ano. No mercado do laser, ja vendi mais de 3 milhoes de reais em 2023. Acompanho de perto a dificuldade dos profissionais do mercado de gravacao a laser, e quero mostrar como e possivel vencer neste mercado que ainda esta apenas comecando!',
+		image: '/img/FERNANDO02.jpeg',
+		bio: 'Sou Fernando Nucci e trabalho no mercado de máquinas de gravação a laser a mais de 10 anos. Atualmente sou sócio de 5 empresas que faturam mais de 10 milhões de reais por ano. No mercado do laser, já vendi mais de 3 milhões de reais em 2023. Acompanho de perto a dificuldade dos profissionais do mercado de gravação a laser, e quero mostrar como é possível vencer neste mercado que ainda está apenas começando!',
 	},
 	{
 		name: 'Giovani Meinhardt',
-		image: '/img/giovani-meinhardt-min.jpg',
-		bio: 'Me chamo Giovani Meinhardt trabalho no mercado de Presentes corporativos gravados a laser a mais de 3 anos, tendo atendido diversas empresas, inclusive multinacionais. Busco sempre novidades e tendencias para oferecer um atendimento diferenciado e produtos de alta qualidade. Tenho faturado a media de R$30k/mes com a gravacao a laser no ano de 2023.',
+		image: '/img/GIOVANI01.jpeg',
+		bio: 'Me chamo Giovani Meinhardt trabalho no mercado de Presentes corporativos gravados a laser a mais de 3 anos, tendo atendido diversas empresas, inclusive multinacionais. Busco sempre novidades e tendências para oferecer um atendimento diferenciado e produtos de alta qualidade. Tenho faturado a média de R$30k/mês com a gravação a laser no ano de 2023.',
 	},
 ];
 
@@ -26,7 +26,7 @@ export function ProfessionalsSection() {
 				className={`max-w-5xl mx-auto transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
 			>
 				<p className="text-[#f2295b] uppercase tracking-widest text-sm font-bold text-center mb-3">
-					Quem esta por tras
+					Quem está por trás
 				</p>
 				<h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-12">
 					Profissionais

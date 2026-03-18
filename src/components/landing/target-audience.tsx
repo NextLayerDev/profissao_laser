@@ -17,49 +17,49 @@ const segments = [
 		icon: Factory,
 		title: 'Industrial',
 		description:
-			'Profissionais que atuam em industrias e gravam e cortam metais e outros materiais.',
+			'Profissionais que atuam em indústrias e gravam e cortam metais e outros materiais.',
 	},
 	{
 		icon: Gift,
 		title: 'Brindes',
 		description:
-			'Profissionais que trabalham com personalizacao de brindes, como canetas, canecas, chaveiros, etc.',
+			'Profissionais que trabalham com personalização de brindes, como canetas, canecas, chaveiros, etc.',
 	},
 	{
 		icon: HeartPulse,
 		title: 'Hospitalar',
 		description:
-			'Gravacao de equipamentos de utensilios medicos, como bisturis, oticas, sondas, etc.',
+			'Gravação de equipamentos de utensílios médicos, como bisturis, óticas, sondas, etc.',
 	},
 	{
 		icon: Crosshair,
 		title: 'Armeiros',
 		description:
-			'Para profissionais que atuam na gravacao de airsoft, pistolas, fuzis, e outros armamentos.',
+			'Para profissionais que atuam na gravação de airsoft, pistolas, fuzis, e outros armamentos.',
 	},
 	{
 		icon: Utensils,
 		title: 'Cutelaria',
 		description:
-			'Profissionais que atuam na personalizacao de facas e materiais para churrascos, machados, etc.',
+			'Profissionais que atuam na personalização de facas e materiais para churrascos, machados, etc.',
 	},
 	{
 		icon: Puzzle,
 		title: 'Brinquedos',
 		description:
-			'Action figures, lego, bonecas, carrinhos, e uma infinidade de produtos personalizaveis.',
+			'Action figures, lego, bonecas, carrinhos, e uma infinidade de produtos personalizáveis.',
 	},
 	{
 		icon: Gem,
 		title: 'Ourives',
 		description:
-			'Para quem quer trabalhar com personalizacao de joias delicadas e metais preciosos.',
+			'Para quem quer trabalhar com personalização de jóias delicadas e metais preciosos.',
 	},
 	{
 		icon: Apple,
 		title: 'Alimentos',
 		description:
-			'Pao de hamburguer, alimentos personalizados de eventos, embalagens de alimentos, etc.',
+			'Pão de hambúrguer, alimentos personalizados de eventos, embalagens de alimentos, etc.',
 	},
 ];
 
@@ -73,18 +73,18 @@ export function TargetAudience() {
 				className={`max-w-5xl mx-auto transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
 			>
 				<p className="text-[#f2295b] uppercase tracking-widest text-sm font-bold text-center mb-3">
-					Para quem e
+					Para quem é
 				</p>
 				<h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
-					A Comunidade Profissao Laser
+					A Comunidade Profissão Laser
 					<br />
 					<span className="text-[#f2295b]">vai funcionar para mim?</span>
 				</h2>
 
 				<p className="text-gray-400 text-center text-lg max-w-3xl mx-auto mb-12">
-					A Comunidade pode ajudar inumeros profissionais e empresas que atuam
-					ou desejam atuar no mercado. Para quem nao conhece absolutamente nada,
-					e o ponto de partida essencial. Para quem ja e do mercado, e
+					A Comunidade pode ajudar inúmeros profissionais e empresas que atuam
+					ou desejam atuar no mercado. Para quem não conhece absolutamente nada,
+					é o ponto de partida essencial. Para quem já é do mercado, é
 					importante para estar por dentro das novidades.
 				</p>
 
@@ -113,16 +113,16 @@ export function TargetAudience() {
 					})}
 				</div>
 
-				{/* Negocio proprio */}
+				{/* Negócio próprio */}
 				<div className="mt-16 text-center bg-gradient-to-r from-[#f2295b]/10 via-violet-500/10 to-[#f2295b]/10 border border-white/[0.08] rounded-3xl p-10">
 					<h3 className="text-2xl md:text-3xl font-bold text-white uppercase mb-4">
-						Ideal para quem sonha em abrir o proprio negocio do zero!
+						Ideal para quem sonha em abrir o próprio negócio do zero!
 					</h3>
 					<p className="text-gray-400 text-lg max-w-3xl mx-auto">
-						O Mercado da Gravacao a Laser de Produtos e muito amplo, indo desde
-						a industria ate mesmo a gravacao em pao de hamburguer. Tudo depende
-						de dominar o equipamento e ter a estrategia correta de venda. Aqui
-						literalmente o limite e a sua imaginacao!
+						O Mercado da Gravação a Laser de Produtos é muito amplo, indo desde
+						a indústria até mesmo a gravação em pão de hambúrguer. Tudo depende
+						de dominar o equipamento e ter a estratégia correta de venda. Aqui
+						literalmente o limite é a sua imaginação!
 					</p>
 				</div>
 			</div>

@@ -7,25 +7,25 @@ const features = [
 	{
 		title: 'Lives Exclusivas',
 		description:
-			'Toda semana Lives Exclusivas com gravacoes personalizadas de diversos produtos passo a passo, dicas de empreendedorismo e muito mais!',
-		image: '/img/thumbnail-youtube-min.jpg',
+			'Lives fechadas exclusivas para membros com gravações personalizadas de diversos produtos passo a passo, dicas de empreendedorismo e muito mais!',
+		image: '/img/LIVES.jpeg',
 	},
 	{
 		title: 'Grupo de Network',
 		description:
-			'Uma comunidade engajada, com varias ferramentas que vao te ajudar a fazer a sua empresa decolar na gravacao a laser e faturar muito.',
-		image: '/img/copo-stanley-copy-min.jpg',
+			'Uma comunidade engajada, com várias ferramentas que vão te ajudar a fazer a sua empresa decolar na gravação a laser e faturar muito.',
+		image: '/img/NETWORK.jpeg',
 	},
 	{
 		title: 'Curso Completo',
 		description:
-			'Nao fique mais procurando dicas aleatorias. Voce tera uma trilha de aprendizado para dominar a gravacao a laser de uma vez por todas!',
-		image: '/img/como-fazer-preenchimento-100-min.jpg',
+			'Não fique mais procurando dicas aleatórias. Você terá uma trilha de aprendizado para dominar a gravação a laser de uma vez por todas!',
+		image: '/img/CURSOS.jpeg',
 	},
 	{
 		title: 'Suporte Especializado',
 		description:
-			'Esta com problema na hora de usar sua maquina de gravacao a laser e precisa de ajuda? Aqui nao vamos te deixar na mao!',
+			'Está com problema na hora de usar sua máquina de gravação a laser e precisa de ajuda? Aqui não vamos te deixar na mão!',
 		image: '/img/suport-min.jpg',
 	},
 ];
