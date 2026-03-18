@@ -19,8 +19,10 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useClasses } from '@/hooks/use-classes';
 import { useProducts } from '@/hooks/use-products';
+import { useSystemClasses } from '@/hooks/use-system-classes';
 import type { ClassWithProducts } from '@/types/classes';
 import type { Product } from '@/types/products';
+import type { SystemClassWithRelations } from '@/types/system-classes';
 import { CLASS_FEATURES } from '@/utils/constants/class-features';
 import { TIER_STYLES } from '@/utils/constants/tier-styles';
 import { formatCurrency } from '@/utils/format-currency';
@@ -46,6 +48,7 @@ const FEATURE_DESCRIPTIONS: Record<string, string> = {
 interface ProductVariant {
 	product: Product;
 	classInfo?: ClassWithProducts;
+	systemClasses?: SystemClassWithRelations[];
 }
 
 interface ProductGroup {
@@ -68,19 +71,37 @@ function ProductCard({
 		const ouroIdx = variants.findIndex((v) => v.classInfo?.tier === 'ouro');
 		return ouroIdx >= 0 ? ouroIdx : 0;
 	});
+	const [selectedScIndex, setSelectedScIndex] = useState<number | null>(() => {
+		const sc = variants[0].systemClasses ?? [];
+		return sc.length > 0 ? 0 : null;
+	});
 	const [imgError, setImgError] = useState(false);
 	const router = useRouter();
 
 	const { product, classInfo } = variants[selectedIndex];
 	const hasMultipleTiers = variants.length > 1;
 
+	const allSystemClasses = variants[selectedIndex].systemClasses ?? [];
+	const activeSystemClass =
+		selectedScIndex !== null
+			? (allSystemClasses[selectedScIndex] ?? null)
+			: null;
+
 	function handleBuy() {
 		const classParam = classInfo ? `?classId=${classInfo.id}` : '';
 		router.push(`/checkout/${product.slug}${classParam}`);
 	}
 
-	const enabledFeatures = CLASS_FEATURES.filter((f) => classInfo?.[f.key]);
-	const disabledFeatures = CLASS_FEATURES.filter((f) => !classInfo?.[f.key]);
+	const enabledFeatures = classInfo
+		? CLASS_FEATURES.filter((f) => classInfo[f.key])
+		: activeSystemClass
+			? CLASS_FEATURES.filter((f) => activeSystemClass[f.key])
+			: [];
+	const disabledFeatures = classInfo
+		? CLASS_FEATURES.filter((f) => !classInfo[f.key])
+		: activeSystemClass
+			? CLASS_FEATURES.filter((f) => !activeSystemClass[f.key])
+			: CLASS_FEATURES;
 
 	return (
 		<div
@@ -130,6 +151,15 @@ function ProductCard({
 					</div>
 				)}
 
+				{/* System class badge */}
+				{activeSystemClass && !featured && (
+					<div className="absolute top-4 right-4 z-10">
+						<span className="bg-purple-500/80 backdrop-blur-md text-white text-[11px] font-semibold px-3 py-1.5 rounded-full border border-purple-400/30">
+							{activeSystemClass.name}
+						</span>
+					</div>
+				)}
+
 				{/* Title overlay at bottom of image */}
 				<div className="absolute bottom-0 left-0 right-0 p-5 z-10">
 					<h3 className="text-xl font-bold text-white leading-tight drop-shadow-lg">
@@ -171,6 +201,8 @@ function ProductCard({
 										type="button"
 										onClick={() => {
 											setSelectedIndex(i);
+											const sc = variants[i].systemClasses ?? [];
+											setSelectedScIndex(sc.length > 0 ? 0 : null);
 											setImgError(false);
 										}}
 										className={`relative py-2 text-xs font-semibold rounded-lg transition-all duration-300 cursor-pointer ${
@@ -196,6 +228,68 @@ function ProductCard({
 									</button>
 								);
 							})}
+						</div>
+					</div>
+				)}
+
+				{/* System class selector - mini cards */}
+				{allSystemClasses.length >= 1 && (
+					<div className="mb-5">
+						<p className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold mb-2.5">
+							Plano do sistema
+						</p>
+						<div className="grid grid-cols-2 gap-2">
+							{allSystemClasses.map((sc, i) => {
+								const isActive = selectedScIndex === i;
+								const scFeatures = CLASS_FEATURES.filter((f) => sc[f.key]);
+								return (
+									<button
+										key={sc.id}
+										type="button"
+										onClick={() => setSelectedScIndex(i)}
+										className={`text-left p-3 rounded-xl border transition-all duration-200 cursor-pointer ${
+											isActive
+												? 'bg-purple-500/15 border-purple-500/50'
+												: 'bg-white/[0.03] border-white/[0.06] hover:border-white/15'
+										}`}
+									>
+										<p
+											className={`text-xs font-bold mb-1.5 ${isActive ? 'text-white' : 'text-gray-400'}`}
+										>
+											{sc.name}
+										</p>
+										<div className="flex flex-wrap gap-1">
+											{scFeatures.map((f) => (
+												<span
+													key={f.key}
+													className={`inline-flex items-center gap-0.5 text-[10px] ${isActive ? 'text-emerald-400' : 'text-gray-600'}`}
+												>
+													<Check className="w-2.5 h-2.5" />
+													{f.label}
+												</span>
+											))}
+										</div>
+									</button>
+								);
+							})}
+							{/* Sem plano */}
+							<button
+								type="button"
+								onClick={() => setSelectedScIndex(null)}
+								className={`text-left p-3 rounded-xl border transition-all duration-200 cursor-pointer ${
+									selectedScIndex === null
+										? 'bg-white/[0.08] border-white/20'
+										: 'bg-white/[0.03] border-white/[0.06] hover:border-white/15'
+								}`}
+							>
+								<p
+									className={`text-xs font-bold mb-1.5 flex items-center gap-1 ${selectedScIndex === null ? 'text-white' : 'text-gray-400'}`}
+								>
+									<X className="w-3 h-3" />
+									Sem plano
+								</p>
+								<p className="text-[10px] text-gray-600">Apenas o curso</p>
+							</button>
 						</div>
 					</div>
 				)}
@@ -287,11 +381,15 @@ function ProductCard({
 export function ProductsSection() {
 	const { products, isLoading: productsLoading } = useProducts();
 	const { classes, isLoading: classesLoading } = useClasses();
+	const { systemClasses, isLoading: systemClassesLoading } = useSystemClasses();
 
-	const isLoading = productsLoading || classesLoading;
+	const isLoading = productsLoading || classesLoading || systemClassesLoading;
 
 	const activeProducts = (products ?? []).filter((p) => p.status === 'ativo');
 	const activeClasses = classes.filter((c) => c.status === 'ativo');
+	const activeSystemClasses = systemClasses.filter(
+		(sc) => sc.status === 'ativo',
+	);
 
 	const productClassMap = useMemo(() => {
 		const map = new Map<string, ClassWithProducts>();
@@ -303,6 +401,17 @@ export function ProductsSection() {
 		return map;
 	}, [activeClasses]);
 
+	const productSystemClassesMap = useMemo(() => {
+		const map = new Map<string, SystemClassWithRelations[]>();
+		for (const sc of activeSystemClasses) {
+			for (const product of sc.products) {
+				if (!map.has(product.id)) map.set(product.id, []);
+				map.get(product.id)?.push(sc);
+			}
+		}
+		return map;
+	}, [activeSystemClasses]);
+
 	const productGroups: ProductGroup[] = useMemo(() => {
 		const map = new Map<string, ProductVariant[]>();
 		for (const product of activeProducts) {
@@ -310,6 +419,7 @@ export function ProductsSection() {
 			map.get(product.name)?.push({
 				product,
 				classInfo: productClassMap.get(product.id),
+				systemClasses: productSystemClassesMap.get(product.id),
 			});
 		}
 
@@ -327,7 +437,7 @@ export function ProductsSection() {
 			});
 		}
 		return groups;
-	}, [activeProducts, productClassMap]);
+	}, [activeProducts, productClassMap, productSystemClassesMap]);
 
 	const categories = useMemo(() => {
 		const catMap = new Map<string, ProductGroup[]>();
