@@ -32,7 +32,7 @@ export function ProfessionalsSection() {
 					Profissionais
 				</h2>
 
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 					{professionals.map((pro, i) => (
 						<div
 							key={pro.name}

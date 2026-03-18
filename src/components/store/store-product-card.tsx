@@ -58,7 +58,8 @@ export function StoreProductCard({ variants }: StoreProductCardProps) {
 			: null;
 
 	function handleBuy() {
-		router.push(`/checkout/${product.slug}?productId=${product.id}`);
+		const classParam = classInfo ? `?classId=${classInfo.id}` : '';
+		router.push(`/checkout/${product.slug}${classParam}`);
 	}
 
 	const { status: ownershipStatus } = useOwnership(variants, selectedIndex);

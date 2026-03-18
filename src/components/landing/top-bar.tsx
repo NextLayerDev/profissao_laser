@@ -68,10 +68,9 @@ export function TopBar() {
 				<button
 					type="button"
 					onClick={scrollToVideo}
-					className="flex items-center gap-1.5 sm:gap-2 bg-[#f2295b] hover:bg-[#e0214f] text-white text-xs font-bold uppercase tracking-wide px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-[#f2295b]/20 cursor-pointer"
+					className="hidden sm:flex items-center gap-2 bg-[#f2295b] hover:bg-[#e0214f] text-white text-xs font-bold uppercase tracking-wide px-5 py-2.5 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-[#f2295b]/20 cursor-pointer"
 				>
-					<span className="hidden sm:inline">Aproveitar oferta</span>
-					<span className="sm:hidden">Oferta</span>
+					Aproveitar oferta
 					<ChevronRight className="w-3.5 h-3.5" />
 				</button>
 			</div>

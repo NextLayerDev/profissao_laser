@@ -58,7 +58,7 @@ export function FeatureCards() {
 							<h3 className="text-white text-lg font-black uppercase tracking-wide mb-2">
 								{feature.title}
 							</h3>
-							<p className="text-gray-300 text-sm leading-relaxed opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300">
+							<p className="text-gray-300 text-sm leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-300">
 								{feature.description}
 							</p>
 						</div>

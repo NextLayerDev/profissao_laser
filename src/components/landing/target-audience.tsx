@@ -94,7 +94,7 @@ export function TargetAudience() {
 						return (
 							<div
 								key={segment.title}
-								className={`bg-white/[0.04] backdrop-blur-sm border border-white/[0.08] rounded-2xl p-4 sm:p-5 text-center hover:border-[#f2295b]/30 hover:bg-white/[0.06] transition-all duration-500 group ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+								className={`bg-white/[0.04] backdrop-blur-sm border border-white/[0.08] rounded-2xl p-5 text-center hover:border-[#f2295b]/30 hover:bg-white/[0.06] transition-all duration-500 group ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
 								style={{
 									transitionDelay: `${200 + i * 80}ms`,
 								}}
@@ -114,8 +114,8 @@ export function TargetAudience() {
 				</div>
 
 				{/* Negócio próprio */}
-				<div className="mt-16 text-center bg-gradient-to-r from-[#f2295b]/10 via-violet-500/10 to-[#f2295b]/10 border border-white/[0.08] rounded-3xl p-6 sm:p-10">
-					<h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white uppercase mb-4">
+				<div className="mt-16 text-center bg-gradient-to-r from-[#f2295b]/10 via-violet-500/10 to-[#f2295b]/10 border border-white/[0.08] rounded-3xl p-10">
+					<h3 className="text-2xl md:text-3xl font-bold text-white uppercase mb-4">
 						Ideal para quem sonha em abrir o próprio negócio do zero!
 					</h3>
 					<p className="text-gray-400 text-lg max-w-3xl mx-auto">

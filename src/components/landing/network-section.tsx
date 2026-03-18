@@ -19,7 +19,7 @@ export function NetworkSection() {
 				ref={ref}
 				className={`max-w-5xl mx-auto transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
 			>
-				<div className="bg-white/[0.03] backdrop-blur-sm border border-[#f2295b]/30 rounded-3xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-6 sm:gap-10 shadow-2xl shadow-[#f2295b]/5">
+				<div className="bg-white/[0.03] backdrop-blur-sm border border-[#f2295b]/30 rounded-3xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-10 shadow-2xl shadow-[#f2295b]/5">
 					<div className="flex-1">
 						<p className="text-[#f2295b] uppercase tracking-widest text-sm font-bold mb-3">
 							Comunidade exclusiva
