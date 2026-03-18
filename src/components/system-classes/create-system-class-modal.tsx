@@ -8,7 +8,20 @@ import {
 	useUpdateSystemClass,
 } from '@/hooks/use-system-classes';
 import type { CreateSystemClassModalProps } from '@/types/components/create-system-class-modal';
-import { SC_OPTIONS } from '@/utils/constants/system-class-options';
+
+const FEATURES = [
+	{ key: 'aula' as const, label: 'Aulas' },
+	{ key: 'chat' as const, label: 'Chat' },
+	{ key: 'vetorizacao' as const, label: 'Vetorização' },
+	{ key: 'suporte' as const, label: 'Suporte' },
+	{ key: 'comunidade' as const, label: 'Comunidade' },
+];
+
+const TIERS = [
+	{ key: 'prata' as const, label: 'Prata' },
+	{ key: 'gold' as const, label: 'Gold' },
+	{ key: 'platina' as const, label: 'Platina' },
+];
 
 export function CreateSystemClassModal({
 	isOpen,
@@ -18,10 +31,18 @@ export function CreateSystemClassModal({
 	const [name, setName] = useState('');
 	const [description, setDescription] = useState('');
 	const [status, setStatus] = useState<'ativo' | 'inativo'>('ativo');
-	const [options, setOptions] = useState({
-		sistemaGerenciamento: false,
-		iaPrevias: false,
-		iaWhatsappPrevias: false,
+	const [system, setSystem] = useState(true);
+	const [features, setFeatures] = useState({
+		aula: false,
+		chat: false,
+		vetorizacao: false,
+		suporte: false,
+		comunidade: false,
+	});
+	const [tiers, setTiers] = useState({
+		prata: false,
+		gold: false,
+		platina: false,
 	});
 
 	const createMutation = useCreateSystemClass();
@@ -34,11 +55,15 @@ export function CreateSystemClassModal({
 		setName('');
 		setDescription('');
 		setStatus('ativo');
-		setOptions({
-			sistemaGerenciamento: false,
-			iaPrevias: false,
-			iaWhatsappPrevias: false,
+		setSystem(true);
+		setFeatures({
+			aula: false,
+			chat: false,
+			vetorizacao: false,
+			suporte: false,
+			comunidade: false,
 		});
+		setTiers({ prata: false, gold: false, platina: false });
 	}, []);
 
 	useEffect(() => {
@@ -46,10 +71,18 @@ export function CreateSystemClassModal({
 			setName(editing.name);
 			setDescription(editing.description ?? '');
 			setStatus(editing.status);
-			setOptions({
-				sistemaGerenciamento: editing.sistemaGerenciamento,
-				iaPrevias: editing.iaPrevias,
-				iaWhatsappPrevias: editing.iaWhatsappPrevias,
+			setSystem(editing.system);
+			setFeatures({
+				aula: editing.aula,
+				chat: editing.chat,
+				vetorizacao: editing.vetorizacao,
+				suporte: editing.suporte,
+				comunidade: editing.comunidade,
+			});
+			setTiers({
+				prata: editing.prata,
+				gold: editing.gold,
+				platina: editing.platina,
 			});
 		} else {
 			resetForm();
@@ -63,10 +96,12 @@ export function CreateSystemClassModal({
 		onClose();
 	}
 
-	function toggleOption(
-		key: 'sistemaGerenciamento' | 'iaPrevias' | 'iaWhatsappPrevias',
-	) {
-		setOptions((prev) => ({ ...prev, [key]: !prev[key] }));
+	function toggleFeature(key: keyof typeof features) {
+		setFeatures((prev) => ({ ...prev, [key]: !prev[key] }));
+	}
+
+	function toggleTier(key: keyof typeof tiers) {
+		setTiers((prev) => ({ ...prev, [key]: !prev[key] }));
 	}
 
 	async function handleSubmit() {
@@ -76,12 +111,12 @@ export function CreateSystemClassModal({
 		}
 
 		const payload = {
-			name: name.trim(),
-			...(description.trim() ? { description: description.trim() } : {}),
+			name,
+			description,
 			status,
-			sistemaGerenciamento: options.sistemaGerenciamento,
-			iaPrevias: options.iaPrevias,
-			iaWhatsappPrevias: options.iaWhatsappPrevias,
+			system,
+			...features,
+			...tiers,
 		};
 
 		try {
@@ -187,40 +222,89 @@ export function CreateSystemClassModal({
 					</div>
 
 					<div>
+						<button
+							type="button"
+							onClick={() => setSystem(!system)}
+							className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
+								system
+									? 'bg-violet-600/20 border border-violet-500/50 text-violet-600 dark:text-violet-300'
+									: 'bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-400 hover:border-slate-300 dark:hover:border-gray-600'
+							}`}
+						>
+							<span
+								className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
+									system
+										? 'bg-violet-600 border-violet-600'
+										: 'border-slate-300 dark:border-gray-600'
+								}`}
+							>
+								{system && <Check className="w-3 h-3 text-white" />}
+							</span>
+							Sistema
+						</button>
+					</div>
+
+					<div>
 						<p className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
-							Opções
+							Permissões
 						</p>
-						<div className="grid grid-cols-1 gap-2">
-							{SC_OPTIONS.map((opt) => (
+						<div className="grid grid-cols-2 gap-2">
+							{FEATURES.map((feat) => (
 								<button
-									key={opt.key}
+									key={feat.key}
 									type="button"
-									onClick={() =>
-										toggleOption(
-											opt.key as
-												| 'sistemaGerenciamento'
-												| 'iaPrevias'
-												| 'iaWhatsappPrevias',
-										)
-									}
-									className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
-										options[opt.key]
+									onClick={() => toggleFeature(feat.key)}
+									className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+										features[feat.key]
 											? 'bg-violet-600/20 border border-violet-500/50 text-violet-600 dark:text-violet-300'
 											: 'bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-400 hover:border-slate-300 dark:hover:border-gray-600'
 									}`}
 								>
 									<span
-										className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
-											options[opt.key]
+										className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
+											features[feat.key]
 												? 'bg-violet-600 border-violet-600'
 												: 'border-slate-300 dark:border-gray-600'
 										}`}
 									>
-										{options[opt.key] && (
-											<Check className="w-3 h-3 text-white" />
+										{features[feat.key] && (
+											<Check className="w-2.5 h-2.5 text-white" />
 										)}
 									</span>
-									{opt.label}
+									{feat.label}
+								</button>
+							))}
+						</div>
+					</div>
+
+					<div>
+						<p className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
+							Tiers
+						</p>
+						<div className="grid grid-cols-3 gap-2">
+							{TIERS.map((t) => (
+								<button
+									key={t.key}
+									type="button"
+									onClick={() => toggleTier(t.key)}
+									className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+										tiers[t.key]
+											? 'bg-violet-600/20 border border-violet-500/50 text-violet-600 dark:text-violet-300'
+											: 'bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-400 hover:border-slate-300 dark:hover:border-gray-600'
+									}`}
+								>
+									<span
+										className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
+											tiers[t.key]
+												? 'bg-violet-600 border-violet-600'
+												: 'border-slate-300 dark:border-gray-600'
+										}`}
+									>
+										{tiers[t.key] && (
+											<Check className="w-2.5 h-2.5 text-white" />
+										)}
+									</span>
+									{t.label}
 								</button>
 							))}
 						</div>

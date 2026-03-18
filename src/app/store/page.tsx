@@ -3,14 +3,11 @@
 import {
 	BookOpen,
 	CalendarClock,
-	ChevronDown,
-	Cpu,
 	LayoutDashboard,
 	Loader2,
-	Monitor,
 	Search,
+	Settings2,
 	Store,
-	X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -22,11 +19,12 @@ import { useProducts } from '@/hooks/use-products';
 import { useSystemClasses } from '@/hooks/use-system-classes';
 import { getCurrentUser, getToken } from '@/lib/auth';
 
+const TIER_ORDER: Record<string, number> = { prata: 0, ouro: 1, platina: 2 };
+
 export default function Loja() {
 	const [search, setSearch] = useState('');
 	const [activeCategory, setActiveCategory] = useState('Todos');
-	const [selectedMachine, setSelectedMachine] = useState('');
-	const [selectedSoftware, setSelectedSoftware] = useState('');
+	const [activeCategorySystem, setActiveCategorySystem] = useState('Todos');
 	const [isAdmin, setIsAdmin] = useState(false);
 	const { products, isLoading, error } = useProducts();
 	const { classes } = useClasses();
@@ -43,7 +41,6 @@ export default function Loja() {
 		(sc) => sc.status === 'ativo',
 	);
 
-	/* Map product.id → class */
 	const productClassMap = useMemo(() => {
 		const map = new Map<string, (typeof activeClasses)[0]>();
 		for (const cls of activeClasses) {
@@ -54,7 +51,19 @@ export default function Loja() {
 		return map;
 	}, [activeClasses]);
 
-	/* Map product.id → ALL system classes */
+	// Map product.id -> system class names (for filtering)
+	const productSystemClassMap = useMemo(() => {
+		const map = new Map<string, string[]>();
+		for (const sc of activeSystemClasses) {
+			for (const product of sc.products) {
+				if (!map.has(product.id)) map.set(product.id, []);
+				map.get(product.id)?.push(sc.name);
+			}
+		}
+		return map;
+	}, [activeSystemClasses]);
+
+	// Map product.id -> ALL system classes (for card display & selection)
 	const productSystemClassesMap = useMemo(() => {
 		const map = new Map<string, typeof activeSystemClasses>();
 		for (const sc of activeSystemClasses) {
@@ -66,33 +75,6 @@ export default function Loja() {
 		return map;
 	}, [activeSystemClasses]);
 
-	/* Unique machines + softwares */
-	const { machines, softwares } = useMemo(() => {
-		const machineSet = new Set<string>();
-		const softwareSet = new Set<string>();
-		for (const p of activeProducts) {
-			if (p.machine) machineSet.add(p.machine);
-			if (p.software) softwareSet.add(p.software);
-		}
-		return {
-			machines: Array.from(machineSet).sort(),
-			softwares: Array.from(softwareSet).sort(),
-		};
-	}, [activeProducts]);
-
-	/* Pre-select Fiber Laser + EZCAD once data loads */
-	useEffect(() => {
-		if (isLoading || machines.length === 0 || selectedMachine !== '') return;
-		setSelectedMachine(
-			machines.includes('Fiber Laser') ? 'Fiber Laser' : machines[0],
-		);
-	}, [isLoading, machines, selectedMachine]);
-
-	useEffect(() => {
-		if (isLoading || softwares.length === 0 || selectedSoftware !== '') return;
-		setSelectedSoftware(softwares.includes('EZCAD') ? 'EZCAD' : softwares[0]);
-	}, [isLoading, softwares, selectedSoftware]);
-
 	const categories = [
 		'Todos',
 		...Array.from(
@@ -100,71 +82,62 @@ export default function Loja() {
 		),
 	] as string[];
 
-	const hasFilters = selectedMachine !== '' || selectedSoftware !== '';
+	const systemClassCategories = [
+		'Todos',
+		...Array.from(new Set(activeSystemClasses.map((sc) => sc.name))),
+	];
 
-	/* filteredGroups: array of variant arrays (one sub-array per product name)
-	   Machine/software filter is applied at GROUP level — if any variant in the
-	   group matches, all variants of that product name are shown. This ensures
-	   SC-linked products (which may not have machine/software set) still appear. */
+	const filtered = useMemo(
+		() =>
+			activeProducts.filter((p) => {
+				const matchesSearch = p.name
+					.toLowerCase()
+					.includes(search.toLowerCase());
+				const matchesCategory =
+					activeCategory === 'Todos' || p.category === activeCategory;
+				const matchesSystemClass =
+					activeCategorySystem === 'Todos' ||
+					(productSystemClassMap.get(p.id) ?? []).includes(
+						activeCategorySystem,
+					);
+				return matchesSearch && matchesCategory && matchesSystemClass;
+			}),
+		[
+			activeProducts,
+			search,
+			activeCategory,
+			activeCategorySystem,
+			productSystemClassMap,
+		],
+	);
+
 	const filteredGroups = useMemo(() => {
-		// 1. Text + category filter only (not machine/software yet)
-		const textFiltered = activeProducts.filter((p) => {
-			if (!p.name.toLowerCase().includes(search.toLowerCase())) return false;
-			if (activeCategory !== 'Todos' && p.category !== activeCategory)
-				return false;
-			return true;
-		});
-
-		// 2. Group all text-filtered products by name
 		const map = new Map<
 			string,
 			Array<{
 				product: (typeof activeProducts)[0];
 				classInfo?: (typeof activeClasses)[0];
+				systemClassInfo?: (typeof activeSystemClasses)[0];
 				systemClasses?: typeof activeSystemClasses;
 			}>
 		>();
-
-		for (const product of textFiltered) {
+		for (const product of filtered) {
 			const classInfo = productClassMap.get(product.id);
 			const allSc = productSystemClassesMap.get(product.id);
+			const systemClassInfo = allSc?.[0];
 			if (!map.has(product.name)) map.set(product.name, []);
-			map.get(product.name)?.push({ product, classInfo, systemClasses: allSc });
+			map
+				.get(product.name)
+				?.push({ product, classInfo, systemClassInfo, systemClasses: allSc });
 		}
-
-		// 3. Sort variants within each group (base first, then by SC name)
-		const groups = Array.from(map.values()).map((variants) =>
+		return Array.from(map.values()).map((variants) =>
 			[...variants].sort((a, b) => {
-				const aHasSc = (a.systemClasses ?? []).length > 0;
-				const bHasSc = (b.systemClasses ?? []).length > 0;
-				if (!aHasSc && bHasSc) return -1;
-				if (aHasSc && !bHasSc) return 1;
-				const aName = a.systemClasses?.[0]?.name ?? '';
-				const bName = b.systemClasses?.[0]?.name ?? '';
-				return aName.localeCompare(bName);
+				const aOrder = a.classInfo ? (TIER_ORDER[a.classInfo.tier] ?? 3) : 3;
+				const bOrder = b.classInfo ? (TIER_ORDER[b.classInfo.tier] ?? 3) : 3;
+				return aOrder - bOrder;
 			}),
 		);
-
-		// 4. Filter groups at group level: keep if any variant matches machine/software
-		return groups.filter((variants) => {
-			if (!selectedMachine && !selectedSoftware) return true;
-			return variants.some((v) => {
-				const machineOk =
-					!selectedMachine || v.product.machine === selectedMachine;
-				const softwareOk =
-					!selectedSoftware || v.product.software === selectedSoftware;
-				return machineOk && softwareOk;
-			});
-		});
-	}, [
-		activeProducts,
-		search,
-		activeCategory,
-		selectedMachine,
-		selectedSoftware,
-		productClassMap,
-		productSystemClassesMap,
-	]);
+	}, [filtered, productClassMap, productSystemClassesMap]);
 
 	return (
 		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] text-slate-900 dark:text-white font-sans">
@@ -230,7 +203,7 @@ export default function Loja() {
 					</p>
 				</div>
 
-				{/* Category filter */}
+				{/* Filtros por categoria */}
 				<div className="flex items-center gap-2 mb-4 flex-wrap">
 					{categories.map((cat) => (
 						<button
@@ -254,60 +227,27 @@ export default function Loja() {
 					)}
 				</div>
 
-				{/* Machine + Software filter */}
-				{(machines.length > 0 || softwares.length > 0) && (
-					<div className="flex flex-wrap items-center gap-3 mb-8">
-						{machines.length > 0 && (
-							<div className="relative">
-								<Monitor className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-violet-500 pointer-events-none" />
-								<select
-									value={selectedMachine}
-									onChange={(e) => setSelectedMachine(e.target.value)}
-									className="appearance-none bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 hover:border-violet-500/40 rounded-xl pl-9 pr-8 py-2 text-sm text-slate-700 dark:text-gray-300 focus:outline-none focus:border-violet-500/50 transition-colors cursor-pointer shadow-sm dark:shadow-none"
-								>
-									<option value="">Qual sua máquina?</option>
-									{machines.map((m) => (
-										<option key={m} value={m}>
-											{m}
-										</option>
-									))}
-								</select>
-								<ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-							</div>
-						)}
-
-						{softwares.length > 0 && (
-							<div className="relative">
-								<Cpu className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-violet-500 pointer-events-none" />
-								<select
-									value={selectedSoftware}
-									onChange={(e) => setSelectedSoftware(e.target.value)}
-									className="appearance-none bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 hover:border-violet-500/40 rounded-xl pl-9 pr-8 py-2 text-sm text-slate-700 dark:text-gray-300 focus:outline-none focus:border-violet-500/50 transition-colors cursor-pointer shadow-sm dark:shadow-none"
-								>
-									<option value="">Qual seu software?</option>
-									{softwares.map((s) => (
-										<option key={s} value={s}>
-											{s}
-										</option>
-									))}
-								</select>
-								<ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-							</div>
-						)}
-
-						{hasFilters && (
+				{/* Filtros por system class */}
+				{systemClassCategories.length > 1 && (
+					<div className="flex items-center gap-2 mb-8 flex-wrap">
+						<Settings2 className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+						<span className="text-xs font-medium text-slate-500 dark:text-gray-500 mr-1">
+							Plano:
+						</span>
+						{systemClassCategories.map((sc) => (
 							<button
+								key={sc}
 								type="button"
-								onClick={() => {
-									setSelectedMachine('');
-									setSelectedSoftware('');
-								}}
-								className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white px-3 py-2 rounded-xl border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700 transition-colors cursor-pointer"
+								onClick={() => setActiveCategorySystem(sc)}
+								className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer ${
+									activeCategorySystem === sc
+										? 'bg-purple-600 text-white'
+										: 'bg-white dark:bg-[#1a1a1d] text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-gray-800 hover:border-purple-500/40 hover:text-slate-900 dark:hover:text-white shadow-sm dark:shadow-none'
+								}`}
 							>
-								<X className="w-3.5 h-3.5" />
-								Limpar filtros
+								{sc}
 							</button>
-						)}
+						))}
 					</div>
 				)}
 
