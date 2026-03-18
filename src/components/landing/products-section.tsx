@@ -4,6 +4,7 @@ import {
 	ArrowRight,
 	BookOpen,
 	Check,
+	CheckCircle,
 	ChevronDown,
 	Cpu,
 	GraduationCap,
@@ -22,16 +23,18 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useClasses } from '@/hooks/use-classes';
+import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { useProducts } from '@/hooks/use-products';
 import { useSystemClasses } from '@/hooks/use-system-classes';
+import { getCurrentUser } from '@/lib/auth';
 import type { ClassWithProducts } from '@/types/classes';
+import type { CustomerPlan } from '@/types/plans';
 import type { Product } from '@/types/products';
 import type { SystemClassWithRelations } from '@/types/system-classes';
 import { CLASS_FEATURES } from '@/utils/constants/class-features';
 import { TIER_STYLES } from '@/utils/constants/tier-styles';
 import { formatCurrency } from '@/utils/format-currency';
-
-const TIER_ORDER: Record<string, number> = { prata: 0, ouro: 1, platina: 2 };
+import { resolveOwnership, TIER_ORDER } from '@/utils/ownership';
 
 const FEATURE_ICONS: Record<string, typeof BookOpen> = {
 	aula: BookOpen,
@@ -66,9 +69,11 @@ interface ProductGroup {
 function ProductCard({
 	variants,
 	featured,
+	ownedPlans,
 }: {
 	variants: ProductVariant[];
 	featured?: boolean;
+	ownedPlans?: CustomerPlan[];
 }) {
 	const [selectedIndex, setSelectedIndex] = useState(() => {
 		if (variants.length <= 1) return 0;
@@ -95,6 +100,10 @@ function ProductCard({
 		const classParam = classInfo ? `?classId=${classInfo.id}` : '';
 		router.push(`/checkout/${product.slug}${classParam}`);
 	}
+
+	const ownershipStatus = ownedPlans
+		? resolveOwnership(ownedPlans, variants, selectedIndex)
+		: 'none';
 
 	const enabledFeatures = classInfo
 		? CLASS_FEATURES.filter((f) => classInfo[f.key])
@@ -362,18 +371,31 @@ function ProductCard({
 					</div>
 
 					{/* CTA */}
-					<button
-						type="button"
-						onClick={handleBuy}
-						className={`w-full flex items-center justify-center gap-2.5 font-bold py-4 rounded-2xl transition-all duration-300 cursor-pointer text-[15px] ${
-							featured
-								? 'bg-[#f2295b] hover:bg-[#e0214f] text-white shadow-lg shadow-[#f2295b]/20 hover:shadow-[#f2295b]/30'
-								: 'bg-white/[0.07] hover:bg-white/[0.12] text-white'
-						}`}
-					>
-						Começar agora
-						<ArrowRight className="w-4 h-4" />
-					</button>
+					{ownershipStatus === 'owned' ? (
+						<button
+							type="button"
+							disabled
+							className="w-full flex items-center justify-center gap-2.5 font-bold py-4 rounded-2xl text-[15px] bg-white/[0.05] text-gray-500 cursor-not-allowed"
+						>
+							<CheckCircle className="w-4 h-4" />
+							Já possui
+						</button>
+					) : (
+						<button
+							type="button"
+							onClick={handleBuy}
+							className={`w-full flex items-center justify-center gap-2.5 font-bold py-4 rounded-2xl transition-all duration-300 cursor-pointer text-[15px] ${
+								featured
+									? 'bg-[#f2295b] hover:bg-[#e0214f] text-white shadow-lg shadow-[#f2295b]/20 hover:shadow-[#f2295b]/30'
+									: 'bg-white/[0.07] hover:bg-white/[0.12] text-white'
+							}`}
+						>
+							{ownershipStatus === 'upgrade'
+								? 'Fazer upgrade'
+								: 'Começar agora'}
+							<ArrowRight className="w-4 h-4" />
+						</button>
+					)}
 				</div>
 			</div>
 		</div>
@@ -425,6 +447,9 @@ export function ProductsSection() {
 	const { products, isLoading: productsLoading } = useProducts();
 	const { classes, isLoading: classesLoading } = useClasses();
 	const { systemClasses, isLoading: systemClassesLoading } = useSystemClasses();
+
+	const currentUser = getCurrentUser();
+	const { data: ownedPlans } = useCustomerPlans(currentUser?.email ?? null);
 
 	const [selectedMachine, setSelectedMachine] = useState('');
 	const [selectedSoftware, setSelectedSoftware] = useState('');
@@ -695,6 +720,7 @@ export function ProductsSection() {
 									featured={
 										groups.length >= 3 && idx === Math.floor(groups.length / 2)
 									}
+									ownedPlans={ownedPlans ?? []}
 								/>
 							))}
 						</div>

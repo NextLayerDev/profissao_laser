@@ -1,18 +1,23 @@
 'use client';
 
-import { Loader2, Lock, User } from 'lucide-react';
+import { ArrowUpCircle, CheckCircle, Loader2, Lock, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePurchase } from '@/hooks/use-purchase';
 import { getCurrentUser } from '@/lib/auth';
+import type { OwnershipStatus } from '@/utils/ownership';
 
 interface CheckoutConfirmButtonProps {
 	productId: string;
 	companyName?: string;
+	ownershipStatus: OwnershipStatus;
+	isLoadingOwnership?: boolean;
 }
 
 export function CheckoutConfirmButton({
 	productId,
 	companyName,
+	ownershipStatus,
+	isLoadingOwnership,
 }: CheckoutConfirmButtonProps) {
 	const { mutate: purchase, isPending } = usePurchase();
 	const user = getCurrentUser();
@@ -30,6 +35,55 @@ export function CheckoutConfirmButton({
 			},
 		);
 	}
+
+	const isDisabled =
+		isPending || ownershipStatus === 'owned' || !!isLoadingOwnership;
+
+	function renderButton() {
+		if (isLoadingOwnership) {
+			return (
+				<>
+					<Loader2 className="w-5 h-5 animate-spin" />
+					Verificando...
+				</>
+			);
+		}
+		if (ownershipStatus === 'owned') {
+			return (
+				<>
+					<CheckCircle className="w-4 h-4" />
+					Já possui
+				</>
+			);
+		}
+		if (isPending) {
+			return (
+				<>
+					<Loader2 className="w-5 h-5 animate-spin" />
+					Processando...
+				</>
+			);
+		}
+		if (ownershipStatus === 'upgrade') {
+			return (
+				<>
+					<ArrowUpCircle className="w-4 h-4" />
+					Fazer upgrade
+				</>
+			);
+		}
+		return (
+			<>
+				<Lock className="w-4 h-4" />
+				Finalizar compra
+			</>
+		);
+	}
+
+	const buttonClass =
+		ownershipStatus === 'owned' || isLoadingOwnership
+			? 'w-full flex items-center justify-center gap-2 bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-semibold py-3.5 rounded-xl cursor-not-allowed text-base'
+			: 'w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-colors cursor-pointer text-base';
 
 	return (
 		<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl border border-slate-200 dark:border-gray-800 p-6">
@@ -61,26 +115,22 @@ export function CheckoutConfirmButton({
 
 			<button
 				type="button"
-				onClick={handlePurchase}
-				disabled={isPending}
-				className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-colors cursor-pointer text-base"
+				onClick={ownershipStatus === 'owned' ? undefined : handlePurchase}
+				disabled={isDisabled}
+				className={buttonClass}
 			>
-				{isPending ? (
-					<>
-						<Loader2 className="w-5 h-5 animate-spin" />
-						Processando...
-					</>
-				) : (
-					<>
-						<Lock className="w-4 h-4" />
-						Finalizar compra
-					</>
-				)}
+				{renderButton()}
 			</button>
 
-			<p className="text-center text-xs text-slate-400 dark:text-gray-500 mt-3">
-				Pagamento processado com seguranca via Stripe
-			</p>
+			{ownershipStatus === 'owned' ? (
+				<p className="text-center text-xs text-slate-400 dark:text-gray-500 mt-3">
+					Voce ja possui este produto. Acesse sua area de alunos.
+				</p>
+			) : (
+				<p className="text-center text-xs text-slate-400 dark:text-gray-500 mt-3">
+					Pagamento processado com seguranca via Stripe
+				</p>
+			)}
 		</div>
 	);
 }
