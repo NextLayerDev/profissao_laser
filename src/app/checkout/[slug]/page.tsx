@@ -11,32 +11,38 @@ import { CheckoutProductSummary } from '@/components/checkout/checkout-product-s
 import { useClasses } from '@/hooks/use-classes';
 import { useOwnership } from '@/hooks/use-ownership';
 import { useProducts } from '@/hooks/use-products';
+import { useSystemClasses } from '@/hooks/use-system-classes';
 import { getCurrentUser } from '@/lib/auth';
 import { createPurchase } from '@/services/purchase';
 import type { ClassWithProducts } from '@/types/classes';
 import type { Product } from '@/types/products';
-import { TIER_ORDER } from '@/utils/ownership';
+import type { SystemClassWithRelations } from '@/types/system-classes';
 
 interface ProductVariant {
 	product: Product;
 	classInfo?: ClassWithProducts;
+	systemClasses?: SystemClassWithRelations[];
 }
 
 export default function CheckoutPage() {
 	const params = useParams<{ slug: string }>();
 	const searchParams = useSearchParams();
-	const classIdParam = searchParams.get('classId');
+	const productIdParam = searchParams.get('productId');
 
 	const { products, isLoading: productsLoading } = useProducts();
 	const { classes, isLoading: classesLoading } = useClasses();
+	const { systemClasses, isLoading: systemClassesLoading } = useSystemClasses();
 	const [isAuthenticated, setIsAuthenticated] = useState(!!getCurrentUser());
 	const [isPurchasing, setIsPurchasing] = useState(false);
 	const [companyName, setCompanyName] = useState('');
 
-	const isLoading = productsLoading || classesLoading;
+	const isLoading = productsLoading || classesLoading || systemClassesLoading;
 
 	const activeProducts = (products ?? []).filter((p) => p.status === 'ativo');
 	const activeClasses = classes.filter((c) => c.status === 'ativo');
+	const activeSystemClasses = systemClasses.filter(
+		(sc) => sc.status === 'ativo',
+	);
 
 	// Map product ID -> class
 	const productClassMap = useMemo(() => {
@@ -49,7 +55,19 @@ export default function CheckoutPage() {
 		return map;
 	}, [activeClasses]);
 
-	// Find all variants for this slug (products with same name)
+	// Map product ID -> system classes
+	const productSystemClassesMap = useMemo(() => {
+		const map = new Map<string, SystemClassWithRelations[]>();
+		for (const sc of activeSystemClasses) {
+			for (const product of sc.products) {
+				if (!map.has(product.id)) map.set(product.id, []);
+				map.get(product.id)?.push(sc);
+			}
+		}
+		return map;
+	}, [activeSystemClasses]);
+
+	// Find all variants for this slug (products with same name), sorted by price asc
 	const variants = useMemo(() => {
 		const matchingProducts = activeProducts.filter(
 			(p) => p.slug === params.slug,
@@ -64,21 +82,28 @@ export default function CheckoutPage() {
 		const variantList: ProductVariant[] = allVariants.map((product) => ({
 			product,
 			classInfo: productClassMap.get(product.id),
+			systemClasses: productSystemClassesMap.get(product.id),
 		}));
 
+		// Sort: "Sem sistema" first, then by price ascending
 		return variantList.sort((a, b) => {
-			const aOrder = a.classInfo ? (TIER_ORDER[a.classInfo.tier] ?? 3) : 3;
-			const bOrder = b.classInfo ? (TIER_ORDER[b.classInfo.tier] ?? 3) : 3;
-			return aOrder - bOrder;
+			const aHasSc = (a.systemClasses ?? []).length > 0;
+			const bHasSc = (b.systemClasses ?? []).length > 0;
+			if (!aHasSc && bHasSc) return -1;
+			if (aHasSc && !bHasSc) return 1;
+			return a.product.price - b.product.price;
 		});
-	}, [activeProducts, params.slug, productClassMap]);
+	}, [activeProducts, params.slug, productClassMap, productSystemClassesMap]);
 
-	// Determine initial selected index based on classId param
+	// Determine initial selected index based on productId param
 	const initialIndex = useMemo(() => {
-		if (!classIdParam || variants.length === 0) return 0;
-		const idx = variants.findIndex((v) => v.classInfo?.id === classIdParam);
-		return idx >= 0 ? idx : 0;
-	}, [classIdParam, variants]);
+		if (variants.length === 0) return 0;
+		if (productIdParam) {
+			const idx = variants.findIndex((v) => v.product.id === productIdParam);
+			if (idx >= 0) return idx;
+		}
+		return 0;
+	}, [productIdParam, variants]);
 
 	const [selectedIndex, setSelectedIndex] = useState(initialIndex);
 

@@ -31,8 +31,7 @@ function PricingColumn({ variant }: { variant: ProductVariant }) {
 	const classFeatures = CLASS_FEATURES.filter((f) => classInfo?.[f.key]);
 
 	function handleBuy() {
-		const classParam = classInfo ? `?classId=${classInfo.id}` : '';
-		router.push(`/checkout/${product.slug}${classParam}`);
+		router.push(`/checkout/${product.slug}?productId=${product.id}`);
 	}
 
 	return (
