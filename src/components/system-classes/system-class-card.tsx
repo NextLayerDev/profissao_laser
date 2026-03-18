@@ -5,25 +5,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { useDeleteSystemClass } from '@/hooks/use-system-classes';
 import type { SystemClassCardProps } from '@/types/components/system-class-card';
-import { CLASS_FEATURES } from '@/utils/constants/class-features';
-
-const TIER_BADGES = [
-	{
-		key: 'prata' as const,
-		label: 'Prata',
-		style: 'bg-slate-400/20 text-slate-300 border border-slate-500/40',
-	},
-	{
-		key: 'gold' as const,
-		label: 'Gold',
-		style: 'bg-amber-400/20 text-amber-300 border border-amber-500/40',
-	},
-	{
-		key: 'platina' as const,
-		label: 'Platina',
-		style: 'bg-violet-400/20 text-violet-300 border border-violet-500/40',
-	},
-];
+import { SC_OPTIONS } from '@/utils/constants/system-class-options';
 
 export function SystemClassCard({
 	systemClass,
@@ -44,8 +26,7 @@ export function SystemClassCard({
 		});
 	}
 
-	const enabledFeatures = CLASS_FEATURES.filter((f) => systemClass[f.key]);
-	const enabledTiers = TIER_BADGES.filter((t) => systemClass[t.key]);
+	const enabledOptions = SC_OPTIONS.filter((o) => systemClass[o.key]);
 
 	return (
 		<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl overflow-hidden border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700 transition-all duration-300 shadow-sm dark:shadow-none">
@@ -74,27 +55,14 @@ export function SystemClassCard({
 					</span>
 				</div>
 
-				{enabledFeatures.length > 0 && (
+				{enabledOptions.length > 0 && (
 					<div className="flex flex-wrap gap-1.5 mb-3">
-						{enabledFeatures.map((f) => (
+						{enabledOptions.map((o) => (
 							<span
-								key={f.key}
+								key={o.key}
 								className="text-xs px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20"
 							>
-								{f.label}
-							</span>
-						))}
-					</div>
-				)}
-
-				{enabledTiers.length > 0 && (
-					<div className="flex flex-wrap gap-1.5 mb-3">
-						{enabledTiers.map((t) => (
-							<span
-								key={t.key}
-								className={`text-xs px-2 py-0.5 rounded-full ${t.style}`}
-							>
-								{t.label}
+								{o.label}
 							</span>
 						))}
 					</div>

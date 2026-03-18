@@ -72,14 +72,17 @@ export function useDuplicateProduct() {
 			product,
 			classId,
 			payment,
+			systemClassIds,
 		}: {
 			product: Product;
 			classId: string;
 			payment: import('@/lib/duplicate-product').DuplicateProductPaymentPayload;
-		}) => duplicateProduct(product, classId, payment),
+			systemClassIds?: string[];
+		}) => duplicateProduct(product, classId, payment, systemClassIds ?? []),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: ['products'] });
 			qc.invalidateQueries({ queryKey: ['classes'] });
+			qc.invalidateQueries({ queryKey: ['system-classes'] });
 		},
 	});
 }

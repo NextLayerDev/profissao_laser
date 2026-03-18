@@ -7,15 +7,9 @@ export const systemClassSchema = z.object({
 	name: z.string(),
 	description: z.string().nullable(),
 	status: z.enum(['ativo', 'inativo']),
-	system: z.boolean(),
-	aula: z.boolean(),
-	chat: z.boolean(),
-	vetorizacao: z.boolean(),
-	suporte: z.boolean(),
-	comunidade: z.boolean(),
-	prata: z.boolean(),
-	gold: z.boolean(),
-	platina: z.boolean(),
+	sistemaGerenciamento: z.boolean(),
+	iaPrevias: z.boolean(),
+	iaWhatsappPrevias: z.boolean(),
 	createdAt: z.string(),
 	updatedAt: z.string(),
 });
@@ -34,28 +28,16 @@ export interface CreateSystemClassPayload {
 	name: string;
 	description?: string;
 	status?: 'ativo' | 'inativo';
-	system?: boolean;
-	aula?: boolean;
-	chat?: boolean;
-	vetorizacao?: boolean;
-	suporte?: boolean;
-	comunidade?: boolean;
-	prata?: boolean;
-	gold?: boolean;
-	platina?: boolean;
+	sistemaGerenciamento?: boolean;
+	iaPrevias?: boolean;
+	iaWhatsappPrevias?: boolean;
 }
 
 export interface UpdateSystemClassPayload {
 	name?: string;
 	description?: string;
 	status?: 'ativo' | 'inativo';
-	system?: boolean;
-	aula?: boolean;
-	chat?: boolean;
-	vetorizacao?: boolean;
-	suporte?: boolean;
-	comunidade?: boolean;
-	prata?: boolean;
-	gold?: boolean;
-	platina?: boolean;
+	sistemaGerenciamento?: boolean;
+	iaPrevias?: boolean;
+	iaWhatsappPrevias?: boolean;
 }

@@ -8,25 +8,7 @@ import {
 	useSystemClasses,
 	useUnlinkProduct,
 } from '@/hooks/use-system-classes';
-import { CLASS_FEATURES } from '@/utils/constants/class-features';
-
-const TIER_BADGES = [
-	{
-		key: 'prata' as const,
-		label: 'Prata',
-		style: 'bg-slate-400/20 text-slate-300 border border-slate-500/40',
-	},
-	{
-		key: 'gold' as const,
-		label: 'Gold',
-		style: 'bg-amber-400/20 text-amber-300 border border-amber-500/40',
-	},
-	{
-		key: 'platina' as const,
-		label: 'Platina',
-		style: 'bg-violet-400/20 text-violet-300 border border-violet-500/40',
-	},
-];
+import { SC_OPTIONS } from '@/utils/constants/system-class-options';
 
 interface ProductSystemClassesSectionProps {
 	productId: string;
@@ -118,8 +100,7 @@ export function ProductSystemClassesSection({
 					{allActiveSystemClasses.map((sc) => {
 						const isLinked = linkedIds.has(sc.id);
 						const isToggling = togglingId === sc.id;
-						const enabledFeatures = CLASS_FEATURES.filter((f) => sc[f.key]);
-						const enabledTiers = TIER_BADGES.filter((t) => sc[t.key]);
+						const enabledOptions = SC_OPTIONS.filter((o) => sc[o.key]);
 
 						return (
 							<button
@@ -154,20 +135,12 @@ export function ProductSystemClassesSection({
 									</p>
 								)}
 								<div className="flex flex-wrap gap-1">
-									{enabledFeatures.map((f) => (
+									{enabledOptions.map((o) => (
 										<span
-											key={f.key}
+											key={o.key}
 											className="text-[10px] px-1.5 py-0.5 rounded-full bg-violet-500/10 text-violet-500 dark:text-violet-400 border border-violet-500/20"
 										>
-											{f.label}
-										</span>
-									))}
-									{enabledTiers.map((t) => (
-										<span
-											key={t.key}
-											className={`text-[10px] px-1.5 py-0.5 rounded-full ${t.style}`}
-										>
-											{t.label}
+											{o.label}
 										</span>
 									))}
 								</div>
