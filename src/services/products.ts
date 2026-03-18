@@ -13,7 +13,7 @@ export interface CreateProductPayload {
 	slug: string;
 	language: string;
 	country: string;
-	category: string;
+	category?: string;
 	refundDays: number;
 	machine?: string;
 	software?: string;

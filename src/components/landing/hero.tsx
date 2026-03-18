@@ -9,7 +9,7 @@ export function Hero() {
 
 	const scrollToCursos = () => {
 		document
-			.getElementById('video-compra')
+			.getElementById('cursos')
 			?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 	};
 
