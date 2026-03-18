@@ -22,9 +22,12 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useClasses } from '@/hooks/use-classes';
+import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { useProducts } from '@/hooks/use-products';
 import { useSystemClasses } from '@/hooks/use-system-classes';
+import { getCurrentUser } from '@/lib/auth';
 import type { ClassWithProducts } from '@/types/classes';
+import type { CustomerPlan } from '@/types/plans';
 import type { Product } from '@/types/products';
 import type { SystemClassWithRelations } from '@/types/system-classes';
 import { CLASS_FEATURES } from '@/utils/constants/class-features';
@@ -70,9 +73,11 @@ interface ProductGroup {
 function PricingColumn({
 	variant,
 	featured,
+	ownedPlans,
 }: {
 	variant: ProductVariant;
 	featured?: boolean;
+	ownedPlans?: CustomerPlan[];
 }) {
 	const router = useRouter();
 	const { product, classInfo, systemClasses } = variant;
@@ -369,6 +374,9 @@ export function ProductsSection() {
 	const { products, isLoading: productsLoading } = useProducts();
 	const { classes, isLoading: classesLoading } = useClasses();
 	const { systemClasses, isLoading: systemClassesLoading } = useSystemClasses();
+
+	const currentUser = getCurrentUser();
+	const { data: ownedPlans } = useCustomerPlans(currentUser?.email ?? null);
 
 	const [selectedMachine, setSelectedMachine] = useState('');
 	const [selectedSoftware, setSelectedSoftware] = useState('');
