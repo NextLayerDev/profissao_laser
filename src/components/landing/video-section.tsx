@@ -28,7 +28,7 @@ export function VideoSection() {
 				<h2 className="text-3xl md:text-4xl font-bold text-center text-white mb-4">
 					Aprenda a{' '}
 					<span className="bg-gradient-to-r from-[#f2295b] to-violet-500 bg-clip-text text-transparent italic font-extrabold">
-						personalizar com gravacao a laser
+						personalizar com gravação a laser
 					</span>{' '}
 					os{' '}
 					<span className="bg-gradient-to-r from-violet-500 to-[#f2295b] bg-clip-text text-transparent italic font-extrabold">
@@ -40,13 +40,13 @@ export function VideoSection() {
 				<p className="text-gray-400 text-center text-lg leading-relaxed mb-10 max-w-3xl mx-auto">
 					Na{' '}
 					<span className="text-[#f2295b] font-semibold">
-						Comunidade Profissao Laser
+						Comunidade Profissão Laser
 					</span>{' '}
-					temos lives semanais de personalizacao dos produtos que sao campeoes
-					de venda, mostrando todas as configuracoes necessarias em diferentes
-					artes, e voce ainda pode{' '}
+					temos lives fechadas exclusivas para membros de personalizações de
+					produtos que são campeões de vendas, mostrando todas as configurações
+					necessárias em diferentes artes, e você pode{' '}
 					<span className="text-white font-semibold underline decoration-[#f2295b]/50 underline-offset-4">
-						tirar suas duvidas ao vivo.
+						tirar suas dúvidas ao Vivo.
 					</span>
 				</p>
 
@@ -59,7 +59,7 @@ export function VideoSection() {
 				>
 					<Image
 						src="/img/thumbnail-youtube-min.png"
-						alt="Video da comunidade"
+						alt="Vídeo da comunidade"
 						fill
 						className="object-cover group-hover:scale-105 transition-transform duration-700"
 					/>

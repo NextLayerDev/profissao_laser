@@ -6,71 +6,66 @@ import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 
 const faqItems = [
 	{
-		question: 'Como funciona a Comunidade Profissao Laser?',
+		question: 'Como funciona a Comunidade Profissão Laser?',
 		answer:
-			'A Comunidade e dedicada aos profissionais que trabalham no mercado de gravacao a laser com maquinas Fiber ou CO2 para personalizacao de produtos.',
+			'A Comunidade é dedicada aos profissionais que trabalham no mercado de gravação a laser com máquinas Fiber ou CO2 para personalização de produtos.',
 	},
 	{
-		question: 'A Comunidade Profissao Laser e um curso?',
+		question: 'A Comunidade Profissão Laser é um curso?',
 		answer:
-			'Nao. No entanto, os membros da nossa Comunidade tem disponivel um curso gravado ensinando os primeiros passos ate passos mais avancados, alem das gravacoes de todas as nossa reunioes exclusivas. A Comunidade Profissao Laser, foca em prestar Suporte Especializado para os seus membros, alem de termos nosso Grupo Exclusivo no WhatsApp e no Facebook para compartilhamento de informacoes, fornecedores de produtos, e tudo o que for relevante para o nosso mercado.',
+			'Não. No entanto, os membros da nossa Comunidade tem disponível um curso gravado ensinando os primeiros passos até passos mais avançados, além das gravações de todas as nossas reuniões exclusivas. A Comunidade Profissão Laser, foca em prestar Suporte Especializado para os seus membros, além de termos nosso Grupo Exclusivo no WhatsApp e no Facebook para compartilhamento de informações, fornecedores de produtos, e tudo o que for relevante para o nosso mercado.',
 	},
 	{
-		question: 'Como sao as reunioes ao vivo?',
+		question: 'Como são as reuniões ao vivo?',
 		answer:
-			'Semanalmente temos um reuniao ao vivo somente para os membros da Comunidade. Nossa equipe envia o link de acesso de participacao em nossos grupos, e quem desejar entrar na reuniao ao vivo, para tirar duvidas com nossos instrutores, e interagindo com o conteudo programado. As vagas para a sala sao limitadas, e uma vez estando lotada, so sera possivel assistir ao vivo atraves do grupo fechado no Facebook. A gravacao das lives tambem ficaram disponiveis na area de membro na Hotmart.',
+			'Semanalmente temos uma reunião ao vivo somente para os membros da Comunidade. Nossa equipe envia o link de acesso de participação em nossos grupos, e quem desejar entrar na reunião ao vivo, para tirar dúvidas com nossos instrutores, e interagindo com o conteúdo programado. As vagas para a sala são limitadas, e uma vez estando lotada, só será possível assistir ao vivo através do grupo fechado no Facebook. A gravação das lives também ficarão disponíveis na área de membro na Hotmart.',
 	},
 	{
-		question: 'Quais softwares sao usados?',
+		question: 'Quais softwares são usados?',
 		answer:
-			'Usamos os softwares mais usados no mercado. Corel Draw e Ezcad sao os principais, visto que a maior parte do mercado faz uso desses softwares. Tambem temos aulas sobre o LightBurn, e ensinamos o trabalho com vetores em varios softwares.',
+			'Usamos os softwares mais usados no mercado. Corel Draw e Ezcad são os principais, visto que a maior parte do mercado faz uso desses softwares. Também temos aulas sobre o LightBurn, e ensinamos o trabalho com vetores em vários softwares.',
 	},
 	{
 		question: 'Como funciona o Suporte?',
 		answer:
-			'Nosso suporte atende todos os dias uteis de 8h as 16h30. Nosso atendimento e via WhatsApp, e realizamos o atendimento por chat, chamada de video e acesso remoto. A solicitacao de suporte e ILIMITADA. Atendemos desde configuracoes basicas da maquina ate mesmo arrumando vetores em caso de urgencias.',
+			'Nosso suporte atende todos os dias úteis de 8h às 16h30. Nosso atendimento é via WhatsApp, e realizamos o atendimento por chat, chamada de vídeo e acesso remoto. A solicitação de suporte é ILIMITADA. Atendemos desde configurações básicas da máquina até mesmo arrumando vetores em caso de urgências.',
 	},
 	{
-		question: 'Quem pode participar do Sorteio de Maquinas?',
+		question: 'Como funciona a renovação?',
 		answer:
-			'Todos os membros assinantes do Plano Anual, com mais de 7 dias ativo na Comunidade estao participando automaticamente dos nossos sorteios internos. Se o membro sorteado estiver com plano inadimplente, nao podera concorrer aos sorteios.',
-	},
-	{
-		question: 'Como funciona a renovacao?',
-		answer:
-			'Trabalhamos com 3 assinaturas: MENSAL, TRIMESTRAL e ANUAL. Ao final de cada ciclo, nao havendo solicitacao de cancelamento, a assinatura e renovada automaticamente.',
+			'Trabalhamos com 3 assinaturas: MENSAL, TRIMESTRAL e ANUAL. Ao final de cada ciclo, não havendo solicitação de cancelamento, a assinatura é renovada automaticamente.',
 	},
 	{
 		question: 'Posso cancelar minha assinatura a qualquer momento?',
 		answer:
-			'Sim, sua assinatura pode ser cancelada a qualquer momento. No entanto, ao passar os 7 dias de garantia, nao e possivel solicitar o reembolso. O acesso aos nossos servicos continuarao ate o vencimento da sua assinatura vigente.',
+			'Sim, sua assinatura pode ser cancelada a qualquer momento. No entanto, ao passar os 7 dias de garantia, não é possível solicitar o reembolso. O acesso aos nossos serviços continuarão até o vencimento da sua assinatura vigente.',
 	},
 	{
 		question: 'Como funciona a garantia?',
 		answer:
-			'Voce pode usar a Comunidade Profissao Laser por ate 7 dias e solicitar o reembolso caso nao deseje ser membro da Comunidade. A solicitacao de reembolso durante a garantia deve ser feita no seu painel da Hotmart.',
+			'Você pode usar a Comunidade Profissão Laser por até 7 dias e solicitar o reembolso caso não deseje ser membro da Comunidade. A solicitação de reembolso durante a garantia deve ser feita no seu painel da Hotmart.',
 	},
 	{
-		question: 'Como e feito pagamento?',
+		question: 'Como é feito pagamento?',
 		answer:
-			'A assinatura da Comunidade Profissao Laser e realizada atraves da Hotmart que disponibiliza o pagamento por PIX, Cartao ou Boleto.',
-	},
-	{
-		question:
-			'Sera descontado o valor total da assinatura de uma vez no meu limite de cartao?',
-		answer:
-			'Sim. O valor total das assinaturas (TRIMESTRAL e ANUAL) sao descontadas de uma unica vez do limite do cartao, ja o pagamento pode ser parcelado em ate 12x.',
-	},
-	{
-		question: 'A Comunidade Profissao Laser vende maquinas?',
-		answer:
-			'NOS NAO VENDEMOS MAQUINAS. Nos buscamos ensinar nossos membros as diferencas entre cada maquina disponivel no mercado, e qual a aplicacao que cada uma delas pode ter.',
+			'A assinatura da Comunidade Profissão Laser é realizada através da Hotmart que disponibiliza o pagamento por PIX, Cartão ou Boleto.',
 	},
 	{
 		question:
-			'A Comunidade Profissao Laser possui algum vinculo de venda de maquinas com alguma empresa?',
+			'Será descontado o valor total da assinatura de uma vez no meu limite de cartão?',
 		answer:
-			'A Comunidade Profissao Laser e focada em prestar suporte aos profissionais do mercado de gravacao a laser, por esse motivo temos parcerias de prestacao de Suporte. Quando a pessoa compra um equipamento com nossos parceiros, ela ganha 30 dias de acesso gratuito a todos os nossos servicos, incluindo o Suporte Especializado. No entanto, nao somos comissionados por nenhuma venda de equipamento.',
+			'Sim. O valor total das assinaturas (TRIMESTRAL e ANUAL) são descontadas de uma única vez do limite do cartão, já o pagamento pode ser parcelado em até 12x.',
+	},
+	{
+		question: 'A Comunidade Profissão Laser vende máquinas?',
+		answer:
+			'NÓS NÃO VENDEMOS MÁQUINAS. Nós buscamos ensinar nossos membros as diferenças entre cada máquina disponível no mercado, e qual a aplicação que cada uma delas pode ter.',
+	},
+	{
+		question:
+			'A Comunidade Profissão Laser possui algum vínculo de venda de máquinas com alguma empresa?',
+		answer:
+			'A Comunidade Profissão Laser é focada em prestar suporte aos profissionais do mercado de gravação a laser, por esse motivo temos parcerias de prestação de Suporte. Quando a pessoa compra um equipamento com nossos parceiros, ela ganha 30 dias de acesso gratuito a todos os nossos serviços, incluindo o Suporte Especializado. No entanto, não somos comissionados por nenhuma venda de equipamento.',
 	},
 ];
 
@@ -85,13 +80,13 @@ export function FaqSection() {
 				className={`max-w-3xl mx-auto transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
 			>
 				<p className="text-[#f2295b] uppercase tracking-widest text-sm font-bold text-center mb-3">
-					Duvidas frequentes
+					Dúvidas frequentes
 				</p>
 				<h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
 					FAQ
 				</h2>
 				<p className="text-gray-400 text-center mb-10">
-					Esta com alguma duvida?
+					Está com alguma dúvida?
 				</p>
 
 				<div className="space-y-3">

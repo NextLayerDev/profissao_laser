@@ -56,20 +56,20 @@ export function Hero() {
 					</div>
 
 					<h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-white leading-[1.05] mb-6 max-w-4xl">
-						Conheca os cursos que vao{' '}
+						Treinamentos e Plataforma Exclusiva que vão{' '}
 						<span className="relative inline-block">
 							<span className="bg-gradient-to-r from-[#f2295b] via-[#ff6b6b] to-[#f2295b] bg-clip-text text-transparent">
-								transformar
+								Transformar
 							</span>
 							<div className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-[#f2295b]/0 via-[#f2295b] to-[#f2295b]/0 rounded-full" />
 						</span>{' '}
-						seu negocio
+						seu Negócio
 					</h1>
 
 					<p className="text-lg md:text-xl text-gray-300/90 leading-relaxed max-w-2xl mb-10">
-						Domine todos os processos da gravacao a laser com cursos praticos,
+						Domine todos os processos da gravação a laser com cursos práticos,
 						suporte especializado e uma comunidade ativa de profissionais. Do
-						basico ao avancado, temos o caminho certo para voce.
+						básico ao avançado, temos o caminho certo para você.
 					</p>
 
 					<button
@@ -94,13 +94,13 @@ export function Hero() {
 								icon: Star,
 								color: 'text-amber-400',
 								value: '4.9/5',
-								label: 'Avaliacao dos alunos',
+								label: 'Avaliação dos alunos',
 							},
 							{
 								icon: Zap,
 								color: 'text-emerald-400',
-								value: 'Lives semanais',
-								label: 'Conteudo exclusivo ao vivo',
+								value: 'Lives fechadas',
+								label: 'Conteúdo exclusivo ao vivo',
 							},
 						].map((stat, i) => (
 							<div key={stat.label} className="contents">

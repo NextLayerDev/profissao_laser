@@ -27,8 +27,8 @@ export function CoursesVideoSection() {
 						</span>
 					</h2>
 					<p className="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed">
-						Assista ao video e descubra como centenas de profissionais estao
-						faturando mais com gravacao a laser usando nossos metodos
+						Assista ao vídeo e descubra como centenas de profissionais estão
+						faturando mais com gravação a laser usando nossos métodos
 						exclusivos.
 					</p>
 				</div>
@@ -42,7 +42,7 @@ export function CoursesVideoSection() {
 				>
 					<Image
 						src="/img/thumbnail-youtube-min.png"
-						alt="Video sobre os cursos"
+						alt="Vídeo sobre os cursos"
 						fill
 						className="object-cover group-hover:scale-105 transition-transform duration-700"
 					/>

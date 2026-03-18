@@ -8,7 +8,6 @@ import { NetworkSection } from '@/components/landing/network-section';
 import { PlatformSection } from '@/components/landing/platform-section';
 import { ProductsSection } from '@/components/landing/products-section';
 import { ProfessionalsSection } from '@/components/landing/professionals-section';
-import { RaffleSection } from '@/components/landing/raffle-section';
 import { TargetAudience } from '@/components/landing/target-audience';
 import { TopBar } from '@/components/landing/top-bar';
 import { VideoSection } from '@/components/landing/video-section';
@@ -41,8 +40,6 @@ export default function LandingPage() {
 			<Divider />
 			<CoursesVideoSection />
 			<ProductsSection />
-			<Divider />
-			<RaffleSection />
 			<Divider />
 			<ProfessionalsSection />
 			<Divider />

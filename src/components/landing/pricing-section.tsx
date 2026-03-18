@@ -5,18 +5,17 @@ import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 
 const features = [
 	'Comunidade em Grupo Fechado',
-	'Curso do Basico ao Avancado',
+	'Curso do Básico ao Avançado',
 	'Suporte Especializado',
-	'Lives Semanais Exclusivas',
+	'Lives Fechadas Exclusivas',
 	'Biblioteca de Vetores',
 	'Lista de Fornecedores',
-	'Sorteio da CO2 6040',
 ];
 
 const plans = [
-	{ name: 'Anual', price: '127', period: 'POR MES', popular: false },
-	{ name: 'Trimestral', price: '197', period: 'POR MES', popular: true },
-	{ name: 'Mensal', price: '327', period: 'POR MES', popular: false },
+	{ name: 'Anual', price: '127', period: 'POR MÊS', popular: false },
+	{ name: 'Trimestral', price: '197', period: 'POR MÊS', popular: true },
+	{ name: 'Mensal', price: '327', period: 'POR MÊS', popular: false },
 ];
 
 export function PricingSection() {
@@ -38,15 +37,15 @@ export function PricingSection() {
 					Planos
 				</p>
 				<h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
-					Escolha a melhor opcao e faca parte da
+					Escolha a melhor opção e faça parte da
 					<br />
-					<span className="text-[#f2295b]">Comunidade Profissao Laser</span>
+					<span className="text-[#f2295b]">Comunidade Profissão Laser</span>
 				</h2>
 
 				<p className="text-gray-400 text-center text-lg mb-12 max-w-3xl mx-auto">
-					A Comunidade e o investimento em uma ferramenta que vai te auxiliar a
+					A Comunidade é o investimento em uma ferramenta que vai te auxiliar a
 					investir em conhecimento no mercado de produtos personalizados com
-					gravacao a laser.
+					gravação a laser.
 				</p>
 
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-6">

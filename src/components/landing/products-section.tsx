@@ -4,10 +4,14 @@ import {
 	ArrowRight,
 	BookOpen,
 	Check,
+	ChevronDown,
+	Cpu,
 	GraduationCap,
 	Loader2,
 	MessageCircle,
+	Monitor,
 	Pen,
+	Search,
 	Shield,
 	Sparkles,
 	Users,
@@ -38,10 +42,10 @@ const FEATURE_ICONS: Record<string, typeof BookOpen> = {
 };
 
 const FEATURE_DESCRIPTIONS: Record<string, string> = {
-	aula: 'Aulas completas do basico ao avancado com conteudo atualizado',
-	chat: 'Tire duvidas em tempo real com nossos especialistas',
-	vetorizacao: 'Servico de vetorizacao profissional para seus projetos',
-	suporte: 'Suporte tecnico especializado via WhatsApp e acesso remoto',
+	aula: 'Aulas completas do básico ao avançado com conteúdo atualizado',
+	chat: 'Tire dúvidas em tempo real com nossos especialistas',
+	vetorizacao: 'Serviço de vetorização profissional para seus projetos',
+	suporte: 'Suporte técnico especializado via WhatsApp e acesso remoto',
 	comunidade: 'Acesso ao grupo exclusivo de profissionais do mercado laser',
 };
 
@@ -177,8 +181,8 @@ function ProductCard({
 					</p>
 				) : (
 					<p className="text-[13px] text-gray-500 leading-relaxed mb-5">
-						Curso profissional completo com conteudo exclusivo para dominar o
-						mercado de gravacao a laser.
+						Curso profissional completo com conteúdo exclusivo para dominar o
+						mercado de gravação a laser.
 					</p>
 				)}
 
@@ -186,14 +190,14 @@ function ProductCard({
 				{hasMultipleTiers && (
 					<div className="mb-5">
 						<p className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold mb-2.5">
-							Nivel de acesso
+							Nível de acesso
 						</p>
 						<div className="grid grid-cols-3 gap-1.5 bg-white/[0.03] p-1 rounded-xl">
 							{variants.map((v, i) => {
 								const style = v.classInfo
 									? TIER_STYLES[v.classInfo.tier]
 									: null;
-								const label = style?.label ?? 'Padrao';
+								const label = style?.label ?? 'Padrão';
 								const isActive = i === selectedIndex;
 								return (
 									<button
@@ -297,7 +301,7 @@ function ProductCard({
 				{/* Features — show enabled with details */}
 				<div className="space-y-2.5 mb-5 flex-1">
 					<p className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold mb-1">
-						O que esta incluso
+						O que está incluso
 					</p>
 					{enabledFeatures.map((feat) => {
 						const Icon = FEATURE_ICONS[feat.key] ?? Check;
@@ -367,10 +371,49 @@ function ProductCard({
 								: 'bg-white/[0.07] hover:bg-white/[0.12] text-white'
 						}`}
 					>
-						Comecar agora
+						Começar agora
 						<ArrowRight className="w-4 h-4" />
 					</button>
 				</div>
+			</div>
+		</div>
+	);
+}
+
+/* ─── Filter select ─── */
+
+function FilterSelect({
+	icon: Icon,
+	label,
+	value,
+	options,
+	onChange,
+}: {
+	icon: typeof Monitor;
+	label: string;
+	value: string;
+	options: string[];
+	onChange: (v: string) => void;
+}) {
+	return (
+		<div className="relative flex-1 min-w-[200px]">
+			<div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none z-10">
+				<Icon className="w-5 h-5 text-[#f2295b]" />
+			</div>
+			<select
+				value={value}
+				onChange={(e) => onChange(e.target.value)}
+				className="w-full appearance-none bg-white/[0.05] border border-white/[0.1] hover:border-[#f2295b]/40 focus:border-[#f2295b]/60 focus:ring-1 focus:ring-[#f2295b]/30 text-white rounded-2xl pl-12 pr-10 py-4 text-sm font-medium outline-none transition-all duration-300 cursor-pointer [&>option]:bg-[#16161a] [&>option]:text-white"
+			>
+				<option value="">{label}</option>
+				{options.map((opt) => (
+					<option key={opt} value={opt}>
+						{opt}
+					</option>
+				))}
+			</select>
+			<div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+				<ChevronDown className="w-4 h-4 text-gray-500" />
 			</div>
 		</div>
 	);
@@ -383,6 +426,9 @@ export function ProductsSection() {
 	const { classes, isLoading: classesLoading } = useClasses();
 	const { systemClasses, isLoading: systemClassesLoading } = useSystemClasses();
 
+	const [selectedMachine, setSelectedMachine] = useState('');
+	const [selectedSoftware, setSelectedSoftware] = useState('');
+
 	const isLoading = productsLoading || classesLoading || systemClassesLoading;
 
 	const activeProducts = (products ?? []).filter((p) => p.status === 'ativo');
@@ -390,6 +436,22 @@ export function ProductsSection() {
 	const activeSystemClasses = systemClasses.filter(
 		(sc) => sc.status === 'ativo',
 	);
+
+	/* Extract unique machine and software values */
+	const { machines, softwares } = useMemo(() => {
+		const machineSet = new Set<string>();
+		const softwareSet = new Set<string>();
+		for (const p of activeProducts) {
+			if (p.machine) machineSet.add(p.machine);
+			if (p.software) softwareSet.add(p.software);
+		}
+		return {
+			machines: Array.from(machineSet).sort(),
+			softwares: Array.from(softwareSet).sort(),
+		};
+	}, [activeProducts]);
+
+	const hasFilters = selectedMachine !== '' || selectedSoftware !== '';
 
 	const productClassMap = useMemo(() => {
 		const map = new Map<string, ClassWithProducts>();
@@ -413,8 +475,15 @@ export function ProductsSection() {
 	}, [activeSystemClasses]);
 
 	const productGroups: ProductGroup[] = useMemo(() => {
+		/* Filter products by machine/software before grouping */
+		const filtered = activeProducts.filter((p) => {
+			if (selectedMachine && p.machine !== selectedMachine) return false;
+			if (selectedSoftware && p.software !== selectedSoftware) return false;
+			return true;
+		});
+
 		const map = new Map<string, ProductVariant[]>();
-		for (const product of activeProducts) {
+		for (const product of filtered) {
 			if (!map.has(product.name)) map.set(product.name, []);
 			map.get(product.name)?.push({
 				product,
@@ -437,7 +506,13 @@ export function ProductsSection() {
 			});
 		}
 		return groups;
-	}, [activeProducts, productClassMap, productSystemClassesMap]);
+	}, [
+		activeProducts,
+		selectedMachine,
+		selectedSoftware,
+		productClassMap,
+		productSystemClassesMap,
+	]);
 
 	const categories = useMemo(() => {
 		const catMap = new Map<string, ProductGroup[]>();
@@ -460,7 +535,7 @@ export function ProductsSection() {
 		);
 	}
 
-	if (productGroups.length === 0) return null;
+	if (activeProducts.length === 0) return null;
 
 	return (
 		<section
@@ -477,16 +552,112 @@ export function ProductsSection() {
 						Nossos cursos
 					</p>
 					<h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
-						Domine a gravacao a laser
+						Domine a gravação a laser
 						<br />
 						<span className="text-[#f2295b]">com quem entende do assunto</span>
 					</h2>
 					<p className="text-gray-400 text-center text-lg mb-12 max-w-3xl mx-auto">
-						Escolha o curso ideal para o seu equipamento e nivel de experiencia.
-						Cada curso inclui conteudo pratico, suporte e acesso a comunidade
+						Escolha o curso ideal para o seu equipamento e nível de experiência.
+						Cada curso inclui conteúdo prático, suporte e acesso à comunidade
 						exclusiva.
 					</p>
 				</div>
+
+				{/* Course finder filters */}
+				{(machines.length > 0 || softwares.length > 0) && (
+					<div className="mb-16">
+						<div className="relative bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/[0.08] rounded-3xl p-6 md:p-8 backdrop-blur-sm">
+							{/* Glow accent */}
+							<div className="absolute -top-px left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-[#f2295b]/60 to-transparent" />
+
+							<div className="flex items-center gap-3 mb-5">
+								<div className="w-10 h-10 rounded-xl bg-[#f2295b]/10 flex items-center justify-center">
+									<Search className="w-5 h-5 text-[#f2295b]" />
+								</div>
+								<div>
+									<h3 className="text-white font-bold text-lg">
+										Encontre o curso ideal para você
+									</h3>
+									<p className="text-gray-500 text-sm">
+										Selecione sua máquina e software para ver a recomendação
+									</p>
+								</div>
+							</div>
+
+							<div className="flex flex-col sm:flex-row gap-3">
+								{machines.length > 0 && (
+									<FilterSelect
+										icon={Monitor}
+										label="Qual sua máquina?"
+										value={selectedMachine}
+										options={machines}
+										onChange={setSelectedMachine}
+									/>
+								)}
+								{softwares.length > 0 && (
+									<FilterSelect
+										icon={Cpu}
+										label="Qual seu software?"
+										value={selectedSoftware}
+										options={softwares}
+										onChange={setSelectedSoftware}
+									/>
+								)}
+								{hasFilters && (
+									<button
+										type="button"
+										onClick={() => {
+											setSelectedMachine('');
+											setSelectedSoftware('');
+										}}
+										className="flex items-center justify-center gap-2 text-gray-400 hover:text-white text-sm font-medium px-5 py-4 rounded-2xl border border-white/[0.08] hover:border-white/20 transition-all duration-300 cursor-pointer sm:w-auto"
+									>
+										<X className="w-4 h-4" />
+										Limpar
+									</button>
+								)}
+							</div>
+
+							{/* Result message */}
+							{hasFilters && (
+								<div className="mt-5 flex items-center gap-3 bg-[#f2295b]/[0.08] border border-[#f2295b]/20 rounded-2xl px-5 py-3.5">
+									<Sparkles className="w-5 h-5 text-[#f2295b] shrink-0" />
+									{productGroups.length > 0 ? (
+										<p className="text-sm text-gray-300">
+											<span className="text-white font-bold">
+												{productGroups.length}{' '}
+												{productGroups.length === 1
+													? 'curso encontrado'
+													: 'cursos encontrados'}
+											</span>{' '}
+											para{' '}
+											{selectedMachine && (
+												<span className="text-[#f2295b] font-semibold">
+													{selectedMachine}
+												</span>
+											)}
+											{selectedMachine && selectedSoftware && ' + '}
+											{selectedSoftware && (
+												<span className="text-violet-400 font-semibold">
+													{selectedSoftware}
+												</span>
+											)}
+											{' — '}
+											{productGroups.length === 1
+												? 'este é o curso ideal para você!'
+												: 'estes são os cursos ideais para você!'}
+										</p>
+									) : (
+										<p className="text-sm text-gray-400">
+											Nenhum curso encontrado para essa combinação. Tente
+											ajustar os filtros.
+										</p>
+									)}
+								</div>
+							)}
+						</div>
+					</div>
+				)}
 
 				{/* Products by category */}
 				{categories.map(([categoryName, groups]) => (

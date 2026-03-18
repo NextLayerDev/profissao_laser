@@ -25,18 +25,18 @@ export function NetworkSection() {
 							Comunidade exclusiva
 						</p>
 						<h2 className="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
-							Network e essencial para quem quer ter{' '}
+							Network é essencial para quem quer ter{' '}
 							<span className="bg-gradient-to-r from-[#f2295b] to-violet-500 bg-clip-text text-transparent italic font-extrabold">
 								bons resultados
 							</span>{' '}
-							no mundo da gravacao laser
+							no mundo da gravação laser
 						</h2>
 
 						<p className="text-gray-400 text-lg leading-relaxed mb-8">
-							A Comunidade e um GRUPO FECHADO no Facebook, dedicado somente aos
-							assinantes da plataforma. Voce tera acesso a ferramentas como
-							planilhas dedicadas aos profissionais do laser, alem de poder
-							acessar fornecedores com precos incriveis.
+							A Comunidade é um GRUPO FECHADO no Facebook, dedicado somente aos
+							assinantes da plataforma. Você terá acesso a ferramentas como
+							planilhas dedicadas aos profissionais do laser, além de poder
+							acessar fornecedores com preços incríveis.
 						</p>
 
 						<button
@@ -53,7 +53,7 @@ export function NetworkSection() {
 					<div className="flex-shrink-0 w-full md:w-80 aspect-[3/4] rounded-2xl overflow-hidden border border-white/10 relative">
 						<Image
 							src="/img/maquina-laser-min-min.png"
-							alt="Maquina de gravacao a laser"
+							alt="Máquina de gravação a laser"
 							fill
 							className="object-cover"
 						/>

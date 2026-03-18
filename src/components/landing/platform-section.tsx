@@ -7,7 +7,7 @@ import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 const screenshots = [
 	{
 		src: '/img/primeiras-configuracoes-100-min.jpg',
-		alt: 'Primeiras configuracoes',
+		alt: 'Primeiras configurações',
 	},
 	{
 		src: '/img/como-fazer-preenchimento-100-min.jpg',
@@ -43,13 +43,13 @@ export function PlatformSection() {
 						trilha de conhecimento
 					</span>
 					<br />
-					para voce acessar a hora que precisar
+					para você acessar a hora que precisar
 				</h2>
 
 				<p className="text-gray-400 text-lg leading-relaxed mb-10 max-w-3xl mx-auto">
-					Chega de ficar procurando dicas aleatorias de como usar sua maquina de
-					gravacao a laser. Na nossa plataforma voce tera o treinamento completo
-					desde as configuracoes mais basicas ate a producao de produtos mais
+					Chega de ficar procurando dicas aleatórias de como usar sua máquina de
+					gravação a laser. Na nossa plataforma você terá o treinamento completo
+					desde as configurações mais básicas até a produção de produtos mais
 					complexos.
 				</p>
 
