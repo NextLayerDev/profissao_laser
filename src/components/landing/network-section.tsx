@@ -33,10 +33,10 @@ export function NetworkSection() {
 						</h2>
 
 						<p className="text-gray-400 text-lg leading-relaxed mb-8">
-							A Comunidade é um GRUPO FECHADO no Facebook, dedicado somente aos
-							assinantes da plataforma. Você terá acesso a ferramentas como
-							planilhas dedicadas aos profissionais do laser, além de poder
-							acessar fornecedores com preços incríveis.
+							A Comunidade é um GRUPO FECHADO, dedicado somente aos assinantes
+							da plataforma. Você terá acesso a ferramentas como planilhas
+							dedicadas aos profissionais do laser, além de poder acessar
+							fornecedores com preços incríveis.
 						</p>
 
 						<button
