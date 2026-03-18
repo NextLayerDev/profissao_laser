@@ -36,7 +36,7 @@ function PricingColumn({ variant }: { variant: ProductVariant }) {
 
 	return (
 		<div
-			className={`flex flex-col flex-1 min-w-[160px] rounded-xl border p-4 transition-all duration-200 ${
+			className={`flex flex-col w-full sm:flex-1 sm:min-w-[160px] rounded-xl border p-4 transition-all duration-200 ${
 				hasSc
 					? 'border-violet-500/40 bg-violet-500/[0.05] dark:bg-violet-500/[0.08]'
 					: 'border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-[#111113]'
@@ -203,7 +203,7 @@ export function StoreProductCard({ variants }: StoreProductCardProps) {
 			</div>
 
 			{/* Pricing columns — one per variant, sorted price asc */}
-			<div className="flex gap-3 px-5 pb-5 overflow-x-auto">
+			<div className="flex flex-col sm:flex-row gap-3 px-4 sm:px-5 pb-5 sm:overflow-x-auto">
 				{sorted.map((v) => (
 					<PricingColumn key={v.product.id} variant={v} />
 				))}

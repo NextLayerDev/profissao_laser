@@ -92,7 +92,7 @@ function PricingColumn({
 
 	return (
 		<div
-			className={`flex flex-col flex-1 min-w-[165px] rounded-2xl border p-4 transition-all duration-200 ${
+			className={`flex flex-col w-full sm:flex-1 sm:min-w-[165px] rounded-2xl border p-4 transition-all duration-200 ${
 				featured
 					? 'border-[#f2295b]/50 bg-gradient-to-b from-[#f2295b]/[0.08] to-transparent shadow-lg shadow-[#f2295b]/10'
 					: hasSc
@@ -144,7 +144,7 @@ function PricingColumn({
 								<p className="text-xs text-gray-200 font-medium leading-tight">
 									{f.label}
 								</p>
-								<p className="text-[10px] text-gray-500 leading-snug mt-0.5 hidden sm:block">
+								<p className="text-[10px] text-gray-500 leading-snug mt-0.5">
 									{FEATURE_DESCRIPTIONS[f.key]}
 								</p>
 							</div>
@@ -187,7 +187,7 @@ function PricingColumn({
 									{o.label}
 								</p>
 								{enabled && (
-									<p className="text-[10px] text-gray-500 leading-snug mt-0.5 hidden sm:block">
+									<p className="text-[10px] text-gray-500 leading-snug mt-0.5">
 										{FEATURE_DESCRIPTIONS[o.key]}
 									</p>
 								)}
@@ -315,7 +315,7 @@ function ProductCard({ group }: { group: ProductGroup }) {
 			</div>
 
 			{/* Pricing columns — sorted by price asc */}
-			<div className="flex gap-3 px-5 pb-5 pt-3 overflow-x-auto">
+			<div className="flex flex-col sm:flex-row gap-3 px-4 sm:px-5 pb-5 pt-3 sm:overflow-x-auto">
 				{sorted.map((v, i) => (
 					<PricingColumn
 						key={v.product.id}

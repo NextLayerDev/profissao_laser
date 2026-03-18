@@ -45,7 +45,7 @@ export function JourneySection() {
 						{journeySteps.map((step, index) => (
 							<div
 								key={step}
-								className={`flex items-center gap-4 bg-white/[0.04] backdrop-blur-sm border border-white/[0.08] rounded-xl px-6 py-4 transition-all duration-500 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`}
+								className={`flex items-center gap-4 bg-white/[0.04] backdrop-blur-sm border border-white/[0.08] rounded-xl px-4 sm:px-6 py-3.5 sm:py-4 transition-all duration-500 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`}
 								style={{
 									transitionDelay: `${200 + index * 100}ms`,
 								}}

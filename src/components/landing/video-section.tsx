@@ -62,7 +62,7 @@ export function VideoSection() {
 				</div>
 
 				{/* Instructors */}
-				<div className="flex items-center gap-6 mb-8">
+				<div className="flex flex-wrap items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
 					<div className="flex items-center gap-3">
 						<Image
 							src="/img/FERNANDO02.jpeg"

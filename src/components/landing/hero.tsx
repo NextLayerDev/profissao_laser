@@ -26,8 +26,8 @@ export function Hero() {
 			{/* Gradient overlays */}
 			<div className="absolute inset-0 bg-gradient-to-br from-[#1a0a2e]/95 via-[#2d1b69]/90 to-[#0f1b4d]/95" />
 			<div className="absolute inset-0 overflow-hidden pointer-events-none">
-				<div className="absolute top-20 left-10 w-72 h-72 bg-[#f2295b]/10 rounded-full blur-[120px]" />
-				<div className="absolute bottom-20 right-10 w-96 h-96 bg-violet-600/10 rounded-full blur-[150px]" />
+				<div className="absolute top-20 left-10 w-40 sm:w-72 h-40 sm:h-72 bg-[#f2295b]/10 rounded-full blur-[120px]" />
+				<div className="absolute bottom-20 right-10 w-56 sm:w-96 h-56 sm:h-96 bg-violet-600/10 rounded-full blur-[150px]" />
 				<div
 					className="absolute inset-0 opacity-[0.03]"
 					style={{
@@ -44,7 +44,7 @@ export function Hero() {
 			>
 				<div className="flex flex-col items-center text-center">
 					{/* Header logo */}
-					<div className="relative w-full max-w-md mx-auto mb-8">
+					<div className="relative w-full max-w-[220px] sm:max-w-md mx-auto mb-6 sm:mb-8">
 						<Image
 							src="/img/header_prof-laser.png"
 							alt="Comunidade Profissão Laser"
@@ -55,7 +55,7 @@ export function Hero() {
 						/>
 					</div>
 
-					<h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-white leading-[1.05] mb-6 max-w-4xl">
+					<h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] sm:leading-[1.05] mb-5 sm:mb-6 max-w-4xl">
 						Treinamentos e Plataforma Exclusiva que vão{' '}
 						<span className="relative inline-block">
 							<span className="bg-gradient-to-r from-[#f2295b] via-[#ff6b6b] to-[#f2295b] bg-clip-text text-transparent">
@@ -66,7 +66,7 @@ export function Hero() {
 						seu Negócio
 					</h1>
 
-					<p className="text-lg md:text-xl text-gray-300/90 leading-relaxed max-w-2xl mb-10">
+					<p className="text-base sm:text-lg md:text-xl text-gray-300/90 leading-relaxed max-w-2xl mb-8 sm:mb-10">
 						Domine todos os processos da gravação a laser com cursos práticos,
 						suporte especializado e uma comunidade ativa de profissionais. Do
 						básico ao avançado, temos o caminho certo para você.
@@ -75,14 +75,14 @@ export function Hero() {
 					<button
 						type="button"
 						onClick={scrollToCursos}
-						className="group inline-flex items-center gap-3 bg-[#f2295b] hover:bg-[#e0214f] text-white text-lg font-bold px-10 py-5 rounded-2xl transition-all duration-300 shadow-xl shadow-[#f2295b]/20 hover:shadow-[#f2295b]/30 hover:-translate-y-0.5 mb-14 cursor-pointer"
+						className="group inline-flex items-center gap-2 sm:gap-3 bg-[#f2295b] hover:bg-[#e0214f] text-white text-base sm:text-lg font-bold px-6 sm:px-8 md:px-10 py-3.5 sm:py-4 md:py-5 rounded-2xl transition-all duration-300 shadow-xl shadow-[#f2295b]/20 hover:shadow-[#f2295b]/30 hover:-translate-y-0.5 mb-10 sm:mb-14 cursor-pointer"
 					>
 						Ver todos os cursos
 						<ChevronDown className="w-5 h-5 group-hover:translate-y-0.5 transition-transform animate-bounce" />
 					</button>
 
 					{/* Social proof */}
-					<div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
+					<div className="flex flex-wrap items-center justify-center gap-x-5 sm:gap-x-10 gap-y-3 sm:gap-y-4">
 						{[
 							{
 								icon: Users,
