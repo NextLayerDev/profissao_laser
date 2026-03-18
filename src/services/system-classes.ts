@@ -12,7 +12,30 @@ import {
 
 export async function getSystemClasses(): Promise<SystemClassWithRelations[]> {
 	const { data } = await api.get('/system-classes');
-	return systemClassWithRelationsSchema.array().parse(data);
+
+	const result = systemClassWithRelationsSchema.array().safeParse(data);
+	if (result.success) return result.data;
+
+	// Fallback: parse individual system class fields strictly and pass
+	// products/classes through without validation, to handle API shape
+	// variations without a full crash.
+	if (!Array.isArray(data)) return [];
+
+	const items: SystemClassWithRelations[] = [];
+	for (const raw of data as Record<string, unknown>[]) {
+		const scResult = systemClassSchema.safeParse(raw);
+		if (!scResult.success) continue;
+		items.push({
+			...scResult.data,
+			products: Array.isArray(raw.products)
+				? (raw.products as SystemClassWithRelations['products'])
+				: [],
+			classes: Array.isArray(raw.classes)
+				? (raw.classes as SystemClassWithRelations['classes'])
+				: [],
+		});
+	}
+	return items;
 }
 
 export async function getSystemClass(
