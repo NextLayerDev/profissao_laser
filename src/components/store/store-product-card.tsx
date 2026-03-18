@@ -2,6 +2,7 @@
 
 import {
 	Check,
+	CheckCircle,
 	Cpu,
 	Layers,
 	Monitor,
@@ -13,6 +14,7 @@ import {
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useOwnership } from '@/hooks/use-ownership';
 import type { StoreProductCardProps } from '@/types/components/store-product-card';
 import { CLASS_FEATURES } from '@/utils/constants/class-features';
 import { TIER_STYLES } from '@/utils/constants/tier-styles';
@@ -59,6 +61,8 @@ export function StoreProductCard({ variants }: StoreProductCardProps) {
 		const classParam = classInfo ? `?classId=${classInfo.id}` : '';
 		router.push(`/checkout/${product.slug}${classParam}`);
 	}
+
+	const { status: ownershipStatus } = useOwnership(variants, selectedIndex);
 
 	// Features: prefer classInfo, fallback to selected system class
 	const enabledFeatures = classInfo
@@ -298,14 +302,27 @@ export function StoreProductCard({ variants }: StoreProductCardProps) {
 						)}
 					</div>
 
-					<button
-						type="button"
-						onClick={handleBuy}
-						className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-semibold py-3 rounded-xl transition-colors duration-200 cursor-pointer"
-					>
-						<ShoppingCart className="w-4 h-4" />
-						Comprar agora
-					</button>
+					{ownershipStatus === 'owned' ? (
+						<button
+							type="button"
+							disabled
+							className="w-full flex items-center justify-center gap-2 bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-semibold py-3 rounded-xl cursor-not-allowed"
+						>
+							<CheckCircle className="w-4 h-4" />
+							Já possui
+						</button>
+					) : (
+						<button
+							type="button"
+							onClick={handleBuy}
+							className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-semibold py-3 rounded-xl transition-colors duration-200 cursor-pointer"
+						>
+							<ShoppingCart className="w-4 h-4" />
+							{ownershipStatus === 'upgrade'
+								? 'Fazer upgrade'
+								: 'Comprar agora'}
+						</button>
+					)}
 				</div>
 			</div>
 		</div>

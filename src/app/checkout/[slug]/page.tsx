@@ -9,13 +9,13 @@ import { CheckoutAuthForm } from '@/components/checkout/checkout-auth-form';
 import { CheckoutConfirmButton } from '@/components/checkout/checkout-confirm-button';
 import { CheckoutProductSummary } from '@/components/checkout/checkout-product-summary';
 import { useClasses } from '@/hooks/use-classes';
+import { useOwnership } from '@/hooks/use-ownership';
 import { useProducts } from '@/hooks/use-products';
 import { getCurrentUser } from '@/lib/auth';
 import { createPurchase } from '@/services/purchase';
 import type { ClassWithProducts } from '@/types/classes';
 import type { Product } from '@/types/products';
-
-const TIER_ORDER: Record<string, number> = { prata: 0, ouro: 1, platina: 2 };
+import { TIER_ORDER } from '@/utils/ownership';
 
 interface ProductVariant {
 	product: Product;
@@ -85,6 +85,11 @@ export default function CheckoutPage() {
 	// Keep selectedIndex in sync when variants change
 	const safeIndex = selectedIndex < variants.length ? selectedIndex : 0;
 	const selectedVariant = variants[safeIndex];
+
+	const { status: ownershipStatus, isLoading: ownershipLoading } = useOwnership(
+		variants,
+		safeIndex,
+	);
 
 	const handleAuthenticatedPurchase = useCallback(async () => {
 		if (!selectedVariant) return;
@@ -211,6 +216,8 @@ export default function CheckoutPage() {
 							<CheckoutConfirmButton
 								productId={selectedVariant.product.id}
 								companyName={companyName.trim() || undefined}
+								ownershipStatus={ownershipStatus}
+								isLoadingOwnership={ownershipLoading}
 							/>
 						) : (
 							<CheckoutAuthForm onAuthenticated={handleAuthenticatedPurchase} />
