@@ -6,6 +6,7 @@ import {
 	LayoutDashboard,
 	Loader2,
 	Search,
+	Settings2,
 	Store,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -229,6 +230,7 @@ export default function Loja() {
 				{/* Filtros por system class */}
 				{systemClassCategories.length > 1 && (
 					<div className="flex items-center gap-2 mb-8 flex-wrap">
+						<Settings2 className="w-3.5 h-3.5 text-purple-400 shrink-0" />
 						<span className="text-xs font-medium text-slate-500 dark:text-gray-500 mr-1">
 							Plano:
 						</span>

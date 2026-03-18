@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, Plus, Settings2, Trash2 } from 'lucide-react';
+import { Check, Loader2, Settings2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -38,34 +38,42 @@ export function ProductSystemClassesSection({
 	const { systemClasses, isLoading } = useSystemClasses();
 	const linkMutation = useLinkProduct();
 	const unlinkMutation = useUnlinkProduct();
-	const [selectedId, setSelectedId] = useState('');
+	const [togglingId, setTogglingId] = useState<string | null>(null);
 
-	const linkedSystemClasses = systemClasses.filter((sc) =>
-		sc.products.some((p) => p.id === productId),
+	const linkedIds = new Set(
+		systemClasses
+			.filter((sc) => sc.products.some((p) => p.id === productId))
+			.map((sc) => sc.id),
 	);
 
-	const linkedIds = new Set(linkedSystemClasses.map((sc) => sc.id));
-	const availableSystemClasses = systemClasses.filter(
-		(sc) => sc.status === 'ativo' && !linkedIds.has(sc.id),
-	);
+	const allActiveSystemClasses = systemClasses
+		.filter((sc) => sc.status === 'ativo')
+		.sort((a, b) => {
+			const aLinked = linkedIds.has(a.id) ? 0 : 1;
+			const bLinked = linkedIds.has(b.id) ? 0 : 1;
+			return aLinked - bLinked;
+		});
 
-	async function handleLink() {
-		if (!selectedId) return;
+	async function handleToggle(systemClassId: string) {
+		setTogglingId(systemClassId);
 		try {
-			await linkMutation.mutateAsync({ id: selectedId, productId });
-			toast.success('System class vinculada ao produto!');
-			setSelectedId('');
+			if (linkedIds.has(systemClassId)) {
+				await unlinkMutation.mutateAsync({
+					id: systemClassId,
+					productId,
+				});
+				toast.success('System class desvinculada!');
+			} else {
+				await linkMutation.mutateAsync({
+					id: systemClassId,
+					productId,
+				});
+				toast.success('System class vinculada ao produto!');
+			}
 		} catch {
-			toast.error('Erro ao vincular system class');
-		}
-	}
-
-	async function handleUnlink(systemClassId: string) {
-		try {
-			await unlinkMutation.mutateAsync({ id: systemClassId, productId });
-			toast.success('System class desvinculada!');
-		} catch {
-			toast.error('Erro ao desvincular system class');
+			toast.error('Erro ao alterar vinculação');
+		} finally {
+			setTogglingId(null);
 		}
 	}
 
@@ -87,118 +95,83 @@ export function ProductSystemClassesSection({
 					Vincule este produto a system classes para definir planos de acesso,
 					permissões e tiers.
 				</p>
+				{allActiveSystemClasses.length > 0 && (
+					<p className="text-xs text-slate-500 dark:text-gray-500 mt-1">
+						{linkedIds.size} de {allActiveSystemClasses.length} vinculada
+						{allActiveSystemClasses.length !== 1 ? 's' : ''}
+					</p>
+				)}
 			</div>
 
-			{/* Vincular nova system class */}
-			<div className="bg-white dark:bg-[#1a1a1d] rounded-xl border border-slate-200 dark:border-gray-800 p-5 mb-6 shadow-sm dark:shadow-none">
-				<p className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-3">
-					Vincular a uma System Class
-				</p>
-				<div className="flex items-center gap-2">
-					<select
-						value={selectedId}
-						onChange={(e) => setSelectedId(e.target.value)}
-						className="flex-1 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm text-slate-700 dark:text-gray-300 focus:outline-none focus:border-violet-500/50"
-					>
-						<option value="">Selecione uma system class...</option>
-						{availableSystemClasses.map((sc) => (
-							<option key={sc.id} value={sc.id}>
-								{sc.name}
-							</option>
-						))}
-					</select>
-					<button
-						type="button"
-						onClick={handleLink}
-						disabled={!selectedId || linkMutation.isPending}
-						className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-medium bg-violet-600 hover:bg-violet-700 text-white transition-colors disabled:opacity-50"
-					>
-						{linkMutation.isPending ? (
-							<Loader2 className="w-4 h-4 animate-spin" />
-						) : (
-							<Plus className="w-4 h-4" />
-						)}
-						Vincular
-					</button>
-				</div>
-			</div>
-
-			{/* Lista de system classes vinculadas */}
-			{linkedSystemClasses.length === 0 ? (
+			{allActiveSystemClasses.length === 0 ? (
 				<div className="text-center py-12 bg-white dark:bg-[#1a1a1d] rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm dark:shadow-none">
 					<Settings2 className="w-10 h-10 text-slate-400 dark:text-gray-700 mx-auto mb-3" />
 					<p className="text-slate-600 dark:text-gray-400 font-medium">
-						Nenhuma system class vinculada
+						Nenhuma system class disponível
 					</p>
 					<p className="text-sm text-slate-500 dark:text-gray-600 mt-1">
-						Vincule este produto a uma system class para configurar acessos.
+						Crie uma system class ativa para poder vincular a este produto.
 					</p>
 				</div>
 			) : (
-				<div className="space-y-3">
-					{linkedSystemClasses.map((sc) => {
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+					{allActiveSystemClasses.map((sc) => {
+						const isLinked = linkedIds.has(sc.id);
+						const isToggling = togglingId === sc.id;
 						const enabledFeatures = CLASS_FEATURES.filter((f) => sc[f.key]);
 						const enabledTiers = TIER_BADGES.filter((t) => sc[t.key]);
 
 						return (
-							<div
+							<button
 								key={sc.id}
-								className="bg-white dark:bg-[#1a1a1d] rounded-xl border border-slate-200 dark:border-gray-800 p-5 shadow-sm dark:shadow-none"
+								type="button"
+								onClick={() => handleToggle(sc.id)}
+								disabled={togglingId !== null}
+								className={`relative text-left p-4 rounded-xl border-2 transition-all duration-200 ${
+									isLinked
+										? 'bg-violet-500/5 dark:bg-violet-500/10 border-violet-500/50 shadow-sm shadow-violet-500/10'
+										: 'bg-white dark:bg-[#1a1a1d] border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700 opacity-60 hover:opacity-100'
+								} ${togglingId !== null ? 'cursor-wait' : 'cursor-pointer'}`}
 							>
-								<div className="flex items-start justify-between gap-4">
-									<div className="flex-1 min-w-0">
-										<div className="flex items-center gap-2 mb-2">
-											<h3 className="font-semibold text-slate-900 dark:text-white truncate">
-												{sc.name}
-											</h3>
-											<span
-												className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${
-													sc.status === 'ativo'
-														? 'bg-emerald-500/10 text-emerald-400'
-														: 'bg-slate-200 dark:bg-gray-700 text-slate-600 dark:text-gray-400'
-												}`}
-											>
-												{sc.status === 'ativo' ? 'Ativo' : 'Inativo'}
-											</span>
+								<div className="absolute top-3 right-3">
+									{isToggling ? (
+										<Loader2 className="w-4 h-4 animate-spin text-violet-400" />
+									) : isLinked ? (
+										<div className="w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center">
+											<Check className="w-3 h-3 text-white" />
 										</div>
-
-										{sc.description && (
-											<p className="text-sm text-slate-600 dark:text-gray-400 mb-3 line-clamp-1">
-												{sc.description}
-											</p>
-										)}
-
-										<div className="flex flex-wrap gap-1.5">
-											{enabledFeatures.map((f) => (
-												<span
-													key={f.key}
-													className="text-xs px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-500 dark:text-violet-400 border border-violet-500/20"
-												>
-													{f.label}
-												</span>
-											))}
-											{enabledTiers.map((t) => (
-												<span
-													key={t.key}
-													className={`text-xs px-2 py-0.5 rounded-full ${t.style}`}
-												>
-													{t.label}
-												</span>
-											))}
-										</div>
-									</div>
-
-									<button
-										type="button"
-										onClick={() => handleUnlink(sc.id)}
-										disabled={unlinkMutation.isPending}
-										className="p-2 text-slate-400 dark:text-gray-500 hover:text-red-400 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-[#252528] shrink-0"
-										title="Desvincular"
-									>
-										<Trash2 className="w-4 h-4" />
-									</button>
+									) : (
+										<div className="w-5 h-5 rounded-full border-2 border-slate-300 dark:border-gray-600" />
+									)}
 								</div>
-							</div>
+
+								<h4 className="font-semibold text-slate-900 dark:text-white text-sm mb-1 pr-8">
+									{sc.name}
+								</h4>
+								{sc.description && (
+									<p className="text-xs text-slate-500 dark:text-gray-500 line-clamp-1 mb-2">
+										{sc.description}
+									</p>
+								)}
+								<div className="flex flex-wrap gap-1">
+									{enabledFeatures.map((f) => (
+										<span
+											key={f.key}
+											className="text-[10px] px-1.5 py-0.5 rounded-full bg-violet-500/10 text-violet-500 dark:text-violet-400 border border-violet-500/20"
+										>
+											{f.label}
+										</span>
+									))}
+									{enabledTiers.map((t) => (
+										<span
+											key={t.key}
+											className={`text-[10px] px-1.5 py-0.5 rounded-full ${t.style}`}
+										>
+											{t.label}
+										</span>
+									))}
+								</div>
+							</button>
 						);
 					})}
 				</div>
