@@ -61,30 +61,7 @@ export function StoreProductCard({ variants }: StoreProductCardProps) {
 		router.push(`/checkout/${product.slug}?productId=${product.id}`);
 	}
 
-	return (
-		<div
-			className={`flex flex-col w-full sm:flex-1 sm:min-w-[160px] rounded-xl border p-4 transition-all duration-200 ${
-				hasSc
-					? 'border-violet-500/40 bg-violet-500/[0.05] dark:bg-violet-500/[0.08]'
-					: 'border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-[#111113]'
-			}`}
-		>
-			{/* Plan badge */}
-			<div className="mb-3">
-				{hasSc ? (
-					<span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-violet-600/15 text-violet-600 dark:text-violet-300 border border-violet-500/30">
-						<Sparkles className="w-3 h-3" />
-						{systemClass.name}
-					</span>
-				) : (
-					<span className="inline-block text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-gray-400 border border-slate-200 dark:border-gray-700">
-						Sem sistema
-					</span>
-				)}
-				<p className="text-[11px] text-slate-400 dark:text-gray-500 mt-1.5">
-					{hasSc ? `Curso + ${systemClass.name}` : 'Curso sem sistema'}
-				</p>
-			</div>
+	const { status: ownershipStatus } = useOwnership(variants, selectedIndex);
 
 	// Features: prefer classInfo, fallback to selected system class
 	const enabledFeatures = classInfo
@@ -307,11 +284,45 @@ export function StoreProductCard({ variants }: StoreProductCardProps) {
 					</span>
 				</div>
 
-			{/* Pricing columns — one per variant, sorted price asc */}
-			<div className="flex flex-col sm:flex-row gap-3 px-4 sm:px-5 pb-5 sm:overflow-x-auto">
-				{sorted.map((v) => (
-					<PricingColumn key={v.product.id} variant={v} />
-				))}
+				<div className="mt-auto border-t border-slate-200 dark:border-gray-800 pt-4">
+					<div className="flex items-center justify-between mb-3">
+						<div>
+							<p className="text-xs text-slate-500 dark:text-gray-500 mb-0.5">
+								Por apenas
+							</p>
+							<p className="text-2xl font-bold text-slate-900 dark:text-white">
+								{formatCurrency(product.price, 'BRL')}
+							</p>
+						</div>
+						{product.refundDays && (
+							<span className="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">
+								{product.refundDays} dias de garantia
+							</span>
+						)}
+					</div>
+
+					{ownershipStatus === 'owned' ? (
+						<button
+							type="button"
+							disabled
+							className="w-full flex items-center justify-center gap-2 bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-semibold py-3 rounded-xl cursor-not-allowed"
+						>
+							<CheckCircle className="w-4 h-4" />
+							Já possui
+						</button>
+					) : (
+						<button
+							type="button"
+							onClick={handleBuy}
+							className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-semibold py-3 rounded-xl transition-colors duration-200 cursor-pointer"
+						>
+							<ShoppingCart className="w-4 h-4" />
+							{ownershipStatus === 'upgrade'
+								? 'Fazer upgrade'
+								: 'Comprar agora'}
+						</button>
+					)}
+				</div>
 			</div>
 		</div>
 	);

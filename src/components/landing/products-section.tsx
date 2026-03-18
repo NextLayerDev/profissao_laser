@@ -128,96 +128,7 @@ function ProductCard({
 				<div className="absolute top-5 right-5 z-20">
 					<div className="flex items-center gap-1.5 bg-[#f2295b] text-white text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full shadow-lg shadow-[#f2295b]/30">
 						<Sparkles className="w-3 h-3" />
-						{systemClass.name}
-					</span>
-				) : (
-					<span className="inline-block text-xs font-bold px-2.5 py-1 rounded-full bg-white/[0.05] text-gray-400 border border-white/[0.08]">
-						Sem sistema
-					</span>
-				)}
-				<p className="text-[11px] text-gray-500 mt-1.5">
-					{hasSc ? `Curso + ${systemClass.name}` : 'Curso sem sistema'}
-				</p>
-			</div>
-
-			{/* Features */}
-			<div className="flex-1 space-y-2 mb-4">
-				{classFeatures.map((f) => {
-					const Icon = FEATURE_ICONS[f.key] ?? Check;
-					return (
-						<div key={f.key} className="flex items-start gap-2">
-							<div className="w-4 h-4 rounded-md bg-emerald-500/10 flex items-center justify-center mt-0.5 shrink-0">
-								<Icon className="w-2.5 h-2.5 text-emerald-400" />
-							</div>
-							<div className="min-w-0">
-								<p className="text-xs text-gray-200 font-medium leading-tight">
-									{f.label}
-								</p>
-								<p className="text-[10px] text-gray-500 leading-snug mt-0.5">
-									{FEATURE_DESCRIPTIONS[f.key]}
-								</p>
-							</div>
-						</div>
-					);
-				})}
-				{SC_OPTIONS.map((o) => {
-					const enabled = hasSc && systemClass[o.key] === true;
-					const Icon = FEATURE_ICONS[o.key] ?? Check;
-					return (
-						<div
-							key={o.key}
-							className={`flex items-start gap-2 ${enabled ? '' : 'opacity-25'}`}
-						>
-							{enabled ? (
-								<div
-									className={`w-4 h-4 rounded-md flex items-center justify-center mt-0.5 shrink-0 ${
-										featured ? 'bg-[#f2295b]/15' : 'bg-purple-500/15'
-									}`}
-								>
-									<Icon
-										className={`w-2.5 h-2.5 ${featured ? 'text-[#f2295b]' : 'text-purple-400'}`}
-									/>
-								</div>
-							) : (
-								<div className="w-4 h-4 rounded-md bg-white/[0.03] flex items-center justify-center mt-0.5 shrink-0">
-									<X className="w-2.5 h-2.5 text-gray-600" />
-								</div>
-							)}
-							<div className="min-w-0">
-								<p
-									className={`text-xs font-medium leading-tight ${
-										enabled
-											? featured
-												? 'text-[#f2295b]'
-												: 'text-purple-300'
-											: 'text-gray-600 line-through'
-									}`}
-								>
-									{o.label}
-								</p>
-								{enabled && (
-									<p className="text-[10px] text-gray-500 leading-snug mt-0.5">
-										{FEATURE_DESCRIPTIONS[o.key]}
-									</p>
-								)}
-							</div>
-						</div>
-					);
-				})}
-			</div>
-
-			{/* Price + CTA */}
-			<div
-				className={`border-t pt-4 mt-auto ${
-					featured ? 'border-[#f2295b]/20' : 'border-white/[0.06]'
-				}`}
-			>
-				{product.refundDays && (
-					<div className="flex items-center gap-1.5 mb-3">
-						<Shield className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-						<span className="text-[10px] text-emerald-400/80 font-medium">
-							Garantia de {product.refundDays} dias
-						</span>
+						Mais popular
 					</div>
 				</div>
 			)}
@@ -333,15 +244,155 @@ function ProductCard({
 					</div>
 				)}
 
-			{/* Pricing columns — sorted by price asc */}
-			<div className="flex flex-col sm:flex-row gap-3 px-4 sm:px-5 pb-5 pt-3 sm:overflow-x-auto">
-				{sorted.map((v, i) => (
-					<PricingColumn
-						key={v.product.id}
-						variant={v}
-						featured={i === featuredIndex}
-					/>
-				))}
+				{/* System class selector - mini cards */}
+				{allSystemClasses.length >= 1 && (
+					<div className="mb-5">
+						<p className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold mb-2.5">
+							Plano do sistema
+						</p>
+						<div className="grid grid-cols-2 gap-2">
+							{allSystemClasses.map((sc, i) => {
+								const isActive = selectedScIndex === i;
+								const scFeatures = CLASS_FEATURES.filter((f) => sc[f.key]);
+								return (
+									<button
+										key={sc.id}
+										type="button"
+										onClick={() => setSelectedScIndex(i)}
+										className={`text-left p-3 rounded-xl border transition-all duration-200 cursor-pointer ${
+											isActive
+												? 'bg-purple-500/15 border-purple-500/50'
+												: 'bg-white/[0.03] border-white/[0.06] hover:border-white/15'
+										}`}
+									>
+										<p
+											className={`text-xs font-bold mb-1.5 ${isActive ? 'text-white' : 'text-gray-400'}`}
+										>
+											{sc.name}
+										</p>
+										<div className="flex flex-wrap gap-1">
+											{scFeatures.map((f) => (
+												<span
+													key={f.key}
+													className={`inline-flex items-center gap-0.5 text-[10px] ${isActive ? 'text-emerald-400' : 'text-gray-600'}`}
+												>
+													<Check className="w-2.5 h-2.5" />
+													{f.label}
+												</span>
+											))}
+										</div>
+									</button>
+								);
+							})}
+							{/* Sem plano */}
+							<button
+								type="button"
+								onClick={() => setSelectedScIndex(null)}
+								className={`text-left p-3 rounded-xl border transition-all duration-200 cursor-pointer ${
+									selectedScIndex === null
+										? 'bg-white/[0.08] border-white/20'
+										: 'bg-white/[0.03] border-white/[0.06] hover:border-white/15'
+								}`}
+							>
+								<p
+									className={`text-xs font-bold mb-1.5 flex items-center gap-1 ${selectedScIndex === null ? 'text-white' : 'text-gray-400'}`}
+								>
+									<X className="w-3 h-3" />
+									Sem plano
+								</p>
+								<p className="text-[10px] text-gray-600">Apenas o curso</p>
+							</button>
+						</div>
+					</div>
+				)}
+
+				{/* Features — show enabled with details */}
+				<div className="space-y-2.5 mb-5 flex-1">
+					<p className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold mb-1">
+						O que está incluso
+					</p>
+					{enabledFeatures.map((feat) => {
+						const Icon = FEATURE_ICONS[feat.key] ?? Check;
+						return (
+							<div key={feat.key} className="flex items-start gap-2.5">
+								<div className="w-5 h-5 rounded-md bg-emerald-500/10 flex items-center justify-center mt-0.5 shrink-0">
+									<Icon className="w-3 h-3 text-emerald-400" />
+								</div>
+								<div className="min-w-0">
+									<p className="text-sm text-gray-200 font-medium leading-tight">
+										{feat.label}
+									</p>
+									<p className="text-[11px] text-gray-500 leading-snug mt-0.5">
+										{FEATURE_DESCRIPTIONS[feat.key]}
+									</p>
+								</div>
+							</div>
+						);
+					})}
+					{disabledFeatures.map((feat) => (
+						<div
+							key={feat.key}
+							className="flex items-center gap-2.5 opacity-40"
+						>
+							<div className="w-5 h-5 rounded-md bg-white/5 flex items-center justify-center shrink-0">
+								<X className="w-3 h-3 text-gray-600" />
+							</div>
+							<p className="text-sm text-gray-600 line-through">{feat.label}</p>
+						</div>
+					))}
+				</div>
+
+				{/* Divider + Price */}
+				<div className="border-t border-white/[0.06] pt-5 mt-auto">
+					{product.refundDays && (
+						<div className="flex items-center gap-2 mb-4">
+							<Shield className="w-4 h-4 text-emerald-400 shrink-0" />
+							<span className="text-xs text-emerald-400/80 font-medium">
+								Garantia incondicional de {product.refundDays} dias — sem
+								perguntas
+							</span>
+						</div>
+					)}
+
+					<div className="flex items-end justify-between mb-4">
+						<div>
+							<p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1">
+								Investimento
+							</p>
+							<div className="flex items-baseline gap-1">
+								<span className="text-3xl font-black text-white tracking-tight">
+									{formatCurrency(product.price, 'BRL')}
+								</span>
+							</div>
+						</div>
+					</div>
+
+					{ownershipStatus === 'owned' ? (
+						<button
+							type="button"
+							disabled
+							className="w-full flex items-center justify-center gap-2.5 font-bold py-4 rounded-2xl text-[15px] bg-white/[0.05] text-gray-500 cursor-not-allowed"
+						>
+							<CheckCircle className="w-4 h-4" />
+							Já possui
+						</button>
+					) : (
+						<button
+							type="button"
+							onClick={handleBuy}
+							className={`w-full flex items-center justify-center gap-2.5 font-bold py-4 rounded-2xl transition-all duration-300 cursor-pointer text-[15px] ${
+								featured
+									? 'bg-[#f2295b] hover:bg-[#e0214f] text-white shadow-lg shadow-[#f2295b]/20 hover:shadow-[#f2295b]/30'
+									: 'bg-white/[0.07] hover:bg-white/[0.12] text-white'
+							}`}
+						>
+							{ownershipStatus === 'upgrade'
+								? 'Fazer upgrade'
+								: 'Começar agora'}
+							<ArrowRight className="w-4 h-4" />
+						</button>
+					)}
+				</div>
 			</div>
 		</div>
 	);

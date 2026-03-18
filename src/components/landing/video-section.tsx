@@ -65,27 +65,19 @@ export function VideoSection() {
 					/>
 					<div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors duration-300" />
 
-				{/* Instructors */}
-				<div className="flex flex-wrap items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
-					<div className="flex items-center gap-3">
-						<Image
-							src="/img/FERNANDO02.jpeg"
-							alt="Fernando Nucci"
-							width={44}
-							height={44}
-							className="rounded-xl object-cover"
-						/>
-						<div>
-							<p className="text-white text-sm font-bold leading-tight">
-								Fernando Nucci
-							</p>
-							<p className="text-gray-500 text-[11px]">Instrutor</p>
+					{/* Play button */}
+					<div className="absolute inset-0 flex items-center justify-center">
+						<div className="relative">
+							<div className="absolute inset-0 rounded-full bg-[#f2295b]/20 animate-ping" />
+							<div className="relative w-20 h-20 rounded-full bg-[#f2295b]/90 backdrop-blur-sm flex items-center justify-center shadow-xl shadow-[#f2295b]/30 group-hover:bg-[#f2295b] group-hover:scale-110 transition-all duration-300">
+								<Play className="w-8 h-8 text-white ml-1" />
+							</div>
 						</div>
 					</div>
 
 					{/* Instructor names overlay */}
 					<div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
-						<div className="flex items-center gap-6">
+						<div className="flex flex-wrap items-center gap-4 sm:gap-6">
 							<div className="flex items-center gap-3">
 								<Image
 									src="/img/fernando-nucci_lw-min.jpg"
