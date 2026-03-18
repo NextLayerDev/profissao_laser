@@ -1,15 +1,11 @@
 'use client';
 
-import { Check, Copy, Loader2, Settings2, X } from 'lucide-react';
+import { Copy, Loader2, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useClasses } from '@/hooks/use-classes';
 import { useDuplicateProduct } from '@/hooks/use-products';
-import { useSystemClasses } from '@/hooks/use-system-classes';
-import type {
-	ProductClassInfo,
-	ProductSystemClassInfo,
-} from '@/types/components/product-card';
+import type { ProductClassInfo } from '@/types/components/product-card';
 import type { Product } from '@/types/products';
 import { TIER_STYLES } from '@/utils/constants/tier-styles';
 
@@ -17,8 +13,6 @@ interface DuplicateProductModalProps {
 	product: Product;
 	/** Classes às quais o produto já pertence (serão excluídas da seleção) */
 	productClasses?: ProductClassInfo[];
-	/** System classes às quais o produto original pertence (pré-selecionadas) */
-	productSystemClasses?: ProductSystemClassInfo[];
 	onClose: () => void;
 	onSuccess?: () => void;
 }
@@ -26,17 +20,12 @@ interface DuplicateProductModalProps {
 export function DuplicateProductModal({
 	product,
 	productClasses = [],
-	productSystemClasses = [],
 	onClose,
 	onSuccess,
 }: DuplicateProductModalProps) {
 	const { classes } = useClasses();
-	const { systemClasses } = useSystemClasses();
 	const { mutate: duplicateProduct, isPending } = useDuplicateProduct();
 	const [selectedClassId, setSelectedClassId] = useState<string>('');
-	const [selectedSystemClassIds, setSelectedSystemClassIds] = useState<
-		string[]
-	>(() => productSystemClasses.map((sc) => sc.id));
 	const [paymentType, setPaymentType] = useState<'single' | 'subscription'>(
 		'single',
 	);
@@ -51,18 +40,13 @@ export function DuplicateProductModal({
 		(product.refundDays ?? 7).toString(),
 	);
 
-	function toggleSystemClass(id: string) {
-		setSelectedSystemClassIds((prev) =>
-			prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-		);
-	}
-
 	const activeClasses = classes.filter((c) => c.status === 'ativo');
+	const productClassIds = new Set(productClasses.map((c) => c.id));
+	const selectableClasses = activeClasses.filter(
+		(c) => !productClassIds.has(c.id),
+	);
 
 	const interval = paymentType === 'single' ? 'one_time' : subscriptionInterval;
-	const activeSystemClasses = systemClasses.filter(
-		(sc) => sc.status === 'ativo',
-	);
 
 	function handleDuplicate() {
 		if (!selectedClassId) {
@@ -85,7 +69,6 @@ export function DuplicateProductModal({
 					category,
 					refundDays: parseInt(refundDays, 10) || 7,
 				},
-				systemClassIds: selectedSystemClassIds,
 			},
 			{
 				onSuccess: () => {
@@ -252,7 +235,7 @@ export function DuplicateProductModal({
 						htmlFor="duplicate-class"
 						className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2"
 					>
-						Classe
+						Classe (diferente da original)
 					</label>
 					<select
 						id="duplicate-class"
@@ -261,7 +244,7 @@ export function DuplicateProductModal({
 						className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
 					>
 						<option value="">Selecione uma classe</option>
-						{activeClasses.map((cls) => {
+						{selectableClasses.map((cls) => {
 							const style = TIER_STYLES[cls.tier];
 							return (
 								<option key={cls.id} value={cls.id}>
@@ -270,51 +253,18 @@ export function DuplicateProductModal({
 							);
 						})}
 					</select>
+					{selectableClasses.length === 0 && activeClasses.length > 0 && (
+						<p className="text-amber-600 dark:text-amber-400 text-xs mt-1">
+							Este produto já está em todas as classes ativas. Crie uma nova
+							classe ou adicione-o manualmente.
+						</p>
+					)}
 					{activeClasses.length === 0 && (
 						<p className="text-amber-600 dark:text-amber-400 text-xs mt-1">
 							Nenhuma classe ativa. Crie uma classe primeiro.
 						</p>
 					)}
 				</div>
-
-				{activeSystemClasses.length > 0 && (
-					<div className="mb-6">
-						<div className="flex items-center gap-2 mb-2">
-							<Settings2 className="w-4 h-4 text-purple-400" />
-							<span className="text-sm font-medium text-slate-700 dark:text-gray-300">
-								Classes do Sistema
-							</span>
-						</div>
-						<div className="grid grid-cols-1 gap-2">
-							{activeSystemClasses.map((sc) => {
-								const isSelected = selectedSystemClassIds.includes(sc.id);
-								return (
-									<button
-										key={sc.id}
-										type="button"
-										onClick={() => toggleSystemClass(sc.id)}
-										className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
-											isSelected
-												? 'bg-violet-600/20 border border-violet-500/50 text-violet-600 dark:text-violet-300'
-												: 'bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-400 hover:border-slate-300 dark:hover:border-gray-600'
-										}`}
-									>
-										<span
-											className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
-												isSelected
-													? 'bg-violet-600 border-violet-600'
-													: 'border-slate-300 dark:border-gray-600'
-											}`}
-										>
-											{isSelected && <Check className="w-3 h-3 text-white" />}
-										</span>
-										{sc.name}
-									</button>
-								);
-							})}
-						</div>
-					</div>
-				)}
 
 				<div className="flex justify-end gap-3">
 					<button
@@ -328,7 +278,12 @@ export function DuplicateProductModal({
 					<button
 						type="button"
 						onClick={handleDuplicate}
-						disabled={isPending || !selectedClassId || !price.trim()}
+						disabled={
+							isPending ||
+							!selectedClassId ||
+							selectableClasses.length === 0 ||
+							!price.trim()
+						}
 						className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 					>
 						{isPending && <Loader2 size={14} className="animate-spin" />}

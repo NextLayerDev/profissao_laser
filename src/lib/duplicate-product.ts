@@ -11,7 +11,6 @@ import {
 	createQuestion,
 	getLessonQuiz,
 } from '@/services/quiz';
-import { linkProduct } from '@/services/system-classes';
 import type { Lesson, Module } from '@/types/modules';
 import type { Product } from '@/types/products';
 import type { CreateQuestionPayload } from '@/types/quiz';
@@ -35,7 +34,6 @@ export async function duplicateProduct(
 	product: Product,
 	classId: string,
 	payment: DuplicateProductPaymentPayload,
-	systemClassIds: string[] = [],
 ): Promise<Product> {
 	// 1. Buscar módulos e aulas do produto original
 	const modules = await getModules(product.id);
@@ -58,7 +56,7 @@ export async function duplicateProduct(
 		slug: uniqueSlug(product.slug),
 		language: product.language,
 		country: product.country,
-		category: payment.category || undefined,
+		category: payment.category,
 		refundDays: payment.refundDays,
 		machine: product.machine ?? undefined,
 		software: product.software ?? undefined,
@@ -83,11 +81,6 @@ export async function duplicateProduct(
 
 	// 4. Associar à classe
 	await addProductToClass(classId, newProduct.id);
-
-	// 4b. Associar às system classes selecionadas
-	for (const scId of systemClassIds) {
-		await linkProduct(scId, newProduct.id);
-	}
 
 	// 5. Criar módulos e aulas
 	const sortedModules = [...modulesWithLessons].sort(
