@@ -143,12 +143,23 @@ export interface CreateDoubtChatPayload {
 	technicianId?: string;
 	qualificationAnswers?: Record<string, string>;
 	initialMessage: string;
+	file?: File;
 }
 
 export async function createDoubtChat(
 	payload: CreateDoubtChatPayload,
 ): Promise<DoubtChat> {
-	const { data } = await api.post<DoubtChat>('/doubt-chats', payload);
+	const fd = new FormData();
+	fd.append('categoryId', payload.categoryId);
+	fd.append('initialMessage', payload.initialMessage);
+	if (payload.technicianId) fd.append('technicianId', payload.technicianId);
+	if (payload.qualificationAnswers)
+		fd.append(
+			'qualificationAnswers',
+			JSON.stringify(payload.qualificationAnswers),
+		);
+	if (payload.file) fd.append('file', payload.file);
+	const { data } = await api.post<DoubtChat>('/doubt-chats', fd);
 	return data;
 }
 
@@ -162,19 +173,12 @@ export async function sendDoubtChatMessage(
 	content: string,
 	file?: File,
 ): Promise<ChatMessage> {
-	if (file) {
-		const fd = new FormData();
-		if (content) fd.append('content', content);
-		fd.append('file', file);
-		const { data } = await api.post<ChatMessage>(
-			`/doubt-chats/${chatId}/messages`,
-			fd,
-		);
-		return data;
-	}
+	const fd = new FormData();
+	if (content) fd.append('content', content);
+	if (file) fd.append('file', file);
 	const { data } = await api.post<ChatMessage>(
 		`/doubt-chats/${chatId}/messages`,
-		{ content },
+		fd,
 	);
 	return data;
 }
