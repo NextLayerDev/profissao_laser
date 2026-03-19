@@ -1,4 +1,3 @@
-import { CoursesVideoSection } from '@/components/landing/courses-video-section';
 import { FaqSection } from '@/components/landing/faq-section';
 import { FeatureCards } from '@/components/landing/feature-cards';
 import { Hero } from '@/components/landing/hero';
@@ -38,7 +37,6 @@ export default function LandingPage() {
 			<Divider />
 			<TargetAudience />
 			<Divider />
-			<CoursesVideoSection />
 			<ProductsSection />
 			<Divider />
 			<ProfessionalsSection />
