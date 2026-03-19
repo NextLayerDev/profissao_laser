@@ -22,7 +22,13 @@ api.interceptors.request.use((config) => {
 	return config;
 });
 
-const PUBLIC_PAGE_PREFIXES = ['/store', '/checkout', '/login', '/register'];
+const PUBLIC_PAGE_PREFIXES = [
+	'/store',
+	'/checkout',
+	'/login',
+	'/register',
+	'/payment-link',
+];
 
 api.interceptors.response.use(
 	(response) => response,
