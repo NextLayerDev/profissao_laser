@@ -4,7 +4,14 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { getCurrentUser, isAdmin } from '@/lib/auth';
 
-const PUBLIC_PATHS = ['/login', '/register', '/store', '/', '/checkout'];
+const PUBLIC_PATHS = [
+	'/login',
+	'/register',
+	'/store',
+	'/',
+	'/checkout',
+	'/payment-link',
+];
 
 const CUSTOMER_PATHS = [
 	'/store',

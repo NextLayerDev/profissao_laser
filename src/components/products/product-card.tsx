@@ -8,6 +8,7 @@ import { usePermissions } from '@/hooks/use-permissions';
 import type { ProductCardProps } from '@/types/components/product-card';
 import { TIER_STYLES } from '@/utils/constants/tier-styles';
 import { formatCurrency } from '@/utils/format-currency';
+import { CreatePaymentLinkModal } from './create-payment-link-modal';
 import { DeleteProductModal } from './delete-product-modal';
 import { DuplicateProductModal } from './duplicate-product-modal';
 
@@ -96,6 +97,10 @@ export function ProductCard({
 	const [imgError, setImgError] = useState(false);
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
 	const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+	const [showPaymentLinkModal, setShowPaymentLinkModal] = useState(false);
+
+	const hasSystemClasses =
+		productSystemClasses && productSystemClasses.length > 0;
 
 	const primarySc = productSystemClasses?.[0];
 	const [scBorder, scBorderHover, scBadge] = primarySc
@@ -197,13 +202,20 @@ export function ProductCard({
 								<div />
 							)}
 							<div className="flex items-center gap-1">
-								<button
-									type="button"
-									className="p-2 text-slate-500 dark:text-gray-500 hover:text-slate-900 dark:hover:text-white transition-colors"
-									onClick={(e) => e.stopPropagation()}
-								>
-									<Link2 className="w-4 h-4" />
-								</button>
+								{!hasSystemClasses && product.status === 'ativo' && (
+									<button
+										type="button"
+										className="p-2 text-slate-500 dark:text-gray-500 hover:text-violet-400 transition-colors"
+										title="Gerar link de pagamento"
+										onClick={(e) => {
+											e.preventDefault();
+											e.stopPropagation();
+											setShowPaymentLinkModal(true);
+										}}
+									>
+										<Link2 className="w-4 h-4" />
+									</button>
+								)}
 								<button
 									type="button"
 									onClick={(e) => {
@@ -246,6 +258,13 @@ export function ProductCard({
 					productClasses={productClasses}
 					productSystemClasses={productSystemClasses}
 					onClose={() => setShowDuplicateModal(false)}
+				/>
+			)}
+
+			{showPaymentLinkModal && (
+				<CreatePaymentLinkModal
+					product={product}
+					onClose={() => setShowPaymentLinkModal(false)}
 				/>
 			)}
 		</>
