@@ -40,7 +40,7 @@ const FEATURE_ICONS: Record<string, typeof BookOpen> = {
 	vetorizacao: Pen,
 	suporte: Zap,
 	comunidade: Users,
-	sistemaGerenciamento: Shield,
+	gerenciamentoSistema: Shield,
 	iaPrevias: Sparkles,
 	iaWhatsappPrevias: MessageCircle,
 };
@@ -51,7 +51,7 @@ const FEATURE_DESCRIPTIONS: Record<string, string> = {
 	vetorizacao: 'Serviço de vetorização profissional para seus projetos',
 	suporte: 'Suporte técnico especializado via WhatsApp e acesso remoto',
 	comunidade: 'Acesso ao grupo exclusivo de profissionais do mercado laser',
-	sistemaGerenciamento: 'Acesso completo ao sistema de gerenciamento',
+	gerenciamentoSistema: 'Acesso completo ao sistema de gerenciamento',
 	iaPrevias: 'Geração de prévias automáticas com Inteligência Artificial',
 	iaWhatsappPrevias: 'Envio de prévias via WhatsApp com IA integrada',
 };

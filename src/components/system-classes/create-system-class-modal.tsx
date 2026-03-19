@@ -19,7 +19,7 @@ export function CreateSystemClassModal({
 	const [description, setDescription] = useState('');
 	const [status, setStatus] = useState<'ativo' | 'inativo'>('ativo');
 	const [options, setOptions] = useState({
-		sistemaGerenciamento: false,
+		gerenciamentoSistema: false,
 		iaPrevias: false,
 		iaWhatsappPrevias: false,
 	});
@@ -35,7 +35,7 @@ export function CreateSystemClassModal({
 		setDescription('');
 		setStatus('ativo');
 		setOptions({
-			sistemaGerenciamento: false,
+			gerenciamentoSistema: false,
 			iaPrevias: false,
 			iaWhatsappPrevias: false,
 		});
@@ -47,7 +47,7 @@ export function CreateSystemClassModal({
 			setDescription(editing.description ?? '');
 			setStatus(editing.status);
 			setOptions({
-				sistemaGerenciamento: editing.sistemaGerenciamento,
+				gerenciamentoSistema: editing.gerenciamentoSistema,
 				iaPrevias: editing.iaPrevias,
 				iaWhatsappPrevias: editing.iaWhatsappPrevias,
 			});
@@ -64,7 +64,7 @@ export function CreateSystemClassModal({
 	}
 
 	function toggleOption(
-		key: 'sistemaGerenciamento' | 'iaPrevias' | 'iaWhatsappPrevias',
+		key: 'gerenciamentoSistema' | 'iaPrevias' | 'iaWhatsappPrevias',
 	) {
 		setOptions((prev) => ({ ...prev, [key]: !prev[key] }));
 	}
@@ -79,7 +79,7 @@ export function CreateSystemClassModal({
 			name: name.trim(),
 			...(description.trim() ? { description: description.trim() } : {}),
 			status,
-			sistemaGerenciamento: options.sistemaGerenciamento,
+			gerenciamentoSistema: options.gerenciamentoSistema,
 			iaPrevias: options.iaPrevias,
 			iaWhatsappPrevias: options.iaWhatsappPrevias,
 		};
@@ -198,7 +198,7 @@ export function CreateSystemClassModal({
 									onClick={() =>
 										toggleOption(
 											opt.key as
-												| 'sistemaGerenciamento'
+												| 'gerenciamentoSistema'
 												| 'iaPrevias'
 												| 'iaWhatsappPrevias',
 										)
