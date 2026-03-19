@@ -26,7 +26,7 @@ const features = [
 		title: 'Suporte Especializado',
 		description:
 			'Está com problema na hora de usar sua máquina de gravação a laser e precisa de ajuda? Aqui não vamos te deixar na mão!',
-		image: '/img/suport-min.jpg',
+		image: '/img/suport-min.jpeg',
 	},
 ];
 
