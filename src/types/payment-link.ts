@@ -32,6 +32,7 @@ export const paymentLinkInfoSchema = z.object({
 	token: z.string(),
 	productName: z.string(),
 	productDescription: z.string().nullable().optional(),
+	productImage: z.string().nullable().optional(),
 	originalPrice: z.number(),
 	discountedPrice: z.number(),
 	discountPercent: z.number(),

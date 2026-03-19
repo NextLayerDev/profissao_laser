@@ -170,9 +170,17 @@ export default function PaymentLinkPage() {
 				{/* Left — Product summary */}
 				<div className="bg-[#1a1a1d] rounded-2xl border border-gray-800 overflow-hidden">
 					<div className="relative h-56 bg-linear-to-br from-violet-600 via-purple-600 to-fuchsia-500 flex items-center justify-center">
-						<span className="text-lg font-bold text-white/80 px-6 text-center">
-							{data.productName}
-						</span>
+						{data.productImage ? (
+							<img
+								src={data.productImage}
+								alt={data.productName}
+								className="w-full h-full object-cover"
+							/>
+						) : (
+							<span className="text-lg font-bold text-white/80 px-6 text-center">
+								{data.productName}
+							</span>
+						)}
 					</div>
 
 					<div className="p-6">
@@ -196,6 +204,10 @@ export default function PaymentLinkPage() {
 							</div>
 							<p className="text-3xl font-bold text-white mt-1">
 								{formatCurrency(data.discountedPrice, 'BRL')}
+							</p>
+							<p className="text-gray-500 text-xs mt-2">
+								Valor promocional válido por 3 meses. Após esse período, você
+								pode cancelar a assinatura a qualquer momento.
 							</p>
 						</div>
 					</div>
@@ -329,6 +341,11 @@ export default function PaymentLinkPage() {
 								'Continuar para pagamento'
 							)}
 						</button>
+						<p className="text-gray-600 text-xs text-center mt-3">
+							Ao continuar, você concorda que o desconto é aplicado por 3 meses.
+							Após esse prazo, o valor integral será cobrado automaticamente
+							caso a assinatura não seja cancelada.
+						</p>
 					</form>
 				</div>
 			</div>
