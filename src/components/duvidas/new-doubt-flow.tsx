@@ -6,10 +6,11 @@ import {
 	ArrowRight,
 	Loader2,
 	MessageSquare,
+	Paperclip,
 	Send,
 	X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
 	useCreateDoubtChat,
@@ -39,7 +40,9 @@ export function NewDoubtFlow({
 	const [step, setStep] = useState(0);
 	const [categoryId, setCategoryId] = useState<string | null>(null);
 	const [initialMessage, setInitialMessage] = useState('');
+	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [createdChat, setCreatedChat] = useState<DoubtChat | null>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const { data: categories = [], isLoading: categoriesLoading } =
 		useDoubtCategories(isOpen);
@@ -52,6 +55,7 @@ export function NewDoubtFlow({
 		setStep(0);
 		setCategoryId(null);
 		setInitialMessage('');
+		setSelectedFile(null);
 		setCreatedChat(null);
 	}
 
@@ -66,12 +70,13 @@ export function NewDoubtFlow({
 			return;
 		}
 
-		if (!categoryId || !initialMessage.trim()) return;
+		if (!categoryId || (!initialMessage.trim() && !selectedFile)) return;
 
 		try {
 			const chat = await createChatMutation.mutateAsync({
 				categoryId,
 				initialMessage: initialMessage.trim(),
+				file: selectedFile ?? undefined,
 			});
 			try {
 				await assignRandomTechnician(chat.id);
@@ -110,7 +115,7 @@ export function NewDoubtFlow({
 
 	const canProceed =
 		(step === 0 && categoryId) ||
-		(step === 1 && initialMessage.trim().length > 0);
+		(step === 1 && (initialMessage.trim().length > 0 || selectedFile !== null));
 
 	const isLoading = createChatMutation.isPending;
 
@@ -245,6 +250,43 @@ export function NewDoubtFlow({
 										rows={5}
 										className="w-full px-4 py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-violet-500 focus:outline-none text-sm resize-none"
 									/>
+									{/* File input oculto */}
+									<input
+										ref={fileInputRef}
+										type="file"
+										className="hidden"
+										accept="image/*"
+										onChange={(e) =>
+											setSelectedFile(e.target.files?.[0] ?? null)
+										}
+									/>
+									{/* Botão de anexar + preview */}
+									<div className="flex items-center gap-2">
+										<button
+											type="button"
+											onClick={() => fileInputRef.current?.click()}
+											className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 rounded-xl transition-colors text-sm"
+										>
+											<Paperclip className="w-4 h-4" />
+											Anexar imagem
+										</button>
+										{selectedFile && (
+											<div className="flex items-center gap-1.5 px-2 py-1 bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/30 rounded-lg">
+												<Paperclip className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400 shrink-0" />
+												<span className="text-xs text-violet-700 dark:text-violet-300 truncate max-w-[200px]">
+													{selectedFile.name}
+												</span>
+												<button
+													type="button"
+													onClick={() => setSelectedFile(null)}
+													className="ml-0.5 text-violet-500 hover:text-violet-700 dark:hover:text-violet-200"
+													aria-label="Remover ficheiro"
+												>
+													<X className="w-3.5 h-3.5" />
+												</button>
+											</div>
+										)}
+									</div>
 								</div>
 							)}
 						</>
