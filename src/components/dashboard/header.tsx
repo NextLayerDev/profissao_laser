@@ -15,7 +15,12 @@ export function Header() {
 
 	const visibleNavItems = navItems.filter((item) => {
 		if (item.name === 'Acessos') return canAdmin;
-		if (item.name === 'Vendas' || item.name === 'Relatórios') return canPrice;
+		if (
+			item.name === 'Vendas' ||
+			item.name === 'Relatórios' ||
+			item.name === 'Links'
+		)
+			return canPrice;
 		return true;
 	});
 

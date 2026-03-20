@@ -1,10 +1,13 @@
+import { z } from 'zod';
 import { api } from '@/lib/fetch';
 import {
 	type CreatePaymentLinkPayload,
 	type CreatePaymentLinkResponse,
 	createPaymentLinkResponseSchema,
 	type PaymentLinkInfo,
+	type PaymentLinkListItem,
 	paymentLinkInfoSchema,
+	paymentLinkListItemSchema,
 	type RedeemPaymentLinkPayload,
 	type RedeemPaymentLinkResponse,
 	redeemPaymentLinkResponseSchema,
@@ -30,4 +33,9 @@ export async function redeemPaymentLink(
 ): Promise<RedeemPaymentLinkResponse> {
 	const { data } = await api.post(`/payment-link/${token}/redeem`, payload);
 	return redeemPaymentLinkResponseSchema.parse(data);
+}
+
+export async function listPaymentLinks(): Promise<PaymentLinkListItem[]> {
+	const { data } = await api.get('/payment-links');
+	return z.array(paymentLinkListItemSchema).parse(data);
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { Copy, Layers, Link2, Settings2, Trash2 } from 'lucide-react';
+import { Copy, Gift, Layers, Link2, Settings2, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -9,6 +9,7 @@ import type { ProductCardProps } from '@/types/components/product-card';
 import { TIER_STYLES } from '@/utils/constants/tier-styles';
 import { formatCurrency } from '@/utils/format-currency';
 import { CreatePaymentLinkModal } from './create-payment-link-modal';
+import { CreatePromoLinkModal } from './create-promo-link-modal';
 import { DeleteProductModal } from './delete-product-modal';
 import { DuplicateProductModal } from './duplicate-product-modal';
 
@@ -98,6 +99,7 @@ export function ProductCard({
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
 	const [showDuplicateModal, setShowDuplicateModal] = useState(false);
 	const [showPaymentLinkModal, setShowPaymentLinkModal] = useState(false);
+	const [showPromoLinkModal, setShowPromoLinkModal] = useState(false);
 
 	const hasSystemClasses =
 		productSystemClasses && productSystemClasses.length > 0;
@@ -216,6 +218,20 @@ export function ProductCard({
 										<Link2 className="w-4 h-4" />
 									</button>
 								)}
+								{product.status === 'ativo' && (
+									<button
+										type="button"
+										className="p-2 text-slate-500 dark:text-gray-500 hover:text-amber-400 transition-colors"
+										title="Gerar link promocional"
+										onClick={(e) => {
+											e.preventDefault();
+											e.stopPropagation();
+											setShowPromoLinkModal(true);
+										}}
+									>
+										<Gift className="w-4 h-4" />
+									</button>
+								)}
 								<button
 									type="button"
 									onClick={(e) => {
@@ -265,6 +281,13 @@ export function ProductCard({
 				<CreatePaymentLinkModal
 					product={product}
 					onClose={() => setShowPaymentLinkModal(false)}
+				/>
+			)}
+
+			{showPromoLinkModal && (
+				<CreatePromoLinkModal
+					product={product}
+					onClose={() => setShowPromoLinkModal(false)}
 				/>
 			)}
 		</>

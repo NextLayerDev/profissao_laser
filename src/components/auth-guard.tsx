@@ -11,6 +11,7 @@ const PUBLIC_PATHS = [
 	'/',
 	'/checkout',
 	'/payment-link',
+	'/promo-link',
 ];
 
 const CUSTOMER_PATHS = [
@@ -25,6 +26,7 @@ const ADMIN_PATHS = [
 	'/dashboard',
 	'/products',
 	'/sales',
+	'/links',
 	'/reports',
 	'/community',
 	'/acessos',

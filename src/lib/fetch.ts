@@ -28,6 +28,7 @@ const PUBLIC_PAGE_PREFIXES = [
 	'/login',
 	'/register',
 	'/payment-link',
+	'/promo-link',
 ];
 
 api.interceptors.response.use(
