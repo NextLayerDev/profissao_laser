@@ -92,7 +92,7 @@ function PricingColumn({
 
 	return (
 		<div
-			className={`flex flex-col flex-1 min-w-[165px] rounded-2xl border p-4 transition-all duration-200 ${
+			className={`flex flex-col flex-1 sm:min-w-[165px] rounded-2xl border p-4 transition-all duration-200 ${
 				featured
 					? 'border-[#f2295b]/50 bg-gradient-to-b from-[#f2295b]/[0.08] to-transparent shadow-lg shadow-[#f2295b]/10'
 					: hasSc
@@ -315,7 +315,7 @@ function ProductCard({ group }: { group: ProductGroup }) {
 			</div>
 
 			{/* Pricing columns — sorted by price asc */}
-			<div className="flex gap-3 px-5 pb-5 pt-3 overflow-x-auto">
+			<div className="flex flex-col sm:flex-row gap-3 px-5 pb-5 pt-3">
 				{sorted.map((v, i) => (
 					<PricingColumn
 						key={v.product.id}
@@ -344,7 +344,7 @@ function FilterSelect({
 	onChange: (v: string) => void;
 }) {
 	return (
-		<div className="relative flex-1 min-w-[200px]">
+		<div className="relative flex-1 min-w-0 sm:min-w-[200px]">
 			<div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none z-10">
 				<Icon className="w-5 h-5 text-[#f2295b]" />
 			</div>
@@ -656,7 +656,7 @@ export function ProductsSection() {
 				))}
 
 				{/* Trust badges */}
-				<div className="flex items-center justify-center gap-6 mt-10">
+				<div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mt-10">
 					<div className="flex items-center gap-2 text-gray-500 text-sm">
 						<div className="w-5 h-5 bg-emerald-500/20 rounded-full flex items-center justify-center">
 							<Check className="w-3 h-3 text-emerald-400" />
