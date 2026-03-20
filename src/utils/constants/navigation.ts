@@ -3,6 +3,7 @@ import {
 	CalendarClock,
 	HelpCircle,
 	Home,
+	Link2,
 	MessageSquare,
 	Package,
 	ShieldCheck,
@@ -14,6 +15,7 @@ export const navItems: NavItem[] = [
 	{ name: 'Home', icon: Home, href: '/dashboard', hasDropdown: false },
 	{ name: 'Produtos', icon: Package, href: '/products', hasDropdown: false },
 	{ name: 'Vendas', icon: ShoppingCart, href: '/sales', hasDropdown: false },
+	{ name: 'Links', icon: Link2, href: '/links', hasDropdown: false },
 	{
 		name: 'Relatórios',
 		icon: BarChart3,

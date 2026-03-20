@@ -16,6 +16,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { ChatButton } from '@/components/dashboard/chat-button';
+import { ProductLinksModal } from '@/components/links/product-links-modal';
 import { BasicInfoSection } from '@/components/products/basic-info-section';
 import { CommunitySection } from '@/components/products/community-section';
 import { CourseContentSection } from '@/components/products/course-content-section';
@@ -41,6 +42,7 @@ export default function ProdutoDetalhes() {
 	const [activeMenu, setActiveMenu] = useState('painel');
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
 	const [subscriptionModal, setSubscriptionModal] = useState(false);
+	const [showLinksModal, setShowLinksModal] = useState(false);
 
 	const handleToggleStatus = async () => {
 		const newStatus = !vendasAtivas;
@@ -229,6 +231,7 @@ export default function ProdutoDetalhes() {
 									</p>
 									<button
 										type="button"
+										onClick={() => setShowLinksModal(true)}
 										className="mt-4 bg-slate-100 dark:bg-[#252528] hover:bg-slate-200 dark:hover:bg-[#2a2a2d] px-6 py-3 rounded-lg font-medium text-sm transition-colors border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white"
 									>
 										VER MEUS LINKS
@@ -361,6 +364,13 @@ export default function ProdutoDetalhes() {
 					product={product}
 					onClose={() => setShowDeleteModal(false)}
 					onDeleted={() => router.push('/products')}
+				/>
+			)}
+
+			{showLinksModal && (
+				<ProductLinksModal
+					product={product}
+					onClose={() => setShowLinksModal(false)}
 				/>
 			)}
 		</div>

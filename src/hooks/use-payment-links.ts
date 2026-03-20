@@ -2,6 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import {
 	createPaymentLink,
 	getPaymentLinkInfo,
+	listPaymentLinks,
 	redeemPaymentLink,
 } from '@/services/payment-links';
 import type {
@@ -31,4 +32,12 @@ export function useRedeemPaymentLink(token: string) {
 		mutationFn: (payload: RedeemPaymentLinkPayload) =>
 			redeemPaymentLink(token, payload),
 	});
+}
+
+export function usePaymentLinks() {
+	const { data, isLoading, error } = useQuery({
+		queryKey: ['payment-links'],
+		queryFn: () => listPaymentLinks(),
+	});
+	return { paymentLinks: data ?? [], isLoading, error };
 }
