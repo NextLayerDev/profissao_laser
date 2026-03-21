@@ -23,7 +23,6 @@ import type {
 	ProductVariant,
 	StoreProductCardProps,
 } from '@/types/components/store-product-card';
-import type { CustomerPlan } from '@/types/plans';
 import { CLASS_FEATURES } from '@/utils/constants/class-features';
 import { SC_OPTIONS } from '@/utils/constants/system-class-options';
 import { formatCurrency } from '@/utils/format-currency';
@@ -363,10 +362,9 @@ export function StoreProductCard({
 					</div>
 				)}
 				<div className="flex items-center gap-0.5 mb-1">
-					{Array.from({ length: 5 }).map((_, i) => (
-						// biome-ignore lint/suspicious/noArrayIndexKey: static mock stars
+					{['s1', 's2', 's3', 's4', 's5'].map((id) => (
 						<Star
-							key={i}
+							key={id}
 							className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400"
 						/>
 					))}
