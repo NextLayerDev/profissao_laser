@@ -2,7 +2,7 @@ import type { ClassWithProducts } from '@/types/classes';
 import type { CustomerPlan } from '@/types/plans';
 import type { Product } from '@/types/products';
 
-export type OwnershipStatus = 'none' | 'owned' | 'upgrade';
+export type OwnershipStatus = 'none' | 'owned' | 'upgrade' | 'downgrade';
 
 export const TIER_ORDER: Record<string, number> = {
 	prata: 0,
@@ -31,17 +31,28 @@ export function resolveOwnership(
 
 	if (!ownedPlan) return 'none';
 
-	// No tier info on the plan — product was purchased as non-tiered
+	const selected = variants[selectedIndex];
+	if (!selected) return 'owned';
+
+	// Try price-based comparison first (covers both tier and system class changes)
+	const ownedVariant = variants.find((v) => v.product.slug === ownedPlan.slug);
+
+	if (ownedVariant) {
+		if (selected.product.price > ownedVariant.product.price) return 'upgrade';
+		if (selected.product.price < ownedVariant.product.price) return 'downgrade';
+		return 'owned';
+	}
+
+	// Fallback: tier-based comparison when owned variant is not in the list
 	if (!ownedPlan.tier) return 'owned';
 
-	const selectedTier = variants[selectedIndex]?.classInfo?.tier;
-
-	// Selected variant has no tier info — treat as owned
+	const selectedTier = selected.classInfo?.tier;
 	if (!selectedTier) return 'owned';
 
 	const ownedIdx = TIER_ORDER[ownedPlan.tier] ?? -1;
 	const selectedIdx = TIER_ORDER[selectedTier] ?? -1;
 
 	if (selectedIdx > ownedIdx) return 'upgrade';
+	if (selectedIdx < ownedIdx) return 'downgrade';
 	return 'owned';
 }

@@ -33,6 +33,11 @@ import type { SystemClassWithRelations } from '@/types/system-classes';
 import { CLASS_FEATURES } from '@/utils/constants/class-features';
 import { SC_OPTIONS } from '@/utils/constants/system-class-options';
 import { formatCurrency } from '@/utils/format-currency';
+import {
+	type OwnershipStatus,
+	type ProductVariantRef,
+	resolveOwnership,
+} from '@/utils/ownership';
 
 const FEATURE_ICONS: Record<string, typeof BookOpen> = {
 	aula: BookOpen,
@@ -73,11 +78,11 @@ interface ProductGroup {
 function PricingColumn({
 	variant,
 	featured,
-	ownedPlans,
+	ownership,
 }: {
 	variant: ProductVariant;
 	featured?: boolean;
-	ownedPlans?: CustomerPlan[];
+	ownership: OwnershipStatus;
 }) {
 	const router = useRouter();
 	const { product, classInfo, systemClasses } = variant;
@@ -85,6 +90,7 @@ function PricingColumn({
 		systemClasses?.[0] ?? null;
 	const hasSc = systemClass !== null;
 	const classFeatures = CLASS_FEATURES.filter((f) => classInfo?.[f.key]);
+	const isOwned = ownership === 'owned';
 
 	function handleBuy() {
 		router.push(`/checkout/${product.slug}?productId=${product.id}`);
@@ -219,17 +225,46 @@ function PricingColumn({
 				</p>
 				<button
 					type="button"
-					onClick={handleBuy}
-					className={`w-full flex items-center justify-center gap-2 font-bold py-3 rounded-xl transition-all duration-300 cursor-pointer text-sm ${
-						featured
-							? 'bg-[#f2295b] hover:bg-[#e0214f] text-white shadow-lg shadow-[#f2295b]/20'
-							: hasSc
-								? 'bg-purple-600/80 hover:bg-purple-600 text-white'
-								: 'bg-white/[0.07] hover:bg-white/[0.12] text-white'
+					onClick={isOwned ? undefined : handleBuy}
+					disabled={isOwned}
+					className={`w-full flex items-center justify-center gap-2 font-bold py-3 rounded-xl transition-all duration-300 text-sm ${
+						isOwned
+							? 'bg-emerald-500/[0.08] text-emerald-400 border border-emerald-500/20 cursor-default'
+							: ownership === 'upgrade'
+								? featured
+									? 'bg-[#f2295b] hover:bg-[#e0214f] text-white shadow-lg shadow-[#f2295b]/20 cursor-pointer'
+									: 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-500/20 cursor-pointer'
+								: ownership === 'downgrade'
+									? 'bg-white/[0.07] hover:bg-white/[0.12] text-gray-300 cursor-pointer'
+									: featured
+										? 'bg-[#f2295b] hover:bg-[#e0214f] text-white shadow-lg shadow-[#f2295b]/20 cursor-pointer'
+										: hasSc
+											? 'bg-purple-600/80 hover:bg-purple-600 text-white cursor-pointer'
+											: 'bg-white/[0.07] hover:bg-white/[0.12] text-white cursor-pointer'
 					}`}
 				>
-					Começar agora
-					<ArrowRight className="w-4 h-4" />
+					{isOwned ? (
+						<>
+							<Check className="w-4 h-4" />
+							Seu plano atual
+						</>
+					) : ownership === 'upgrade' ? (
+						<>
+							<Sparkles className="w-4 h-4" />
+							Evoluir agora
+							<ArrowRight className="w-4 h-4" />
+						</>
+					) : ownership === 'downgrade' ? (
+						<>
+							Trocar plano
+							<ArrowRight className="w-4 h-4" />
+						</>
+					) : (
+						<>
+							Começar agora
+							<ArrowRight className="w-4 h-4" />
+						</>
+					)}
 				</button>
 			</div>
 		</div>
@@ -238,7 +273,13 @@ function PricingColumn({
 
 /* ─── Parent product card (shared header + pricing columns) ─── */
 
-function ProductCard({ group }: { group: ProductGroup }) {
+function ProductCard({
+	group,
+	ownedPlans,
+}: {
+	group: ProductGroup;
+	ownedPlans?: CustomerPlan[];
+}) {
 	const [imgError, setImgError] = useState(false);
 
 	// Sort by price ascending
@@ -252,6 +293,13 @@ function ProductCard({ group }: { group: ProductGroup }) {
 		if (!v.systemClasses?.[0]) return best;
 		return i;
 	}, -1);
+
+	// Compute ownership for each variant
+	const plans = ownedPlans ?? [];
+	const variantRefs: ProductVariantRef[] = sorted.map((v) => ({
+		product: v.product,
+		classInfo: v.classInfo,
+	}));
 
 	return (
 		<div className="group relative rounded-3xl overflow-hidden border border-white/[0.06] hover:border-white/10 bg-[#16161a] transition-all duration-500">
@@ -321,6 +369,7 @@ function ProductCard({ group }: { group: ProductGroup }) {
 						key={v.product.id}
 						variant={v}
 						featured={i === featuredIndex}
+						ownership={resolveOwnership(plans, variantRefs, i)}
 					/>
 				))}
 			</div>
@@ -649,7 +698,11 @@ export function ProductsSection() {
 
 						<div className="flex flex-col gap-8">
 							{groups.map((group) => (
-								<ProductCard key={group.name} group={group} />
+								<ProductCard
+									key={group.name}
+									group={group}
+									ownedPlans={ownedPlans}
+								/>
 							))}
 						</div>
 					</div>

@@ -1,6 +1,12 @@
 'use client';
 
-import { ArrowLeft, Building2, Loader2 } from 'lucide-react';
+import {
+	ArrowDownCircle,
+	ArrowLeft,
+	ArrowUpCircle,
+	Building2,
+	Loader2,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
@@ -116,6 +122,9 @@ export default function CheckoutPage() {
 		safeIndex,
 	);
 
+	const isPlanChange =
+		ownershipStatus === 'upgrade' || ownershipStatus === 'downgrade';
+
 	const handleAuthenticatedPurchase = useCallback(async () => {
 		if (!selectedVariant) return;
 
@@ -200,35 +209,60 @@ export default function CheckoutPage() {
 
 					{/* Right: Company name + Auth or Confirm */}
 					<div className="space-y-6">
-						{/* Company name field */}
-						<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl border border-slate-200 dark:border-gray-800 p-6">
-							<div className="flex items-center gap-2 mb-1">
-								<Building2 className="w-4 h-4 text-violet-400" />
-								<h3 className="text-lg font-bold text-slate-900 dark:text-white">
-									Dados da empresa
-								</h3>
+						{/* Plan change info banner */}
+						{isPlanChange && (
+							<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl border border-slate-200 dark:border-gray-800 p-6">
+								<div className="flex items-center gap-2 mb-1">
+									{ownershipStatus === 'upgrade' ? (
+										<ArrowUpCircle className="w-4 h-4 text-violet-400" />
+									) : (
+										<ArrowDownCircle className="w-4 h-4 text-amber-400" />
+									)}
+									<h3 className="text-lg font-bold text-slate-900 dark:text-white">
+										{ownershipStatus === 'upgrade'
+											? 'Upgrade de plano'
+											: 'Downgrade de plano'}
+									</h3>
+								</div>
+								<p className="text-sm text-slate-500 dark:text-gray-400">
+									{ownershipStatus === 'upgrade'
+										? 'Voce esta melhorando seu plano atual. A alteracao sera aplicada imediatamente.'
+										: 'Voce esta alterando para um plano inferior. Alguns recursos podem ficar indisponiveis.'}
+								</p>
 							</div>
-							<p className="text-sm text-slate-500 dark:text-gray-400 mb-4">
-								Informe o nome da empresa para configuracao do sistema
-							</p>
-							<div>
-								<label
-									htmlFor="company-name"
-									className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1"
-								>
-									Nome da empresa
-								</label>
-								<input
-									id="company-name"
-									type="text"
-									value={companyName}
-									onChange={(e) => setCompanyName(e.target.value)}
-									required
-									placeholder="Nome da sua empresa"
-									className="w-full bg-white dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-violet-500/50 transition-colors"
-								/>
+						)}
+
+						{/* Company name field — hidden for plan changes */}
+						{!isPlanChange && (
+							<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl border border-slate-200 dark:border-gray-800 p-6">
+								<div className="flex items-center gap-2 mb-1">
+									<Building2 className="w-4 h-4 text-violet-400" />
+									<h3 className="text-lg font-bold text-slate-900 dark:text-white">
+										Dados da empresa
+									</h3>
+								</div>
+								<p className="text-sm text-slate-500 dark:text-gray-400 mb-4">
+									Informe o nome da empresa para configuracao do sistema
+								</p>
+								<div>
+									<label
+										htmlFor="company-name"
+										className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1"
+									>
+										Nome da empresa
+									</label>
+									<input
+										id="company-name"
+										type="text"
+										value={companyName}
+										onChange={(e) => setCompanyName(e.target.value)}
+										required
+										placeholder="Nome da sua empresa"
+										className="w-full bg-white dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-violet-500/50 transition-colors"
+									/>
+								</div>
 							</div>
-						</div>
+						)}
 
 						{isPurchasing ? (
 							<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl border border-slate-200 dark:border-gray-800 p-6 flex flex-col items-center justify-center min-h-[200px]">
@@ -237,6 +271,12 @@ export default function CheckoutPage() {
 									Redirecionando para pagamento...
 								</p>
 							</div>
+						) : isPlanChange ? (
+							<CheckoutConfirmButton
+								productId={selectedVariant.product.id}
+								ownershipStatus={ownershipStatus}
+								isLoadingOwnership={ownershipLoading}
+							/>
 						) : isAuthenticated && getCurrentUser() ? (
 							<CheckoutConfirmButton
 								productId={selectedVariant.product.id}
