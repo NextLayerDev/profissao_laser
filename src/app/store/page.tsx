@@ -18,6 +18,7 @@ import { StoreProductCard } from '@/components/store/store-product-card';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useClasses } from '@/hooks/use-classes';
+import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { useProducts } from '@/hooks/use-products';
 import { useSystemClasses } from '@/hooks/use-system-classes';
 import { getCurrentUser, getToken } from '@/lib/auth';
@@ -31,6 +32,9 @@ export default function Loja() {
 	const { products, isLoading, error } = useProducts();
 	const { classes } = useClasses();
 	const { systemClasses } = useSystemClasses();
+
+	const currentUser = getCurrentUser();
+	const { data: ownedPlans } = useCustomerPlans(currentUser?.email ?? null);
 
 	useEffect(() => {
 		const user = getCurrentUser();
@@ -325,11 +329,12 @@ export default function Loja() {
 						</p>
 					</div>
 				) : filteredGroups.length > 0 ? (
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+					<div className="flex flex-col gap-8">
 						{filteredGroups.map((variants) => (
 							<StoreProductCard
 								key={variants[0].product.name}
 								variants={variants}
+								ownedPlans={ownedPlans}
 							/>
 						))}
 					</div>
