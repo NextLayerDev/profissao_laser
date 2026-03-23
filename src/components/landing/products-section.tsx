@@ -2,21 +2,16 @@
 
 import {
 	ArrowRight,
-	BookOpen,
 	Check,
 	ChevronDown,
 	Cpu,
 	GraduationCap,
 	Loader2,
-	MessageCircle,
 	Monitor,
-	Pen,
 	Search,
 	Shield,
 	Sparkles,
-	Users,
 	X,
-	Zap,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -31,6 +26,10 @@ import type { CustomerPlan } from '@/types/plans';
 import type { Product } from '@/types/products';
 import type { SystemClassWithRelations } from '@/types/system-classes';
 import { CLASS_FEATURES } from '@/utils/constants/class-features';
+import {
+	FEATURE_DESCRIPTIONS,
+	FEATURE_ICONS,
+} from '@/utils/constants/feature-display';
 import { SC_OPTIONS } from '@/utils/constants/system-class-options';
 import { formatCurrency } from '@/utils/format-currency';
 import {
@@ -38,28 +37,6 @@ import {
 	type ProductVariantRef,
 	resolveOwnership,
 } from '@/utils/ownership';
-
-const FEATURE_ICONS: Record<string, typeof BookOpen> = {
-	aula: BookOpen,
-	chat: MessageCircle,
-	vetorizacao: Pen,
-	suporte: Zap,
-	comunidade: Users,
-	gerenciamentoSistema: Shield,
-	iaPrevias: Sparkles,
-	iaWhatsappPrevias: MessageCircle,
-};
-
-const FEATURE_DESCRIPTIONS: Record<string, string> = {
-	aula: 'Aulas completas do básico ao avançado com conteúdo atualizado',
-	chat: 'Tire dúvidas em tempo real com nossos especialistas',
-	vetorizacao: 'Serviço de vetorização profissional para seus projetos',
-	suporte: 'Suporte técnico especializado via WhatsApp e acesso remoto',
-	comunidade: 'Acesso ao grupo exclusivo de profissionais do mercado laser',
-	gerenciamentoSistema: 'Acesso completo ao sistema de gerenciamento',
-	iaPrevias: 'Geração de prévias automáticas com Inteligência Artificial',
-	iaWhatsappPrevias: 'Envio de prévias via WhatsApp com IA integrada',
-};
 
 interface ProductVariant {
 	product: Product;
