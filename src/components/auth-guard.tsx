@@ -12,6 +12,7 @@ const PUBLIC_PATHS = [
 	'/checkout',
 	'/payment-link',
 	'/promo-link',
+	'/global-promo-link',
 ];
 
 const CUSTOMER_PATHS = [
