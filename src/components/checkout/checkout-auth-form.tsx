@@ -20,15 +20,22 @@ export function CheckoutAuthForm({ onAuthenticated }: CheckoutAuthFormProps) {
 	const [name, setName] = useState('');
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
+	const [phone, setPhone] = useState('');
 
 	async function handleRegister(e: React.FormEvent) {
 		e.preventDefault();
-		if (!name.trim() || !email.trim() || !password.trim()) return;
+		if (!name.trim() || !email.trim() || !password.trim() || !phone.trim())
+			return;
 
 		setIsLoading(true);
 		try {
 			// 1. Registrar conta
-			await registerCustomer({ name, email, password });
+			await registerCustomer({
+				name: name.trim(),
+				email: email.trim(),
+				password: password.trim(),
+				phone: phone.trim().replace(/\D/g, ''), // Send only digits
+			});
 
 			// 2. Login para pegar token
 			const { token } = await loginCustomer({ email, password });
@@ -142,6 +149,24 @@ export function CheckoutAuthForm({ onAuthenticated }: CheckoutAuthFormProps) {
 							onChange={(e) => setEmail(e.target.value)}
 							required
 							placeholder="seu@email.com"
+							className="w-full bg-white dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-violet-500/50 transition-colors"
+						/>
+					</div>
+					<div>
+						<label
+							htmlFor="checkout-phone"
+							className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1"
+						>
+							Telefone
+						</label>
+						<input
+							id="checkout-phone"
+							type="tel"
+							value={phone}
+							onChange={(e) => setPhone(e.target.value)}
+							required
+							minLength={10}
+							placeholder="(11) 99999-9999"
 							className="w-full bg-white dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-violet-500/50 transition-colors"
 						/>
 					</div>

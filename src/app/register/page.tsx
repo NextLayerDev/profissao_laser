@@ -28,7 +28,12 @@ export default function Register() {
 
 		if (tab === 'customer') {
 			registerCustomer.mutate(
-				{ name, email, password, phone },
+				{
+					name: name.trim(),
+					email: email.trim(),
+					password: password.trim(),
+					phone: phone.trim().replace(/\D/g, ''), // Send only digits
+				},
 				{
 					onSuccess: () =>
 						toast.success('Conta criada! Faça login para continuar.'),
@@ -37,7 +42,13 @@ export default function Register() {
 			);
 		} else {
 			registerUser.mutate(
-				{ name, email, password, role, Permissions: null },
+				{
+					name: name.trim(),
+					email: email.trim(),
+					password: password.trim(),
+					role: role.trim(),
+					Permissions: null,
+				},
 				{
 					onSuccess: () =>
 						toast.success('Conta criada! Faça login para continuar.'),
