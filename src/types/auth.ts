@@ -5,9 +5,18 @@ export const registerCustomerSchema = z.object({
 	name: z.string().min(2),
 	email: z.string().email(),
 	password: z.string().min(6),
+	phone: z.string().min(8),
 });
 
 export type RegisterCustomerPayload = z.infer<typeof registerCustomerSchema>;
+
+export const updateCustomerSchema = z.object({
+	name: z.string().min(2).optional(),
+	email: z.string().email().optional(),
+	phone: z.string().optional(),
+});
+
+export type UpdateCustomerPayload = z.infer<typeof updateCustomerSchema>;
 
 export const loginCustomerSchema = z.object({
 	email: z.string().email(),

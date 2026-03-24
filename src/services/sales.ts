@@ -5,3 +5,8 @@ export async function getSales(): Promise<Sales[]> {
 	const { data } = await api.get('/sales');
 	return salesSchema.array().parse(data);
 }
+
+export async function getSalesAttempts(): Promise<Sales[]> {
+	const { data } = await api.get('/sales/attempts');
+	return salesSchema.array().parse(data);
+}

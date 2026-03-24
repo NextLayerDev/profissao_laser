@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getSales } from '@/services/sales';
+import { getSales, getSalesAttempts } from '@/services/sales';
 import type { Sales } from '@/types/sales';
 
 export function useSales() {
@@ -11,7 +11,20 @@ export function useSales() {
 	});
 
 	return {
-		sales: data as Sales[],
+		sales: (data as Sales[]) ?? [],
+		error,
+		isLoading,
+	};
+}
+
+export function useSalesAttempts() {
+	const { data, error, isLoading } = useQuery({
+		queryKey: ['sales-attempts'],
+		queryFn: getSalesAttempts,
+	});
+
+	return {
+		attempts: (data as Sales[]) ?? [],
 		error,
 		isLoading,
 	};

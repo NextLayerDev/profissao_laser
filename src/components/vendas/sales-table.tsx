@@ -108,6 +108,9 @@ export function SalesTable({
 								<th className="px-4 py-3 font-medium hidden md:table-cell">
 									E-mail
 								</th>
+								<th className="px-4 py-3 font-medium hidden xl:table-cell">
+									Telefone
+								</th>
 								<th className="px-4 py-3 font-medium hidden lg:table-cell">
 									Produto
 								</th>
@@ -225,12 +228,17 @@ export function SalesTable({
 												)}
 											</div>
 											{/* Mobile: show email below name */}
-											<div className="md:hidden mt-0.5">
+											<div className="md:hidden mt-0.5 space-y-0.5">
 												<span
-													className={`text-xs ${isUnknown ? 'text-amber-500 font-medium' : 'text-slate-500 dark:text-gray-400'}`}
+													className={`block text-xs ${isUnknown ? 'text-amber-500 font-medium' : 'text-slate-500 dark:text-gray-400'}`}
 												>
 													{sale.customer.email}
 												</span>
+												{sale.customer.phone && (
+													<span className="block text-[10px] text-violet-400/80 font-medium">
+														{sale.customer.phone}
+													</span>
+												)}
 											</div>
 										</td>
 
@@ -239,6 +247,15 @@ export function SalesTable({
 											className={`px-4 py-3 hidden md:table-cell ${isUnknown ? 'text-amber-500 font-medium' : 'text-slate-600 dark:text-gray-400'}`}
 										>
 											{sale.customer.email}
+										</td>
+
+										{/* Telefone */}
+										<td className="px-4 py-3 hidden xl:table-cell text-slate-600 dark:text-gray-400 tabular-nums">
+											{sale.customer.phone || (
+												<span className="text-slate-400 dark:text-gray-600 italic">
+													Não informado
+												</span>
+											)}
 										</td>
 
 										{/* Produto */}

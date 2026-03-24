@@ -10,6 +10,7 @@ export const salesSchema = z.object({
 	customer: z.object({
 		name: z.string(),
 		email: z.string(),
+		phone: z.string().optional().nullable(),
 	}),
 	receipt_url: z.string().nullable(),
 });

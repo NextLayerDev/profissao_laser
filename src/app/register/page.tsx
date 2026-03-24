@@ -13,6 +13,7 @@ export default function Register() {
 	const [name, setName] = useState('');
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
+	const [phone, setPhone] = useState('');
 	// user-only
 	const [role, setRole] = useState('');
 
@@ -27,7 +28,7 @@ export default function Register() {
 
 		if (tab === 'customer') {
 			registerCustomer.mutate(
-				{ name, email, password },
+				{ name, email, password, phone },
 				{
 					onSuccess: () =>
 						toast.success('Conta criada! Faça login para continuar.'),
@@ -126,6 +127,27 @@ export default function Register() {
 								className="w-full bg-[#0d0d0f] border border-gray-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-violet-500/60 transition-colors"
 							/>
 						</div>
+
+						{tab === 'customer' && (
+							<div>
+								<label
+									htmlFor="phone"
+									className="block text-sm text-gray-400 mb-1.5"
+								>
+									Telefone
+								</label>
+								<input
+									id="phone"
+									type="tel"
+									required
+									minLength={8}
+									value={phone}
+									onChange={(e) => setPhone(e.target.value)}
+									placeholder="(11) 99999-9999"
+									className="w-full bg-[#0d0d0f] border border-gray-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-violet-500/60 transition-colors"
+								/>
+							</div>
+						)}
 
 						<div>
 							<label

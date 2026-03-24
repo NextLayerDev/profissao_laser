@@ -94,6 +94,14 @@ export function SaleDetailModal({ sale, isOpen, onClose, canPrice }: Props) {
 						</span>
 					</DetailRow>
 
+					{sale.customer.phone && (
+						<DetailRow label="Telefone">
+							<span className="text-slate-900 dark:text-white">
+								{sale.customer.phone}
+							</span>
+						</DetailRow>
+					)}
+
 					<DetailRow label="Produto">
 						<span className="text-slate-900 dark:text-white">
 							{sale.product}
