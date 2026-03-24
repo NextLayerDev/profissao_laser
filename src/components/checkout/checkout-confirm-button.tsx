@@ -23,6 +23,7 @@ import type { OwnershipStatus } from '@/utils/ownership';
 interface CheckoutConfirmButtonProps {
 	productId: string;
 	companyName?: string;
+	phone?: string;
 	ownershipStatus: OwnershipStatus;
 	isLoadingOwnership?: boolean;
 }
@@ -30,6 +31,7 @@ interface CheckoutConfirmButtonProps {
 export function CheckoutConfirmButton({
 	productId,
 	companyName,
+	phone,
 	ownershipStatus,
 	isLoadingOwnership,
 }: CheckoutConfirmButtonProps) {
@@ -41,10 +43,15 @@ export function CheckoutConfirmButton({
 	const user = getCurrentUser();
 
 	function handlePurchase() {
+		if (!phone || phone.replace(/\D/g, '').length < 10) {
+			toast.error('Informe um telefone valido.');
+			return;
+		}
 		purchase(
 			{
 				productId,
 				...(companyName ? { companyName } : {}),
+				phone: phone.replace(/\D/g, ''),
 			},
 			{
 				onError: () => {
