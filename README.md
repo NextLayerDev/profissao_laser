@@ -1,6 +1,6 @@
 # Profissão Laser
 
-A business management platform for laser/aesthetic professionals. Built with Next.js, it provides a dashboard to manage products, courses, subscriptions, sales, coupons, and affiliates.
+A business management platform for laser/aesthetic professionals. Built with Next.js, it provides a dashboard to manage products, courses, subscriptions, sales, coupons, affiliates, promo links, appointments, and more.
 
 ## Tech Stack
 
@@ -12,6 +12,8 @@ A business management platform for laser/aesthetic professionals. Built with Nex
 - **Icons:** Lucide React
 - **Notifications:** Sonner
 - **Validation:** Zod
+- **Charts:** Recharts
+- **File Upload:** tus-js-client
 - **Linter/Formatter:** Biome
 - **Git Hooks:** Husky + lint-staged
 
@@ -20,28 +22,42 @@ A business management platform for laser/aesthetic professionals. Built with Nex
 - **Dashboard** — stats overview, quick access, alerts, and chat button
 - **Products** — list, search, and manage courses/products; add new courses via modal
 - **Courses** — view active subscriptions and access course content by slug
-- **Subscriptions** — create and manage customer subscription plans
+- **Checkout** — payment flow with phone number collection and promo code support
+- **Subscriptions** — create and manage plans; upgrade/downgrade flow with ownership indicators
+- **Promo Links** — create and manage promotional links with custom pricing
+- **Payment Links** — list and share payment links
+- **Global Promo Link** — public landing page for promotional offers, accessible via token
 - **Coupons** — coupon management
-- **Sales** — sales tracking
+- **Sales** — sales tracking with KPIs, filters, sorting, pagination, CSV export, and detail modal
 - **Reports** — business reports
 - **Affiliates** — partner/affiliate management
+- **Doubts / Chat** — Q&A and chat system for customer questions
+- **Appointments** — scheduling management
+- **Access Management** — user access control
 
 ## Project Structure
 
 ```
 src/
-├── app/              # Next.js App Router pages
-│   ├── page.tsx      # Dashboard
-│   ├── products/     # Products listing and detail
-│   └── course/       # Course listing and content
-├── components/
-│   ├── dashboard/    # Dashboard UI components
-│   └── products/     # Product/course UI components
-├── hooks/            # React Query data hooks
-├── services/         # API service functions
-├── lib/              # Supabase client, fetch helpers
-├── types/            # TypeScript type definitions
-└── utils/            # Constants and format helpers
+├── app/                          # Next.js App Router pages
+│   ├── page.tsx                  # Dashboard
+│   ├── products/                 # Products listing and detail
+│   ├── course/[slug]/            # Course listing and content
+│   ├── checkout/[slug]/          # Checkout flow
+│   ├── links/                    # Promo and payment links CRUD
+│   ├── global-promo-link/[token]/# Public promo landing page
+│   ├── duvidas/                  # Doubts/chat system
+│   ├── agendamentos/             # Appointment scheduling
+│   ├── acessos/                  # Access/user management
+│   ├── sales/                    # Sales with KPIs and filters
+│   └── reports/                  # Business reports
+├── components/                   # React components by feature
+├── hooks/                        # React Query data hooks
+├── services/                     # API service functions
+├── lib/                          # Supabase client, fetch helpers
+├── types/                        # TypeScript type definitions
+├── contexts/                     # React Context definitions
+└── utils/                        # Constants and format helpers
 ```
 
 ## Getting Started
