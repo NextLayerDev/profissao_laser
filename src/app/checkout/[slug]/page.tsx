@@ -41,6 +41,7 @@ export default function CheckoutPage() {
 	const [isAuthenticated, setIsAuthenticated] = useState(!!getCurrentUser());
 	const [isPurchasing, setIsPurchasing] = useState(false);
 	const [companyName, setCompanyName] = useState('');
+	const [phone, setPhone] = useState('');
 
 	const isLoading = productsLoading || classesLoading || systemClassesLoading;
 
@@ -133,6 +134,11 @@ export default function CheckoutPage() {
 			return;
 		}
 
+		if (!phone.trim() || phone.replace(/\D/g, '').length < 10) {
+			toast.error('Informe um telefone valido.');
+			return;
+		}
+
 		setIsPurchasing(true);
 		setIsAuthenticated(true);
 
@@ -140,13 +146,14 @@ export default function CheckoutPage() {
 			const { checkoutUrl } = await createPurchase({
 				productId: selectedVariant.product.id,
 				companyName: companyName.trim(),
+				phone: phone.trim().replace(/\D/g, ''),
 			});
 			window.location.href = checkoutUrl;
 		} catch {
 			toast.error('Erro ao processar compra. Tente novamente.');
 			setIsPurchasing(false);
 		}
-	}, [selectedVariant, companyName]);
+	}, [selectedVariant, companyName, phone.trim, phone.replace]);
 
 	if (isLoading) {
 		return (
@@ -244,22 +251,42 @@ export default function CheckoutPage() {
 								<p className="text-sm text-slate-500 dark:text-gray-400 mb-4">
 									Informe o nome da empresa para configuracao do sistema
 								</p>
-								<div>
-									<label
-										htmlFor="company-name"
-										className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1"
-									>
-										Nome da empresa
-									</label>
-									<input
-										id="company-name"
-										type="text"
-										value={companyName}
-										onChange={(e) => setCompanyName(e.target.value)}
-										required
-										placeholder="Nome da sua empresa"
-										className="w-full bg-white dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-violet-500/50 transition-colors"
-									/>
+								<div className="space-y-4">
+									<div>
+										<label
+											htmlFor="company-name"
+											className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1"
+										>
+											Nome da empresa
+										</label>
+										<input
+											id="company-name"
+											type="text"
+											value={companyName}
+											onChange={(e) => setCompanyName(e.target.value)}
+											required
+											placeholder="Nome da sua empresa"
+											className="w-full bg-white dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-violet-500/50 transition-colors"
+										/>
+									</div>
+									<div>
+										<label
+											htmlFor="checkout-phone"
+											className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1"
+										>
+											Telefone
+										</label>
+										<input
+											id="checkout-phone"
+											type="tel"
+											value={phone}
+											onChange={(e) => setPhone(e.target.value)}
+											required
+											minLength={10}
+											placeholder="(11) 99999-9999"
+											className="w-full bg-white dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-violet-500/50 transition-colors"
+										/>
+									</div>
 								</div>
 							</div>
 						)}
@@ -281,6 +308,7 @@ export default function CheckoutPage() {
 							<CheckoutConfirmButton
 								productId={selectedVariant.product.id}
 								companyName={companyName.trim() || undefined}
+								phone={phone.trim() || undefined}
 								ownershipStatus={ownershipStatus}
 								isLoadingOwnership={ownershipLoading}
 							/>
