@@ -1,6 +1,5 @@
 import {
 	BookOpen,
-	Check,
 	MessageCircle,
 	Pen,
 	Shield,

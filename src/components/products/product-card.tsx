@@ -105,7 +105,7 @@ export function ProductCard({
 		productSystemClasses && productSystemClasses.length > 0;
 
 	const primarySc = productSystemClasses?.[0];
-	const [scBorder, scBorderHover, scBadge] = primarySc
+	const [scBorder, scBorderHover, _scBadge] = primarySc
 		? resolveScStyle(primarySc.name)
 		: [
 				'dark:border-violet-500/30',

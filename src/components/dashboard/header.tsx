@@ -14,7 +14,7 @@ export function Header() {
 	const { canAdmin, canPrice } = usePermissions();
 
 	const visibleNavItems = navItems.filter((item) => {
-		if (item.name === 'Acessos') return canAdmin;
+		if (item.name === 'Acessos' || item.name === 'Alunos') return canAdmin;
 		if (
 			item.name === 'Vendas' ||
 			item.name === 'Relatórios' ||
