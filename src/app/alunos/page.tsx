@@ -1,6 +1,13 @@
 'use client';
 
-import { KeyRound, ShieldCheck, ShieldOff, Trash2, Users } from 'lucide-react';
+import {
+	KeyRound,
+	Search,
+	ShieldCheck,
+	ShieldOff,
+	Trash2,
+	Users,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { BlockCustomerModal } from '@/components/alunos/block-customer-modal';
@@ -29,6 +36,11 @@ export default function AlunosPage() {
 	const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null);
 	const [blockTarget, setBlockTarget] = useState<Customer | null>(null);
 	const [passwordTarget, setPasswordTarget] = useState<Customer | null>(null);
+	const [search, setSearch] = useState('');
+
+	const filteredCustomers = customers.filter((c) =>
+		c.name.toLowerCase().includes(search.toLowerCase()),
+	);
 
 	useEffect(() => {
 		if (!permissionsLoading && !canAdmin) {
@@ -59,6 +71,16 @@ export default function AlunosPage() {
 							Bloqueie, exclua e gerencie as senhas dos alunos.
 						</p>
 					</div>
+					<div className="relative">
+						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-gray-500 pointer-events-none" />
+						<input
+							type="text"
+							placeholder="Buscar por nome..."
+							value={search}
+							onChange={(e) => setSearch(e.target.value)}
+							className="pl-9 pr-4 py-2 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 w-64"
+						/>
+					</div>
 				</div>
 
 				{isLoading && (
@@ -86,7 +108,7 @@ export default function AlunosPage() {
 								</tr>
 							</thead>
 							<tbody>
-								{customers.length === 0 && (
+								{filteredCustomers.length === 0 && (
 									<tr>
 										<td
 											colSpan={5}
@@ -96,7 +118,7 @@ export default function AlunosPage() {
 										</td>
 									</tr>
 								)}
-								{customers.map((customer) => (
+								{filteredCustomers.map((customer) => (
 									<tr
 										key={customer.id}
 										className="border-t border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/2 transition-colors"
