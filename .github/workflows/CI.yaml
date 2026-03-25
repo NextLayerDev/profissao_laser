@@ -82,3 +82,11 @@ jobs:
 
       - name: 🔒 Run NPM Audit
         run: npm audit --audit-level=high
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build, security]
+    if: github.event_name == 'push'
+    steps:
+      - name: 🚀 Deploy to EasyPanel
+        run: curl -s -X GET "${{ github.ref_name == 'main' && secrets.EASYPANEL_DEPLOY_MAIN || secrets.EASYPANEL_DEPLOY_DEV }}"
