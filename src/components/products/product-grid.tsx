@@ -52,7 +52,7 @@ export function ProductGrid({
 		const map = new Map<string, typeof products>();
 		for (const p of products) {
 			if (!map.has(p.name)) map.set(p.name, []);
-			map.get(p.name)!.push(p);
+			map.get(p.name)?.push(p);
 		}
 		return Array.from(map.values());
 	}, [products]);

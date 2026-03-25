@@ -8,6 +8,7 @@ import {
 	Package,
 	ShieldCheck,
 	ShoppingCart,
+	Users,
 } from 'lucide-react';
 import type { NavItem } from '@/types/navigation';
 
@@ -41,4 +42,5 @@ export const navItems: NavItem[] = [
 		hasDropdown: false,
 	},
 	{ name: 'Acessos', icon: ShieldCheck, href: '/acessos', hasDropdown: false },
+	{ name: 'Alunos', icon: Users, href: '/alunos', hasDropdown: false },
 ];
