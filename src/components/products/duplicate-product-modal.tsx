@@ -25,7 +25,7 @@ interface DuplicateProductModalProps {
 
 export function DuplicateProductModal({
 	product,
-	productClasses = [],
+	productClasses: _productClasses = [],
 	productSystemClasses = [],
 	onClose,
 	onSuccess,
