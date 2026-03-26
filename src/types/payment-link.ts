@@ -72,7 +72,7 @@ export const paymentLinkListItemSchema = z.object({
 	token: z.string(),
 	productName: z.string(),
 	customerName: z.string(),
-	customerPhone: z.string(),
+	customerPhone: z.string().nullable().optional(),
 	customerCpf: z.string(),
 	companyName: z.string(),
 	status: z.string(),
