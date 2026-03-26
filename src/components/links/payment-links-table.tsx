@@ -113,7 +113,7 @@ export function PaymentLinksTable({ productName }: PaymentLinksTableProps) {
 							<td className="py-3 px-4 text-slate-600 dark:text-gray-300">
 								<div>{link.customerName}</div>
 								<div className="text-xs text-slate-400 dark:text-gray-500">
-									{link.customerPhone}
+									{link.customerPhone ?? '—'}
 								</div>
 							</td>
 							<td className="py-3 px-4 text-slate-600 dark:text-gray-400">
