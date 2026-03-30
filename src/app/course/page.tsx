@@ -4,6 +4,7 @@ import {
 	BookOpen,
 	CalendarClock,
 	ChevronRight,
+	CreditCard,
 	Flame,
 	Gem,
 	LayoutDashboard,
@@ -396,7 +397,7 @@ export default function CoursePage() {
 							</h3>
 							<p className="text-slate-400 text-xs mb-5 truncate">{email}</p>
 
-							<div className="flex justify-center gap-3">
+							<div className="flex justify-center gap-3 mb-4">
 								<div className="bg-linear-to-br from-yellow-500 to-amber-400 rounded-xl p-3 text-white flex items-center justify-center w-12 h-12">
 									<Star className="w-5 h-5" />
 								</div>
@@ -407,6 +408,14 @@ export default function CoursePage() {
 									<Gem className="w-5 h-5" />
 								</div>
 							</div>
+
+							<Link
+								href="/course/assinatura"
+								className="w-full flex items-center justify-center gap-2 bg-slate-100 dark:bg-white/5 hover:bg-violet-50 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 hover:border-violet-500/40 text-slate-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-white text-sm font-medium py-2.5 rounded-xl transition-all"
+							>
+								<CreditCard className="w-4 h-4" />
+								Minha assinatura
+							</Link>
 						</div>
 
 						{/* Stats mini cards */}
