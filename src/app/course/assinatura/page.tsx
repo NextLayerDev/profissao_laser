@@ -19,7 +19,6 @@ import { CancelSubscriptionModal } from '@/components/assinatura/cancel-subscrip
 import { ChangePlanModal } from '@/components/assinatura/change-plan-modal';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { useClasses } from '@/hooks/use-classes';
 import {
 	useCancelMySubscription,
 	useDowngradeMySubscription,
@@ -27,12 +26,12 @@ import {
 	useUpgradeMySubscription,
 } from '@/hooks/use-my-subscription';
 import { useProducts } from '@/hooks/use-products';
+import { useSystemClasses } from '@/hooks/use-system-classes';
 import { getCurrentUser } from '@/lib/auth';
-import type { ClassWithProducts } from '@/types/classes';
 import type { MySubscription } from '@/types/my-subscription';
 import type { Product } from '@/types/products';
-import { CLASS_FEATURES } from '@/utils/constants/class-features';
-import { TIER_STYLES } from '@/utils/constants/tier-styles';
+import type { SystemClassWithRelations } from '@/types/system-classes';
+import { SC_OPTIONS } from '@/utils/constants/system-class-options';
 
 const Background = () => (
 	<div className="fixed inset-0 bg-linear-to-br from-slate-100 via-white to-slate-50 dark:from-[#12103a] dark:via-[#0d0b1e] dark:to-[#0a0818] pointer-events-none" />
@@ -147,7 +146,7 @@ function SubscriptionCard({
 			)}
 
 			{!subscription.cancelAtPeriodEnd && (
-				<div className="pl-[52px]">
+				<div className="pl-13">
 					<button
 						type="button"
 						onClick={onCancelClick}
@@ -164,35 +163,28 @@ function SubscriptionCard({
 function PlanOption({
 	product,
 	type,
-	classInfo,
+	systemClass,
 	onSelect,
 }: {
 	product: Product;
 	type: 'upgrade' | 'downgrade';
-	classInfo: ClassWithProducts | undefined;
+	systemClass: SystemClassWithRelations | null;
 	onSelect: (product: Product, type: 'upgrade' | 'downgrade') => void;
 }) {
 	const isUpgrade = type === 'upgrade';
-	const tier = classInfo?.tier;
-	const tierStyle = tier ? TIER_STYLES[tier] : null;
-
-	const enabledFeatures = CLASS_FEATURES.filter((f) => classInfo?.[f.key]);
-	const disabledFeatures = CLASS_FEATURES.filter((f) => !classInfo?.[f.key]);
 
 	return (
 		<div className="rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-sm dark:shadow-none flex flex-col">
-			{/* Tier stripe */}
+			{/* Stripe */}
 			<div
-				className={`h-1.5 bg-linear-to-r ${tierStyle?.gradient ?? 'from-violet-600 to-purple-700'}`}
+				className={`h-1.5 bg-linear-to-r ${isUpgrade ? 'from-green-500 to-emerald-500' : 'from-amber-400 to-orange-500'}`}
 			/>
 
 			<div className="bg-white dark:bg-white/5 p-5 flex flex-col flex-1">
-				{/* Tier badge */}
-				{tierStyle && (
-					<span
-						className={`self-start text-xs font-semibold px-2.5 py-0.5 rounded-full mb-3 ${tierStyle.badge}`}
-					>
-						{tierStyle.label}
+				{/* System class badge */}
+				{systemClass && (
+					<span className="self-start text-xs font-semibold px-2.5 py-0.5 rounded-full mb-3 bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">
+						{systemClass.name}
 					</span>
 				)}
 
@@ -214,25 +206,30 @@ function PlanOption({
 					<p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">
 						Recursos inclusos
 					</p>
-					{enabledFeatures.map((feat) => (
-						<div key={feat.key} className="flex items-center gap-2.5">
-							<Check size={14} className="text-emerald-400 shrink-0" />
-							<span className="text-sm text-slate-700 dark:text-gray-200">
-								{feat.label}
-							</span>
-						</div>
-					))}
-					{disabledFeatures.map((feat) => (
-						<div key={feat.key} className="flex items-center gap-2.5">
-							<X
-								size={14}
-								className="text-slate-300 dark:text-gray-600 shrink-0"
-							/>
-							<span className="text-sm text-slate-400 dark:text-gray-600 line-through">
-								{feat.label}
-							</span>
-						</div>
-					))}
+					{SC_OPTIONS.map((o) => {
+						const enabled = systemClass !== null && systemClass[o.key] === true;
+						return (
+							<div key={o.key} className="flex items-center gap-2.5">
+								{enabled ? (
+									<Check size={14} className="text-emerald-400 shrink-0" />
+								) : (
+									<X
+										size={14}
+										className="text-slate-300 dark:text-gray-600 shrink-0"
+									/>
+								)}
+								<span
+									className={
+										enabled
+											? 'text-sm text-slate-700 dark:text-gray-200'
+											: 'text-sm text-slate-400 dark:text-gray-600 line-through'
+									}
+								>
+									{o.label}
+								</span>
+							</div>
+						);
+					})}
 				</div>
 
 				{/* Action button */}
@@ -265,16 +262,20 @@ export default function CourseAssinaturaPage() {
 
 	const { data, isLoading, isError } = useMySubscription();
 	const { products } = useProducts();
-	const { classes } = useClasses();
+	const { systemClasses } = useSystemClasses();
 
-	const TIER_ORDER: Record<string, number> = { prata: 0, ouro: 1, platina: 2 };
+	const activeSystemClasses = systemClasses.filter(
+		(sc) => sc.status === 'ativo',
+	);
 
-	function classForProduct(productId: string) {
-		return [...classes]
-			.filter((c) => c.products.some((p) => p.id === productId))
-			.sort(
-				(a, b) => (TIER_ORDER[a.tier] ?? 99) - (TIER_ORDER[b.tier] ?? 99),
-			)[0];
+	function systemClassForProduct(
+		productId: string,
+	): SystemClassWithRelations | null {
+		return (
+			activeSystemClasses.find((sc) =>
+				sc.products.some((p) => p.id === productId),
+			) ?? null
+		);
 	}
 	const { mutate: cancelSubscription, isPending: isCanceling } =
 		useCancelMySubscription();
@@ -567,7 +568,7 @@ export default function CourseAssinaturaPage() {
 												key={product.id}
 												product={product}
 												type="upgrade"
-												classInfo={classForProduct(product.id)}
+												systemClass={systemClassForProduct(product.id)}
 												onSelect={handleSelectPlan}
 											/>
 										))}
@@ -577,7 +578,7 @@ export default function CourseAssinaturaPage() {
 												key={product.id}
 												product={product}
 												type="downgrade"
-												classInfo={classForProduct(product.id)}
+												systemClass={systemClassForProduct(product.id)}
 												onSelect={handleSelectPlan}
 											/>
 										))}
