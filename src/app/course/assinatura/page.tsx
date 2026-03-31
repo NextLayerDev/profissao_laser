@@ -20,7 +20,6 @@ import { ChangePlanModal } from '@/components/assinatura/change-plan-modal';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useClasses } from '@/hooks/use-classes';
-import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import {
 	useCancelMySubscription,
 	useDowngradeMySubscription,
@@ -289,38 +288,26 @@ export default function CourseAssinaturaPage() {
 		setName(user?.name ?? '');
 	}, []);
 
+	// Encontra o produto atual usando nome + preço para diferenciar variantes
 	const currentProduct = data
-		? products?.find((p) => p.name === data.product_name)
+		? (products?.find(
+				(p) => p.name === data.product_name && p.price === data.amount,
+			) ?? products?.find((p) => p.name === data.product_name))
 		: undefined;
 
-	// Descobre o slug do curso a partir da classe que contém o produto atual
-	const courseSlug = currentProduct
-		? classes
-				.find((c) => c.products.some((p) => p.id === currentProduct.id))
-				?.products.find((p) => p.id === currentProduct.id)?.slug
-		: undefined;
-
-	// Todos os product IDs vinculados a esse slug nas classes
-	const relatedProductIds = courseSlug
-		? new Set(
-				classes
-					.filter((c) => c.products.some((p) => p.slug === courseSlug))
-					.flatMap((c) =>
-						c.products.filter((p) => p.slug === courseSlug).map((p) => p.id),
-					),
-			)
-		: new Set<string>();
-
-	const relatedPlans =
-		relatedProductIds.size > 0
-			? (products?.filter(
-					(p) =>
-						p.status === 'ativo' &&
-						p.stripeProductId !== null &&
-						relatedProductIds.has(p.id) &&
-						p.id !== currentProduct?.id,
-				) ?? [])
-			: [];
+	// Produtos relacionados = mesmo nome + mesma máquina + mesmo software,
+	// garantindo que sejam variantes de tier diferente (com features distintas)
+	const relatedPlans = currentProduct
+		? (products?.filter(
+				(p) =>
+					p.status === 'ativo' &&
+					p.stripeProductId !== null &&
+					p.name === currentProduct.name &&
+					p.machine === currentProduct.machine &&
+					p.software === currentProduct.software &&
+					p.id !== currentProduct.id,
+			) ?? [])
+		: [];
 
 	const upgradePlans = relatedPlans.filter(
 		(p) => p.price > (data?.amount ?? 0),
