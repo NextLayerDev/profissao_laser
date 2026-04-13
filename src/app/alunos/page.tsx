@@ -16,7 +16,85 @@ import { DeleteCustomerModal } from '@/components/alunos/delete-customer-modal';
 import { Header } from '@/components/dashboard/header';
 import { useCustomers } from '@/hooks/use-customers';
 import { usePermissions } from '@/hooks/use-permissions';
-import type { Customer } from '@/types/customer';
+import type { Customer, CustomerSubscription } from '@/types/customer';
+
+const STATUS_LABELS: Record<string, string> = {
+	active: 'Ativo',
+	trialing: 'Em teste',
+	canceled: 'Cancelado',
+	past_due: 'Vencido',
+	incomplete: 'Incompleto',
+	incomplete_expired: 'Expirado',
+	paused: 'Pausado',
+	unpaid: 'Não pago',
+};
+
+const STATUS_COLORS: Record<string, string> = {
+	active:
+		'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400',
+	trialing: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',
+	canceled: 'bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-gray-500',
+	past_due: 'bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-400',
+	incomplete:
+		'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400',
+	incomplete_expired:
+		'bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-gray-500',
+	paused: 'bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-gray-500',
+	unpaid: 'bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-400',
+};
+
+function formatPeriodDate(dateStr: string | null): string {
+	if (!dateStr) return '';
+	const date = new Date(dateStr);
+	return date.toLocaleDateString('pt-BR', {
+		day: '2-digit',
+		month: '2-digit',
+		year: 'numeric',
+	});
+}
+
+function SubscriptionCell({
+	subscription,
+}: {
+	subscription: CustomerSubscription | null | undefined;
+}) {
+	if (!subscription) {
+		return (
+			<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-gray-500">
+				Sem assinatura
+			</span>
+		);
+	}
+
+	const colorClass =
+		STATUS_COLORS[subscription.status] ??
+		'bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-gray-500';
+	const label = STATUS_LABELS[subscription.status] ?? subscription.status;
+	const date = formatPeriodDate(subscription.currentPeriodEnd);
+
+	const periodText = date
+		? subscription.cancelAtPeriodEnd
+			? `Cancela em ${date}`
+			: `Renova em ${date}`
+		: null;
+
+	const periodColor = subscription.cancelAtPeriodEnd
+		? 'text-amber-600 dark:text-amber-400'
+		: 'text-slate-500 dark:text-gray-500';
+
+	return (
+		<div className="flex flex-col gap-1">
+			<span
+				className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium w-fit ${colorClass}`}
+			>
+				{label}
+			</span>
+			{periodText && (
+				<span className={`text-xs ${periodColor}`}>{periodText}</span>
+			)}
+		</div>
+	);
+}
 
 export default function AlunosPage() {
 	const router = useRouter();
@@ -104,6 +182,7 @@ export default function AlunosPage() {
 									<th className="px-4 py-3 font-medium">E-mail</th>
 									<th className="px-4 py-3 font-medium">Telefone</th>
 									<th className="px-4 py-3 font-medium">Status</th>
+									<th className="px-4 py-3 font-medium">Assinatura</th>
 									<th className="px-4 py-3 font-medium text-right">Ações</th>
 								</tr>
 							</thead>
@@ -111,7 +190,7 @@ export default function AlunosPage() {
 								{filteredCustomers.length === 0 && (
 									<tr>
 										<td
-											colSpan={5}
+											colSpan={6}
 											className="px-4 py-10 text-center text-slate-500 dark:text-gray-500"
 										>
 											Nenhum aluno encontrado.
@@ -144,6 +223,9 @@ export default function AlunosPage() {
 													Ativo
 												</span>
 											)}
+										</td>
+										<td className="px-4 py-3">
+											<SubscriptionCell subscription={customer.subscription} />
 										</td>
 										<td className="px-4 py-3 text-right">
 											<div className="flex items-center justify-end gap-2">
