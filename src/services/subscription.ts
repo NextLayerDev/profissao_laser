@@ -25,3 +25,14 @@ export async function downgradeSubscription(
 	const { data } = await api.post('/subscription/downgrade', payload);
 	return subscriptionChangeResponseSchema.parse(data);
 }
+
+export async function adminChangePlan(
+	customerId: string,
+	payload: SubscriptionChangePayload,
+): Promise<SubscriptionChangeResponse> {
+	const { data } = await api.patch(
+		`/customer/${customerId}/subscription`,
+		payload,
+	);
+	return subscriptionChangeResponseSchema.parse(data);
+}

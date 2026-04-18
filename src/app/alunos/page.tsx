@@ -1,6 +1,7 @@
 'use client';
 
 import {
+	ArrowUpDown,
 	KeyRound,
 	Search,
 	ShieldCheck,
@@ -12,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { BlockCustomerModal } from '@/components/alunos/block-customer-modal';
 import { ChangePasswordModal } from '@/components/alunos/change-password-modal';
+import { AdminChangePlanModal } from '@/components/alunos/change-plan-modal';
 import { DeleteCustomerModal } from '@/components/alunos/delete-customer-modal';
 import { Header } from '@/components/dashboard/header';
 import { useCustomers } from '@/hooks/use-customers';
@@ -114,6 +116,7 @@ export default function AlunosPage() {
 	const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null);
 	const [blockTarget, setBlockTarget] = useState<Customer | null>(null);
 	const [passwordTarget, setPasswordTarget] = useState<Customer | null>(null);
+	const [planTarget, setPlanTarget] = useState<Customer | null>(null);
 	const [search, setSearch] = useState('');
 
 	const filteredCustomers = customers.filter((c) =>
@@ -231,6 +234,14 @@ export default function AlunosPage() {
 											<div className="flex items-center justify-end gap-2">
 												<button
 													type="button"
+													onClick={() => setPlanTarget(customer)}
+													className="p-2 text-slate-500 dark:text-gray-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors"
+													title="Alterar plano"
+												>
+													<ArrowUpDown className="w-4 h-4" />
+												</button>
+												<button
+													type="button"
 													onClick={() => setBlockTarget(customer)}
 													className="p-2 text-slate-500 dark:text-gray-400 hover:text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors"
 													title={customer.banned ? 'Desbloquear' : 'Bloquear'}
@@ -263,6 +274,11 @@ export default function AlunosPage() {
 				)}
 			</main>
 
+			<AdminChangePlanModal
+				customer={planTarget}
+				isOpen={!!planTarget}
+				onClose={() => setPlanTarget(null)}
+			/>
 			<DeleteCustomerModal
 				customer={deleteTarget}
 				isOpen={!!deleteTarget}

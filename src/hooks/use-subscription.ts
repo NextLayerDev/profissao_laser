@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
+	adminChangePlan,
 	createSubscription,
 	downgradeSubscription,
 	upgradeSubscription,
@@ -34,6 +35,23 @@ export function useDowngradeSubscription() {
 			downgradeSubscription(payload),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: ['customer-plans'] });
+		},
+	});
+}
+
+export function useAdminChangePlan() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			customerId,
+			payload,
+		}: {
+			customerId: string;
+			payload: SubscriptionChangePayload;
+		}) => adminChangePlan(customerId, payload),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ['customer-plans'] });
+			qc.invalidateQueries({ queryKey: ['customers'] });
 		},
 	});
 }
