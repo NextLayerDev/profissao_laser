@@ -1,6 +1,6 @@
 'use client';
 
-import { Download, Loader2, RefreshCw } from 'lucide-react';
+import { Download, Loader2, RefreshCw, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -56,6 +56,13 @@ export default function Vendas() {
 						>
 							<RefreshCw className="w-4 h-4" />
 							Recorrentes
+						</Link>
+						<Link
+							href="/sales/refunds"
+							className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-gray-300 text-sm font-medium hover:bg-slate-300 dark:hover:bg-white/15 transition-colors"
+						>
+							<RotateCcw className="w-4 h-4" />
+							Reembolsos
 						</Link>
 						{!isLoading && !error && (
 							<button

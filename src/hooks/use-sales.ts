@@ -3,11 +3,13 @@
 import { useQuery } from '@tanstack/react-query';
 import {
 	type GetRecurringParams,
+	type GetRefundsParams,
 	getRecurringSales,
+	getRefunds,
 	getSales,
 	getSalesAttempts,
 } from '@/services/sales';
-import type { RecurringSubscription, Sales } from '@/types/sales';
+import type { RecurringSubscription, Refund, Sales } from '@/types/sales';
 
 export function useSales() {
 	const { data, error, isLoading } = useQuery({
@@ -45,5 +47,19 @@ export function useRecurringSales(params: GetRecurringParams = {}) {
 		subscriptions: (data as RecurringSubscription[]) ?? [],
 		error,
 		isLoading,
+	};
+}
+
+export function useRefunds(params: GetRefundsParams = {}) {
+	const { data, error, isLoading, isFetching } = useQuery({
+		queryKey: ['sales-refunds', params],
+		queryFn: () => getRefunds(params),
+	});
+
+	return {
+		refunds: (data as Refund[]) ?? [],
+		error,
+		isLoading,
+		isFetching,
 	};
 }

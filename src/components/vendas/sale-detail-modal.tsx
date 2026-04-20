@@ -108,6 +108,14 @@ export function SaleDetailModal({ sale, isOpen, onClose, canPrice }: Props) {
 						</span>
 					</DetailRow>
 
+					{sale.subscriptionMonth != null && (
+						<DetailRow label="Cobrança recorrente">
+							<span className="text-violet-400 font-medium">
+								{sale.subscriptionMonth}ª vez
+							</span>
+						</DetailRow>
+					)}
+
 					{canPrice && (
 						<DetailRow label="Valor">
 							<span className="text-slate-900 dark:text-white font-medium tabular-nums">
