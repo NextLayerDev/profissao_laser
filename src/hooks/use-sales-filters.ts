@@ -15,10 +15,8 @@ export type SortDirection = 'asc' | 'desc';
 export type ItemsPerPage = 10 | 25 | 50 | 100;
 
 const STATUS_ORDER: Record<string, number> = {
-	paid: 0,
-	pending: 1,
-	refunded: 2,
-	canceled: 3,
+	succeeded: 0,
+	reembolsado: 1,
 };
 
 function getDateRangeForPreset(

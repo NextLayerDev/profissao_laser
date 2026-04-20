@@ -1,13 +1,14 @@
 'use client';
 
-import { AlertCircle, ExternalLink, X } from 'lucide-react';
-import { useEffect } from 'react';
+import { AlertCircle, ExternalLink, RotateCcw, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import type { Sales } from '@/types/sales';
 import { STATUS_LABELS } from '@/utils/constants/status-label';
 import { formatCurrency } from '@/utils/format-currency';
 import { formatDate } from '@/utils/formatDate';
 import { isTestRecord } from '@/utils/test-record-detector';
 import { toTitleCase } from '@/utils/title-case';
+import { RefundSaleModal } from './refund-sale-modal';
 
 interface Props {
 	sale: Sales | null;
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function SaleDetailModal({ sale, isOpen, onClose, canPrice }: Props) {
+	const [refundOpen, setRefundOpen] = useState(false);
 	useEffect(() => {
 		if (!isOpen) return;
 		const handler = (e: KeyboardEvent) => {
@@ -35,6 +37,7 @@ export function SaleDetailModal({ sale, isOpen, onClose, canPrice }: Props) {
 		label: sale.status,
 		color: 'bg-gray-500/10 text-gray-400',
 	};
+	const canRefund = sale.status === 'succeeded';
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -108,7 +111,7 @@ export function SaleDetailModal({ sale, isOpen, onClose, canPrice }: Props) {
 						</span>
 					</DetailRow>
 
-					{sale.subscriptionMonth != null && (
+					{sale.subscriptionMonth > 1 && (
 						<DetailRow label="Cobrança recorrente">
 							<span className="text-violet-400 font-medium">
 								{sale.subscriptionMonth}ª vez
@@ -164,7 +167,26 @@ export function SaleDetailModal({ sale, isOpen, onClose, canPrice }: Props) {
 						</DetailRow>
 					)}
 				</div>
+
+				{canPrice && canRefund && (
+					<div className="mt-6 pt-4 border-t border-slate-100 dark:border-gray-800/50 flex justify-end">
+						<button
+							type="button"
+							onClick={() => setRefundOpen(true)}
+							className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-red-600 hover:bg-red-500 text-white transition-colors"
+						>
+							<RotateCcw className="w-4 h-4" />
+							Reembolsar
+						</button>
+					</div>
+				)}
 			</div>
+
+			<RefundSaleModal
+				sale={sale}
+				isOpen={refundOpen}
+				onClose={() => setRefundOpen(false)}
+			/>
 		</div>
 	);
 }

@@ -13,7 +13,7 @@ export const salesSchema = z.object({
 		phone: z.string().optional().nullable(),
 	}),
 	receipt_url: z.string().nullable(),
-	subscriptionMonth: z.number().int().positive().nullable().optional(),
+	subscriptionMonth: z.number().int().positive(),
 });
 
 export type Sales = z.infer<typeof salesSchema>;

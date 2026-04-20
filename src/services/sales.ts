@@ -42,3 +42,13 @@ export async function getRefunds(
 	const { data } = await api.get('/sales/refunds', { params });
 	return refundSchema.array().parse(data);
 }
+
+export interface RefundSalePayload {
+	chargeId: string;
+	email: string;
+}
+
+export async function refundSale(payload: RefundSalePayload) {
+	const { data } = await api.post('/refund', payload);
+	return data;
+}
