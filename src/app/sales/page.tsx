@@ -1,6 +1,7 @@
 'use client';
 
-import { Download, Loader2 } from 'lucide-react';
+import { Download, Loader2, RefreshCw } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Header } from '@/components/dashboard/header';
@@ -48,17 +49,26 @@ export default function Vendas() {
 							adquiriram.
 						</p>
 					</div>
-					{!isLoading && !error && (
-						<button
-							type="button"
-							onClick={() => exportSalesCSV(filters.sortedSales)}
-							disabled={filters.sortedSales.length === 0}
-							className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+					<div className="flex items-center gap-2 shrink-0">
+						<Link
+							href="/sales/recurring"
+							className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-gray-300 text-sm font-medium hover:bg-slate-300 dark:hover:bg-white/15 transition-colors"
 						>
-							<Download className="w-4 h-4" />
-							Exportar CSV
-						</button>
-					)}
+							<RefreshCw className="w-4 h-4" />
+							Recorrentes
+						</Link>
+						{!isLoading && !error && (
+							<button
+								type="button"
+								onClick={() => exportSalesCSV(filters.sortedSales)}
+								disabled={filters.sortedSales.length === 0}
+								className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+							>
+								<Download className="w-4 h-4" />
+								Exportar CSV
+							</button>
+						)}
+					</div>
 				</div>
 
 				{/* Loading */}
