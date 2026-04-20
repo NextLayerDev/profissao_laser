@@ -266,6 +266,11 @@ export function SalesTable({
 											>
 												{sale.product}
 											</span>
+											{sale.subscriptionMonth > 1 && (
+												<span className="block text-xs text-violet-400 mt-0.5">
+													{sale.subscriptionMonth}ª cobrança
+												</span>
+											)}
 										</td>
 
 										{/* Valor */}

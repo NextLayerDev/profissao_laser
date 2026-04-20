@@ -49,7 +49,7 @@ export function getRevenueGrouped(
 ): { key: string; label: string; revenue: number }[] {
 	const grouped: Record<string, number> = {};
 	for (const sale of sales) {
-		if (sale.status !== 'paid') continue;
+		if (sale.status !== 'succeeded') continue;
 		const key = getGroupKey(new Date(sale.date), groupBy);
 		grouped[key] = (grouped[key] ?? 0) + sale.amount;
 	}
@@ -75,10 +75,8 @@ export function getRevenueGrouped(
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-	paid: { label: 'Pago', color: '#22c55e' },
-	pending: { label: 'Pendente', color: '#eab308' },
-	refunded: { label: 'Reembolsado', color: '#ef4444' },
-	canceled: { label: 'Cancelado', color: '#6b7280' },
+	succeeded: { label: 'Pago', color: '#22c55e' },
+	reembolsado: { label: 'Reembolsado', color: '#ef4444' },
 };
 
 export function getSalesByStatus(sales: Sales[]): {
@@ -109,7 +107,7 @@ export function getTopProducts(
 	sales: Sales[],
 	n = 6,
 ): { product: string; revenue: number; count: number }[] {
-	const paidSales = sales.filter((s) => s.status === 'paid');
+	const paidSales = sales.filter((s) => s.status === 'succeeded');
 	const grouped: Record<string, { revenue: number; count: number }> = {};
 
 	for (const sale of paidSales) {
@@ -133,7 +131,7 @@ export function getSummaryKPIs(sales: Sales[]): {
 	paidRate: number;
 	currency: string;
 } {
-	const paidSales = sales.filter((s) => s.status === 'paid');
+	const paidSales = sales.filter((s) => s.status === 'succeeded');
 	const totalRevenue = paidSales.reduce((acc, s) => acc + s.amount, 0);
 	const totalSales = sales.length;
 	const avgTicket = paidSales.length > 0 ? totalRevenue / paidSales.length : 0;

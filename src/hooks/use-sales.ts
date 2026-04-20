@@ -1,13 +1,17 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
 	type GetRecurringParams,
+	type GetRefundsParams,
 	getRecurringSales,
+	getRefunds,
 	getSales,
 	getSalesAttempts,
+	type RefundSalePayload,
+	refundSale,
 } from '@/services/sales';
-import type { RecurringSubscription, Sales } from '@/types/sales';
+import type { RecurringSubscription, Refund, Sales } from '@/types/sales';
 
 export function useSales() {
 	const { data, error, isLoading } = useQuery({
@@ -46,4 +50,30 @@ export function useRecurringSales(params: GetRecurringParams = {}) {
 		error,
 		isLoading,
 	};
+}
+
+export function useRefunds(params: GetRefundsParams = {}) {
+	const { data, error, isLoading, isFetching } = useQuery({
+		queryKey: ['sales-refunds', params],
+		queryFn: () => getRefunds(params),
+	});
+
+	return {
+		refunds: (data as Refund[]) ?? [],
+		error,
+		isLoading,
+		isFetching,
+	};
+}
+
+export function useRefundSale() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (payload: RefundSalePayload) => refundSale(payload),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ['sales'] });
+			qc.invalidateQueries({ queryKey: ['sales-attempts'] });
+			qc.invalidateQueries({ queryKey: ['sales-refunds'] });
+		},
+	});
 }
