@@ -8,10 +8,12 @@ import {
 	ShieldOff,
 	Trash2,
 	Users,
+	XCircle,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { BlockCustomerModal } from '@/components/alunos/block-customer-modal';
+import { CancelSubscriptionModal } from '@/components/alunos/cancel-subscription-modal';
 import { ChangePasswordModal } from '@/components/alunos/change-password-modal';
 import { AdminChangePlanModal } from '@/components/alunos/change-plan-modal';
 import { DeleteCustomerModal } from '@/components/alunos/delete-customer-modal';
@@ -117,6 +119,7 @@ export default function AlunosPage() {
 	const [blockTarget, setBlockTarget] = useState<Customer | null>(null);
 	const [passwordTarget, setPasswordTarget] = useState<Customer | null>(null);
 	const [planTarget, setPlanTarget] = useState<Customer | null>(null);
+	const [cancelTarget, setCancelTarget] = useState<Customer | null>(null);
 	const [search, setSearch] = useState('');
 
 	const filteredCustomers = customers.filter((c) =>
@@ -242,6 +245,14 @@ export default function AlunosPage() {
 												</button>
 												<button
 													type="button"
+													onClick={() => setCancelTarget(customer)}
+													className="p-2 text-slate-500 dark:text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+													title="Cancelar assinatura"
+												>
+													<XCircle className="w-4 h-4" />
+												</button>
+												<button
+													type="button"
 													onClick={() => setBlockTarget(customer)}
 													className="p-2 text-slate-500 dark:text-gray-400 hover:text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors"
 													title={customer.banned ? 'Desbloquear' : 'Bloquear'}
@@ -278,6 +289,11 @@ export default function AlunosPage() {
 				customer={planTarget}
 				isOpen={!!planTarget}
 				onClose={() => setPlanTarget(null)}
+			/>
+			<CancelSubscriptionModal
+				customer={cancelTarget}
+				isOpen={!!cancelTarget}
+				onClose={() => setCancelTarget(null)}
 			/>
 			<DeleteCustomerModal
 				customer={deleteTarget}
