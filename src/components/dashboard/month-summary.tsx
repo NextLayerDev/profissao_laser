@@ -21,7 +21,7 @@ function getMonthRange(year: number, month: number) {
 }
 
 export function MonthSummary() {
-	const { sales } = useSales();
+	const { sales, isLoading } = useSales();
 	const { canPrice } = usePermissions();
 
 	const now = new Date();
@@ -76,41 +76,58 @@ export function MonthSummary() {
 					Total do Mês
 				</h3>
 				<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl border border-slate-200 dark:border-gray-800/50 p-5 shadow-sm dark:shadow-none">
-					<div className="flex items-center justify-between mb-3">
-						<span className="text-sm font-semibold text-slate-900 dark:text-white">
-							{monthCapitalized}
-						</span>
-						<div className="p-2 bg-blue-700 rounded-xl">
-							{isPositive ? (
-								<TrendingUp className="w-4 h-4 text-white" />
-							) : (
-								<TrendingDown className="w-4 h-4 text-white" />
-							)}
+					{isLoading ? (
+						<div className="animate-pulse">
+							<div className="flex items-center justify-between mb-3">
+								<div className="h-4 w-20 bg-slate-200 dark:bg-gray-700 rounded" />
+								<div className="w-8 h-8 bg-slate-200 dark:bg-gray-700 rounded-xl" />
+							</div>
+							<div className="h-8 w-32 bg-slate-200 dark:bg-gray-700 rounded mb-1" />
+							<div className="h-3 w-28 bg-slate-200 dark:bg-gray-700 rounded mb-4" />
+							<div className="flex items-center justify-between">
+								<div className="h-3 w-16 bg-slate-200 dark:bg-gray-700 rounded" />
+								<div className="h-3 w-24 bg-slate-200 dark:bg-gray-700 rounded" />
+							</div>
 						</div>
-					</div>
-					{canPrice && (
+					) : (
 						<>
-							<div className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
-								{formatCurrency(curRevenue, currency)}
-							</div>
-							<p
-								className={`text-xs mb-4 ${isPositive ? 'text-emerald-500' : 'text-red-400'}`}
-							>
-								{isPositive ? '+' : ''}
-								{change.toFixed(1)}% vs mês anterior
-							</p>
-							<div className="flex items-center justify-between text-xs text-slate-500 dark:text-gray-500">
-								<span>{curSales.length} vendas</span>
-								<span>
-									{formatCurrency(avgTicket, currency)} / ticket médio
+							<div className="flex items-center justify-between mb-3">
+								<span className="text-sm font-semibold text-slate-900 dark:text-white">
+									{monthCapitalized}
 								</span>
+								<div className="p-2 bg-blue-700 rounded-xl">
+									{isPositive ? (
+										<TrendingUp className="w-4 h-4 text-white" />
+									) : (
+										<TrendingDown className="w-4 h-4 text-white" />
+									)}
+								</div>
 							</div>
+							{canPrice && (
+								<>
+									<div className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
+										{formatCurrency(curRevenue, currency)}
+									</div>
+									<p
+										className={`text-xs mb-4 ${isPositive ? 'text-emerald-500' : 'text-red-400'}`}
+									>
+										{isPositive ? '+' : ''}
+										{change.toFixed(1)}% vs mês anterior
+									</p>
+									<div className="flex items-center justify-between text-xs text-slate-500 dark:text-gray-500">
+										<span>{curSales.length} vendas</span>
+										<span>
+											{formatCurrency(avgTicket, currency)} / ticket médio
+										</span>
+									</div>
+								</>
+							)}
+							{!canPrice && (
+								<div className="text-2xl font-bold text-slate-900 dark:text-white">
+									{curSales.length} vendas
+								</div>
+							)}
 						</>
-					)}
-					{!canPrice && (
-						<div className="text-2xl font-bold text-slate-900 dark:text-white">
-							{curSales.length} vendas
-						</div>
 					)}
 				</div>
 			</div>
@@ -121,42 +138,66 @@ export function MonthSummary() {
 					Produtos Mais Vendidos
 				</h3>
 				<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl border border-slate-200 dark:border-gray-800/50 p-5 shadow-sm dark:shadow-none space-y-4">
-					{topProducts.length === 0 && (
-						<p className="text-sm text-slate-500 dark:text-gray-500">
-							Sem dados disponíveis.
-						</p>
-					)}
-					{topProducts.map(([product, revenue], idx) => {
-						const pct = (revenue / maxRevenue) * 100;
-						return (
-							<div key={product}>
-								<div className="flex items-center justify-between mb-1.5">
-									<span
-										className="text-sm text-slate-700 dark:text-gray-300 truncate max-w-[160px]"
-										title={product}
-									>
-										{product}
-									</span>
-									<div className="text-right shrink-0 ml-2 flex items-center gap-1.5">
-										{canPrice && (
-											<span className="text-sm font-semibold text-slate-900 dark:text-white">
-												{formatCurrency(revenue, currency)}
-											</span>
-										)}
-										<span className="text-xs text-slate-400 dark:text-gray-600">
-											{pct.toFixed(0)}%
-										</span>
+					{isLoading ? (
+						<div className="animate-pulse space-y-4">
+							{[80, 60, 45, 30, 20].map((w, i) => (
+								<div key={i}>
+									<div className="flex items-center justify-between mb-1.5">
+										<div
+											className="h-3.5 bg-slate-200 dark:bg-gray-700 rounded"
+											style={{ width: `${w}%` }}
+										/>
+										<div className="h-3.5 w-12 bg-slate-200 dark:bg-gray-700 rounded ml-2" />
+									</div>
+									<div className="h-1.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+										<div
+											className="h-full bg-slate-200 dark:bg-gray-700 rounded-full"
+											style={{ width: `${w}%` }}
+										/>
 									</div>
 								</div>
-								<div className="h-1.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
-									<div
-										className={`h-full ${BAR_COLORS[idx]} rounded-full transition-all duration-500`}
-										style={{ width: `${pct}%` }}
-									/>
-								</div>
-							</div>
-						);
-					})}
+							))}
+						</div>
+					) : (
+						<>
+							{topProducts.length === 0 && (
+								<p className="text-sm text-slate-500 dark:text-gray-500">
+									Sem dados disponíveis.
+								</p>
+							)}
+							{topProducts.map(([product, revenue], idx) => {
+								const pct = (revenue / maxRevenue) * 100;
+								return (
+									<div key={product}>
+										<div className="flex items-center justify-between mb-1.5">
+											<span
+												className="text-sm text-slate-700 dark:text-gray-300 truncate max-w-[160px]"
+												title={product}
+											>
+												{product}
+											</span>
+											<div className="text-right shrink-0 ml-2 flex items-center gap-1.5">
+												{canPrice && (
+													<span className="text-sm font-semibold text-slate-900 dark:text-white">
+														{formatCurrency(revenue, currency)}
+													</span>
+												)}
+												<span className="text-xs text-slate-400 dark:text-gray-600">
+													{pct.toFixed(0)}%
+												</span>
+											</div>
+										</div>
+										<div className="h-1.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+											<div
+												className={`h-full ${BAR_COLORS[idx]} rounded-full transition-all duration-500`}
+												style={{ width: `${pct}%` }}
+											/>
+										</div>
+									</div>
+								);
+							})}
+						</>
+					)}
 				</div>
 			</div>
 		</div>
