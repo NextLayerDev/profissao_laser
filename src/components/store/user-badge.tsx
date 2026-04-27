@@ -47,7 +47,7 @@ export function UserBadge() {
 		return (
 			<Link
 				href={loginHref}
-				className="flex items-center gap-2 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 hover:border-violet-500/50 px-3 py-1.5 rounded-xl text-sm text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-all duration-200 shadow-sm dark:shadow-none"
+				className="flex items-center gap-2 bg-slate-100 dark:bg-transparent border border-slate-200 dark:border-transparent hover:bg-slate-200 dark:hover:bg-white/10 px-3 py-1.5 rounded-lg text-sm text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-all duration-200"
 			>
 				<User className="w-4 h-4" />
 				Entrar
@@ -67,7 +67,7 @@ export function UserBadge() {
 	return (
 		<>
 			<div className="flex items-center gap-2">
-				<div className="flex items-center gap-2 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 px-3 py-1.5 rounded-xl shadow-sm dark:shadow-none">
+				<div className="flex items-center gap-2 bg-slate-100 dark:bg-transparent border border-slate-200 dark:border-transparent px-3 py-1.5 rounded-lg">
 					<span className="w-6 h-6 rounded-full bg-violet-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
 						{initials}
 					</span>
@@ -80,7 +80,7 @@ export function UserBadge() {
 						type="button"
 						onClick={() => setShowChangePassword(true)}
 						title="Trocar senha"
-						className="p-1.5 rounded-lg text-slate-500 dark:text-gray-500 hover:text-violet-400 hover:bg-violet-500/10 transition-all duration-200 cursor-pointer"
+						className="p-1.5 rounded-lg text-slate-500 dark:text-gray-400 hover:text-violet-400 dark:hover:text-violet-300 hover:bg-violet-500/10 transition-all duration-200 cursor-pointer"
 					>
 						<KeyRound className="w-4 h-4" />
 					</button>
@@ -89,7 +89,7 @@ export function UserBadge() {
 					type="button"
 					onClick={handleLogout}
 					title="Sair"
-					className="p-1.5 rounded-lg text-slate-500 dark:text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 cursor-pointer"
+					className="p-1.5 rounded-lg text-slate-500 dark:text-gray-400 hover:text-red-400 dark:hover:text-red-300 hover:bg-red-500/10 transition-all duration-200 cursor-pointer"
 				>
 					<LogOut className="w-4 h-4" />
 				</button>

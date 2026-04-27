@@ -24,6 +24,10 @@ export function SalesKpiCards({ kpiData, isLoading }: Props) {
 			value: isLoading ? '...' : String(kpiData.totalSales),
 			icon: ShoppingCart,
 			iconBg: 'bg-blue-600',
+			gradient:
+				'from-blue-100 to-white dark:from-blue-600/30 dark:to-[#1a1a1d]',
+			bgIcon: ShoppingCart,
+			bgIconColor: 'text-blue-400',
 			desc: 'Todas as transações',
 		},
 		{
@@ -33,6 +37,10 @@ export function SalesKpiCards({ kpiData, isLoading }: Props) {
 				: formatCurrency(kpiData.totalRevenue, kpiData.currency),
 			icon: DollarSign,
 			iconBg: 'bg-violet-600',
+			gradient:
+				'from-violet-100 to-white dark:from-violet-600/30 dark:to-[#1a1a1d]',
+			bgIcon: DollarSign,
+			bgIconColor: 'text-violet-400',
 			desc: 'Vendas pagas no período',
 		},
 		{
@@ -42,6 +50,10 @@ export function SalesKpiCards({ kpiData, isLoading }: Props) {
 				: formatCurrency(kpiData.avgTicket, kpiData.currency),
 			icon: TrendingUp,
 			iconBg: 'bg-emerald-600',
+			gradient:
+				'from-emerald-100 to-white dark:from-emerald-600/30 dark:to-[#1a1a1d]',
+			bgIcon: TrendingUp,
+			bgIconColor: 'text-emerald-400',
 			desc: 'Por venda aprovada',
 		},
 		{
@@ -49,6 +61,10 @@ export function SalesKpiCards({ kpiData, isLoading }: Props) {
 			value: isLoading ? '...' : String(kpiData.uniqueCustomers),
 			icon: Users,
 			iconBg: 'bg-amber-600',
+			gradient:
+				'from-amber-100 to-white dark:from-amber-600/30 dark:to-[#1a1a1d]',
+			bgIcon: Users,
+			bgIconColor: 'text-amber-400',
 			desc: 'E-mails distintos',
 		},
 	];
@@ -58,8 +74,12 @@ export function SalesKpiCards({ kpiData, isLoading }: Props) {
 			{cards.map((card) => (
 				<div
 					key={card.title}
-					className="bg-white dark:bg-[#1a1a1d] rounded-2xl p-6 border border-slate-200 dark:border-gray-800/50 shadow-sm dark:shadow-none"
+					className={`relative overflow-hidden bg-linear-to-br ${card.gradient} rounded-2xl p-6 border border-slate-200 dark:border-gray-800/50 shadow-sm dark:shadow-none`}
 				>
+					<card.bgIcon
+						className={`absolute bottom-2 right-3 w-20 h-20 ${card.bgIconColor} opacity-10`}
+						aria-hidden="true"
+					/>
 					<div className="flex items-start justify-between mb-4">
 						<span className="text-slate-600 dark:text-gray-400 text-sm">
 							{card.title}

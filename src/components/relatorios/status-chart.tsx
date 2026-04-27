@@ -22,7 +22,7 @@ export function StatusChart({ sales, isLoading }: Props) {
 	const currency = sales[0]?.currency ?? 'BRL';
 
 	return (
-		<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl p-6 border border-slate-200 dark:border-gray-800/50 shadow-sm dark:shadow-none">
+		<div className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-sm rounded-2xl p-6 border border-slate-200 dark:border-white/8 shadow-sm dark:shadow-none">
 			<h3 className="text-sm font-semibold text-slate-600 dark:text-gray-400 uppercase tracking-wider mb-6">
 				Vendas por Status
 			</h3>

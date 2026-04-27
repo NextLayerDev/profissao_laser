@@ -57,10 +57,10 @@ export function SalesFilters({
 	clearAllFilters,
 }: Props) {
 	return (
-		<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl p-4 border border-slate-200 dark:border-gray-800/50 shadow-sm dark:shadow-none">
+		<div className="p-4 border-b border-slate-200 dark:border-white/10">
 			<div className="flex flex-wrap items-center gap-3">
 				{/* Search */}
-				<div className="relative flex-1 min-w-[220px]">
+				<div className="relative flex-1 min-w-55">
 					<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-gray-500" />
 					<input
 						type="text"
@@ -91,7 +91,7 @@ export function SalesFilters({
 							type="date"
 							value={customFrom}
 							onChange={(e) => setCustomFrom(e.target.value)}
-							className={`${selectClass} w-[150px]`}
+							className={`${selectClass} w-37.5`}
 						/>
 						<span className="text-slate-400 dark:text-gray-500 text-sm">
 							até
@@ -100,7 +100,7 @@ export function SalesFilters({
 							type="date"
 							value={customTo}
 							onChange={(e) => setCustomTo(e.target.value)}
-							className={`${selectClass} w-[150px]`}
+							className={`${selectClass} w-37.5`}
 						/>
 					</>
 				)}
@@ -109,7 +109,7 @@ export function SalesFilters({
 				<select
 					value={selectedProduct}
 					onChange={(e) => setSelectedProduct(e.target.value)}
-					className={`${selectClass} max-w-[220px]`}
+					className={`${selectClass} max-w-55`}
 				>
 					<option value="">Todos os produtos</option>
 					{uniqueProducts.map((p) => (

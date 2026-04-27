@@ -320,13 +320,13 @@ export function CommunitySection() {
 	return (
 		<div className="space-y-4">
 			{/* Tabs */}
-			<div className="flex gap-2 p-1 bg-slate-100 dark:bg-[#1a1a1d] rounded-xl border border-slate-200 dark:border-gray-800 w-fit">
+			<div className="flex gap-2 p-1 bg-white/60 dark:bg-white/[0.03] backdrop-blur-sm rounded-xl border border-slate-200 dark:border-white/8 w-fit">
 				<button
 					type="button"
 					onClick={() => setActiveAdminTab('channels')}
 					className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
 						activeAdminTab === 'channels'
-							? 'bg-white dark:bg-[#252528] text-slate-900 dark:text-white shadow-sm'
+							? 'bg-white/80 dark:bg-white/8 text-slate-900 dark:text-white shadow-sm'
 							: 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
 					}`}
 				>
@@ -338,7 +338,7 @@ export function CommunitySection() {
 					onClick={() => setActiveAdminTab('events')}
 					className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
 						activeAdminTab === 'events'
-							? 'bg-white dark:bg-[#252528] text-slate-900 dark:text-white shadow-sm'
+							? 'bg-white/80 dark:bg-white/8 text-slate-900 dark:text-white shadow-sm'
 							: 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
 					}`}
 				>
@@ -350,7 +350,7 @@ export function CommunitySection() {
 					onClick={() => setActiveAdminTab('projects')}
 					className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
 						activeAdminTab === 'projects'
-							? 'bg-white dark:bg-[#252528] text-slate-900 dark:text-white shadow-sm'
+							? 'bg-white/80 dark:bg-white/8 text-slate-900 dark:text-white shadow-sm'
 							: 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
 					}`}
 				>
@@ -362,7 +362,7 @@ export function CommunitySection() {
 					onClick={() => setActiveAdminTab('vectors')}
 					className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
 						activeAdminTab === 'vectors'
-							? 'bg-white dark:bg-[#252528] text-slate-900 dark:text-white shadow-sm'
+							? 'bg-white/80 dark:bg-white/8 text-slate-900 dark:text-white shadow-sm'
 							: 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
 					}`}
 				>
@@ -378,9 +378,9 @@ export function CommunitySection() {
 			) : activeAdminTab === 'events' ? (
 				<EventsAdminSection />
 			) : (
-				<div className="flex gap-6 h-[calc(100vh-260px)] min-h-[400px]">
+				<div className="flex gap-6 h-[calc(100vh-260px)] min-h-100">
 					{/* Sidebar - Canais */}
-					<aside className="w-64 bg-white dark:bg-[#1a1a1d] rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm dark:shadow-none shrink-0 overflow-hidden flex flex-col">
+					<aside className="w-64 bg-white/60 dark:bg-white/[0.03] backdrop-blur-sm rounded-xl border border-slate-200 dark:border-white/8 shadow-sm dark:shadow-none shrink-0 overflow-hidden flex flex-col">
 						<div className="p-4 border-b border-slate-200 dark:border-gray-800 flex items-center justify-between">
 							<h3 className="font-semibold text-slate-900 dark:text-white">
 								Canais
@@ -486,7 +486,7 @@ export function CommunitySection() {
 					</aside>
 
 					{/* Área de mensagens */}
-					<div className="flex-1 bg-white dark:bg-[#1a1a1d] rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm dark:shadow-none flex flex-col overflow-hidden">
+					<div className="flex-1 bg-white/60 dark:bg-white/[0.03] backdrop-blur-sm rounded-xl border border-slate-200 dark:border-white/8 shadow-sm dark:shadow-none flex flex-col overflow-hidden">
 						{selectedChannelId ? (
 							<>
 								<div className="p-4 border-b border-slate-200 dark:border-gray-800">
@@ -675,7 +675,7 @@ export function CommunitySection() {
 														}`}
 													>
 														{msg.content && (
-															<p className="whitespace-pre-wrap break-words">
+															<p className="whitespace-pre-wrap wrap-break-word">
 																{highlightSearchText(
 																	msg.content,
 																	chatSearchQuery.trim(),
@@ -732,7 +732,7 @@ export function CommunitySection() {
 											<Paperclip className="h-5 w-5" />
 										</button>
 										{messageFile && (
-											<span className="flex items-center gap-1 text-xs text-slate-500 dark:text-gray-400 max-w-[140px]">
+											<span className="flex items-center gap-1 text-xs text-slate-500 dark:text-gray-400 max-w-35">
 												<span className="truncate">{messageFile.name}</span>
 												<button
 													type="button"

@@ -140,7 +140,7 @@ export function AppointmentsCalendar({
 								key={d.date}
 								type="button"
 								onClick={() => onDayClick?.(d.date)}
-								className={`min-h-[3rem] rounded-lg text-sm transition-colors ${
+								className={`min-h-12 rounded-lg text-sm transition-colors ${
 									d.isCurrentMonth
 										? 'text-slate-900 dark:text-white hover:bg-violet-500/20'
 										: 'text-slate-400 dark:text-gray-600'

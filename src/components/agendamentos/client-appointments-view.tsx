@@ -138,7 +138,7 @@ export function ClientAppointmentsView({
 	return (
 		<div className="space-y-6">
 			<div className="flex flex-col lg:flex-row gap-6">
-				<div className="lg:w-80 flex-shrink-0">
+				<div className="lg:w-80 shrink-0">
 					<AppointmentsCalendar
 						appointments={appointments ?? []}
 						selectedDate={selectedDate}
@@ -212,7 +212,7 @@ export function ClientAppointmentsView({
 										</p>
 									</div>
 									<span
-										className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${
+										className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0 ${
 											APPOINTMENT_STATUS_STYLES[apt.status] ??
 											'bg-slate-500/10 text-slate-400'
 										}`}

@@ -1,80 +1,48 @@
 'use client';
 
-import { ChevronDown, Store } from 'lucide-react';
+import { BookOpen, Store } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { ChatButton } from '@/components/dashboard/chat-button';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { usePermissions } from '@/hooks/use-permissions';
-import { navItems } from '@/utils/constants/navigation';
+
+function Separator() {
+	return <div className="w-px h-5 bg-slate-200 dark:bg-white/10 shrink-0" />;
+}
 
 export function Header() {
-	const pathname = usePathname();
-	const { canAdmin, canPrice } = usePermissions();
-
-	const visibleNavItems = navItems.filter((item) => {
-		if (item.name === 'Acessos' || item.name === 'Alunos') return canAdmin;
-		if (
-			item.name === 'Vendas' ||
-			item.name === 'Relatórios' ||
-			item.name === 'Links'
-		)
-			return canPrice;
-		return true;
-	});
-
 	return (
-		<header className="px-8 pt-8 pb-4">
-			<div className="flex items-center justify-between mb-6">
-				<div>
-					<h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-						Gerenciamento
-					</h1>
-					<p className="text-slate-600 dark:text-gray-400 mt-1">
-						Controle completo do seu negócio digital
-					</p>
-				</div>
-				<div className="flex items-center gap-3">
-					<ChatButton variant="inline" />
-					<ThemeToggle />
-					<Link
-						href="/store"
-						className="flex items-center gap-2 bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 hover:border-violet-500/50 px-3 py-1.5 rounded-xl text-sm text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-all duration-200"
-					>
-						<Store className="w-4 h-4" />
-						Ver loja
-					</Link>
-					<Link
-						href="/course"
-						className="flex items-center gap-2 bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 hover:border-violet-500/50 px-3 py-1.5 rounded-xl text-sm text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-all duration-200"
-					>
-						<Store className="w-4 h-4" />
-						Ver cursos
-					</Link>
-					<UserBadge />
-				</div>
+		<header className="h-[64px] px-8 flex items-center justify-between border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-[#040405]/90 backdrop-blur-sm sticky top-0 z-30">
+			<div>
+				<h1 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white leading-none">
+					Gerenciamento
+				</h1>
+				<p className="text-slate-500 dark:text-gray-500 text-xs mt-0.5">
+					Controle completo do seu negócio digital
+				</p>
 			</div>
-
-			<nav className="flex items-center gap-2 bg-slate-100 dark:bg-[#1a1a1d] p-1.5 rounded-2xl border border-slate-200 dark:border-gray-800/50">
-				{visibleNavItems.map((item) => (
-					<Link
-						key={item.name}
-						href={item.href}
-						className={`flex flex-1 items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-							pathname === item.href
-								? 'bg-white dark:bg-[#252528] text-slate-900 dark:text-white shadow-lg'
-								: 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-[#252528]/50'
-						}`}
-					>
-						<item.icon className="w-4 h-4" />
-						{item.name}
-						{item.hasDropdown && (
-							<ChevronDown className="w-3 h-3 ml-1 opacity-60" />
-						)}
-					</Link>
-				))}
-			</nav>
+			<div className="flex items-center gap-2">
+				<ChatButton variant="inline" />
+				<Separator />
+				<ThemeToggle />
+				<Separator />
+				<Link
+					href="/store"
+					className="h-9 flex items-center gap-2 bg-linear-to-br from-slate-100 to-slate-200 dark:from-white/8 dark:to-white/3 border border-slate-200 dark:border-white/10 hover:from-blue-50 hover:to-slate-100 dark:hover:from-white/12 dark:hover:to-white/6 px-3 rounded-lg text-sm text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-all duration-200 shadow-sm dark:shadow-none"
+				>
+					<Store className="w-4 h-4" />
+					Ver loja
+				</Link>
+				<Link
+					href="/course"
+					className="h-9 flex items-center gap-2 bg-linear-to-br from-slate-100 to-slate-200 dark:from-white/8 dark:to-white/3 border border-slate-200 dark:border-white/10 hover:from-blue-50 hover:to-slate-100 dark:hover:from-white/12 dark:hover:to-white/6 px-3 rounded-lg text-sm text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-all duration-200 shadow-sm dark:shadow-none"
+				>
+					<BookOpen className="w-4 h-4" />
+					Ver cursos
+				</Link>
+				<Separator />
+				<UserBadge />
+			</div>
 		</header>
 	);
 }

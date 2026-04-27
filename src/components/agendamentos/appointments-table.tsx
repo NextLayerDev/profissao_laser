@@ -225,7 +225,7 @@ export function AppointmentsTable({
 
 			{viewMode === 'calendario' && (
 				<div className="flex flex-col lg:flex-row gap-6">
-					<div className="flex-shrink-0">
+					<div className="shrink-0">
 						<AppointmentsCalendar
 							appointments={appointments ?? []}
 							selectedDate={selectedDate}
@@ -293,7 +293,7 @@ export function AppointmentsTable({
 																<UserCheck className="w-4 h-4" />
 															</button>
 															{assignDropdownId === apt.id && (
-																<div className="absolute right-0 top-full mt-1 z-50 min-w-[160px] rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] shadow-lg py-1">
+																<div className="absolute right-0 top-full mt-1 z-50 min-w-40 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] shadow-lg py-1">
 																	{currentUser?.sub && (
 																		<button
 																			type="button"

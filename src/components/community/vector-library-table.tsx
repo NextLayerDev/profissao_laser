@@ -166,12 +166,12 @@ export function VectorLibraryTable({
 											createPortal(
 												<>
 													<div
-														className="fixed inset-0 z-[9998]"
+														className="fixed inset-0 z-9998"
 														aria-hidden
 														onClick={() => setOpenMenuId(null)}
 													/>
 													<div
-														className="fixed z-[9999] py-1 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl shadow-lg min-w-[140px]"
+														className="fixed z-9999 py-1 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl shadow-lg min-w-35"
 														style={{
 															top: menuPosition.top,
 															left: menuPosition.left,
@@ -269,12 +269,12 @@ export function VectorLibraryTable({
 													createPortal(
 														<>
 															<div
-																className="fixed inset-0 z-[9998]"
+																className="fixed inset-0 z-9998"
 																aria-hidden
 																onClick={() => setOpenMenuId(null)}
 															/>
 															<div
-																className="fixed z-[9999] py-1 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl shadow-lg min-w-[140px]"
+																className="fixed z-9999 py-1 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl shadow-lg min-w-35"
 																style={{
 																	top: menuPosition.top,
 																	left: menuPosition.left,

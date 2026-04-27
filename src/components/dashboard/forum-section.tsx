@@ -189,7 +189,7 @@ export function ForumSection() {
 				Dúvidas do Fórum
 			</h3>
 
-			<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl border border-slate-200 dark:border-gray-800/50 shadow-sm dark:shadow-none overflow-hidden">
+			<div className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-sm rounded-2xl border border-slate-200 dark:border-white/8 shadow-sm dark:shadow-none overflow-hidden">
 				{isLoading ? (
 					<div className="flex justify-center py-10">
 						<Loader2 className="w-5 h-5 text-violet-500 animate-spin" />

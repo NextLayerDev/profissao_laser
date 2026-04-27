@@ -113,14 +113,14 @@ export function ProjectsAdminSection() {
 	};
 
 	return (
-		<div className="flex flex-col h-[calc(100vh-200px)] min-h-[400px]">
+		<div className="flex flex-col h-[calc(100vh-200px)] min-h-100">
 			<div className="flex items-center justify-between mb-4">
 				<h3 className="font-semibold text-slate-900 dark:text-white">
 					Vitrine de Projetos
 				</h3>
 			</div>
 
-			<div className="flex-1 overflow-y-auto bg-white dark:bg-[#1a1a1d] rounded-xl border border-slate-200 dark:border-gray-800">
+			<div className="flex-1 overflow-y-auto bg-white/60 dark:bg-white/[0.03] backdrop-blur-sm rounded-xl border border-slate-200 dark:border-white/8">
 				{projectsLoading ? (
 					<div className="flex justify-center py-16">
 						<Loader2 className="h-8 w-8 text-violet-500 animate-spin" />
