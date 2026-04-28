@@ -68,7 +68,7 @@ export default function AgendamentosPage() {
 
 	if (isAdmin === null) {
 		return (
-			<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] flex items-center justify-center">
+			<div className="min-h-screen flex items-center justify-center">
 				<div className="text-slate-600 dark:text-gray-400">A carregar...</div>
 			</div>
 		);
@@ -76,7 +76,7 @@ export default function AgendamentosPage() {
 
 	if (isAdmin) {
 		return (
-			<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] text-slate-900 dark:text-white font-sans">
+			<div className="min-h-screen text-slate-900 dark:text-white">
 				<Header />
 				<main className="px-8 py-6">
 					<div className="mb-6">
@@ -95,7 +95,7 @@ export default function AgendamentosPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] text-slate-900 dark:text-white font-sans">
+		<div className="min-h-screen text-slate-900 dark:text-white">
 			<CustomerHeader />
 			<main className="max-w-5xl mx-auto px-6 py-10">
 				<div className="mb-8">

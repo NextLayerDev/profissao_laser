@@ -26,6 +26,7 @@ interface CheckoutConfirmButtonProps {
 	phone?: string;
 	ownershipStatus: OwnershipStatus;
 	isLoadingOwnership?: boolean;
+	isCourseOnly?: boolean;
 }
 
 export function CheckoutConfirmButton({
@@ -34,8 +35,9 @@ export function CheckoutConfirmButton({
 	phone,
 	ownershipStatus,
 	isLoadingOwnership,
+	isCourseOnly,
 }: CheckoutConfirmButtonProps) {
-	const { mutate: purchase, isPending } = usePurchase();
+	const { mutate: purchase, isPending } = usePurchase(isCourseOnly);
 	const { mutate: upgrade, isPending: isUpgrading } = useUpgradeSubscription();
 	const { mutate: downgrade, isPending: isDowngrading } =
 		useDowngradeSubscription();

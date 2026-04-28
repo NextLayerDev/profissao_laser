@@ -15,8 +15,8 @@ import {
 	Zap,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import {
 	useProvisioningJob,
@@ -118,8 +118,17 @@ function copyToClipboard(text: string) {
 export default function CheckoutSuccessPage() {
 	const searchParams = useSearchParams();
 	const sessionId = searchParams.get('session_id');
+	const router = useRouter();
 	const [showSystemPassword, setShowSystemPassword] = useState(false);
 	const [showCoursePassword, setShowCoursePassword] = useState(false);
+
+	useEffect(() => {
+		const purchaseType = sessionStorage.getItem('purchase_type');
+		if (purchaseType === 'course_only') {
+			sessionStorage.removeItem('purchase_type');
+			router.replace('/course');
+		}
+	}, [router]);
 
 	const {
 		data: jobData,

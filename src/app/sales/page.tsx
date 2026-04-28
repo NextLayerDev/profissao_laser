@@ -34,7 +34,7 @@ export default function Vendas() {
 	}
 
 	return (
-		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] text-slate-900 dark:text-white font-sans">
+		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
 
 			<main className="px-8 py-6 space-y-6">
@@ -98,47 +98,47 @@ export default function Vendas() {
 						{/* KPI Cards */}
 						<SalesKpiCards kpiData={filters.kpiData} isLoading={false} />
 
-						{/* Filters */}
-						<SalesFilters
-							searchQuery={filters.searchQuery}
-							setSearchQuery={filters.setSearchQuery}
-							periodPreset={filters.periodPreset}
-							setPeriodPreset={filters.setPeriodPreset}
-							customFrom={filters.customFrom}
-							setCustomFrom={filters.setCustomFrom}
-							customTo={filters.customTo}
-							setCustomTo={filters.setCustomTo}
-							selectedProduct={filters.selectedProduct}
-							setSelectedProduct={filters.setSelectedProduct}
-							selectedStatus={filters.selectedStatus}
-							setSelectedStatus={filters.setSelectedStatus}
-							hideTestRecords={filters.hideTestRecords}
-							setHideTestRecords={filters.setHideTestRecords}
-							uniqueProducts={filters.uniqueProducts}
-							uniqueStatuses={filters.uniqueStatuses}
-							hasActiveFilters={filters.hasActiveFilters}
-							clearAllFilters={filters.clearAllFilters}
-						/>
-
-						{/* Table */}
-						<SalesTable
-							sales={filters.paginatedSales}
-							canPrice={canPrice}
-							sortField={filters.sortField}
-							sortDirection={filters.sortDirection}
-							onSort={filters.toggleSort}
-							onRowClick={setSelectedSale}
-							priceVariationMap={filters.priceVariationMap}
-							currentPage={filters.currentPage}
-							totalPages={filters.totalPages}
-							totalItems={filters.sortedSales.length}
-							itemsPerPage={filters.itemsPerPage}
-							paginationRange={filters.paginationRange}
-							onPageChange={filters.setCurrentPage}
-							onItemsPerPageChange={filters.setItemsPerPage}
-							hasActiveFilters={filters.hasActiveFilters}
-							clearAllFilters={filters.clearAllFilters}
-						/>
+						{/* Filters + Table joined */}
+						<div className="rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden bg-white/60 dark:bg-white/[0.03] backdrop-blur-sm shadow-sm dark:shadow-none">
+							<SalesFilters
+								searchQuery={filters.searchQuery}
+								setSearchQuery={filters.setSearchQuery}
+								periodPreset={filters.periodPreset}
+								setPeriodPreset={filters.setPeriodPreset}
+								customFrom={filters.customFrom}
+								setCustomFrom={filters.setCustomFrom}
+								customTo={filters.customTo}
+								setCustomTo={filters.setCustomTo}
+								selectedProduct={filters.selectedProduct}
+								setSelectedProduct={filters.setSelectedProduct}
+								selectedStatus={filters.selectedStatus}
+								setSelectedStatus={filters.setSelectedStatus}
+								hideTestRecords={filters.hideTestRecords}
+								setHideTestRecords={filters.setHideTestRecords}
+								uniqueProducts={filters.uniqueProducts}
+								uniqueStatuses={filters.uniqueStatuses}
+								hasActiveFilters={filters.hasActiveFilters}
+								clearAllFilters={filters.clearAllFilters}
+							/>
+							<SalesTable
+								sales={filters.paginatedSales}
+								canPrice={canPrice}
+								sortField={filters.sortField}
+								sortDirection={filters.sortDirection}
+								onSort={filters.toggleSort}
+								onRowClick={setSelectedSale}
+								priceVariationMap={filters.priceVariationMap}
+								currentPage={filters.currentPage}
+								totalPages={filters.totalPages}
+								totalItems={filters.sortedSales.length}
+								itemsPerPage={filters.itemsPerPage}
+								paginationRange={filters.paginationRange}
+								onPageChange={filters.setCurrentPage}
+								onItemsPerPageChange={filters.setItemsPerPage}
+								hasActiveFilters={filters.hasActiveFilters}
+								clearAllFilters={filters.clearAllFilters}
+							/>
+						</div>
 					</>
 				)}
 

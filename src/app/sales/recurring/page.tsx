@@ -55,7 +55,7 @@ export default function RecurringSales() {
 	if (!canPrice && !permissionsLoading) return null;
 
 	return (
-		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] text-slate-900 dark:text-white font-sans">
+		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
 
 			<main className="px-8 py-6 space-y-6">

@@ -86,11 +86,11 @@ export function SalesTable({
 	return (
 		<div>
 			{/* Table */}
-			<div className="rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden bg-white dark:bg-transparent shadow-sm dark:shadow-none">
+			<div className="overflow-hidden">
 				<div className="overflow-x-auto">
 					<table className="w-full text-sm">
 						<thead>
-							<tr className="bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-left">
+							<tr className="bg-transparent text-slate-400 dark:text-gray-600 text-left">
 								<th className="px-4 py-3 font-medium">
 									<button
 										type="button"
@@ -203,7 +203,7 @@ export function SalesTable({
 									<tr
 										key={sale.id}
 										onClick={() => onRowClick(sale)}
-										className="border-t border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
+										className="border-t border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/2 transition-colors cursor-pointer"
 									>
 										{/* Usuário */}
 										<td className="px-4 py-3">
@@ -261,7 +261,7 @@ export function SalesTable({
 										{/* Produto */}
 										<td className="px-4 py-3 hidden lg:table-cell">
 											<span
-												className="block max-w-[200px] truncate text-slate-900 dark:text-white"
+												className="block max-w-50 truncate text-slate-900 dark:text-white"
 												title={sale.product}
 											>
 												{sale.product}
@@ -332,7 +332,7 @@ export function SalesTable({
 
 			{/* Pagination */}
 			{totalItems > 0 && (
-				<div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 px-1">
+				<div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 border-t border-slate-200 dark:border-white/10">
 					{/* Items per page */}
 					<div className="flex items-center gap-2 text-sm text-slate-600 dark:text-gray-400">
 						<select
@@ -387,7 +387,7 @@ export function SalesTable({
 									key={key}
 									type="button"
 									onClick={() => onPageChange(item as number)}
-									className={`min-w-[32px] h-8 px-2 rounded-lg text-sm font-medium transition-colors ${
+									className={`min-w-8 h-8 px-2 rounded-lg text-sm font-medium transition-colors ${
 										item === currentPage
 											? 'bg-violet-600 text-white'
 											: 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-[#252528]'

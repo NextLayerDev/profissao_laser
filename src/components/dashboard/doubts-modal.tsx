@@ -206,11 +206,11 @@ function ProductCard({
 	).length;
 
 	return (
-		<div className="bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 rounded-xl overflow-hidden">
+		<div className="bg-slate-50 dark:bg-white/2 border border-slate-200 dark:border-white/5 rounded-xl overflow-hidden">
 			<button
 				type="button"
 				onClick={() => setExpanded((e) => !e)}
-				className="w-full flex items-center gap-2 px-4 py-4 text-left hover:bg-slate-100 dark:hover:bg-white/[0.03] transition-colors"
+				className="w-full flex items-center gap-2 px-4 py-4 text-left hover:bg-slate-100 dark:hover:bg-white/3 transition-colors"
 			>
 				{expanded ? (
 					<ChevronDown className="w-5 h-5 text-violet-500 dark:text-violet-400 shrink-0" />

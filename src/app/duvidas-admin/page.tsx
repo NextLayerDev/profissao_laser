@@ -29,7 +29,7 @@ export default function DuvidasAdminPage() {
 
 	if (isAdmin === null) {
 		return (
-			<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] flex items-center justify-center">
+			<div className="min-h-screen flex items-center justify-center">
 				<Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
 			</div>
 		);
@@ -37,7 +37,7 @@ export default function DuvidasAdminPage() {
 
 	if (!isAdmin) {
 		return (
-			<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] flex items-center justify-center">
+			<div className="min-h-screen flex items-center justify-center">
 				<div className="text-center">
 					<MessageSquare className="w-12 h-12 text-slate-400 dark:text-gray-600 mx-auto mb-4" />
 					<p className="text-slate-600 dark:text-gray-400 font-medium mb-2">
@@ -58,7 +58,7 @@ export default function DuvidasAdminPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] text-slate-900 dark:text-white font-sans">
+		<div className="min-h-screen text-slate-900 dark:text-white">
 			{/* Header */}
 			<header className="border-b border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] px-8 py-4">
 				<div className="max-w-5xl mx-auto flex items-center justify-between">

@@ -15,7 +15,7 @@ export default function LinksPage() {
 	const [showCreateGlobal, setShowCreateGlobal] = useState(false);
 
 	return (
-		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] text-slate-900 dark:text-white font-sans">
+		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
 
 			<main className="px-8 py-6">
@@ -29,64 +29,62 @@ export default function LinksPage() {
 				</div>
 
 				{/* Tabs */}
-				<div className="flex items-center gap-2 mb-6">
-					<button
-						type="button"
-						onClick={() => setActiveTab('payment')}
-						className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-							activeTab === 'payment'
-								? 'bg-violet-600 text-white'
-								: 'bg-white dark:bg-[#1a1a1d] text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700 hover:text-slate-900 dark:hover:text-white shadow-sm dark:shadow-none'
-						}`}
-					>
-						<Link2 className="w-4 h-4" />
-						Links de Pagamento
-					</button>
-					<button
-						type="button"
-						onClick={() => setActiveTab('promo')}
-						className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-							activeTab === 'promo'
-								? 'bg-violet-600 text-white'
-								: 'bg-white dark:bg-[#1a1a1d] text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700 hover:text-slate-900 dark:hover:text-white shadow-sm dark:shadow-none'
-						}`}
-					>
-						<Gift className="w-4 h-4" />
-						Links Promocionais
-					</button>
-					<button
-						type="button"
-						onClick={() => setActiveTab('global')}
-						className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-							activeTab === 'global'
-								? 'bg-violet-600 text-white'
-								: 'bg-white dark:bg-[#1a1a1d] text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700 hover:text-slate-900 dark:hover:text-white shadow-sm dark:shadow-none'
-						}`}
-					>
-						<Globe className="w-4 h-4" />
-						Links Globais
-					</button>
+				<div className="flex items-center justify-between mb-6">
+					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={() => setActiveTab('payment')}
+							className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+								activeTab === 'payment'
+									? 'bg-violet-600 text-white'
+									: 'bg-white dark:bg-[#1a1a1d] text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700 hover:text-slate-900 dark:hover:text-white shadow-sm dark:shadow-none'
+							}`}
+						>
+							<Link2 className="w-4 h-4" />
+							Links de Pagamento
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveTab('promo')}
+							className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+								activeTab === 'promo'
+									? 'bg-violet-600 text-white'
+									: 'bg-white dark:bg-[#1a1a1d] text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700 hover:text-slate-900 dark:hover:text-white shadow-sm dark:shadow-none'
+							}`}
+						>
+							<Gift className="w-4 h-4" />
+							Links Promocionais
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveTab('global')}
+							className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+								activeTab === 'global'
+									? 'bg-violet-600 text-white'
+									: 'bg-white dark:bg-[#1a1a1d] text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700 hover:text-slate-900 dark:hover:text-white shadow-sm dark:shadow-none'
+							}`}
+						>
+							<Globe className="w-4 h-4" />
+							Links Globais
+						</button>
+					</div>
+					{activeTab === 'global' && (
+						<button
+							type="button"
+							onClick={() => setShowCreateGlobal(true)}
+							className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-violet-600 hover:bg-violet-700 text-white transition-colors"
+						>
+							<Plus className="w-4 h-4" />
+							Criar Link Global
+						</button>
+					)}
 				</div>
 
 				{/* Content */}
-				<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl border border-slate-200 dark:border-gray-800 shadow-sm dark:shadow-none">
+				<div className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-sm rounded-2xl border border-slate-200 dark:border-white/8 shadow-sm dark:shadow-none">
 					{activeTab === 'payment' && <PaymentLinksTable />}
 					{activeTab === 'promo' && <PromoLinksTable />}
-					{activeTab === 'global' && (
-						<>
-							<div className="flex items-center justify-end px-4 pt-4">
-								<button
-									type="button"
-									onClick={() => setShowCreateGlobal(true)}
-									className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-violet-600 hover:bg-violet-700 text-white transition-colors"
-								>
-									<Plus className="w-4 h-4" />
-									Criar Link Global
-								</button>
-							</div>
-							<GlobalPromoLinksTable />
-						</>
-					)}
+					{activeTab === 'global' && <GlobalPromoLinksTable />}
 				</div>
 			</main>
 

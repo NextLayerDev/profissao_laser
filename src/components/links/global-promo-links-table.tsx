@@ -88,28 +88,28 @@ export function GlobalPromoLinksTable() {
 			<table className="w-full text-sm">
 				<thead>
 					<tr className="border-b border-slate-200 dark:border-gray-800">
-						<th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-gray-500">
+						<th className="text-left py-3 px-4 font-medium text-slate-400 dark:text-gray-600">
 							Desconto
 						</th>
-						<th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-gray-500">
+						<th className="text-left py-3 px-4 font-medium text-slate-400 dark:text-gray-600">
 							Usos
 						</th>
-						<th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-gray-500">
+						<th className="text-left py-3 px-4 font-medium text-slate-400 dark:text-gray-600">
 							Duração
 						</th>
-						<th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-gray-500">
+						<th className="text-left py-3 px-4 font-medium text-slate-400 dark:text-gray-600">
 							Status
 						</th>
-						<th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-gray-500">
+						<th className="text-left py-3 px-4 font-medium text-slate-400 dark:text-gray-600">
 							Criado por
 						</th>
-						<th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-gray-500">
+						<th className="text-left py-3 px-4 font-medium text-slate-400 dark:text-gray-600">
 							Criado em
 						</th>
-						<th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-gray-500">
+						<th className="text-left py-3 px-4 font-medium text-slate-400 dark:text-gray-600">
 							Expira em
 						</th>
-						<th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-gray-500">
+						<th className="text-left py-3 px-4 font-medium text-slate-400 dark:text-gray-600">
 							Ações
 						</th>
 					</tr>

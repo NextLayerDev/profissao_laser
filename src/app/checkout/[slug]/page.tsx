@@ -126,10 +126,12 @@ export default function CheckoutPage() {
 	const isPlanChange =
 		ownershipStatus === 'upgrade' || ownershipStatus === 'downgrade';
 
+	const isCourseOnly = (selectedVariant?.systemClasses ?? []).length === 0;
+
 	const handleAuthenticatedPurchase = useCallback(async () => {
 		if (!selectedVariant) return;
 
-		if (!companyName.trim()) {
+		if (!isCourseOnly && !companyName.trim()) {
 			toast.error('Informe o nome da empresa.');
 			return;
 		}
@@ -148,12 +150,15 @@ export default function CheckoutPage() {
 				companyName: companyName.trim(),
 				phone: phone.trim().replace(/\D/g, ''),
 			});
+			if (isCourseOnly) {
+				sessionStorage.setItem('purchase_type', 'course_only');
+			}
 			window.location.href = checkoutUrl;
 		} catch {
 			toast.error('Erro ao processar compra. Tente novamente.');
 			setIsPurchasing(false);
 		}
-	}, [selectedVariant, companyName, phone.trim, phone.replace]);
+	}, [selectedVariant, companyName, phone.trim, phone.replace, isCourseOnly]);
 
 	if (isLoading) {
 		return (
@@ -239,36 +244,40 @@ export default function CheckoutPage() {
 							</div>
 						)}
 
-						{/* Company name field — hidden for plan changes */}
+						{/* Company name + phone — hidden for plan changes */}
 						{!isPlanChange && (
 							<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl border border-slate-200 dark:border-gray-800 p-6">
 								<div className="flex items-center gap-2 mb-1">
 									<Building2 className="w-4 h-4 text-violet-400" />
 									<h3 className="text-lg font-bold text-slate-900 dark:text-white">
-										Dados da empresa
+										{isCourseOnly ? 'Seus dados' : 'Dados da empresa'}
 									</h3>
 								</div>
 								<p className="text-sm text-slate-500 dark:text-gray-400 mb-4">
-									Informe o nome da empresa para configuracao do sistema
+									{isCourseOnly
+										? 'Informe seu telefone para contato'
+										: 'Informe o nome da empresa para configuracao do sistema'}
 								</p>
 								<div className="space-y-4">
-									<div>
-										<label
-											htmlFor="company-name"
-											className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1"
-										>
-											Nome da empresa
-										</label>
-										<input
-											id="company-name"
-											type="text"
-											value={companyName}
-											onChange={(e) => setCompanyName(e.target.value)}
-											required
-											placeholder="Nome da sua empresa"
-											className="w-full bg-white dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-violet-500/50 transition-colors"
-										/>
-									</div>
+									{!isCourseOnly && (
+										<div>
+											<label
+												htmlFor="company-name"
+												className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1"
+											>
+												Nome da empresa
+											</label>
+											<input
+												id="company-name"
+												type="text"
+												value={companyName}
+												onChange={(e) => setCompanyName(e.target.value)}
+												required
+												placeholder="Nome da sua empresa"
+												className="w-full bg-white dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-violet-500/50 transition-colors"
+											/>
+										</div>
+									)}
 									<div>
 										<label
 											htmlFor="checkout-phone"
@@ -311,6 +320,7 @@ export default function CheckoutPage() {
 								phone={phone.trim() || undefined}
 								ownershipStatus={ownershipStatus}
 								isLoadingOwnership={ownershipLoading}
+								isCourseOnly={isCourseOnly}
 							/>
 						) : (
 							<CheckoutAuthForm onAuthenticated={handleAuthenticatedPurchase} />
