@@ -68,6 +68,9 @@ export default function PaymentLinkPage() {
 				password,
 			});
 
+			if (data?.hasSystemClass === false) {
+				sessionStorage.setItem('purchase_type', 'course_only');
+			}
 			window.location.href = checkoutUrl;
 		} catch (err: unknown) {
 			const status = getErrorStatus(err);

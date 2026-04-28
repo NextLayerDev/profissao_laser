@@ -682,6 +682,11 @@ export default function GlobalPromoLinkPage() {
 				password,
 			});
 
+			const isCourseOnly =
+				(productSystemClassesMap.get(selectedProduct.id) ?? []).length === 0;
+			if (isCourseOnly) {
+				sessionStorage.setItem('purchase_type', 'course_only');
+			}
 			window.location.href = checkoutUrl;
 		} catch (err: unknown) {
 			const status = getErrorStatus(err);
