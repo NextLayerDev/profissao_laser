@@ -126,6 +126,8 @@ export default function CheckoutPage() {
 	const isPlanChange =
 		ownershipStatus === 'upgrade' || ownershipStatus === 'downgrade';
 
+	const isCourseOnly = (selectedVariant?.systemClasses ?? []).length === 0;
+
 	const handleAuthenticatedPurchase = useCallback(async () => {
 		if (!selectedVariant) return;
 
@@ -148,12 +150,15 @@ export default function CheckoutPage() {
 				companyName: companyName.trim(),
 				phone: phone.trim().replace(/\D/g, ''),
 			});
+			if (isCourseOnly) {
+				sessionStorage.setItem('purchase_type', 'course_only');
+			}
 			window.location.href = checkoutUrl;
 		} catch {
 			toast.error('Erro ao processar compra. Tente novamente.');
 			setIsPurchasing(false);
 		}
-	}, [selectedVariant, companyName, phone.trim, phone.replace]);
+	}, [selectedVariant, companyName, phone.trim, phone.replace, isCourseOnly]);
 
 	if (isLoading) {
 		return (
@@ -311,6 +316,7 @@ export default function CheckoutPage() {
 								phone={phone.trim() || undefined}
 								ownershipStatus={ownershipStatus}
 								isLoadingOwnership={ownershipLoading}
+								isCourseOnly={isCourseOnly}
 							/>
 						) : (
 							<CheckoutAuthForm onAuthenticated={handleAuthenticatedPurchase} />
