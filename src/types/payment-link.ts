@@ -40,6 +40,7 @@ export const paymentLinkInfoSchema = z.object({
 	companyName: z.string(),
 	status: z.string(),
 	expiresAt: z.string().nullable(),
+	hasSystemClass: z.boolean().optional(),
 });
 
 export type PaymentLinkInfo = z.infer<typeof paymentLinkInfoSchema>;

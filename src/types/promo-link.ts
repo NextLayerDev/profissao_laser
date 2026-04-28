@@ -45,6 +45,7 @@ export const promoLinkInfoSchema = z.object({
 	remainingRedemptions: z.number(),
 	status: z.string(),
 	expiresAt: z.string().nullable(),
+	hasSystemClass: z.boolean().optional(),
 });
 
 export type PromoLinkInfo = z.infer<typeof promoLinkInfoSchema>;
