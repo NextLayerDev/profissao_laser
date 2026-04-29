@@ -22,8 +22,8 @@ import { getCurrentUser } from '@/lib/auth';
 const Background = () => (
 	<>
 		<div className="fixed inset-0 bg-linear-to-br from-slate-100 via-white to-slate-50 dark:from-[#12103a] dark:via-[#0d0b1e] dark:to-[#0a0818] pointer-events-none" />
-		<div className="fixed top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-violet-500/5 via-transparent to-transparent pointer-events-none" />
-		<div className="fixed bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-cyan-500/5 via-transparent to-transparent pointer-events-none" />
+		<div className="fixed top-0 right-0 w-125 h-125 bg-linear-to-bl from-violet-500/5 via-transparent to-transparent pointer-events-none" />
+		<div className="fixed bottom-0 left-0 w-100 h-100 bg-linear-to-tr from-cyan-500/5 via-transparent to-transparent pointer-events-none" />
 	</>
 );
 
