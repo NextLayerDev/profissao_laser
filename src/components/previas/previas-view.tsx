@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/ui/page-header';
 import {
 	useDeletePrevia,
 	useGeneratePrevia,
@@ -139,10 +140,10 @@ function StepIndicator({ current }: { current: WizardStep }) {
 							<div
 								className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
 									done
-										? 'bg-rose-600 text-white'
+										? 'bg-violet-700 text-white'
 										: active
-											? 'bg-rose-600 text-white ring-4 ring-rose-600/20'
-											: 'bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400'
+											? 'bg-violet-700 text-white ring-4 ring-violet-600/20'
+											: 'bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-gray-400'
 								}`}
 							>
 								{done ? <Check className="w-5 h-5" /> : step.num}
@@ -150,10 +151,10 @@ function StepIndicator({ current }: { current: WizardStep }) {
 							<span
 								className={`mt-2 text-xs font-medium hidden sm:block ${
 									active
-										? 'text-rose-600 dark:text-rose-400'
+										? 'text-violet-700 dark:text-violet-400'
 										: done
-											? 'text-slate-600 dark:text-slate-400'
-											: 'text-slate-400 dark:text-slate-500'
+											? 'text-slate-600 dark:text-gray-400'
+											: 'text-slate-400 dark:text-gray-500'
 								}`}
 							>
 								{step.label}
@@ -163,7 +164,7 @@ function StepIndicator({ current }: { current: WizardStep }) {
 							<div
 								className={`w-12 sm:w-20 h-0.5 mx-2 sm:mx-3 mb-5 sm:mb-0 ${
 									current > step.num
-										? 'bg-rose-600'
+										? 'bg-violet-700'
 										: 'bg-slate-200 dark:bg-white/10'
 								}`}
 							/>
@@ -220,11 +221,11 @@ function ImageUploadZone({
 			</div>
 
 			{preview ? (
-				<div className="relative rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden">
+				<div className="relative rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] overflow-hidden">
 					<img
 						src={preview}
 						alt={label}
-						className="w-full h-40 object-contain bg-slate-50 dark:bg-white/5"
+						className="w-full h-40 object-contain bg-slate-50 dark:bg-[#1a1a1d]"
 					/>
 					<button
 						type="button"
@@ -261,8 +262,8 @@ function ImageUploadZone({
 					onClick={() => inputRef.current?.click()}
 					className={`flex flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-8 cursor-pointer transition-colors ${
 						isDragging
-							? 'border-rose-500 bg-rose-500/10'
-							: 'border-slate-200 dark:border-white/10 hover:border-rose-500/50'
+							? 'border-violet-600 bg-violet-500/10'
+							: 'border-slate-200 dark:border-white/10 hover:border-violet-500/50'
 					}`}
 				>
 					<input
@@ -288,7 +289,7 @@ function ImageUploadZone({
 					<button
 						type="button"
 						onClick={() => setShowUrlInput(!showUrlInput)}
-						className="text-xs text-rose-500 hover:text-rose-400"
+						className="text-xs text-violet-600 hover:text-violet-400"
 					>
 						{showUrlInput ? 'Fechar' : 'Ou cole uma URL'}
 					</button>
@@ -299,7 +300,7 @@ function ImageUploadZone({
 								placeholder="https://..."
 								value={urlValue}
 								onChange={(e) => setUrlValue(e.target.value)}
-								className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+								className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 							/>
 							<button
 								type="button"
@@ -310,7 +311,7 @@ function ImageUploadZone({
 										setShowUrlInput(false);
 									}
 								}}
-								className="px-3 py-1.5 text-xs bg-rose-600 text-white rounded-lg hover:bg-rose-500"
+								className="px-3 py-1.5 text-xs bg-violet-700 text-white rounded-lg hover:bg-violet-600"
 							>
 								OK
 							</button>
@@ -370,8 +371,8 @@ function HistoryCard({
 	const [editNotes, setEditNotes] = useState(previa.notes ?? '');
 
 	return (
-		<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden group">
-			<div className="aspect-[4/3] bg-slate-100 dark:bg-white/5 flex items-center justify-center overflow-hidden">
+		<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] overflow-hidden group">
+			<div className="aspect-[4/3] bg-slate-100 dark:bg-[#1a1a1d] flex items-center justify-center overflow-hidden">
 				{previa.previewUrl ? (
 					<img
 						src={previa.previewUrl}
@@ -389,14 +390,14 @@ function HistoryCard({
 							type="text"
 							value={editName}
 							onChange={(e) => setEditName(e.target.value)}
-							className="w-full px-2 py-1 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+							className="w-full px-2 py-1 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 						/>
 						<textarea
 							value={editNotes}
 							onChange={(e) => setEditNotes(e.target.value)}
 							rows={2}
 							placeholder="Notas..."
-							className="w-full px-2 py-1 text-xs rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30 resize-none"
+							className="w-full px-2 py-1 text-xs rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 resize-none"
 						/>
 						<div className="flex gap-1">
 							<button
@@ -405,14 +406,14 @@ function HistoryCard({
 									onEdit(previa.id, editName, editNotes);
 									setEditing(false);
 								}}
-								className="flex-1 text-xs py-1 bg-rose-600 text-white rounded-lg hover:bg-rose-500"
+								className="flex-1 text-xs py-1 bg-violet-700 text-white rounded-lg hover:bg-violet-600"
 							>
 								Salvar
 							</button>
 							<button
 								type="button"
 								onClick={() => setEditing(false)}
-								className="flex-1 text-xs py-1 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5"
+								className="flex-1 text-xs py-1 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-400 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5"
 							>
 								Cancelar
 							</button>
@@ -423,12 +424,12 @@ function HistoryCard({
 						<h4 className="font-semibold text-sm text-slate-900 dark:text-white truncate">
 							{previa.name || previa.productName}
 						</h4>
-						<p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+						<p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
 							{previa.productName} &middot;{' '}
 							{new Date(previa.createdAt).toLocaleDateString('pt-BR')}
 						</p>
 						{previa.notes && (
-							<p className="text-xs text-slate-400 dark:text-slate-500 mt-1 line-clamp-2">
+							<p className="text-xs text-slate-400 dark:text-gray-500 mt-1 line-clamp-2">
 								{previa.notes}
 							</p>
 						)}
@@ -436,7 +437,7 @@ function HistoryCard({
 							<button
 								type="button"
 								onClick={() => setEditing(true)}
-								className="flex-1 flex items-center justify-center gap-1 text-xs py-1.5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+								className="flex-1 flex items-center justify-center gap-1 text-xs py-1.5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-400 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
 							>
 								<Pencil className="w-3 h-3" />
 								Editar
@@ -450,7 +451,7 @@ function HistoryCard({
 											`${previa.name || 'previa'}.png`,
 										)
 									}
-									className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors"
+									className="p-1.5 text-slate-500 dark:text-gray-400 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-500/10 rounded-lg transition-colors"
 									title="Download"
 								>
 									<Download className="w-3.5 h-3.5" />
@@ -497,7 +498,7 @@ function Pagination({
 			>
 				<ChevronLeft className="w-4 h-4" />
 			</button>
-			<span className="text-sm text-slate-500 dark:text-slate-400">
+			<span className="text-sm text-slate-500 dark:text-gray-400">
 				{page} / {totalPages}
 			</span>
 			<button
@@ -532,17 +533,17 @@ function QuotaBanner({
 		minute: '2-digit',
 	});
 
-	let barColor = 'bg-rose-500';
-	let borderColor = 'border-rose-200 dark:border-rose-800/40';
-	let bgColor = 'bg-rose-50 dark:bg-rose-950/20';
+	let barColor = 'bg-violet-600';
+	let borderColor = 'border-violet-200 dark:border-violet-800/40';
+	let bgColor = 'bg-violet-50 dark:bg-violet-950/20';
 	if (isAtLimit) {
 		barColor = 'bg-red-600';
 		borderColor = 'border-red-300 dark:border-red-800/50';
 		bgColor = 'bg-red-50 dark:bg-red-950/20';
 	} else if (isLow) {
-		barColor = 'bg-amber-500';
-		borderColor = 'border-amber-200 dark:border-amber-800/40';
-		bgColor = 'bg-amber-50 dark:bg-amber-950/20';
+		barColor = 'bg-violet-600';
+		borderColor = 'border-violet-200 dark:border-violet-800/40';
+		bgColor = 'bg-violet-50 dark:bg-violet-950/20';
 	}
 
 	return (
@@ -552,13 +553,13 @@ function QuotaBanner({
 					{isAtLimit ? (
 						<AlertTriangle className="w-4 h-4 text-red-500" />
 					) : (
-						<Zap className="w-4 h-4 text-rose-500" />
+						<Zap className="w-4 h-4 text-violet-600" />
 					)}
 					{isAtLimit
 						? 'Limite diario atingido'
 						: `${quota.remaining} de ${quota.limit} previas restantes hoje`}
 				</div>
-				<span className="text-xs text-slate-500 dark:text-slate-400">
+				<span className="text-xs text-slate-500 dark:text-gray-400">
 					Renova as {resetTime}
 				</span>
 			</div>
@@ -712,37 +713,18 @@ export function PreviasView() {
 	const canProceedStep2 = !!productName.trim();
 
 	return (
-		<div className="relative p-4 md:p-8 max-w-[1400px] mx-auto">
-			{/* Decorative glows */}
-			<div className="absolute top-40 -right-20 w-72 h-72 bg-rose-500/5 rounded-full blur-3xl pointer-events-none" />
-			<div className="absolute bottom-40 -left-20 w-56 h-56 bg-fuchsia-500/5 rounded-full blur-3xl pointer-events-none" />
-
-			{/* Hero */}
-			<section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-500 via-fuchsia-600 to-pink-700 p-6 md:p-10 mb-8">
-				<div className="absolute inset-0 bg-[linear-gradient(rgba(244,63,94,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(244,63,94,0.05)_1px,transparent_1px)] bg-[size:32px_32px]" />
-				<div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-rose-400/50 to-transparent" />
-				<div className="absolute -top-10 -left-10 w-40 h-40 bg-rose-400/20 rounded-full blur-3xl animate-pulse" />
-
-				<div className="relative z-10 flex items-center gap-3">
-					<div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center shrink-0">
-						<Eye className="w-7 h-7 text-white" />
-					</div>
-					<div>
-						<h2 className="text-2xl md:text-3xl font-black text-white">
-							Previas IA
-						</h2>
-						<p className="text-rose-100 text-sm md:text-base">
-							Gere previas realistas de personalizacao a laser com IA.
-						</p>
-					</div>
-				</div>
-			</section>
+		<div className="p-4 md:p-8">
+			<PageHeader
+				title="Previas IA"
+				subtitle="Gere previas realistas de personalizacao a laser com IA."
+				icon={Eye}
+			/>
 
 			{/* Quota Banner */}
 			<QuotaBanner quota={quota} isLoading={quotaLoading} />
 
 			{/* Wizard card */}
-			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800/50 rounded-2xl p-6 mb-8">
+			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-6 mb-8">
 				<StepIndicator current={step} />
 
 				{/* Step 1: Images */}
@@ -775,7 +757,7 @@ export function PreviasView() {
 								type="button"
 								disabled={!canProceedStep1}
 								onClick={() => setStep(2)}
-								className="flex items-center gap-2 px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded-xl transition-colors disabled:opacity-40"
+								className="flex items-center gap-2 px-6 py-3 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-40"
 							>
 								Continuar
 								<ArrowRight className="w-4 h-4" />
@@ -797,7 +779,7 @@ export function PreviasView() {
 									value={productName}
 									onChange={(e) => setProductName(e.target.value)}
 									placeholder="Ex: Oculos Ray-Ban Aviator"
-									className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+									className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 								/>
 							</div>
 							<div>
@@ -809,7 +791,7 @@ export function PreviasView() {
 									value={productColor}
 									onChange={(e) => setProductColor(e.target.value)}
 									placeholder="Ex: Preto, Dourado"
-									className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+									className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 								/>
 							</div>
 						</div>
@@ -831,8 +813,8 @@ export function PreviasView() {
 										onClick={() => setPersonalizationType(opt.key)}
 										className={`px-4 py-2 text-sm font-medium rounded-xl transition-colors ${
 											personalizationType === opt.key
-												? 'bg-rose-600 text-white'
-												: 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
+												? 'bg-violet-700 text-white'
+												: 'bg-slate-100 dark:bg-[#1a1a1d] text-slate-600 dark:text-gray-400 hover:bg-slate-200 dark:hover:bg-white/10'
 										}`}
 									>
 										{opt.label}
@@ -853,7 +835,7 @@ export function PreviasView() {
 									value={customName}
 									onChange={(e) => setCustomName(e.target.value)}
 									placeholder="Nome que sera gravado"
-									className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+									className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 								/>
 							</div>
 						)}
@@ -866,7 +848,7 @@ export function PreviasView() {
 								aria-checked={modoLentes}
 								onClick={() => setModoLentes(!modoLentes)}
 								className={`relative w-11 h-6 rounded-full transition-colors ${
-									modoLentes ? 'bg-rose-600' : 'bg-slate-300 dark:bg-white/20'
+									modoLentes ? 'bg-violet-700' : 'bg-slate-300 dark:bg-white/20'
 								}`}
 							>
 								<span
@@ -890,7 +872,7 @@ export function PreviasView() {
 										type="text"
 										value={textoLenteDireita}
 										onChange={(e) => setTextoLenteDireita(e.target.value)}
-										className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+										className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 									/>
 								</div>
 								<div>
@@ -901,7 +883,7 @@ export function PreviasView() {
 										type="text"
 										value={textoLenteEsquerda}
 										onChange={(e) => setTextoLenteEsquerda(e.target.value)}
-										className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+										className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 									/>
 								</div>
 							</div>
@@ -917,7 +899,7 @@ export function PreviasView() {
 								onChange={(e) => setInstrucoesPersonalizadas(e.target.value)}
 								rows={3}
 								placeholder="Ex: Gravar no canto superior direito com angulo de 45 graus..."
-								className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 resize-none"
+								className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 resize-none"
 							/>
 						</div>
 
@@ -934,7 +916,7 @@ export function PreviasView() {
 								type="button"
 								disabled={!canProceedStep2}
 								onClick={() => setStep(3)}
-								className="flex items-center gap-2 px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded-xl transition-colors disabled:opacity-40"
+								className="flex items-center gap-2 px-6 py-3 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-40"
 							>
 								Continuar
 								<ArrowRight className="w-4 h-4" />
@@ -955,7 +937,7 @@ export function PreviasView() {
 									<select
 										value={laserSettings.tamanho}
 										onChange={(e) => updateLS('tamanho', e.target.value)}
-										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 									>
 										<option value="pequeno">Pequeno</option>
 										<option value="medio">Medio</option>
@@ -970,7 +952,7 @@ export function PreviasView() {
 									<select
 										value={laserSettings.posicao}
 										onChange={(e) => updateLS('posicao', e.target.value)}
-										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 									>
 										<option value="central">Central</option>
 										<option value="superior">Superior</option>
@@ -990,7 +972,7 @@ export function PreviasView() {
 										}
 										min={-360}
 										max={360}
-										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 									/>
 								</div>
 								<div>
@@ -1000,7 +982,7 @@ export function PreviasView() {
 									<select
 										value={laserSettings.moldura}
 										onChange={(e) => updateLS('moldura', e.target.value)}
-										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 									>
 										<option value="nenhuma">Nenhuma</option>
 										<option value="simples">Simples</option>
@@ -1022,7 +1004,7 @@ export function PreviasView() {
 										type="text"
 										value={laserSettings.material}
 										onChange={(e) => updateLS('material', e.target.value)}
-										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 									/>
 								</div>
 								<div>
@@ -1032,7 +1014,7 @@ export function PreviasView() {
 									<select
 										value={laserSettings.estiloGravacao}
 										onChange={(e) => updateLS('estiloGravacao', e.target.value)}
-										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 									>
 										<option value="clean">Clean</option>
 										<option value="vintage">Vintage</option>
@@ -1050,7 +1032,7 @@ export function PreviasView() {
 										onChange={(e) =>
 											updateLS('acabamentoSuperficie', e.target.value)
 										}
-										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 									>
 										<option value="fosco">Fosco</option>
 										<option value="brilhante">Brilhante</option>
@@ -1064,7 +1046,7 @@ export function PreviasView() {
 									<select
 										value={laserSettings.intensidade}
 										onChange={(e) => updateLS('intensidade', e.target.value)}
-										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 									>
 										<option value="baixa">Baixa</option>
 										<option value="media">Media</option>
@@ -1079,7 +1061,7 @@ export function PreviasView() {
 									<select
 										value={laserSettings.profundidade}
 										onChange={(e) => updateLS('profundidade', e.target.value)}
-										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 									>
 										<option value="superficial">Superficial</option>
 										<option value="media">Media</option>
@@ -1098,7 +1080,7 @@ export function PreviasView() {
 									<select
 										value={laserSettings.comNome}
 										onChange={(e) => updateLS('comNome', e.target.value)}
-										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 									>
 										<option value="com">Com</option>
 										<option value="sem">Sem</option>
@@ -1112,7 +1094,7 @@ export function PreviasView() {
 										type="text"
 										value={laserSettings.fonteFamilia}
 										onChange={(e) => updateLS('fonteFamilia', e.target.value)}
-										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 									/>
 								</div>
 								<div>
@@ -1122,7 +1104,7 @@ export function PreviasView() {
 									<select
 										value={laserSettings.tamanhoNome}
 										onChange={(e) => updateLS('tamanhoNome', e.target.value)}
-										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 									>
 										<option value="pequeno">Pequeno</option>
 										<option value="medio">Medio</option>
@@ -1136,7 +1118,7 @@ export function PreviasView() {
 									<select
 										value={laserSettings.orientacaoLogo}
 										onChange={(e) => updateLS('orientacaoLogo', e.target.value)}
-										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 									>
 										<option value="horizontal">Horizontal</option>
 										<option value="vertical">Vertical</option>
@@ -1149,7 +1131,7 @@ export function PreviasView() {
 									<select
 										value={laserSettings.orientacaoNome}
 										onChange={(e) => updateLS('orientacaoNome', e.target.value)}
-										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 									>
 										<option value="horizontal">Horizontal</option>
 										<option value="vertical">Vertical</option>
@@ -1172,7 +1154,7 @@ export function PreviasView() {
 										onChange={(e) =>
 											updateLS('contraste', Number(e.target.value))
 										}
-										className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-200 dark:bg-white/10 accent-rose-600"
+										className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-200 dark:bg-white/10 accent-violet-700"
 									/>
 								</div>
 								<div>
@@ -1187,7 +1169,7 @@ export function PreviasView() {
 										onChange={(e) =>
 											updateLS('efeitoSombra', Number(e.target.value))
 										}
-										className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-200 dark:bg-white/10 accent-rose-600"
+										className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-200 dark:bg-white/10 accent-violet-700"
 									/>
 								</div>
 							</div>
@@ -1205,7 +1187,7 @@ export function PreviasView() {
 										onChange={(e) =>
 											updateLS('tipoVisualizacao', e.target.value)
 										}
-										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 									/>
 								</div>
 								<div>
@@ -1216,7 +1198,7 @@ export function PreviasView() {
 										type="text"
 										value={laserSettings.anguloCamera}
 										onChange={(e) => updateLS('anguloCamera', e.target.value)}
-										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 									/>
 								</div>
 								<div>
@@ -1227,7 +1209,7 @@ export function PreviasView() {
 										type="text"
 										value={laserSettings.iluminacao}
 										onChange={(e) => updateLS('iluminacao', e.target.value)}
-										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 									/>
 								</div>
 								<div>
@@ -1238,7 +1220,7 @@ export function PreviasView() {
 										type="text"
 										value={laserSettings.fundoCena}
 										onChange={(e) => updateLS('fundoCena', e.target.value)}
-										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 									/>
 								</div>
 							</div>
@@ -1256,7 +1238,7 @@ export function PreviasView() {
 							<button
 								type="button"
 								onClick={() => setStep(4)}
-								className="flex items-center gap-2 px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded-xl transition-colors"
+								className="flex items-center gap-2 px-6 py-3 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors"
 							>
 								Revisar e Gerar
 								<ArrowRight className="w-4 h-4" />
@@ -1269,13 +1251,13 @@ export function PreviasView() {
 				{step === 4 && (
 					<div className="space-y-6">
 						{/* Summary */}
-						<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-5 space-y-3">
+						<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#1a1a1d] p-5 space-y-3">
 							<h4 className="font-semibold text-slate-900 dark:text-white">
 								Resumo
 							</h4>
 							<div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
 								<div>
-									<span className="text-slate-500 dark:text-slate-400 text-xs">
+									<span className="text-slate-500 dark:text-gray-400 text-xs">
 										Produto
 									</span>
 									<p className="text-slate-900 dark:text-white font-medium">
@@ -1284,7 +1266,7 @@ export function PreviasView() {
 								</div>
 								{productColor && (
 									<div>
-										<span className="text-slate-500 dark:text-slate-400 text-xs">
+										<span className="text-slate-500 dark:text-gray-400 text-xs">
 											Cor
 										</span>
 										<p className="text-slate-900 dark:text-white font-medium">
@@ -1293,7 +1275,7 @@ export function PreviasView() {
 									</div>
 								)}
 								<div>
-									<span className="text-slate-500 dark:text-slate-400 text-xs">
+									<span className="text-slate-500 dark:text-gray-400 text-xs">
 										Tipo
 									</span>
 									<p className="text-slate-900 dark:text-white font-medium capitalize">
@@ -1301,7 +1283,7 @@ export function PreviasView() {
 									</p>
 								</div>
 								<div>
-									<span className="text-slate-500 dark:text-slate-400 text-xs">
+									<span className="text-slate-500 dark:text-gray-400 text-xs">
 										Estilo
 									</span>
 									<p className="text-slate-900 dark:text-white font-medium capitalize">
@@ -1309,7 +1291,7 @@ export function PreviasView() {
 									</p>
 								</div>
 								<div>
-									<span className="text-slate-500 dark:text-slate-400 text-xs">
+									<span className="text-slate-500 dark:text-gray-400 text-xs">
 										Material
 									</span>
 									<p className="text-slate-900 dark:text-white font-medium capitalize">
@@ -1317,7 +1299,7 @@ export function PreviasView() {
 									</p>
 								</div>
 								<div>
-									<span className="text-slate-500 dark:text-slate-400 text-xs">
+									<span className="text-slate-500 dark:text-gray-400 text-xs">
 										Tamanho
 									</span>
 									<p className="text-slate-900 dark:text-white font-medium capitalize">
@@ -1353,11 +1335,11 @@ export function PreviasView() {
 
 						{/* Generated result */}
 						{generatedPrevia && (
-							<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-4">
-								<p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+							<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-4">
+								<p className="text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-3">
 									Resultado
 								</p>
-								<div className="aspect-[4/3] bg-slate-100 dark:bg-white/5 rounded-lg flex items-center justify-center overflow-hidden">
+								<div className="aspect-[4/3] bg-slate-100 dark:bg-[#1a1a1d] rounded-lg flex items-center justify-center overflow-hidden">
 									<img
 										src={generatedPrevia.previewUrl}
 										alt="Previa gerada"
@@ -1369,7 +1351,7 @@ export function PreviasView() {
 									onClick={() =>
 										downloadUrl(generatedPrevia.previewUrl, 'previa.png')
 									}
-									className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-medium rounded-xl transition-colors text-sm"
+									className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-violet-700 hover:bg-violet-600 text-white font-medium rounded-xl transition-colors text-sm"
 								>
 									<Download className="w-4 h-4" />
 									Download
@@ -1380,7 +1362,7 @@ export function PreviasView() {
 						{/* Loading state */}
 						{generateMutation.isPending && (
 							<div className="flex flex-col items-center gap-3 py-8">
-								<Loader2 className="w-10 h-10 text-rose-500 animate-spin" />
+								<Loader2 className="w-10 h-10 text-violet-600 animate-spin" />
 								<p className="text-sm text-slate-500 font-medium">
 									Gerando previa com IA...
 								</p>
@@ -1401,7 +1383,7 @@ export function PreviasView() {
 								type="button"
 								disabled={generateMutation.isPending || isAtLimit}
 								onClick={handleGenerate}
-								className="flex items-center gap-2 px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
+								className="flex items-center gap-2 px-6 py-3 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
 							>
 								{generateMutation.isPending ? (
 									<Loader2 className="w-4 h-4 animate-spin" />
@@ -1432,21 +1414,21 @@ export function PreviasView() {
 			{/* History Section */}
 			<div id="previas-historico">
 				<h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-					<Image className="w-5 h-5 text-rose-500" />
+					<Image className="w-5 h-5 text-violet-600" />
 					Historico de Previas
 				</h3>
 
 				{histLoading ? (
 					<div className="flex items-center justify-center py-12">
-						<Loader2 className="w-8 h-8 text-rose-500 animate-spin" />
+						<Loader2 className="w-8 h-8 text-violet-600 animate-spin" />
 					</div>
 				) : !historyData?.data.length ? (
-					<div className="text-center py-12 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800/50 rounded-2xl">
+					<div className="text-center py-12 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl">
 						<Eye className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-						<p className="text-slate-500 dark:text-slate-400 font-medium">
+						<p className="text-slate-500 dark:text-gray-400 font-medium">
 							Nenhuma previa gerada ainda
 						</p>
-						<p className="text-sm text-slate-400 dark:text-slate-500 mt-1">
+						<p className="text-sm text-slate-400 dark:text-gray-500 mt-1">
 							Use o wizard acima para gerar sua primeira previa.
 						</p>
 					</div>

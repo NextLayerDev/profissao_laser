@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, Cpu, Loader2, Monitor, Search, X } from 'lucide-react';
+import { ChevronDown, Cpu, Monitor, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { StoreProductCard } from '@/components/store/store-product-card';
 import { useClasses } from '@/hooks/use-classes';
@@ -158,7 +158,7 @@ export function StoreContent() {
 					placeholder="Buscar cursos..."
 					value={search}
 					onChange={(e) => setSearch(e.target.value)}
-					className="w-full bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-gray-500 focus:outline-none focus:border-violet-500/50 transition-colors shadow-sm dark:shadow-none"
+					className="w-full bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-gray-500 focus:outline-none focus:border-violet-500/50 transition-colors shadow-sm dark:shadow-none"
 				/>
 			</div>
 
@@ -172,7 +172,7 @@ export function StoreContent() {
 						className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 cursor-pointer ${
 							activeCategory === cat
 								? 'bg-violet-600 text-white'
-								: 'bg-white dark:bg-[#1a1a1d] text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-gray-800 hover:border-violet-500/40 hover:text-slate-900 dark:hover:text-white shadow-sm dark:shadow-none'
+								: 'bg-white dark:bg-[#1a1a1d] text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-white/10 hover:border-violet-500/40 hover:text-slate-900 dark:hover:text-white shadow-sm dark:shadow-none'
 						}`}
 					>
 						{cat}
@@ -191,11 +191,11 @@ export function StoreContent() {
 				<div className="flex flex-wrap items-center gap-3 mb-8">
 					{machines.length > 0 && (
 						<div className="relative">
-							<Monitor className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-violet-500 pointer-events-none" />
+							<Monitor className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-violet-600 pointer-events-none" />
 							<select
 								value={selectedMachine}
 								onChange={(e) => setSelectedMachine(e.target.value)}
-								className="appearance-none bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 hover:border-violet-500/40 rounded-xl pl-9 pr-8 py-2 text-sm text-slate-700 dark:text-gray-300 focus:outline-none focus:border-violet-500/50 transition-colors cursor-pointer shadow-sm dark:shadow-none"
+								className="appearance-none bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 hover:border-violet-500/40 rounded-xl pl-9 pr-8 py-2 text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:border-violet-500/50 transition-colors cursor-pointer shadow-sm dark:shadow-none"
 							>
 								<option value="">Qual sua máquina?</option>
 								{machines.map((m) => (
@@ -210,11 +210,11 @@ export function StoreContent() {
 
 					{softwares.length > 0 && (
 						<div className="relative">
-							<Cpu className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-violet-500 pointer-events-none" />
+							<Cpu className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-violet-600 pointer-events-none" />
 							<select
 								value={selectedSoftware}
 								onChange={(e) => setSelectedSoftware(e.target.value)}
-								className="appearance-none bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 hover:border-violet-500/40 rounded-xl pl-9 pr-8 py-2 text-sm text-slate-700 dark:text-gray-300 focus:outline-none focus:border-violet-500/50 transition-colors cursor-pointer shadow-sm dark:shadow-none"
+								className="appearance-none bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 hover:border-violet-500/40 rounded-xl pl-9 pr-8 py-2 text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:border-violet-500/50 transition-colors cursor-pointer shadow-sm dark:shadow-none"
 							>
 								<option value="">Qual seu software?</option>
 								{softwares.map((s) => (
@@ -234,7 +234,7 @@ export function StoreContent() {
 								setSelectedMachine('');
 								setSelectedSoftware('');
 							}}
-							className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white px-3 py-2 rounded-xl border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700 transition-colors cursor-pointer"
+							className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer"
 						>
 							<X className="w-3.5 h-3.5" />
 							Limpar filtros
@@ -244,13 +244,47 @@ export function StoreContent() {
 			)}
 
 			{isLoading ? (
-				<div className="flex items-center justify-center py-20">
-					<Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
+				<div className="animate-pulse space-y-6">
+					{/* Skeleton search bar */}
+					<div className="max-w-md mx-auto">
+						<div className="h-10 w-full rounded-xl bg-slate-200 dark:bg-white/5" />
+					</div>
+					{/* Skeleton filter pills */}
+					<div className="flex gap-2">
+						{Array.from({ length: 4 }).map((_, i) => (
+							<div
+								key={i}
+								className="h-8 w-20 rounded-full bg-slate-200 dark:bg-white/5"
+							/>
+						))}
+					</div>
+					{/* Skeleton product cards */}
+					<div className="flex flex-col gap-8">
+						{Array.from({ length: 3 }).map((_, i) => (
+							<div
+								key={i}
+								className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-6"
+							>
+								<div className="flex items-start gap-5">
+									<div className="w-24 h-24 rounded-xl bg-slate-200 dark:bg-white/5 shrink-0" />
+									<div className="flex-1 space-y-3">
+										<div className="h-5 w-48 rounded bg-slate-200 dark:bg-white/5" />
+										<div className="h-4 w-full rounded bg-slate-200 dark:bg-white/5" />
+										<div className="h-4 w-3/4 rounded bg-slate-200 dark:bg-white/5" />
+										<div className="flex gap-2 mt-3">
+											<div className="h-8 w-24 rounded-lg bg-slate-200 dark:bg-white/5" />
+											<div className="h-8 w-24 rounded-lg bg-slate-200 dark:bg-white/5" />
+										</div>
+									</div>
+								</div>
+							</div>
+						))}
+					</div>
 				</div>
 			) : error ? (
 				<div className="text-center py-20">
 					<p className="text-red-400 font-medium">Erro ao carregar os cursos</p>
-					<p className="text-slate-500 dark:text-gray-600 text-sm mt-1">
+					<p className="text-slate-500 dark:text-gray-500 text-sm mt-1">
 						Tente novamente mais tarde
 					</p>
 				</div>
@@ -266,11 +300,11 @@ export function StoreContent() {
 				</div>
 			) : (
 				<div className="text-center py-20">
-					<Search className="w-10 h-10 text-slate-400 dark:text-gray-700 mx-auto mb-4" />
+					<Search className="w-10 h-10 text-slate-400 dark:text-slate-600 mx-auto mb-4" />
 					<p className="text-slate-600 dark:text-gray-400 font-medium">
 						Nenhum curso encontrado
 					</p>
-					<p className="text-slate-500 dark:text-gray-600 text-sm mt-1">
+					<p className="text-slate-500 dark:text-gray-500 text-sm mt-1">
 						Tente outro termo ou categoria
 					</p>
 				</div>

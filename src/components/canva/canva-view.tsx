@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
+import { PageHeader } from '@/components/ui/page-header';
 import {
 	useCreateDesign,
 	useDeleteDesign,
@@ -50,7 +51,7 @@ function Pagination({
 			>
 				<ChevronLeft className="w-4 h-4" />
 			</button>
-			<span className="text-sm text-slate-500 dark:text-slate-400">
+			<span className="text-sm text-slate-500 dark:text-gray-400">
 				{page} / {totalPages}
 			</span>
 			<button
@@ -77,8 +78,8 @@ function TemplateCard({
 	isCloning: boolean;
 }) {
 	return (
-		<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden group">
-			<div className="aspect-[4/3] bg-slate-100 dark:bg-white/5 flex items-center justify-center overflow-hidden">
+		<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] overflow-hidden group">
+			<div className="aspect-[4/3] bg-slate-100 dark:bg-[#1a1a1d] flex items-center justify-center overflow-hidden">
 				{template.imageUrl ? (
 					<img
 						src={template.imageUrl}
@@ -94,7 +95,7 @@ function TemplateCard({
 					{template.name}
 				</h4>
 				{template.description && (
-					<p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+					<p className="text-xs text-slate-500 dark:text-gray-400 mt-1 line-clamp-2">
 						{template.description}
 					</p>
 				)}
@@ -103,7 +104,7 @@ function TemplateCard({
 						{template.tags.slice(0, 3).map((tag) => (
 							<span
 								key={tag}
-								className="text-[10px] px-2 py-0.5 rounded-full bg-lime-100 dark:bg-lime-500/10 text-lime-700 dark:text-lime-400 font-medium"
+								className="text-[10px] px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 font-medium"
 							>
 								{tag}
 							</span>
@@ -114,7 +115,7 @@ function TemplateCard({
 					type="button"
 					disabled={isCloning}
 					onClick={() => onClone(template.id)}
-					className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium bg-lime-600 hover:bg-lime-500 text-white rounded-lg transition-colors disabled:opacity-50"
+					className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium bg-violet-700 hover:bg-violet-600 text-white rounded-lg transition-colors disabled:opacity-50"
 				>
 					{isCloning ? (
 						<Loader2 className="w-4 h-4 animate-spin" />
@@ -142,8 +143,8 @@ function DesignCard({
 	isDeleting: boolean;
 }) {
 	return (
-		<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden group">
-			<div className="aspect-[4/3] bg-slate-100 dark:bg-white/5 flex items-center justify-center overflow-hidden">
+		<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] overflow-hidden group">
+			<div className="aspect-[4/3] bg-slate-100 dark:bg-[#1a1a1d] flex items-center justify-center overflow-hidden">
 				{design.thumbnailUrl ? (
 					<img
 						src={design.thumbnailUrl}
@@ -158,7 +159,7 @@ function DesignCard({
 				<h4 className="font-semibold text-sm text-slate-900 dark:text-white truncate">
 					{design.name}
 				</h4>
-				<p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+				<p className="text-xs text-slate-500 dark:text-gray-400 mt-1">
 					{new Date(design.updatedAt).toLocaleDateString('pt-BR')}
 				</p>
 				<div className="flex gap-2 mt-3">
@@ -259,34 +260,15 @@ export function CanvaView() {
 	}, [createDesignMutation, router]);
 
 	return (
-		<div className="relative p-4 md:p-8 max-w-[1400px] mx-auto">
-			{/* Decorative glows */}
-			<div className="absolute top-40 -right-20 w-72 h-72 bg-lime-500/5 rounded-full blur-3xl pointer-events-none" />
-			<div className="absolute bottom-40 -left-20 w-56 h-56 bg-green-500/5 rounded-full blur-3xl pointer-events-none" />
-
-			{/* Hero */}
-			<section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-lime-500 via-green-600 to-emerald-700 p-6 md:p-10 mb-8">
-				<div className="absolute inset-0 bg-[linear-gradient(rgba(132,204,22,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(132,204,22,0.05)_1px,transparent_1px)] bg-[size:32px_32px]" />
-				<div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-lime-400/50 to-transparent" />
-				<div className="absolute -top-10 -left-10 w-40 h-40 bg-lime-400/20 rounded-full blur-3xl animate-pulse" />
-
-				<div className="relative z-10 flex items-center gap-3">
-					<div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center shrink-0">
-						<Palette className="w-7 h-7 text-white" />
-					</div>
-					<div>
-						<h2 className="text-2xl md:text-3xl font-black text-white">
-							Canva
-						</h2>
-						<p className="text-lime-100 text-sm md:text-base">
-							Templates prontos e seus designs personalizados.
-						</p>
-					</div>
-				</div>
-			</section>
+		<div className="p-4 md:p-8">
+			<PageHeader
+				title="Canva"
+				subtitle="Templates prontos e seus designs personalizados."
+				icon={Palette}
+			/>
 
 			{/* Tabs */}
-			<div className="flex items-center gap-1 mb-6 bg-slate-100 dark:bg-white/5 rounded-xl p-1 w-fit">
+			<div className="flex items-center gap-1 mb-6 bg-slate-100 dark:bg-[#1a1a1d] rounded-xl p-1 w-fit">
 				{[
 					{ key: 'templates' as const, label: 'Templates' },
 					{ key: 'designs' as const, label: 'Meus Designs' },
@@ -298,7 +280,7 @@ export function CanvaView() {
 						className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
 							tab === t.key
 								? 'bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm'
-								: 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+								: 'text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-slate-300'
 						}`}
 					>
 						{t.label}
@@ -321,7 +303,7 @@ export function CanvaView() {
 									setTplSearch(e.target.value);
 									setTplPage(1);
 								}}
-								className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-lime-500/30"
+								className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 							/>
 						</div>
 						<select
@@ -330,7 +312,7 @@ export function CanvaView() {
 								setTplTipo(e.target.value);
 								setTplPage(1);
 							}}
-							className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-lime-500/30"
+							className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 						>
 							<option value="">Todos os tipos</option>
 							<option value="base">Base</option>
@@ -342,15 +324,15 @@ export function CanvaView() {
 					{/* Grid */}
 					{tplLoading ? (
 						<div className="flex items-center justify-center py-20">
-							<Loader2 className="w-8 h-8 text-lime-500 animate-spin" />
+							<Loader2 className="w-8 h-8 text-violet-600 animate-spin" />
 						</div>
 					) : !tplData?.data.length ? (
 						<div className="text-center py-20">
 							<Image className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-							<p className="text-slate-500 dark:text-slate-400 font-medium">
+							<p className="text-slate-500 dark:text-gray-400 font-medium">
 								Nenhum template encontrado
 							</p>
-							<p className="text-sm text-slate-400 dark:text-slate-500 mt-1">
+							<p className="text-sm text-slate-400 dark:text-gray-500 mt-1">
 								Tente ajustar os filtros de busca.
 							</p>
 						</div>
@@ -392,14 +374,14 @@ export function CanvaView() {
 									setDsnSearch(e.target.value);
 									setDsnPage(1);
 								}}
-								className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-lime-500/30"
+								className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 							/>
 						</div>
 						<button
 							type="button"
 							onClick={handleNewDesign}
 							disabled={createDesignMutation.isPending}
-							className="flex items-center justify-center gap-2 px-5 py-2.5 bg-lime-600 hover:bg-lime-500 text-white font-medium rounded-xl transition-colors disabled:opacity-50"
+							className="flex items-center justify-center gap-2 px-5 py-2.5 bg-violet-700 hover:bg-violet-600 text-white font-medium rounded-xl transition-colors disabled:opacity-50"
 						>
 							{createDesignMutation.isPending ? (
 								<Loader2 className="w-4 h-4 animate-spin" />
@@ -413,15 +395,15 @@ export function CanvaView() {
 					{/* Grid */}
 					{dsnLoading ? (
 						<div className="flex items-center justify-center py-20">
-							<Loader2 className="w-8 h-8 text-lime-500 animate-spin" />
+							<Loader2 className="w-8 h-8 text-violet-600 animate-spin" />
 						</div>
 					) : !dsnData?.data.length ? (
 						<div className="text-center py-20">
 							<Palette className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-							<p className="text-slate-500 dark:text-slate-400 font-medium">
+							<p className="text-slate-500 dark:text-gray-400 font-medium">
 								Nenhum design encontrado
 							</p>
-							<p className="text-sm text-slate-400 dark:text-slate-500 mt-1">
+							<p className="text-sm text-slate-400 dark:text-gray-500 mt-1">
 								Crie um novo design ou use um template.
 							</p>
 						</div>

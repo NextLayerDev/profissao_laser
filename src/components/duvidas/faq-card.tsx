@@ -40,7 +40,7 @@ export function FAQCard({ faq }: { faq: PLFAQ }) {
 	const visibleReactions = faq.reactions.filter((r) => r.count > 0);
 
 	return (
-		<div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden transition-colors hover:border-violet-500/40">
+		<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden transition-colors hover:border-violet-500/40">
 			{/* Imagem */}
 			{faq.imageUrl && (
 				<div className="overflow-hidden">
@@ -59,7 +59,7 @@ export function FAQCard({ faq }: { faq: PLFAQ }) {
 				</h3>
 
 				{/* Resposta */}
-				<p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed whitespace-pre-wrap">
+				<p className="text-sm text-slate-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">
 					{faq.answer}
 				</p>
 
@@ -75,8 +75,8 @@ export function FAQCard({ faq }: { faq: PLFAQ }) {
 								disabled={reactMutation.isPending || removeMutation.isPending}
 								className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-sm border transition-colors disabled:opacity-50 ${
 									isUserReaction
-										? 'bg-violet-500/20 border-violet-500 text-violet-700 dark:text-violet-300'
-										: 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-white/20'
+										? 'bg-violet-500/20 border-violet-600 text-violet-700 dark:text-violet-400'
+										: 'bg-slate-100 dark:bg-[#1a1a1d] border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-400 hover:border-slate-300 dark:hover:border-white/20'
 								}`}
 							>
 								<span>{r.emoji}</span>
@@ -90,13 +90,13 @@ export function FAQCard({ faq }: { faq: PLFAQ }) {
 						<button
 							type="button"
 							onClick={() => setShowPicker((p) => !p)}
-							className="flex items-center justify-center w-8 h-8 rounded-full border border-dashed border-slate-300 dark:border-white/20 text-slate-400 dark:text-slate-500 hover:border-violet-500 hover:text-violet-500 transition-colors"
+							className="flex items-center justify-center w-8 h-8 rounded-full border border-dashed border-slate-300 dark:border-white/20 text-slate-400 dark:text-gray-500 hover:border-violet-600 hover:text-violet-600 transition-colors"
 						>
 							<SmilePlus className="w-4 h-4" />
 						</button>
 
 						{showPicker && (
-							<div className="absolute bottom-full left-0 mb-2 flex gap-1 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-700 rounded-xl p-2 shadow-xl z-50">
+							<div className="absolute bottom-full left-0 mb-2 flex gap-1 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl p-2 shadow-xl z-50">
 								{FAQ_EMOJIS.map((emoji) => (
 									<button
 										key={emoji}
@@ -113,7 +113,7 @@ export function FAQCard({ faq }: { faq: PLFAQ }) {
 
 					{/* Contagem total */}
 					{totalReactions > 0 && (
-						<span className="text-xs text-slate-400 dark:text-slate-500 ml-1">
+						<span className="text-xs text-slate-400 dark:text-gray-500 ml-1">
 							{totalReactions} {totalReactions === 1 ? 'reação' : 'reações'}
 						</span>
 					)}

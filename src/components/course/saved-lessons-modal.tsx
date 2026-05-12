@@ -43,7 +43,7 @@ function SavedLessonItem({
 				<Link
 					href={`/course/${item.courseSlug}?lesson=${item.lessonId}`}
 					onClick={onClose}
-					className="flex items-center gap-1.5 px-3 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg transition-colors"
+					className="flex items-center gap-1.5 px-3 py-2 bg-violet-600 hover:bg-violet-600 text-white text-sm font-medium rounded-lg transition-colors"
 				>
 					<Play className="w-4 h-4" />
 					Assistir
@@ -82,7 +82,7 @@ export function SavedLessonsModal({ isOpen, onClose }: SavedLessonsModalProps) {
 				<span className="sr-only">Fechar</span>
 			</button>
 
-			<div className="relative bg-[#1a1a1d] border border-gray-800 rounded-2xl w-full max-w-md mx-4 max-h-[85vh] flex flex-col shadow-2xl">
+			<div className="relative bg-[#1a1a1d] border border-white/10 rounded-2xl w-full max-w-md mx-4 max-h-[85vh] flex flex-col shadow-2xl">
 				<button
 					type="button"
 					onClick={onClose}
@@ -92,7 +92,7 @@ export function SavedLessonsModal({ isOpen, onClose }: SavedLessonsModalProps) {
 				</button>
 
 				<div className="p-6 pb-4 shrink-0">
-					<div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-linear-to-r from-orange-500 to-amber-500 mb-5 mx-auto">
+					<div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-linear-to-r from-orange-500 to-violet-600 mb-5 mx-auto">
 						<Bookmark className="w-7 h-7 text-white" />
 					</div>
 					<h2 className="text-lg font-bold text-white text-center mb-1">
@@ -109,7 +109,7 @@ export function SavedLessonsModal({ isOpen, onClose }: SavedLessonsModalProps) {
 							<Link
 								href="/login"
 								onClick={onClose}
-								className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-xl transition-colors"
+								className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-600 text-white text-sm font-semibold rounded-xl transition-colors"
 							>
 								<LogIn className="w-4 h-4" />
 								Entrar na minha conta

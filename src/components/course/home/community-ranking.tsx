@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { useCommunityRanking } from '@/hooks/use-community';
 
 const POSITION_STYLES: Record<number, string> = {
-	0: 'bg-gradient-to-br from-amber-400 to-yellow-500 text-white',
+	0: 'bg-gradient-to-br from-violet-400 to-yellow-500 text-white',
 	1: 'bg-gradient-to-br from-slate-300 to-slate-400 text-white',
-	2: 'bg-gradient-to-br from-orange-400 to-amber-600 text-white',
+	2: 'bg-gradient-to-br from-orange-400 to-violet-700 text-white',
 };
 
 const AVATAR_GRADIENTS = [
@@ -27,14 +27,14 @@ export function CommunityRanking() {
 		<div className="bg-white dark:bg-[#12121a] border border-slate-200 dark:border-white/5 rounded-2xl p-5">
 			<div className="flex items-center justify-between mb-4">
 				<div className="flex items-center gap-2">
-					<Trophy className="w-4 h-4 text-amber-500" />
+					<Trophy className="w-4 h-4 text-violet-600" />
 					<h3 className="text-sm font-bold text-slate-900 dark:text-white">
 						Ranking da Comunidade
 					</h3>
 				</div>
 				<Link
 					href="/course/membros"
-					className="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-500 font-medium transition-colors"
+					className="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-600 font-medium transition-colors"
 				>
 					Ver todos
 				</Link>
@@ -62,7 +62,7 @@ export function CommunityRanking() {
 							<div
 								className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
 									POSITION_STYLES[i] ??
-									'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-gray-400'
+									'bg-slate-100 dark:bg-[#1a1a1d] text-slate-500 dark:text-gray-400'
 								}`}
 							>
 								{member.pos}

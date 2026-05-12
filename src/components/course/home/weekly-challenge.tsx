@@ -27,7 +27,7 @@ export function WeeklyChallenge() {
 					<span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase rounded-full tracking-wider">
 						ATIVO
 					</span>
-					<div className="flex items-center gap-1 text-amber-400">
+					<div className="flex items-center gap-1 text-violet-400">
 						<Clock className="w-3 h-3" />
 						<span className="text-[10px] font-medium">4 dias restantes</span>
 					</div>
@@ -47,7 +47,7 @@ export function WeeklyChallenge() {
 							description: 'Desafios estarao disponiveis em breve!',
 						})
 					}
-					className="w-full py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-sm font-semibold rounded-xl hover:brightness-110 transition-all shadow-lg shadow-violet-500/20 mb-4"
+					className="w-full py-2.5 bg-gradient-to-r from-violet-600 to-violet-600 text-white text-sm font-semibold rounded-xl hover:brightness-110 transition-all shadow-lg shadow-violet-500/20 mb-4"
 				>
 					Participar do desafio
 				</button>

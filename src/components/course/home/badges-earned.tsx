@@ -4,12 +4,12 @@ import { Award } from 'lucide-react';
 import Link from 'next/link';
 
 const BADGES = [
-	{ name: 'Mestre em MDF', gradient: 'from-violet-500 to-purple-600' },
+	{ name: 'Mestre em MDF', gradient: 'from-violet-600 to-violet-700' },
 	{ name: 'Ajuda Nota 10', gradient: 'from-blue-500 to-cyan-500' },
 	{ name: 'Top Colaborador', gradient: 'from-emerald-500 to-teal-500' },
 	{ name: 'Expert em Acrilico', gradient: 'from-pink-500 to-rose-500' },
-	{ name: 'Veterano', gradient: 'from-amber-500 to-orange-500' },
-	{ name: 'Desafio Cumprido', gradient: 'from-fuchsia-500 to-violet-500' },
+	{ name: 'Veterano', gradient: 'from-violet-600 to-orange-500' },
+	{ name: 'Desafio Cumprido', gradient: 'from-violet-600 to-violet-600' },
 ];
 
 export function BadgesEarned() {
@@ -17,14 +17,14 @@ export function BadgesEarned() {
 		<div className="bg-white dark:bg-[#12121a] border border-slate-200 dark:border-white/5 rounded-2xl p-5">
 			<div className="flex items-center justify-between mb-4">
 				<div className="flex items-center gap-2">
-					<Award className="w-4 h-4 text-amber-500" />
+					<Award className="w-4 h-4 text-violet-600" />
 					<h3 className="text-sm font-bold text-slate-900 dark:text-white">
 						Badges conquistadas
 					</h3>
 				</div>
 				<Link
 					href="/course/jornada"
-					className="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-500 font-medium transition-colors"
+					className="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-600 font-medium transition-colors"
 				>
 					Ver todas
 				</Link>

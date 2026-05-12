@@ -29,7 +29,7 @@ export default function PreviasAdminPage() {
 		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
 
-			<main className="px-8 py-6">
+			<main className="px-4 md:px-8 py-6">
 				<div className="mb-6">
 					<h2 className="text-2xl font-bold tracking-tight flex items-center gap-2 text-slate-900 dark:text-white">
 						<Eye className="w-6 h-6 text-violet-400" />

@@ -17,7 +17,7 @@ const GRADIENTS = [
 	'from-pink-500 to-rose-500',
 	'from-blue-500 to-cyan-500',
 	'from-emerald-500 to-teal-500',
-	'from-violet-500 to-purple-500',
+	'from-violet-600 to-violet-600',
 ];
 
 function getInitials(name: string): string {
@@ -103,7 +103,7 @@ export function RecentActivity() {
 
 			<Link
 				href="/comunity"
-				className="mt-4 block text-center text-sm font-medium text-violet-600 dark:text-violet-400 hover:text-violet-500 transition-colors"
+				className="mt-4 block text-center text-sm font-medium text-violet-600 dark:text-violet-400 hover:text-violet-600 transition-colors"
 			>
 				Ver todas as atividades
 			</Link>

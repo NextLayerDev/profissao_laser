@@ -10,11 +10,11 @@ interface HighlightsSectionProps {
 }
 
 const PLACEHOLDER_GRADIENTS = [
-	'from-violet-500 to-fuchsia-500',
+	'from-violet-600 to-violet-600',
 	'from-blue-500 to-cyan-500',
 	'from-emerald-500 to-teal-500',
 	'from-pink-500 to-rose-500',
-	'from-amber-500 to-orange-500',
+	'from-violet-600 to-orange-500',
 ];
 
 export function HighlightsSection({ jornadaItems }: HighlightsSectionProps) {
@@ -26,7 +26,7 @@ export function HighlightsSection({ jornadaItems }: HighlightsSectionProps) {
 				</h3>
 				<Link
 					href="/store"
-					className="text-violet-600 dark:text-violet-400 hover:text-violet-500 text-sm font-medium transition-colors"
+					className="text-violet-600 dark:text-violet-400 hover:text-violet-600 text-sm font-medium transition-colors"
 				>
 					Ver tudo
 				</Link>
@@ -42,7 +42,7 @@ export function HighlightsSection({ jornadaItems }: HighlightsSectionProps) {
 						fill
 						className="object-cover"
 					/>
-					<div className="absolute inset-0 bg-gradient-to-br from-violet-900/85 via-purple-900/80 to-fuchsia-900/85" />
+					<div className="absolute inset-0 bg-gradient-to-br from-violet-900/85 via-violet-900/80 to-violet-900/85" />
 
 					<div className="relative z-10">
 						<div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center mb-4 mx-auto">
@@ -68,7 +68,7 @@ export function HighlightsSection({ jornadaItems }: HighlightsSectionProps) {
 							className="flex-shrink-0 w-52 group"
 						>
 							<div
-								className={`relative w-full h-32 rounded-xl overflow-hidden border border-white/10 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-violet-500/20 ${
+								className={`relative w-full h-32 rounded-xl overflow-hidden border border-white/10 transition-all duration-300 group-hover:shadow-lg ${
 									!item.course.image
 										? `bg-gradient-to-br ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]}`
 										: ''
@@ -93,9 +93,9 @@ export function HighlightsSection({ jornadaItems }: HighlightsSectionProps) {
 									{item.course.name}
 								</p>
 								<div className="mt-1.5">
-									<div className="w-full h-1 bg-slate-200 dark:bg-gray-800 rounded-full overflow-hidden">
+									<div className="w-full h-1 bg-slate-200 dark:bg-white/[0.06] rounded-full overflow-hidden">
 										<div
-											className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full"
+											className="h-full bg-gradient-to-r from-violet-600 to-violet-600 rounded-full"
 											style={{ width: `${item.percentage}%` }}
 										/>
 									</div>

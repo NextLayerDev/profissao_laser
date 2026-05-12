@@ -39,7 +39,7 @@ export function LearningStreak() {
 							<div
 								className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
 									isToday
-										? 'bg-gradient-to-br from-amber-400 to-yellow-500 shadow-lg shadow-amber-400/30'
+										? 'bg-gradient-to-br from-violet-400 to-yellow-500 shadow-lg shadow-violet-400/30'
 										: isCompleted
 											? 'bg-gradient-to-br from-emerald-400 to-green-500'
 											: 'bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10'

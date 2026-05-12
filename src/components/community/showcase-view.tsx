@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type React from 'react';
 import { useMemo, useRef, useState } from 'react';
+import { ModalOverlay } from '@/components/ui/modal-overlay';
 import {
 	useCommunityProjects,
 	useCreateProject,
@@ -21,7 +22,6 @@ import {
 } from '@/hooks/use-community';
 import type { Project } from '@/types/community';
 import { formatDate, formatMessageTime } from '@/utils/formatDate';
-import { ModalOverlay } from './modal-overlay';
 
 interface ShowcaseViewProps {
 	userName: string;
@@ -192,12 +192,12 @@ export function ShowcaseView({
 										/>
 									</div>
 								)}
-								<p className="text-slate-600 dark:text-slate-400 mt-4 leading-relaxed">
+								<p className="text-slate-600 dark:text-gray-400 mt-4 leading-relaxed">
 									{currentProject.description}
 								</p>
 								<div className="grid grid-cols-3 gap-4 p-4 bg-violet-500/10 rounded-xl mt-4">
 									<div className="text-center">
-										<p className="text-xs text-slate-600 dark:text-slate-500">
+										<p className="text-xs text-slate-600 dark:text-gray-500">
 											Material
 										</p>
 										<p className="font-medium text-slate-900 dark:text-white text-sm">
@@ -205,7 +205,7 @@ export function ShowcaseView({
 										</p>
 									</div>
 									<div className="text-center">
-										<p className="text-xs text-slate-600 dark:text-slate-500">
+										<p className="text-xs text-slate-600 dark:text-gray-500">
 											Tecnica
 										</p>
 										<p className="font-medium text-slate-900 dark:text-white text-sm">
@@ -213,7 +213,7 @@ export function ShowcaseView({
 										</p>
 									</div>
 									<div className="text-center">
-										<p className="text-xs text-slate-600 dark:text-slate-500">
+										<p className="text-xs text-slate-600 dark:text-gray-500">
 											Tempo
 										</p>
 										<p className="font-medium text-slate-900 dark:text-white text-sm">
@@ -232,7 +232,7 @@ export function ShowcaseView({
 										className={`flex items-center gap-2 ${
 											likedProjectIds.has(selectedProject.id)
 												? 'text-pink-500'
-												: 'text-slate-600 dark:text-slate-400 hover:text-pink-500'
+												: 'text-slate-600 dark:text-gray-400 hover:text-pink-500'
 										}`}
 									>
 										<Heart
@@ -244,7 +244,7 @@ export function ShowcaseView({
 										/>{' '}
 										{currentProject.likes ?? 0} curtidas
 									</button>
-									<span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+									<span className="flex items-center gap-2 text-slate-600 dark:text-gray-400">
 										<MessageSquare className="h-5 w-5" />{' '}
 										{currentProject.comments ?? 0} comentarios
 									</span>
@@ -256,14 +256,14 @@ export function ShowcaseView({
 									</h4>
 									<div className="space-y-4 max-h-48 overflow-y-auto">
 										{comments.length === 0 ? (
-											<p className="text-sm text-slate-500 dark:text-slate-400">
+											<p className="text-sm text-slate-500 dark:text-gray-400">
 												Nenhum comentario ainda. Seja o primeiro!
 											</p>
 										) : (
 											comments.map((c) => (
 												<div
 													key={c.id}
-													className="p-3 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10"
+													className="p-3 rounded-xl bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10"
 												>
 													<div className="flex items-center justify-between mb-1">
 														<span className="font-medium text-slate-900 dark:text-white text-sm">
@@ -294,13 +294,13 @@ export function ShowcaseView({
 											onKeyDown={(e) =>
 												e.key === 'Enter' && handleAddProjectComment()
 											}
-											className="flex-1 px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50"
+											className="flex-1 px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50"
 										/>
 										<button
 											type="button"
 											onClick={handleAddProjectComment}
 											disabled={!projectCommentInput.trim()}
-											className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-medium flex items-center gap-2"
+											className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-600 disabled:opacity-50 text-white font-medium flex items-center gap-2"
 										>
 											<Send className="h-4 w-4" />
 											Comentar
@@ -322,7 +322,7 @@ export function ShowcaseView({
 						<h3 className="text-2xl font-bold text-slate-900 dark:text-white text-center">
 							Enviar Projeto
 						</h3>
-						<p className="text-slate-600 dark:text-slate-400 text-center mt-1">
+						<p className="text-slate-600 dark:text-gray-400 text-center mt-1">
 							Compartilhe seu trabalho de personalizacao a laser
 						</p>
 						<div className="mt-6 space-y-4">
@@ -365,7 +365,7 @@ export function ShowcaseView({
 										className="w-full border-2 border-dashed border-white/20 rounded-xl p-8 text-center hover:border-violet-500/50 hover:bg-violet-500/10 transition-colors"
 									>
 										<ImageIcon className="h-10 w-10 text-violet-400 mx-auto mb-2" />
-										<p className="text-sm text-slate-600 dark:text-slate-400">
+										<p className="text-sm text-slate-600 dark:text-gray-400">
 											Clique para adicionar uma imagem
 										</p>
 									</button>
@@ -386,7 +386,7 @@ export function ShowcaseView({
 									onChange={(e) =>
 										setNewProject((p) => ({ ...p, title: e.target.value }))
 									}
-									className="w-full h-12 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 px-4"
+									className="w-full h-12 rounded-xl bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 px-4"
 								/>
 							</div>
 							<div>
@@ -406,7 +406,7 @@ export function ShowcaseView({
 											description: e.target.value,
 										}))
 									}
-									className="w-full min-h-[80px] rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 p-4 resize-none"
+									className="w-full min-h-[80px] rounded-xl bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 p-4 resize-none"
 								/>
 							</div>
 							<div className="grid grid-cols-2 gap-4">
@@ -428,7 +428,7 @@ export function ShowcaseView({
 												material: e.target.value,
 											}))
 										}
-										className="w-full h-10 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 px-4"
+										className="w-full h-10 rounded-xl bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 px-4"
 									/>
 								</div>
 								<div>
@@ -449,7 +449,7 @@ export function ShowcaseView({
 												technique: e.target.value,
 											}))
 										}
-										className="w-full h-10 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 px-4"
+										className="w-full h-10 rounded-xl bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 px-4"
 									/>
 								</div>
 							</div>
@@ -462,7 +462,7 @@ export function ShowcaseView({
 								!newProject.description.trim() ||
 								createProjectMutation.isPending
 							}
-							className="w-full mt-6 flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 disabled:opacity-50 text-white font-medium rounded-full"
+							className="w-full mt-6 flex items-center justify-center gap-2 py-3 bg-violet-600 hover:bg-violet-400 disabled:opacity-50 text-white font-medium rounded-full"
 						>
 							<UploadIcon className="h-4 w-4" /> Enviar Projeto
 						</button>
@@ -472,25 +472,22 @@ export function ShowcaseView({
 
 			{/* Main content */}
 			<div className="relative w-full p-6 space-y-6">
-				{/* Glow orbs */}
-				<div className="absolute top-20 -right-20 w-60 h-60 bg-pink-500/5 rounded-full blur-3xl pointer-events-none" />
-				<div className="absolute bottom-20 -left-20 w-48 h-48 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
 				<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
 					<div>
-						<h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-							<div className="p-2 rounded-xl bg-gradient-to-br from-pink-500 to-purple-600">
+						<h2 className="text-2xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-3">
+							<div className="p-2 rounded-xl bg-violet-600">
 								<Star className="h-6 w-6 text-white" />
 							</div>
 							Vitrine de Projetos
 						</h2>
-						<p className="text-slate-600 dark:text-slate-400 mt-1">
+						<p className="text-slate-600 dark:text-gray-400 mt-1">
 							Projetos incriveis da comunidade
 						</p>
 					</div>
 					<button
 						type="button"
 						onClick={() => setShowSubmitProjectModal(true)}
-						className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-medium rounded-full"
+						className="flex items-center gap-2 px-6 py-2 bg-violet-600 hover:bg-violet-400 text-white font-medium rounded-full"
 					>
 						<UploadIcon className="h-4 w-4" /> Enviar Projeto
 					</button>
@@ -508,7 +505,7 @@ export function ShowcaseView({
 								setProjectSearch(e.target.value);
 								setProjectPage(1);
 							}}
-							className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50"
+							className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50"
 						/>
 					</div>
 					<select
@@ -517,7 +514,7 @@ export function ShowcaseView({
 							setProjectMaterialFilter(e.target.value);
 							setProjectPage(1);
 						}}
-						className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50"
+						className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50"
 					>
 						<option value="">Todos os materiais</option>
 						{uniqueMaterials.map((m) => (
@@ -532,7 +529,7 @@ export function ShowcaseView({
 							setProjectTechniqueFilter(e.target.value);
 							setProjectPage(1);
 						}}
-						className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50"
+						className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50"
 					>
 						<option value="">Todas as tecnicas</option>
 						{uniqueTechniques.map((t) => (
@@ -551,7 +548,7 @@ export function ShowcaseView({
 							className={`px-4 py-2 rounded-xl text-sm font-medium ${
 								projectSort === 'recent'
 									? 'bg-violet-600 text-white'
-									: 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+									: 'bg-slate-100 dark:bg-[#1a1a1d] text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
 							}`}
 						>
 							Mais recentes
@@ -565,7 +562,7 @@ export function ShowcaseView({
 							className={`px-4 py-2 rounded-xl text-sm font-medium ${
 								projectSort === 'likes'
 									? 'bg-violet-600 text-white'
-									: 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+									: 'bg-slate-100 dark:bg-[#1a1a1d] text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
 							}`}
 						>
 							Mais curtidos
@@ -576,21 +573,21 @@ export function ShowcaseView({
 				{/* Grid de projetos */}
 				{projectsLoading ? (
 					<div className="flex justify-center py-16">
-						<div className="w-10 h-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+						<div className="w-10 h-10 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
 					</div>
 				) : projects.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-16 text-center">
-						<Star className="h-16 w-16 text-slate-400 dark:text-slate-500 mb-4 opacity-50" />
-						<p className="text-lg font-medium text-slate-600 dark:text-slate-400">
+						<Star className="h-16 w-16 text-slate-400 dark:text-gray-500 mb-4 opacity-50" />
+						<p className="text-lg font-medium text-slate-600 dark:text-gray-400">
 							Nenhum projeto ainda
 						</p>
-						<p className="text-sm text-slate-500 dark:text-slate-500 mt-1">
+						<p className="text-sm text-slate-500 dark:text-gray-500 mt-1">
 							Seja o primeiro a compartilhar seu trabalho!
 						</p>
 						<button
 							type="button"
 							onClick={() => setShowSubmitProjectModal(true)}
-							className="mt-6 flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-medium rounded-full"
+							className="mt-6 flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-400 text-white font-medium rounded-full"
 						>
 							<UploadIcon className="h-4 w-4" /> Enviar Projeto
 						</button>
@@ -608,7 +605,7 @@ export function ShowcaseView({
 									onKeyDown={(e) =>
 										e.key === 'Enter' && handleViewDetails(item)
 									}
-									className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden text-left hover:border-violet-500/40 hover:scale-[1.02] hover:shadow-xl hover:shadow-violet-500/10 transition-all duration-300 group cursor-pointer"
+									className="bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden text-left hover:border-violet-500/40 hover:shadow-xl hover:shadow-violet-500/10 transition-all duration-300 group cursor-pointer"
 								>
 									<div className="aspect-square overflow-hidden">
 										<img
@@ -624,22 +621,22 @@ export function ShowcaseView({
 										<h3 className="font-bold text-lg text-slate-900 dark:text-white mb-1">
 											{item.title}
 										</h3>
-										<p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+										<p className="text-sm text-slate-600 dark:text-gray-400 mb-3">
 											por {item.author}
 										</p>
 										<div className="flex gap-2 mb-4 flex-wrap">
 											{item.material && (
-												<span className="px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 text-xs">
+												<span className="px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-400 text-xs">
 													{item.material}
 												</span>
 											)}
 											{item.technique && (
-												<span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-xs">
+												<span className="px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 text-xs">
 													{item.technique}
 												</span>
 											)}
 										</div>
-										<div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
+										<div className="flex items-center gap-4 text-sm text-slate-600 dark:text-gray-400">
 											<button
 												type="button"
 												onClick={(e) => {
@@ -663,7 +660,7 @@ export function ShowcaseView({
 												{item.comments ?? 0}
 											</span>
 										</div>
-										<div className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-violet-600 hover:bg-violet-500 text-white font-medium rounded-full">
+										<div className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-violet-600 hover:bg-violet-600 text-white font-medium rounded-full">
 											<Eye className="h-4 w-4" /> Ver Detalhes
 										</div>
 									</div>
@@ -675,7 +672,7 @@ export function ShowcaseView({
 								<button
 									type="button"
 									onClick={() => setProjectPage((p) => p + 1)}
-									className="px-6 py-2 rounded-full border border-violet-500/50 text-violet-500 hover:bg-violet-500/10 font-medium"
+									className="px-6 py-2 rounded-full border border-violet-500/50 text-violet-600 hover:bg-violet-500/10 font-medium"
 								>
 									Carregar mais
 								</button>

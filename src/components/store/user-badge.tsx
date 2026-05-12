@@ -47,7 +47,7 @@ export function UserBadge() {
 		return (
 			<Link
 				href={loginHref}
-				className="flex items-center gap-2 bg-slate-100 dark:bg-transparent border border-slate-200 dark:border-transparent hover:bg-slate-200 dark:hover:bg-white/10 px-3 py-1.5 rounded-lg text-sm text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-all duration-200"
+				className="flex items-center gap-2 bg-slate-100 dark:bg-transparent border border-slate-200 dark:border-transparent hover:bg-slate-200 dark:hover:bg-white/10 px-3 py-1.5 rounded-lg text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all duration-200"
 			>
 				<User className="w-4 h-4" />
 				Entrar

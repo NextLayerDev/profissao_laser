@@ -81,7 +81,7 @@ export function CheckoutAuthForm({ onAuthenticated }: CheckoutAuthFormProps) {
 	}
 
 	return (
-		<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl border border-slate-200 dark:border-gray-800 p-6">
+		<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl border border-slate-200 dark:border-white/10 p-6">
 			<h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
 				Finalize sua compra
 			</h3>
@@ -90,7 +90,7 @@ export function CheckoutAuthForm({ onAuthenticated }: CheckoutAuthFormProps) {
 			</p>
 
 			{/* Tabs */}
-			<div className="flex gap-1 bg-slate-100 dark:bg-white/5 rounded-xl p-1 mb-6">
+			<div className="flex gap-1 bg-slate-100 dark:bg-[#1a1a1d] rounded-xl p-1 mb-6">
 				<button
 					type="button"
 					onClick={() => setTab('register')}
@@ -192,7 +192,7 @@ export function CheckoutAuthForm({ onAuthenticated }: CheckoutAuthFormProps) {
 					<button
 						type="submit"
 						disabled={isLoading}
-						className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors cursor-pointer"
+						className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors cursor-pointer"
 					>
 						{isLoading ? (
 							<>
@@ -245,7 +245,7 @@ export function CheckoutAuthForm({ onAuthenticated }: CheckoutAuthFormProps) {
 					<button
 						type="submit"
 						disabled={isLoading}
-						className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors cursor-pointer"
+						className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors cursor-pointer"
 					>
 						{isLoading ? (
 							<>

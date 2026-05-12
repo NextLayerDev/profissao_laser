@@ -73,7 +73,7 @@ export default function Produtos() {
 		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
 
-			<main className="px-8 py-6">
+			<main className="px-4 md:px-8 py-6">
 				<div className="mb-6">
 					<h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
 						Seus produtos

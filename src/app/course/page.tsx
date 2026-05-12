@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, Loader2 } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { BadgesEarned } from '@/components/course/home/badges-earned';
@@ -19,6 +19,7 @@ import { OnlineMembers } from '@/components/course/home/online-members';
 import { QuickAccessGrid } from '@/components/course/home/quick-access-grid';
 import { WeeklyChallenge } from '@/components/course/home/weekly-challenge';
 import { SavedLessonsModal } from '@/components/course/saved-lessons-modal';
+import { DashboardSkeleton } from '@/components/ui/skeletons/dashboard-skeleton';
 import { useCustomerFeatures } from '@/hooks/use-customer-features';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { useJornadaProgress } from '@/hooks/use-jornada-progress';
@@ -102,24 +103,20 @@ export default function CoursePage() {
 	const displayName = name ? name.split(' ')[0] : 'bem-vindo';
 
 	if (email === undefined || isLoading) {
-		return (
-			<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d10] flex items-center justify-center">
-				<Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
-			</div>
-		);
+		return <DashboardSkeleton />;
 	}
 
 	if (email === null) {
 		return (
-			<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d10] flex items-center justify-center">
+			<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] flex items-center justify-center">
 				<div className="text-center">
-					<BookOpen className="w-12 h-12 text-slate-400 dark:text-gray-600 mx-auto mb-4" />
-					<p className="text-slate-600 dark:text-gray-500 font-medium">
+					<BookOpen className="w-12 h-12 text-slate-400 dark:text-gray-500 mx-auto mb-4" />
+					<p className="text-slate-600 dark:text-gray-400 font-medium">
 						Voce nao esta logado
 					</p>
 					<Link
 						href="/login"
-						className="mt-4 inline-block px-5 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors"
+						className="mt-4 inline-block px-5 py-2 bg-violet-600 hover:bg-violet-600 text-white text-sm font-medium rounded-xl transition-colors"
 					>
 						Fazer login
 					</Link>
@@ -129,7 +126,7 @@ export default function CoursePage() {
 	}
 
 	return (
-		<div className="relative min-h-screen bg-slate-100 dark:bg-[#080809] text-slate-900 dark:text-white font-sans flex">
+		<div className="relative min-h-screen bg-slate-100 dark:bg-[#0d0d0f] text-slate-900 dark:text-white font-sans flex">
 			{/* Dark mode background orbs */}
 			<div className="hidden dark:block absolute inset-0 pointer-events-none overflow-hidden">
 				<div className="absolute top-[10%] left-[20%] w-[500px] h-[500px] bg-blue-900/15 rounded-full blur-3xl" />
@@ -154,7 +151,7 @@ export default function CoursePage() {
 				/>
 
 				<main className="flex-1 mt-16 p-4 md:p-8 overflow-x-hidden">
-					<div className="max-w-[1400px] mx-auto">
+					<div className="">
 						<div className="flex flex-col xl:flex-row gap-6">
 							{/* Main column */}
 							<div className="flex-1 min-w-0 space-y-6">

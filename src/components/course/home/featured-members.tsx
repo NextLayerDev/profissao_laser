@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useFeaturedMembers } from '@/hooks/use-community';
 
 const GRADIENTS = [
-	'from-violet-500 to-fuchsia-500',
+	'from-violet-600 to-violet-600',
 	'from-blue-500 to-cyan-500',
 	'from-emerald-500 to-teal-500',
 	'from-pink-500 to-rose-500',
@@ -31,7 +31,7 @@ export function FeaturedMembers() {
 				</h3>
 				<Link
 					href="/course/membros"
-					className="text-violet-600 dark:text-violet-400 hover:text-violet-500 text-sm font-medium transition-colors"
+					className="text-violet-600 dark:text-violet-400 hover:text-violet-600 text-sm font-medium transition-colors"
 				>
 					Ver todos
 				</Link>
@@ -96,7 +96,7 @@ export function FeaturedMembers() {
 					fill
 					className="object-cover"
 				/>
-				<div className="absolute inset-0 bg-gradient-to-r from-violet-900/80 via-purple-900/75 to-fuchsia-900/80" />
+				<div className="absolute inset-0 bg-gradient-to-r from-violet-900/80 via-violet-900/75 to-violet-900/80" />
 				<div className="relative p-4 text-center">
 					<p className="text-sm font-medium text-white/90">
 						Participe, colabore e cresca junto!

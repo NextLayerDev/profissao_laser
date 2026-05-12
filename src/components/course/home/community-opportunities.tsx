@@ -8,7 +8,7 @@ const TYPE_STYLES: Record<string, string> = {
 	PARCERIA:
 		'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
 	FORNECEDOR:
-		'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400',
+		'bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400',
 };
 
 const OPPORTUNITIES = [
@@ -37,14 +37,14 @@ export function CommunityOpportunities() {
 		<div className="bg-white dark:bg-[#12121a] border border-slate-200 dark:border-white/5 rounded-2xl p-5">
 			<div className="flex items-center justify-between mb-4">
 				<div className="flex items-center gap-2">
-					<Briefcase className="w-4 h-4 text-violet-500" />
+					<Briefcase className="w-4 h-4 text-violet-600" />
 					<h3 className="text-sm font-bold text-slate-900 dark:text-white">
 						Oportunidades
 					</h3>
 				</div>
 				<Link
 					href="/course/comunity"
-					className="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-500 font-medium transition-colors"
+					className="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-600 font-medium transition-colors"
 				>
 					Ver todas
 				</Link>

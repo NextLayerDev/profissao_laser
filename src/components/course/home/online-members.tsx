@@ -41,7 +41,7 @@ export function OnlineMembers() {
 				</div>
 				<Link
 					href="/course/membros"
-					className="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-500 font-medium transition-colors"
+					className="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-600 font-medium transition-colors"
 				>
 					Ver todos
 				</Link>

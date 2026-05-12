@@ -77,7 +77,7 @@ export function ForumPostDetail({
 	if (isLoading || !post) {
 		return (
 			<div className="flex items-center justify-center py-20">
-				<Loader2 className="w-6 h-6 text-violet-500 animate-spin" />
+				<Loader2 className="w-6 h-6 text-violet-600 animate-spin" />
 			</div>
 		);
 	}
@@ -90,14 +90,14 @@ export function ForumPostDetail({
 			<button
 				type="button"
 				onClick={onBack}
-				className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+				className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors"
 			>
 				<ArrowLeft className="w-4 h-4" />
 				Voltar ao fórum
 			</button>
 
 			{/* Post */}
-			<div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5">
+			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-5">
 				<div className="flex gap-4">
 					{/* Upvote */}
 					<div className="flex flex-col items-center gap-1 shrink-0 pt-1">
@@ -108,7 +108,7 @@ export function ForumPostDetail({
 							className={`flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-xl transition-colors text-sm font-bold ${
 								post.upvotedByMe
 									? 'bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400'
-									: 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400'
+									: 'bg-slate-100 dark:bg-[#1a1a1d] text-slate-500 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400'
 							}`}
 						>
 							<ChevronUp className="w-4 h-4" />
@@ -152,7 +152,7 @@ export function ForumPostDetail({
 							{post.content}
 						</p>
 
-						<div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
+						<div className="flex items-center gap-3 text-xs text-slate-400 dark:text-gray-500">
 							<span className="font-medium">{post.author}</span>
 							<span>•</span>
 							<span>{timeAgo(post.createdAt)}</span>
@@ -187,7 +187,7 @@ export function ForumPostDetail({
 			)}
 
 			{/* Reply form */}
-			<div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-4">
+			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-4">
 				<h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
 					Sua resposta
 				</h3>
@@ -197,13 +197,13 @@ export function ForumPostDetail({
 						onChange={(e) => setReplyContent(e.target.value)}
 						placeholder="Escreva sua resposta..."
 						rows={4}
-						className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 resize-none"
+						className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 resize-none"
 					/>
 					<div className="flex justify-end">
 						<button
 							type="submit"
 							disabled={createReply.isPending || !replyContent.trim()}
-							className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-violet-600 hover:bg-violet-500 disabled:opacity-60 text-white rounded-xl transition-colors"
+							className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-violet-600 hover:bg-violet-600 disabled:opacity-60 text-white rounded-xl transition-colors"
 						>
 							{createReply.isPending ? (
 								<Loader2 className="w-3.5 h-3.5 animate-spin" />

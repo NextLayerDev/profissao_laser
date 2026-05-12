@@ -55,7 +55,7 @@ export function CourseHero({ displayName }: CourseHeroProps) {
 					</h2>
 					<p className="text-slate-600 dark:text-gray-400 text-base md:text-lg leading-relaxed mb-1">
 						Continue evoluindo na{' '}
-						<span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-violet-400 bg-clip-text text-transparent font-semibold italic">
+						<span className="bg-gradient-to-r from-violet-600 via-violet-600 to-violet-400 bg-clip-text text-transparent font-semibold italic">
 							Profissao Laser
 						</span>
 					</p>
@@ -67,13 +67,13 @@ export function CourseHero({ displayName }: CourseHeroProps) {
 					{/* Progress + Level cards */}
 					<div className="flex flex-col sm:flex-row gap-3 mb-4">
 						{/* Progress card */}
-						<div className="flex-1 bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 rounded-xl p-3">
+						<div className="flex-1 bg-slate-50 dark:bg-[#1a1a1d] border border-slate-200/60 dark:border-white/5 rounded-xl p-3">
 							<p className="text-xs font-medium text-slate-500 dark:text-gray-400 mb-2">
 								Seu progresso hoje
 							</p>
 							<div className="w-full h-2 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
 								<div
-									className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full transition-all"
+									className="h-full bg-gradient-to-r from-violet-600 to-violet-600 rounded-full transition-all"
 									style={{ width: '60%' }}
 								/>
 							</div>
@@ -83,13 +83,13 @@ export function CourseHero({ displayName }: CourseHeroProps) {
 						</div>
 
 						{/* Level card */}
-						<div className="flex-1 bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 rounded-xl p-3">
+						<div className="flex-1 bg-slate-50 dark:bg-[#1a1a1d] border border-slate-200/60 dark:border-white/5 rounded-xl p-3">
 							<p className="text-xs font-medium text-slate-500 dark:text-gray-400 mb-1.5">
 								Seu nivel
 							</p>
 							<div className="flex items-center gap-2">
-								<div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center">
-									<Star className="w-3.5 h-3.5 text-amber-500" />
+								<div className="w-7 h-7 rounded-lg bg-violet-500/15 flex items-center justify-center">
+									<Star className="w-3.5 h-3.5 text-violet-600" />
 								</div>
 								<div>
 									<p className="text-sm font-bold text-slate-900 dark:text-white">
@@ -105,7 +105,7 @@ export function CourseHero({ displayName }: CourseHeroProps) {
 
 					<Link
 						href="/course/jornada"
-						className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-600 dark:text-violet-400 hover:text-violet-500 transition-colors"
+						className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-600 dark:text-violet-400 hover:text-violet-600 transition-colors"
 					>
 						Ver meu progresso
 						<ArrowRight className="w-3.5 h-3.5" />

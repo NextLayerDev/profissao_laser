@@ -1,9 +1,9 @@
 'use client';
 
-import { Loader2, Lock, Store } from 'lucide-react';
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { PreviasView } from '@/components/previas/previas-view';
+import { AccessGate } from '@/components/ui/access-gate';
+import { WizardSkeleton } from '@/components/ui/skeletons/wizard-skeleton';
 import { useCustomerFeatures } from '@/hooks/use-customer-features';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { getCurrentUser, getToken } from '@/lib/auth';
@@ -34,37 +34,15 @@ export default function PreviasCoursePage() {
 	const hasAccess = features?.vetorizacao ?? false;
 
 	if (email === undefined || isLoading) {
-		return (
-			<div className="flex items-center justify-center py-32">
-				<Loader2 className="w-8 h-8 text-rose-500 animate-spin" />
-			</div>
-		);
+		return <WizardSkeleton />;
 	}
 
 	if (!hasAccess) {
 		return (
-			<div className="flex items-center justify-center py-32">
-				<div className="text-center max-w-sm">
-					<div className="p-6 rounded-2xl bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800/50 mb-4">
-						<Lock className="w-14 h-14 text-rose-400 mx-auto mb-3" />
-						<h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
-							Acesso a Previas IA
-						</h2>
-						<p className="text-slate-500 dark:text-gray-500 text-sm">
-							{upgradeTiers?.vetorizacao
-								? `Disponivel no plano ${upgradeTiers.vetorizacao}.`
-								: 'Disponivel em planos com previas.'}
-						</p>
-					</div>
-					<Link
-						href="/store"
-						className="inline-flex items-center gap-2 px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-medium rounded-xl transition-colors"
-					>
-						<Store className="w-4 h-4" />
-						Ver planos
-					</Link>
-				</div>
-			</div>
+			<AccessGate
+				feature="Previas IA"
+				upgradeTier={upgradeTiers?.vetorizacao}
+			/>
 		);
 	}
 

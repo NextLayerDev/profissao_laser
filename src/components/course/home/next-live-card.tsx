@@ -82,7 +82,7 @@ export function NextLiveCard() {
 							description: 'Lembretes estarao disponiveis em breve!',
 						})
 					}
-					className="w-full py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-sm font-semibold rounded-xl hover:brightness-110 transition-all shadow-lg shadow-violet-500/20"
+					className="w-full py-2.5 bg-gradient-to-r from-violet-600 to-violet-600 text-white text-sm font-semibold rounded-xl hover:brightness-110 transition-all shadow-lg shadow-violet-500/20"
 				>
 					Definir lembrete
 				</button>

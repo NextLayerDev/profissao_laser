@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { ModalOverlay } from '@/components/ui/modal-overlay';
 import {
 	useChannelMessages,
 	useCommunityChannels,
@@ -34,7 +35,6 @@ import { useUsers } from '@/hooks/use-users';
 import type { Channel } from '@/types/community';
 import { buildUserDisplayMap, getMessageDisplayName } from '@/utils/community';
 import { formatMessageTime } from '@/utils/formatDate';
-import { ModalOverlay } from './modal-overlay';
 
 const CHANNEL_ICON_MAP: Record<string, typeof MessageSquare> = {
 	chat: MessageSquare,
@@ -247,7 +247,7 @@ export function ChannelsView({
 						<h3 className="text-2xl font-bold text-slate-900 dark:text-white text-center">
 							Criar Novo Canal
 						</h3>
-						<p className="text-slate-600 dark:text-slate-400 text-center mt-1">
+						<p className="text-slate-600 dark:text-gray-400 text-center mt-1">
 							Crie um espaco para discussoes sobre personalizacao laser
 						</p>
 						<div className="mt-6 space-y-2">
@@ -258,7 +258,7 @@ export function ChannelsView({
 								Nome do Canal
 							</label>
 							<div className="relative">
-								<span className="absolute left-4 top-1/2 -translate-y-1/2 text-violet-500 font-bold">
+								<span className="absolute left-4 top-1/2 -translate-y-1/2 text-violet-600 font-bold">
 									#
 								</span>
 								<input
@@ -267,7 +267,7 @@ export function ChannelsView({
 									placeholder="nome-do-canal"
 									value={newChannelName}
 									onChange={(e) => setNewChannelName(e.target.value)}
-									className="w-full pl-8 h-12 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50"
+									className="w-full pl-8 h-12 rounded-xl bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50"
 								/>
 							</div>
 						</div>
@@ -275,7 +275,7 @@ export function ChannelsView({
 							type="button"
 							onClick={handleCreateChannel}
 							disabled={!newChannelName.trim()}
-							className="w-full mt-6 flex items-center justify-center gap-2 py-3 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-medium rounded-full"
+							className="w-full mt-6 flex items-center justify-center gap-2 py-3 bg-violet-600 hover:bg-violet-600 disabled:opacity-50 text-white font-medium rounded-full"
 						>
 							<Sparkles className="h-4 w-4" /> Criar Canal
 						</button>
@@ -286,10 +286,10 @@ export function ChannelsView({
 			{/* Two-panel layout */}
 			<div className="flex h-[calc(100vh-4rem)]">
 				{/* Left panel - Channel list */}
-				<div className="w-72 border-r border-slate-200 dark:border-white/10 bg-white/50 dark:bg-[#0d0b1e]/60 overflow-y-auto shrink-0">
+				<div className="w-72 border-r border-slate-200 dark:border-white/10 bg-white/50 dark:bg-[#1a1a1d]/60 overflow-y-auto shrink-0">
 					<div className="p-4">
 						<div className="flex items-center justify-between mb-3">
-							<h4 className="text-xs font-bold text-violet-400 uppercase tracking-wider">
+							<h4 className="text-xs font-bold font-display text-violet-400 uppercase tracking-wider">
 								Canais
 							</h4>
 							{isAdmin && (
@@ -307,7 +307,7 @@ export function ChannelsView({
 								channelCategories.map((category) => (
 									<div key={category.name} className="space-y-1">
 										<div className="px-4 py-2">
-											<h5 className="text-[10px] font-bold text-violet-500 uppercase">
+											<h5 className="text-[10px] font-bold text-violet-600 uppercase">
 												{category.name}
 											</h5>
 										</div>
@@ -322,8 +322,8 @@ export function ChannelsView({
 													title={channel.description ?? undefined}
 													className={`w-full flex items-center gap-2 h-10 px-4 rounded-xl text-sm transition-all ${
 														isActive
-															? 'bg-violet-500/20 text-violet-700 dark:text-violet-300'
-															: 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+															? 'bg-violet-500/20 text-violet-700 dark:text-violet-400'
+															: 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
 													}`}
 												>
 													<IconComponent className="h-4 w-4 text-violet-400 shrink-0" />
@@ -349,7 +349,7 @@ export function ChannelsView({
 				{/* Right panel - Messages */}
 				<div className="flex-1 flex flex-col">
 					{/* Channel header */}
-					<div className="px-6 py-4 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0d0b1e]/80 backdrop-blur-lg shrink-0">
+					<div className="px-6 py-4 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#1a1a1d]/80 backdrop-blur-lg shrink-0">
 						<div className="flex items-center justify-between gap-4">
 							<div className="flex items-center gap-4 min-w-0">
 								<div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shrink-0">
@@ -359,7 +359,7 @@ export function ChannelsView({
 									<h2 className="font-bold text-lg text-slate-900 dark:text-white truncate">
 										{activeChannelLabel}
 									</h2>
-									<p className="text-xs text-slate-600 dark:text-slate-500">
+									<p className="text-xs text-slate-600 dark:text-gray-500">
 										Canal de discussao - Profissao Laser
 									</p>
 								</div>
@@ -393,13 +393,13 @@ export function ChannelsView({
 												placeholder="Pesquisar..."
 												value={chatSearchQuery}
 												onChange={(e) => setChatSearchQuery(e.target.value)}
-												className="w-full pl-8 pr-8 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30"
+												className="w-full pl-8 pr-8 py-1.5 rounded-lg bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30"
 											/>
 											{chatSearchQuery && (
 												<button
 													type="button"
 													onClick={() => setChatSearchQuery('')}
-													className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-slate-500 hover:text-slate-700 dark:hover:text-gray-300"
+													className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
 													title="Limpar pesquisa"
 												>
 													<X className="h-3.5 w-3.5" />
@@ -437,7 +437,7 @@ export function ChannelsView({
 												setIsSearchOpen(false);
 												setChatSearchQuery('');
 											}}
-											className="p-2 rounded-lg text-slate-500 hover:text-slate-700 dark:hover:text-gray-300 shrink-0"
+											className="p-2 rounded-lg text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 shrink-0"
 											title="Fechar pesquisa"
 										>
 											<X className="h-4 w-4" />
@@ -448,12 +448,12 @@ export function ChannelsView({
 									{[1, 2, 3].map((i) => (
 										<div
 											key={i}
-											className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 border-2 border-white dark:border-[#0d0b1e] flex items-center justify-center text-xs font-bold text-white"
+											className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 border-2 border-white dark:border-[#1a1a1d] flex items-center justify-center text-xs font-bold text-white"
 										>
 											U{i}
 										</div>
 									))}
-									<div className="w-9 h-9 rounded-full bg-cyan-500/50 border-2 border-white dark:border-[#0d0b1e] flex items-center justify-center text-[10px] font-bold text-white">
+									<div className="w-9 h-9 rounded-full bg-cyan-500/50 border-2 border-white dark:border-[#1a1a1d] flex items-center justify-center text-[10px] font-bold text-white">
 										+15
 									</div>
 								</div>
@@ -470,7 +470,7 @@ export function ChannelsView({
 							filteredChannelMessages.length === 0 ? (
 								<div className="flex flex-col items-center justify-center h-64 text-center">
 									<Search className="h-12 w-12 text-cyan-400 mb-4 opacity-50" />
-									<p className="text-slate-600 dark:text-slate-400">
+									<p className="text-slate-600 dark:text-gray-400">
 										Nenhuma mensagem encontrada para &quot;{chatSearchQuery}
 										&quot;
 									</p>
@@ -498,7 +498,7 @@ export function ChannelsView({
 												<span className="text-sm font-bold text-slate-900 dark:text-white">
 													{getMessageDisplayName(msg, userMap)}
 												</span>
-												<span className="text-[10px] text-slate-600 dark:text-slate-500">
+												<span className="text-[10px] text-slate-600 dark:text-gray-500">
 													{formatMessageTime(msg.time)}
 												</span>
 											</div>
@@ -506,7 +506,7 @@ export function ChannelsView({
 												className={`p-4 rounded-2xl text-sm space-y-2 ${
 													msg.isMe
 														? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-tr-sm'
-														: 'bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-200 rounded-tl-sm'
+														: 'bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-200 rounded-tl-sm'
 												}`}
 											>
 												{msg.content && (
@@ -548,7 +548,7 @@ export function ChannelsView({
 								<div className="p-6 rounded-full bg-cyan-500/20 mb-4">
 									<MessageSquare className="h-12 w-12 text-cyan-400" />
 								</div>
-								<p className="text-slate-600 dark:text-slate-400">
+								<p className="text-slate-600 dark:text-gray-400">
 									{activeChannel
 										? 'Seja o primeiro a enviar uma mensagem!'
 										: 'Selecione um canal para comecar'}
@@ -558,9 +558,9 @@ export function ChannelsView({
 					</div>
 
 					{/* Message input */}
-					<div className="p-4 border-t border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0d0b1e]/80 backdrop-blur-lg shrink-0">
+					<div className="p-4 border-t border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#1a1a1d]/80 backdrop-blur-lg shrink-0">
 						{!isAdmin && activeChannelData?.adminOnly === true ? (
-							<div className="flex items-center justify-center gap-2 py-4 px-4 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 dark:text-gray-400 text-sm">
+							<div className="flex items-center justify-center gap-2 py-4 px-4 rounded-2xl bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 text-slate-500 dark:text-gray-400 text-sm">
 								<Lock className="h-4 w-4 shrink-0" />
 								Apenas administradores podem enviar mensagens neste canal
 							</div>
@@ -613,7 +613,7 @@ export function ChannelsView({
 										}
 									}}
 									rows={1}
-									className="flex-1 min-h-[44px] max-h-32 py-3 px-6 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/50 resize-none overflow-y-auto"
+									className="flex-1 min-h-[44px] max-h-32 py-3 px-6 rounded-2xl bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/50 resize-none overflow-y-auto"
 								/>
 								<button
 									type="button"

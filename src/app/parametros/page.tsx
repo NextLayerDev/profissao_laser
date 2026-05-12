@@ -27,7 +27,7 @@ export default function ParametrosAdminPage() {
 	return (
 		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
-			<main className="px-8 py-6">
+			<main className="px-4 md:px-8 py-6">
 				<ParametrosAdminView />
 			</main>
 		</div>

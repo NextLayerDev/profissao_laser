@@ -257,7 +257,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 	if (isLoading) {
 		return (
 			<div className="flex items-center justify-center py-32">
-				<Loader2 className="w-8 h-8 text-lime-500 animate-spin" />
+				<Loader2 className="w-8 h-8 text-violet-600 animate-spin" />
 			</div>
 		);
 	}
@@ -265,12 +265,12 @@ export function DesignEditorView({ designId }: { designId: string }) {
 	if (isError || !design) {
 		return (
 			<div className="flex flex-col items-center justify-center py-32 gap-4">
-				<p className="text-slate-500 dark:text-slate-400">
+				<p className="text-slate-500 dark:text-gray-400">
 					Design nao encontrado.
 				</p>
 				<Link
 					href="/course/canva"
-					className="flex items-center gap-2 text-lime-600 hover:text-lime-500 font-medium"
+					className="flex items-center gap-2 text-violet-700 hover:text-violet-600 font-medium"
 				>
 					<ArrowLeft className="w-4 h-4" />
 					Voltar para designs
@@ -290,7 +290,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 	];
 
 	return (
-		<div className="relative p-4 md:p-6 max-w-[1400px] mx-auto">
+		<div className="relative p-4 md:p-6">
 			{/* Header */}
 			<div className="flex items-center justify-between gap-4 mb-6">
 				<div className="flex items-center gap-3 min-w-0">
@@ -313,7 +313,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 				</div>
 				<div className="flex items-center gap-2 shrink-0">
 					{hasUnsavedChanges && (
-						<span className="text-xs text-amber-500 font-medium hidden sm:inline">
+						<span className="text-xs text-violet-600 font-medium hidden sm:inline">
 							Nao salvo
 						</span>
 					)}
@@ -330,7 +330,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 						type="button"
 						onClick={handleSave}
 						disabled={isSaving}
-						className="flex items-center gap-2 px-4 py-2.5 bg-lime-600 hover:bg-lime-500 text-white font-medium rounded-xl transition-colors disabled:opacity-50"
+						className="flex items-center gap-2 px-4 py-2.5 bg-violet-700 hover:bg-violet-600 text-white font-medium rounded-xl transition-colors disabled:opacity-50"
 					>
 						{isSaving ? (
 							<Loader2 className="w-4 h-4 animate-spin" />
@@ -360,7 +360,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 						>
 							{isAnyPending && (
 								<div className="absolute inset-0 bg-white/60 dark:bg-black/40 flex flex-col items-center justify-center z-10">
-									<Loader2 className="w-10 h-10 text-lime-500 animate-spin mb-3" />
+									<Loader2 className="w-10 h-10 text-violet-600 animate-spin mb-3" />
 									<span className="text-sm font-medium text-slate-600 dark:text-slate-300">
 										Processando...
 									</span>
@@ -381,11 +381,11 @@ export function DesignEditorView({ designId }: { designId: string }) {
 								/>
 							) : (
 								<div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-									<Sparkles className="w-12 h-12 text-lime-400 mb-4" />
+									<Sparkles className="w-12 h-12 text-violet-400 mb-4" />
 									<h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
 										Gere sua primeira imagem
 									</h3>
-									<p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs">
+									<p className="text-sm text-slate-500 dark:text-gray-400 max-w-xs">
 										Use o painel de geracao ao lado para criar uma imagem com
 										IA.
 									</p>
@@ -434,8 +434,8 @@ export function DesignEditorView({ designId }: { designId: string }) {
 									onClick={() => setActiveTool(t.key)}
 									className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium rounded-lg transition-colors ${
 										activeTool === t.key
-											? 'bg-lime-50 dark:bg-lime-500/10 text-lime-700 dark:text-lime-400'
-											: 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5'
+											? 'bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400'
+											: 'text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5'
 									}`}
 								>
 									<t.icon className="w-3.5 h-3.5" />
@@ -461,7 +461,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 													onClick={() => setAiMode(m)}
 													className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
 														aiMode === m
-															? 'bg-lime-600 text-white'
+															? 'bg-violet-700 text-white'
 															: 'border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5'
 													}`}
 												>
@@ -470,7 +470,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 											))}
 										</div>
 										{aiMode === 'edit' && !canEditImage && (
-											<p className="text-xs text-amber-500 mt-1.5">
+											<p className="text-xs text-violet-600 mt-1.5">
 												Gere uma imagem primeiro para usar o modo editar.
 											</p>
 										)}
@@ -488,7 +488,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 													: 'Ex: Adicionar texto "Laser Pro" na parte inferior...'
 											}
 											rows={4}
-											className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-lime-500/30"
+											className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm text-slate-900 dark:text-white placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 										/>
 									</div>
 									<button
@@ -499,7 +499,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 											!aiPrompt.trim() ||
 											(aiMode === 'edit' && !canEditImage)
 										}
-										className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-lime-600 hover:bg-lime-500 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
+										className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
 									>
 										{aiGenerate.isPending ? (
 											<Loader2 className="w-4 h-4 animate-spin" />
@@ -514,13 +514,13 @@ export function DesignEditorView({ designId }: { designId: string }) {
 							{/* Remove Background */}
 							{activeTool === 'remove-bg' && (
 								<div className="space-y-4">
-									<div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-white/5">
-										<Eraser className="w-5 h-5 text-lime-500 mt-0.5 shrink-0" />
+									<div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-[#1a1a1d]">
+										<Eraser className="w-5 h-5 text-violet-600 mt-0.5 shrink-0" />
 										<div>
 											<p className="text-sm font-medium text-slate-900 dark:text-white">
 												Remover Fundo
 											</p>
-											<p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+											<p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
 												Remove automaticamente o fundo da imagem atual usando
 												IA.
 											</p>
@@ -530,7 +530,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 										type="button"
 										onClick={handleRemoveBg}
 										disabled={isAnyPending || !canEditImage}
-										className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-lime-600 hover:bg-lime-500 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
+										className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
 									>
 										{removeBg.isPending ? (
 											<Loader2 className="w-4 h-4 animate-spin" />
@@ -540,7 +540,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 										Remover Fundo
 									</button>
 									{!canEditImage && (
-										<p className="text-xs text-amber-500 text-center">
+										<p className="text-xs text-violet-600 text-center">
 											Gere uma imagem primeiro.
 										</p>
 									)}
@@ -550,13 +550,13 @@ export function DesignEditorView({ designId }: { designId: string }) {
 							{/* Apply Color */}
 							{activeTool === 'apply-color' && (
 								<div className="space-y-4">
-									<div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-white/5">
-										<Palette className="w-5 h-5 text-lime-500 mt-0.5 shrink-0" />
+									<div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-[#1a1a1d]">
+										<Palette className="w-5 h-5 text-violet-600 mt-0.5 shrink-0" />
 										<div>
 											<p className="text-sm font-medium text-slate-900 dark:text-white">
 												Aplicar Cor
 											</p>
-											<p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+											<p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
 												Aplica uma cor alvo a imagem atual usando IA.
 											</p>
 										</div>
@@ -576,7 +576,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 												type="text"
 												value={targetColor}
 												onChange={(e) => setTargetColor(e.target.value)}
-												className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-lime-500/30"
+												className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 											/>
 										</div>
 									</div>
@@ -584,7 +584,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 										type="button"
 										onClick={handleApplyColor}
 										disabled={isAnyPending || !canEditImage}
-										className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-lime-600 hover:bg-lime-500 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
+										className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
 									>
 										{applyColorMutation.isPending ? (
 											<Loader2 className="w-4 h-4 animate-spin" />
@@ -594,7 +594,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 										Aplicar Cor
 									</button>
 									{!canEditImage && (
-										<p className="text-xs text-amber-500 text-center">
+										<p className="text-xs text-violet-600 text-center">
 											Gere uma imagem primeiro.
 										</p>
 									)}
@@ -615,7 +615,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 												setEditName(e.target.value);
 												setHasUnsavedChanges(true);
 											}}
-											className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-lime-500/30"
+											className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 										/>
 									</div>
 									<div>
@@ -630,7 +630,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 											}}
 											placeholder="Notas sobre este design..."
 											rows={4}
-											className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-lime-500/30"
+											className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm text-slate-900 dark:text-white placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 										/>
 									</div>
 									<div className="pt-2 space-y-1.5 text-xs text-slate-400">

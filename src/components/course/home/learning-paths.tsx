@@ -9,7 +9,7 @@ const PATHS = [
 		lessons: 24,
 		progress: 60,
 		Icon: BookOpen,
-		gradient: 'from-violet-500 to-purple-600',
+		gradient: 'from-violet-600 to-violet-700',
 		iconBg: 'bg-violet-500/10 dark:bg-violet-500/20',
 	},
 	{
@@ -47,7 +47,7 @@ export function LearningPaths() {
 				</h3>
 				<Link
 					href="/course/jornada"
-					className="text-violet-600 dark:text-violet-400 hover:text-violet-500 text-sm font-medium transition-colors"
+					className="text-violet-600 dark:text-violet-400 hover:text-violet-600 text-sm font-medium transition-colors"
 				>
 					Ver todas
 				</Link>
@@ -81,7 +81,7 @@ export function LearningPaths() {
 						<p className="text-xs text-slate-400 dark:text-gray-500 mb-3">
 							{path.lessons} aulas
 						</p>
-						<div className="w-full h-1.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden mb-1">
+						<div className="w-full h-1.5 bg-slate-100 dark:bg-[#1a1a1d] rounded-full overflow-hidden mb-1">
 							<div
 								className={`h-full bg-gradient-to-r ${path.gradient} rounded-full transition-all`}
 								style={{ width: `${path.progress}%` }}

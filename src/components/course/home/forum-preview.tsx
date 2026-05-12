@@ -35,14 +35,14 @@ export function ForumPreview() {
 		<div className="bg-white dark:bg-[#12121a] border border-slate-200 dark:border-white/5 rounded-2xl p-5">
 			<div className="flex items-center justify-between mb-4">
 				<div className="flex items-center gap-2">
-					<MessageSquare className="w-4 h-4 text-violet-500" />
+					<MessageSquare className="w-4 h-4 text-violet-600" />
 					<h3 className="text-sm font-bold text-slate-900 dark:text-white">
 						Forum
 					</h3>
 				</div>
 				<Link
 					href="/course/forum"
-					className="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-500 font-medium transition-colors"
+					className="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-600 font-medium transition-colors"
 				>
 					Ver tudo
 				</Link>

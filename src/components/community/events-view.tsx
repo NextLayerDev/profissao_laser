@@ -2,6 +2,7 @@
 
 import { ArrowLeft, Calendar, Clock, Video } from 'lucide-react';
 import { useState } from 'react';
+import { ModalOverlay } from '@/components/ui/modal-overlay';
 import { useCommunityEvents } from '@/hooks/use-community';
 import type { Event } from '@/types/community';
 import {
@@ -12,7 +13,6 @@ import {
 	getEventMonthYear,
 	parseEventDate,
 } from '@/utils/formatDate';
-import { ModalOverlay } from './modal-overlay';
 
 function getEventTypeBadge(event: Event): { label: string; className: string } {
 	switch (event.type) {
@@ -21,7 +21,7 @@ function getEventTypeBadge(event: Event): { label: string; className: string } {
 		case 'workshop':
 			return { label: 'WORKSHOP', className: 'bg-blue-500/20 text-blue-400' };
 		case 'qa':
-			return { label: 'Q&A', className: 'bg-amber-500/20 text-amber-400' };
+			return { label: 'Q&A', className: 'bg-violet-500/20 text-violet-400' };
 		default:
 			return { label: 'EVENTO', className: 'bg-violet-500/20 text-violet-400' };
 	}
@@ -47,7 +47,7 @@ export function EventsView({ isAdmin: _isAdmin = false }: EventsViewProps) {
 				<ModalOverlay onClose={() => setShowCalendarModal(false)}>
 					<div className="p-6">
 						<h3 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-4">
-							<Calendar className="h-6 w-6 text-violet-500" />
+							<Calendar className="h-6 w-6 text-violet-600" />
 							Calendario de Eventos
 						</h3>
 						<p className="text-violet-400 mb-6">
@@ -175,14 +175,14 @@ export function EventsView({ isAdmin: _isAdmin = false }: EventsViewProps) {
 									.slice(0, 10);
 								if (events.length === 0) {
 									return (
-										<p className="text-sm text-slate-500 dark:text-slate-400 py-4">
+										<p className="text-sm text-slate-500 dark:text-gray-400 py-4">
 											Nenhum evento agendado
 										</p>
 									);
 								}
 								if (monthEvents.length === 0) {
 									return (
-										<p className="text-sm text-slate-500 dark:text-slate-400 py-4">
+										<p className="text-sm text-slate-500 dark:text-gray-400 py-4">
 											Nenhum evento neste mes
 										</p>
 									);
@@ -192,7 +192,7 @@ export function EventsView({ isAdmin: _isAdmin = false }: EventsViewProps) {
 									return (
 										<div
 											key={event.id}
-											className="p-4 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl hover:border-violet-500/40 transition-colors"
+											className="p-4 bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl hover:border-violet-500/40 transition-colors"
 										>
 											<div className="flex gap-3">
 												<div className="w-14 h-14 rounded-xl bg-violet-600 flex flex-col items-center justify-center text-white shrink-0">
@@ -203,7 +203,7 @@ export function EventsView({ isAdmin: _isAdmin = false }: EventsViewProps) {
 													<h5 className="font-semibold text-slate-900 dark:text-white text-sm">
 														{event.title}
 													</h5>
-													<p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+													<p className="text-xs text-slate-600 dark:text-gray-400 mt-1">
 														{event.description ?? ''}
 													</p>
 													<div className="flex items-center gap-2 text-xs text-violet-400 mt-2">
@@ -223,25 +223,22 @@ export function EventsView({ isAdmin: _isAdmin = false }: EventsViewProps) {
 
 			{/* Main content */}
 			<div className="relative w-full p-6 space-y-6">
-				{/* Glow orbs */}
-				<div className="absolute top-20 -right-20 w-60 h-60 bg-violet-500/5 rounded-full blur-3xl pointer-events-none" />
-				<div className="absolute bottom-20 -left-20 w-48 h-48 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
 				<div className="flex justify-between items-center">
 					<div>
-						<h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-							<div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600">
+						<h2 className="text-2xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-3">
+							<div className="p-2 rounded-xl bg-violet-600">
 								<Calendar className="h-6 w-6 text-white" />
 							</div>
 							Agenda de Eventos
 						</h2>
-						<p className="text-slate-600 dark:text-slate-400 mt-1">
+						<p className="text-slate-600 dark:text-gray-400 mt-1">
 							Lives, workshops e treinamentos exclusivos
 						</p>
 					</div>
 					<button
 						type="button"
 						onClick={() => setShowCalendarModal(true)}
-						className="flex items-center gap-2 px-6 py-2 bg-violet-600 hover:bg-violet-500 text-white font-medium rounded-full"
+						className="flex items-center gap-2 px-6 py-2 bg-violet-600 hover:bg-violet-600 text-white font-medium rounded-full"
 					>
 						<Calendar className="h-4 w-4" /> Ver Calendario
 					</button>
@@ -249,12 +246,12 @@ export function EventsView({ isAdmin: _isAdmin = false }: EventsViewProps) {
 
 				<div className="space-y-6">
 					{events.length === 0 ? (
-						<div className="text-center py-16 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl">
-							<Calendar className="h-16 w-16 text-slate-400 dark:text-slate-500 mx-auto mb-4" />
-							<p className="text-slate-600 dark:text-slate-400 font-medium">
+						<div className="text-center py-16 bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl">
+							<Calendar className="h-16 w-16 text-slate-400 dark:text-gray-500 mx-auto mb-4" />
+							<p className="text-slate-600 dark:text-gray-400 font-medium">
 								Nenhum evento agendado
 							</p>
-							<p className="text-sm text-slate-500 dark:text-slate-500 mt-1">
+							<p className="text-sm text-slate-500 dark:text-gray-500 mt-1">
 								Volte em breve para ver lives e workshops
 							</p>
 						</div>
@@ -264,7 +261,7 @@ export function EventsView({ isAdmin: _isAdmin = false }: EventsViewProps) {
 							return (
 								<div
 									key={event.id}
-									className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden border-l-4 border-l-cyan-500 hover:scale-[1.01] hover:shadow-xl hover:shadow-violet-500/10 transition-all duration-300"
+									className="bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden border-l-4 border-l-cyan-500 hover:shadow-xl hover:shadow-violet-500/10 transition-all duration-300"
 								>
 									<div className="md:flex">
 										<div className="md:w-64 p-8 bg-violet-500/10 flex flex-col items-center justify-center text-center">
@@ -284,12 +281,12 @@ export function EventsView({ isAdmin: _isAdmin = false }: EventsViewProps) {
 											<h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
 												{event.title}
 											</h3>
-											<p className="text-slate-600 dark:text-slate-400 mb-4">
+											<p className="text-slate-600 dark:text-gray-400 mb-4">
 												{event.description ?? ''}
 											</p>
 											<button
 												type="button"
-												className="flex items-center gap-2 px-6 py-2 bg-violet-600 hover:bg-violet-500 text-white font-medium rounded-full"
+												className="flex items-center gap-2 px-6 py-2 bg-violet-600 hover:bg-violet-600 text-white font-medium rounded-full"
 											>
 												<Video className="h-4 w-4" /> Entrar na Sala de Espera
 											</button>

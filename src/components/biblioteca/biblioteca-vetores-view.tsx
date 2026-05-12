@@ -9,7 +9,6 @@ import {
 	Heart,
 	Lightbulb,
 	List,
-	Loader2,
 	Search,
 	Star,
 	Upload,
@@ -79,10 +78,10 @@ const BADGE_COLORS: Record<string, string> = {
 	CDR: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
 	SVG: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
 	DXF: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-	AI: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+	AI: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
 	PDF: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
 	PNG: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400',
-	JPG: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
+	JPG: 'bg-violet-100 text-violet-700 dark:bg-violet-800/30 dark:text-violet-400',
 	EPS: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
 };
 
@@ -182,15 +181,15 @@ export function BibliotecaVetoresView({
 	};
 
 	return (
-		<div className="relative p-4 md:p-8 max-w-[1400px] mx-auto space-y-8">
+		<div className="relative p-4 md:p-8 space-y-8">
 			{/* Decorative glow orbs */}
 			<div className="absolute top-40 -right-20 w-72 h-72 bg-violet-500/5 rounded-full blur-3xl pointer-events-none" />
-			<div className="absolute bottom-40 -left-20 w-56 h-56 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+			<div className="absolute bottom-40 -left-20 w-56 h-56 bg-violet-500/5 rounded-full blur-3xl pointer-events-none" />
 
 			{/* ============================================================ */}
 			{/*  1 - HEADER                                                  */}
 			{/* ============================================================ */}
-			<div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600/5 to-indigo-600/5 dark:from-violet-600/10 dark:to-indigo-600/10 border border-slate-200 dark:border-white/10 p-6 md:p-8">
+			<div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500/5 to-violet-500/5 dark:from-violet-500/10 dark:to-violet-500/10 border border-slate-200 dark:border-white/10 p-6 md:p-8">
 				{/* Header bg image */}
 				<Image
 					src="/img/header_prof-laser.png"
@@ -231,7 +230,7 @@ export function BibliotecaVetoresView({
 									setSearchQuery(e.target.value);
 									setCurrentPage(1);
 								}}
-								className="pl-9 pr-4 py-2 w-56 md:w-64 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition"
+								className="pl-9 pr-4 py-2 w-56 md:w-64 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition"
 							/>
 						</div>
 
@@ -239,7 +238,7 @@ export function BibliotecaVetoresView({
 						<button
 							type="button"
 							onClick={handleUploadClick}
-							className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition-colors"
+							className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-600 text-white text-sm font-semibold transition-colors"
 						>
 							<Upload className="w-4 h-4" />
 							<span className="hidden sm:inline">Enviar vetor</span>
@@ -258,7 +257,7 @@ export function BibliotecaVetoresView({
 					return (
 						<div
 							key={stat.label}
-							className="p-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:scale-[1.02] hover:shadow-xl hover:shadow-violet-500/10 transition-all duration-300"
+							className="p-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] hover:scale-[1.02] hover:shadow-xl hover:shadow-violet-500/10 transition-all duration-300"
 						>
 							<div className="flex items-center gap-3">
 								<div className="p-2 rounded-xl bg-violet-100 dark:bg-violet-500/10">
@@ -305,11 +304,11 @@ export function BibliotecaVetoresView({
 								key={cat.name}
 								type="button"
 								onClick={handleFilterClick}
-								className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:border-violet-400 dark:hover:border-violet-500/50 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors"
+								className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm font-medium text-slate-700 dark:text-slate-300 hover:border-violet-400 dark:hover:border-violet-500/50 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors"
 							>
 								{cat.icon && <span>{cat.icon}</span>}
 								<span>{cat.name}</span>
-								<span className="text-xs text-slate-400 dark:text-slate-500">
+								<span className="text-xs text-slate-400 dark:text-gray-500">
 									{cat.count.toLocaleString('pt-BR')}
 								</span>
 							</button>
@@ -335,10 +334,10 @@ export function BibliotecaVetoresView({
 									key={file.id}
 									type="button"
 									onClick={() => handleDownload(file)}
-									className="flex-shrink-0 w-56 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden hover:border-violet-400 dark:hover:border-violet-500/50 hover:shadow-xl hover:shadow-violet-500/10 hover:scale-105 transition-all duration-300 group text-left"
+									className="flex-shrink-0 w-56 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] overflow-hidden hover:border-violet-400 dark:hover:border-violet-500/50 hover:border-violet-500/30 transition-all duration-300 group text-left"
 								>
 									{/* Image */}
-									<div className="h-32 relative overflow-hidden bg-gradient-to-br from-violet-100 to-violet-200 dark:from-violet-900/30 dark:to-violet-800/20">
+									<div className="h-32 relative overflow-hidden bg-gradient-to-br from-violet-100 to-violet-200 dark:from-violet-800/30 dark:to-violet-700/20">
 										{showThumbnail ? (
 											<img
 												src={file.fileUrl}
@@ -381,7 +380,7 @@ export function BibliotecaVetoresView({
 						key={label}
 						type="button"
 						onClick={handleFilterClick}
-						className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-600 dark:text-slate-300 hover:border-violet-400 dark:hover:border-violet-500/50 transition-colors"
+						className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm text-slate-600 dark:text-slate-300 hover:border-violet-400 dark:hover:border-violet-500/50 transition-colors"
 					>
 						<Filter className="w-3.5 h-3.5" />
 						{label}
@@ -395,7 +394,7 @@ export function BibliotecaVetoresView({
 				<button
 					type="button"
 					onClick={handleFilterClick}
-					className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-600 dark:text-slate-300 hover:border-violet-400 dark:hover:border-violet-500/50 transition-colors"
+					className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm text-slate-600 dark:text-slate-300 hover:border-violet-400 dark:hover:border-violet-500/50 transition-colors"
 				>
 					<Star className="w-3.5 h-3.5" />
 					Ordenar
@@ -410,7 +409,7 @@ export function BibliotecaVetoresView({
 						className={`p-1.5 transition-colors ${
 							viewMode === 'grid'
 								? 'bg-violet-600 text-white'
-								: 'bg-white dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:text-violet-600'
+								: 'bg-white dark:bg-[#1a1a1d] text-slate-500 dark:text-gray-400 hover:text-violet-600'
 						}`}
 					>
 						<Grid className="w-4 h-4" />
@@ -421,7 +420,7 @@ export function BibliotecaVetoresView({
 						className={`p-1.5 transition-colors ${
 							viewMode === 'list'
 								? 'bg-violet-600 text-white'
-								: 'bg-white dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:text-violet-600'
+								: 'bg-white dark:bg-[#1a1a1d] text-slate-500 dark:text-gray-400 hover:text-violet-600'
 						}`}
 					>
 						<List className="w-4 h-4" />
@@ -433,15 +432,46 @@ export function BibliotecaVetoresView({
 			{/*  6 - CONTENT: FOLDERS + FILES GRID                           */}
 			{/* ============================================================ */}
 			{contentsLoading ? (
-				<div className="flex justify-center py-16">
-					<Loader2 className="w-10 h-10 text-violet-500 animate-spin" />
+				<div className="animate-pulse space-y-8">
+					{/* Skeleton folders */}
+					<div>
+						<div className="h-4 w-16 rounded bg-slate-200 dark:bg-white/5 mb-4" />
+						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+							{Array.from({ length: 6 }).map((_, i) => (
+								<div
+									key={i}
+									className="flex flex-col items-center gap-3 p-5 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl"
+								>
+									<div className="w-14 h-14 rounded-2xl bg-slate-200 dark:bg-white/5" />
+									<div className="h-3 w-20 rounded bg-slate-200 dark:bg-white/5" />
+								</div>
+							))}
+						</div>
+					</div>
+					{/* Skeleton file cards */}
+					<div>
+						<div className="h-4 w-16 rounded bg-slate-200 dark:bg-white/5 mb-4" />
+						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+							{Array.from({ length: 6 }).map((_, i) => (
+								<div
+									key={i}
+									className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden"
+								>
+									<div className="aspect-square bg-slate-200 dark:bg-white/5" />
+									<div className="p-3">
+										<div className="h-3 w-full rounded bg-slate-200 dark:bg-white/5" />
+									</div>
+								</div>
+							))}
+						</div>
+					</div>
 				</div>
 			) : (
 				<div className="space-y-8">
 					{/* Folders */}
 					{folders.length > 0 && (
 						<div>
-							<h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">
+							<h3 className="text-sm font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-4">
 								Pastas
 							</h3>
 							<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -454,15 +484,15 @@ export function BibliotecaVetoresView({
 											setCurrentPage(1);
 											setSearchQuery('');
 										}}
-										className="group flex flex-col items-center gap-3 p-5 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl hover:border-violet-400 dark:hover:border-violet-500/40 hover:shadow-lg hover:shadow-violet-500/5 transition-all duration-200 text-left"
+										className="group flex flex-col items-center gap-3 p-5 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl hover:border-violet-400 dark:hover:border-violet-500/40 hover:shadow-lg hover:shadow-violet-500/5 transition-all duration-200 text-left"
 									>
-										<div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
+										<div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-400 to-orange-500 flex items-center justify-center shadow-lg shadow-violet-500/20 group-hover:scale-[1.02] transition-transform">
 											<FolderOpen className="w-7 h-7 text-white" />
 										</div>
 										<span className="font-medium text-slate-900 dark:text-white text-sm text-center line-clamp-2 w-full">
 											{folder.name}
 										</span>
-										<ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-violet-500 transition-colors" />
+										<ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-violet-600 transition-colors" />
 									</button>
 								))}
 							</div>
@@ -472,7 +502,7 @@ export function BibliotecaVetoresView({
 					{/* Files */}
 					{paginatedFiles.length > 0 && (
 						<div>
-							<h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">
+							<h3 className="text-sm font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-4">
 								Vetores
 							</h3>
 
@@ -488,19 +518,19 @@ export function BibliotecaVetoresView({
 										return (
 											<div
 												key={file.id}
-												className="group flex flex-col bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden hover:border-violet-400 dark:hover:border-violet-500/40 hover:shadow-lg hover:shadow-violet-500/5 transition-all duration-200"
+												className="group flex flex-col bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden hover:border-violet-400 dark:hover:border-violet-500/40 hover:shadow-lg hover:shadow-violet-500/5 transition-all duration-200"
 											>
 												{/* Preview */}
-												<div className="aspect-square bg-slate-50 dark:bg-white/5 relative overflow-hidden">
+												<div className="aspect-square bg-slate-50 dark:bg-[#1a1a1d] relative overflow-hidden">
 													{showThumbnail ? (
 														<img
 															src={file.fileUrl}
 															alt={file.name}
-															className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+															className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
 														/>
 													) : (
 														<div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-white/5 dark:to-white/[0.02]">
-															<div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
+															<div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-violet-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
 																<FolderOpen className="w-7 h-7 text-white" />
 															</div>
 														</div>
@@ -528,7 +558,7 @@ export function BibliotecaVetoresView({
 														<button
 															type="button"
 															onClick={() => handleDownload(file)}
-															className="p-2 rounded-xl bg-white/90 dark:bg-slate-900/90 shadow-md text-violet-600 dark:text-violet-400 hover:bg-violet-500 hover:text-white transition-colors"
+															className="p-2 rounded-xl bg-white/90 dark:bg-slate-900/90 shadow-md text-violet-600 dark:text-violet-400 hover:bg-violet-600 hover:text-white transition-colors"
 															title="Download"
 														>
 															<Download className="w-4 h-4" />
@@ -559,10 +589,10 @@ export function BibliotecaVetoresView({
 										return (
 											<div
 												key={file.id}
-												className="group flex items-center gap-4 p-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl hover:border-violet-400 dark:hover:border-violet-500/40 transition-all"
+												className="group flex items-center gap-4 p-3 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl hover:border-violet-400 dark:hover:border-violet-500/40 transition-all"
 											>
 												{/* Thumbnail */}
-												<div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-50 dark:bg-white/5 flex-shrink-0">
+												<div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-50 dark:bg-[#1a1a1d] flex-shrink-0">
 													{showThumbnail ? (
 														<img
 															src={file.fileUrl}
@@ -571,7 +601,7 @@ export function BibliotecaVetoresView({
 														/>
 													) : (
 														<div className="w-full h-full flex items-center justify-center">
-															<FolderOpen className="w-5 h-5 text-violet-500" />
+															<FolderOpen className="w-5 h-5 text-violet-600" />
 														</div>
 													)}
 												</div>
@@ -603,7 +633,7 @@ export function BibliotecaVetoresView({
 													<button
 														type="button"
 														onClick={() => handleDownload(file)}
-														className="p-1.5 rounded-lg text-violet-600 dark:text-violet-400 hover:bg-violet-500 hover:text-white transition-colors"
+														className="p-1.5 rounded-lg text-violet-600 dark:text-violet-400 hover:bg-violet-600 hover:text-white transition-colors"
 														title="Download"
 													>
 														<Download className="w-4 h-4" />
@@ -619,14 +649,14 @@ export function BibliotecaVetoresView({
 
 					{/* Empty state */}
 					{folders.length === 0 && allFiles.length === 0 && (
-						<div className="text-center py-20 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl">
+						<div className="text-center py-20 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl">
 							<FolderOpen className="w-20 h-20 text-slate-300 dark:text-slate-600 mx-auto mb-6 opacity-60" />
-							<p className="text-slate-600 dark:text-slate-400 font-medium text-lg">
+							<p className="text-slate-600 dark:text-gray-400 font-medium text-lg">
 								{searchQuery
 									? 'Nenhum resultado encontrado'
 									: 'Esta pasta está vazia'}
 							</p>
-							<p className="text-sm text-slate-500 dark:text-slate-500 mt-2">
+							<p className="text-sm text-slate-500 dark:text-gray-500 mt-2">
 								{searchQuery
 									? 'Tente usar outros termos na busca.'
 									: 'Volte em breve para ver novos conteúdos'}
@@ -674,7 +704,7 @@ export function BibliotecaVetoresView({
 									return (
 										<span key={page} className="flex items-center">
 											{showEllipsis && (
-												<span className="px-1 text-slate-400 dark:text-slate-500">
+												<span className="px-1 text-slate-400 dark:text-gray-500">
 													...
 												</span>
 											)}
@@ -709,13 +739,13 @@ export function BibliotecaVetoresView({
 			{/* ============================================================ */}
 			{/*  8 - WIDGET: DICA CPL                                        */}
 			{/* ============================================================ */}
-			<div className="relative overflow-hidden rounded-2xl border border-violet-200 dark:border-violet-500/20 bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-900/20 dark:to-violet-800/10 p-6">
+			<div className="relative overflow-hidden rounded-2xl border border-violet-200 dark:border-violet-500/20 bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-800/20 dark:to-violet-700/10 p-6">
 				<div className="flex items-start gap-4">
 					<div className="p-3 rounded-xl bg-violet-200 dark:bg-violet-500/20 flex-shrink-0">
 						<Lightbulb className="w-6 h-6 text-violet-600 dark:text-violet-400" />
 					</div>
 					<div>
-						<h3 className="font-bold text-violet-900 dark:text-violet-300 mb-1">
+						<h3 className="font-bold text-violet-800 dark:text-violet-400 mb-1">
 							Dica CPL
 						</h3>
 						<p className="text-sm text-violet-700 dark:text-violet-400 leading-relaxed">

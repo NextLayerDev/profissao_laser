@@ -10,7 +10,6 @@ import {
 	Download,
 	Eye,
 	HelpCircle,
-	History,
 	Image,
 	Loader2,
 	PenLine,
@@ -26,6 +25,7 @@ import {
 import NextImage from 'next/image';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/ui/page-header';
 import { useSaveVector, useVectorizeImage } from '@/hooks/use-vectors';
 import type { VectorizeResult } from '@/services/vectorize';
 
@@ -80,8 +80,8 @@ function StepIndicator({ current }: { current: WizardStep }) {
 									done
 										? 'bg-violet-600 text-white'
 										: active
-											? 'bg-violet-600 text-white ring-4 ring-violet-600/20'
-											: 'bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400'
+											? 'bg-violet-600 text-white ring-4 ring-violet-500/20'
+											: 'bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-gray-400'
 								}`}
 							>
 								{done ? <Check className="w-5 h-5" /> : step.num}
@@ -91,8 +91,8 @@ function StepIndicator({ current }: { current: WizardStep }) {
 									active
 										? 'text-violet-600 dark:text-violet-400'
 										: done
-											? 'text-slate-600 dark:text-slate-400'
-											: 'text-slate-400 dark:text-slate-500'
+											? 'text-slate-600 dark:text-gray-400'
+											: 'text-slate-400 dark:text-gray-500'
 								}`}
 							>
 								{step.label}
@@ -175,7 +175,7 @@ function StepUpload({
 				onClick={() => inputRef.current?.click()}
 				className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-8 py-14 transition-colors cursor-pointer ${
 					isDragging
-						? 'border-violet-500 bg-violet-500/10 dark:bg-violet-500/20'
+						? 'border-violet-600 bg-violet-500/10 dark:bg-violet-500/20'
 						: 'border-slate-200 dark:border-white/10 hover:border-violet-500/50 dark:hover:border-white/20'
 				}`}
 			>
@@ -186,20 +186,20 @@ function StepUpload({
 					onChange={handleFileSelect}
 					className="hidden"
 				/>
-				<div className="rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 p-4 text-white mb-4">
+				<div className="rounded-xl bg-gradient-to-br from-violet-600 to-violet-700 p-4 text-white mb-4">
 					<Upload className="w-10 h-10" />
 				</div>
-				<p className="text-slate-600 dark:text-slate-400 text-center font-medium mb-1">
+				<p className="text-slate-600 dark:text-gray-400 text-center font-medium mb-1">
 					Arraste sua imagem ou clique para selecionar
 				</p>
-				<p className="text-slate-500 dark:text-slate-500 text-sm">
+				<p className="text-slate-500 dark:text-gray-500 text-sm">
 					PNG, JPG, WEBP (max. 10MB)
 				</p>
 			</div>
 
 			{/* File info card */}
 			{file && (
-				<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-4">
+				<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-4">
 					<div className="flex items-center gap-3">
 						<div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-500/20">
 							<Image className="w-5 h-5 text-violet-600 dark:text-violet-400" />
@@ -208,13 +208,13 @@ function StepUpload({
 							<p className="font-medium text-slate-900 dark:text-white truncate text-sm">
 								{file.name}
 							</p>
-							<p className="text-slate-500 dark:text-slate-400 text-xs">
+							<p className="text-slate-500 dark:text-gray-400 text-xs">
 								{formatFileSize(file.size)} &middot;{' '}
 								{file.type.split('/')[1]?.toUpperCase()}
 							</p>
 						</div>
 						{isVectorizing && (
-							<div className="flex items-center gap-2 text-violet-500">
+							<div className="flex items-center gap-2 text-violet-600">
 								<Loader2 className="w-5 h-5 animate-spin" />
 								<span className="text-sm font-medium">Vetorizando...</span>
 							</div>
@@ -233,11 +233,11 @@ function StepUpload({
 			{file && (originalPreviewUrl || result) && (
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					{originalPreviewUrl && (
-						<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-4">
-							<p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+						<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-4">
+							<p className="text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-3">
 								Original
 							</p>
-							<div className="aspect-square bg-slate-100 dark:bg-white/5 rounded-lg flex items-center justify-center overflow-hidden">
+							<div className="aspect-square bg-slate-100 dark:bg-[#1a1a1d] rounded-lg flex items-center justify-center overflow-hidden">
 								<img
 									src={originalPreviewUrl}
 									alt="Original"
@@ -246,14 +246,14 @@ function StepUpload({
 							</div>
 						</div>
 					)}
-					<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-4">
-						<p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+					<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-4">
+						<p className="text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-3">
 							Vetorizado
 						</p>
-						<div className="aspect-square bg-slate-100 dark:bg-white/5 rounded-lg flex items-center justify-center overflow-hidden">
+						<div className="aspect-square bg-slate-100 dark:bg-[#1a1a1d] rounded-lg flex items-center justify-center overflow-hidden">
 							{isVectorizing ? (
 								<div className="flex flex-col items-center gap-3">
-									<Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
+									<Loader2 className="w-8 h-8 text-violet-600 animate-spin" />
 									<span className="text-sm text-slate-500">Processando...</span>
 								</div>
 							) : result ? (
@@ -339,15 +339,15 @@ function StepParams({
 							onClick={() => setMode(m.key)}
 							className={`rounded-xl border-2 p-4 text-left transition-all ${
 								mode === m.key
-									? 'border-violet-500 bg-violet-50 dark:bg-violet-500/10'
-									: 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:border-slate-300 dark:hover:border-white/20'
+									? 'border-violet-600 bg-violet-50 dark:bg-violet-500/10'
+									: 'border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] hover:border-slate-300 dark:hover:border-white/20'
 							}`}
 						>
 							<div
 								className={`mb-2 ${
 									mode === m.key
 										? 'text-violet-600 dark:text-violet-400'
-										: 'text-slate-400 dark:text-slate-500'
+										: 'text-slate-400 dark:text-gray-500'
 								}`}
 							>
 								{m.icon}
@@ -355,13 +355,13 @@ function StepParams({
 							<p
 								className={`font-semibold text-sm ${
 									mode === m.key
-										? 'text-violet-700 dark:text-violet-300'
+										? 'text-violet-700 dark:text-violet-400'
 										: 'text-slate-700 dark:text-slate-300'
 								}`}
 							>
 								{m.label}
 							</p>
-							<p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+							<p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
 								{m.desc}
 							</p>
 						</button>
@@ -393,7 +393,7 @@ function StepParams({
 				].map((s) => (
 					<div key={s.key}>
 						<div className="flex items-center justify-between mb-1.5">
-							<div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+							<div className="flex items-center gap-2 text-sm text-slate-600 dark:text-gray-400">
 								{s.icon}
 								{s.label}
 							</div>
@@ -469,7 +469,7 @@ function StepParams({
 					)}
 				</button>
 				{advancedOpen && (
-					<div className="p-4 pt-0 text-sm text-slate-500 dark:text-slate-400">
+					<div className="p-4 pt-0 text-sm text-slate-500 dark:text-gray-400">
 						<p>
 							Configuracoes avancadas estarao disponiveis em breve. Os
 							parametros atuais ja oferecem excelentes resultados para a maioria
@@ -484,7 +484,7 @@ function StepParams({
 				<button
 					type="button"
 					onClick={onContinue}
-					className="flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-colors"
+					className="flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors"
 				>
 					Continuar
 					<ArrowRight className="w-4 h-4" />
@@ -525,7 +525,7 @@ function StepResult({
 	return (
 		<div className="space-y-6">
 			{/* SVG Preview */}
-			<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-4">
+			<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-4">
 				<div
 					className={`aspect-[4/3] rounded-lg flex items-center justify-center overflow-hidden ${bgClass}`}
 				>
@@ -539,7 +539,7 @@ function StepResult({
 
 			{/* Background toggle */}
 			<div className="flex items-center gap-2">
-				<span className="text-sm text-slate-500 dark:text-slate-400 mr-2">
+				<span className="text-sm text-slate-500 dark:text-gray-400 mr-2">
 					Fundo:
 				</span>
 				{[
@@ -554,7 +554,7 @@ function StepResult({
 						className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
 							bgMode === bg.key
 								? 'bg-violet-600 text-white'
-								: 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-white/20'
+								: 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-gray-400 hover:bg-slate-300 dark:hover:bg-white/20'
 						}`}
 					>
 						{bg.label}
@@ -567,7 +567,7 @@ function StepResult({
 				<button
 					type="button"
 					onClick={() => downloadSvg(result.svgContent, result.originalName)}
-					className="flex items-center justify-center gap-2 px-4 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-colors"
+					className="flex items-center justify-center gap-2 px-4 py-3 bg-violet-600 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors"
 				>
 					<Download className="w-5 h-5" />
 					Baixar SVG
@@ -575,22 +575,22 @@ function StepResult({
 				<button
 					type="button"
 					onClick={() => toast.info('Exportacao DXF em breve!')}
-					className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400 font-semibold rounded-xl transition-colors hover:bg-slate-300 dark:hover:bg-white/20"
+					className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-gray-400 font-semibold rounded-xl transition-colors hover:bg-slate-300 dark:hover:bg-white/20"
 				>
 					<Download className="w-5 h-5" />
 					Baixar DXF
-					<span className="text-[10px] bg-slate-300 dark:bg-white/10 text-slate-500 dark:text-slate-500 px-1.5 py-0.5 rounded-full font-medium">
+					<span className="text-[10px] bg-slate-300 dark:bg-white/10 text-slate-500 dark:text-gray-500 px-1.5 py-0.5 rounded-full font-medium">
 						Em breve
 					</span>
 				</button>
 				<button
 					type="button"
 					onClick={() => toast.info('Exportacao PNG em breve!')}
-					className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400 font-semibold rounded-xl transition-colors hover:bg-slate-300 dark:hover:bg-white/20"
+					className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-gray-400 font-semibold rounded-xl transition-colors hover:bg-slate-300 dark:hover:bg-white/20"
 				>
 					<Download className="w-5 h-5" />
 					Baixar PNG
-					<span className="text-[10px] bg-slate-300 dark:bg-white/10 text-slate-500 dark:text-slate-500 px-1.5 py-0.5 rounded-full font-medium">
+					<span className="text-[10px] bg-slate-300 dark:bg-white/10 text-slate-500 dark:text-gray-500 px-1.5 py-0.5 rounded-full font-medium">
 						Em breve
 					</span>
 				</button>
@@ -661,22 +661,22 @@ function HelpSection() {
 	return (
 		<div>
 			<h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-				<BookOpen className="w-5 h-5 text-violet-500" />
+				<BookOpen className="w-5 h-5 text-violet-600" />
 				Ajuda
 			</h3>
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 				{cards.map((card) => (
 					<div
 						key={card.title}
-						className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-4 hover:border-violet-500/50 dark:hover:border-violet-500/30 transition-colors group"
+						className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-4 hover:border-violet-500/50 dark:hover:border-violet-500/30 transition-colors group"
 					>
-						<div className="text-slate-400 dark:text-slate-500 group-hover:text-violet-500 transition-colors mb-3">
+						<div className="text-slate-400 dark:text-gray-500 group-hover:text-violet-600 transition-colors mb-3">
 							{card.icon}
 						</div>
 						<p className="font-semibold text-sm text-slate-900 dark:text-white">
 							{card.title}
 						</p>
-						<p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+						<p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
 							{card.desc}
 						</p>
 					</div>
@@ -690,30 +690,19 @@ function HelpSection() {
 
 function BatchBanner() {
 	return (
-		<div className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-white/10 bg-gradient-to-r from-violet-600/5 to-fuchsia-600/5 dark:from-violet-600/10 dark:to-fuchsia-600/10 p-6 flex flex-col sm:flex-row items-center gap-4">
-			<div className="p-3 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shrink-0">
+		<div className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-white/10 bg-gradient-to-r from-violet-500/5 to-violet-700/5 dark:from-violet-500/10 dark:to-violet-700/10 p-6 flex flex-col sm:flex-row items-center gap-4">
+			<div className="p-3 rounded-xl bg-gradient-to-br from-violet-600 to-violet-700 text-white shrink-0">
 				<Zap className="w-7 h-7" />
 			</div>
 			<div className="flex-1 text-center sm:text-left">
 				<h4 className="font-bold text-slate-900 dark:text-white">
 					Vetorizacao em lote
 				</h4>
-				<p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+				<p className="text-sm text-slate-500 dark:text-gray-400 mt-0.5">
 					Vetorize multiplas imagens de uma vez. Recurso disponivel em breve.
 				</p>
 			</div>
-			{/* Decorative image */}
-			<div className="relative hidden md:block w-24 h-24 shrink-0">
-				<div className="absolute inset-0 bg-violet-400/15 rounded-full blur-xl animate-[pulse_4s_ease-in-out_infinite]" />
-				<NextImage
-					src="/img/CO²-6040-min2.png"
-					alt=""
-					width={96}
-					height={96}
-					className="relative z-10 object-contain drop-shadow-lg"
-				/>
-			</div>
-			<span className="px-4 py-2 bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400 text-sm font-semibold rounded-xl">
+			<span className="px-4 py-2 bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-gray-400 text-sm font-semibold rounded-xl">
 				Em breve
 			</span>
 		</div>
@@ -724,7 +713,7 @@ function BatchBanner() {
 
 function ProWidget() {
 	return (
-		<div className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-white/10 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 p-6">
+		<div className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-white/10 bg-gradient-to-br from-violet-50 to-orange-50 dark:from-violet-900/10 dark:to-orange-900/10 p-6">
 			{/* Background image */}
 			<NextImage
 				src="/img/fiber-copy-min.jpg"
@@ -734,18 +723,18 @@ function ProWidget() {
 			/>
 			<div className="relative z-10">
 				<div className="flex items-center gap-3 mb-3">
-					<div className="p-2 rounded-lg bg-amber-400/20">
-						<Crown className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+					<div className="p-2 rounded-lg bg-violet-400/20">
+						<Crown className="w-6 h-6 text-violet-700 dark:text-violet-400" />
 					</div>
 					<h4 className="font-bold text-slate-900 dark:text-white">Seja PRO</h4>
 				</div>
-				<p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+				<p className="text-sm text-slate-600 dark:text-gray-400 mb-4">
 					Desbloqueie vetorizacao em lote, exportacao DXF, historico ilimitado e
 					muito mais com o plano PRO.
 				</p>
 				<a
 					href="/store"
-					className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-white font-semibold rounded-xl transition-colors text-sm"
+					className="inline-flex items-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-400 text-white font-semibold rounded-xl transition-colors text-sm"
 				>
 					Ver planos
 					<ArrowRight className="w-4 h-4" />
@@ -833,68 +822,15 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 	const canProceedStep1 = !!result && !vectorizeMutation.isPending;
 
 	return (
-		<div className="relative p-4 md:p-8 max-w-[1400px] mx-auto">
-			{/* Decorative glow orbs */}
-			<div className="absolute top-40 -right-20 w-72 h-72 bg-violet-500/5 rounded-full blur-3xl pointer-events-none" />
-			<div className="absolute bottom-40 -left-20 w-56 h-56 bg-fuchsia-500/5 rounded-full blur-3xl pointer-events-none" />
-
-			{/* Header area */}
-			<section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-fuchsia-700 to-purple-800 p-6 md:p-10 mb-8">
-				{/* Grid pattern */}
-				<div className="absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.05)_1px,transparent_1px)] bg-[size:32px_32px]" />
-				<div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-400/50 to-transparent" />
-				<div className="absolute -top-10 -left-10 w-40 h-40 bg-fuchsia-400/20 rounded-full blur-3xl animate-pulse" />
-
-				<div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-					<div className="flex items-center gap-3">
-						<div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center shrink-0">
-							<PenLine className="w-7 h-7 text-white" />
-						</div>
-						<div>
-							<h2 className="text-2xl md:text-3xl font-black text-white">
-								Vetorizacao
-							</h2>
-							<p className="text-violet-200 text-sm md:text-base">
-								Converta imagens PNG, JPG ou WEBP em SVG vetorial.
-							</p>
-						</div>
-					</div>
-					{/* Floating decorative image */}
-					<div className="relative hidden lg:block w-28 h-28 shrink-0">
-						<div className="absolute inset-0 bg-violet-400/20 rounded-full blur-2xl animate-[pulse_4s_ease-in-out_infinite]" />
-						<NextImage
-							src="/img/maquina-laser-min-min.png"
-							alt=""
-							width={112}
-							height={112}
-							className="relative z-10 object-contain animate-[float_6s_ease-in-out_infinite] drop-shadow-2xl"
-						/>
-					</div>
-					<div className="flex items-center gap-3">
-						<button
-							type="button"
-							className="flex items-center gap-1.5 text-sm text-violet-200 hover:text-white transition-colors"
-						>
-							<HelpCircle className="w-4 h-4" />
-							Como funciona?
-						</button>
-						<button
-							type="button"
-							onClick={() => {
-								const el = document.getElementById('vetorizacao-historico');
-								el?.scrollIntoView({ behavior: 'smooth' });
-							}}
-							className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white border border-white/20 rounded-xl hover:bg-white/10 transition-colors"
-						>
-							<History className="w-4 h-4" />
-							Historico
-						</button>
-					</div>
-				</div>
-			</section>
+		<div className="p-4 md:p-8">
+			<PageHeader
+				title="Vetorizacao"
+				subtitle="Converta imagens PNG, JPG ou WEBP em SVG vetorial."
+				icon={PenLine}
+			/>
 
 			{/* Wizard card */}
-			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800/50 rounded-2xl p-6 mb-8">
+			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-6 mb-8">
 				<StepIndicator current={step} />
 
 				{/* Step 1 */}
@@ -912,7 +848,7 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 								<button
 									type="button"
 									onClick={() => setStep(2)}
-									className="flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-colors"
+									className="flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors"
 								>
 									Continuar
 									<ArrowRight className="w-4 h-4" />
@@ -953,14 +889,6 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 				<BatchBanner />
 				<ProWidget />
 			</div>
-
-			{/* CSS Keyframes */}
-			<style jsx>{`
-				@keyframes float {
-					0%, 100% { transform: translateY(0px); }
-					50% { transform: translateY(-12px); }
-				}
-			`}</style>
 		</div>
 	);
 }

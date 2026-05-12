@@ -26,7 +26,7 @@ export function ForumPostCard({
 	onUpvote,
 }: ForumPostCardProps) {
 	return (
-		<div className="group bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-4 hover:border-violet-300 dark:hover:border-violet-500/50 transition-all cursor-pointer">
+		<div className="group bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-lg p-4 hover:border-violet-400 dark:hover:border-violet-500/50 transition-all cursor-pointer">
 			<div className="flex gap-3">
 				{/* Upvote column */}
 				<div className="flex flex-col items-center gap-1 shrink-0 pt-0.5">
@@ -39,7 +39,7 @@ export function ForumPostCard({
 						className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-colors text-xs font-bold ${
 							post.upvotedByMe
 								? 'bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400'
-								: 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400'
+								: 'bg-slate-100 dark:bg-[#1a1a1d] text-slate-500 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400'
 						}`}
 					>
 						<ChevronUp className="w-3.5 h-3.5" />
@@ -75,13 +75,13 @@ export function ForumPostCard({
 					<h3 className="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors leading-snug mb-1">
 						{post.title}
 					</h3>
-					<p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+					<p className="text-xs text-slate-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
 						{post.content}
 					</p>
 				</button>
 
 				{/* Meta */}
-				<div className="flex flex-col items-end gap-2 shrink-0 text-xs text-slate-400 dark:text-slate-500">
+				<div className="flex flex-col items-end gap-2 shrink-0 text-xs text-slate-400 dark:text-gray-500">
 					<span className="flex items-center gap-1">
 						<MessageSquare className="w-3.5 h-3.5" />
 						{post.repliesCount}

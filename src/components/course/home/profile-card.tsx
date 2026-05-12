@@ -17,9 +17,9 @@ export function ProfileCard({
 	overallProgress,
 }: ProfileCardProps) {
 	return (
-		<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800/50 rounded-2xl p-5">
+		<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-5">
 			<div className="flex items-center gap-3 mb-4">
-				<div className="w-12 h-12 rounded-full bg-linear-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-xl font-black text-white shrink-0 shadow-lg shadow-violet-500/20">
+				<div className="w-12 h-12 rounded-full bg-linear-to-br from-violet-600 to-violet-600 flex items-center justify-center text-xl font-black text-white shrink-0 shadow-lg shadow-violet-500/20">
 					{(name || email || 'U')[0].toUpperCase()}
 				</div>
 				<div className="min-w-0">
@@ -51,7 +51,7 @@ export function ProfileCard({
 			</div>
 			<Link
 				href="/course/assinatura"
-				className="w-full flex items-center justify-center gap-2 bg-slate-50 dark:bg-gray-800/40 hover:bg-slate-100 dark:hover:bg-gray-800/60 border border-slate-200 dark:border-gray-800/50 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium py-2.5 rounded-xl transition-all"
+				className="w-full flex items-center justify-center gap-2 bg-slate-50 dark:bg-gray-800/40 hover:bg-slate-100 dark:hover:bg-gray-800/60 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium py-2.5 rounded-xl transition-all"
 			>
 				<CreditCard className="w-4 h-4" />
 				Minha assinatura

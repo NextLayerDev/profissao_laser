@@ -33,6 +33,7 @@ import { DoubtsTab } from '@/components/course/doubts-tab';
 import { SavedLessonsModal } from '@/components/course/saved-lessons-modal';
 import { VideoPlayer } from '@/components/course/video-player';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { ClassroomSkeleton } from '@/components/ui/skeletons/classroom-skeleton';
 import { useCourse } from '@/hooks/use-course';
 import { useCustomerFeaturesForCourse } from '@/hooks/use-customer-features';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
@@ -94,7 +95,7 @@ function QuizPlayer({ quiz }: { quiz: Quiz }) {
 					<h3 className="font-bold text-slate-900 dark:text-white text-lg">
 						{quiz.title}
 					</h3>
-					<p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">
+					<p className="text-slate-500 dark:text-gray-400 text-sm mt-0.5">
 						{sorted.length} pergunta{sorted.length !== 1 ? 's' : ''}
 					</p>
 				</div>
@@ -140,10 +141,10 @@ function QuizPlayer({ quiz }: { quiz: Quiz }) {
 												'border-red-500/60 bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-300';
 										else
 											optStyle =
-												'border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02] text-slate-400 dark:text-slate-500 opacity-60';
+												'border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02] text-slate-400 dark:text-gray-500 opacity-60';
 									} else if (isChosen) {
 										optStyle =
-											'border-violet-500/60 bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-200';
+											'border-violet-600/60 bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-200';
 									}
 
 									return (
@@ -161,7 +162,7 @@ function QuizPlayer({ quiz }: { quiz: Quiz }) {
 														: submitted && isChosen && !isCorrect
 															? 'border-red-500 bg-red-500 dark:border-red-400 dark:bg-red-400'
 															: isChosen
-																? 'border-violet-500 bg-violet-500 dark:border-violet-400 dark:bg-violet-400'
+																? 'border-violet-600 bg-violet-600 dark:border-violet-400 dark:bg-violet-400'
 																: 'border-slate-300 dark:border-white/20'
 												}`}
 											>
@@ -197,7 +198,7 @@ function QuizPlayer({ quiz }: { quiz: Quiz }) {
 					type="button"
 					onClick={() => setSubmitted(true)}
 					disabled={!allAnswered}
-					className="w-full flex items-center justify-center gap-2 py-3 bg-linear-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 text-white font-semibold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+					className="w-full flex items-center justify-center gap-2 py-3 bg-linear-to-r from-violet-600 to-violet-700 hover:from-violet-600 hover:to-violet-600 text-white font-semibold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
 				>
 					<Trophy className="w-4 h-4" />
 					Verificar respostas
@@ -261,7 +262,7 @@ function MaterialsTab({ lessonId }: { lessonId: string | null }) {
 					href={mat.url}
 					target="_blank"
 					rel="noreferrer"
-					className={`flex items-center justify-between p-4 rounded-xl border border-slate-200 dark:border-white/10 border-l-4 ${borderColors[mat.type] ?? 'border-l-violet-500'} hover:bg-slate-50 dark:hover:bg-white/10 transition-all group`}
+					className={`flex items-center justify-between p-4 rounded-xl border border-slate-200 dark:border-white/10 border-l-4 ${borderColors[mat.type] ?? 'border-l-violet-600'} hover:bg-slate-50 dark:hover:bg-white/10 transition-all group`}
 				>
 					<div className="flex items-center gap-4 min-w-0">
 						<div
@@ -279,7 +280,7 @@ function MaterialsTab({ lessonId }: { lessonId: string | null }) {
 							<p className="font-semibold text-slate-900 dark:text-white truncate">
 								{mat.name}
 							</p>
-							<p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+							<p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
 								{mat.type === 'pdf'
 									? 'PDF'
 									: mat.type === 'word'
@@ -288,7 +289,7 @@ function MaterialsTab({ lessonId }: { lessonId: string | null }) {
 							</p>
 						</div>
 					</div>
-					<ExternalLink className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-violet-400 shrink-0 transition-colors" />
+					<ExternalLink className="w-4 h-4 text-slate-400 dark:text-gray-500 group-hover:text-violet-400 shrink-0 transition-colors" />
 				</a>
 			))}
 		</div>
@@ -467,16 +468,12 @@ export default function CourseSlugPage() {
 		});
 
 	if (isLoading) {
-		return (
-			<div className="min-h-screen bg-slate-50 dark:bg-[#0d0b1e] flex items-center justify-center">
-				<Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
-			</div>
-		);
+		return <ClassroomSkeleton />;
 	}
 
 	if (isError || !course) {
 		return (
-			<div className="min-h-screen bg-slate-50 dark:bg-[#0d0b1e] flex items-center justify-center">
+			<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] flex items-center justify-center">
 				<div className="text-center">
 					<PackageX className="w-12 h-12 text-red-400 mx-auto mb-4" />
 					<p className="text-slate-600 dark:text-gray-400">
@@ -573,31 +570,31 @@ export default function CourseSlugPage() {
 	const watchedCount = watchedLessonIds.size;
 
 	return (
-		<div className="min-h-screen bg-slate-50 dark:bg-[#06040f] text-slate-900 dark:text-white font-sans flex flex-col relative overflow-hidden">
+		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] text-slate-900 dark:text-white font-sans flex flex-col relative overflow-hidden">
 			{/* Background gradients */}
 			<div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-violet-500/5 via-transparent to-transparent pointer-events-none" />
 			<div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-cyan-500/5 via-transparent to-transparent pointer-events-none" />
 
 			{/* ── Header ──────────────────────────────────────────────────────── */}
-			<header className="h-14 bg-white/80 dark:bg-[#08060f]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/6 flex items-center justify-between px-5 shrink-0 sticky top-0 z-20">
+			<header className="h-14 bg-white/80 dark:bg-[#0d0d0f]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/6 flex items-center justify-between px-5 shrink-0 sticky top-0 z-20">
 				<div className="flex items-center gap-4">
 					<Link
 						href="/course"
-						className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors text-sm"
+						className="flex items-center gap-1.5 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors text-sm"
 					>
 						<ArrowLeft className="w-4 h-4" />
 						Voltar
 					</Link>
 					<div className="w-px h-6 bg-slate-200 dark:bg-white/10" />
 					<div className="flex items-center gap-3">
-						<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
+						<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-violet-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
 							<BookOpen className="w-4 h-4 text-white" />
 						</div>
 						<div>
 							<p className="font-bold text-sm leading-tight text-slate-900 dark:text-white">
 								{course.name}
 							</p>
-							<p className="text-slate-500 dark:text-slate-400 text-xs">
+							<p className="text-slate-500 dark:text-gray-400 text-xs">
 								{activeModule?.title ?? 'Sala de Aula'}
 							</p>
 						</div>
@@ -610,14 +607,14 @@ export default function CourseSlugPage() {
 						onClick={() => setSavedLessonsModalOpen(true)}
 						className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-sm font-medium transition-colors group"
 					>
-						<div className="rounded-lg p-1 bg-linear-to-r from-orange-500 to-amber-500">
+						<div className="rounded-lg p-1 bg-linear-to-r from-orange-500 to-violet-600">
 							<Bookmark className="w-4 h-4 text-white" />
 						</div>
 						<span>Aulas Salvas</span>
 						<ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
 					</button>
 					<div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/20">
-						<Zap className="w-3.5 h-3.5 text-amber-500" />
+						<Zap className="w-3.5 h-3.5 text-violet-600" />
 						<span className="text-xs font-medium text-slate-700 dark:text-white">
 							{watchedCount}/{totalLessons} aulas
 						</span>
@@ -633,8 +630,8 @@ export default function CourseSlugPage() {
 							}
 							className={`p-2.5 rounded-xl border transition-colors ${
 								autoPlay
-									? 'bg-violet-100 dark:bg-violet-600/20 border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400'
-									: 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+									? 'bg-violet-100 dark:bg-violet-500/20 border-violet-200 dark:border-violet-700 text-violet-600 dark:text-violet-400'
+									: 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-slate-300'
 							}`}
 						>
 							<Zap className="h-5 w-5" />
@@ -653,7 +650,7 @@ export default function CourseSlugPage() {
 			<div className="flex flex-1 overflow-hidden">
 				{/* ── Main (video + tabs) ──────────────────────────────────────── */}
 				<div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-					<main className="flex-1 flex flex-col overflow-y-auto bg-slate-50 dark:bg-[#06040f]">
+					<main className="flex-1 flex flex-col overflow-y-auto bg-slate-50 dark:bg-[#0d0d0f]">
 						<VideoPlayer
 							lesson={activeLesson}
 							courseName={course.name}
@@ -703,10 +700,10 @@ export default function CourseSlugPage() {
 									onClick={() => features?.chat && setBottomTab('duvidas')}
 									className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-semibold transition-all border-b-2 -mb-px ${
 										!features?.chat
-											? 'text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed border-transparent'
+											? 'text-slate-400 dark:text-gray-500 opacity-60 cursor-not-allowed border-transparent'
 											: bottomTab === 'duvidas'
-												? 'text-violet-600 dark:text-violet-400 border-violet-500 bg-transparent'
-												: 'text-slate-600 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+												? 'text-violet-600 dark:text-violet-400 border-violet-600 bg-transparent'
+												: 'text-slate-600 dark:text-gray-400 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
 									}`}
 								>
 									{features?.chat ? (
@@ -721,8 +718,8 @@ export default function CourseSlugPage() {
 									onClick={() => setBottomTab('materiais')}
 									className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-semibold transition-all border-b-2 -mb-px ${
 										bottomTab === 'materiais'
-											? 'text-violet-600 dark:text-violet-400 border-violet-500 bg-transparent'
-											: 'text-slate-600 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+											? 'text-violet-600 dark:text-violet-400 border-violet-600 bg-transparent'
+											: 'text-slate-600 dark:text-gray-400 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
 									}`}
 								>
 									<Paperclip className="w-4 h-4" />
@@ -733,8 +730,8 @@ export default function CourseSlugPage() {
 									onClick={() => setBottomTab('quiz')}
 									className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-semibold transition-all border-b-2 -mb-px ${
 										bottomTab === 'quiz'
-											? 'text-violet-600 dark:text-violet-400 border-violet-500 bg-transparent'
-											: 'text-slate-600 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+											? 'text-violet-600 dark:text-violet-400 border-violet-600 bg-transparent'
+											: 'text-slate-600 dark:text-gray-400 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
 									}`}
 								>
 									<ClipboardList className="w-4 h-4" />
@@ -746,7 +743,7 @@ export default function CourseSlugPage() {
 								{activeLesson && features?.chat && (
 									<div className="flex items-center gap-3">
 										<div className="flex items-center gap-2">
-											<span className="text-slate-500 dark:text-slate-400 text-xs">
+											<span className="text-slate-500 dark:text-gray-400 text-xs">
 												Avalie:
 											</span>
 											<div className="flex gap-0.5">
@@ -762,7 +759,7 @@ export default function CourseSlugPage() {
 														<Star
 															className={`w-5 h-5 transition-colors ${
 																(hoverRating || myRating) >= star
-																	? 'text-amber-400 fill-amber-400 dark:text-amber-400 dark:fill-amber-400'
+																	? 'text-violet-400 fill-violet-400 dark:text-violet-400 dark:fill-violet-400'
 																	: 'text-slate-300 dark:text-slate-600'
 															}`}
 														/>
@@ -771,7 +768,7 @@ export default function CourseSlugPage() {
 											</div>
 										</div>
 										{totalRatings > 0 && (
-											<p className="text-slate-500 dark:text-slate-400 text-xs">
+											<p className="text-slate-500 dark:text-gray-400 text-xs">
 												{averageRating.toFixed(1)} ({totalRatings})
 											</p>
 										)}
@@ -781,7 +778,7 @@ export default function CourseSlugPage() {
 									<button
 										type="button"
 										onClick={handleMarkComplete}
-										className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-700 hover:to-violet-600 text-white shadow-lg shadow-violet-500/20 transition-all"
+										className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-violet-600 to-violet-600 hover:from-violet-700 hover:to-violet-600 text-white shadow-lg shadow-violet-500/20 transition-all"
 									>
 										<Check className="w-4 h-4" />
 										Marcar como concluída
@@ -796,7 +793,7 @@ export default function CourseSlugPage() {
 								<div className="p-6">
 									{bottomTab === 'duvidas' &&
 										(!features?.chat ? (
-											<div className="flex flex-col items-center justify-center py-16 text-slate-500 dark:text-slate-500">
+											<div className="flex flex-col items-center justify-center py-16 text-slate-500 dark:text-gray-500">
 												<Lock className="w-12 h-12 mb-4" />
 												<p className="text-sm font-medium">
 													{upgradeTiers?.chat
@@ -808,7 +805,7 @@ export default function CourseSlugPage() {
 												</p>
 												<Link
 													href="/store"
-													className="mt-4 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors"
+													className="mt-4 px-4 py-2 bg-violet-600 hover:bg-violet-600 text-white text-sm font-medium rounded-xl transition-colors"
 												>
 													Ver planos
 												</Link>
@@ -834,10 +831,10 @@ export default function CourseSlugPage() {
 				</div>
 
 				{/* ── Sidebar ─────────────────────────────────────────────────── */}
-				<aside className="w-72 xl:w-[380px] border-l border-slate-200 dark:border-white/6 bg-white/80 dark:bg-[#0a0818]/95 backdrop-blur-sm flex flex-col shrink-0 overflow-hidden">
+				<aside className="hidden md:flex w-72 xl:w-[380px] border-l border-slate-200 dark:border-white/6 bg-white/80 dark:bg-[#0d0d0f]/95 backdrop-blur-sm flex-col shrink-0 overflow-hidden">
 					{/* Next lesson banner */}
 					{nextLesson && (
-						<div className="p-4 border-b border-slate-200 dark:border-white/10 bg-gradient-to-r from-violet-600/10 to-cyan-500/10 shrink-0">
+						<div className="p-4 border-b border-slate-200 dark:border-white/10 bg-gradient-to-r from-violet-500/10 to-cyan-500/10 shrink-0">
 							<button
 								type="button"
 								onClick={() => handleSelectLesson(nextLesson)}
@@ -881,10 +878,10 @@ export default function CourseSlugPage() {
 									<button
 										type="button"
 										onClick={() => toggleModule(mod.id)}
-										className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-violet-600/10 to-cyan-500/10 dark:from-violet-600/20 dark:to-cyan-500/20 border-b border-slate-200 dark:border-white/6 hover:from-violet-600/15 hover:to-cyan-500/15 transition-colors"
+										className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-violet-500/10 to-cyan-500/10 dark:from-violet-500/20 dark:to-cyan-500/20 border-b border-slate-200 dark:border-white/6 hover:from-violet-500/15 hover:to-cyan-500/15 transition-colors"
 									>
 										<div className="flex items-center gap-2 min-w-0">
-											<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-lg">
+											<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-lg">
 												{mod.order}
 											</div>
 											<span className="font-semibold text-sm truncate text-slate-900 dark:text-white">
@@ -892,7 +889,7 @@ export default function CourseSlugPage() {
 											</span>
 										</div>
 										<div className="flex items-center gap-2 shrink-0 ml-2">
-											<span className="text-[10px] bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400 border border-violet-200 dark:border-violet-800/40 rounded-full px-2 py-0.5 font-semibold whitespace-nowrap">
+											<span className="text-[10px] bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400 border border-violet-200 dark:border-violet-700/40 rounded-full px-2 py-0.5 font-semibold whitespace-nowrap">
 												{mod.lessons.length} aula
 												{mod.lessons.length !== 1 ? 's' : ''}
 											</span>
@@ -956,7 +953,7 @@ export default function CourseSlugPage() {
 														</span>
 													)}
 													{isActive && (
-														<ChevronRight className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
+														<ChevronRight className="w-4 h-4 text-slate-500 dark:text-gray-400 shrink-0" />
 													)}
 												</button>
 											);

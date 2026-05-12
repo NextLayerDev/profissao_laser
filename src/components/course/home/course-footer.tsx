@@ -21,7 +21,7 @@ export function CourseFooter() {
 	return (
 		<footer className="relative border-t border-slate-200 dark:border-white/5 mt-8 pt-8 pb-6">
 			{/* Subtle background gradient */}
-			<div className="absolute inset-0 bg-gradient-to-b from-transparent via-violet-500/[0.02] to-fuchsia-500/[0.04] dark:via-violet-500/[0.03] dark:to-fuchsia-500/[0.05] pointer-events-none" />
+			<div className="absolute inset-0 bg-gradient-to-b from-transparent via-violet-600/[0.02] to-violet-600/[0.04] dark:via-violet-600/[0.03] dark:to-violet-600/[0.05] pointer-events-none" />
 
 			<div className="relative">
 				{/* CTA + Stats */}
@@ -58,7 +58,7 @@ export function CourseFooter() {
 						height={28}
 						className="h-auto opacity-50 dark:opacity-30"
 					/>
-					<p className="text-xs text-slate-400 dark:text-gray-600">
+					<p className="text-xs text-slate-400 dark:text-gray-500">
 						Comunidade Profissao Laser
 					</p>
 				</div>
