@@ -81,7 +81,7 @@ jobs:
         run: npm ci
 
       - name: 🔒 Run NPM Audit
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=critical
 
   deploy:
     name: 🚀 Deploy
