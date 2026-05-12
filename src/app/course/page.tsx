@@ -3,14 +3,21 @@
 import { BookOpen, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { CommunityCard } from '@/components/course/home/community-card';
-import { ContinueWatching } from '@/components/course/home/continue-watching';
+import { BadgesEarned } from '@/components/course/home/badges-earned';
+import { CommunityOpportunities } from '@/components/course/home/community-opportunities';
+import { CommunityRanking } from '@/components/course/home/community-ranking';
+import { CourseFooter } from '@/components/course/home/course-footer';
 import { CourseHero } from '@/components/course/home/course-hero';
 import { CourseSidebar } from '@/components/course/home/course-sidebar';
 import { CourseTopHeader } from '@/components/course/home/course-top-header';
-import { CoursesListCard } from '@/components/course/home/courses-list-card';
-import { ProfileCard } from '@/components/course/home/profile-card';
+import { ForumPreview } from '@/components/course/home/forum-preview';
+import { HighlightsSection } from '@/components/course/home/highlights-section';
+import { LearningPaths } from '@/components/course/home/learning-paths';
+import { LearningStreak } from '@/components/course/home/learning-streak';
+import { NextLiveCard } from '@/components/course/home/next-live-card';
+import { OnlineMembers } from '@/components/course/home/online-members';
 import { QuickAccessGrid } from '@/components/course/home/quick-access-grid';
+import { WeeklyChallenge } from '@/components/course/home/weekly-challenge';
 import { SavedLessonsModal } from '@/components/course/saved-lessons-modal';
 import { useCustomerFeatures } from '@/hooks/use-customer-features';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
@@ -45,13 +52,11 @@ export default function CoursePage() {
 		});
 	};
 
-	const {
-		data: plans,
-		isLoading,
-		isError,
-	} = useCustomerPlans(isAdmin ? null : (email ?? null));
+	const { data: plans, isLoading } = useCustomerPlans(
+		isAdmin ? null : (email ?? null),
+	);
 
-	const uniquePlans = useMemo(() => {
+	const _uniquePlans = useMemo(() => {
 		if (!plans) return [];
 		const byKey = new Map<string, (typeof plans)[0]>();
 		for (const plan of plans) {
@@ -90,19 +95,9 @@ export default function CoursePage() {
 		? null
 		: (customerFeatures?.upgradeTiers ?? null);
 
-	const { items: jornadaItems, isLoading: jornadaLoading } = useJornadaProgress(
+	const { items: jornadaItems } = useJornadaProgress(
 		activePlans.length > 0 ? activePlans : undefined,
 	);
-
-	const overallProgress = useMemo(() => {
-		if (jornadaItems.length === 0) return 0;
-		const total = jornadaItems.reduce((acc, item) => acc + item.percentage, 0);
-		return Math.round(total / jornadaItems.length);
-	}, [jornadaItems]);
-
-	const firstActiveItem =
-		jornadaItems.find((item) => item.percentage > 0 && item.percentage < 100) ??
-		jornadaItems[0];
 
 	const displayName = name ? name.split(' ')[0] : 'bem-vindo';
 
@@ -120,7 +115,7 @@ export default function CoursePage() {
 				<div className="text-center">
 					<BookOpen className="w-12 h-12 text-slate-400 dark:text-gray-600 mx-auto mb-4" />
 					<p className="text-slate-600 dark:text-gray-500 font-medium">
-						Você não está logado
+						Voce nao esta logado
 					</p>
 					<Link
 						href="/login"
@@ -141,6 +136,7 @@ export default function CoursePage() {
 				<div className="absolute bottom-[10%] right-[10%] w-[400px] h-[400px] bg-indigo-900/15 rounded-full blur-3xl" />
 				<div className="absolute top-[40%] right-[30%] w-[300px] h-[300px] bg-blue-800/8 rounded-full blur-3xl" />
 			</div>
+
 			<CourseSidebar
 				isCollapsed={sidebarCollapsed}
 				onToggle={handleSidebarToggle}
@@ -154,47 +150,44 @@ export default function CoursePage() {
 				<CourseTopHeader
 					isAdmin={isAdmin}
 					sidebarCollapsed={sidebarCollapsed}
+					userName={displayName}
 				/>
 
 				<main className="flex-1 mt-16 p-4 md:p-8 overflow-x-hidden">
-					<div className="max-w-[1600px] mx-auto flex flex-col xl:flex-row gap-6">
-						<div className="flex-1 space-y-8">
-							<CourseHero
-								displayName={displayName}
-								firstActiveItem={firstActiveItem}
-								overallProgress={overallProgress}
-							/>
+					<div className="max-w-[1400px] mx-auto">
+						<div className="flex flex-col xl:flex-row gap-6">
+							{/* Main column */}
+							<div className="flex-1 min-w-0 space-y-6">
+								<CourseHero displayName={displayName} />
 
-							<QuickAccessGrid
-								features={features}
-								upgradeTiers={upgradeTiers}
-								onSavedLessonsOpen={() => setSavedLessonsModalOpen(true)}
-							/>
+								<QuickAccessGrid
+									features={features}
+									upgradeTiers={upgradeTiers}
+									onSavedLessonsOpen={() => setSavedLessonsModalOpen(true)}
+								/>
 
-							<ContinueWatching
-								jornadaItems={jornadaItems}
-								jornadaLoading={jornadaLoading}
-								uniquePlans={uniquePlans}
-								isError={isError}
-								hasPlans={!!plans}
-							/>
+								<HighlightsSection jornadaItems={jornadaItems} />
+
+								<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+									<ForumPreview />
+									<BadgesEarned />
+									<NextLiveCard />
+								</div>
+
+								<LearningPaths />
+							</div>
+
+							{/* Right sidebar */}
+							<aside className="hidden xl:flex flex-col w-[360px] shrink-0 space-y-6">
+								<LearningStreak />
+								<CommunityOpportunities />
+								<OnlineMembers />
+								<WeeklyChallenge />
+								<CommunityRanking />
+							</aside>
 						</div>
 
-						<div className="w-full xl:w-[360px] space-y-6">
-							<ProfileCard
-								name={name}
-								email={email}
-								coursesCount={uniquePlans.length}
-								overallProgress={overallProgress}
-							/>
-
-							<CommunityCard features={features} upgradeTiers={upgradeTiers} />
-
-							<CoursesListCard
-								uniquePlans={uniquePlans}
-								jornadaItems={jornadaItems}
-							/>
-						</div>
+						<CourseFooter />
 					</div>
 				</main>
 			</div>

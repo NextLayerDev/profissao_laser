@@ -1,86 +1,136 @@
 'use client';
 
-import { BookOpen, Play } from 'lucide-react';
+import { ArrowRight, Star } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
-import type { JornadaCourseItem } from '@/hooks/use-jornada-progress';
 
 interface CourseHeroProps {
 	displayName: string;
-	firstActiveItem: JornadaCourseItem | undefined;
-	overallProgress: number;
 }
 
-export function CourseHero({
-	displayName,
-	firstActiveItem,
-	overallProgress,
-}: CourseHeroProps) {
+export function CourseHero({ displayName }: CourseHeroProps) {
 	return (
-		<section className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-gray-800/50 bg-white dark:bg-[#1a1a1d] p-8 isolate">
-			<div className="absolute top-0 right-0 -z-10 w-125 h-125 bg-violet-500/10 dark:bg-violet-600/15 blur-[100px] rounded-full translate-x-1/3 -translate-y-1/3" />
-			<div className="absolute bottom-0 left-0 -z-10 w-75 h-75 bg-fuchsia-500/8 dark:bg-fuchsia-600/10 blur-[80px] rounded-full -translate-x-1/2 translate-y-1/2" />
-			<div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-				<div>
-					<h2 className="text-4xl font-black text-slate-900 dark:text-white mb-2">
-						Bem-vindo de volta, {displayName}!
+		<section className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-violet-500/10 bg-white dark:bg-[#12121a] isolate">
+			{/* Background image */}
+			<Image
+				src="/img/header_prof-laser.png"
+				alt=""
+				aria-hidden
+				fill
+				className="object-cover opacity-[0.07] dark:opacity-[0.1]"
+				priority
+			/>
+
+			{/* Gradient overlay */}
+			<div className="absolute inset-0 bg-gradient-to-br from-white/90 via-white/80 to-violet-50/90 dark:from-[#1a0a2e]/95 dark:via-[#2d1b69]/90 dark:to-[#0f1b4d]/95 -z-[1]" />
+
+			{/* Grid pattern overlay */}
+			<div
+				className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] -z-[1]"
+				style={{
+					backgroundImage:
+						'linear-gradient(rgba(139,92,246,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.3) 1px, transparent 1px)',
+					backgroundSize: '40px 40px',
+				}}
+			/>
+
+			{/* Animated glow orb */}
+			<div
+				className="absolute top-1/2 right-[15%] -translate-y-1/2 w-[300px] h-[300px] rounded-full -z-[1] blur-[100px]"
+				style={{
+					background:
+						'radial-gradient(circle, rgba(139,92,246,0.25), rgba(217,70,239,0.15), transparent)',
+					animation: 'pulseGlow 4s ease-in-out infinite',
+				}}
+			/>
+
+			{/* Light effect line */}
+			<div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
+
+			<div className="relative p-8 md:p-12 flex items-center justify-between">
+				{/* Left side */}
+				<div className="flex-1 max-w-xl">
+					<h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white mb-2 leading-tight">
+						Bem-vindo(a) de volta, {displayName}!
 					</h2>
-					{firstActiveItem ? (
-						<p className="text-slate-600 dark:text-gray-300 text-base max-w-xl">
-							Você está a{' '}
-							<span className="text-violet-600 dark:text-violet-400 font-semibold">
-								{firstActiveItem.totalLessons - firstActiveItem.watchedCount}{' '}
-								aulas
-							</span>{' '}
-							de completar o curso{' '}
-							<span className="text-slate-900 dark:text-white font-medium">
-								{firstActiveItem.course.name}
-							</span>
-							. Continue seu progresso.
-						</p>
-					) : (
-						<p className="text-slate-600 dark:text-gray-300 text-base max-w-xl">
-							Continue aprendendo e domine o mercado de produtos personalizados
-							a laser.
-						</p>
-					)}
-					<div className="mt-6">
-						{firstActiveItem ? (
-							<Link
-								href={`/course/${firstActiveItem.plan.slug}${firstActiveItem.nextLessonId ? `?lesson=${firstActiveItem.nextLessonId}` : ''}`}
-								className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white px-6 py-3 rounded-full font-medium transition-colors shadow-[0_0_20px_rgba(108,56,255,0.3)]"
-							>
-								<Play className="w-4 h-4 fill-current" />
-								Continuar Aula
-							</Link>
-						) : (
-							<Link
-								href="/store"
-								className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white px-6 py-3 rounded-full font-medium transition-colors"
-							>
-								<BookOpen className="w-4 h-4" />
-								Ver Cursos
-							</Link>
-						)}
+					<p className="text-slate-600 dark:text-gray-400 text-base md:text-lg leading-relaxed mb-1">
+						Continue evoluindo na{' '}
+						<span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-violet-400 bg-clip-text text-transparent font-semibold italic">
+							Profissao Laser
+						</span>
+					</p>
+					<p className="text-slate-500 dark:text-gray-500 text-sm leading-relaxed mb-5">
+						Aprenda, compartilhe e evolua junto com milhares de profissionais
+						que vivem o laser!
+					</p>
+
+					{/* Progress + Level cards */}
+					<div className="flex flex-col sm:flex-row gap-3 mb-4">
+						{/* Progress card */}
+						<div className="flex-1 bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 rounded-xl p-3">
+							<p className="text-xs font-medium text-slate-500 dark:text-gray-400 mb-2">
+								Seu progresso hoje
+							</p>
+							<div className="w-full h-2 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+								<div
+									className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full transition-all"
+									style={{ width: '60%' }}
+								/>
+							</div>
+							<p className="text-[11px] text-slate-400 dark:text-gray-500 mt-1">
+								60% concluido
+							</p>
+						</div>
+
+						{/* Level card */}
+						<div className="flex-1 bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 rounded-xl p-3">
+							<p className="text-xs font-medium text-slate-500 dark:text-gray-400 mb-1.5">
+								Seu nivel
+							</p>
+							<div className="flex items-center gap-2">
+								<div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center">
+									<Star className="w-3.5 h-3.5 text-amber-500" />
+								</div>
+								<div>
+									<p className="text-sm font-bold text-slate-900 dark:text-white">
+										Profissional
+									</p>
+									<p className="text-[10px] text-slate-400 dark:text-gray-500">
+										2.450 / 3.000 XP
+									</p>
+								</div>
+							</div>
+						</div>
 					</div>
+
+					<Link
+						href="/course/jornada"
+						className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-600 dark:text-violet-400 hover:text-violet-500 transition-colors"
+					>
+						Ver meu progresso
+						<ArrowRight className="w-3.5 h-3.5" />
+					</Link>
 				</div>
 
-				<div className="bg-slate-50 dark:bg-[#040405]/60 backdrop-blur-md border border-slate-200 dark:border-gray-800/50 rounded-xl p-5 min-w-65 shrink-0">
-					<div className="flex justify-between items-center mb-3">
-						<span className="text-sm font-medium text-slate-600 dark:text-gray-300">
-							Seu Progresso Atual
-						</span>
-						<span className="text-xl font-bold text-violet-600 dark:text-violet-400">
-							{overallProgress}%
-						</span>
-					</div>
-					<div className="w-full h-2 bg-slate-200 dark:bg-gray-800/60 rounded-full overflow-hidden">
-						<div
-							className="h-full bg-linear-to-r from-violet-500 to-fuchsia-500 rounded-full shadow-[0_0_10px_rgba(139,92,246,0.4)] transition-all"
-							style={{ width: `${overallProgress}%` }}
-						/>
-					</div>
+				{/* Right side - Machine image */}
+				<div className="hidden lg:block w-[260px] h-[220px] relative shrink-0 ml-8">
+					<div className="absolute inset-0 bg-violet-500/20 rounded-full blur-[60px]" />
+					<Image
+						src="/img/maquina-laser-min-min.png"
+						alt="Maquina Laser"
+						fill
+						className="object-contain relative z-10"
+					/>
 				</div>
 			</div>
+
+			{/* Keyframes for glow animation */}
+			<style jsx>{`
+				@keyframes pulseGlow {
+					0%, 100% { opacity: 0.5; transform: translateY(-50%) scale(1); }
+					50% { opacity: 1; transform: translateY(-50%) scale(1.15); }
+				}
+			`}</style>
 		</section>
 	);
 }

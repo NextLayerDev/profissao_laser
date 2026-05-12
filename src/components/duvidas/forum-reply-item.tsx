@@ -1,10 +1,12 @@
 'use client';
 
-import { CheckCircle2, ChevronUp, Trash2 } from 'lucide-react';
+import { CheckCircle2, ChevronUp, Pencil, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import {
 	useAcceptForumReply,
 	useDeleteForumReply,
+	useUpdateForumReply,
 	useUpvoteForumReply,
 } from '@/hooks/use-forum';
 import type { ForumReply } from '@/types/forum';
@@ -21,11 +23,11 @@ function timeAgo(dateStr: string): string {
 	const diff = Date.now() - new Date(dateStr).getTime();
 	const mins = Math.floor(diff / 60000);
 	if (mins < 1) return 'agora';
-	if (mins < 60) return `${mins}min atrás`;
+	if (mins < 60) return `${mins}min atras`;
 	const hours = Math.floor(mins / 60);
-	if (hours < 24) return `${hours}h atrás`;
+	if (hours < 24) return `${hours}h atras`;
 	const days = Math.floor(hours / 24);
-	return `${days}d atrás`;
+	return `${days}d atras`;
 }
 
 export function ForumReplyItem({
@@ -37,8 +39,12 @@ export function ForumReplyItem({
 	const upvote = useUpvoteForumReply(postId);
 	const accept = useAcceptForumReply(postId);
 	const remove = useDeleteForumReply(postId);
+	const update = useUpdateForumReply(postId);
 
 	const isOwner = reply.authorId === currentUserId;
+
+	const [isEditing, setIsEditing] = useState(false);
+	const [editContent, setEditContent] = useState(reply.content);
 
 	function handleUpvote() {
 		upvote.mutate(reply.id);
@@ -56,6 +62,31 @@ export function ForumReplyItem({
 			onSuccess: () => toast.success('Resposta removida'),
 			onError: () => toast.error('Erro ao remover resposta'),
 		});
+	}
+
+	function handleStartEdit() {
+		setEditContent(reply.content);
+		setIsEditing(true);
+	}
+
+	function handleCancelEdit() {
+		setIsEditing(false);
+		setEditContent(reply.content);
+	}
+
+	function handleSaveEdit() {
+		const trimmed = editContent.trim();
+		if (!trimmed) return;
+		update.mutate(
+			{ replyId: reply.id, content: trimmed },
+			{
+				onSuccess: () => {
+					setIsEditing(false);
+					toast.success('Resposta atualizada');
+				},
+				onError: () => toast.error('Erro ao atualizar resposta'),
+			},
+		);
 	}
 
 	return (
@@ -105,9 +136,38 @@ export function ForumReplyItem({
 							{timeAgo(reply.createdAt)}
 						</span>
 					</div>
-					<p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
-						{reply.content}
-					</p>
+
+					{isEditing ? (
+						<div className="space-y-2">
+							<textarea
+								value={editContent}
+								onChange={(e) => setEditContent(e.target.value)}
+								className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-700 dark:text-slate-300 p-3 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+								rows={3}
+							/>
+							<div className="flex gap-2 justify-end">
+								<button
+									type="button"
+									onClick={handleCancelEdit}
+									className="px-3 py-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+								>
+									Cancelar
+								</button>
+								<button
+									type="button"
+									onClick={handleSaveEdit}
+									disabled={update.isPending || !editContent.trim()}
+									className="px-3 py-1.5 text-xs font-medium bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white rounded-lg transition-colors"
+								>
+									{update.isPending ? 'Salvando...' : 'Salvar'}
+								</button>
+							</div>
+						</div>
+					) : (
+						<p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
+							{reply.content}
+						</p>
+					)}
 				</div>
 
 				{/* Actions */}
@@ -124,15 +184,25 @@ export function ForumReplyItem({
 						</button>
 					)}
 					{isOwner && (
-						<button
-							type="button"
-							onClick={handleDelete}
-							disabled={remove.isPending}
-							title="Deletar resposta"
-							className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-						>
-							<Trash2 className="w-4 h-4" />
-						</button>
+						<>
+							<button
+								type="button"
+								onClick={handleStartEdit}
+								title="Editar resposta"
+								className="p-1.5 rounded-lg text-slate-400 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors"
+							>
+								<Pencil className="w-4 h-4" />
+							</button>
+							<button
+								type="button"
+								onClick={handleDelete}
+								disabled={remove.isPending}
+								title="Deletar resposta"
+								className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+							>
+								<Trash2 className="w-4 h-4" />
+							</button>
+						</>
 					)}
 				</div>
 			</div>

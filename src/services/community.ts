@@ -1,7 +1,9 @@
 import { api } from '@/lib/fetch';
 import type {
+	Activity,
 	Channel,
 	ChannelMessage,
+	CommunityStats,
 	Event,
 	Member,
 	Post,
@@ -108,6 +110,8 @@ export async function deleteChannelMessage(
 export async function getMembers(params?: {
 	search?: string;
 	category?: string;
+	featured?: string;
+	online?: string;
 }): Promise<Member[]> {
 	const { data } = await api.get<Member[]>('/community/members', {
 		params: params ?? undefined,
@@ -241,4 +245,19 @@ export async function getRanking(params?: {
 		{ params: params ?? undefined },
 	);
 	return data ?? { top: [], rest: [] };
+}
+
+export async function getActivity(params?: {
+	page?: number;
+	limit?: number;
+}): Promise<Activity[]> {
+	const { data } = await api.get<Activity[]>('/community/activity', {
+		params: params ?? undefined,
+	});
+	return data ?? [];
+}
+
+export async function getStats(): Promise<CommunityStats> {
+	const { data } = await api.get<CommunityStats>('/community/stats');
+	return data;
 }

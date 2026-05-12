@@ -1,10 +1,9 @@
 'use client';
 
-import { FolderOpen, Loader2, Lock, Store } from 'lucide-react';
+import { Loader2, Lock, Store } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { VectorLibraryBreadcrumbs } from '@/components/community/vector-library-breadcrumbs';
-import { VectorLibraryCards } from '@/components/community/vector-library-cards';
+import { BibliotecaVetoresView } from '@/components/biblioteca/biblioteca-vetores-view';
 import { useCustomerFeatures } from '@/hooks/use-customer-features';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import {
@@ -97,39 +96,13 @@ export default function BibliotecaCoursePage() {
 	}
 
 	return (
-		<div className="p-4 md:p-8 max-w-5xl mx-auto">
-			<div className="mb-6">
-				<div className="flex items-center gap-3 mb-1">
-					<div className="bg-linear-to-br from-emerald-500 to-teal-600 rounded-lg p-2">
-						<FolderOpen className="w-5 h-5 text-white" />
-					</div>
-					<div>
-						<h2 className="text-2xl font-black text-slate-900 dark:text-white">
-							Biblioteca de Vetores
-						</h2>
-						<VectorLibraryBreadcrumbs
-							items={breadcrumbs}
-							onNavigate={setCurrentFolderId}
-						/>
-					</div>
-				</div>
-				<p className="text-slate-500 dark:text-gray-500 text-sm mt-2 ml-11">
-					Vetores e arquivos prontos para gravação a laser.
-				</p>
-			</div>
-
-			{contentsLoading ? (
-				<div className="flex justify-center py-16">
-					<Loader2 className="w-10 h-10 text-violet-500 animate-spin" />
-				</div>
-			) : (
-				<VectorLibraryCards
-					folders={contents?.folders ?? []}
-					files={contents?.files ?? []}
-					onFolderClick={setCurrentFolderId}
-					onFileDownload={handleDownload}
-				/>
-			)}
-		</div>
+		<BibliotecaVetoresView
+			currentFolderId={currentFolderId}
+			setCurrentFolderId={setCurrentFolderId}
+			contents={contents}
+			contentsLoading={contentsLoading}
+			breadcrumbs={breadcrumbs}
+			handleDownload={handleDownload}
+		/>
 	);
 }

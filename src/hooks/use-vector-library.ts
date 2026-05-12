@@ -2,26 +2,100 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import type { FolderContentsParams } from '@/services/vector-library';
 import {
 	createFile,
 	createFolder,
 	deleteFile,
 	deleteFolder,
+	favoriteFile,
 	getBreadcrumbPath,
 	getFolderContents,
+	getVectorLibraryCategories,
+	getVectorLibraryFavorites,
+	getVectorLibraryFeatured,
+	getVectorLibraryStats,
+	unfavoriteFile,
 	updateFile,
 	updateFolder,
 } from '@/services/vector-library';
 
 const VECTOR_LIBRARY_KEYS = {
+	all: ['vector-library'] as const,
 	contents: (parentId: string | null) =>
 		['vector-library', 'contents', parentId] as const,
 };
 
-export function useVectorLibraryContents(parentId?: string | null) {
+export function useVectorLibraryContents(
+	parentIdOrParams?: string | null | FolderContentsParams,
+) {
+	const key =
+		typeof parentIdOrParams === 'object' && parentIdOrParams !== null
+			? ['vector-library', 'contents', parentIdOrParams]
+			: VECTOR_LIBRARY_KEYS.contents(
+					(parentIdOrParams as string | null) ?? null,
+				);
+
 	return useQuery({
-		queryKey: VECTOR_LIBRARY_KEYS.contents(parentId ?? null),
-		queryFn: () => getFolderContents(parentId ?? null),
+		queryKey: key,
+		queryFn: () => getFolderContents(parentIdOrParams ?? null),
+	});
+}
+
+export function useVectorLibraryStats(enabled = true) {
+	return useQuery({
+		queryKey: [...VECTOR_LIBRARY_KEYS.all, 'stats'] as const,
+		queryFn: getVectorLibraryStats,
+		enabled,
+	});
+}
+
+export function useVectorLibraryCategories(enabled = true) {
+	return useQuery({
+		queryKey: [...VECTOR_LIBRARY_KEYS.all, 'categories'] as const,
+		queryFn: getVectorLibraryCategories,
+		enabled,
+	});
+}
+
+export function useVectorLibraryFavorites(enabled = true) {
+	return useQuery({
+		queryKey: [...VECTOR_LIBRARY_KEYS.all, 'favorites'] as const,
+		queryFn: getVectorLibraryFavorites,
+		enabled,
+	});
+}
+
+export function useVectorLibraryFeatured(enabled = true) {
+	return useQuery({
+		queryKey: [...VECTOR_LIBRARY_KEYS.all, 'featured'] as const,
+		queryFn: getVectorLibraryFeatured,
+		enabled,
+	});
+}
+
+export function useFavoriteFile() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({ id, isFavorited }: { id: string; isFavorited: boolean }) =>
+			isFavorited ? unfavoriteFile(id) : favoriteFile(id),
+		onSuccess: () => {
+			invalidateContents(queryClient);
+			toast.success('Favorito atualizado!');
+		},
+		onError: () => toast.error('Erro ao atualizar favorito'),
+	});
+}
+
+export function useUnfavoriteFile() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: (id: string) => unfavoriteFile(id),
+		onSuccess: () => {
+			invalidateContents(queryClient);
+			toast.success('Removido dos favoritos!');
+		},
+		onError: () => toast.error('Erro ao remover favorito'),
 	});
 }
 

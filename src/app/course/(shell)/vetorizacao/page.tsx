@@ -1,10 +1,9 @@
 'use client';
 
-import { BookOpen, Loader2, Lock, PenLine, Store } from 'lucide-react';
+import { Loader2, Lock, Store } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { VectorList } from '@/components/vetorizacao/vector-list';
-import { VectorizationUpload } from '@/components/vetorizacao/vectorization-upload';
+import { VetorizacaoView } from '@/components/vetorizacao/vetorizacao-view';
 import { useCustomerFeatures } from '@/hooks/use-customer-features';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { useCustomerVectors } from '@/hooks/use-vectors';
@@ -14,8 +13,8 @@ import { FULL_FEATURES } from '@/utils/constants/class-features';
 export default function VetorizacaoCoursePage() {
 	const [email, setEmail] = useState<string | null | undefined>(undefined);
 	const [isAdmin, setIsAdmin] = useState(false);
-	const [page, setPage] = useState(1);
-	const [search, setSearch] = useState('');
+	const [page, _setPage] = useState(1);
+	const [search, _setSearch] = useState('');
 
 	useEffect(() => {
 		const user = getCurrentUser();
@@ -37,7 +36,7 @@ export default function VetorizacaoCoursePage() {
 		: (customerFeatures?.upgradeTiers ?? null);
 	const hasAccess = features?.vetorizacao ?? false;
 
-	const { data: vectorsResponse, refetch } = useCustomerVectors({
+	const { refetch } = useCustomerVectors({
 		page,
 		limit: 20,
 		search: search || undefined,
@@ -58,12 +57,12 @@ export default function VetorizacaoCoursePage() {
 					<div className="p-6 rounded-2xl bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800/50 mb-4">
 						<Lock className="w-14 h-14 text-violet-400 mx-auto mb-3" />
 						<h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
-							Acesso à Vetorização
+							Acesso a Vetorizacao
 						</h2>
 						<p className="text-slate-500 dark:text-gray-500 text-sm">
 							{upgradeTiers?.vetorizacao
-								? `Disponível no plano ${upgradeTiers.vetorizacao}.`
-								: 'Disponível em planos com vetorização.'}
+								? `Disponivel no plano ${upgradeTiers.vetorizacao}.`
+								: 'Disponivel em planos com vetorizacao.'}
 						</p>
 					</div>
 					<Link
@@ -78,43 +77,5 @@ export default function VetorizacaoCoursePage() {
 		);
 	}
 
-	return (
-		<div className="p-4 md:p-8 max-w-4xl mx-auto">
-			<div className="mb-8 flex items-center gap-3">
-				<div className="bg-linear-to-br from-violet-600 to-fuchsia-600 rounded-lg p-2">
-					<PenLine className="w-5 h-5 text-white" />
-				</div>
-				<div>
-					<h2 className="text-2xl font-black text-slate-900 dark:text-white">
-						Vetorização
-					</h2>
-					<p className="text-slate-500 dark:text-gray-500 text-sm">
-						Converta imagens PNG, JPG ou WEBP em SVG vetorial.
-					</p>
-				</div>
-			</div>
-
-			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800/50 rounded-2xl p-6 mb-8">
-				<VectorizationUpload onSuccess={() => refetch()} />
-			</div>
-
-			<h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-				<BookOpen className="w-5 h-5 text-violet-500" />
-				Banco de vetores
-			</h3>
-			<VectorList
-				data={vectorsResponse?.data ?? []}
-				total={vectorsResponse?.total ?? 0}
-				page={page}
-				limit={20}
-				search={search}
-				onPageChange={setPage}
-				onSearchChange={(v) => {
-					setSearch(v);
-					setPage(1);
-				}}
-				onRefetch={refetch}
-			/>
-		</div>
-	);
+	return <VetorizacaoView onRefetch={refetch} />;
 }

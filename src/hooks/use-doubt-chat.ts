@@ -10,6 +10,7 @@ import {
 	createDoubtChat,
 	getDoubtCategories,
 	getDoubtChat,
+	getDoubtChatStats,
 	getDoubtChats,
 	getTechnician,
 	getTechnicians,
@@ -17,6 +18,14 @@ import {
 } from '@/services/doubt-chat';
 
 const QUERY_KEY = ['doubt-chat'] as const;
+
+export function useDoubtChatStats(enabled = true) {
+	return useQuery({
+		queryKey: [...QUERY_KEY, 'stats'] as const,
+		queryFn: getDoubtChatStats,
+		enabled,
+	});
+}
 
 export function useDoubtCategories(enabled = true) {
 	return useQuery({

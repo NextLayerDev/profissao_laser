@@ -4,8 +4,16 @@ import type {
 	DefaultQuestion,
 	DoubtCategory,
 	DoubtChat,
+	DoubtChatStats,
 	Technician,
 } from '@/types/doubt-chat';
+
+// ─── Stats ──────────────────────────────────────────────────────────────────
+
+export async function getDoubtChatStats(): Promise<DoubtChatStats> {
+	const { data } = await api.get<DoubtChatStats>('/doubt-chats/stats');
+	return data;
+}
 
 // ─── Categorias ─────────────────────────────────────────────────────────────
 

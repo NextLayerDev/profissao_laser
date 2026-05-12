@@ -23,6 +23,13 @@ export interface DefaultQuestion {
 	order: number;
 }
 
+// Stats
+export interface DoubtChatStats {
+	pending: number;
+	answered: number;
+	total: number;
+}
+
 // Conversa/dúvida
 export interface DoubtChat {
 	id: string;
@@ -32,9 +39,16 @@ export interface DoubtChat {
 	technicianName?: string;
 	customerId: string;
 	customerName?: string;
+	ticketNumber?: number | null;
 	status: 'pending' | 'answered';
 	messages?: ChatMessage[];
 	qualificationAnswers?: Record<string, string>;
+	category?: {
+		id: string;
+		title: string;
+		description?: string | null;
+		order: number;
+	} | null;
 	createdAt: string;
 	updatedAt: string;
 }

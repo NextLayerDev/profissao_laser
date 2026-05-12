@@ -14,20 +14,27 @@ export default function FornecedoresCoursePage() {
 	);
 
 	return (
-		<div className="p-4 md:p-8 max-w-4xl mx-auto">
-			<div className="mb-6 flex items-center gap-3">
-				<div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg p-2">
-					<Store className="w-5 h-5 text-white" />
+		<div className="p-4 md:p-8 max-w-[1400px] mx-auto">
+			{/* Hero Banner */}
+			<section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-green-700 to-teal-800 p-6 md:p-10 mb-8">
+				<div className="absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:32px_32px]" />
+				<div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-400/20 rounded-full blur-3xl animate-pulse" />
+				<div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/5 rounded-full blur-2xl" />
+				<div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent" />
+				<div className="relative z-10 flex items-center gap-4">
+					<div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center shrink-0">
+						<Store className="w-7 h-7 text-white" />
+					</div>
+					<div>
+						<h2 className="text-2xl md:text-3xl font-black text-white">
+							Fornecedores
+						</h2>
+						<p className="mt-1 text-emerald-200 text-sm md:text-base">
+							Fornecedores de insumos e máquinas indicados pela comunidade.
+						</p>
+					</div>
 				</div>
-				<div>
-					<h2 className="text-2xl font-black text-slate-900 dark:text-white">
-						Fornecedores
-					</h2>
-					<p className="text-slate-500 dark:text-gray-500 text-sm">
-						Fornecedores de insumos e máquinas indicados pela comunidade.
-					</p>
-				</div>
-			</div>
+			</section>
 
 			{isLoading ? (
 				<div className="flex justify-center py-24">
@@ -55,7 +62,7 @@ export default function FornecedoresCoursePage() {
 						return (
 							<div
 								key={msg.id}
-								className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800/50 rounded-xl p-4"
+								className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800/50 rounded-xl p-4 hover:scale-[1.01] hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300"
 							>
 								<div className="flex items-start gap-3">
 									{msg.avatar ? (

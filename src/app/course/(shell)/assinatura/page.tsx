@@ -3,7 +3,6 @@
 import {
 	AlertTriangle,
 	ArrowDown,
-	ArrowLeft,
 	ArrowUp,
 	BookOpen,
 	Check,
@@ -17,8 +16,6 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { CancelSubscriptionModal } from '@/components/assinatura/cancel-subscription-modal';
 import { ChangePlanModal } from '@/components/assinatura/change-plan-modal';
-import { UserBadge } from '@/components/store/user-badge';
-import { ThemeToggle } from '@/components/theme-toggle';
 import {
 	useCancelMySubscription,
 	useDowngradeMySubscription,
@@ -32,10 +29,6 @@ import type { MySubscription } from '@/types/my-subscription';
 import type { Product } from '@/types/products';
 import type { SystemClassWithRelations } from '@/types/system-classes';
 import { SC_OPTIONS } from '@/utils/constants/system-class-options';
-
-const Background = () => (
-	<div className="fixed inset-0 bg-linear-to-br from-slate-100 via-white to-slate-50 dark:from-[#12103a] dark:via-[#0d0b1e] dark:to-[#0a0818] pointer-events-none" />
-);
 
 function formatDate(iso: string) {
 	return new Date(iso).toLocaleDateString('pt-BR', {
@@ -289,15 +282,12 @@ export default function CourseAssinaturaPage() {
 		setName(user?.name ?? '');
 	}, []);
 
-	// Encontra o produto atual usando nome + preço para diferenciar variantes
 	const currentProduct = data
 		? (products?.find(
 				(p) => p.name === data.product_name && p.price === data.amount,
 			) ?? products?.find((p) => p.name === data.product_name))
 		: undefined;
 
-	// Produtos relacionados = mesmo nome + mesma máquina + mesmo software,
-	// garantindo que sejam variantes de tier diferente (com features distintas)
 	const relatedPlans = currentProduct
 		? (products?.filter(
 				(p) =>
@@ -317,7 +307,6 @@ export default function CourseAssinaturaPage() {
 		(p) => p.price < (data?.amount ?? 0),
 	);
 
-	// Se não há upgrades mas há downgrades, seleciona a aba correta
 	const effectiveTab =
 		planTab === 'upgrade' &&
 		upgradePlans.length === 0 &&
@@ -381,41 +370,8 @@ export default function CourseAssinaturaPage() {
 	const isChangingPlan = isUpgrading || isDowngrading;
 
 	return (
-		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0b1e] text-slate-900 dark:text-white font-sans">
-			<Background />
-
-			{/* Header */}
-			<header className="relative z-10 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur-sm px-6 py-4">
-				<div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-					<div className="flex items-center gap-3">
-						<Link
-							href="/course"
-							className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 hover:border-violet-500/40 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium rounded-xl transition-colors"
-						>
-							<ArrowLeft className="w-4 h-4" />
-							Meus Cursos
-						</Link>
-					</div>
-
-					<div className="flex items-center gap-3">
-						<div className="hidden sm:flex items-center gap-2">
-							<div className="bg-linear-to-br from-violet-600 to-purple-700 rounded-lg p-1.5">
-								<CreditCard className="w-4 h-4 text-white" />
-							</div>
-							<span className="text-sm font-bold text-slate-900 dark:text-white">
-								Minha Assinatura
-							</span>
-						</div>
-					</div>
-
-					<div className="flex items-center gap-2">
-						<ThemeToggle />
-						<UserBadge />
-					</div>
-				</div>
-			</header>
-
-			<div className="relative z-10 max-w-4xl mx-auto px-6 py-8">
+		<>
+			<div className="max-w-[1400px] mx-auto px-6 py-8">
 				{/* Top tag */}
 				<div className="inline-flex items-center gap-2 bg-violet-100 dark:bg-white/10 border border-violet-200 dark:border-white/20 rounded-full px-4 py-1.5 mb-6 text-xs font-semibold text-violet-700 dark:text-white uppercase tracking-wider">
 					<Zap className="w-4 h-4" />
@@ -474,7 +430,7 @@ export default function CourseAssinaturaPage() {
 							</p>
 						</div>
 						<Link
-							href="/store"
+							href="/course/store"
 							className="flex items-center gap-2 px-5 py-2.5 bg-linear-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 text-white text-sm font-semibold rounded-xl transition-all"
 						>
 							<BookOpen className="w-4 h-4" />
@@ -612,6 +568,6 @@ export default function CourseAssinaturaPage() {
 				onConfirm={handleConfirmChangePlan}
 				isPending={isChangingPlan}
 			/>
-		</div>
+		</>
 	);
 }
