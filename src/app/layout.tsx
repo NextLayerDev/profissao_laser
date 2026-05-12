@@ -1,13 +1,18 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { JetBrains_Mono, Outfit, Syne } from 'next/font/google';
 import { Providers } from '@/components/providers';
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin'] });
+const syne = Syne({ subsets: ['latin'], variable: '--font-display' });
+const outfit = Outfit({ subsets: ['latin'], variable: '--font-body' });
+const jetbrainsMono = JetBrains_Mono({
+	subsets: ['latin'],
+	variable: '--font-mono',
+});
 
 export const metadata: Metadata = {
-	title: 'Profissão Laser',
-	description: 'Controle completo do seu negócio digital',
+	title: 'Profissao Laser',
+	description: 'Controle completo do seu negocio digital',
 };
 
 export default function RootLayout({
@@ -17,7 +22,9 @@ export default function RootLayout({
 }) {
 	return (
 		<html lang="pt-BR">
-			<body className={inter.className}>
+			<body
+				className={`${syne.variable} ${outfit.variable} ${jetbrainsMono.variable} font-body`}
+			>
 				<Providers>{children}</Providers>
 			</body>
 		</html>

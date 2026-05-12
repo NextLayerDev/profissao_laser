@@ -140,8 +140,8 @@ export function MonthSummary() {
 				<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl border border-slate-200 dark:border-gray-800/50 p-5 shadow-sm dark:shadow-none space-y-4">
 					{isLoading ? (
 						<div className="animate-pulse space-y-4">
-							{[80, 60, 45, 30, 20].map((w, i) => (
-								<div key={i}>
+							{[80, 60, 45, 30, 20].map((w) => (
+								<div key={w}>
 									<div className="flex items-center justify-between mb-1.5">
 										<div
 											className="h-3.5 bg-slate-200 dark:bg-gray-700 rounded"

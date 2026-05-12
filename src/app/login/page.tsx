@@ -91,7 +91,16 @@ export default function Login() {
 						</button>
 					</form>
 
-					<p className="text-center text-sm text-gray-500 mt-5">
+					<p className="text-center text-sm text-gray-500 mt-4">
+						<Link
+							href="/forgot-password"
+							className="text-violet-400 hover:text-violet-300 font-medium"
+						>
+							Esqueceu sua senha?
+						</Link>
+					</p>
+
+					<p className="text-center text-sm text-gray-500 mt-3">
 						Não tem conta?{' '}
 						<Link
 							href="/register"

@@ -130,16 +130,16 @@ export function VectorList({
 							value={searchInput}
 							onChange={(e) => setSearchInput(e.target.value)}
 							placeholder="Buscar por nome..."
-							className="pl-9 pr-4 py-2 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white text-sm w-48 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+							className="pl-9 pr-4 py-2 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white text-sm w-48 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
 						/>
 					</div>
 				</div>
 			</div>
 
 			{data.length === 0 ? (
-				<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-12 text-center">
+				<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-12 text-center">
 					<BookOpen className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-					<p className="text-slate-600 dark:text-slate-400">
+					<p className="text-slate-600 dark:text-gray-400">
 						{search
 							? 'Nenhum vetor encontrado.'
 							: 'Ainda não tem vetores guardados.'}
@@ -148,7 +148,7 @@ export function VectorList({
 						<button
 							type="button"
 							onClick={() => setSearchInput('')}
-							className="mt-2 text-violet-500 hover:text-violet-400 text-sm"
+							className="mt-2 text-violet-600 hover:text-violet-400 text-sm"
 						>
 							Limpar busca
 						</button>
@@ -160,9 +160,9 @@ export function VectorList({
 						{data.map((v) => (
 							<div
 								key={v.id}
-								className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-4 overflow-hidden"
+								className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-4 overflow-hidden"
 							>
-								<div className="aspect-square relative bg-slate-100 dark:bg-white/5 rounded-lg mb-3">
+								<div className="aspect-square relative bg-slate-100 dark:bg-[#1a1a1d] rounded-lg mb-3">
 									<Image
 										src={v.svg_url}
 										alt={v.original_name}
@@ -174,14 +174,14 @@ export function VectorList({
 								<p className="font-medium text-slate-900 dark:text-white truncate text-sm">
 									{v.original_name}
 								</p>
-								<p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
+								<p className="text-slate-500 dark:text-gray-400 text-xs mt-0.5">
 									{formatDate(v.created_at)}
 								</p>
 								<div className="flex items-center gap-2 mt-3 flex-wrap">
 									<button
 										type="button"
 										onClick={() => downloadFromUrl(v.svg_url, v.original_name)}
-										className="flex items-center gap-1 px-2 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium transition-colors"
+										className="flex items-center gap-1 px-2 py-1 rounded-lg bg-violet-600 hover:bg-violet-600 text-white text-xs font-medium transition-colors"
 									>
 										<Download className="w-3 h-3" />
 										Descarregar
@@ -209,7 +209,7 @@ export function VectorList({
 
 					{totalPages > 1 && (
 						<div className="flex items-center justify-between pt-4">
-							<p className="text-slate-500 dark:text-slate-400 text-sm">
+							<p className="text-slate-500 dark:text-gray-400 text-sm">
 								{total} vetor{total !== 1 ? 'es' : ''}
 							</p>
 							<div className="flex items-center gap-2">
@@ -221,7 +221,7 @@ export function VectorList({
 								>
 									<ChevronLeft className="w-4 h-4" />
 								</button>
-								<span className="text-sm text-slate-600 dark:text-slate-400">
+								<span className="text-sm text-slate-600 dark:text-gray-400">
 									Página {page} de {totalPages}
 								</span>
 								<button
@@ -267,7 +267,7 @@ export function VectorList({
 									type="text"
 									value={editName}
 									onChange={(e) => setEditName(e.target.value)}
-									className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+									className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
 								/>
 							</div>
 							<div>
@@ -282,7 +282,7 @@ export function VectorList({
 									type="file"
 									accept={ACCEPTED_TYPES.join(',')}
 									onChange={(e) => setReplaceFile(e.target.files?.[0] ?? null)}
-									className="w-full text-sm text-slate-600 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-violet-600 file:text-white file:text-sm file:font-medium file:cursor-pointer hover:file:bg-violet-500"
+									className="w-full text-sm text-slate-600 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-violet-600 file:text-white file:text-sm file:font-medium file:cursor-pointer hover:file:bg-violet-600"
 								/>
 								{replaceFile && (
 									<p className="mt-1 text-xs text-slate-500">
@@ -303,7 +303,7 @@ export function VectorList({
 								type="button"
 								onClick={handleSaveEdit}
 								disabled={isSavingEdit || updateMutation.isPending}
-								className="flex-1 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+								className="flex-1 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-600 text-white text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2"
 							>
 								{(isSavingEdit || updateMutation.isPending) && (
 									<Loader2 className="w-4 h-4 animate-spin" />
@@ -322,7 +322,7 @@ export function VectorList({
 						<h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
 							Excluir vetor?
 						</h3>
-						<p className="text-slate-600 dark:text-slate-400 text-sm mb-6">
+						<p className="text-slate-600 dark:text-gray-400 text-sm mb-6">
 							Esta ação não pode ser desfeita.
 						</p>
 						<div className="flex gap-2">

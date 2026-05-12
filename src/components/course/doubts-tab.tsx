@@ -21,7 +21,7 @@ function formatDate(iso: string) {
 
 function DoubtCard({ doubt }: { doubt: Doubt }) {
 	return (
-		<div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-4 space-y-3">
+		<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl p-4 space-y-3">
 			<div className="flex items-start justify-between gap-2">
 				<div className="flex-1 min-w-0">
 					<p className="text-sm text-slate-900 dark:text-white leading-relaxed">
@@ -44,7 +44,7 @@ function DoubtCard({ doubt }: { doubt: Doubt }) {
 									{reply.authorName}
 								</span>
 								{reply.isInstructor && (
-									<span className="text-[10px] px-1.5 py-0.5 bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300 rounded font-medium">
+									<span className="text-[10px] px-1.5 py-0.5 bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-400 rounded font-medium">
 										Instrutor
 									</span>
 								)}
@@ -114,13 +114,13 @@ export function DoubtsTab({ lessonId, hasAccess }: DoubtsTabProps) {
 					onChange={(e) => setQuestion(e.target.value)}
 					placeholder="Escreva sua dúvida aqui..."
 					rows={3}
-					className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-violet-500/60 transition-colors resize-none"
+					className="w-full bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-violet-600/60 transition-colors resize-none"
 				/>
 				<div className="flex justify-end">
 					<button
 						type="submit"
 						disabled={!question.trim() || createDoubt.isPending}
-						className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+						className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-violet-600 to-violet-700 hover:from-violet-600 hover:to-violet-700 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
 					>
 						{createDoubt.isPending ? (
 							<Loader2 className="w-4 h-4 animate-spin" />

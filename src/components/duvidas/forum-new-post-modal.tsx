@@ -50,7 +50,7 @@ export function ForumNewPostModal({ onClose }: ForumNewPostModalProps) {
 			<div
 				role="dialog"
 				aria-modal="true"
-				className="relative w-full max-w-lg bg-white dark:bg-[#1a1a2e] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl"
+				className="relative w-full max-w-lg bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl"
 			>
 				{/* Header */}
 				<div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-white/10">
@@ -72,7 +72,7 @@ export function ForumNewPostModal({ onClose }: ForumNewPostModalProps) {
 						<div>
 							<label
 								htmlFor="post-category"
-								className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5"
+								className="block text-xs font-semibold text-slate-600 dark:text-gray-400 mb-1.5"
 							>
 								Categoria (opcional)
 							</label>
@@ -80,7 +80,7 @@ export function ForumNewPostModal({ onClose }: ForumNewPostModalProps) {
 								id="post-category"
 								value={categoryId}
 								onChange={(e) => setCategoryId(e.target.value)}
-								className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+								className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50"
 							>
 								<option value="">Sem categoria</option>
 								{categories.map((cat) => (
@@ -95,7 +95,7 @@ export function ForumNewPostModal({ onClose }: ForumNewPostModalProps) {
 					<div>
 						<label
 							htmlFor="post-title"
-							className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5"
+							className="block text-xs font-semibold text-slate-600 dark:text-gray-400 mb-1.5"
 						>
 							Título *
 						</label>
@@ -106,14 +106,14 @@ export function ForumNewPostModal({ onClose }: ForumNewPostModalProps) {
 							onChange={(e) => setTitle(e.target.value)}
 							placeholder="Qual é a sua dúvida?"
 							maxLength={200}
-							className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+							className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
 						/>
 					</div>
 
 					<div>
 						<label
 							htmlFor="post-content"
-							className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5"
+							className="block text-xs font-semibold text-slate-600 dark:text-gray-400 mb-1.5"
 						>
 							Descrição *
 						</label>
@@ -123,7 +123,7 @@ export function ForumNewPostModal({ onClose }: ForumNewPostModalProps) {
 							onChange={(e) => setContent(e.target.value)}
 							placeholder="Descreva a sua dúvida com detalhes..."
 							rows={5}
-							className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 resize-none"
+							className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 resize-none"
 						/>
 					</div>
 
@@ -131,14 +131,14 @@ export function ForumNewPostModal({ onClose }: ForumNewPostModalProps) {
 						<button
 							type="button"
 							onClick={onClose}
-							className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors"
+							className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors"
 						>
 							Cancelar
 						</button>
 						<button
 							type="submit"
 							disabled={create.isPending}
-							className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-violet-600 hover:bg-violet-500 disabled:opacity-60 text-white rounded-xl transition-colors"
+							className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-violet-600 hover:bg-violet-600 disabled:opacity-60 text-white rounded-xl transition-colors"
 						>
 							{create.isPending && (
 								<Loader2 className="w-3.5 h-3.5 animate-spin" />

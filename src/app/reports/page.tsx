@@ -81,7 +81,7 @@ export default function Relatorios() {
 		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
 
-			<main className="px-8 py-6">
+			<main className="px-4 md:px-8 py-6">
 				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
 					<div>
 						<h2 className="text-2xl font-bold tracking-tight flex items-center gap-2 text-slate-900 dark:text-white">

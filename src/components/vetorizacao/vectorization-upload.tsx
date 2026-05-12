@@ -172,7 +172,7 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 				onDragLeave={handleDragLeave}
 				className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-8 py-12 transition-colors ${
 					isDragging
-						? 'border-violet-500 bg-violet-500/10 dark:bg-violet-500/20'
+						? 'border-violet-600 bg-violet-500/10 dark:bg-violet-500/20'
 						: 'border-slate-200 dark:border-white/10 hover:border-violet-500/50 dark:hover:border-white/20'
 				}`}
 			>
@@ -186,10 +186,10 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 				<div className="rounded-xl bg-linear-to-br from-violet-600 to-fuchsia-600 p-4 text-white mb-4">
 					<PenLine className="w-10 h-10" />
 				</div>
-				<p className="text-slate-600 dark:text-slate-400 text-center font-medium mb-1">
+				<p className="text-slate-600 dark:text-gray-400 text-center font-medium mb-1">
 					Arraste imagens ou clique para selecionar
 				</p>
-				<p className="text-slate-500 dark:text-slate-500 text-sm">
+				<p className="text-slate-500 dark:text-gray-500 text-sm">
 					PNG, JPG, WEBP (máx. 10MB)
 				</p>
 			</section>
@@ -203,11 +203,11 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 						{files.map((item) => (
 							<div
 								key={item.id}
-								className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-4"
+								className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-4"
 							>
 								<div className="flex gap-4">
 									{item.status === 'success' && item.result && (
-										<div className="w-20 h-20 shrink-0 rounded-lg bg-slate-100 dark:bg-white/5 overflow-hidden flex items-center justify-center">
+										<div className="w-20 h-20 shrink-0 rounded-lg bg-slate-100 dark:bg-[#1a1a1d] overflow-hidden flex items-center justify-center">
 											<img
 												src={svgToDataUrl(item.result.svgContent)}
 												alt={item.result.originalName}
@@ -224,7 +224,7 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 												className={`inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full ${
 													item.result.isColor
 														? 'bg-violet-500/20 text-violet-600 dark:text-violet-400'
-														: 'bg-slate-500/20 text-slate-600 dark:text-slate-400'
+														: 'bg-slate-500/20 text-slate-600 dark:text-gray-400'
 												}`}
 											>
 												{item.result.isColor ? 'Colorida' : 'P&B'}
@@ -238,7 +238,7 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 									</div>
 									<div className="flex items-center gap-2 shrink-0">
 										{item.status === 'uploading' && (
-											<Loader2 className="w-5 h-5 text-violet-500 animate-spin" />
+											<Loader2 className="w-5 h-5 text-violet-600 animate-spin" />
 										)}
 										{item.status === 'success' && item.result && (
 											<>
@@ -252,7 +252,7 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 															);
 														}
 													}}
-													className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors"
+													className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-600 text-white text-sm font-medium transition-colors"
 												>
 													<Download className="w-4 h-4" />
 													Descarregar

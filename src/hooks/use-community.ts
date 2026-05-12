@@ -12,6 +12,7 @@ import {
 	deleteChannelMessage,
 	deleteEvent,
 	deleteProject,
+	getActivity,
 	getChannelMessages,
 	getChannels,
 	getEvents,
@@ -21,6 +22,7 @@ import {
 	getProjectComments,
 	getProjects,
 	getRanking,
+	getStats,
 	sendChannelMessage,
 	updateChannel,
 	updateEvent,
@@ -33,8 +35,12 @@ const COMMUNITY_KEYS = {
 	channels: () => ['community', 'channels'] as const,
 	messages: (channelId: string | null, before?: string, limit?: number) =>
 		['community', 'messages', channelId, before, limit] as const,
-	members: (search?: string, category?: string) =>
-		['community', 'members', search, category] as const,
+	members: (
+		search?: string,
+		category?: string,
+		featured?: string,
+		online?: string,
+	) => ['community', 'members', search, category, featured, online] as const,
 	projects: (
 		page?: number,
 		limit?: number,
@@ -59,6 +65,9 @@ const COMMUNITY_KEYS = {
 	events: (from?: string, to?: string) =>
 		['community', 'events', from, to] as const,
 	ranking: (period?: string) => ['community', 'ranking', period] as const,
+	activity: (page?: number, limit?: number) =>
+		['community', 'activity', page, limit] as const,
+	stats: () => ['community', 'stats'] as const,
 };
 
 export function useCommunityPosts(page = 1, limit = 20) {
@@ -201,10 +210,29 @@ export function useDeleteChannelMessage(channelId: string | null) {
 	});
 }
 
-export function useCommunityMembers(search?: string, category?: string) {
+export function useCommunityMembers(
+	search?: string,
+	category?: string,
+	featured?: string,
+	online?: string,
+) {
 	return useQuery({
-		queryKey: COMMUNITY_KEYS.members(search, category),
-		queryFn: () => getMembers({ search, category }),
+		queryKey: COMMUNITY_KEYS.members(search, category, featured, online),
+		queryFn: () => getMembers({ search, category, featured, online }),
+	});
+}
+
+export function useOnlineMembers() {
+	return useQuery({
+		queryKey: COMMUNITY_KEYS.members(undefined, undefined, undefined, 'true'),
+		queryFn: () => getMembers({ online: 'true' }),
+	});
+}
+
+export function useFeaturedMembers() {
+	return useQuery({
+		queryKey: COMMUNITY_KEYS.members(undefined, undefined, 'true'),
+		queryFn: () => getMembers({ featured: 'true' }),
 	});
 }
 
@@ -426,5 +454,19 @@ export function useCommunityRanking(period?: 'week' | 'month') {
 	return useQuery({
 		queryKey: COMMUNITY_KEYS.ranking(period),
 		queryFn: () => getRanking({ period }),
+	});
+}
+
+export function useCommunityActivity(page = 1, limit = 5) {
+	return useQuery({
+		queryKey: COMMUNITY_KEYS.activity(page, limit),
+		queryFn: () => getActivity({ page, limit }),
+	});
+}
+
+export function useCommunityStats() {
+	return useQuery({
+		queryKey: COMMUNITY_KEYS.stats(),
+		queryFn: getStats,
 	});
 }

@@ -60,7 +60,7 @@ export default function DuvidasAdminPage() {
 	return (
 		<div className="min-h-screen text-slate-900 dark:text-white">
 			{/* Header */}
-			<header className="border-b border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] px-8 py-4">
+			<header className="border-b border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] px-4 md:px-8 py-4">
 				<div className="max-w-5xl mx-auto flex items-center justify-between">
 					<div className="flex items-center gap-3">
 						<Link

@@ -411,7 +411,7 @@ export function VideoPlayer({
 							/>
 						</video>
 					) : (
-						<div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-slate-500 dark:text-slate-500">
+						<div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-slate-500 dark:text-gray-500">
 							<Lock className="w-10 h-10" />
 							<p className="text-sm">Vídeo não disponível</p>
 						</div>
@@ -494,7 +494,7 @@ export function VideoPlayer({
 									}}
 								>
 									<div
-										className="h-full bg-gradient-to-r from-violet-500 to-cyan-400 rounded-full relative transition-none"
+										className="h-full bg-gradient-to-r from-violet-600 to-cyan-400 rounded-full relative transition-none"
 										style={{
 											width: `${
 												isDragging
@@ -643,7 +643,7 @@ export function VideoPlayer({
 					{showEndScreen && (
 						<div className="absolute inset-0 z-20 flex items-center justify-center bg-black/80 backdrop-blur-sm">
 							<div className="text-center space-y-6 p-8">
-								<div className="w-16 h-16 mx-auto bg-gradient-to-br from-violet-500 to-cyan-400 rounded-full flex items-center justify-center">
+								<div className="w-16 h-16 mx-auto bg-gradient-to-br from-violet-600 to-cyan-400 rounded-full flex items-center justify-center">
 									<CheckCircle className="w-8 h-8 text-white" />
 								</div>
 								<div>
@@ -709,8 +709,8 @@ export function VideoPlayer({
 							disabled={isSaveLoading}
 							className={`shrink-0 flex items-center justify-center w-10 h-10 rounded-xl transition-all disabled:opacity-50 ${
 								isSaved
-									? 'bg-linear-to-r from-orange-500 to-amber-500 text-white'
-									: 'bg-white/10 hover:bg-white/15 text-slate-400 hover:text-amber-400 border border-white/10'
+									? 'bg-linear-to-r from-orange-500 to-violet-600 text-white'
+									: 'bg-white/10 hover:bg-white/15 text-slate-400 hover:text-violet-400 border border-white/10'
 							}`}
 							title={isSaved ? 'Remover das salvas' : 'Salvar aula'}
 						>
@@ -725,7 +725,7 @@ export function VideoPlayer({
 					)}
 				</div>
 				{description && (
-					<p className="text-slate-600 dark:text-slate-400 text-sm mt-2 leading-relaxed">
+					<p className="text-slate-600 dark:text-gray-400 text-sm mt-2 leading-relaxed">
 						{description}
 					</p>
 				)}

@@ -101,7 +101,7 @@ export function DoubtChatView({
 					{chat.categoryName}
 				</h3>
 				{chat.technicianName && (
-					<p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+					<p className="text-sm text-slate-500 dark:text-gray-400 mt-0.5">
 						Técnico: {chat.technicianName}
 					</p>
 				)}
@@ -123,13 +123,13 @@ export function DoubtChatView({
 					{selectedFile && (
 						<div className="flex items-center gap-1.5 mb-2 px-2 py-1 bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/30 rounded-lg w-fit max-w-full">
 							<Paperclip className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400 shrink-0" />
-							<span className="text-xs text-violet-700 dark:text-violet-300 truncate max-w-[200px]">
+							<span className="text-xs text-violet-700 dark:text-violet-400 truncate max-w-[200px]">
 								{selectedFile.name}
 							</span>
 							<button
 								type="button"
 								onClick={() => setSelectedFile(null)}
-								className="ml-0.5 text-violet-500 hover:text-violet-700 dark:hover:text-violet-200 shrink-0"
+								className="ml-0.5 text-violet-600 hover:text-violet-700 dark:hover:text-violet-200 shrink-0"
 								aria-label="Remover ficheiro"
 							>
 								<X className="w-3.5 h-3.5" />
@@ -146,7 +146,7 @@ export function DoubtChatView({
 						<button
 							type="button"
 							onClick={() => fileInputRef.current?.click()}
-							className="px-3 py-2 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 rounded-xl transition-colors shrink-0"
+							className="px-3 py-2 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-400 rounded-xl transition-colors shrink-0"
 							aria-label="Anexar ficheiro"
 						>
 							<Paperclip className="w-5 h-5" />
@@ -156,12 +156,12 @@ export function DoubtChatView({
 							onChange={(e) => setNewMessage(e.target.value)}
 							placeholder="Escreva sua mensagem..."
 							rows={2}
-							className="flex-1 px-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-violet-500 focus:outline-none text-sm resize-none"
+							className="flex-1 px-3 py-2 bg-slate-50 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-violet-600 focus:outline-none text-sm resize-none"
 						/>
 						<button
 							type="submit"
 							disabled={!newMessage.trim() && !selectedFile}
-							className="px-4 py-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl transition-colors shrink-0"
+							className="px-4 py-2 bg-violet-600 hover:bg-violet-600 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl transition-colors shrink-0"
 						>
 							<Send className="w-5 h-5" />
 						</button>

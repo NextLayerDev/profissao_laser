@@ -13,6 +13,11 @@ export type VectorLibraryFile = {
 	fileUrl: string;
 	mimeType: string;
 	size?: number;
+	formats?: string[] | null;
+	downloadCount?: number;
+	category?: string | null;
+	featured?: boolean;
+	isFavorited?: boolean;
 	createdAt: string;
 	order: number;
 };
@@ -26,4 +31,18 @@ export function isFolder(node: VectorLibraryNode): node is VectorLibraryFolder {
 export type VectorLibraryContents = {
 	folders: VectorLibraryFolder[];
 	files: VectorLibraryFile[];
+	total?: number;
+};
+
+export type VectorLibraryStats = {
+	totalFiles: number;
+	totalCollections: number;
+	totalFavorites: number;
+	totalDownloads: number;
+};
+
+export type VectorLibraryCategory = {
+	name: string;
+	icon?: string | null;
+	count: number;
 };

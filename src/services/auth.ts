@@ -38,3 +38,16 @@ export async function loginUser(
 	const { data } = await api.post('/login/user', payload);
 	return authTokenResponseSchema.parse(data);
 }
+
+export async function forgotPassword(email: string): Promise<string> {
+	const { data } = await api.post('/forgot-password', { email });
+	return authMessageResponseSchema.parse(data).message;
+}
+
+export async function resetPassword(
+	token: string,
+	newPassword: string,
+): Promise<string> {
+	const { data } = await api.post('/reset-password', { token, newPassword });
+	return authMessageResponseSchema.parse(data).message;
+}

@@ -159,10 +159,10 @@ export function CheckoutConfirmButton({
 
 	const buttonClass =
 		ownershipStatus === 'owned' || isLoadingOwnership
-			? 'w-full flex items-center justify-center gap-2 bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-semibold py-3.5 rounded-xl cursor-not-allowed text-base'
+			? 'w-full flex items-center justify-center gap-2 bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-gray-400 font-semibold py-3.5 rounded-xl cursor-not-allowed text-base'
 			: ownershipStatus === 'downgrade'
-				? 'w-full flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-colors cursor-pointer text-base'
-				: 'w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-colors cursor-pointer text-base';
+				? 'w-full flex items-center justify-center gap-2 bg-violet-700 hover:bg-violet-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-colors cursor-pointer text-base'
+				: 'w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-colors cursor-pointer text-base';
 
 	const heading =
 		ownershipStatus === 'upgrade'
@@ -180,7 +180,7 @@ export function CheckoutConfirmButton({
 
 	return (
 		<>
-			<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl border border-slate-200 dark:border-gray-800 p-6">
+			<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl border border-slate-200 dark:border-white/10 p-6">
 				<h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
 					{heading}
 				</h3>
@@ -190,7 +190,7 @@ export function CheckoutConfirmButton({
 
 				{/* Usuario logado */}
 				{user && (
-					<div className="flex items-center gap-3 bg-slate-50 dark:bg-white/5 rounded-xl px-4 py-3 mb-5">
+					<div className="flex items-center gap-3 bg-slate-50 dark:bg-[#1a1a1d] rounded-xl px-4 py-3 mb-5">
 						<div className="w-9 h-9 rounded-full bg-violet-600 flex items-center justify-center">
 							<User className="w-4 h-4 text-white" />
 						</div>
@@ -236,7 +236,7 @@ export function CheckoutConfirmButton({
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm">
 					<div className="bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-2xl w-full max-w-md mx-4 p-6 shadow-xl">
 						<div className="flex items-center justify-between mb-5">
-							<div className="flex items-center gap-2 text-amber-500 dark:text-amber-400">
+							<div className="flex items-center gap-2 text-violet-600 dark:text-violet-400">
 								<AlertTriangle size={18} />
 								<h2 className="text-base font-semibold text-slate-900 dark:text-white">
 									Confirmar downgrade
@@ -270,7 +270,7 @@ export function CheckoutConfirmButton({
 								type="button"
 								onClick={handleDowngrade}
 								disabled={isDowngrading}
-								className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg bg-amber-600 hover:bg-amber-500 text-white disabled:opacity-50 transition-colors cursor-pointer"
+								className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg bg-violet-700 hover:bg-violet-600 text-white disabled:opacity-50 transition-colors cursor-pointer"
 							>
 								{isDowngrading ? (
 									<>

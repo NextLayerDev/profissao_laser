@@ -1,25 +1,99 @@
 import { api } from '@/lib/fetch';
 import type {
+	VectorLibraryCategory,
 	VectorLibraryContents,
 	VectorLibraryFile,
 	VectorLibraryFolder,
+	VectorLibraryStats,
 } from '@/types/vector-library';
+
+// ─── Query params for folder contents ────────────────────────────────────────
+
+export interface FolderContentsParams {
+	parentId?: string | null;
+	search?: string;
+	category?: string;
+	format?: string;
+	sort?: string;
+	page?: number;
+	limit?: number;
+}
 
 /** Lista pastas e ficheiros numa pasta. parentId null = raiz. */
 export async function getFolderContents(
-	parentId?: string | null,
+	parentIdOrParams?: string | null | FolderContentsParams,
 ): Promise<VectorLibraryContents> {
+	let params: Record<string, unknown> | undefined;
+
+	if (
+		typeof parentIdOrParams === 'object' &&
+		parentIdOrParams !== null &&
+		!Array.isArray(parentIdOrParams)
+	) {
+		const { parentId, ...rest } = parentIdOrParams;
+		params = { ...rest };
+		if (parentId != null && parentId !== '') {
+			params.parentId = parentId;
+		}
+	} else if (parentIdOrParams != null && parentIdOrParams !== '') {
+		params = { parentId: parentIdOrParams };
+	}
+
 	const { data } = await api.get<VectorLibraryContents>(
 		'/community/vector-library/contents',
-		{
-			params: parentId != null && parentId !== '' ? { parentId } : undefined,
-		},
+		{ params },
 	);
 	return (
 		data ?? {
 			folders: [],
 			files: [],
 		}
+	);
+}
+
+// ─── Stats, Categories, Favorites, Featured ─────────────────────────────────
+
+export async function getVectorLibraryStats(): Promise<VectorLibraryStats> {
+	const { data } = await api.get<VectorLibraryStats>(
+		'/community/vector-library/stats',
+	);
+	return data;
+}
+
+export async function getVectorLibraryCategories(): Promise<
+	VectorLibraryCategory[]
+> {
+	const { data } = await api.get<VectorLibraryCategory[]>(
+		'/community/vector-library/categories',
+	);
+	return Array.isArray(data) ? data : [];
+}
+
+export async function getVectorLibraryFavorites(): Promise<
+	VectorLibraryFile[]
+> {
+	const { data } = await api.get<VectorLibraryFile[]>(
+		'/community/vector-library/favorites',
+	);
+	return Array.isArray(data) ? data : [];
+}
+
+export async function getVectorLibraryFeatured(): Promise<VectorLibraryFile[]> {
+	const { data } = await api.get<VectorLibraryFile[]>(
+		'/community/vector-library/featured',
+	);
+	return Array.isArray(data) ? data : [];
+}
+
+export async function favoriteFile(id: string): Promise<void> {
+	await api.post(
+		`/community/vector-library/files/${encodeURIComponent(id)}/favorite`,
+	);
+}
+
+export async function unfavoriteFile(id: string): Promise<void> {
+	await api.delete(
+		`/community/vector-library/files/${encodeURIComponent(id)}/favorite`,
 	);
 }
 

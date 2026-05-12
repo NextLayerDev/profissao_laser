@@ -32,11 +32,40 @@ export interface Channel {
 }
 
 export interface Member {
+	id: string;
 	name: string;
 	specialty?: string | null;
 	badges: string[];
+	badge?: string | null;
+	featuredRole?: string | null;
+	featured?: boolean;
 	category?: string | null;
 	image?: string | null;
+	isOnline?: boolean;
+	lastSeenAt?: string | null;
+}
+
+export type ActivityType =
+	| 'lesson_completed'
+	| 'badge_earned'
+	| 'forum_post'
+	| 'forum_reply'
+	| 'challenge_completed'
+	| 'member_joined';
+
+export interface Activity {
+	id: string;
+	type: ActivityType;
+	user: { id: string; name: string; avatar: string | null };
+	data: Record<string, unknown>;
+	createdAt: string;
+}
+
+export interface CommunityStats {
+	activeMembers: number;
+	completedProjects: number;
+	messagesSent: number;
+	livesRealized: number;
 }
 
 export interface Project {

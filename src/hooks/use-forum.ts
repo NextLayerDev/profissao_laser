@@ -15,6 +15,7 @@ import {
 	getForumPosts,
 	updateForumCategory,
 	updateForumPost,
+	updateForumReply,
 	upvoteForumPost,
 	upvoteForumReply,
 } from '@/services/forum';
@@ -153,6 +154,18 @@ export function useCreateForumReply(postId: string) {
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (content: string) => createForumReply(postId, content),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'post', postId] });
+			qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'posts'] });
+		},
+	});
+}
+
+export function useUpdateForumReply(postId: string) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({ replyId, content }: { replyId: string; content: string }) =>
+			updateForumReply(postId, replyId, content),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'post', postId] });
 			qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'posts'] });

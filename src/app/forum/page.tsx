@@ -10,7 +10,7 @@ export default function ForumAdminPage() {
 		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
 
-			<main className="px-8 py-6">
+			<main className="px-4 md:px-8 py-6">
 				<div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 					<div>
 						<h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-3">

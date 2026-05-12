@@ -3,22 +3,19 @@
 import {
 	AlertTriangle,
 	ArrowDown,
-	ArrowLeft,
 	ArrowUp,
 	BookOpen,
 	Check,
 	CreditCard,
-	Loader2,
 	X,
-	Zap,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { CancelSubscriptionModal } from '@/components/assinatura/cancel-subscription-modal';
 import { ChangePlanModal } from '@/components/assinatura/change-plan-modal';
-import { UserBadge } from '@/components/store/user-badge';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { PageHeader } from '@/components/ui/page-header';
+import { SubscriptionSkeleton } from '@/components/ui/skeletons/subscription-skeleton';
 import {
 	useCancelMySubscription,
 	useDowngradeMySubscription,
@@ -32,10 +29,6 @@ import type { MySubscription } from '@/types/my-subscription';
 import type { Product } from '@/types/products';
 import type { SystemClassWithRelations } from '@/types/system-classes';
 import { SC_OPTIONS } from '@/utils/constants/system-class-options';
-
-const Background = () => (
-	<div className="fixed inset-0 bg-linear-to-br from-slate-100 via-white to-slate-50 dark:from-[#12103a] dark:via-[#0d0b1e] dark:to-[#0a0818] pointer-events-none" />
-);
 
 function formatDate(iso: string) {
 	return new Date(iso).toLocaleDateString('pt-BR', {
@@ -53,7 +46,7 @@ function formatCurrency(amount: number) {
 }
 
 function formatAmount(amount: number, interval: 'month' | 'year') {
-	return `${formatCurrency(amount)}/${interval === 'month' ? 'mês' : 'ano'}`;
+	return `${formatCurrency(amount)}/${interval === 'month' ? 'mes' : 'ano'}`;
 }
 
 function StatusBadge({
@@ -65,7 +58,7 @@ function StatusBadge({
 }) {
 	if (cancelAtPeriodEnd) {
 		return (
-			<span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
+			<span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300 border border-violet-200 dark:border-violet-500/30">
 				Cancelamento agendado
 			</span>
 		);
@@ -78,7 +71,7 @@ function StatusBadge({
 		);
 	}
 	return (
-		<span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300 border border-green-200 dark:border-green-500/30">
+		<span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
 			Ativo
 		</span>
 	);
@@ -92,17 +85,17 @@ function SubscriptionCard({
 	onCancelClick: () => void;
 }) {
 	return (
-		<div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-sm dark:shadow-none space-y-5">
+		<div className="bg-white dark:bg-[#1a1a1d] border border-violet-500/30 rounded-lg p-6 space-y-5">
 			<div className="flex items-start justify-between gap-4">
 				<div className="flex items-center gap-3">
-					<div className="bg-linear-to-br from-violet-600 to-purple-700 rounded-xl p-2.5 shrink-0">
-						<CreditCard className="w-5 h-5 text-white" />
+					<div className="bg-violet-500/10 dark:bg-violet-500/20 rounded-lg p-2.5 shrink-0">
+						<CreditCard className="w-5 h-5 text-violet-600 dark:text-violet-400" />
 					</div>
 					<div>
-						<p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-0.5">
+						<p className="text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wide mb-0.5">
 							Plano atual
 						</p>
-						<h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
+						<h2 className="font-display text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight">
 							{subscription.product_name}
 						</h2>
 					</div>
@@ -114,15 +107,15 @@ function SubscriptionCard({
 			</div>
 
 			<div className="flex flex-col gap-1.5 pl-[52px]">
-				<p className="text-2xl font-black text-slate-900 dark:text-white">
+				<p className="font-mono text-2xl font-bold text-slate-900 dark:text-slate-100">
 					{formatAmount(subscription.amount, subscription.interval)}
 				</p>
 				{subscription.currentPeriodEnd && (
-					<p className="text-sm text-slate-500 dark:text-slate-400">
+					<p className="text-sm text-slate-500 dark:text-gray-400">
 						{subscription.cancelAtPeriodEnd
 							? 'Encerra em'
-							: 'Próxima cobrança em'}{' '}
-						<span className="font-semibold text-slate-700 dark:text-slate-200">
+							: 'Proxima cobranca em'}{' '}
+						<span className="font-mono font-semibold text-slate-700 dark:text-slate-200">
 							{formatDate(subscription.currentPeriodEnd)}
 						</span>
 					</p>
@@ -130,17 +123,17 @@ function SubscriptionCard({
 			</div>
 
 			{subscription.cancelAtPeriodEnd && subscription.currentPeriodEnd && (
-				<div className="flex items-start gap-3 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-4 py-3">
+				<div className="flex items-start gap-3 rounded-lg border border-violet-200 dark:border-violet-500/30 bg-violet-50 dark:bg-violet-500/10 px-4 py-3">
 					<AlertTriangle
 						size={15}
-						className="text-amber-500 dark:text-amber-400 shrink-0 mt-0.5"
+						className="text-violet-600 dark:text-violet-400 shrink-0 mt-0.5"
 					/>
-					<p className="text-sm text-amber-700 dark:text-amber-300">
-						Sua assinatura será encerrada em{' '}
+					<p className="text-sm text-violet-700 dark:text-violet-300">
+						Sua assinatura sera encerrada em{' '}
 						<span className="font-semibold">
 							{formatDate(subscription.currentPeriodEnd)}
 						</span>
-						. Você ainda tem acesso até lá.
+						. Voce ainda tem acesso ate la.
 					</p>
 				</div>
 			)}
@@ -150,7 +143,7 @@ function SubscriptionCard({
 					<button
 						type="button"
 						onClick={onCancelClick}
-						className="px-4 py-2 text-sm rounded-xl border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+						className="px-4 py-2 text-sm rounded-lg border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
 					>
 						Cancelar assinatura
 					</button>
@@ -174,36 +167,32 @@ function PlanOption({
 	const isUpgrade = type === 'upgrade';
 
 	return (
-		<div className="rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-sm dark:shadow-none flex flex-col">
-			{/* Stripe */}
+		<div className="rounded-lg border border-slate-200 dark:border-white/10 overflow-hidden flex flex-col">
 			<div
-				className={`h-1.5 bg-linear-to-r ${isUpgrade ? 'from-green-500 to-emerald-500' : 'from-amber-400 to-orange-500'}`}
+				className={`h-1 ${isUpgrade ? 'bg-emerald-500' : 'bg-violet-600'}`}
 			/>
 
-			<div className="bg-white dark:bg-white/5 p-5 flex flex-col flex-1">
-				{/* System class badge */}
+			<div className="bg-white dark:bg-[#1a1a1d] p-5 flex flex-col flex-1">
 				{systemClass && (
 					<span className="self-start text-xs font-semibold px-2.5 py-0.5 rounded-full mb-3 bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">
 						{systemClass.name}
 					</span>
 				)}
 
-				{/* Name + price */}
-				<h3 className="font-bold text-slate-900 dark:text-white text-base leading-snug mb-1">
+				<h3 className="font-display font-bold text-slate-900 dark:text-slate-100 text-base leading-snug mb-1">
 					{product.name}
 				</h3>
 				<p className="mb-5">
-					<span className="text-2xl font-black text-slate-900 dark:text-white">
+					<span className="font-mono text-2xl font-bold text-slate-900 dark:text-slate-100">
 						{formatCurrency(product.price)}
 					</span>
-					<span className="text-sm text-slate-500 dark:text-slate-400">
-						/mês
+					<span className="text-sm text-slate-500 dark:text-gray-400">
+						/mes
 					</span>
 				</p>
 
-				{/* Features */}
 				<div className="space-y-2 mb-5 flex-1">
-					<p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">
+					<p className="text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wide mb-3">
 						Recursos inclusos
 					</p>
 					{SC_OPTIONS.map((o) => {
@@ -211,18 +200,18 @@ function PlanOption({
 						return (
 							<div key={o.key} className="flex items-center gap-2.5">
 								{enabled ? (
-									<Check size={14} className="text-emerald-400 shrink-0" />
+									<Check size={14} className="text-violet-600 shrink-0" />
 								) : (
 									<X
 										size={14}
-										className="text-slate-300 dark:text-gray-600 shrink-0"
+										className="text-slate-300 dark:text-slate-600 shrink-0"
 									/>
 								)}
 								<span
 									className={
 										enabled
-											? 'text-sm text-slate-700 dark:text-gray-200'
-											: 'text-sm text-slate-400 dark:text-gray-600 line-through'
+											? 'text-sm text-slate-700 dark:text-slate-200'
+											: 'text-sm text-slate-400 dark:text-slate-600 line-through'
 									}
 								>
 									{o.label}
@@ -232,14 +221,13 @@ function PlanOption({
 					})}
 				</div>
 
-				{/* Action button */}
 				<button
 					type="button"
 					onClick={() => onSelect(product, type)}
-					className={`w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-xl transition-all ${
+					className={`w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all ${
 						isUpgrade
-							? 'bg-linear-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white'
-							: 'border border-slate-200 dark:border-white/10 hover:border-amber-400 dark:hover:border-amber-500/50 text-slate-700 dark:text-slate-200 hover:text-amber-700 dark:hover:text-amber-300'
+							? 'bg-violet-600 hover:bg-violet-400 text-white'
+							: 'border border-slate-200 dark:border-white/10 hover:border-violet-500/50 text-slate-700 dark:text-slate-200 hover:text-violet-700 dark:hover:text-violet-400'
 					}`}
 				>
 					{isUpgrade ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
@@ -289,15 +277,12 @@ export default function CourseAssinaturaPage() {
 		setName(user?.name ?? '');
 	}, []);
 
-	// Encontra o produto atual usando nome + preço para diferenciar variantes
 	const currentProduct = data
 		? (products?.find(
 				(p) => p.name === data.product_name && p.price === data.amount,
 			) ?? products?.find((p) => p.name === data.product_name))
 		: undefined;
 
-	// Produtos relacionados = mesmo nome + mesma máquina + mesmo software,
-	// garantindo que sejam variantes de tier diferente (com features distintas)
 	const relatedPlans = currentProduct
 		? (products?.filter(
 				(p) =>
@@ -317,7 +302,6 @@ export default function CourseAssinaturaPage() {
 		(p) => p.price < (data?.amount ?? 0),
 	);
 
-	// Se não há upgrades mas há downgrades, seleciona a aba correta
 	const effectiveTab =
 		planTab === 'upgrade' &&
 		upgradePlans.length === 0 &&
@@ -330,7 +314,7 @@ export default function CourseAssinaturaPage() {
 			onSuccess: () => {
 				setCancelModalOpen(false);
 				toast.success(
-					'Assinatura cancelada. Você ainda tem acesso até o fim do período.',
+					'Assinatura cancelada. Voce ainda tem acesso ate o fim do periodo.',
 				);
 			},
 			onError: () => {
@@ -363,7 +347,7 @@ export default function CourseAssinaturaPage() {
 				onError: (error: unknown) => {
 					const msg = error instanceof Error ? error.message.toLowerCase() : '';
 					if (msg.includes('not higher')) {
-						toast.error('Este plano não é superior ao atual.');
+						toast.error('Este plano nao e superior ao atual.');
 					} else if (msg.includes('tenant')) {
 						toast.error('Nenhuma conta ativa encontrada.');
 					} else {
@@ -381,109 +365,49 @@ export default function CourseAssinaturaPage() {
 	const isChangingPlan = isUpgrading || isDowngrading;
 
 	return (
-		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0b1e] text-slate-900 dark:text-white font-sans">
-			<Background />
+		<>
+			<div className="px-6 py-8">
+				<PageHeader
+					title={name ? `Ola, ${name}` : 'Sua assinatura'}
+					subtitle="Gerencie os detalhes do seu plano ativo."
+					icon={CreditCard}
+				/>
 
-			{/* Header */}
-			<header className="relative z-10 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur-sm px-6 py-4">
-				<div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-					<div className="flex items-center gap-3">
-						<Link
-							href="/course"
-							className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 hover:border-violet-500/40 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium rounded-xl transition-colors"
-						>
-							<ArrowLeft className="w-4 h-4" />
-							Meus Cursos
-						</Link>
-					</div>
+				{isLoading && <SubscriptionSkeleton />}
 
-					<div className="flex items-center gap-3">
-						<div className="hidden sm:flex items-center gap-2">
-							<div className="bg-linear-to-br from-violet-600 to-purple-700 rounded-lg p-1.5">
-								<CreditCard className="w-4 h-4 text-white" />
-							</div>
-							<span className="text-sm font-bold text-slate-900 dark:text-white">
-								Minha Assinatura
-							</span>
-						</div>
-					</div>
-
-					<div className="flex items-center gap-2">
-						<ThemeToggle />
-						<UserBadge />
-					</div>
-				</div>
-			</header>
-
-			<div className="relative z-10 max-w-4xl mx-auto px-6 py-8">
-				{/* Top tag */}
-				<div className="inline-flex items-center gap-2 bg-violet-100 dark:bg-white/10 border border-violet-200 dark:border-white/20 rounded-full px-4 py-1.5 mb-6 text-xs font-semibold text-violet-700 dark:text-white uppercase tracking-wider">
-					<Zap className="w-4 h-4" />
-					Comunidade Profissão Laser
-				</div>
-
-				{/* Title */}
-				<h2 className="text-4xl font-black leading-tight mb-1">
-					{name ? (
-						<>
-							Olá,{' '}
-							<span className="bg-linear-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
-								{name}
-							</span>
-						</>
-					) : (
-						<span className="bg-linear-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
-							Sua assinatura
-						</span>
-					)}
-				</h2>
-				<p className="text-slate-600 dark:text-slate-400 text-base mb-8">
-					Gerencie os detalhes do seu plano ativo.
-				</p>
-
-				{/* Loading */}
-				{isLoading && (
-					<div className="flex items-center justify-center py-20">
-						<Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
-					</div>
-				)}
-
-				{/* Error */}
 				{isError && (
-					<div className="flex items-center gap-3 bg-white dark:bg-white/5 border border-red-200 dark:border-red-500/30 rounded-2xl px-5 py-4 text-sm text-red-600 dark:text-red-400 shadow-sm dark:shadow-none">
+					<div className="flex items-center gap-3 bg-white dark:bg-[#1a1a1d] border border-red-200 dark:border-red-500/30 rounded-lg px-5 py-4 text-sm text-red-600 dark:text-red-400">
 						<AlertTriangle size={16} className="shrink-0" />
 						Erro ao carregar assinatura. Tente novamente.
 					</div>
 				)}
 
-				{/* Empty state */}
 				{!isLoading && !isError && data === null && (
-					<div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-10 shadow-sm dark:shadow-none flex flex-col items-center text-center gap-5">
-						<div className="bg-linear-to-br from-slate-100 to-slate-200 dark:from-white/10 dark:to-white/5 rounded-2xl p-5">
+					<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-lg p-10 flex flex-col items-center text-center gap-5">
+						<div className="bg-slate-100 dark:bg-white/5 rounded-xl p-5">
 							<CreditCard
 								size={32}
-								className="text-slate-400 dark:text-slate-500"
+								className="text-slate-400 dark:text-gray-500"
 							/>
 						</div>
 						<div>
-							<p className="font-bold text-lg text-slate-900 dark:text-white">
+							<p className="font-display font-bold text-lg text-slate-900 dark:text-slate-100">
 								Nenhuma assinatura ativa
 							</p>
-							<p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-								Você não possui uma assinatura ativa no momento.
+							<p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
+								Voce nao possui uma assinatura ativa no momento.
 							</p>
 						</div>
 						<Link
-							href="/store"
-							className="flex items-center gap-2 px-5 py-2.5 bg-linear-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 text-white text-sm font-semibold rounded-xl transition-all"
+							href="/course/store"
+							className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-400 text-white text-sm font-semibold rounded-lg transition-colors"
 						>
 							<BookOpen className="w-4 h-4" />
-							Ver planos disponíveis
+							Ver planos disponiveis
 						</Link>
 					</div>
 				)}
 
-				{/* Content with subscription */}
 				{!isLoading && !isError && data && (
 					<div className="space-y-6">
 						<SubscriptionCard
@@ -491,26 +415,23 @@ export default function CourseAssinaturaPage() {
 							onCancelClick={() => setCancelModalOpen(true)}
 						/>
 
-						{/* Plan change section */}
 						{(upgradePlans.length > 0 || downgradePlans.length > 0) && (
-							<div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm dark:shadow-none overflow-hidden">
-								{/* Header */}
+							<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-lg overflow-hidden">
 								<div className="flex items-center gap-3 px-6 pt-6 pb-4">
-									<div className="bg-linear-to-br from-cyan-500 to-blue-600 rounded-xl p-2.5">
-										<Zap className="w-5 h-5 text-white" />
+									<div className="bg-violet-500/10 dark:bg-violet-500/20 rounded-lg p-2.5">
+										<ArrowUp className="w-5 h-5 text-violet-600 dark:text-violet-400" />
 									</div>
 									<div>
-										<h3 className="font-bold text-slate-900 dark:text-white">
+										<h3 className="font-display font-bold text-slate-900 dark:text-slate-100">
 											Alterar plano
 										</h3>
-										<p className="text-xs text-slate-500 dark:text-slate-400">
-											Faça upgrade para mais recursos ou downgrade quando
+										<p className="text-xs text-slate-500 dark:text-gray-400">
+											Faca upgrade para mais recursos ou downgrade quando
 											precisar
 										</p>
 									</div>
 								</div>
 
-								{/* Tabs */}
 								<div className="flex border-b border-slate-200 dark:border-white/10 px-6">
 									{upgradePlans.length > 0 && (
 										<button
@@ -518,17 +439,17 @@ export default function CourseAssinaturaPage() {
 											onClick={() => setPlanTab('upgrade')}
 											className={`flex items-center gap-1.5 pb-3 px-1 mr-6 text-sm font-semibold border-b-2 transition-colors ${
 												planTab === 'upgrade'
-													? 'border-green-500 text-green-600 dark:text-green-400'
-													: 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+													? 'border-violet-600 text-violet-700 dark:text-violet-400'
+													: 'border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-slate-200'
 											}`}
 										>
 											<ArrowUp size={14} />
 											Upgrade
 											<span
-												className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+												className={`font-mono text-xs px-1.5 py-0.5 rounded-full ${
 													planTab === 'upgrade'
-														? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300'
-														: 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400'
+														? 'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300'
+														: 'bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-gray-400'
 												}`}
 											>
 												{upgradePlans.length}
@@ -541,17 +462,17 @@ export default function CourseAssinaturaPage() {
 											onClick={() => setPlanTab('downgrade')}
 											className={`flex items-center gap-1.5 pb-3 px-1 mr-6 text-sm font-semibold border-b-2 transition-colors ${
 												planTab === 'downgrade'
-													? 'border-amber-500 text-amber-600 dark:text-amber-400'
-													: 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+													? 'border-violet-600 text-violet-700 dark:text-violet-400'
+													: 'border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-slate-200'
 											}`}
 										>
 											<ArrowDown size={14} />
 											Downgrade
 											<span
-												className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+												className={`font-mono text-xs px-1.5 py-0.5 rounded-full ${
 													planTab === 'downgrade'
-														? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300'
-														: 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400'
+														? 'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300'
+														: 'bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-gray-400'
 												}`}
 											>
 												{downgradePlans.length}
@@ -560,7 +481,6 @@ export default function CourseAssinaturaPage() {
 									)}
 								</div>
 
-								{/* Tab content */}
 								<div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 									{effectiveTab === 'upgrade' &&
 										upgradePlans.map((product) => (
@@ -606,12 +526,12 @@ export default function CourseAssinaturaPage() {
 				productName={changePlanModal.product?.name ?? ''}
 				price={
 					changePlanModal.product
-						? `${formatCurrency(changePlanModal.product.price)}/mês`
+						? `${formatCurrency(changePlanModal.product.price)}/mes`
 						: ''
 				}
 				onConfirm={handleConfirmChangePlan}
 				isPending={isChangingPlan}
 			/>
-		</div>
+		</>
 	);
 }

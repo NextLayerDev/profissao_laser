@@ -58,7 +58,7 @@ export default function RecurringSales() {
 		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
 
-			<main className="px-8 py-6 space-y-6">
+			<main className="px-4 md:px-8 py-6 space-y-6">
 				{/* Title + Filter */}
 				<div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
 					<div>
