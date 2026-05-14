@@ -141,9 +141,16 @@ export function ProductCard({
 				</div>
 
 				<div className="p-4">
-					<h3 className="font-semibold text-slate-900 dark:text-white mb-2">
-						{product.name}
-					</h3>
+					<div className="flex items-start justify-between gap-2 mb-2">
+						<h3 className="font-semibold text-slate-900 dark:text-white">
+							{product.name}
+						</h3>
+						{product.type === 'addon' && (
+							<span className="inline-flex items-center text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border border-violet-500/40 text-violet-600 dark:text-violet-300 bg-violet-500/10 shrink-0">
+								Addon
+							</span>
+						)}
+					</div>
 					{productClasses && productClasses.length > 0 && (
 						<div className="flex flex-wrap gap-1.5 mb-2">
 							{productClasses.map((cls) => {

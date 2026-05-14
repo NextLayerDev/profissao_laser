@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { Header } from '@/components/dashboard/header';
 import { AddCourseModal } from '@/components/products/add-course-modal';
 import { ClassCard } from '@/components/products/class-card';
+import { CreateAddonModal } from '@/components/products/create-addon-modal';
 import { CreateClassModal } from '@/components/products/create-class-modal';
 import { ProductGrid } from '@/components/products/product-grid';
 import { SearchBar } from '@/components/products/search-bar';
@@ -23,6 +24,7 @@ export default function Produtos() {
 	const [activeTab, setActiveTab] = useState<Tab>('produtos');
 	const [searchQuery, setSearchQuery] = useState('');
 	const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+	const [isAddonModalOpen, setIsAddonModalOpen] = useState(false);
 	const [isClassModalOpen, setIsClassModalOpen] = useState(false);
 	const [editingClass, setEditingClass] = useState<ClassWithProducts | null>(
 		null,
@@ -125,6 +127,16 @@ export default function Produtos() {
 
 				{activeTab === 'produtos' && (
 					<>
+						<div className="flex justify-end mb-4">
+							<button
+								type="button"
+								onClick={() => setIsAddonModalOpen(true)}
+								className="flex items-center gap-2 bg-white dark:bg-[#1a1a1d] border border-violet-500/40 rounded-xl px-5 py-2.5 text-sm font-medium text-violet-600 dark:text-violet-300 hover:border-violet-500 transition-colors shadow-sm dark:shadow-none"
+							>
+								<Plus className="w-4 h-4" />
+								Novo addon
+							</button>
+						</div>
 						<SearchBar
 							value={searchQuery}
 							onChange={setSearchQuery}
@@ -236,6 +248,11 @@ export default function Produtos() {
 					</>
 				)}
 			</main>
+
+			<CreateAddonModal
+				isOpen={isAddonModalOpen}
+				onClose={() => setIsAddonModalOpen(false)}
+			/>
 
 			<AddCourseModal
 				isOpen={isProductModalOpen}

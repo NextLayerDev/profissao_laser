@@ -12,6 +12,7 @@ import {
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { AddonsSection } from '@/components/assinatura/addons-section';
 import { CancelSubscriptionModal } from '@/components/assinatura/cancel-subscription-modal';
 import { ChangePlanModal } from '@/components/assinatura/change-plan-modal';
 import { PageHeader } from '@/components/ui/page-header';
@@ -507,6 +508,7 @@ export default function CourseAssinaturaPage() {
 						)}
 					</div>
 				)}
+				<AddonsSection />
 			</div>
 
 			<CancelSubscriptionModal
