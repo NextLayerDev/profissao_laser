@@ -1,9 +1,10 @@
 'use client';
 
-import { Layers, Package, Plus, Settings2 } from 'lucide-react';
+import { Layers, Package, Plus, Puzzle, Settings2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Header } from '@/components/dashboard/header';
 import { AddCourseModal } from '@/components/products/add-course-modal';
+import { AddonCard } from '@/components/products/addon-card';
 import { ClassCard } from '@/components/products/class-card';
 import { CreateAddonModal } from '@/components/products/create-addon-modal';
 import { CreateClassModal } from '@/components/products/create-class-modal';
@@ -18,7 +19,7 @@ import { useSystemClasses } from '@/hooks/use-system-classes';
 import type { ClassWithProducts } from '@/types/classes';
 import type { SystemClassWithRelations } from '@/types/system-classes';
 
-type Tab = 'produtos' | 'classes' | 'system-classes';
+type Tab = 'produtos' | 'addons' | 'classes' | 'system-classes';
 
 export default function Produtos() {
 	const [activeTab, setActiveTab] = useState<Tab>('produtos');
@@ -39,8 +40,16 @@ export default function Produtos() {
 	const { classes, isLoading: classesLoading } = useClasses();
 	const { systemClasses, isLoading: systemClassesLoading } = useSystemClasses();
 
-	const filteredProducts = (products ?? []).filter((product) =>
-		product.name.toLowerCase().includes(searchQuery.toLowerCase()),
+	const filteredProducts = (products ?? []).filter(
+		(product) =>
+			product.type !== 'addon' &&
+			product.name.toLowerCase().includes(searchQuery.toLowerCase()),
+	);
+
+	const filteredAddons = (products ?? []).filter(
+		(product) =>
+			product.type === 'addon' &&
+			product.name.toLowerCase().includes(searchQuery.toLowerCase()),
 	);
 
 	const filteredSystemClasses = useMemo(
@@ -101,6 +110,18 @@ export default function Produtos() {
 					</button>
 					<button
 						type="button"
+						onClick={() => setActiveTab('addons')}
+						className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+							activeTab === 'addons'
+								? 'bg-violet-600 text-white'
+								: 'bg-white dark:bg-[#1a1a1d] text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-gray-800 hover:border-slate-300 dark:hover:border-gray-700 hover:text-slate-900 dark:hover:text-white shadow-sm dark:shadow-none'
+						}`}
+					>
+						<Puzzle className="w-4 h-4" />
+						Addons
+					</button>
+					<button
+						type="button"
 						onClick={() => setActiveTab('classes')}
 						className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
 							activeTab === 'classes'
@@ -127,16 +148,6 @@ export default function Produtos() {
 
 				{activeTab === 'produtos' && (
 					<>
-						<div className="flex justify-end mb-4">
-							<button
-								type="button"
-								onClick={() => setIsAddonModalOpen(true)}
-								className="flex items-center gap-2 bg-white dark:bg-[#1a1a1d] border border-violet-500/40 rounded-xl px-5 py-2.5 text-sm font-medium text-violet-600 dark:text-violet-300 hover:border-violet-500 transition-colors shadow-sm dark:shadow-none"
-							>
-								<Plus className="w-4 h-4" />
-								Novo addon
-							</button>
-						</div>
 						<SearchBar
 							value={searchQuery}
 							onChange={setSearchQuery}
@@ -149,6 +160,57 @@ export default function Produtos() {
 							classes={classes}
 							systemClasses={systemClasses}
 						/>
+					</>
+				)}
+
+				{activeTab === 'addons' && (
+					<>
+						<div className="flex items-center justify-between gap-4 mb-6">
+							<p className="text-sm text-slate-600 dark:text-gray-400">
+								Funcionalidades extras que podem ser anexadas à assinatura de um
+								cliente. Addons não têm imagem nem conteúdo de curso.
+							</p>
+							<button
+								type="button"
+								onClick={() => setIsAddonModalOpen(true)}
+								className="flex items-center gap-2 bg-violet-600 rounded-xl px-5 py-3 text-sm font-medium text-white hover:bg-violet-700 transition-colors shrink-0"
+							>
+								<Plus className="w-4 h-4" />
+								Novo addon
+							</button>
+						</div>
+
+						{isLoading ? (
+							<div className="flex items-center justify-center py-20">
+								<div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+							</div>
+						) : error ? (
+							<div className="text-center py-20">
+								<p className="text-red-500 dark:text-red-400 font-medium">
+									Erro ao carregar addons
+								</p>
+							</div>
+						) : filteredAddons.length === 0 ? (
+							<div className="text-center py-20">
+								<Puzzle className="w-10 h-10 text-slate-400 dark:text-gray-700 mx-auto mb-4" />
+								<p className="text-slate-600 dark:text-gray-400 font-medium">
+									{searchQuery
+										? 'Nenhum resultado encontrado'
+										: 'Nenhum addon criado'}
+								</p>
+								<p className="text-slate-500 dark:text-gray-600 text-sm mt-1">
+									{searchQuery
+										? 'Tente outro termo de busca'
+										: 'Crie um addon para liberar funcionalidades extras.'}
+								</p>
+							</div>
+						) : (
+							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+								{filteredAddons.map((addon) => (
+									<AddonCard key={addon.id} addon={addon} />
+								))}
+							</div>
+						)}
 					</>
 				)}
 
