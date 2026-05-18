@@ -29,7 +29,9 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { MyMachineSection } from '@/components/previas/my-machine-section';
 import { PageHeader } from '@/components/ui/page-header';
+import { useLaserProduct, useLaserProducts } from '@/hooks/use-laser-products';
 import {
 	useDeletePrevia,
 	useDeleteWatermark,
@@ -41,8 +43,6 @@ import {
 	useUploadWatermark,
 	useWatermark,
 } from '@/hooks/use-previas';
-import { useLaserProduct, useLaserProducts } from '@/hooks/use-laser-products';
-import { MyMachineSection } from '@/components/previas/my-machine-section';
 import type {
 	GeneratePreviaPayload,
 	LaserSettings,
@@ -53,7 +53,6 @@ import type {
 	PreviaOptions,
 	PreviasQuota,
 } from '@/types/previas';
-import type { LaserProduct, LaserProductVariant } from '@/types/laser-products';
 
 type WizardStep = 1 | 2 | 3 | 4;
 
@@ -484,9 +483,7 @@ function ProductSelector({
 			) : products.length === 0 ? (
 				<div className="text-center py-8">
 					<Package className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-					<p className="text-sm text-slate-500">
-						Nenhum produto encontrado
-					</p>
+					<p className="text-sm text-slate-500">Nenhum produto encontrado</p>
 				</div>
 			) : (
 				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -533,10 +530,9 @@ function ProductSelector({
 /* ─────────────── Logo Upload Zone ─────────────── */
 
 function LogoUploadZone({
-	preview,
 	onSelect,
 }: {
-	preview: string | null;
+	preview?: string | null;
 	onSelect: (dataUrl: string | null) => void;
 }) {
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -559,8 +555,7 @@ function LogoUploadZone({
 			<div
 				onClick={() => inputRef.current?.click()}
 				onKeyDown={(e) => {
-					if (e.key === 'Enter' || e.key === ' ')
-						inputRef.current?.click();
+					if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click();
 				}}
 				className="w-28 h-28 rounded-lg border-2 border-dashed border-slate-300 dark:border-white/20 hover:border-violet-500/50 cursor-pointer transition-colors bg-white dark:bg-[#1a1a1d] flex flex-col items-center justify-center shrink-0"
 			>
@@ -983,13 +978,10 @@ export function PreviasView() {
 	const canProceedStep1 = !!selectedVariantId;
 
 	// Auto-set material from product
-	const handleSelectProduct = useCallback(
-		(id: string) => {
-			setSelectedProductId(id || null);
-			setSelectedVariantId(null);
-		},
-		[],
-	);
+	const handleSelectProduct = useCallback((id: string) => {
+		setSelectedProductId(id || null);
+		setSelectedVariantId(null);
+	}, []);
 
 	// When variant is selected, update material hint
 	const handleSelectVariant = useCallback(
@@ -1046,7 +1038,9 @@ export function PreviasView() {
 				{optionsLoading && step === 3 && (
 					<div className="flex items-center justify-center py-12">
 						<Loader2 className="w-6 h-6 text-violet-500 animate-spin" />
-						<span className="ml-2 text-sm text-slate-500">Carregando opcoes...</span>
+						<span className="ml-2 text-sm text-slate-500">
+							Carregando opcoes...
+						</span>
 					</div>
 				)}
 
@@ -1080,7 +1074,9 @@ export function PreviasView() {
 										)}
 									</div>
 									<div className="min-w-0">
-										<p className="text-xs text-slate-500 dark:text-gray-400">Produto</p>
+										<p className="text-xs text-slate-500 dark:text-gray-400">
+											Produto
+										</p>
 										<p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
 											{selectedVariant.name}
 										</p>
@@ -1111,7 +1107,9 @@ export function PreviasView() {
 												</button>
 											</div>
 											<div className="min-w-0">
-												<p className="text-xs text-slate-500 dark:text-gray-400">Logo</p>
+												<p className="text-xs text-slate-500 dark:text-gray-400">
+													Logo
+												</p>
 												<p className="text-sm font-semibold text-slate-900 dark:text-white">
 													Enviada
 												</p>
@@ -1121,7 +1119,9 @@ export function PreviasView() {
 										<>
 											<LogoUploadZone preview={null} onSelect={setImageLogo} />
 											<div className="min-w-0">
-												<p className="text-xs text-slate-500 dark:text-gray-400">Logo</p>
+												<p className="text-xs text-slate-500 dark:text-gray-400">
+													Logo
+												</p>
 												<p className="text-sm text-slate-500 dark:text-gray-400">
 													Opcional
 												</p>
@@ -1230,9 +1230,7 @@ export function PreviasView() {
 								aria-checked={modoLentes}
 								onClick={() => setModoLentes(!modoLentes)}
 								className={`relative w-11 h-6 rounded-full transition-colors ${
-									modoLentes
-										? 'bg-violet-700'
-										: 'bg-slate-300 dark:bg-white/20'
+									modoLentes ? 'bg-violet-700' : 'bg-slate-300 dark:bg-white/20'
 								}`}
 							>
 								<span
@@ -1266,9 +1264,7 @@ export function PreviasView() {
 									<input
 										type="text"
 										value={textoLenteEsquerda}
-										onChange={(e) =>
-											setTextoLenteEsquerda(e.target.value)
-										}
+										onChange={(e) => setTextoLenteEsquerda(e.target.value)}
 										className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 									/>
 								</div>
@@ -1282,9 +1278,7 @@ export function PreviasView() {
 							</span>
 							<textarea
 								value={instrucoesPersonalizadas}
-								onChange={(e) =>
-									setInstrucoesPersonalizadas(e.target.value)
-								}
+								onChange={(e) => setInstrucoesPersonalizadas(e.target.value)}
 								rows={3}
 								placeholder="Ex: Gravar no canto superior direito com angulo de 45 graus..."
 								className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 resize-none"
@@ -1302,7 +1296,7 @@ export function PreviasView() {
 									<p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
 										{hasWatermark
 											? 'Sera aplicada nos cantos das suas previas quando ativada.'
-											: 'Cadastre sua logo para usar como marca d\'agua nas previas.'}
+											: "Cadastre sua logo para usar como marca d'agua nas previas."}
 									</p>
 								</div>
 								{hasWatermark && watermark?.imageUrl && (
@@ -1369,7 +1363,11 @@ export function PreviasView() {
 				{/* Step 3: Laser Settings */}
 				{step === 3 && !optionsLoading && (
 					<div className="space-y-4">
-						<CollapsibleSection title="Tamanho e Posicao" icon={Ruler} defaultOpen>
+						<CollapsibleSection
+							title="Tamanho e Posicao"
+							icon={Ruler}
+							defaultOpen
+						>
 							<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
 								<DynamicSelect
 									label="Tamanho"
@@ -1407,7 +1405,11 @@ export function PreviasView() {
 							</div>
 						</CollapsibleSection>
 
-						<CollapsibleSection title="Estilo e Material" icon={Palette} defaultOpen>
+						<CollapsibleSection
+							title="Estilo e Material"
+							icon={Palette}
+							defaultOpen
+						>
 							<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
 								<DynamicSelect
 									label="Material"
@@ -1501,7 +1503,9 @@ export function PreviasView() {
 										min={getRange('contraste', 0, 100).min}
 										max={getRange('contraste', 0, 100).max}
 										value={laserSettings.contraste}
-										onChange={(e) => updateLS('contraste', Number(e.target.value))}
+										onChange={(e) =>
+											updateLS('contraste', Number(e.target.value))
+										}
 										className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-200 dark:bg-white/10 accent-violet-700"
 									/>
 								</div>
@@ -1514,7 +1518,9 @@ export function PreviasView() {
 										min={getRange('efeitoSombra', 0, 100).min}
 										max={getRange('efeitoSombra', 0, 100).max}
 										value={laserSettings.efeitoSombra}
-										onChange={(e) => updateLS('efeitoSombra', Number(e.target.value))}
+										onChange={(e) =>
+											updateLS('efeitoSombra', Number(e.target.value))
+										}
 										className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-200 dark:bg-white/10 accent-violet-700"
 									/>
 								</div>
@@ -1551,11 +1557,19 @@ export function PreviasView() {
 						</CollapsibleSection>
 
 						<div className="flex justify-between pt-2">
-							<button type="button" onClick={() => setStep(2)} className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-medium rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+							<button
+								type="button"
+								onClick={() => setStep(2)}
+								className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-medium rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+							>
 								<ArrowLeft className="w-4 h-4" />
 								Voltar
 							</button>
-							<button type="button" onClick={() => setStep(4)} className="flex items-center gap-2 px-6 py-3 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors">
+							<button
+								type="button"
+								onClick={() => setStep(4)}
+								className="flex items-center gap-2 px-6 py-3 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors"
+							>
 								Revisar e Gerar
 								<ArrowRight className="w-4 h-4" />
 							</button>
@@ -1573,39 +1587,72 @@ export function PreviasView() {
 							</h4>
 							<div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
 								<div>
-									<span className="text-slate-500 dark:text-gray-400 text-xs">Produto</span>
-									<p className="text-slate-900 dark:text-white font-medium">{selectedProduct?.name ?? '—'}</p>
+									<span className="text-slate-500 dark:text-gray-400 text-xs">
+										Produto
+									</span>
+									<p className="text-slate-900 dark:text-white font-medium">
+										{selectedProduct?.name ?? '—'}
+									</p>
 								</div>
 								{selectedVariant && (
 									<div>
-										<span className="text-slate-500 dark:text-gray-400 text-xs">Variante</span>
-										<p className="text-slate-900 dark:text-white font-medium">{selectedVariant.name}</p>
+										<span className="text-slate-500 dark:text-gray-400 text-xs">
+											Variante
+										</span>
+										<p className="text-slate-900 dark:text-white font-medium">
+											{selectedVariant.name}
+										</p>
 									</div>
 								)}
 								<div>
-									<span className="text-slate-500 dark:text-gray-400 text-xs">Tipo</span>
-									<p className="text-slate-900 dark:text-white font-medium capitalize">{personalizationType}</p>
+									<span className="text-slate-500 dark:text-gray-400 text-xs">
+										Tipo
+									</span>
+									<p className="text-slate-900 dark:text-white font-medium capitalize">
+										{personalizationType}
+									</p>
 								</div>
 								<div>
-									<span className="text-slate-500 dark:text-gray-400 text-xs">Estilo</span>
-									<p className="text-slate-900 dark:text-white font-medium capitalize">{laserSettings.estiloGravacao}</p>
+									<span className="text-slate-500 dark:text-gray-400 text-xs">
+										Estilo
+									</span>
+									<p className="text-slate-900 dark:text-white font-medium capitalize">
+										{laserSettings.estiloGravacao}
+									</p>
 								</div>
 								<div>
-									<span className="text-slate-500 dark:text-gray-400 text-xs">Material</span>
-									<p className="text-slate-900 dark:text-white font-medium capitalize">{laserSettings.material}</p>
+									<span className="text-slate-500 dark:text-gray-400 text-xs">
+										Material
+									</span>
+									<p className="text-slate-900 dark:text-white font-medium capitalize">
+										{laserSettings.material}
+									</p>
 								</div>
 								<div>
-									<span className="text-slate-500 dark:text-gray-400 text-xs">Tamanho</span>
-									<p className="text-slate-900 dark:text-white font-medium capitalize">{laserSettings.tamanho}</p>
+									<span className="text-slate-500 dark:text-gray-400 text-xs">
+										Tamanho
+									</span>
+									<p className="text-slate-900 dark:text-white font-medium capitalize">
+										{laserSettings.tamanho}
+									</p>
 								</div>
 							</div>
 							{/* Image previews */}
 							<div className="flex gap-3 mt-3">
-								{selectedVariant?.imageUrl && !selectedVariant.imageUrl.includes('placeholder') && (
-									<img src={selectedVariant.imageUrl} alt="Produto" className="w-16 h-16 object-cover rounded-lg border border-slate-200 dark:border-white/10" />
-								)}
+								{selectedVariant?.imageUrl &&
+									!selectedVariant.imageUrl.includes('placeholder') && (
+										<img
+											src={selectedVariant.imageUrl}
+											alt="Produto"
+											className="w-16 h-16 object-cover rounded-lg border border-slate-200 dark:border-white/10"
+										/>
+									)}
 								{imageLogo && (
-									<img src={imageLogo} alt="Logo" className="w-16 h-16 object-cover rounded-lg border border-slate-200 dark:border-white/10" />
+									<img
+										src={imageLogo}
+										alt="Logo"
+										className="w-16 h-16 object-cover rounded-lg border border-slate-200 dark:border-white/10"
+									/>
 								)}
 							</div>
 						</div>
@@ -1618,14 +1665,28 @@ export function PreviasView() {
 										<Check className="w-4 h-4 text-white" />
 									</div>
 									<div>
-										<p className="text-sm font-bold text-slate-900 dark:text-white">Previa Gerada</p>
-										<p className="text-xs text-slate-500 dark:text-gray-400">Visualizacao realista da gravacao a laser</p>
+										<p className="text-sm font-bold text-slate-900 dark:text-white">
+											Previa Gerada
+										</p>
+										<p className="text-xs text-slate-500 dark:text-gray-400">
+											Visualizacao realista da gravacao a laser
+										</p>
 									</div>
 								</div>
 								<div className="aspect-[4/3] bg-slate-100 dark:bg-black/30 rounded-xl flex items-center justify-center overflow-hidden shadow-inner">
-									<img src={generatedPrevia.previewUrl} alt="Previa gerada" className="max-w-full max-h-full object-contain" />
+									<img
+										src={generatedPrevia.previewUrl}
+										alt="Previa gerada"
+										className="max-w-full max-h-full object-contain"
+									/>
 								</div>
-								<button type="button" onClick={() => downloadUrl(generatedPrevia.previewUrl, 'previa.png')} className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold rounded-xl transition-all shadow-lg shadow-violet-500/20 hover:shadow-violet-500/30 text-sm">
+								<button
+									type="button"
+									onClick={() =>
+										downloadUrl(generatedPrevia.previewUrl, 'previa.png')
+									}
+									className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold rounded-xl transition-all shadow-lg shadow-violet-500/20 hover:shadow-violet-500/30 text-sm"
+								>
 									<Download className="w-4 h-4" />
 									Download da Previa
 								</button>
@@ -1642,14 +1703,20 @@ export function PreviasView() {
 									</div>
 								</div>
 								<div className="text-center">
-									<p className="text-base font-semibold text-slate-900 dark:text-white">Criando sua previa...</p>
-									<p className="text-sm text-slate-500 dark:text-gray-400 mt-1">A IA esta gerando uma visualizacao realista da gravacao</p>
+									<p className="text-base font-semibold text-slate-900 dark:text-white">
+										Criando sua previa...
+									</p>
+									<p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
+										A IA esta gerando uma visualizacao realista da gravacao
+									</p>
 								</div>
 							</div>
 						)}
 
 						{/* Watermark toggle */}
-						<label className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${hasWatermark ? 'border-slate-200 dark:border-white/10 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5' : 'border-slate-100 dark:border-white/5 opacity-50 cursor-not-allowed'}`}>
+						<label
+							className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${hasWatermark ? 'border-slate-200 dark:border-white/10 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5' : 'border-slate-100 dark:border-white/5 opacity-50 cursor-not-allowed'}`}
+						>
 							<button
 								type="button"
 								role="switch"
@@ -1658,7 +1725,9 @@ export function PreviasView() {
 								onClick={() => setUseWatermarkFlag(!useWatermarkFlag)}
 								className={`relative w-10 h-[22px] rounded-full transition-colors shrink-0 ${useWatermarkFlag && hasWatermark ? 'bg-violet-600' : 'bg-slate-300 dark:bg-white/20'}`}
 							>
-								<span className={`absolute top-0.5 left-0.5 w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform ${useWatermarkFlag && hasWatermark ? 'translate-x-[18px]' : 'translate-x-0'}`} />
+								<span
+									className={`absolute top-0.5 left-0.5 w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform ${useWatermarkFlag && hasWatermark ? 'translate-x-[18px]' : 'translate-x-0'}`}
+								/>
 							</button>
 							<div className="min-w-0">
 								<span className="text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -1671,7 +1740,11 @@ export function PreviasView() {
 								)}
 							</div>
 							{hasWatermark && watermark?.imageUrl && (
-								<img src={watermark.imageUrl} alt="" className="w-8 h-8 rounded object-contain border border-slate-200 dark:border-white/10 ml-auto shrink-0" />
+								<img
+									src={watermark.imageUrl}
+									alt=""
+									className="w-8 h-8 rounded object-contain border border-slate-200 dark:border-white/10 ml-auto shrink-0"
+								/>
 							)}
 						</label>
 
@@ -1680,7 +1753,11 @@ export function PreviasView() {
 
 						{/* Action buttons */}
 						<div className="flex flex-wrap gap-3">
-							<button type="button" onClick={() => setStep(3)} className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-medium rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+							<button
+								type="button"
+								onClick={() => setStep(3)}
+								className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-medium rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+							>
 								<ArrowLeft className="w-4 h-4" />
 								Voltar
 							</button>
@@ -1703,10 +1780,18 @@ export function PreviasView() {
 								) : (
 									<Sparkles className="w-5 h-5" />
 								)}
-								{isAtLimit ? 'Limite Atingido' : generatedPrevia ? 'Gerar Novamente' : 'Gerar Previa com IA'}
+								{isAtLimit
+									? 'Limite Atingido'
+									: generatedPrevia
+										? 'Gerar Novamente'
+										: 'Gerar Previa com IA'}
 							</button>
 							{generatedPrevia && (
-								<button type="button" onClick={handleReset} className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-medium rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+								<button
+									type="button"
+									onClick={handleReset}
+									className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-medium rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+								>
 									<RotateCcw className="w-4 h-4" />
 									Nova Previa
 								</button>
@@ -1730,8 +1815,12 @@ export function PreviasView() {
 				) : !historyData?.data.length ? (
 					<div className="text-center py-12 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl">
 						<Eye className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-						<p className="text-slate-500 dark:text-gray-400 font-medium">Nenhuma previa gerada ainda</p>
-						<p className="text-sm text-slate-400 dark:text-gray-500 mt-1">Use o wizard acima para gerar sua primeira previa.</p>
+						<p className="text-slate-500 dark:text-gray-400 font-medium">
+							Nenhuma previa gerada ainda
+						</p>
+						<p className="text-sm text-slate-400 dark:text-gray-500 mt-1">
+							Use o wizard acima para gerar sua primeira previa.
+						</p>
 					</div>
 				) : (
 					<>
@@ -1747,7 +1836,12 @@ export function PreviasView() {
 								/>
 							))}
 						</div>
-						<Pagination page={histPage} total={historyData.total} limit={histLimit} onPageChange={setHistPage} />
+						<Pagination
+							page={histPage}
+							total={historyData.total}
+							limit={histLimit}
+							onPageChange={setHistPage}
+						/>
 					</>
 				)}
 			</div>

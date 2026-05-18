@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { ProductParametersSection } from '@/components/previas/product-parameters-section';
 import {
 	useCreateLaserProduct,
 	useCreateLaserProductVariant,
@@ -26,7 +27,6 @@ import {
 	useUpdateLaserProductVariant,
 	useUploadLaserProductVariantImage,
 } from '@/hooks/use-laser-products';
-import { ProductParametersSection } from '@/components/previas/product-parameters-section';
 import type {
 	CreateLaserProductPayload,
 	CreateLaserProductVariantPayload,
@@ -85,9 +85,9 @@ function ProductModal({
 				</div>
 				<div className="p-5 space-y-4">
 					<div>
-						<label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
+						<span className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
 							Nome *
-						</label>
+						</span>
 						<input
 							type="text"
 							value={name}
@@ -97,9 +97,9 @@ function ProductModal({
 						/>
 					</div>
 					<div>
-						<label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
+						<span className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
 							Descricao
-						</label>
+						</span>
 						<textarea
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
@@ -110,9 +110,9 @@ function ProductModal({
 					</div>
 					<div className="grid grid-cols-2 gap-4">
 						<div>
-							<label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
+							<span className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
 								Categoria *
-							</label>
+							</span>
 							<input
 								type="text"
 								value={category}
@@ -122,9 +122,9 @@ function ProductModal({
 							/>
 						</div>
 						<div>
-							<label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
+							<span className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
 								Material Padrao
-							</label>
+							</span>
 							<input
 								type="text"
 								value={defaultMaterial}
@@ -135,9 +135,9 @@ function ProductModal({
 						</div>
 					</div>
 					<div>
-						<label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
+						<span className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
 							Tags (separadas por virgula)
-						</label>
+						</span>
 						<input
 							type="text"
 							value={tags}
@@ -147,14 +147,12 @@ function ProductModal({
 						/>
 					</div>
 					<div>
-						<label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
+						<span className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
 							Status
-						</label>
+						</span>
 						<select
 							value={status}
-							onChange={(e) =>
-								setStatus(e.target.value as 'ativo' | 'inativo')
-							}
+							onChange={(e) => setStatus(e.target.value as 'ativo' | 'inativo')}
 							className={selectCls}
 						>
 							<option value="ativo">Ativo</option>
@@ -259,7 +257,8 @@ function VariantManager({
 				colorName: vColorName.trim() || undefined,
 				colorHex: vColorHex.trim() || undefined,
 				tipo: vTipo.trim() || undefined,
-				imageUrl: editingVariant?.imageUrl ?? 'https://placeholder.com/temp.png',
+				imageUrl:
+					editingVariant?.imageUrl ?? 'https://placeholder.com/temp.png',
 				order: vOrder,
 				status: vStatus,
 			};
@@ -365,8 +364,7 @@ function VariantManager({
 						>
 							{/* Image */}
 							<div className="aspect-square bg-slate-100 dark:bg-black/30 relative group">
-								{v.imageUrl &&
-								!v.imageUrl.includes('placeholder') ? (
+								{v.imageUrl && !v.imageUrl.includes('placeholder') ? (
 									<img
 										src={v.imageUrl}
 										alt={v.name}
@@ -380,9 +378,7 @@ function VariantManager({
 								{/* Upload overlay */}
 								<button
 									type="button"
-									onClick={() =>
-										fileInputRefs.current[v.id]?.click()
-									}
+									onClick={() => fileInputRefs.current[v.id]?.click()}
 									className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
 								>
 									<Upload className="w-6 h-6 text-white" />
@@ -468,9 +464,9 @@ function VariantManager({
 						</div>
 						<div className="p-5 space-y-4">
 							<div>
-								<label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
+								<span className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
 									Nome *
-								</label>
+								</span>
 								<input
 									type="text"
 									value={vName}
@@ -481,9 +477,9 @@ function VariantManager({
 							</div>
 							<div className="grid grid-cols-2 gap-4">
 								<div>
-									<label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
+									<span className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
 										Cor
-									</label>
+									</span>
 									<input
 										type="text"
 										value={vColorName}
@@ -493,9 +489,9 @@ function VariantManager({
 									/>
 								</div>
 								<div>
-									<label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
+									<span className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
 										Hex
-									</label>
+									</span>
 									<input
 										type="text"
 										value={vColorHex}
@@ -507,9 +503,9 @@ function VariantManager({
 							</div>
 							<div className="grid grid-cols-2 gap-4">
 								<div>
-									<label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
+									<span className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
 										Tipo
-									</label>
+									</span>
 									<input
 										type="text"
 										value={vTipo}
@@ -519,9 +515,9 @@ function VariantManager({
 									/>
 								</div>
 								<div>
-									<label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
+									<span className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
 										Ordem
-									</label>
+									</span>
 									<input
 										type="number"
 										value={vOrder}
@@ -532,9 +528,9 @@ function VariantManager({
 								</div>
 							</div>
 							<div>
-								<label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
+								<span className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
 									Status
-								</label>
+								</span>
 								<select
 									value={vStatus}
 									onChange={(e) =>
@@ -750,9 +746,7 @@ export function LaserProductsAdminView() {
 					</p>
 					<button
 						type="button"
-						onClick={() =>
-							setProductModal({ open: true, editing: null })
-						}
+						onClick={() => setProductModal({ open: true, editing: null })}
 						className="text-violet-600 dark:text-violet-400 hover:text-violet-500 font-medium"
 					>
 						Criar primeiro produto
@@ -789,9 +783,7 @@ export function LaserProductsAdminView() {
 									<td className="px-4 py-3">
 										<button
 											type="button"
-											onClick={() =>
-												setSelectedProductId(product.id)
-											}
+											onClick={() => setSelectedProductId(product.id)}
 											className="text-left hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
 										>
 											<p className="font-semibold text-slate-900 dark:text-white">
@@ -832,9 +824,7 @@ export function LaserProductsAdminView() {
 										<div className="flex items-center justify-end gap-1">
 											<button
 												type="button"
-												onClick={() =>
-													setSelectedProductId(product.id)
-												}
+												onClick={() => setSelectedProductId(product.id)}
 												className="p-1.5 text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-500/10 rounded-lg transition-colors"
 												title="Gerenciar variantes"
 											>
@@ -868,9 +858,7 @@ export function LaserProductsAdminView() {
 											</button>
 											<button
 												type="button"
-												onClick={() =>
-													void handleDeleteProduct(product)
-												}
+												onClick={() => void handleDeleteProduct(product)}
 												className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
 												title="Excluir"
 											>

@@ -2,11 +2,18 @@ import { api } from '@/lib/fetch';
 import type {
 	GeneratePreviaPayload,
 	Previa,
+	PreviaOptions,
 	PreviasAdminUsageResponse,
 	PreviasQuota,
 	PreviasResponse,
 	UpdatePreviaPayload,
+	Watermark,
 } from '@/types/previas';
+
+export async function getPreviaOptions(): Promise<PreviaOptions> {
+	const { data } = await api.get<PreviaOptions>('/previas/options');
+	return data;
+}
 
 export async function generatePrevia(
 	payload: GeneratePreviaPayload,
@@ -52,4 +59,29 @@ export async function getPreviasAdminUsage(params?: {
 		{ params },
 	);
 	return data;
+}
+
+// ─── Watermark ──────────────────────────────────────────────────────────────
+
+export async function getWatermark(): Promise<Watermark | null> {
+	try {
+		const { data } = await api.get<Watermark>('/watermark');
+		return data;
+	} catch (err: unknown) {
+		const status = (err as { response?: { status?: number } })?.response
+			?.status;
+		if (status === 404) return null;
+		throw err;
+	}
+}
+
+export async function uploadWatermark(file: File): Promise<Watermark> {
+	const fd = new FormData();
+	fd.append('file', file);
+	const { data } = await api.put<Watermark>('/watermark', fd);
+	return data;
+}
+
+export async function deleteWatermark(): Promise<void> {
+	await api.delete('/watermark');
 }
