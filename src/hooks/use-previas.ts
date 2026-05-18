@@ -4,11 +4,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
 	deletePrevia,
+	deleteWatermark,
 	generatePrevia,
+	getPreviaOptions,
 	getPreviasAdminUsage,
 	getPreviasHistory,
 	getPreviasQuota,
+	getWatermark,
 	updatePrevia,
+	uploadWatermark,
 } from '@/services/previas';
 import type {
 	GeneratePreviaPayload,
@@ -17,6 +21,16 @@ import type {
 
 const QUERY_KEY = ['previas'] as const;
 const QUOTA_KEY = ['previas', 'quota'] as const;
+const OPTIONS_KEY = ['previas', 'options'] as const;
+
+export function usePreviaOptions(enabled = true) {
+	return useQuery({
+		queryKey: OPTIONS_KEY,
+		queryFn: getPreviaOptions,
+		staleTime: Infinity,
+		enabled,
+	});
+}
 
 export function usePreviasQuota() {
 	return useQuery({
@@ -85,5 +99,42 @@ export function usePreviasAdminUsage(
 	return useQuery({
 		queryKey: [...QUERY_KEY, 'admin-usage', page, limit, search] as const,
 		queryFn: () => getPreviasAdminUsage({ page, limit, search }),
+	});
+}
+
+// ─── Watermark ──────────────────────────────────────────────────────────────
+
+const WATERMARK_KEY = ['watermark'] as const;
+
+export function useWatermark(enabled = true) {
+	return useQuery({
+		queryKey: WATERMARK_KEY,
+		queryFn: getWatermark,
+		enabled,
+		retry: false,
+	});
+}
+
+export function useUploadWatermark() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (file: File) => uploadWatermark(file),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: WATERMARK_KEY });
+			toast.success("Marca d'agua atualizada!");
+		},
+		onError: () => toast.error("Erro ao enviar marca d'agua"),
+	});
+}
+
+export function useDeleteWatermark() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: () => deleteWatermark(),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: WATERMARK_KEY });
+			toast.success("Marca d'agua removida!");
+		},
+		onError: () => toast.error("Erro ao remover marca d'agua"),
 	});
 }

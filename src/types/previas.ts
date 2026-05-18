@@ -1,23 +1,63 @@
 export type PersonalizationType = 'logo' | 'text' | 'both';
 
+export interface PreviaOptionItem {
+	value: string;
+	label: string;
+}
+
+export interface PreviaFontOption {
+	value: string;
+	label: string;
+	family: string;
+	category: string;
+}
+
+export interface PreviaRange {
+	min: number;
+	max: number;
+}
+
+export interface PreviaOptions {
+	tamanho: PreviaOptionItem[];
+	posicao: PreviaOptionItem[];
+	intensidade: PreviaOptionItem[];
+	profundidade: PreviaOptionItem[];
+	tamanhoNome: PreviaOptionItem[];
+	material: PreviaOptionItem[];
+	estiloGravacao: PreviaOptionItem[];
+	acabamentoSuperficie: PreviaOptionItem[];
+	moldura: PreviaOptionItem[];
+	posicaoTextoRelLogo: PreviaOptionItem[];
+	espacamentoLogoTexto: PreviaOptionItem[];
+	tipoVisualizacao: PreviaOptionItem[];
+	anguloCamera: PreviaOptionItem[];
+	iluminacao: PreviaOptionItem[];
+	fundoCena: PreviaOptionItem[];
+	orientacaoLogo: PreviaOptionItem[];
+	orientacaoNome: PreviaOptionItem[];
+	comNome: PreviaOptionItem[];
+	fontes: PreviaFontOption[];
+	ranges: Record<string, PreviaRange>;
+}
+
 export interface LaserSettings {
-	tamanho: 'pequeno' | 'medio' | 'grande' | 'custom';
-	posicao: 'central' | 'superior' | 'inferior' | 'lateral';
+	tamanho: string;
+	posicao: string;
 	rotacao: number;
-	intensidade: 'baixa' | 'media' | 'alta' | 'maxima';
-	profundidade: 'superficial' | 'media' | 'profunda';
-	comNome: 'com' | 'sem';
+	intensidade: string;
+	profundidade: string;
+	comNome: string;
 	nomePersonalizado: string;
 	fonteFamilia: string;
-	tamanhoNome: 'pequeno' | 'medio' | 'grande';
-	orientacaoLogo: 'horizontal' | 'vertical';
-	orientacaoNome: 'horizontal' | 'vertical';
+	tamanhoNome: string;
+	orientacaoLogo: string;
+	orientacaoNome: string;
 	material: string;
-	estiloGravacao: 'clean' | 'vintage' | 'elegante' | 'industrial' | 'futurista';
-	acabamentoSuperficie: 'fosco' | 'brilhante' | 'escovado';
+	estiloGravacao: string;
+	acabamentoSuperficie: string;
 	contraste: number;
 	efeitoSombra: number;
-	moldura: 'nenhuma' | 'simples' | 'dupla' | 'ornamental' | 'arredondada';
+	moldura: string;
 	posicaoTextoRelLogo: string;
 	espacamentoLogoTexto: string;
 	tipoVisualizacao: string;
@@ -62,11 +102,8 @@ export interface PreviasResponse {
 }
 
 export interface GeneratePreviaPayload {
-	imagebase_url: string;
-	imageproduct_url: string;
+	productVariantId: string;
 	imagelogo_url?: string;
-	productName: string;
-	productColor?: string;
 	personalizationType: PersonalizationType;
 	customName?: string;
 	instrucoesPersonalizadas?: string;
@@ -76,6 +113,14 @@ export interface GeneratePreviaPayload {
 	name?: string;
 	notes?: string;
 	laserSettings: LaserSettings;
+	useWatermark?: boolean;
+}
+
+export interface Watermark {
+	customerId: string;
+	imageUrl: string;
+	createdAt: string;
+	updatedAt: string;
 }
 
 export interface UpdatePreviaPayload {
