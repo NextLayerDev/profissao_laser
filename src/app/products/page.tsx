@@ -118,7 +118,7 @@ export default function Produtos() {
 						}`}
 					>
 						<Puzzle className="w-4 h-4" />
-						Addons
+						Voxes
 					</button>
 					<button
 						type="button"
@@ -168,7 +168,7 @@ export default function Produtos() {
 						<div className="flex items-center justify-between gap-4 mb-6">
 							<p className="text-sm text-slate-600 dark:text-gray-400">
 								Funcionalidades extras que podem ser anexadas à assinatura de um
-								cliente. Addons não têm imagem nem conteúdo de curso.
+								cliente. Voxes não têm imagem nem conteúdo de curso.
 							</p>
 							<button
 								type="button"
@@ -176,7 +176,7 @@ export default function Produtos() {
 								className="flex items-center gap-2 bg-violet-600 rounded-xl px-5 py-3 text-sm font-medium text-white hover:bg-violet-700 transition-colors shrink-0"
 							>
 								<Plus className="w-4 h-4" />
-								Novo addon
+								Novo vox
 							</button>
 						</div>
 
@@ -187,7 +187,7 @@ export default function Produtos() {
 						) : error ? (
 							<div className="text-center py-20">
 								<p className="text-red-500 dark:text-red-400 font-medium">
-									Erro ao carregar addons
+									Erro ao carregar voxes
 								</p>
 							</div>
 						) : filteredAddons.length === 0 ? (
@@ -196,12 +196,12 @@ export default function Produtos() {
 								<p className="text-slate-600 dark:text-gray-400 font-medium">
 									{searchQuery
 										? 'Nenhum resultado encontrado'
-										: 'Nenhum addon criado'}
+										: 'Nenhum vox criado'}
 								</p>
 								<p className="text-slate-500 dark:text-gray-600 text-sm mt-1">
 									{searchQuery
 										? 'Tente outro termo de busca'
-										: 'Crie um addon para liberar funcionalidades extras.'}
+										: 'Crie um vox para liberar funcionalidades extras.'}
 								</p>
 							</div>
 						) : (

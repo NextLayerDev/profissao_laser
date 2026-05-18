@@ -23,7 +23,7 @@ export function AddonCard({ addon }: AddonCardProps) {
 						{addon.name}
 					</h3>
 					<span className="inline-flex items-center text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border border-violet-500/40 text-violet-600 dark:text-violet-300 bg-violet-500/10 shrink-0">
-						Addon
+						Vox
 					</span>
 				</div>
 
@@ -53,7 +53,7 @@ export function AddonCard({ addon }: AddonCardProps) {
 						type="button"
 						onClick={() => setShowDeleteModal(true)}
 						className="p-2 text-slate-500 dark:text-gray-500 hover:text-red-400 transition-colors"
-						title="Excluir addon"
+						title="Excluir vox"
 					>
 						<Trash2 className="w-4 h-4" />
 					</button>

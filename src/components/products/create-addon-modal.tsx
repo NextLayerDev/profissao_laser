@@ -46,14 +46,14 @@ export function CreateAddonModal({ isOpen, onClose }: CreateAddonModalProps) {
 			},
 			{
 				onSuccess: () => {
-					toast.success('Addon criado com sucesso.');
+					toast.success('Vox criado com sucesso.');
 					reset();
 					onClose();
 				},
 				onError: (err: unknown) => {
 					const message =
 						(err as { response?: { data?: { message?: string } } })?.response
-							?.data?.message ?? 'Erro ao criar addon.';
+							?.data?.message ?? 'Erro ao criar vox.';
 					toast.error(message);
 				},
 			},
@@ -70,7 +70,7 @@ export function CreateAddonModal({ isOpen, onClose }: CreateAddonModalProps) {
 					<div className="flex items-center gap-2">
 						<Plus size={18} className="text-violet-500" />
 						<h2 className="text-base font-semibold text-slate-900 dark:text-white">
-							Novo addon
+							Novo vox
 						</h2>
 					</div>
 					<button
@@ -167,7 +167,7 @@ export function CreateAddonModal({ isOpen, onClose }: CreateAddonModalProps) {
 						) : (
 							<Plus size={14} />
 						)}
-						{isPending ? 'Criando...' : 'Criar addon'}
+						{isPending ? 'Criando...' : 'Criar vox'}
 					</button>
 				</div>
 			</form>

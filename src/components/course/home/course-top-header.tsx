@@ -1,6 +1,13 @@
 'use client';
 
-import { Bell, Menu, MessageCircle, Search, Settings } from 'lucide-react';
+import {
+	Bell,
+	CreditCard,
+	Menu,
+	MessageCircle,
+	Search,
+	Settings,
+} from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { UserBadge } from '@/components/store/user-badge';
@@ -80,6 +87,13 @@ export function CourseTopHeader({
 					<MessageCircle className="w-[18px] h-[18px]" />
 				</button>
 				<ThemeToggle />
+				<Link
+					href="/course/assinatura"
+					title="Minha assinatura"
+					className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+				>
+					<CreditCard className="w-[18px] h-[18px]" />
+				</Link>
 				{isAdmin && (
 					<Link
 						href="/dashboard"
