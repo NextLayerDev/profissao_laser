@@ -121,9 +121,9 @@ export function useUploadWatermark() {
 		mutationFn: (file: File) => uploadWatermark(file),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: WATERMARK_KEY });
-			toast.success('Marca d\'agua atualizada!');
+			toast.success("Marca d'agua atualizada!");
 		},
-		onError: () => toast.error('Erro ao enviar marca d\'agua'),
+		onError: () => toast.error("Erro ao enviar marca d'agua"),
 	});
 }
 
@@ -133,8 +133,8 @@ export function useDeleteWatermark() {
 		mutationFn: () => deleteWatermark(),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: WATERMARK_KEY });
-			toast.success('Marca d\'agua removida!');
+			toast.success("Marca d'agua removida!");
 		},
-		onError: () => toast.error('Erro ao remover marca d\'agua'),
+		onError: () => toast.error("Erro ao remover marca d'agua"),
 	});
 }
