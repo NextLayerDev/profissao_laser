@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import {
 	ChevronLeft,
 	Loader2,
@@ -9,7 +10,7 @@ import {
 	Video,
 	X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMachines } from '@/hooks/use-machines';
 import {
 	useCreateProductParameter,
@@ -17,6 +18,8 @@ import {
 	useProductParameters,
 	useUpdateProductParameter,
 } from '@/hooks/use-product-parameters';
+import { getCourse } from '@/services/course';
+import { getProducts } from '@/services/products';
 import type { Machine, MachineOptionCategory } from '@/types/machines';
 import type {
 	CreateProductParameterPayload,
@@ -44,6 +47,97 @@ const OPTION_CATEGORIES: MachineOptionCategory[] = [
 	'axis',
 	'operation',
 ];
+
+/* ------------------------------------------------------------------ */
+/*  Lesson Picker                                                       */
+/* ------------------------------------------------------------------ */
+
+interface LessonOption {
+	id: string;
+	title: string;
+	moduleName: string;
+	courseName: string;
+}
+
+function LessonPicker({
+	value,
+	onChange,
+}: {
+	value: string;
+	onChange: (id: string) => void;
+}) {
+	const { data: lessons, isLoading } = useQuery({
+		queryKey: ['all-lessons-for-picker'],
+		queryFn: async () => {
+			const products = await getProducts();
+			const cursoProducts = products.filter((p) => p.type === 'curso');
+			const allLessons: LessonOption[] = [];
+			for (const product of cursoProducts) {
+				try {
+					const course = await getCourse(product.slug);
+					for (const mod of course.modules) {
+						for (const lesson of mod.lessons) {
+							if (lesson.videoUrl) {
+								allLessons.push({
+									id: lesson.id,
+									title: lesson.title,
+									moduleName: mod.title,
+									courseName: course.name,
+								});
+							}
+						}
+					}
+				} catch {
+					// skip
+				}
+			}
+			return allLessons;
+		},
+		staleTime: 5 * 60_000,
+	});
+
+	const grouped = useMemo(() => {
+		if (!lessons) return new Map<string, LessonOption[]>();
+		const map = new Map<string, LessonOption[]>();
+		for (const l of lessons) {
+			const key = `${l.courseName} > ${l.moduleName}`;
+			if (!map.has(key)) map.set(key, []);
+			map.get(key)?.push(l);
+		}
+		return map;
+	}, [lessons]);
+
+	return (
+		<div>
+			<span className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
+				Video-Aula (opcional)
+			</span>
+			{isLoading ? (
+				<div className="flex items-center gap-2 py-2">
+					<Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />
+					<span className="text-xs text-slate-400">Carregando aulas...</span>
+				</div>
+			) : (
+				<select
+					value={value}
+					onChange={(e) => onChange(e.target.value)}
+					className={selectCls}
+				>
+					<option value="">Nenhuma aula</option>
+					{[...grouped.entries()].map(([group, items]) => (
+						<optgroup key={group} label={group}>
+							{items.map((l) => (
+								<option key={l.id} value={l.id}>
+									{l.title}
+								</option>
+							))}
+						</optgroup>
+					))}
+				</select>
+			)}
+		</div>
+	);
+}
 
 /* ------------------------------------------------------------------ */
 /*  Association Modal                                                   */
@@ -347,19 +441,8 @@ function AssociationModal({
 						</div>
 					)}
 
-					{/* Lesson ID */}
-					<div>
-						<span className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
-							ID da Video-Aula (opcional)
-						</span>
-						<input
-							type="text"
-							value={lessonId}
-							onChange={(e) => setLessonId(e.target.value)}
-							placeholder="ID da aula no sistema de cursos"
-							className={inputCls}
-						/>
-					</div>
+					{/* Lesson picker */}
+					<LessonPicker value={lessonId} onChange={setLessonId} />
 				</div>
 				<div className="flex justify-end gap-3 p-5 border-t border-slate-200 dark:border-gray-700">
 					<button
