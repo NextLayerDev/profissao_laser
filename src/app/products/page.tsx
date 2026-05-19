@@ -8,6 +8,7 @@ import { AddonCard } from '@/components/products/addon-card';
 import { ClassCard } from '@/components/products/class-card';
 import { CreateAddonModal } from '@/components/products/create-addon-modal';
 import { CreateClassModal } from '@/components/products/create-class-modal';
+import { CreditsAdminSection } from '@/components/products/credits-admin-section';
 import { ProductGrid } from '@/components/products/product-grid';
 import { SearchBar } from '@/components/products/search-bar';
 import { CreateSystemClassModal } from '@/components/system-classes/create-system-class-modal';
@@ -23,6 +24,7 @@ type Tab = 'produtos' | 'addons' | 'classes' | 'system-classes';
 
 export default function Produtos() {
 	const [activeTab, setActiveTab] = useState<Tab>('produtos');
+	const [voxesSub, setVoxesSub] = useState<'addons' | 'creditos'>('addons');
 	const [searchQuery, setSearchQuery] = useState('');
 	const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 	const [isAddonModalOpen, setIsAddonModalOpen] = useState(false);
@@ -165,51 +167,82 @@ export default function Produtos() {
 
 				{activeTab === 'addons' && (
 					<>
-						<div className="flex items-center justify-between gap-4 mb-6">
-							<p className="text-sm text-slate-600 dark:text-gray-400">
-								Funcionalidades extras que podem ser anexadas à assinatura de um
-								cliente. Voxes não têm imagem nem conteúdo de curso.
-							</p>
+						<div className="flex items-center gap-2 mb-6">
 							<button
 								type="button"
-								onClick={() => setIsAddonModalOpen(true)}
-								className="flex items-center gap-2 bg-violet-600 rounded-xl px-5 py-3 text-sm font-medium text-white hover:bg-violet-700 transition-colors shrink-0"
+								onClick={() => setVoxesSub('addons')}
+								className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+									voxesSub === 'addons'
+										? 'bg-violet-600 text-white'
+										: 'bg-white dark:bg-[#1a1a1d] text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-gray-800'
+								}`}
 							>
-								<Plus className="w-4 h-4" />
-								Novo vox
+								Addons
+							</button>
+							<button
+								type="button"
+								onClick={() => setVoxesSub('creditos')}
+								className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+									voxesSub === 'creditos'
+										? 'bg-violet-600 text-white'
+										: 'bg-white dark:bg-[#1a1a1d] text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-gray-800'
+								}`}
+							>
+								Voxes (créditos)
 							</button>
 						</div>
 
-						{isLoading ? (
-							<div className="flex items-center justify-center py-20">
-								<div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-							</div>
-						) : error ? (
-							<div className="text-center py-20">
-								<p className="text-red-500 dark:text-red-400 font-medium">
-									Erro ao carregar voxes
-								</p>
-							</div>
-						) : filteredAddons.length === 0 ? (
-							<div className="text-center py-20">
-								<Puzzle className="w-10 h-10 text-slate-400 dark:text-gray-700 mx-auto mb-4" />
-								<p className="text-slate-600 dark:text-gray-400 font-medium">
-									{searchQuery
-										? 'Nenhum resultado encontrado'
-										: 'Nenhum vox criado'}
-								</p>
-								<p className="text-slate-500 dark:text-gray-600 text-sm mt-1">
-									{searchQuery
-										? 'Tente outro termo de busca'
-										: 'Crie um vox para liberar funcionalidades extras.'}
-								</p>
-							</div>
+						{voxesSub === 'creditos' ? (
+							<CreditsAdminSection />
 						) : (
-							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-								{filteredAddons.map((addon) => (
-									<AddonCard key={addon.id} addon={addon} />
-								))}
-							</div>
+							<>
+								<div className="flex items-center justify-between gap-4 mb-6">
+									<p className="text-sm text-slate-600 dark:text-gray-400">
+										Funcionalidades extras que podem ser anexadas à assinatura
+										de um cliente. Voxes não têm imagem nem conteúdo de curso.
+									</p>
+									<button
+										type="button"
+										onClick={() => setIsAddonModalOpen(true)}
+										className="flex items-center gap-2 bg-violet-600 rounded-xl px-5 py-3 text-sm font-medium text-white hover:bg-violet-700 transition-colors shrink-0"
+									>
+										<Plus className="w-4 h-4" />
+										Novo vox
+									</button>
+								</div>
+
+								{isLoading ? (
+									<div className="flex items-center justify-center py-20">
+										<div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+									</div>
+								) : error ? (
+									<div className="text-center py-20">
+										<p className="text-red-500 dark:text-red-400 font-medium">
+											Erro ao carregar voxes
+										</p>
+									</div>
+								) : filteredAddons.length === 0 ? (
+									<div className="text-center py-20">
+										<Puzzle className="w-10 h-10 text-slate-400 dark:text-gray-700 mx-auto mb-4" />
+										<p className="text-slate-600 dark:text-gray-400 font-medium">
+											{searchQuery
+												? 'Nenhum resultado encontrado'
+												: 'Nenhum vox criado'}
+										</p>
+										<p className="text-slate-500 dark:text-gray-600 text-sm mt-1">
+											{searchQuery
+												? 'Tente outro termo de busca'
+												: 'Crie um vox para liberar funcionalidades extras.'}
+										</p>
+									</div>
+								) : (
+									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+										{filteredAddons.map((addon) => (
+											<AddonCard key={addon.id} addon={addon} />
+										))}
+									</div>
+								)}
+							</>
 						)}
 					</>
 				)}

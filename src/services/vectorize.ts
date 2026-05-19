@@ -1,21 +1,20 @@
+import { api } from '@/lib/fetch';
+
 export interface VectorizeResult {
 	svgContent: string;
 	originalName: string;
 	isColor: boolean;
 }
 
-export async function vectorizeImage(file: File): Promise<VectorizeResult> {
+export async function vectorizeImage(
+	file: File,
+	opts?: { useCredits?: boolean },
+): Promise<VectorizeResult> {
 	const formData = new FormData();
 	formData.append('image', file);
-
-	const response = await fetch('/api/vectorize', {
-		method: 'POST',
-		body: formData,
-	});
-
-	if (!response.ok) {
-		const data = await response.json().catch(() => ({}));
-		throw new Error(data.error || `Erro ${response.status} ao vetorizar`);
+	if (opts?.useCredits) {
+		formData.append('useCredits', 'true');
 	}
-	return response.json() as Promise<VectorizeResult>;
+	const { data } = await api.post<VectorizeResult>('/vectorize', formData);
+	return data;
 }

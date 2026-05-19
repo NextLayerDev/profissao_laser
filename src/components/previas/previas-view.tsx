@@ -29,8 +29,11 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
 import { MyMachineSection } from '@/components/previas/my-machine-section';
 import { PageHeader } from '@/components/ui/page-header';
+import { useCreditAction } from '@/hooks/use-credit-action';
+import { useVoxBalance, useVoxCosts } from '@/hooks/use-credits';
 import { useLaserProduct, useLaserProducts } from '@/hooks/use-laser-products';
 import {
 	useDeletePrevia,
@@ -901,56 +904,62 @@ export function PreviasView() {
 		if (hasWatermark) setUseWatermarkFlag(true);
 	}, [hasWatermark]);
 
+	const { data: voxBalance } = useVoxBalance();
+	const { data: voxCosts } = useVoxCosts();
+	const previaCost = voxCosts?.find((c) => c.feature === 'previa')?.cost ?? 1;
+
+	const buildPayload = useCallback(
+		(useCredits: boolean): GeneratePreviaPayload | null => {
+			if (!selectedVariantId) return null;
+			return {
+				productVariantId: selectedVariantId,
+				imagelogo_url: imageLogo || undefined,
+				personalizationType,
+				customName: customName.trim() || undefined,
+				instrucoesPersonalizadas: instrucoesPersonalizadas.trim() || undefined,
+				modoLentes,
+				textoLenteDireita: textoLenteDireita.trim() || undefined,
+				textoLenteEsquerda: textoLenteEsquerda.trim() || undefined,
+				laserSettings,
+				useWatermark: useWatermarkFlag || undefined,
+				useCredits: useCredits || undefined,
+			};
+		},
+		[
+			selectedVariantId,
+			imageLogo,
+			personalizationType,
+			customName,
+			instrucoesPersonalizadas,
+			modoLentes,
+			textoLenteDireita,
+			textoLenteEsquerda,
+			laserSettings,
+			useWatermarkFlag,
+		],
+	);
+
+	const creditAction = useCreditAction({
+		feature: 'previa',
+		cost: previaCost,
+		balance: voxBalance?.balance ?? 0,
+		run: async ({ useCredits }) => {
+			const payload = buildPayload(useCredits);
+			if (!payload) throw new Error('no-variant');
+			const result = await generateMutation.mutateAsync(payload);
+			setGeneratedPrevia({ previewUrl: result.previewUrl });
+			return result;
+		},
+	});
+
 	const handleGenerate = useCallback(async () => {
-		if (isAtLimit) {
-			toast.error('Limite diario de previas atingido. Tente novamente amanha.');
-			return;
-		}
 		if (!selectedVariantId) {
 			toast.error('Selecione um produto e uma variante.');
 			return;
 		}
-
-		const payload: GeneratePreviaPayload = {
-			productVariantId: selectedVariantId,
-			imagelogo_url: imageLogo || undefined,
-			personalizationType,
-			customName: customName.trim() || undefined,
-			instrucoesPersonalizadas: instrucoesPersonalizadas.trim() || undefined,
-			modoLentes,
-			textoLenteDireita: textoLenteDireita.trim() || undefined,
-			textoLenteEsquerda: textoLenteEsquerda.trim() || undefined,
-			laserSettings,
-			useWatermark: useWatermarkFlag || undefined,
-		};
-
-		try {
-			const result = await generateMutation.mutateAsync(payload);
-			setGeneratedPrevia({ previewUrl: result.previewUrl });
-			if (quota && quota.remaining <= 3) {
-				toast.warning(
-					`Atencao! Restam ${Math.max(0, quota.remaining - 1)} previas hoje.`,
-					{ duration: 5000 },
-				);
-			}
-		} catch {
-			// toast handled by mutation
-		}
-	}, [
-		isAtLimit,
-		selectedVariantId,
-		imageLogo,
-		personalizationType,
-		customName,
-		instrucoesPersonalizadas,
-		modoLentes,
-		textoLenteDireita,
-		textoLenteEsquerda,
-		laserSettings,
-		useWatermarkFlag,
-		generateMutation,
-		quota,
-	]);
+		// Tenta a cota grátis primeiro; 429 vira modal de uso de voxes.
+		await creditAction.trigger({ useFreeQuotaFirst: true });
+	}, [selectedVariantId, creditAction]);
 
 	const handleReset = useCallback(() => {
 		setStep(1);
@@ -1029,6 +1038,17 @@ export function PreviasView() {
 
 			{/* Quota Banner */}
 			<QuotaBanner quota={quota} isLoading={quotaLoading} />
+			{creditAction.modal && (
+				<CreditConfirmModal
+					variant={creditAction.modal.variant}
+					cost={creditAction.modal.cost}
+					balance={creditAction.modal.balance}
+					canUseCredits={creditAction.modal.canUseCredits}
+					pending={creditAction.pending}
+					onConfirm={creditAction.confirm}
+					onClose={creditAction.close}
+				/>
+			)}
 
 			{/* Wizard card */}
 			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-6 mb-8">
@@ -1763,11 +1783,11 @@ export function PreviasView() {
 							</button>
 							<button
 								type="button"
-								disabled={generateMutation.isPending || isAtLimit}
+								disabled={generateMutation.isPending}
 								onClick={handleGenerate}
 								className={`flex items-center gap-2 px-8 py-3.5 font-bold rounded-xl transition-all text-white disabled:opacity-50 ${
 									isAtLimit
-										? 'bg-slate-400'
+										? 'bg-amber-500 hover:bg-amber-400'
 										: generatedPrevia
 											? 'bg-violet-700 hover:bg-violet-600'
 											: 'bg-gradient-to-r from-violet-600 via-purple-600 to-violet-600 bg-[length:200%_auto] animate-[shimmer_3s_ease-in-out_infinite] hover:shadow-xl hover:shadow-violet-500/25 hover:scale-[1.02]'
@@ -1781,7 +1801,7 @@ export function PreviasView() {
 									<Sparkles className="w-5 h-5" />
 								)}
 								{isAtLimit
-									? 'Limite Atingido'
+									? 'Gerar com voxes'
 									: generatedPrevia
 										? 'Gerar Novamente'
 										: 'Gerar Previa com IA'}

@@ -85,7 +85,10 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 				]);
 
 				try {
-					const result = await vectorizeMutation.mutateAsync(file);
+					const result = await vectorizeMutation.mutateAsync({
+						file,
+						useCredits: true,
+					});
 					setFiles((prev) =>
 						prev.map((f) =>
 							f.id === id ? { ...f, status: 'success' as const, result } : f,

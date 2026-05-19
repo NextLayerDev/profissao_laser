@@ -29,7 +29,8 @@ export function useCustomerVectors(params?: {
 
 export function useVectorizeImage() {
 	return useMutation({
-		mutationFn: (file: File) => vectorizeImage(file),
+		mutationFn: ({ file, useCredits }: { file: File; useCredits: boolean }) =>
+			vectorizeImage(file, { useCredits }),
 		onSuccess: () => {
 			toast.success('Imagem vetorizada com sucesso!');
 		},

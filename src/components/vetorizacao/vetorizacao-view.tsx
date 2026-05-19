@@ -25,7 +25,10 @@ import {
 import NextImage from 'next/image';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
 import { PageHeader } from '@/components/ui/page-header';
+import { useCreditAction } from '@/hooks/use-credit-action';
+import { useVoxBalance, useVoxCosts } from '@/hooks/use-credits';
 import { useSaveVector, useVectorizeImage } from '@/hooks/use-vectors';
 import type { VectorizeResult } from '@/services/vectorize';
 
@@ -764,6 +767,26 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 	const [toggles, setToggles] = useState({ pb: false, invertColors: false });
 
 	const vectorizeMutation = useVectorizeImage();
+	const { data: voxBalance } = useVoxBalance();
+	const { data: voxCosts } = useVoxCosts();
+	const vectorizeCost =
+		voxCosts?.find((c) => c.feature === 'vectorize')?.cost ?? 1;
+	const [pendingFile, setPendingFile] = useState<File | null>(null);
+
+	const creditAction = useCreditAction({
+		feature: 'vectorize',
+		cost: vectorizeCost,
+		balance: voxBalance?.balance ?? 0,
+		run: async ({ useCredits }) => {
+			if (!pendingFile) throw new Error('no-file');
+			const res = await vectorizeMutation.mutateAsync({
+				file: pendingFile,
+				useCredits,
+			});
+			setResult(res);
+			return res;
+		},
+	});
 	const saveMutation = useSaveVector();
 
 	const handleFileSelected = useCallback(
@@ -785,15 +808,11 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 			const previewUrl = URL.createObjectURL(selectedFile);
 			setOriginalPreviewUrl(previewUrl);
 
-			// Auto-vectorize
-			try {
-				const res = await vectorizeMutation.mutateAsync(selectedFile);
-				setResult(res);
-			} catch {
-				// toast handled by mutation
-			}
+			// Confirmação proativa de voxes antes de vetorizar
+			setPendingFile(selectedFile);
+			creditAction.trigger();
 		},
-		[vectorizeMutation],
+		[creditAction],
 	);
 
 	const handleReset = useCallback(() => {
@@ -889,6 +908,18 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 				<BatchBanner />
 				<ProWidget />
 			</div>
+
+			{creditAction.modal && (
+				<CreditConfirmModal
+					variant={creditAction.modal.variant}
+					cost={creditAction.modal.cost}
+					balance={creditAction.modal.balance}
+					canUseCredits={creditAction.modal.canUseCredits}
+					pending={creditAction.pending}
+					onConfirm={creditAction.confirm}
+					onClose={creditAction.close}
+				/>
+			)}
 		</div>
 	);
 }

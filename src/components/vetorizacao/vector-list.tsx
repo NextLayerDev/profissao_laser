@@ -89,7 +89,7 @@ export function VectorList({
 			const payload: { originalName?: string; svgContent?: string } = {};
 			if (editName !== editModal.original_name) payload.originalName = editName;
 			if (replaceFile) {
-				const result = await vectorizeImage(replaceFile);
+				const result = await vectorizeImage(replaceFile, { useCredits: true });
 				payload.svgContent = result.svgContent;
 			}
 			if (Object.keys(payload).length === 0) {

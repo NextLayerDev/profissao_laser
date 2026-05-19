@@ -114,6 +114,7 @@ export interface GeneratePreviaPayload {
 	notes?: string;
 	laserSettings: LaserSettings;
 	useWatermark?: boolean;
+	useCredits?: boolean;
 }
 
 export interface Watermark {
