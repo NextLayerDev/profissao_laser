@@ -34,6 +34,7 @@ function FaqItem({ item, open, onClick }) {
       ${open ? 'bg-violet-500/[0.07] border-violet-500/40' : 'card-dark hover:border-violet-500/30'}`}
 		>
 			<button
+				type="button"
 				onClick={onClick}
 				className="w-full flex items-center justify-between px-5 py-4 text-left cursor-pointer"
 			>

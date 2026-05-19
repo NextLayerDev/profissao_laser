@@ -6,6 +6,7 @@ function HeroImage() {
 		<div className="relative h-full w-full overflow-hidden hero-img rounded-2xl border border-violet-500/10 isolate">
 			<div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/60 to-transparent z-10" />
 			<svg
+				aria-hidden="true"
 				viewBox="0 0 600 700"
 				preserveAspectRatio="xMidYMid slice"
 				className="absolute inset-0 w-full h-full"
@@ -286,7 +287,7 @@ function LiveTicker() {
 	React.useEffect(() => {
 		const t = setInterval(() => setIdx((i) => (i + 1) % events.length), 2800);
 		return () => clearInterval(t);
-	}, []);
+	}, [events.length]);
 	const cur = events[idx];
 	return (
 		<div className="card-dark inline-flex items-center gap-3 rounded-full px-3 py-2 text-xs backdrop-blur-sm">

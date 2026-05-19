@@ -1,10 +1,19 @@
 'use client';
 
-import { Bell, Menu, MessageCircle, Search, Settings } from 'lucide-react';
+import {
+	Bell,
+	Coins,
+	CreditCard,
+	Menu,
+	MessageCircle,
+	Search,
+	Settings,
+} from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { useVoxBalance } from '@/hooks/use-credits';
 
 interface CourseTopHeaderProps {
 	isAdmin: boolean;
@@ -19,6 +28,7 @@ export function CourseTopHeader({
 	userName,
 	onMobileMenuToggle,
 }: CourseTopHeaderProps) {
+	const { data: voxBalance } = useVoxBalance();
 	return (
 		<header
 			className={`fixed top-0 right-0 h-16 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.03)] z-30 bg-white/80 dark:bg-[#0d0d0f]/90 backdrop-blur-lg flex items-center justify-between px-4 md:px-6 lg:px-8 transition-all duration-300 ${
@@ -80,6 +90,23 @@ export function CourseTopHeader({
 					<MessageCircle className="w-[18px] h-[18px]" />
 				</button>
 				<ThemeToggle />
+				<Link
+					href="/course/voxes"
+					title="Meus voxes"
+					className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+				>
+					<Coins className="w-[18px] h-[18px] text-violet-500" />
+					<span className="text-sm font-semibold tabular-nums">
+						{voxBalance?.balance ?? '—'}
+					</span>
+				</Link>
+				<Link
+					href="/course/assinatura"
+					title="Minha assinatura"
+					className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+				>
+					<CreditCard className="w-[18px] h-[18px]" />
+				</Link>
 				{isAdmin && (
 					<Link
 						href="/dashboard"

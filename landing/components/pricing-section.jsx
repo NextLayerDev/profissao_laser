@@ -83,7 +83,7 @@ function FeaturedSparkles() {
 			<div className="orbit">
 				{Array.from({ length: 6 }).map((_, i) => {
 					const a = (i / 6) * Math.PI * 2;
-					const r = 50; // % of half-card
+					const _r = 50; // % of half-card
 					return (
 						<span
 							key={i}
@@ -211,6 +211,7 @@ function PricingCard({ p, billing }) {
 			</div>
 
 			<button
+				type="button"
 				className={`relative w-full font-bold uppercase tracking-wider text-[13px] py-3.5 rounded-xl transition-all cursor-pointer
         ${
 					p.featured
@@ -238,6 +239,7 @@ function PricingSection() {
 				<div className="flex justify-center mb-10">
 					<div className="inline-flex p-1 rounded-xl card-dark">
 						<button
+							type="button"
 							onClick={() => setBilling('monthly')}
 							className={`px-5 py-2 text-sm font-bold rounded-lg transition-all
               ${billing === 'monthly' ? 'bg-white/[0.08] text-white' : 'text-slate-400 hover:text-white'}`}
@@ -245,6 +247,7 @@ function PricingSection() {
 							Mensal
 						</button>
 						<button
+							type="button"
 							onClick={() => setBilling('annual')}
 							className={`relative px-5 py-2 text-sm font-bold rounded-lg transition-all
               ${billing === 'annual' ? 'btn-accent text-white shadow-brand' : 'text-slate-400 hover:text-white'}`}

@@ -9,7 +9,6 @@ import {
 	Crown,
 	Download,
 	Eye,
-	Headphones,
 	HelpCircle,
 	Image,
 	Loader2,
@@ -26,28 +25,18 @@ import {
 import NextImage from 'next/image';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
 import { PageHeader } from '@/components/ui/page-header';
-import {
-	useExportVector,
-	useSaveVector,
-	useVectorizeImage,
-} from '@/hooks/use-vectors';
-import { useVectorizeHelpActive } from '@/hooks/use-vectorize-help';
-import {
-	useCreateVectorSupportTicket,
-	useSendVectorSupportMessage,
-	useVectorSupportTicket,
-	useVectorSupportTickets,
-} from '@/hooks/use-vector-support';
-import { HELP_ICON_MAP } from '@/components/vetorizacao-admin/vetorizacao-help-modal';
-import { VectorSupportChat } from '@/components/vetorizacao-admin/vector-support-chat';
-import type { VectorizeHelpItem } from '@/types/vectorize-help';
-import type { VectorMode, VectorizeResult } from '@/services/vectorize';
+import { useCreditAction } from '@/hooks/use-credit-action';
+import { useVoxBalance, useVoxCosts } from '@/hooks/use-credits';
+import { useSaveVector, useVectorizeImage } from '@/hooks/use-vectors';
+import type { VectorizeResult } from '@/services/vectorize';
 
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 type WizardStep = 1 | 2 | 3;
+type VectorMode = 'contorno' | 'detalhado' | 'preenchimento';
 type BgMode = 'transparent' | 'white' | 'black';
 
 function downloadSvg(svgContent: string, originalName: string) {
@@ -133,10 +122,14 @@ function StepIndicator({ current }: { current: WizardStep }) {
 function StepUpload({
 	onFileSelected,
 	file,
+	result,
+	isVectorizing,
 	originalPreviewUrl,
 }: {
 	onFileSelected: (file: File) => void;
 	file: File | null;
+	result: VectorizeResult | null;
+	isVectorizing: boolean;
 	originalPreviewUrl: string | null;
 }) {
 	const [isDragging, setIsDragging] = useState(false);
@@ -223,26 +216,59 @@ function StepUpload({
 								{file.type.split('/')[1]?.toUpperCase()}
 							</p>
 						</div>
-						<div className="flex items-center gap-2 text-emerald-500">
-							<Check className="w-5 h-5" />
-							<span className="text-sm font-medium">Pronto</span>
-						</div>
+						{isVectorizing && (
+							<div className="flex items-center gap-2 text-violet-600">
+								<Loader2 className="w-5 h-5 animate-spin" />
+								<span className="text-sm font-medium">Vetorizando...</span>
+							</div>
+						)}
+						{result && !isVectorizing && (
+							<div className="flex items-center gap-2 text-emerald-500">
+								<Check className="w-5 h-5" />
+								<span className="text-sm font-medium">Pronto</span>
+							</div>
+						)}
 					</div>
 				</div>
 			)}
 
-			{/* Original preview */}
-			{file && originalPreviewUrl && (
-				<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-4">
-					<p className="text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-3">
-						Original
-					</p>
-					<div className="aspect-square bg-slate-100 dark:bg-[#1a1a1d] rounded-lg flex items-center justify-center overflow-hidden">
-						<img
-							src={originalPreviewUrl}
-							alt="Original"
-							className="max-w-full max-h-full object-contain"
-						/>
+			{/* Side-by-side preview */}
+			{file && (originalPreviewUrl || result) && (
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+					{originalPreviewUrl && (
+						<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-4">
+							<p className="text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+								Original
+							</p>
+							<div className="aspect-square bg-slate-100 dark:bg-[#1a1a1d] rounded-lg flex items-center justify-center overflow-hidden">
+								<img
+									src={originalPreviewUrl}
+									alt="Original"
+									className="max-w-full max-h-full object-contain"
+								/>
+							</div>
+						</div>
+					)}
+					<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-4">
+						<p className="text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+							Vetorizado
+						</p>
+						<div className="aspect-square bg-slate-100 dark:bg-[#1a1a1d] rounded-lg flex items-center justify-center overflow-hidden">
+							{isVectorizing ? (
+								<div className="flex flex-col items-center gap-3">
+									<Loader2 className="w-8 h-8 text-violet-600 animate-spin" />
+									<span className="text-sm text-slate-500">Processando...</span>
+								</div>
+							) : result ? (
+								<img
+									src={svgToDataUrl(result.svgContent)}
+									alt="Vetorizado"
+									className="max-w-full max-h-full object-contain"
+								/>
+							) : (
+								<span className="text-sm text-slate-400">Aguardando...</span>
+							)}
+						</div>
 					</div>
 				</div>
 			)}
@@ -260,7 +286,6 @@ function StepParams({
 	toggles,
 	setToggles,
 	onContinue,
-	isVectorizing,
 }: {
 	mode: VectorMode;
 	setMode: (m: VectorMode) => void;
@@ -273,7 +298,6 @@ function StepParams({
 	toggles: { pb: boolean; invertColors: boolean };
 	setToggles: (t: { pb: boolean; invertColors: boolean }) => void;
 	onContinue: () => void;
-	isVectorizing: boolean;
 }) {
 	const [advancedOpen, setAdvancedOpen] = useState(false);
 
@@ -463,20 +487,10 @@ function StepParams({
 				<button
 					type="button"
 					onClick={onContinue}
-					disabled={isVectorizing}
-					className="flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
+					className="flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors"
 				>
-					{isVectorizing ? (
-						<>
-							<Loader2 className="w-4 h-4 animate-spin" />
-							Vetorizando...
-						</>
-					) : (
-						<>
-							Continuar
-							<ArrowRight className="w-4 h-4" />
-						</>
-					)}
+					Continuar
+					<ArrowRight className="w-4 h-4" />
 				</button>
 			</div>
 		</div>
@@ -491,16 +505,12 @@ function StepResult({
 	onReset,
 	onSave,
 	isSaving,
-	onExport,
-	isExporting,
 }: {
 	result: VectorizeResult;
 	onGoToStep2: () => void;
 	onReset: () => void;
 	onSave: () => void;
 	isSaving: boolean;
-	onExport: (format: 'dxf' | 'png') => void;
-	isExporting: boolean;
 }) {
 	const [bgMode, setBgMode] = useState<BgMode>('transparent');
 
@@ -560,36 +570,32 @@ function StepResult({
 				<button
 					type="button"
 					onClick={() => downloadSvg(result.svgContent, result.originalName)}
-					className="flex items-center justify-center gap-2 px-4 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-colors"
+					className="flex items-center justify-center gap-2 px-4 py-3 bg-violet-600 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors"
 				>
 					<Download className="w-5 h-5" />
 					Baixar SVG
 				</button>
 				<button
 					type="button"
-					onClick={() => onExport('dxf')}
-					disabled={isExporting}
-					className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300 font-semibold rounded-xl transition-colors hover:bg-slate-300 dark:hover:bg-white/20 disabled:opacity-50"
+					onClick={() => toast.info('Exportacao DXF em breve!')}
+					className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-gray-400 font-semibold rounded-xl transition-colors hover:bg-slate-300 dark:hover:bg-white/20"
 				>
-					{isExporting ? (
-						<Loader2 className="w-5 h-5 animate-spin" />
-					) : (
-						<Download className="w-5 h-5" />
-					)}
+					<Download className="w-5 h-5" />
 					Baixar DXF
+					<span className="text-[10px] bg-slate-300 dark:bg-white/10 text-slate-500 dark:text-gray-500 px-1.5 py-0.5 rounded-full font-medium">
+						Em breve
+					</span>
 				</button>
 				<button
 					type="button"
-					onClick={() => onExport('png')}
-					disabled={isExporting}
-					className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300 font-semibold rounded-xl transition-colors hover:bg-slate-300 dark:hover:bg-white/20 disabled:opacity-50"
+					onClick={() => toast.info('Exportacao PNG em breve!')}
+					className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-gray-400 font-semibold rounded-xl transition-colors hover:bg-slate-300 dark:hover:bg-white/20"
 				>
-					{isExporting ? (
-						<Loader2 className="w-5 h-5 animate-spin" />
-					) : (
-						<Download className="w-5 h-5" />
-					)}
+					<Download className="w-5 h-5" />
 					Baixar PNG
+					<span className="text-[10px] bg-slate-300 dark:bg-white/10 text-slate-500 dark:text-gray-500 px-1.5 py-0.5 rounded-full font-medium">
+						Em breve
+					</span>
 				</button>
 			</div>
 
@@ -631,68 +637,29 @@ function StepResult({
 
 /* ─────────────── Help Section ─────────────── */
 
-const FALLBACK_HELP_CARDS: {
-	icon: VectorizeHelpItem['icon'];
-	title: string;
-	desc: string;
-}[] = [
-	{ icon: 'play', title: 'Tutorial', desc: 'Aprenda a vetorizar passo a passo' },
-	{ icon: 'zap', title: 'Dicas de qualidade', desc: 'Melhore seus resultados' },
-	{ icon: 'image', title: 'Exemplos', desc: 'Veja exemplos de vetorizacao' },
-	{ icon: 'help-circle', title: 'FAQ', desc: 'Perguntas frequentes' },
-];
-
-function HelpContentModal({
-	item,
-	onClose,
-}: {
-	item: VectorizeHelpItem;
-	onClose: () => void;
-}) {
-	return (
-		<div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-700 rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
-				<div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-gray-700">
-					<h3 className="text-lg font-bold text-slate-900 dark:text-white">
-						{item.title}
-					</h3>
-					<button
-						type="button"
-						onClick={onClose}
-						className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-					>
-						<Wand2 className="w-4 h-4 text-slate-500 dark:text-gray-400 hidden" />
-						<span className="text-slate-500 dark:text-gray-400 text-xl leading-none">&times;</span>
-					</button>
-				</div>
-				<div className="flex-1 overflow-y-auto p-5">
-					{item.type === 'video' && item.videoUrl ? (
-						<div className="aspect-video w-full rounded-lg overflow-hidden bg-black">
-							<video
-								src={item.videoUrl}
-								controls
-								className="w-full h-full"
-								autoPlay
-							/>
-						</div>
-					) : (
-						<div className="prose prose-sm dark:prose-invert max-w-none">
-							<p className="text-sm text-slate-600 dark:text-gray-300 whitespace-pre-wrap">
-								{item.content || item.description}
-							</p>
-						</div>
-					)}
-				</div>
-			</div>
-		</div>
-	);
-}
-
 function HelpSection() {
-	const { data: apiItems } = useVectorizeHelpActive();
-	const [activeItem, setActiveItem] = useState<VectorizeHelpItem | null>(null);
-
-	const hasApiData = apiItems && apiItems.length > 0;
+	const cards = [
+		{
+			icon: <Play className="w-6 h-6" />,
+			title: 'Tutorial',
+			desc: 'Aprenda a vetorizar passo a passo',
+		},
+		{
+			icon: <Zap className="w-6 h-6" />,
+			title: 'Dicas de qualidade',
+			desc: 'Melhore seus resultados',
+		},
+		{
+			icon: <Image className="w-6 h-6" />,
+			title: 'Exemplos',
+			desc: 'Veja exemplos de vetorizacao',
+		},
+		{
+			icon: <HelpCircle className="w-6 h-6" />,
+			title: 'FAQ',
+			desc: 'Perguntas frequentes',
+		},
+	];
 
 	return (
 		<div>
@@ -701,302 +668,23 @@ function HelpSection() {
 				Ajuda
 			</h3>
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-				{hasApiData
-					? apiItems.map((item) => {
-							const IconComp = HELP_ICON_MAP[item.icon] || HelpCircle;
-							return (
-								<button
-									key={item.id}
-									type="button"
-									onClick={() => setActiveItem(item)}
-									className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-4 hover:border-violet-500/50 dark:hover:border-violet-500/30 transition-colors group text-left cursor-pointer"
-								>
-									<div className="text-slate-400 dark:text-gray-500 group-hover:text-violet-600 transition-colors mb-3">
-										<IconComp className="w-6 h-6" />
-									</div>
-									<p className="font-semibold text-sm text-slate-900 dark:text-white">
-										{item.title}
-									</p>
-									<p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
-										{item.description}
-									</p>
-								</button>
-							);
-						})
-					: FALLBACK_HELP_CARDS.map((card) => {
-							const IconComp = HELP_ICON_MAP[card.icon] || HelpCircle;
-							return (
-								<div
-									key={card.title}
-									className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-4 hover:border-violet-500/50 dark:hover:border-violet-500/30 transition-colors group"
-								>
-									<div className="text-slate-400 dark:text-gray-500 group-hover:text-violet-600 transition-colors mb-3">
-										<IconComp className="w-6 h-6" />
-									</div>
-									<p className="font-semibold text-sm text-slate-900 dark:text-white">
-										{card.title}
-									</p>
-									<p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
-										{card.desc}
-									</p>
-								</div>
-							);
-						})}
-			</div>
-
-			{activeItem && (
-				<HelpContentModal
-					item={activeItem}
-					onClose={() => setActiveItem(null)}
-				/>
-			)}
-		</div>
-	);
-}
-
-/* ─────────────── Vector Support Section ─────────────── */
-
-function VectorSupportSection() {
-	const { data: tickets } = useVectorSupportTickets();
-	const createMutation = useCreateVectorSupportTicket();
-	const sendMutation = useSendVectorSupportMessage();
-
-	const [showNewTicket, setShowNewTicket] = useState(false);
-	const [showChat, setShowChat] = useState<string | null>(null);
-	const [subject, setSubject] = useState('');
-	const [message, setMessage] = useState('');
-	const [files, setFiles] = useState<File[]>([]);
-	const [creating, setCreating] = useState(false);
-
-	const { data: selectedTicket } = useVectorSupportTicket(
-		showChat,
-		!!showChat,
-	);
-
-	const recentTickets = (tickets ?? []).slice(0, 5);
-
-	async function handleCreateTicket() {
-		if (!subject.trim() || !message.trim()) return;
-		setCreating(true);
-		try {
-			await createMutation.mutateAsync({
-				subject: subject.trim(),
-				initialMessage: message.trim(),
-				files: files.length > 0 ? files : undefined,
-			});
-			toast.success('Chamado criado!');
-			setShowNewTicket(false);
-			setSubject('');
-			setMessage('');
-			setFiles([]);
-		} catch {
-			toast.error('Erro ao criar chamado');
-		} finally {
-			setCreating(false);
-		}
-	}
-
-	function handleSendMessage(content: string, msgFiles?: File[]) {
-		if (!showChat) return;
-		sendMutation.mutate(
-			{ ticketId: showChat, content, files: msgFiles },
-			{
-				onError: () => toast.error('Erro ao enviar mensagem'),
-			},
-		);
-	}
-
-	return (
-		<div>
-			<h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-				<Headphones className="w-5 h-5 text-violet-600" />
-				Suporte de Vetorizacao
-			</h3>
-
-			{/* Banner + New Ticket */}
-			<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-5 mb-4">
-				<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-					<div>
+				{cards.map((card) => (
+					<div
+						key={card.title}
+						className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-4 hover:border-violet-500/50 dark:hover:border-violet-500/30 transition-colors group"
+					>
+						<div className="text-slate-400 dark:text-gray-500 group-hover:text-violet-600 transition-colors mb-3">
+							{card.icon}
+						</div>
 						<p className="font-semibold text-sm text-slate-900 dark:text-white">
-							Precisa de ajuda com vetorizacao?
+							{card.title}
 						</p>
 						<p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
-							Abra um chamado e nossa equipe te ajudara.
+							{card.desc}
 						</p>
 					</div>
-					<button
-						type="button"
-						onClick={() => setShowNewTicket(true)}
-						className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-xl transition-colors shrink-0"
-					>
-						Abrir chamado
-					</button>
-				</div>
+				))}
 			</div>
-
-			{/* Recent tickets */}
-			{recentTickets.length > 0 && (
-				<div className="space-y-2">
-					{recentTickets.map((ticket) => (
-						<button
-							key={ticket.id}
-							type="button"
-							onClick={() => setShowChat(ticket.id)}
-							className="w-full flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] px-4 py-3 hover:border-violet-500/50 dark:hover:border-violet-500/30 transition-colors text-left"
-						>
-							<div className="min-w-0">
-								<p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-									{ticket.subject}
-								</p>
-								<p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
-									{new Date(ticket.createdAt).toLocaleDateString('pt-BR')}
-								</p>
-							</div>
-							<span
-								className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold shrink-0 ${
-									ticket.status === 'closed'
-										? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
-										: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
-								}`}
-							>
-								{ticket.status === 'closed' ? 'Fechado' : 'Aberto'}
-							</span>
-						</button>
-					))}
-				</div>
-			)}
-
-			{/* New Ticket Modal */}
-			{showNewTicket && (
-				<div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-					<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-700 rounded-xl shadow-2xl w-full max-w-lg">
-						<div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-gray-700">
-							<h3 className="text-lg font-bold text-slate-900 dark:text-white">
-								Novo chamado
-							</h3>
-							<button
-								type="button"
-								onClick={() => setShowNewTicket(false)}
-								className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-							>
-								<span className="text-slate-500 dark:text-gray-400 text-xl leading-none">
-									&times;
-								</span>
-							</button>
-						</div>
-						<div className="p-5 space-y-4">
-							<div>
-								<label
-									htmlFor="vs-subject"
-									className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block"
-								>
-									Assunto
-								</label>
-								<input
-									id="vs-subject"
-									type="text"
-									value={subject}
-									onChange={(e) => setSubject(e.target.value)}
-									placeholder="Ex: Problema ao vetorizar imagem"
-									className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none"
-								/>
-							</div>
-							<div>
-								<label
-									htmlFor="vs-message"
-									className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block"
-								>
-									Mensagem
-								</label>
-								<textarea
-									id="vs-message"
-									value={message}
-									onChange={(e) => setMessage(e.target.value)}
-									rows={4}
-									placeholder="Descreva seu problema..."
-									className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none resize-none"
-								/>
-							</div>
-							<div>
-								<label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
-									Anexos (opcional)
-								</label>
-								<input
-									type="file"
-									multiple
-									onChange={(e) => {
-										if (e.target.files) {
-											setFiles(Array.from(e.target.files));
-										}
-									}}
-									className="w-full text-sm text-slate-500 file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-violet-100 file:text-violet-700 dark:file:bg-violet-500/20 dark:file:text-violet-400 file:font-medium file:cursor-pointer"
-								/>
-							</div>
-						</div>
-						<div className="flex justify-end gap-3 p-5 border-t border-slate-200 dark:border-gray-700">
-							<button
-								type="button"
-								onClick={() => setShowNewTicket(false)}
-								className="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors text-sm"
-							>
-								Cancelar
-							</button>
-							<button
-								type="button"
-								onClick={() => void handleCreateTicket()}
-								disabled={creating || !subject.trim() || !message.trim()}
-								className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg text-white font-medium transition-colors text-sm disabled:opacity-50"
-							>
-								{creating && (
-									<Loader2 className="w-4 h-4 animate-spin" />
-								)}
-								Enviar
-							</button>
-						</div>
-					</div>
-				</div>
-			)}
-
-			{/* Chat Modal */}
-			{showChat && selectedTicket && (
-				<div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-					<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-700 rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
-						<div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-gray-700">
-							<div className="min-w-0">
-								<h3 className="text-lg font-bold text-slate-900 dark:text-white truncate">
-									{selectedTicket.subject}
-								</h3>
-								<span
-									className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold mt-1 ${
-										selectedTicket.status === 'closed'
-											? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
-											: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
-									}`}
-								>
-									{selectedTicket.status === 'closed'
-										? 'Fechado'
-										: 'Aberto'}
-								</span>
-							</div>
-							<button
-								type="button"
-								onClick={() => setShowChat(null)}
-								className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-							>
-								<span className="text-slate-500 dark:text-gray-400 text-xl leading-none">
-									&times;
-								</span>
-							</button>
-						</div>
-						<div className="flex-1 overflow-y-auto p-5">
-							<VectorSupportChat
-								ticket={selectedTicket}
-								onSendMessage={handleSendMessage}
-							/>
-						</div>
-					</div>
-				</div>
-			)}
 		</div>
 	);
 }
@@ -1014,15 +702,12 @@ function BatchBanner() {
 					Vetorizacao em lote
 				</h4>
 				<p className="text-sm text-slate-500 dark:text-gray-400 mt-0.5">
-					Vetorize multiplas imagens de uma vez com um unico clique.
+					Vetorize multiplas imagens de uma vez. Recurso disponivel em breve.
 				</p>
 			</div>
-			<a
-				href="/vetorizacao"
-				className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-xl transition-colors"
-			>
-				Experimentar
-			</a>
+			<span className="px-4 py-2 bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-gray-400 text-sm font-semibold rounded-xl">
+				Em breve
+			</span>
 		</div>
 	);
 }
@@ -1082,49 +767,53 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 	const [toggles, setToggles] = useState({ pb: false, invertColors: false });
 
 	const vectorizeMutation = useVectorizeImage();
-	const saveMutation = useSaveVector();
-	const exportMutation = useExportVector();
+	const { data: voxBalance } = useVoxBalance();
+	const { data: voxCosts } = useVoxCosts();
+	const vectorizeCost =
+		voxCosts?.find((c) => c.feature === 'vectorize')?.cost ?? 1;
+	const [pendingFile, setPendingFile] = useState<File | null>(null);
 
-	const handleFileSelected = useCallback((selectedFile: File) => {
-		// Validate
-		if (!ACCEPTED_TYPES.includes(selectedFile.type)) {
-			toast.error('Formato nao suportado. Use PNG, JPG ou WEBP.');
-			return;
-		}
-		if (selectedFile.size > MAX_FILE_SIZE) {
-			toast.error('Ficheiro demasiado grande (max. 10MB).');
-			return;
-		}
-
-		setFile(selectedFile);
-		setResult(null);
-
-		// Create preview URL for original
-		const previewUrl = URL.createObjectURL(selectedFile);
-		setOriginalPreviewUrl(previewUrl);
-	}, []);
-
-	const handleVectorize = useCallback(async () => {
-		if (!file) return;
-		setResult(null);
-		try {
+	const creditAction = useCreditAction({
+		feature: 'vectorize',
+		cost: vectorizeCost,
+		balance: voxBalance?.balance ?? 0,
+		run: async ({ useCredits }) => {
+			if (!pendingFile) throw new Error('no-file');
 			const res = await vectorizeMutation.mutateAsync({
-				file,
-				params: {
-					mode,
-					detailLevel: sliders.detalhes,
-					smoothing: sliders.suavizacao,
-					noiseReduction: sliders.ruidos,
-					blackAndWhite: toggles.pb,
-					invertColors: toggles.invertColors,
-				},
+				file: pendingFile,
+				useCredits,
 			});
 			setResult(res);
-			setStep(3);
-		} catch {
-			// toast handled by mutation
-		}
-	}, [file, mode, sliders, toggles, vectorizeMutation]);
+			return res;
+		},
+	});
+	const saveMutation = useSaveVector();
+
+	const handleFileSelected = useCallback(
+		async (selectedFile: File) => {
+			// Validate
+			if (!ACCEPTED_TYPES.includes(selectedFile.type)) {
+				toast.error('Formato nao suportado. Use PNG, JPG ou WEBP.');
+				return;
+			}
+			if (selectedFile.size > MAX_FILE_SIZE) {
+				toast.error('Ficheiro demasiado grande (max. 10MB).');
+				return;
+			}
+
+			setFile(selectedFile);
+			setResult(null);
+
+			// Create preview URL for original
+			const previewUrl = URL.createObjectURL(selectedFile);
+			setOriginalPreviewUrl(previewUrl);
+
+			// Confirmação proativa de voxes antes de vetorizar
+			setPendingFile(selectedFile);
+			creditAction.trigger();
+		},
+		[creditAction],
+	);
 
 	const handleReset = useCallback(() => {
 		setStep(1);
@@ -1149,18 +838,7 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 		}
 	}, [result, saveMutation, onRefetch]);
 
-	const handleExport = useCallback(
-		(format: 'dxf' | 'png') => {
-			if (!result) return;
-			exportMutation.mutate({
-				svgContent: result.svgContent,
-				format,
-			});
-		},
-		[result, exportMutation],
-	);
-
-	const canProceedStep1 = !!file;
+	const canProceedStep1 = !!result && !vectorizeMutation.isPending;
 
 	return (
 		<div className="p-4 md:p-8">
@@ -1180,6 +858,8 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 						<StepUpload
 							onFileSelected={handleFileSelected}
 							file={file}
+							result={result}
+							isVectorizing={vectorizeMutation.isPending}
 							originalPreviewUrl={originalPreviewUrl}
 						/>
 						{canProceedStep1 && (
@@ -1187,7 +867,7 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 								<button
 									type="button"
 									onClick={() => setStep(2)}
-									className="flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-colors"
+									className="flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors"
 								>
 									Continuar
 									<ArrowRight className="w-4 h-4" />
@@ -1206,8 +886,7 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 						setSliders={setSliders}
 						toggles={toggles}
 						setToggles={setToggles}
-						onContinue={handleVectorize}
-						isVectorizing={vectorizeMutation.isPending}
+						onContinue={() => setStep(3)}
 					/>
 				)}
 
@@ -1219,8 +898,6 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 						onReset={handleReset}
 						onSave={handleSave}
 						isSaving={saveMutation.isPending}
-						onExport={handleExport}
-						isExporting={exportMutation.isPending}
 					/>
 				)}
 			</div>
@@ -1228,10 +905,21 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 			{/* Additional sections */}
 			<div className="space-y-8" id="vetorizacao-historico">
 				<HelpSection />
-				<VectorSupportSection />
 				<BatchBanner />
 				<ProWidget />
 			</div>
+
+			{creditAction.modal && (
+				<CreditConfirmModal
+					variant={creditAction.modal.variant}
+					cost={creditAction.modal.cost}
+					balance={creditAction.modal.balance}
+					canUseCredits={creditAction.modal.canUseCredits}
+					pending={creditAction.pending}
+					onConfirm={creditAction.confirm}
+					onClose={creditAction.close}
+				/>
+			)}
 		</div>
 	);
 }

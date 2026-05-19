@@ -1,5 +1,6 @@
 import {
 	BookOpen,
+	Coins,
 	Eye,
 	Headphones,
 	LayoutGrid,
@@ -65,6 +66,13 @@ export const quickAccessItems: QuickAccessItem[] = [
 		Icon: Eye,
 		section: 'FERRAMENTAS',
 		href: '/course/previas',
+	},
+	{
+		label: 'Voxes',
+		description: 'Saldo e pacotes',
+		Icon: Coins,
+		section: 'FERRAMENTAS',
+		href: '/course/voxes',
 	},
 	{
 		label: 'Parametros',

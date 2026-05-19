@@ -23,6 +23,7 @@ function FinalCTA() {
 
 					{/* slowly rotating star illustration */}
 					<svg
+						aria-hidden="true"
 						viewBox="0 0 200 200"
 						className="absolute -left-10 -bottom-10 w-44 h-44 opacity-35"
 						style={{ animation: 'orbit-spin 30s linear infinite' }}

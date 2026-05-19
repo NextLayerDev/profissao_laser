@@ -23,7 +23,9 @@ import { CourseContentSection } from '@/components/products/course-content-secti
 import { CreateSubscriptionModal } from '@/components/products/create-subscription-modal';
 import { CuponsSection } from '@/components/products/cupons-section';
 import { DeleteProductModal } from '@/components/products/delete-product-modal';
+import { DuplicateProductModal } from '@/components/products/duplicate-product-modal';
 import { ProductSystemClassesSection } from '@/components/products/product-system-classes-section';
+import { VersionSelector } from '@/components/products/version-selector';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useProducts } from '@/hooks/use-products';
 import { updateProductStatus } from '@/services/products';
@@ -32,6 +34,7 @@ import {
 	productMenuItems,
 	productStats,
 } from '@/utils/constants/product-detail';
+import { pickDefaultVersion } from '@/utils/products/group-products';
 
 export default function ProdutoDetalhes() {
 	const { id } = useParams<{ id: string }>();
@@ -43,6 +46,7 @@ export default function ProdutoDetalhes() {
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
 	const [subscriptionModal, setSubscriptionModal] = useState(false);
 	const [showLinksModal, setShowLinksModal] = useState(false);
+	const [showDuplicateModal, setShowDuplicateModal] = useState(false);
 
 	const handleToggleStatus = async () => {
 		const newStatus = !vendasAtivas;
@@ -59,6 +63,9 @@ export default function ProdutoDetalhes() {
 	};
 
 	const product = (products ?? []).find((p) => p.id === id);
+	const versions = product
+		? (products ?? []).filter((p) => p.name === product.name)
+		: [];
 
 	useEffect(() => {
 		if (product) {
@@ -122,9 +129,13 @@ export default function ProdutoDetalhes() {
 							<h1 className="font-bold text-lg text-slate-900 dark:text-white">
 								{product.name}
 							</h1>
-							<p className="text-xs text-slate-500 dark:text-gray-500">
-								ID {product.id}
-							</p>
+							<div className="mt-1">
+								<VersionSelector
+									versions={versions}
+									currentId={product.id}
+									onNewVersion={() => setShowDuplicateModal(true)}
+								/>
+							</div>
 						</div>
 
 						<div className="flex items-center gap-3 ml-6">
@@ -363,7 +374,21 @@ export default function ProdutoDetalhes() {
 				<DeleteProductModal
 					product={product}
 					onClose={() => setShowDeleteModal(false)}
-					onDeleted={() => router.push('/products')}
+					onDeleted={() => {
+						const siblings = versions.filter((v) => v.id !== product.id);
+						if (siblings.length > 0) {
+							router.push(`/products/${pickDefaultVersion(siblings).id}`);
+						} else {
+							router.push('/products');
+						}
+					}}
+				/>
+			)}
+
+			{showDuplicateModal && (
+				<DuplicateProductModal
+					product={product}
+					onClose={() => setShowDuplicateModal(false)}
 				/>
 			)}
 

@@ -9,7 +9,13 @@ function Logo({ size = 28 }) {
 				className="tile-grad rounded-lg p-1.5 grid place-items-center"
 				style={{ width: size + 6, height: size + 6 }}
 			>
-				<svg viewBox="0 0 32 32" width={size - 4} height={size - 4} fill="none">
+				<svg
+					aria-hidden="true"
+					viewBox="0 0 32 32"
+					width={size - 4}
+					height={size - 4}
+					fill="none"
+				>
 					<path
 						d="M16 2l2.3 6.7 6.9.5-5.3 4.5 1.8 6.8L16 17l-5.7 3.5 1.8-6.8-5.3-4.5 6.9-.5z"
 						fill="#fff"
@@ -84,6 +90,7 @@ function TopBar() {
 						<IArrowRight size={15} />
 					</a>
 					<button
+						type="button"
 						onClick={() => setOpen((v) => !v)}
 						className="lg:hidden ml-1 w-9 h-9 grid place-items-center text-white border border-white/10 rounded-lg"
 					>

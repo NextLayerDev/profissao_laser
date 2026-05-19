@@ -23,7 +23,11 @@ function VideoPlayerPlaceholder() {
 
 			{/* speaker silhouette area */}
 			<div className="absolute bottom-0 right-0 w-[55%] h-[78%]">
-				<svg viewBox="0 0 320 320" className="w-full h-full opacity-90">
+				<svg
+					aria-hidden="true"
+					viewBox="0 0 320 320"
+					className="w-full h-full opacity-90"
+				>
 					<defs>
 						<radialGradient id="speakerBg" cx="0.5" cy="0.4" r="0.6">
 							<stop offset="0" stopColor="#7c3aed" stopOpacity="0.4" />
@@ -61,7 +65,10 @@ function VideoPlayerPlaceholder() {
 			</div>
 
 			{/* play button */}
-			<button className="absolute inset-0 grid place-items-center group">
+			<button
+				type="button"
+				className="absolute inset-0 grid place-items-center group"
+			>
 				<div className="btn-accent w-20 h-20 rounded-full grid place-items-center shadow-brand-lg group-hover:scale-105 transition-transform">
 					<IPlay size={28} className="text-white translate-x-0.5" />
 				</div>

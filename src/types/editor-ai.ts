@@ -6,6 +6,7 @@ export interface EditorAiPayload {
 	image?: string;
 	regionInfo?: { x: number; y: number; width: number; height: number };
 	mask?: string;
+	useCredits?: boolean;
 }
 
 export interface EditorAiResponse {
@@ -14,6 +15,7 @@ export interface EditorAiResponse {
 
 export interface RemoveBackgroundPayload {
 	image: string;
+	useCredits?: boolean;
 }
 
 export interface RemoveBackgroundResponse {

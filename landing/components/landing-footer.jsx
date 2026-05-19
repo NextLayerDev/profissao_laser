@@ -43,22 +43,22 @@ function LandingFooter() {
 					</div>
 					<ul className="space-y-2 text-sm text-slate-400">
 						<li>
-							<a href="#" className="hover:text-violet-300">
+							<a href="/#" className="hover:text-violet-300">
 								Aulas
 							</a>
 						</li>
 						<li>
-							<a href="#" className="hover:text-violet-300">
+							<a href="/#" className="hover:text-violet-300">
 								Biblioteca de vetores
 							</a>
 						</li>
 						<li>
-							<a href="#" className="hover:text-violet-300">
+							<a href="/#" className="hover:text-violet-300">
 								Parâmetros
 							</a>
 						</li>
 						<li>
-							<a href="#" className="hover:text-violet-300">
+							<a href="/#" className="hover:text-violet-300">
 								Fornecedores
 							</a>
 						</li>
@@ -70,22 +70,22 @@ function LandingFooter() {
 					</div>
 					<ul className="space-y-2 text-sm text-slate-400">
 						<li>
-							<a href="#" className="hover:text-violet-300">
+							<a href="/#" className="hover:text-violet-300">
 								Central de ajuda
 							</a>
 						</li>
 						<li>
-							<a href="#" className="hover:text-violet-300">
+							<a href="/#" className="hover:text-violet-300">
 								Contato
 							</a>
 						</li>
 						<li>
-							<a href="#" className="hover:text-violet-300">
+							<a href="/#" className="hover:text-violet-300">
 								Termos
 							</a>
 						</li>
 						<li>
-							<a href="#" className="hover:text-violet-300">
+							<a href="/#" className="hover:text-violet-300">
 								Privacidade
 							</a>
 						</li>

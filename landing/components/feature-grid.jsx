@@ -148,6 +148,7 @@ function MiniAnim({ kind }) {
 	if (kind === 'trace')
 		return (
 			<svg
+				aria-hidden="true"
 				className="mini-trace absolute top-2 right-2 w-16 h-12"
 				viewBox="0 0 64 48"
 			>
@@ -187,7 +188,11 @@ function MiniAnim({ kind }) {
 	if (kind === 'spark')
 		return (
 			<div className="mini-spark absolute top-2 right-2 w-12 h-12">
-				<svg viewBox="0 0 32 32" className="absolute inset-0">
+				<svg
+					aria-hidden="true"
+					viewBox="0 0 32 32"
+					className="absolute inset-0"
+				>
 					<polygon
 						className="star s1"
 						points="16 4 18 14 28 16 18 18 16 28 14 18 4 16 14 14"
@@ -230,6 +235,7 @@ function MiniAnim({ kind }) {
 	if (kind === 'network')
 		return (
 			<svg
+				aria-hidden="true"
 				className="mini-network absolute top-2 right-2 w-14 h-14"
 				viewBox="0 0 56 56"
 			>

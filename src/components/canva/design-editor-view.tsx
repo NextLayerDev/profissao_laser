@@ -16,6 +16,9 @@ import {
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
+import { useCreditAction } from '@/hooks/use-credit-action';
+import { useVoxBalance, useVoxCosts } from '@/hooks/use-credits';
 import {
 	useDesign,
 	useUpdateDesign,
@@ -82,6 +85,43 @@ export function DesignEditorView({ designId }: { designId: string }) {
 	const aiGenerate = useEditorAiGenerate();
 	const removeBg = useRemoveBackground();
 	const applyColorMutation = useApplyColor();
+	const { data: voxBalance } = useVoxBalance();
+	const { data: voxCosts } = useVoxCosts();
+	const editorCost =
+		voxCosts?.find((c) => c.feature === 'editor-ai')?.cost ?? 1;
+
+	const generateAction = useCreditAction({
+		feature: 'editor-ai',
+		cost: editorCost,
+		balance: voxBalance?.balance ?? 0,
+		run: async ({ useCredits }) => {
+			const result = await aiGenerate.mutateAsync({
+				mode: aiMode,
+				prompt: aiPrompt.trim(),
+				image: aiMode === 'edit' && currentImage ? currentImage : undefined,
+				useCredits,
+			});
+			updateImage(result.imageBase64);
+			setAiPrompt('');
+			return result;
+		},
+	});
+
+	const removeBgAction = useCreditAction({
+		feature: 'editor-ai',
+		cost: editorCost,
+		balance: voxBalance?.balance ?? 0,
+		run: async ({ useCredits }) => {
+			if (!currentImage) throw new Error('no-image');
+			const result = await removeBg.mutateAsync({
+				image: currentImage,
+				useCredits,
+			});
+			updateImage(result.imageBase64);
+			return result;
+		},
+	});
+
 	const updateDesign = useUpdateDesign();
 	const uploadThumbnail = useUploadDesignThumbnail();
 
@@ -150,34 +190,19 @@ export function DesignEditorView({ designId }: { designId: string }) {
 	);
 
 	// AI Generate
-	const handleGenerate = useCallback(async () => {
+	const handleGenerate = useCallback(() => {
 		if (!aiPrompt.trim()) {
 			toast.error('Escreva um prompt para gerar.');
 			return;
 		}
-		try {
-			const result = await aiGenerate.mutateAsync({
-				mode: aiMode,
-				prompt: aiPrompt.trim(),
-				image: aiMode === 'edit' && currentImage ? currentImage : undefined,
-			});
-			updateImage(result.imageBase64);
-			setAiPrompt('');
-		} catch {
-			// toast handled by hook
-		}
-	}, [aiPrompt, aiMode, currentImage, aiGenerate, updateImage]);
+		generateAction.trigger();
+	}, [aiPrompt, generateAction]);
 
 	// Remove Background
-	const handleRemoveBg = useCallback(async () => {
+	const handleRemoveBg = useCallback(() => {
 		if (!currentImage) return;
-		try {
-			const result = await removeBg.mutateAsync({ image: currentImage });
-			updateImage(result.imageBase64);
-		} catch {
-			// toast handled by hook
-		}
-	}, [currentImage, removeBg, updateImage]);
+		removeBgAction.trigger();
+	}, [currentImage, removeBgAction]);
 
 	// Apply Color
 	const handleApplyColor = useCallback(async () => {
@@ -291,6 +316,28 @@ export function DesignEditorView({ designId }: { designId: string }) {
 
 	return (
 		<div className="relative p-4 md:p-6">
+			{generateAction.modal && (
+				<CreditConfirmModal
+					variant={generateAction.modal.variant}
+					cost={generateAction.modal.cost}
+					balance={generateAction.modal.balance}
+					canUseCredits={generateAction.modal.canUseCredits}
+					pending={generateAction.pending}
+					onConfirm={generateAction.confirm}
+					onClose={generateAction.close}
+				/>
+			)}
+			{removeBgAction.modal && (
+				<CreditConfirmModal
+					variant={removeBgAction.modal.variant}
+					cost={removeBgAction.modal.cost}
+					balance={removeBgAction.modal.balance}
+					canUseCredits={removeBgAction.modal.canUseCredits}
+					pending={removeBgAction.pending}
+					onConfirm={removeBgAction.confirm}
+					onClose={removeBgAction.close}
+				/>
+			)}
 			{/* Header */}
 			<div className="flex items-center justify-between gap-4 mb-6">
 				<div className="flex items-center gap-3 min-w-0">
