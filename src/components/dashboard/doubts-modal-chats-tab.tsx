@@ -313,7 +313,7 @@ function AdminChatViewPanel({
 	}
 
 	return (
-		<div className="fixed inset-0 z-[55] flex flex-col bg-white dark:bg-[#0d0d0f] border-l border-slate-200 dark:border-white/10 shadow-2xl md:inset-y-0 md:right-0 md:left-auto md:w-[480px] md:rounded-l-2xl">
+		<div className="fixed inset-0 z-[55] flex flex-col bg-white dark:bg-[#0d0d0f] border-l border-slate-200 dark:border-white/10 shadow-2xl md:inset-y-0 md:right-0 md:left-auto md:w-[400px] lg:w-[480px] md:rounded-l-2xl">
 			<div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-white/10 shrink-0">
 				<button
 					type="button"
@@ -352,6 +352,7 @@ function AdminChatViewPanel({
 							chat={chat}
 							customerName={chat.customerName ?? 'Cliente'}
 							onSendMessage={handleSendMessage}
+							isAdmin
 						/>
 					</>
 				) : (

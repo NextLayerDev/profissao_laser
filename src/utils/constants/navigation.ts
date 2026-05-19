@@ -8,6 +8,7 @@ import {
 	Link2,
 	MessageSquare,
 	Package,
+	PenLine,
 	ShieldCheck,
 	ShoppingCart,
 	SlidersHorizontal,
@@ -54,4 +55,10 @@ export const navItems: NavItem[] = [
 	{ name: 'Acessos', icon: ShieldCheck, href: '/acessos', hasDropdown: false },
 	{ name: 'Alunos', icon: Users, href: '/alunos', hasDropdown: false },
 	{ name: 'Previas IA', icon: Eye, href: '/previas-admin', hasDropdown: false },
+	{
+		name: 'Vetorizacao',
+		icon: PenLine,
+		href: '/vetorizacao-admin',
+		hasDropdown: false,
+	},
 ];

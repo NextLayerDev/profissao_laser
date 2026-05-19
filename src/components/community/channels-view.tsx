@@ -286,7 +286,7 @@ export function ChannelsView({
 			{/* Two-panel layout */}
 			<div className="flex h-[calc(100vh-4rem)]">
 				{/* Left panel - Channel list */}
-				<div className="w-72 border-r border-slate-200 dark:border-white/10 bg-white/50 dark:bg-[#1a1a1d]/60 overflow-y-auto shrink-0">
+				<div className="hidden lg:flex flex-col w-64 xl:w-72 border-r border-slate-200 dark:border-white/10 bg-white/50 dark:bg-[#1a1a1d]/60 overflow-y-auto shrink-0">
 					<div className="p-4">
 						<div className="flex items-center justify-between mb-3">
 							<h4 className="text-xs font-bold font-display text-violet-400 uppercase tracking-wider">

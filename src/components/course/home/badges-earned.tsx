@@ -30,7 +30,7 @@ export function BadgesEarned() {
 				</Link>
 			</div>
 
-			<div className="grid grid-cols-3 gap-3">
+			<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
 				{BADGES.map((badge) => (
 					<div
 						key={badge.name}

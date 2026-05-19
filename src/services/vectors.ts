@@ -6,6 +6,14 @@ export interface CustomerVector {
 	original_name: string;
 	original_url?: string | null;
 	svg_url: string;
+	params?: {
+		mode?: string;
+		detailLevel?: number;
+		smoothing?: number;
+		noiseReduction?: number;
+		blackAndWhite?: boolean;
+		invertColors?: boolean;
+	} | null;
 	created_at: string;
 	updated_at?: string;
 }

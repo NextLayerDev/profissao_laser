@@ -109,9 +109,9 @@ export function SuporteAdminView() {
 	];
 
 	return (
-		<main className="px-8 py-6">
+		<main className="flex flex-col h-full overflow-hidden px-4 md:px-8 py-4">
 			{/* Header */}
-			<div className="mb-6">
+			<div className="shrink-0 mb-4">
 				<h2 className="text-2xl font-bold tracking-tight flex items-center gap-2 text-slate-900 dark:text-white">
 					<Headphones className="w-6 h-6 text-violet-400" />
 					Gestao de Suporte
@@ -122,7 +122,7 @@ export function SuporteAdminView() {
 			</div>
 
 			{/* Stats */}
-			<div className="grid grid-cols-3 gap-4 mb-6">
+			<div className="shrink-0 grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
 				{[
 					{
 						label: 'Pendentes',
@@ -153,7 +153,7 @@ export function SuporteAdminView() {
 			</div>
 
 			{/* 2-column layout */}
-			<div className="flex gap-6 min-h-[600px]">
+			<div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
 				{/* Left: ticket list */}
 				<div className="w-full lg:w-[400px] shrink-0 flex flex-col rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden">
 					{/* Filters */}
@@ -293,6 +293,7 @@ export function SuporteAdminView() {
 									chat={selectedChat}
 									customerName={selectedChat.customerName ?? 'Cliente'}
 									onSendMessage={handleReply}
+									isAdmin
 								/>
 							</div>
 						</>

@@ -10,7 +10,11 @@ import {
 	XCircle,
 } from 'lucide-react';
 import { useCallback, useState } from 'react';
-import { useSaveVector, useVectorizeImage } from '@/hooks/use-vectors';
+import {
+	useSaveVector,
+	useVectorizeBatch,
+	useVectorizeImage,
+} from '@/hooks/use-vectors';
 import type { VectorizeResult } from '@/services/vectorize';
 
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
@@ -46,6 +50,7 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 	const [isDragging, setIsDragging] = useState(false);
 	const [files, setFiles] = useState<FileWithStatus[]>([]);
 	const vectorizeMutation = useVectorizeImage();
+	const batchMutation = useVectorizeBatch();
 	const saveMutation = useSaveVector();
 
 	const validateFile = useCallback((file: File): string | null => {
@@ -77,18 +82,57 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 				return true;
 			});
 
-			for (const file of toProcess) {
-				const id = crypto.randomUUID();
-				setFiles((prev) => [
-					...prev.filter((f) => f.file !== file),
-					{ id, file, status: 'uploading' },
-				]);
+			if (toProcess.length === 0) return;
+
+			if (toProcess.length > 1) {
+				// Batch endpoint for multiple files
+				const entries = toProcess.map((file) => ({
+					id: crypto.randomUUID(),
+					file,
+					status: 'uploading' as const,
+				}));
+				setFiles((prev) => [...prev, ...entries]);
 
 				try {
-					const result = await vectorizeMutation.mutateAsync(file);
+					const results = await batchMutation.mutateAsync({
+						files: toProcess,
+					});
+					setFiles((prev) =>
+						prev.map((f) => {
+							const idx = entries.findIndex((e) => e.id === f.id);
+							if (idx === -1) return f;
+							const r = results[idx];
+							return r
+								? { ...f, status: 'success' as const, result: r }
+								: {
+										...f,
+										status: 'error' as const,
+										error: 'Sem resultado',
+									};
+						}),
+					);
+				} catch {
 					setFiles((prev) =>
 						prev.map((f) =>
-							f.id === id ? { ...f, status: 'success' as const, result } : f,
+							entries.some((e) => e.id === f.id)
+								? { ...f, status: 'error' as const, error: 'Erro no lote' }
+								: f,
+						),
+					);
+				}
+			} else {
+				// Single file
+				const file = toProcess[0];
+				const id = crypto.randomUUID();
+				setFiles((prev) => [...prev, { id, file, status: 'uploading' }]);
+
+				try {
+					const result = await vectorizeMutation.mutateAsync({ file });
+					setFiles((prev) =>
+						prev.map((f) =>
+							f.id === id
+								? { ...f, status: 'success' as const, result }
+								: f,
 						),
 					);
 				} catch {
@@ -106,7 +150,7 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 				}
 			}
 		},
-		[vectorizeMutation, validateFile],
+		[vectorizeMutation, batchMutation, validateFile],
 	);
 
 	const handleSave = useCallback(

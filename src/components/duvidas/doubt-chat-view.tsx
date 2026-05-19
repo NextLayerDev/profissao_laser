@@ -1,7 +1,7 @@
 'use client';
 
 import { Paperclip, Send, X } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ChatMessage, DoubtChat } from '@/types/doubt-chat';
 
 const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
@@ -24,16 +24,19 @@ function formatDate(iso: string) {
 	}
 }
 
-function MessageBubble({ msg }: { msg: ChatMessage }) {
+function MessageBubble({
+	msg,
+	isAdmin = false,
+}: { msg: ChatMessage; isAdmin?: boolean }) {
+	const isOwnMessage = isAdmin ? msg.isTechnician : !msg.isTechnician;
+
 	return (
-		<div
-			className={`flex ${msg.isTechnician ? 'justify-start' : 'justify-end'}`}
-		>
+		<div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
 			<div
 				className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
-					msg.isTechnician
-						? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white rounded-bl-md'
-						: 'bg-violet-600 text-white rounded-br-md'
+					isOwnMessage
+						? 'bg-violet-600 text-white rounded-br-md'
+						: 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white rounded-bl-md'
 				}`}
 			>
 				{msg.content && (
@@ -72,16 +75,23 @@ export interface DoubtChatViewProps {
 	chat: DoubtChat;
 	customerName: string;
 	onSendMessage?: (content: string, file?: File) => void;
+	isAdmin?: boolean;
 }
 
 export function DoubtChatView({
 	chat,
 	customerName: _customerName,
 	onSendMessage,
+	isAdmin = false,
 }: DoubtChatViewProps) {
 	const [newMessage, setNewMessage] = useState('');
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const messagesEndRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
+	}, [chat.messages]);
 
 	function handleSend(e: React.FormEvent) {
 		e.preventDefault();
@@ -110,8 +120,9 @@ export function DoubtChatView({
 			{/* Messages */}
 			<div className="flex-1 overflow-y-auto space-y-3 min-h-[200px]">
 				{(chat.messages ?? []).map((msg) => (
-					<MessageBubble key={msg.id} msg={msg} />
+					<MessageBubble key={msg.id} msg={msg} isAdmin={isAdmin} />
 				))}
+				<div ref={messagesEndRef} />
 			</div>
 
 			{/* Input */}

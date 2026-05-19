@@ -423,7 +423,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 				</div>
 
 				{/* Tools sidebar */}
-				<div className="lg:w-[340px] shrink-0">
+				<div className="lg:w-[280px] xl:w-[340px] shrink-0">
 					<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] overflow-hidden">
 						{/* Tool tabs */}
 						<div className="flex border-b border-slate-100 dark:border-white/5 p-1 gap-1">

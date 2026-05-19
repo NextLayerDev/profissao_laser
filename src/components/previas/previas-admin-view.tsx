@@ -117,7 +117,7 @@ export function PreviasAdminView() {
 	return (
 		<div className="space-y-6">
 			{/* Stat cards */}
-			<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 				<StatCard
 					icon={Zap}
 					label="Previas Geradas Hoje"

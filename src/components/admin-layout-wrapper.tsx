@@ -17,6 +17,10 @@ const ADMIN_PATHS = [
 	'/acessos',
 	'/alunos',
 	'/duvidas-admin',
+	'/suporte',
+	'/parametros',
+	'/previas-admin',
+	'/vetorizacao-admin',
 ];
 
 export function AdminLayoutWrapper({

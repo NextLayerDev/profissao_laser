@@ -57,7 +57,7 @@ export function LearningPaths() {
 				{PATHS.map((path) => (
 					<div
 						key={path.name}
-						className="flex-shrink-0 w-56 rounded-xl border border-slate-100 dark:border-white/5 p-4 hover:border-violet-200 dark:hover:border-violet-500/20 transition-colors"
+						className="flex-shrink-0 w-48 sm:w-56 rounded-xl border border-slate-100 dark:border-white/5 p-4 hover:border-violet-200 dark:hover:border-violet-500/20 transition-colors"
 					>
 						<div
 							className={`w-12 h-12 rounded-xl ${path.iconBg} flex items-center justify-center mb-3`}

@@ -19,7 +19,7 @@ export default function Loja() {
 	return (
 		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] text-slate-900 dark:text-white font-sans">
 			<header className="border-b border-slate-200 dark:border-gray-800 bg-slate-50/80 dark:bg-[#0d0d0f]/80 backdrop-blur-sm sticky top-0 z-10">
-				<div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-6">
+				<div className="max-w-6xl mx-auto px-4 md:px-6 py-4 flex flex-wrap items-center justify-between gap-4 md:gap-6">
 					<div className="flex items-center gap-2">
 						<Store className="w-6 h-6 text-violet-400" />
 						<span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
@@ -58,7 +58,7 @@ export default function Loja() {
 				</div>
 			</header>
 
-			<main className="max-w-6xl mx-auto px-6 py-10">
+			<main className="max-w-6xl mx-auto px-4 md:px-6 py-10">
 				<StoreContent />
 			</main>
 		</div>
