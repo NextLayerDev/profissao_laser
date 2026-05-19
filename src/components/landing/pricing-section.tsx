@@ -1,125 +1,285 @@
 'use client';
 
-import { Check } from 'lucide-react';
-import { useScrollReveal } from '@/hooks/use-scroll-reveal';
+import { Check, Shield } from 'lucide-react';
+import { useState } from 'react';
+import { useTween } from '@/hooks/use-landing';
 
-const features = [
-	'Comunidade em Grupo Fechado',
-	'Curso do Básico ao Avançado',
-	'Suporte Especializado',
-	'Lives Fechadas Exclusivas',
-	'Biblioteca de Vetores',
-	'Lista de Fornecedores',
+// ─── Data ────────────────────────────────────────────────────────────────────
+
+const BASE_FEATURES = [
+	'Acesso à comunidade',
+	'Aulas gravadas (Fiber, UV, CO₂, Diodo)',
+	'Suporte on-line',
+	'Biblioteca de vetores',
+	'Parâmetros',
 ];
 
-const plans = [
-	{ name: 'Anual', price: '127', period: 'POR MÊS', popular: false },
-	{ name: 'Trimestral', price: '197', period: 'POR MÊS', popular: true },
-	{ name: 'Mensal', price: '327', period: 'POR MÊS', popular: false },
+interface Plan {
+	id: string;
+	name: string;
+	tagline: string;
+	monthly: number;
+	annual: number;
+	installments: number;
+	inherits: string | null;
+	addons: string[];
+	cta: string;
+	featured: boolean;
+	badge?: string;
+}
+
+const PLANS: Plan[] = [
+	{
+		id: 'starter',
+		name: 'Starter',
+		tagline: 'Pra quem está começando e quer o essencial.',
+		monthly: 49,
+		annual: 299,
+		installments: 29,
+		inherits: null,
+		addons: [],
+		cta: 'ESCOLHER PLANO',
+		featured: false,
+	},
+	{
+		id: 'plus',
+		name: 'Plus',
+		tagline: 'Pra quem quer ir além e se conectar.',
+		monthly: 59,
+		annual: 399,
+		installments: 39,
+		inherits: 'Starter',
+		addons: ['Grupo no WhatsApp'],
+		cta: 'ESCOLHER PLANO',
+		featured: false,
+	},
+	{
+		id: 'pro',
+		name: 'Pro',
+		tagline: 'Pra quem quer resultados profissionais.',
+		monthly: 69,
+		annual: 599,
+		installments: 59,
+		inherits: 'Plus',
+		addons: ['Vetorização ilimitada'],
+		cta: 'ESCOLHER PLANO',
+		featured: true,
+		badge: 'MAIS ESCOLHIDO',
+	},
+	{
+		id: 'elite',
+		name: 'Elite',
+		tagline: 'Pra quem vive do laser e quer dominar.',
+		monthly: 119,
+		annual: 999,
+		installments: 109,
+		inherits: 'Pro',
+		addons: ['Prévias com marca d\u2019água', 'Canva com IA'],
+		cta: 'ESCOLHER PLANO',
+		featured: false,
+	},
 ];
 
-export function PricingSection() {
-	const { ref, isVisible } = useScrollReveal();
+function fmt(v: number) {
+	return v.toString().replace('.', ',');
+}
 
-	const scrollToVideo = () => {
-		document
-			.getElementById('cursos')
-			?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-	};
+// ─── Featured sparkles ──────────────────────────────────────────────────────
+
+function FeaturedSparkles() {
+	const bits = Array.from({ length: 8 }).map((_, i) => ({
+		x: 10 + i * 11,
+		delay: i * 0.27,
+	}));
+	return (
+		<>
+			<div className="orbit">
+				{Array.from({ length: 6 }).map((_, i) => {
+					const a = (i / 6) * Math.PI * 2;
+					return (
+						<span
+							key={i}
+							className="absolute left-1/2 top-1/2 w-1.5 h-1.5 rounded-full bg-violet-300 shadow-[0_0_8px_#c4b5fd]"
+							style={{
+								transform: `translate(${Math.cos(a) * 180}px, ${Math.sin(a) * 220}px)`,
+							}}
+						/>
+					);
+				})}
+			</div>
+			<div className="pointer-events-none absolute -top-1 left-0 right-0 h-10 overflow-visible">
+				{bits.map((b, i) => (
+					<span
+						key={i}
+						className="sparkle-bit absolute top-0 w-1 h-1 rounded-full bg-violet-300 shadow-[0_0_6px_#c4b5fd]"
+						style={{
+							left: `${b.x}%`,
+							animationDelay: `${b.delay}s`,
+						}}
+					/>
+				))}
+			</div>
+		</>
+	);
+}
+
+// ─── Pricing Card ────────────────────────────────────────────────────────────
+
+function PricingCard({
+	p,
+	billing,
+}: {
+	p: Plan;
+	billing: 'monthly' | 'annual';
+}) {
+	const isAnnual = billing === 'annual';
+	const target = isAnnual ? p.installments : p.monthly;
+	const tweened = useTween(target);
+	const priceShown = Math.round(tweened);
+	const subline = isAnnual
+		? `12x de R$ ${fmt(p.installments)} no anual (R$ ${fmt(p.annual)})`
+		: 'Cobrado mensalmente';
 
 	return (
-		<section className="bg-[#0d0d0f] py-20 md:py-28 px-6">
-			<div
-				ref={ref}
-				className={`max-w-5xl mx-auto transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-			>
-				<p className="text-[#f2295b] uppercase tracking-widest text-sm font-bold text-center mb-3">
-					Planos
+		<div
+			className={`tile-hairline shine relative rounded-2xl border p-6 flex flex-col transition-all duration-300 ${
+				p.featured
+					? 'border-violet-500/50 aura lg:-translate-y-2'
+					: 'card-dark hover:border-violet-500/30'
+			}`}
+			style={
+				p.featured
+					? {
+							background:
+								'linear-gradient(180deg, rgba(124,58,237,0.18) 0%, rgba(124,58,237,0.06) 60%, #15121f 100%)',
+						}
+					: {}
+			}
+		>
+			{p.featured && <FeaturedSparkles />}
+
+			{p.badge && (
+				<div className="btn-accent absolute -top-3 left-1/2 -translate-x-1/2 text-white text-[10px] font-bold uppercase tracking-[0.18em] px-3 py-1 rounded-full shadow-[0_10px_30px_-8px_rgba(124,58,237,0.35)]">
+					{p.badge}
+				</div>
+			)}
+
+			<div className="relative text-center pt-2">
+				<h3 className="font-display text-xl font-bold tracking-tight text-white">
+					{p.name}
+				</h3>
+				<p className="text-slate-400 text-[13px] mt-1 min-h-[2.5rem]">
+					{p.tagline}
 				</p>
-				<h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
-					Escolha a melhor opção e faça parte da
-					<br />
-					<span className="text-[#f2295b]">Comunidade Profissão Laser</span>
-				</h2>
+			</div>
 
-				<p className="text-gray-400 text-center text-lg mb-12 max-w-3xl mx-auto">
-					A Comunidade é o investimento em uma ferramenta que vai te auxiliar a
-					investir em conhecimento no mercado de produtos personalizados com
-					gravação a laser.
-				</p>
+			<div className="relative text-center my-5">
+				<div className="flex items-baseline justify-center gap-1">
+					<span className="text-slate-400 text-base font-bold mr-1">R$</span>
+					<span className="font-display text-white text-5xl font-black tracking-tight tabular-nums">
+						{priceShown}
+					</span>
+					<span className="text-slate-400 text-base font-bold">/mês</span>
+				</div>
+				<div className="text-slate-500 text-xs mt-1.5 font-mono">{subline}</div>
+			</div>
 
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-					{plans.map((plan, i) => (
-						<div
-							key={plan.name}
-							className={`relative bg-white/[0.04] backdrop-blur-sm rounded-3xl overflow-hidden border transition-all duration-500 ${
-								plan.popular
-									? 'border-[#f2295b]/50 shadow-2xl shadow-[#f2295b]/10 scale-[1.02]'
-									: 'border-white/[0.08] hover:border-white/[0.15]'
-							} ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
-							style={{ transitionDelay: `${200 + i * 150}ms` }}
-						>
-							{plan.popular && (
-								<div className="absolute top-0 right-0 bg-[#f2295b] text-white text-xs font-bold uppercase px-4 py-1.5 rounded-bl-2xl">
-									Popular
-								</div>
-							)}
-
-							<div className="p-8">
-								<h3 className="text-white text-xl font-bold mb-4">
-									{plan.name}
-								</h3>
-
-								<div className="mb-6">
-									<div className="flex items-baseline gap-1">
-										<span className="text-gray-400 text-sm">R$</span>
-										<span className="text-white text-5xl font-black">
-											{plan.price}
-										</span>
-									</div>
-									<p className="text-gray-500 text-sm">{plan.period}</p>
-								</div>
-
-								<ul className="space-y-3 mb-8">
-									{features.map((feature) => (
-										<li
-											key={feature}
-											className="flex items-center gap-3 text-gray-300 text-sm"
-										>
-											<div className="w-5 h-5 rounded-full bg-[#f2295b]/15 flex items-center justify-center flex-shrink-0">
-												<Check className="w-3 h-3 text-[#f2295b]" />
-											</div>
-											{feature}
-										</li>
-									))}
-								</ul>
-
-								<button
-									type="button"
-									onClick={scrollToVideo}
-									className={`block w-full text-center font-bold uppercase tracking-wide py-4 rounded-xl transition-all duration-300 cursor-pointer ${
-										plan.popular
-											? 'bg-[#f2295b] hover:bg-[#e0214f] text-white shadow-lg shadow-[#f2295b]/20'
-											: 'bg-white/[0.07] hover:bg-white/[0.12] text-white'
-									}`}
-								>
-									Quero este plano
-								</button>
+			<div className="relative border-t border-violet-500/10 pt-5 mb-5 flex-1">
+				<div className="text-[11px] uppercase tracking-wider font-bold text-slate-500 mb-3">
+					{p.inherits
+						? `Inclui tudo do ${p.inherits} +`
+						: 'Acesso a recursos iniciais'}
+				</div>
+				<ul className="space-y-2.5">
+					{(p.inherits ? p.addons : BASE_FEATURES).map((line, i) => (
+						<li key={i} className="flex items-start gap-2.5">
+							<div
+								className={`w-4 h-4 rounded-full mt-0.5 grid place-items-center shrink-0 ${
+									p.featured ? 'bg-violet-400/25' : 'bg-violet-500/15'
+								}`}
+							>
+								<Check
+									size={10}
+									className={p.featured ? 'text-violet-200' : 'text-violet-400'}
+								/>
 							</div>
-						</div>
+							<span className="text-slate-200 text-[13.5px] leading-snug">
+								{line}
+							</span>
+						</li>
+					))}
+				</ul>
+			</div>
+
+			<button
+				type="button"
+				className={`relative w-full font-bold uppercase tracking-wider text-[13px] py-3.5 rounded-xl transition-all cursor-pointer ${
+					p.featured
+						? 'btn-accent text-white shadow-[0_10px_30px_-8px_rgba(124,58,237,0.35)]'
+						: 'bg-white/[0.04] hover:bg-violet-500/10 text-white border border-violet-500/15 hover:border-violet-500/40'
+				}`}
+			>
+				{p.cta}
+			</button>
+		</div>
+	);
+}
+
+// ─── Main ────────────────────────────────────────────────────────────────────
+
+export function PricingSection() {
+	const [billing, setBilling] = useState<'monthly' | 'annual'>('annual');
+
+	return (
+		<section id="planos" className="relative px-5 md:px-8 py-16 md:py-24">
+			<div className="max-w-7xl mx-auto">
+				<div className="text-center mb-8">
+					<h2 className="font-display text-3xl md:text-[2.5rem] font-black text-white tracking-tight">
+						Escolha o plano <span className="grad-brand">ideal para você</span>
+					</h2>
+				</div>
+
+				<div className="flex justify-center mb-10">
+					<div className="inline-flex p-1 rounded-xl card-dark">
+						<button
+							type="button"
+							onClick={() => setBilling('monthly')}
+							className={`px-5 py-2 text-sm font-bold rounded-lg transition-all ${
+								billing === 'monthly'
+									? 'bg-white/[0.08] text-white'
+									: 'text-slate-400 hover:text-white'
+							}`}
+						>
+							Mensal
+						</button>
+						<button
+							type="button"
+							onClick={() => setBilling('annual')}
+							className={`relative px-5 py-2 text-sm font-bold rounded-lg transition-all ${
+								billing === 'annual'
+									? 'btn-accent text-white shadow-[0_10px_30px_-8px_rgba(124,58,237,0.35)]'
+									: 'text-slate-400 hover:text-white'
+							}`}
+						>
+							Anual
+							<span className="ml-2 inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-white/20">
+								–20%
+							</span>
+						</button>
+					</div>
+				</div>
+
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+					{PLANS.map((p) => (
+						<PricingCard key={p.id} p={p} billing={billing} />
 					))}
 				</div>
 
-				{/* Trust badges */}
-				<div className="flex items-center justify-center gap-6 mt-10">
-					<div className="flex items-center gap-2 text-gray-500 text-sm">
-						<div className="w-5 h-5 bg-emerald-500/20 rounded-full flex items-center justify-center">
-							<Check className="w-3 h-3 text-emerald-400" />
-						</div>
-						Compra segura
-					</div>
-					<div className="text-gray-500 text-sm">Hotmart</div>
-					<div className="text-gray-500 text-sm">Garantia de 7 dias</div>
+				<div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-10 text-slate-400 text-sm">
+					<span className="inline-flex items-center gap-2">
+						<Shield size={16} className="text-violet-400" />7 dias de garantia
+						incondicional. Não gostou? Devolvemos 100% do seu dinheiro.
+					</span>
 				</div>
 			</div>
 		</section>

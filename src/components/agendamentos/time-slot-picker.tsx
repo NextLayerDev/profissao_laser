@@ -74,7 +74,7 @@ export function TimeSlotPicker({
 				<legend className="block text-sm font-medium text-slate-600 dark:text-gray-400">
 					Horário * {multiple && '(selecione um ou mais)'}
 				</legend>
-				<div className="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-48 overflow-y-auto">
+				<div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-48 overflow-y-auto">
 					{slots.map((slot) => {
 						const isSelected = selected.includes(slot);
 						return (

@@ -831,7 +831,7 @@ export default function CourseSlugPage() {
 				</div>
 
 				{/* ── Sidebar ─────────────────────────────────────────────────── */}
-				<aside className="hidden md:flex w-72 xl:w-[380px] border-l border-slate-200 dark:border-white/6 bg-white/80 dark:bg-[#0d0d0f]/95 backdrop-blur-sm flex-col shrink-0 overflow-hidden">
+				<aside className="hidden lg:flex w-64 xl:w-[360px] border-l border-slate-200 dark:border-white/6 bg-white/80 dark:bg-[#0d0d0f]/95 backdrop-blur-sm flex-col shrink-0 overflow-hidden">
 					{/* Next lesson banner */}
 					{nextLesson && (
 						<div className="p-4 border-b border-slate-200 dark:border-white/10 bg-gradient-to-r from-violet-500/10 to-cyan-500/10 shrink-0">

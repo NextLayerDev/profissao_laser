@@ -107,7 +107,6 @@ export function NewDoubtFlow({
 						}
 					: null,
 			);
-			toast.success('Mensagem enviada!');
 		} catch {
 			toast.error('Erro ao enviar mensagem. Tente novamente.');
 		}
@@ -129,7 +128,7 @@ export function NewDoubtFlow({
 				aria-hidden
 			/>
 			<div
-				className="fixed inset-4 md:inset-8 lg:inset-12 z-50 flex flex-col bg-white dark:bg-[#0d0d0f] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+				className="fixed inset-4 md:inset-y-12 md:inset-x-[15%] lg:inset-y-16 lg:inset-x-[22%] z-50 flex flex-col bg-white dark:bg-[#0d0d0f] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="new-doubt-title"
@@ -148,7 +147,7 @@ export function NewDoubtFlow({
 							</h2>
 							<p className="text-xs text-slate-500 dark:text-gray-400">
 								{createdChat
-									? 'Pode continuar a conversa aqui'
+									? 'Chamado criado! Pode enviar mais detalhes.'
 									: `Passo ${step + 1} de ${STEPS.length}`}
 							</p>
 						</div>
@@ -202,27 +201,27 @@ export function NewDoubtFlow({
 											<Loader2 className="w-6 h-6 text-violet-600 animate-spin" />
 										</div>
 									) : (
-										<div className="space-y-2">
+										<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 											{categories.map((cat) => (
 												<button
 													key={cat.id}
 													type="button"
 													onClick={() => setCategoryId(cat.id)}
-													className={`w-full flex items-center gap-3 p-4 rounded-xl border text-left transition-all ${
+													className={`flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all ${
 														categoryId === cat.id
 															? 'border-violet-600 bg-violet-500/10 dark:bg-violet-500/20'
 															: 'border-slate-200 dark:border-white/10 hover:border-violet-500/40'
 													}`}
 												>
-													<div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-600 to-violet-700 flex items-center justify-center shrink-0">
-														<MessageSquare className="w-5 h-5 text-white" />
+													<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-violet-700 flex items-center justify-center shrink-0">
+														<MessageSquare className="w-4 h-4 text-white" />
 													</div>
-													<div>
-														<p className="font-medium text-slate-900 dark:text-white">
+													<div className="min-w-0">
+														<p className="font-medium text-sm text-slate-900 dark:text-white truncate">
 															{cat.title}
 														</p>
 														{cat.description && (
-															<p className="text-xs text-slate-500 dark:text-gray-400">
+															<p className="text-xs text-slate-500 dark:text-gray-400 truncate">
 																{cat.description}
 															</p>
 														)}

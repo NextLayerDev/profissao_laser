@@ -5,7 +5,6 @@ import {
 	BookOpen,
 	ChevronRight,
 	Clock,
-	ExternalLink,
 	FileText,
 	Headphones,
 	HelpCircle,
@@ -27,6 +26,8 @@ import {
 import { useFAQs } from '@/hooks/use-faq';
 import { useKnowledgeBase } from '@/hooks/use-knowledge-base';
 import type { DoubtChat } from '@/types/doubt-chat';
+import type { KnowledgeBaseArticle } from '@/types/knowledge-base';
+import { getEmbedUrl, getVideoType } from '@/utils/video';
 
 const ACTION_CARDS = [
 	{
@@ -91,6 +92,136 @@ function formatDate(iso: string) {
 	}
 }
 
+/* ─── Video Player (inline) ──────────────────────────────────────────────── */
+
+function VideoPlayer({
+	article,
+	onClose,
+}: {
+	article: KnowledgeBaseArticle;
+	onClose: () => void;
+}) {
+	const videoUrl = article.videoUrl ?? '';
+	const vType = getVideoType(videoUrl);
+	const embedUrl = getEmbedUrl(videoUrl);
+
+	return (
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+			<div className="relative w-full max-w-4xl">
+				{/* Close */}
+				<button
+					type="button"
+					onClick={onClose}
+					className="absolute -top-10 right-0 p-1.5 rounded-lg text-white/70 hover:text-white transition-colors"
+				>
+					<X className="w-5 h-5" />
+				</button>
+				{/* Title */}
+				<p className="text-white font-semibold mb-3 truncate">
+					{article.title}
+				</p>
+				{/* Player */}
+				<div className="relative w-full rounded-xl overflow-hidden bg-black aspect-video">
+					{(vType === 'youtube' || vType === 'vimeo' || vType === 'bunny') &&
+					embedUrl ? (
+						<iframe
+							src={embedUrl}
+							className="absolute inset-0 w-full h-full"
+							allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+							allowFullScreen
+							title={article.title}
+						/>
+					) : (
+						<video
+							src={videoUrl}
+							controls
+							autoPlay
+							className="absolute inset-0 w-full h-full object-contain"
+						>
+							<track kind="captions" />
+						</video>
+					)}
+				</div>
+				{/* Description below video */}
+				{article.content && (
+					<div className="mt-4 p-4 bg-white/10 rounded-lg max-h-32 overflow-y-auto">
+						<p className="text-sm text-white/80 whitespace-pre-wrap">
+							{article.content}
+						</p>
+					</div>
+				)}
+			</div>
+		</div>
+	);
+}
+
+/* ─── Article Reader (modal) ─────────────────────────────────────────────── */
+
+function ArticleReader({
+	article,
+	onClose,
+}: {
+	article: KnowledgeBaseArticle;
+	onClose: () => void;
+}) {
+	return (
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+			<div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-white dark:bg-[#1a1a1d] rounded-xl shadow-2xl border border-slate-200 dark:border-white/10 overflow-hidden">
+				{/* Header */}
+				<div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 shrink-0">
+					<div className="flex items-center gap-3 min-w-0">
+						<div className="w-9 h-9 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0">
+							<FileText className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+						</div>
+						<div className="min-w-0">
+							<p className="font-semibold text-sm text-slate-900 dark:text-white truncate">
+								{article.title}
+							</p>
+							<div className="flex items-center gap-2 mt-0.5">
+								{article.category && (
+									<span className="text-xs text-slate-500 dark:text-gray-400">
+										{article.category}
+									</span>
+								)}
+								{article.readTime != null && (
+									<span className="flex items-center gap-1 text-xs text-slate-400 dark:text-gray-500">
+										<Clock className="w-3 h-3" />
+										{article.readTime} min
+									</span>
+								)}
+							</div>
+						</div>
+					</div>
+					<button
+						type="button"
+						onClick={onClose}
+						className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 transition-colors shrink-0"
+					>
+						<X className="w-4 h-4 text-slate-600 dark:text-gray-400" />
+					</button>
+				</div>
+				{/* Body */}
+				<div className="flex-1 overflow-y-auto p-5 space-y-4">
+					{article.excerpt && (
+						<p className="text-sm text-slate-600 dark:text-gray-400 italic border-l-2 border-violet-500 pl-3">
+							{article.excerpt}
+						</p>
+					)}
+					{article.content ? (
+						<div className="text-sm text-slate-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+							{article.content}
+						</div>
+					) : (
+						<p className="text-sm text-slate-500 dark:text-gray-400 text-center py-8">
+							Conteudo ainda nao disponivel.
+						</p>
+					)}
+				</div>
+			</div>
+		</div>
+	);
+}
+
 /* ─── Props ───────────────────────────────────────────────────────────────── */
 
 export interface SuporteOnlineViewProps {
@@ -112,6 +243,11 @@ export function SuporteOnlineView({
 	>('home');
 	const [showAllChats, setShowAllChats] = useState(false);
 	const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+	const [playingVideo, setPlayingVideo] = useState<KnowledgeBaseArticle | null>(
+		null,
+	);
+	const [readingArticle, setReadingArticle] =
+		useState<KnowledgeBaseArticle | null>(null);
 
 	const { data: allChats = [] } = useDoubtChats('all', hasAccess);
 	const { data: selectedChat } = useDoubtChat(selectedChatId, !!selectedChatId);
@@ -120,6 +256,16 @@ export function SuporteOnlineView({
 	const { data: stats } = useDoubtChatStats(hasAccess);
 	const { data: knowledgeBaseArticles = [], isLoading: kbLoading } =
 		useKnowledgeBase(undefined, hasAccess);
+
+	const articles = useMemo(
+		() => knowledgeBaseArticles.filter((a) => a.type === 'article'),
+		[knowledgeBaseArticles],
+	);
+
+	const videos = useMemo(
+		() => knowledgeBaseArticles.filter((a) => a.type === 'video'),
+		[knowledgeBaseArticles],
+	);
 
 	const sortedChats = useMemo(() => {
 		return [...allChats].sort((a, b) => {
@@ -139,6 +285,10 @@ export function SuporteOnlineView({
 		setNewDoubtOpen(false);
 	}
 
+	function handleSendChatMessage(content: string, file?: File) {
+		sendMsgMutation.mutate({ content, file });
+	}
+
 	function handleActionClick(id: string) {
 		if (id === 'novo-chamado') {
 			setNewDoubtOpen(true);
@@ -151,8 +301,12 @@ export function SuporteOnlineView({
 		}
 	}
 
-	function handleSendChatMessage(content: string, file?: File) {
-		sendMsgMutation.mutate({ content, file });
+	function handleArticleClick(article: KnowledgeBaseArticle) {
+		if (article.type === 'video' && article.videoUrl) {
+			setPlayingVideo(article);
+		} else {
+			setReadingArticle(article);
+		}
 	}
 
 	return (
@@ -168,7 +322,7 @@ export function SuporteOnlineView({
 
 			{/* ── Stats counters ───────────────────────────────────────────── */}
 			{stats && (
-				<section className="grid grid-cols-3 gap-4">
+				<section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 					{[
 						{
 							label: 'Abertos',
@@ -277,7 +431,7 @@ export function SuporteOnlineView({
 				</section>
 			)}
 
-			{/* ── Base de conhecimento section ────────────────────────────────── */}
+			{/* ── Base de conhecimento section (articles only) ────────────────── */}
 			{activeSection === 'base' && (
 				<section className="space-y-4">
 					<h2 className="font-display text-xl font-bold text-slate-900 dark:text-white">
@@ -287,43 +441,52 @@ export function SuporteOnlineView({
 						<div className="flex justify-center py-12">
 							<Loader2 className="w-8 h-8 text-violet-600 animate-spin" />
 						</div>
-					) : knowledgeBaseArticles.length === 0 ? (
+					) : articles.length === 0 ? (
 						<div className="flex flex-col items-center justify-center py-16 text-slate-500 dark:text-slate-600">
 							<BookOpen className="w-12 h-12 mb-3 opacity-50" />
 							<p className="text-sm font-medium">Nenhum artigo encontrado</p>
 						</div>
 					) : (
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-							{knowledgeBaseArticles.map((article) => {
-								const Icon = article.type === 'video' ? Play : FileText;
-								return (
-									<div
-										key={article.id}
-										className="flex items-start gap-4 p-5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] hover:border-violet-500/30 transition-all cursor-pointer"
-									>
-										<div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
-											<Icon className="w-5 h-5 text-violet-700 dark:text-violet-400" />
-										</div>
-										<div className="flex-1 min-w-0">
-											<p className="font-semibold text-sm text-slate-900 dark:text-white truncate">
-												{article.title}
-											</p>
-											<div className="flex items-center gap-3 mt-1.5">
-												<span className="text-xs text-slate-500 dark:text-gray-400">
-													{article.type === 'video' ? 'Video' : 'Artigo'}
-												</span>
-												{article.readTime != null && (
-													<span className="flex items-center gap-1 text-xs text-slate-400 dark:text-gray-500">
-														<Clock className="w-3 h-3" />
-														{article.readTime} min
-													</span>
-												)}
-											</div>
-										</div>
-										<ExternalLink className="w-4 h-4 text-slate-400 dark:text-slate-600 shrink-0 mt-1" />
+							{articles.map((article) => (
+								<button
+									key={article.id}
+									type="button"
+									onClick={() => handleArticleClick(article)}
+									className="flex items-start gap-4 p-5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] hover:border-violet-500/30 transition-all cursor-pointer text-left"
+								>
+									<div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
+										<FileText className="w-5 h-5 text-violet-700 dark:text-violet-400" />
 									</div>
-								);
-							})}
+									<div className="flex-1 min-w-0">
+										<p className="font-semibold text-sm text-slate-900 dark:text-white truncate">
+											{article.title}
+										</p>
+										{article.excerpt && (
+											<p className="text-xs text-slate-500 dark:text-gray-400 mt-1 line-clamp-2">
+												{article.excerpt}
+											</p>
+										)}
+										<div className="flex items-center gap-3 mt-1.5">
+											<span className="text-xs text-slate-500 dark:text-gray-400">
+												Artigo
+											</span>
+											{article.readTime != null && (
+												<span className="flex items-center gap-1 text-xs text-slate-400 dark:text-gray-500">
+													<Clock className="w-3 h-3" />
+													{article.readTime} min
+												</span>
+											)}
+											{article.category && (
+												<span className="text-xs text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10 px-1.5 py-0.5 rounded">
+													{article.category}
+												</span>
+											)}
+										</div>
+									</div>
+									<ChevronRight className="w-4 h-4 text-slate-400 dark:text-slate-600 shrink-0 mt-1" />
+								</button>
+							))}
 						</div>
 					)}
 				</section>
@@ -339,39 +502,85 @@ export function SuporteOnlineView({
 						<div className="flex justify-center py-12">
 							<Loader2 className="w-8 h-8 text-violet-600 animate-spin" />
 						</div>
+					) : videos.length === 0 ? (
+						<div className="col-span-2 flex flex-col items-center justify-center py-12 text-slate-500 dark:text-slate-600">
+							<Play className="w-10 h-10 mb-3 opacity-50" />
+							<p className="text-sm font-medium">Nenhum video encontrado</p>
+						</div>
 					) : (
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-							{knowledgeBaseArticles
-								.filter((a) => a.type === 'video')
-								.map((article) => (
-									<div
+							{videos.map((article) => {
+								const vType = article.videoUrl
+									? getVideoType(article.videoUrl)
+									: null;
+								const thumbnailUrl =
+									vType === 'youtube' && article.videoUrl
+										? (() => {
+												const match = article.videoUrl.match(
+													/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/,
+												);
+												return match
+													? `https://img.youtube.com/vi/${match[1]}/mqdefault.jpg`
+													: null;
+											})()
+										: null;
+
+								return (
+									<button
 										key={article.id}
-										className="flex items-start gap-4 p-5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] hover:border-violet-500/30 transition-all cursor-pointer"
+										type="button"
+										onClick={() =>
+											article.videoUrl ? setPlayingVideo(article) : undefined
+										}
+										className="group flex flex-col rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] hover:border-violet-500/30 transition-all cursor-pointer text-left overflow-hidden"
 									>
-										<div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-500/20 flex items-center justify-center shrink-0">
-											<Play className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+										{/* Thumbnail / Play overlay */}
+										<div className="relative aspect-video bg-slate-100 dark:bg-black/30 flex items-center justify-center">
+											{thumbnailUrl ? (
+												<img
+													src={thumbnailUrl}
+													alt={article.title}
+													className="w-full h-full object-cover"
+												/>
+											) : (
+												<div className="w-full h-full bg-gradient-to-br from-violet-500/20 to-rose-500/20 flex items-center justify-center">
+													<Play className="w-10 h-10 text-violet-500/60 dark:text-violet-400/60" />
+												</div>
+											)}
+											{/* Play button overlay */}
+											<div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors">
+												<div className="w-14 h-14 rounded-full bg-violet-600/90 group-hover:bg-violet-600 flex items-center justify-center shadow-xl transition-all group-hover:scale-110">
+													<Play className="w-6 h-6 text-white ml-0.5" />
+												</div>
+											</div>
 										</div>
-										<div className="flex-1 min-w-0">
-											<p className="font-semibold text-sm text-slate-900 dark:text-white truncate">
+										{/* Info */}
+										<div className="p-4">
+											<p className="font-semibold text-sm text-slate-900 dark:text-white line-clamp-2">
 												{article.title}
 											</p>
-											{article.readTime != null && (
-												<span className="flex items-center gap-1 text-xs text-slate-400 dark:text-gray-500 mt-1.5">
-													<Clock className="w-3 h-3" />
-													{article.readTime} min
-												</span>
+											{article.excerpt && (
+												<p className="text-xs text-slate-500 dark:text-gray-400 mt-1 line-clamp-1">
+													{article.excerpt}
+												</p>
 											)}
+											<div className="flex items-center gap-2 mt-2">
+												{article.readTime != null && (
+													<span className="flex items-center gap-1 text-xs text-slate-400 dark:text-gray-500">
+														<Clock className="w-3 h-3" />
+														{article.readTime} min
+													</span>
+												)}
+												{article.category && (
+													<span className="text-xs text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10 px-1.5 py-0.5 rounded">
+														{article.category}
+													</span>
+												)}
+											</div>
 										</div>
-										<ExternalLink className="w-4 h-4 text-slate-400 dark:text-slate-600 shrink-0 mt-1" />
-									</div>
-								))}
-							{knowledgeBaseArticles.filter((a) => a.type === 'video')
-								.length === 0 && (
-								<div className="col-span-2 flex flex-col items-center justify-center py-12 text-slate-500 dark:text-slate-600">
-									<Play className="w-10 h-10 mb-3 opacity-50" />
-									<p className="text-sm font-medium">Nenhum video encontrado</p>
-								</div>
-							)}
+									</button>
+								);
+							})}
 						</div>
 					)}
 				</section>
@@ -435,7 +644,7 @@ export function SuporteOnlineView({
 											onClick={() => setSelectedChatId(chat.id)}
 											className="text-xs font-semibold text-violet-700 dark:text-violet-400 hover:text-violet-600 transition-colors flex items-center gap-1"
 										>
-											Responder
+											Ver chamado
 											<ChevronRight className="w-3.5 h-3.5" />
 										</button>
 									</div>
@@ -465,9 +674,11 @@ export function SuporteOnlineView({
 						{knowledgeBaseArticles.slice(0, 4).map((article) => {
 							const Icon = article.type === 'video' ? Play : FileText;
 							return (
-								<div
+								<button
 									key={article.id}
-									className="flex items-start gap-4 p-5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] hover:border-violet-500/30 transition-all cursor-pointer group"
+									type="button"
+									onClick={() => handleArticleClick(article)}
+									className="flex items-start gap-4 p-5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] hover:border-violet-500/30 transition-all cursor-pointer group text-left"
 								>
 									<div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
 										<Icon className="w-5 h-5 text-violet-700 dark:text-violet-400" />
@@ -488,8 +699,12 @@ export function SuporteOnlineView({
 											)}
 										</div>
 									</div>
-									<ExternalLink className="w-4 h-4 text-slate-400 dark:text-slate-600 group-hover:text-violet-600 shrink-0 mt-1 transition-colors" />
-								</div>
+									{article.type === 'video' ? (
+										<Play className="w-4 h-4 text-violet-500 dark:text-violet-400 shrink-0 mt-1" />
+									) : (
+										<ChevronRight className="w-4 h-4 text-slate-400 dark:text-slate-600 group-hover:text-violet-600 shrink-0 mt-1 transition-colors" />
+									)}
+								</button>
 							);
 						})}
 					</div>
@@ -576,7 +791,11 @@ export function SuporteOnlineView({
 							<DoubtChatView
 								chat={selectedChat}
 								customerName={customerName}
-								onSendMessage={handleSendChatMessage}
+								onSendMessage={
+									selectedChat.status === 'pending'
+										? handleSendChatMessage
+										: undefined
+								}
 							/>
 						</div>
 					</div>
@@ -591,6 +810,22 @@ export function SuporteOnlineView({
 				customerName={customerName}
 				onChatCreated={handleChatCreated}
 			/>
+
+			{/* ── Video player modal ─────────────────────────────────────────── */}
+			{playingVideo?.videoUrl && (
+				<VideoPlayer
+					article={playingVideo}
+					onClose={() => setPlayingVideo(null)}
+				/>
+			)}
+
+			{/* ── Article reader modal ───────────────────────────────────────── */}
+			{readingArticle && (
+				<ArticleReader
+					article={readingArticle}
+					onClose={() => setReadingArticle(null)}
+				/>
+			)}
 		</div>
 	);
 }

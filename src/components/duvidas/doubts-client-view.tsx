@@ -39,19 +39,18 @@ export function DoubtsClientView({
 	);
 	const sendMessageMutation = useSendDoubtMessage(selectedChatId);
 
-	function handleChatCreated(chat: DoubtChat) {
-		setSelectedChatId(chat.id);
-		setActiveTab('pending');
-	}
-
 	async function handleSendMessage(content: string, file?: File) {
 		if (!selectedChatId) return;
 		try {
 			await sendMessageMutation.mutateAsync({ content, file });
-			toast.success('Mensagem enviada!');
 		} catch {
 			toast.error('Erro ao enviar mensagem. Tente novamente.');
 		}
+	}
+
+	function handleChatCreated(chat: DoubtChat) {
+		setSelectedChatId(chat.id);
+		setActiveTab('pending');
 	}
 
 	if (!hasAccess) {
@@ -117,7 +116,11 @@ export function DoubtsClientView({
 								<DoubtChatView
 									chat={selectedChat}
 									customerName={customerName}
-									onSendMessage={handleSendMessage}
+									onSendMessage={
+										selectedChat.status === 'pending'
+											? handleSendMessage
+											: undefined
+									}
 								/>
 							) : null}
 						</div>

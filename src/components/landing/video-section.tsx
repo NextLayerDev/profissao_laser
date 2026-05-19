@@ -1,108 +1,138 @@
 'use client';
 
-import { ChevronRight } from 'lucide-react';
-import Image from 'next/image';
-import { useScrollReveal } from '@/hooks/use-scroll-reveal';
+import {
+	ArrowRight,
+	Check,
+	Download,
+	Maximize,
+	Play,
+	Sparkles,
+	Volume2,
+} from 'lucide-react';
+
+function VideoPlayerPlaceholder() {
+	return (
+		<div className="relative aspect-video rounded-2xl overflow-hidden card-dark">
+			<div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/60 to-transparent z-10" />
+			<div
+				className="absolute inset-0"
+				style={{
+					background:
+						'linear-gradient(135deg, #1a0a2e 0%, #0d0d0f 50%, #12121a 100%)',
+				}}
+			/>
+			<div className="absolute inset-0 bg-grid opacity-[0.07]" />
+			<div className="absolute top-5 left-5 flex items-center gap-2 text-white/90 z-10">
+				<Sparkles size={14} className="text-violet-400" />
+				<span className="font-display text-[11px] font-bold uppercase tracking-widest">
+					Comunidade · Profissão Laser
+				</span>
+			</div>
+
+			{/* Speaker silhouette */}
+			<div className="absolute bottom-0 right-0 w-[55%] h-[78%]">
+				<svg
+					aria-hidden="true"
+					viewBox="0 0 320 320"
+					className="w-full h-full opacity-90"
+				>
+					<defs>
+						<radialGradient id="speakerBg" cx="0.5" cy="0.4" r="0.6">
+							<stop offset="0" stopColor="#7c3aed" stopOpacity="0.4" />
+							<stop offset="1" stopColor="#000" stopOpacity="0" />
+						</radialGradient>
+					</defs>
+					<rect x="0" y="0" width="320" height="320" fill="url(#speakerBg)" />
+					<ellipse cx="170" cy="120" rx="38" ry="44" fill="#1a1535" />
+					<path
+						d="M70 320 C 80 230, 130 200, 170 200 C 210 200, 260 230, 270 320 Z"
+						fill="#0f0a28"
+					/>
+					<path
+						d="M155 205 L185 205 L175 240 L165 240 Z"
+						fill="#7c3aed"
+						opacity="0.8"
+					/>
+				</svg>
+			</div>
+
+			{/* Headline overlay */}
+			<div className="absolute left-6 bottom-6 max-w-[60%]">
+				<div className="font-display text-white text-2xl md:text-3xl font-black leading-tight tracking-tight">
+					Mais que uma
+					<br />
+					comunidade.
+					<br />
+					<span className="grad-brand">Um ecossistema</span>
+					<br />
+					para você crescer.
+				</div>
+			</div>
+
+			{/* Play button */}
+			<button
+				type="button"
+				className="absolute inset-0 grid place-items-center group"
+			>
+				<div className="btn-accent w-20 h-20 rounded-full grid place-items-center shadow-[0_20px_50px_-10px_rgba(124,58,237,0.45)] group-hover:scale-105 transition-transform">
+					<Play size={28} className="text-white translate-x-0.5" />
+				</div>
+			</button>
+
+			{/* Progress bar */}
+			<div className="absolute bottom-0 left-0 right-0 px-3 pb-2 flex items-center gap-3 text-white/80 text-[11px]">
+				<Play size={12} />
+				<Volume2 size={13} />
+				<span className="font-mono">1:32 / 2:45</span>
+				<div className="flex-1 h-1 rounded-full bg-white/20 overflow-hidden">
+					<div className="h-full w-1/3 bg-violet-400" />
+				</div>
+				<Download size={13} />
+				<Maximize size={13} />
+			</div>
+		</div>
+	);
+}
 
 export function VideoSection() {
-	const { ref, isVisible } = useScrollReveal();
-
-	const scrollToVideo = () => {
-		document
-			.getElementById('cursos')
-			?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-	};
+	const bullets = [
+		'Conteúdo prático e direto ao ponto',
+		'Acompanhamento de especialistas',
+		'Ferramentas que facilitam sua rotina',
+		'Network com quem vive o laser',
+		'Novas oportunidades de negócio',
+	];
 
 	return (
-		<section
-			id="video-section"
-			className="bg-[#0d0d0f] py-20 md:py-28 px-6 scroll-mt-20"
-		>
-			<div
-				ref={ref}
-				className={`max-w-4xl mx-auto transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-			>
-				<p className="text-[#f2295b] uppercase tracking-widest text-sm font-bold text-center mb-3">
-					Assista agora
-				</p>
-				<h2 className="text-3xl md:text-4xl font-bold text-center text-white mb-4">
-					Aprenda a{' '}
-					<span className="bg-gradient-to-r from-[#f2295b] to-violet-500 bg-clip-text text-transparent italic font-extrabold">
-						personalizar com gravação a laser
-					</span>{' '}
-					os{' '}
-					<span className="bg-gradient-to-r from-violet-500 to-[#f2295b] bg-clip-text text-transparent italic font-extrabold">
-						produtos mais vendidos
-					</span>{' '}
-					nos e-commerces
-				</h2>
+		<section id="video" className="relative px-5 md:px-8 py-14 md:py-20">
+			<div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1.05fr_1fr] gap-10 items-center">
+				<VideoPlayerPlaceholder />
 
-				<p className="text-gray-400 text-center text-lg leading-relaxed mb-10 max-w-3xl mx-auto">
-					Na{' '}
-					<span className="text-[#f2295b] font-semibold">
-						Comunidade Profissão Laser
-					</span>{' '}
-					temos lives fechadas exclusivas para membros de personalizações de
-					produtos que são campeões de vendas, mostrando todas as configurações
-					necessárias em diferentes artes, e você pode{' '}
-					<span className="text-white font-semibold underline decoration-[#f2295b]/50 underline-offset-4">
-						tirar suas dúvidas ao Vivo.
-					</span>
-				</p>
+				<div>
+					<h2 className="font-display text-3xl md:text-[2.25rem] font-black text-white leading-tight tracking-tight">
+						Por que milhares de profissionais escolheram a{' '}
+						<span className="grad-brand">Profissão Laser?</span>
+					</h2>
 
-				{/* Embedded YouTube video */}
-				<div className="relative aspect-video rounded-3xl overflow-hidden mb-5 border border-white/10 shadow-2xl shadow-violet-900/20">
-					<iframe
-						src="https://www.youtube.com/embed/EHI-vDIjUk4"
-						title="Aprenda a personalizar com gravação a laser"
-						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-						allowFullScreen
-						className="absolute inset-0 w-full h-full"
-					/>
+					<ul className="mt-6 space-y-3">
+						{bullets.map((b) => (
+							<li key={b} className="flex items-center gap-3 text-slate-200">
+								<div className="w-6 h-6 rounded-full bg-violet-500/15 border border-violet-500/30 grid place-items-center shrink-0">
+									<Check size={14} className="text-violet-400" />
+								</div>
+								<span className="text-[15px]">{b}</span>
+							</li>
+						))}
+					</ul>
+
+					<a
+						href="#planos"
+						className="btn-accent mt-8 inline-flex items-center gap-2 text-white font-bold px-6 py-3.5 rounded-xl shadow-[0_20px_50px_-10px_rgba(124,58,237,0.45)]"
+					>
+						QUERO EVOLUIR AGORA
+						<ArrowRight size={16} />
+					</a>
 				</div>
-
-				{/* Instructors */}
-				<div className="flex items-center gap-6 mb-8">
-					<div className="flex items-center gap-3">
-						<Image
-							src="/img/FERNANDO02.jpeg"
-							alt="Fernando Nucci"
-							width={44}
-							height={44}
-							className="rounded-xl object-cover"
-						/>
-						<div>
-							<p className="text-white text-sm font-bold leading-tight">
-								Fernando Nucci
-							</p>
-							<p className="text-gray-500 text-[11px]">Instrutor</p>
-						</div>
-					</div>
-					<div className="flex items-center gap-3">
-						<Image
-							src="/img/GIOVANI01.jpeg"
-							alt="Giovani Meinhardt"
-							width={44}
-							height={44}
-							className="rounded-xl object-cover"
-						/>
-						<div>
-							<p className="text-white text-sm font-bold leading-tight">
-								Giovani Meinhardt
-							</p>
-							<p className="text-gray-500 text-[11px]">Instrutor</p>
-						</div>
-					</div>
-				</div>
-
-				<button
-					type="button"
-					onClick={scrollToVideo}
-					className="flex items-center justify-center gap-2 bg-[#f2295b] hover:bg-[#e0214f] text-white text-lg font-bold uppercase tracking-wide px-8 py-4 rounded-xl transition-all duration-300 w-full shadow-lg shadow-[#f2295b]/20 hover:shadow-[#f2295b]/30 cursor-pointer"
-				>
-					Quero aproveitar esta oportunidade
-					<ChevronRight className="w-5 h-5" />
-				</button>
 			</div>
 		</section>
 	);

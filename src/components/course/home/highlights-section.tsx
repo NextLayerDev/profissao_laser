@@ -65,7 +65,7 @@ export function HighlightsSection({ jornadaItems }: HighlightsSectionProps) {
 						<Link
 							key={item.plan.id}
 							href={`/course/${item.plan.slug}${item.nextLessonId ? `?lesson=${item.nextLessonId}` : ''}`}
-							className="flex-shrink-0 w-52 group"
+							className="flex-shrink-0 w-44 sm:w-52 group"
 						>
 							<div
 								className={`relative w-full h-32 rounded-xl overflow-hidden border border-white/10 transition-all duration-300 group-hover:shadow-lg ${

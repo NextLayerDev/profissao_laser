@@ -251,7 +251,7 @@ export default function ProdutoDetalhes() {
 							</div>
 
 							{/* Stats Cards */}
-							<div className="grid grid-cols-4 gap-4 mb-8">
+							<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
 								{productStats.map((stat) => (
 									<div
 										key={stat.label}
@@ -285,7 +285,7 @@ export default function ProdutoDetalhes() {
 									/>
 								</div>
 
-								<div className="grid grid-cols-4 gap-4">
+								<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
 									{productConfigItems.map((item) => (
 										<div key={item.label} className="flex items-center gap-2">
 											<div
