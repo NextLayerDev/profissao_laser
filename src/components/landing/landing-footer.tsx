@@ -46,24 +46,24 @@ export function LandingFooter() {
 					</div>
 					<ul className="space-y-2 text-sm text-slate-400">
 						<li>
-							<a href="#" className="hover:text-violet-300">
+							<button type="button" className="hover:text-violet-300">
 								Aulas
-							</a>
+							</button>
 						</li>
 						<li>
-							<a href="#" className="hover:text-violet-300">
+							<button type="button" className="hover:text-violet-300">
 								Biblioteca de vetores
-							</a>
+							</button>
 						</li>
 						<li>
-							<a href="#" className="hover:text-violet-300">
+							<button type="button" className="hover:text-violet-300">
 								Parâmetros
-							</a>
+							</button>
 						</li>
 						<li>
-							<a href="#" className="hover:text-violet-300">
+							<button type="button" className="hover:text-violet-300">
 								Fornecedores
-							</a>
+							</button>
 						</li>
 					</ul>
 				</div>
@@ -73,24 +73,24 @@ export function LandingFooter() {
 					</div>
 					<ul className="space-y-2 text-sm text-slate-400">
 						<li>
-							<a href="#" className="hover:text-violet-300">
+							<button type="button" className="hover:text-violet-300">
 								Central de ajuda
-							</a>
+							</button>
 						</li>
 						<li>
-							<a href="#" className="hover:text-violet-300">
+							<button type="button" className="hover:text-violet-300">
 								Contato
-							</a>
+							</button>
 						</li>
 						<li>
-							<a href="#" className="hover:text-violet-300">
+							<button type="button" className="hover:text-violet-300">
 								Termos
-							</a>
+							</button>
 						</li>
 						<li>
-							<a href="#" className="hover:text-violet-300">
+							<button type="button" className="hover:text-violet-300">
 								Privacidade
-							</a>
+							</button>
 						</li>
 					</ul>
 				</div>

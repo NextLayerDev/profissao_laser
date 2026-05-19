@@ -156,7 +156,10 @@
 
 .btn-accent {
 	background: #7c3aed;
-	transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+	transition:
+		background 0.2s ease,
+		transform 0.2s ease,
+		box-shadow 0.2s ease;
 }
 .btn-accent:hover {
 	background: #8b5cf6;
@@ -213,16 +216,15 @@
 }
 
 .bg-grid {
-	background-image: linear-gradient(
-			rgba(139, 92, 246, 0.2) 1px,
-			transparent 1px
-		),
+	background-image:
+		linear-gradient(rgba(139, 92, 246, 0.2) 1px, transparent 1px),
 		linear-gradient(90deg, rgba(139, 92, 246, 0.2) 1px, transparent 1px);
 	background-size: 40px 40px;
 }
 
 .hero-img {
-	background: radial-gradient(
+	background:
+		radial-gradient(
 			60% 90% at 30% 60%,
 			rgba(217, 70, 239, 0.4),
 			transparent 60%
@@ -271,7 +273,9 @@
 	height: 0.9em;
 	vertical-align: -0.08em;
 	background: linear-gradient(180deg, #f0abfc, #7c3aed);
-	box-shadow: 0 0 12px #c084fc, 0 0 28px rgba(192, 132, 252, 0.7);
+	box-shadow:
+		0 0 12px #c084fc,
+		0 0 28px rgba(192, 132, 252, 0.7);
 	animation: blink 0.8s steps(2, end) infinite;
 	margin-left: 2px;
 }
@@ -326,11 +330,13 @@
 @keyframes aura {
 	0%,
 	100% {
-		box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.3),
+		box-shadow:
+			0 0 0 0 rgba(124, 58, 237, 0.3),
 			0 20px 50px -10px rgba(124, 58, 237, 0.45);
 	}
 	50% {
-		box-shadow: 0 0 0 18px rgba(124, 58, 237, 0),
+		box-shadow:
+			0 0 0 18px rgba(124, 58, 237, 0),
 			0 24px 60px -10px rgba(124, 58, 237, 0.55);
 	}
 }
@@ -398,7 +404,9 @@
 .mini-chat .b3 {
 	opacity: 0;
 	transform: translateY(4px);
-	transition: opacity 0.25s ease, transform 0.25s ease;
+	transition:
+		opacity 0.25s ease,
+		transform 0.25s ease;
 }
 .group:hover .mini-chat .b1 {
 	opacity: 1;
@@ -467,7 +475,9 @@
 .mini-pulse .ring {
 	transform: scale(0.6);
 	opacity: 0;
-	transition: transform 1.2s ease, opacity 1.2s ease;
+	transition:
+		transform 1.2s ease,
+		opacity 1.2s ease;
 }
 .group:hover .mini-pulse .r1 {
 	transform: scale(1.6);
@@ -488,7 +498,9 @@
 .mini-spark .star {
 	transform: scale(0.5) rotate(0deg);
 	opacity: 0;
-	transition: transform 0.5s ease, opacity 0.5s ease;
+	transition:
+		transform 0.5s ease,
+		opacity 0.5s ease;
 }
 .group:hover .mini-spark .s1 {
 	transform: scale(1) rotate(15deg);
@@ -509,7 +521,9 @@
 .mini-cart .item {
 	transform: translateY(8px);
 	opacity: 0;
-	transition: transform 0.4s ease, opacity 0.4s ease;
+	transition:
+		transform 0.4s ease,
+		opacity 0.4s ease;
 }
 .group:hover .mini-cart .i1 {
 	transform: none;
@@ -542,7 +556,9 @@
 }
 
 .mini-network .node {
-	transition: transform 0.5s ease, opacity 0.5s ease;
+	transition:
+		transform 0.5s ease,
+		opacity 0.5s ease;
 	opacity: 0.5;
 }
 .group:hover .mini-network .node {
@@ -602,7 +618,9 @@
 
 .mini-radio .wave {
 	transform-origin: left center;
-	transition: transform 0.5s ease, opacity 0.5s ease;
+	transition:
+		transform 0.5s ease,
+		opacity 0.5s ease;
 	opacity: 0.4;
 }
 .group:hover .mini-radio .w1 {
@@ -631,8 +649,12 @@
 }
 
 @keyframes shimmer {
-	0% { background-position: 200% center; }
-	100% { background-position: -200% center; }
+	0% {
+		background-position: 200% center;
+	}
+	100% {
+		background-position: -200% center;
+	}
 }
 
 /* ═══ End landing styles ════════════════════════════════════════════════════ */

@@ -31,20 +31,18 @@ function VideoPlayerPlaceholder() {
 
 			{/* Speaker silhouette */}
 			<div className="absolute bottom-0 right-0 w-[55%] h-[78%]">
-				<svg viewBox="0 0 320 320" className="w-full h-full opacity-90">
+				<svg
+					aria-hidden="true"
+					viewBox="0 0 320 320"
+					className="w-full h-full opacity-90"
+				>
 					<defs>
 						<radialGradient id="speakerBg" cx="0.5" cy="0.4" r="0.6">
 							<stop offset="0" stopColor="#7c3aed" stopOpacity="0.4" />
 							<stop offset="1" stopColor="#000" stopOpacity="0" />
 						</radialGradient>
 					</defs>
-					<rect
-						x="0"
-						y="0"
-						width="320"
-						height="320"
-						fill="url(#speakerBg)"
-					/>
+					<rect x="0" y="0" width="320" height="320" fill="url(#speakerBg)" />
 					<ellipse cx="170" cy="120" rx="38" ry="44" fill="#1a1535" />
 					<path
 						d="M70 320 C 80 230, 130 200, 170 200 C 210 200, 260 230, 270 320 Z"

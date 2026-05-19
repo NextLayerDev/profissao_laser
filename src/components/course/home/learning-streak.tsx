@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { Check, Flame, Star, Trophy, X } from 'lucide-react';
-import { useStreak } from '@/hooks/use-gamification';
+import { useState } from 'react';
 import { ModalOverlay } from '@/components/ui/modal-overlay';
+import { useStreak } from '@/hooks/use-gamification';
 import type { StreakDay } from '@/types/gamification';
 
 function getMotivationalMessage(streak: number) {
@@ -21,13 +21,7 @@ function isToday(dateStr: string) {
 	return dateStr === `${y}-${m}-${d}`;
 }
 
-function DayCircle({
-	day,
-	large,
-}: {
-	day: StreakDay;
-	large?: boolean;
-}) {
+function DayCircle({ day, large }: { day: StreakDay; large?: boolean }) {
 	const today = isToday(day.date);
 	const size = large ? 'w-10 h-10' : 'w-8 h-8';
 	const iconSize = large ? 'w-4 h-4' : 'w-3.5 h-3.5';
@@ -89,7 +83,8 @@ function StreakDetailModal({
 	weekMap: StreakDay[];
 	onClose: () => void;
 }) {
-	const progressPct = bestStreak > 0 ? Math.min((currentStreak / bestStreak) * 100, 100) : 0;
+	const progressPct =
+		bestStreak > 0 ? Math.min((currentStreak / bestStreak) * 100, 100) : 0;
 
 	return (
 		<ModalOverlay onClose={onClose}>

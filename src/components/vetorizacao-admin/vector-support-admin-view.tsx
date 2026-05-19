@@ -1,13 +1,6 @@
 'use client';
 
-import {
-	CheckCircle,
-	Clock,
-	Loader2,
-	MessageSquare,
-	Search,
-	XCircle,
-} from 'lucide-react';
+import { Clock, Loader2, MessageSquare, Search, XCircle } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -16,7 +9,6 @@ import {
 	useVectorSupportTicket,
 	useVectorSupportTicketsAdmin,
 } from '@/hooks/use-vector-support';
-import type { VectorSupportTicket } from '@/types/vector-support';
 import { VectorSupportChat } from './vector-support-chat';
 
 type StatusFilter = 'all' | 'open' | 'closed';

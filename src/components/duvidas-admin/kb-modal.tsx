@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronRight, Loader2, Play, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useCourseContent } from '@/hooks/use-course-content';
 import { useProducts } from '@/hooks/use-products';
 import type { CreateKnowledgeBasePayload } from '@/services/knowledge-base';
@@ -50,10 +50,14 @@ function LessonPicker({
 		<div className="space-y-3">
 			{/* Step 1: Select product/course */}
 			<div>
-				<label className="text-xs font-medium text-slate-500 dark:text-gray-400 mb-1 block">
+				<label
+					htmlFor="kb-course"
+					className="text-xs font-medium text-slate-500 dark:text-gray-400 mb-1 block"
+				>
 					Curso
 				</label>
 				<select
+					id="kb-course"
 					value={selectedProductId ?? ''}
 					onChange={(e) => setSelectedProductId(e.target.value || null)}
 					className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-lg text-slate-900 dark:text-white text-sm focus:border-violet-500 focus:outline-none"
@@ -70,9 +74,9 @@ function LessonPicker({
 			{/* Step 2: Select lesson */}
 			{selectedProductId && (
 				<div>
-					<label className="text-xs font-medium text-slate-500 dark:text-gray-400 mb-1 block">
+					<span className="text-xs font-medium text-slate-500 dark:text-gray-400 mb-1 block">
 						Aula
-					</label>
+					</span>
 					{modulesLoading ? (
 						<div className="flex items-center gap-2 py-3 text-slate-500">
 							<Loader2 className="w-4 h-4 animate-spin" />
@@ -88,7 +92,7 @@ function LessonPicker({
 								<button
 									key={lesson.id}
 									type="button"
-									onClick={() => onChange(lesson.videoUrl!, lesson.title)}
+									onClick={() => onChange(lesson.videoUrl ?? '', lesson.title)}
 									className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-sm transition-colors ${
 										value === lesson.videoUrl
 											? 'bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400'
@@ -207,9 +211,9 @@ export function KBModal({ editing, nextOrder, onClose, onSave }: KBModalProps) {
 				<div className="p-5 space-y-4">
 					{/* Tipo */}
 					<div>
-						<label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
+						<span className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
 							Tipo
-						</label>
+						</span>
 						<div className="flex gap-2">
 							{(['article', 'video'] as const).map((t) => (
 								<button
@@ -249,9 +253,9 @@ export function KBModal({ editing, nextOrder, onClose, onSave }: KBModalProps) {
 					{/* Selecionar vídeo do curso (só para vídeo) */}
 					{type === 'video' && (
 						<div>
-							<label className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
+							<span className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
 								Selecionar aula
-							</label>
+							</span>
 							<LessonPicker value={videoUrl} onChange={handleLessonSelected} />
 						</div>
 					)}

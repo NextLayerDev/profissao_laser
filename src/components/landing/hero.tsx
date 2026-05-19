@@ -1,9 +1,9 @@
 'use client';
 
-import { useCountUp, fmtNumber, useMagnetic } from '@/hooks/use-landing';
-import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 import { ArrowRight, Play, Zap } from 'lucide-react';
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
+import { fmtNumber, useCountUp, useMagnetic } from '@/hooks/use-landing';
+import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
@@ -12,6 +12,7 @@ function HeroImage() {
 		<div className="relative h-full w-full overflow-hidden hero-img rounded-2xl border border-violet-500/10 isolate">
 			<div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/60 to-transparent z-10" />
 			<svg
+				aria-hidden="true"
 				viewBox="0 0 600 700"
 				preserveAspectRatio="xMidYMid slice"
 				className="absolute inset-0 w-full h-full"
@@ -37,20 +38,8 @@ function HeroImage() {
 					</linearGradient>
 				</defs>
 				<g transform="skewY(-6) translate(0, 320)">
-					<rect
-						x="0"
-						y="0"
-						width="600"
-						height="380"
-						fill="rgba(15,5,30,0.7)"
-					/>
-					<rect
-						x="0"
-						y="0"
-						width="600"
-						height="380"
-						fill="url(#hex)"
-					/>
+					<rect x="0" y="0" width="600" height="380" fill="rgba(15,5,30,0.7)" />
+					<rect x="0" y="0" width="600" height="380" fill="url(#hex)" />
 				</g>
 				<ellipse cx="380" cy="320" rx="290" ry="220" fill="url(#glow)" />
 				<g transform="translate(370, 70)">
@@ -356,9 +345,7 @@ function AvatarsAndStats() {
 				<div className="text-white text-sm font-bold">
 					{fmtNumber(n, { prefix: '+' })} membros ativos
 				</div>
-				<div className="text-slate-500 text-xs">
-					e crescendo todos os dias
-				</div>
+				<div className="text-slate-500 text-xs">e crescendo todos os dias</div>
 			</div>
 		</div>
 	);
@@ -387,8 +374,8 @@ export function Hero() {
 				<div className="grid grid-cols-1 lg:grid-cols-[1.05fr_1fr] gap-10 items-center">
 					<div className="animate-fade-in-up">
 						<div className="inline-flex items-center gap-2 bg-violet-500/10 border border-violet-500/30 text-violet-200 text-[11px] font-semibold uppercase tracking-[0.16em] px-3 py-1.5 rounded-full mb-6">
-							<Zap size={13} className="text-violet-300" />A maior comunidade
-							de laser do Brasil
+							<Zap size={13} className="text-violet-300" />A maior comunidade de
+							laser do Brasil
 						</div>
 
 						<EngravedHeadline />
@@ -417,10 +404,7 @@ export function Hero() {
 								className="inline-flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] text-white font-semibold px-5 py-3.5 rounded-xl border border-violet-500/15 hover:border-violet-500/40 transition-colors"
 							>
 								<span className="btn-accent w-7 h-7 grid place-items-center rounded-full">
-									<Play
-										size={11}
-										className="text-white translate-x-px"
-									/>
+									<Play size={11} className="text-white translate-x-px" />
 								</span>
 								ASSISTIR AO VÍDEO
 							</a>

@@ -23,7 +23,10 @@ function Logo({ size = 28 }: { size?: number }) {
 					width={size - 4}
 					height={size - 4}
 					fill="none"
+					role="img"
+					aria-label="Profissão Laser"
 				>
+					<title>Profissão Laser</title>
 					<path
 						d="M16 2l2.3 6.7 6.9.5-5.3 4.5 1.8 6.8L16 17l-5.7 3.5 1.8-6.8-5.3-4.5 6.9-.5z"
 						fill="#fff"

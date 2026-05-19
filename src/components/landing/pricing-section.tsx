@@ -1,8 +1,8 @@
 'use client';
 
-import { useTween } from '@/hooks/use-landing';
 import { Check, Shield } from 'lucide-react';
 import { useState } from 'react';
+import { useTween } from '@/hooks/use-landing';
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -181,9 +181,7 @@ function PricingCard({
 					</span>
 					<span className="text-slate-400 text-base font-bold">/mês</span>
 				</div>
-				<div className="text-slate-500 text-xs mt-1.5 font-mono">
-					{subline}
-				</div>
+				<div className="text-slate-500 text-xs mt-1.5 font-mono">{subline}</div>
 			</div>
 
 			<div className="relative border-t border-violet-500/10 pt-5 mb-5 flex-1">
@@ -202,9 +200,7 @@ function PricingCard({
 							>
 								<Check
 									size={10}
-									className={
-										p.featured ? 'text-violet-200' : 'text-violet-400'
-									}
+									className={p.featured ? 'text-violet-200' : 'text-violet-400'}
 								/>
 							</div>
 							<span className="text-slate-200 text-[13.5px] leading-snug">
@@ -239,8 +235,7 @@ export function PricingSection() {
 			<div className="max-w-7xl mx-auto">
 				<div className="text-center mb-8">
 					<h2 className="font-display text-3xl md:text-[2.5rem] font-black text-white tracking-tight">
-						Escolha o plano{' '}
-						<span className="grad-brand">ideal para você</span>
+						Escolha o plano <span className="grad-brand">ideal para você</span>
 					</h2>
 				</div>
 

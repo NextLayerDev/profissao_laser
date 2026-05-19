@@ -116,7 +116,11 @@ export function DoubtsClientView({
 								<DoubtChatView
 									chat={selectedChat}
 									customerName={customerName}
-									onSendMessage={selectedChat.status === 'pending' ? handleSendMessage : undefined}
+									onSendMessage={
+										selectedChat.status === 'pending'
+											? handleSendMessage
+											: undefined
+									}
 								/>
 							) : null}
 						</div>

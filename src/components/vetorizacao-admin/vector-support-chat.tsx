@@ -103,6 +103,7 @@ export function VectorSupportChat({
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: scroll to bottom whenever messages change
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
 	}, [ticket.messages]);

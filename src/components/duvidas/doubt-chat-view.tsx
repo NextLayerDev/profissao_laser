@@ -27,7 +27,10 @@ function formatDate(iso: string) {
 function MessageBubble({
 	msg,
 	isAdmin = false,
-}: { msg: ChatMessage; isAdmin?: boolean }) {
+}: {
+	msg: ChatMessage;
+	isAdmin?: boolean;
+}) {
 	const isOwnMessage = isAdmin ? msg.isTechnician : !msg.isTechnician;
 
 	return (
@@ -89,6 +92,7 @@ export function DoubtChatView({
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: scroll to bottom whenever messages change
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
 	}, [chat.messages]);

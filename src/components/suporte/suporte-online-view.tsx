@@ -5,7 +5,6 @@ import {
 	BookOpen,
 	ChevronRight,
 	Clock,
-	ExternalLink,
 	FileText,
 	Headphones,
 	HelpCircle,
@@ -102,7 +101,7 @@ function VideoPlayer({
 	article: KnowledgeBaseArticle;
 	onClose: () => void;
 }) {
-	const videoUrl = article.videoUrl!;
+	const videoUrl = article.videoUrl ?? '';
 	const vType = getVideoType(videoUrl);
 	const embedUrl = getEmbedUrl(videoUrl);
 
@@ -531,9 +530,7 @@ export function SuporteOnlineView({
 										key={article.id}
 										type="button"
 										onClick={() =>
-											article.videoUrl
-												? setPlayingVideo(article)
-												: undefined
+											article.videoUrl ? setPlayingVideo(article) : undefined
 										}
 										className="group flex flex-col rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] hover:border-violet-500/30 transition-all cursor-pointer text-left overflow-hidden"
 									>
@@ -794,7 +791,11 @@ export function SuporteOnlineView({
 							<DoubtChatView
 								chat={selectedChat}
 								customerName={customerName}
-								onSendMessage={selectedChat.status === 'pending' ? handleSendChatMessage : undefined}
+								onSendMessage={
+									selectedChat.status === 'pending'
+										? handleSendChatMessage
+										: undefined
+								}
 							/>
 						</div>
 					</div>
@@ -811,7 +812,7 @@ export function SuporteOnlineView({
 			/>
 
 			{/* ── Video player modal ─────────────────────────────────────────── */}
-			{playingVideo && playingVideo.videoUrl && (
+			{playingVideo?.videoUrl && (
 				<VideoPlayer
 					article={playingVideo}
 					onClose={() => setPlayingVideo(null)}
