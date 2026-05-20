@@ -86,7 +86,7 @@ const EMPTY_FORM: CreateParameterPayload = {
 	power: 0,
 	frequency: 0,
 	line: 0,
-	crossHatch: 0,
+	crossHatch: false,
 	angle: 0,
 	passes: 1,
 	passesFill: 1,
@@ -564,7 +564,7 @@ export function ParametrosAdminView() {
 						power: editTarget.power,
 						frequency: editTarget.frequency,
 						line: editTarget.line ?? 0,
-						crossHatch: editTarget.crossHatch ?? 0,
+						crossHatch: editTarget.crossHatch ?? false,
 						angle: editTarget.angle ?? 0,
 						passes: editTarget.passes,
 						passesFill: editTarget.passesFill ?? 1,
@@ -832,13 +832,14 @@ function ParameterFormModal({
 						</div>
 						<div>
 							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-								Defocus (0-20)
+								Defocus (-20 a 20 mm)
 							</span>
 							<input
 								type="number"
-								min={0}
+								min={-20}
 								max={20}
 								step="any"
+								placeholder="Negativo = pra baixo, positivo = pra cima"
 								className={inputCls}
 								value={form.defocus ?? ''}
 								onChange={(e) =>
@@ -881,17 +882,19 @@ function ParameterFormModal({
 						</div>
 						<div>
 							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-								CrossHatch (0-100) *
+								Preenchimento Cruzado
 							</span>
-							<input
-								required
-								type="number"
-								min={0}
-								max={100}
-								className={inputCls}
-								value={form.crossHatch ?? ''}
-								onChange={(e) => set('crossHatch', Number(e.target.value))}
-							/>
+							<label className="flex items-center gap-2 cursor-pointer py-2">
+								<input
+									type="checkbox"
+									checked={!!form.crossHatch}
+									onChange={(e) => set('crossHatch', e.target.checked)}
+									className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+								/>
+								<span className="text-sm text-slate-600 dark:text-slate-400">
+									Cross-hatch ativo
+								</span>
+							</label>
 						</div>
 					</div>
 

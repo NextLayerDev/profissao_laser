@@ -51,7 +51,7 @@ export interface CreateParameterPayload {
 	power: number;
 	frequency: number;
 	line: number;
-	crossHatch: number;
+	crossHatch: boolean;
 	angle: number;
 	passes: number;
 	passesFill: number;
