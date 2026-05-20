@@ -102,15 +102,15 @@ function ModuleModal({
 
 	return (
 		<div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-700 rounded-xl shadow-2xl w-full max-w-md">
-				<div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-gray-700">
+			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl w-full max-w-md">
+				<div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-white/10">
 					<h3 className="text-lg font-bold text-slate-900 dark:text-white">
 						{editing ? 'Editar módulo' : 'Novo módulo'}
 					</h3>
 					<button
 						type="button"
 						onClick={onClose}
-						className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+						className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/8 rounded-lg transition-colors"
 					>
 						<X className="w-4 h-4 text-slate-500 dark:text-gray-400" />
 					</button>
@@ -130,7 +130,7 @@ function ModuleModal({
 							value={form.title}
 							onChange={(e) => setForm({ ...form, title: e.target.value })}
 							placeholder="Ex: Introdução ao curso"
-							className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none"
+							className="w-full px-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none"
 						/>
 					</div>
 
@@ -149,16 +149,16 @@ function ModuleModal({
 							}
 							rows={3}
 							placeholder="Descrição do módulo..."
-							className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 focus:border-violet-500 focus:outline-none resize-none"
+							className="w-full px-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 focus:border-violet-500 focus:outline-none resize-none"
 						/>
 					</div>
 				</div>
 
-				<div className="flex justify-end gap-3 p-5 border-t border-slate-200 dark:border-gray-700">
+				<div className="flex justify-end gap-3 p-5 border-t border-slate-200 dark:border-white/10">
 					<button
 						type="button"
 						onClick={onClose}
-						className="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors text-sm"
+						className="px-4 py-2 border border-slate-300 dark:border-white/10 rounded-lg text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/8 transition-colors text-sm"
 					>
 						Cancelar
 					</button>
@@ -327,15 +327,15 @@ function LessonModal({
 
 	return (
 		<div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-700 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col">
-				<div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-gray-700 shrink-0">
+			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col">
+				<div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-white/10 shrink-0">
 					<h3 className="text-lg font-bold text-slate-900 dark:text-white">
 						{editing ? 'Editar aula' : 'Nova aula'}
 					</h3>
 					<button
 						type="button"
 						onClick={onClose}
-						className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+						className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/8 rounded-lg transition-colors"
 					>
 						<X className="w-4 h-4 text-slate-500 dark:text-gray-400" />
 					</button>
@@ -355,7 +355,7 @@ function LessonModal({
 							value={form.title}
 							onChange={(e) => setForm({ ...form, title: e.target.value })}
 							placeholder="Ex: Introdução ao módulo"
-							className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none"
+							className="w-full px-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none"
 						/>
 					</div>
 
@@ -374,7 +374,7 @@ function LessonModal({
 							}
 							rows={2}
 							placeholder="Descrição da aula..."
-							className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 focus:border-violet-500 focus:outline-none resize-none"
+							className="w-full px-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 focus:border-violet-500 focus:outline-none resize-none"
 						/>
 					</div>
 
@@ -390,7 +390,7 @@ function LessonModal({
 								className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
 									videoMode === 'file'
 										? 'bg-violet-600 text-white'
-										: 'bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-400 hover:border-slate-300 dark:hover:border-gray-600'
+										: 'bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-400 hover:border-slate-300 dark:hover:border-gray-600'
 								}`}
 							>
 								<UploadCloud className="w-3.5 h-3.5" />
@@ -402,7 +402,7 @@ function LessonModal({
 								className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
 									videoMode === 'url'
 										? 'bg-violet-600 text-white'
-										: 'bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-400 hover:border-slate-300 dark:hover:border-gray-600'
+										: 'bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-400 hover:border-slate-300 dark:hover:border-gray-600'
 								}`}
 							>
 								<Link2 className="w-3.5 h-3.5" />
@@ -416,14 +416,14 @@ function LessonModal({
 								value={form.videoUrl}
 								onChange={(e) => setForm({ ...form, videoUrl: e.target.value })}
 								placeholder="https://..."
-								className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none"
+								className="w-full px-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none"
 							/>
 						) : (
 							<div>
 								<button
 									type="button"
 									onClick={() => videoInputRef.current?.click()}
-									className="w-full border-2 border-dashed border-slate-300 dark:border-gray-700 hover:border-violet-500/50 rounded-xl py-5 flex flex-col items-center gap-2 text-slate-600 dark:text-gray-500 hover:text-violet-400 transition-colors"
+									className="w-full border-2 border-dashed border-slate-300 dark:border-white/10 hover:border-violet-500/50 rounded-xl py-5 flex flex-col items-center gap-2 text-slate-600 dark:text-gray-500 hover:text-violet-400 transition-colors"
 								>
 									<UploadCloud className="w-6 h-6" />
 									<span className="text-sm">
@@ -456,7 +456,7 @@ function LessonModal({
 						<button
 							type="button"
 							onClick={() => materialInputRef.current?.click()}
-							className="w-full border-2 border-dashed border-slate-300 dark:border-gray-700 hover:border-amber-500/50 rounded-xl py-4 flex flex-col items-center gap-2 text-slate-600 dark:text-gray-500 hover:text-amber-400 transition-colors"
+							className="w-full border-2 border-dashed border-slate-300 dark:border-white/10 hover:border-amber-500/50 rounded-xl py-4 flex flex-col items-center gap-2 text-slate-600 dark:text-gray-500 hover:text-amber-400 transition-colors"
 						>
 							<Paperclip className="w-5 h-5" />
 							<span className="text-sm">Adicionar PDF ou Word</span>
@@ -478,7 +478,7 @@ function LessonModal({
 								{materialFiles.map((f, i) => (
 									<li
 										key={`${f.name}-${i}`}
-										className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-800 rounded-lg"
+										className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-gray-800 rounded-lg"
 									>
 										<FileText className="w-4 h-4 text-amber-400 shrink-0" />
 										<span className="flex-1 text-xs text-slate-700 dark:text-gray-300 truncate">
@@ -519,7 +519,7 @@ function LessonModal({
 									duration: parseInt(e.target.value, 10) || 1,
 								})
 							}
-							className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-lg text-slate-900 dark:text-white focus:border-violet-500 focus:outline-none"
+							className="w-full px-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-slate-900 dark:text-white focus:border-violet-500 focus:outline-none"
 						/>
 					</div>
 				</div>
@@ -530,7 +530,7 @@ function LessonModal({
 							<span>Enviando vídeo...</span>
 							<span>{uploadProgress}%</span>
 						</div>
-						<div className="w-full bg-slate-200 dark:bg-gray-700 rounded-full h-1.5">
+						<div className="w-full bg-slate-200 dark:bg-white/10 rounded-full h-1.5">
 							<div
 								className="bg-violet-500 h-1.5 rounded-full transition-all duration-300"
 								style={{ width: `${uploadProgress}%` }}
@@ -538,11 +538,11 @@ function LessonModal({
 						</div>
 					</div>
 				)}
-				<div className="flex justify-end gap-3 p-5 border-t border-slate-200 dark:border-gray-700 shrink-0">
+				<div className="flex justify-end gap-3 p-5 border-t border-slate-200 dark:border-white/10 shrink-0">
 					<button
 						type="button"
 						onClick={onClose}
-						className="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors text-sm"
+						className="px-4 py-2 border border-slate-300 dark:border-white/10 rounded-lg text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/8 transition-colors text-sm"
 					>
 						Cancelar
 					</button>
@@ -710,7 +710,7 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 					<Loader2 className="w-8 h-8 animate-spin text-violet-500" />
 				</div>
 			) : sortedModules.length === 0 ? (
-				<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-xl p-12 text-center">
+				<div className="bg-white/60 dark:bg-white/[0.04] backdrop-blur-sm border border-slate-200/80 dark:border-white/8 rounded-xl p-12 text-center">
 					<p className="text-slate-600 dark:text-gray-400 mb-4">
 						Nenhum módulo cadastrado
 					</p>
@@ -733,7 +733,7 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 						return (
 							<div
 								key={mod.id}
-								className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-xl overflow-hidden"
+								className="bg-white/60 dark:bg-white/[0.04] backdrop-blur-sm border border-slate-200/80 dark:border-white/8 rounded-xl overflow-hidden"
 							>
 								{/* Module Header */}
 								<div className="flex items-center gap-2 px-3 py-3">
@@ -743,7 +743,7 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 											type="button"
 											onClick={() => moveModule(modIdx, -1)}
 											disabled={modIdx === 0 || reorderModules.isPending}
-											className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-20"
+											className="p-1 hover:bg-slate-100 dark:hover:bg-white/8 rounded transition-colors disabled:opacity-20"
 										>
 											<MoveUp className="w-3 h-3 text-slate-500 dark:text-gray-400" />
 										</button>
@@ -754,7 +754,7 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 												modIdx === sortedModules.length - 1 ||
 												reorderModules.isPending
 											}
-											className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-20"
+											className="p-1 hover:bg-slate-100 dark:hover:bg-white/8 rounded transition-colors disabled:opacity-20"
 										>
 											<MoveDown className="w-3 h-3 text-slate-500 dark:text-gray-400" />
 										</button>
@@ -763,7 +763,7 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 									<button
 										type="button"
 										onClick={() => toggleModule(mod.id)}
-										className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors"
+										className="p-1 hover:bg-slate-100 dark:hover:bg-white/8 rounded transition-colors"
 									>
 										{isExpanded ? (
 											<ChevronDown className="w-4 h-4 text-slate-500 dark:text-gray-400" />
@@ -805,7 +805,7 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 											onClick={() =>
 												setModuleModal({ open: true, editing: mod })
 											}
-											className="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+											className="p-2 hover:bg-slate-100 dark:hover:bg-white/8 rounded-lg transition-colors"
 										>
 											<Edit className="w-4 h-4 text-slate-500 dark:text-gray-400" />
 										</button>
@@ -862,7 +862,7 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 																disabled={
 																	lessonIdx === 0 || reorderLessons.isPending
 																}
-																className="p-0.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-20"
+																className="p-0.5 hover:bg-slate-100 dark:hover:bg-white/8 rounded transition-colors disabled:opacity-20"
 															>
 																<MoveUp className="w-3 h-3 text-slate-500 dark:text-gray-400" />
 															</button>
@@ -875,7 +875,7 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 																	lessonIdx === lessons.length - 1 ||
 																	reorderLessons.isPending
 																}
-																className="p-0.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-20"
+																className="p-0.5 hover:bg-slate-100 dark:hover:bg-white/8 rounded transition-colors disabled:opacity-20"
 															>
 																<MoveDown className="w-3 h-3 text-slate-500 dark:text-gray-400" />
 															</button>
@@ -947,7 +947,7 @@ export function CourseContentSection({ product }: CourseContentSectionProps) {
 																		editing: lesson,
 																	})
 																}
-																className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+																className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/8 rounded-lg transition-colors"
 															>
 																<Edit className="w-3.5 h-3.5 text-slate-500 dark:text-gray-400" />
 															</button>

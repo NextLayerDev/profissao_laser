@@ -27,26 +27,35 @@ export function VersionSelector({
 	const router = useRouter();
 
 	return (
-		<div className="flex items-center gap-2">
-			{versions.length > 1 && (
-				<select
-					value={currentId}
-					onChange={(e) => router.push(`/products/${e.target.value}`)}
-					className="bg-slate-100 dark:bg-[#252528] text-xs px-3 py-1.5 rounded-full text-slate-600 dark:text-gray-300 border border-slate-200 dark:border-gray-800 focus:outline-none focus:ring-1 focus:ring-violet-500"
-				>
-					{versions.map((v, i) => (
-						<option key={v.id} value={v.id}>
-							{versionLabel(v, i)}
-						</option>
-					))}
-				</select>
-			)}
+		<div className="flex items-center gap-1.5 flex-wrap">
+			{versions.length > 1 &&
+				versions.map((v, i) => {
+					const isActive = v.id === currentId;
+					const shortLabel =
+						[v.machine, v.software].filter(Boolean).join(' · ') ||
+						`Versão ${i + 1}`;
+					return (
+						<button
+							key={v.id}
+							type="button"
+							title={versionLabel(v, i)}
+							onClick={() => router.push(`/products/${v.id}`)}
+							className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${
+								isActive
+									? 'bg-violet-600 text-white shadow-sm shadow-violet-500/30 ring-2 ring-violet-400/30'
+									: 'bg-slate-100 dark:bg-white/8 text-slate-500 dark:text-gray-400 border border-slate-200 dark:border-white/10 hover:border-violet-400/50 dark:hover:border-violet-500/40 hover:text-violet-600 dark:hover:text-violet-400'
+							}`}
+						>
+							{shortLabel}
+						</button>
+					);
+				})}
 			<button
 				type="button"
 				onClick={onNewVersion}
-				className="flex items-center gap-1.5 bg-slate-100 dark:bg-[#252528] text-xs px-3 py-1.5 rounded-full text-slate-600 dark:text-gray-300 hover:text-violet-500 transition-colors"
+				className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-full text-slate-500 dark:text-gray-500 border border-dashed border-slate-300 dark:border-white/15 hover:text-violet-500 dark:hover:text-violet-400 hover:border-violet-400/50 dark:hover:border-violet-500/40 transition-colors"
 			>
-				<Plus className="w-3.5 h-3.5" />
+				<Plus className="w-3 h-3" />
 				Nova versão
 			</button>
 		</div>

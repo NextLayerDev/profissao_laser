@@ -42,7 +42,7 @@ export function ProductCard({
 		<>
 			<Link
 				href={`/products/${product.id}`}
-				className={`bg-white dark:bg-[#1a1a1d] rounded-2xl overflow-hidden border border-slate-200 ${scBorder} ${scBorderHover} transition-all duration-300 hover:scale-[1.02] block shadow-sm dark:shadow-none`}
+				className={`bg-white/70 dark:bg-white/[0.04] backdrop-blur-sm rounded-2xl overflow-hidden border border-slate-200/80 ${scBorder} ${scBorderHover} transition-all duration-300 hover:scale-[1.02] block shadow-sm dark:shadow-none`}
 			>
 				<div className="relative h-44 bg-linear-to-br from-violet-600 via-purple-600 to-fuchsia-500 flex items-center justify-center">
 					{product.image && !imgError ? (
@@ -121,7 +121,7 @@ export function ProductCard({
 						{product.description}
 					</p>
 
-					<div className="border-t border-slate-200 dark:border-gray-800 pt-4">
+					<div className="border-t border-slate-200 dark:border-white/8 pt-4">
 						<div className="flex items-center justify-between">
 							{canPrice ? (
 								<div className="text-sm">

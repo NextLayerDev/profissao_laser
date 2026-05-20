@@ -93,15 +93,15 @@ export function CreatePromoLinkModal({
 				<span className="sr-only">Fechar modal</span>
 			</button>
 
-			<div className="relative bg-[#1a1a1d] border border-gray-800 rounded-2xl w-full max-w-lg mx-4 p-6 shadow-2xl">
+			<div className="relative bg-white/80 dark:bg-white/[0.06] backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl w-full max-w-lg mx-4 p-6 shadow-2xl">
 				<div className="flex items-center justify-between mb-6">
-					<h2 className="text-xl font-bold">
+					<h2 className="text-xl font-bold text-slate-900 dark:text-white">
 						{result ? 'Link promocional gerado!' : 'Gerar Link Promocional'}
 					</h2>
 					<button
 						type="button"
 						onClick={handleClose}
-						className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-[#252528]"
+						className="p-2 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-white/8"
 					>
 						<X className="w-5 h-5" />
 					</button>
@@ -123,7 +123,7 @@ export function CreatePromoLinkModal({
 								<div>
 									<label
 										htmlFor="promo-discount"
-										className="block text-sm font-medium text-gray-300 mb-2"
+										className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2"
 									>
 										Desconto (%)
 									</label>
@@ -135,13 +135,13 @@ export function CreatePromoLinkModal({
 										value={discountPercent}
 										onChange={(e) => setDiscountPercent(e.target.value)}
 										placeholder="Ex: 50"
-										className="w-full bg-[#0d0d0f] border border-gray-700 rounded-xl px-4 py-3 text-sm placeholder:text-gray-500 focus:outline-none focus:border-violet-500/50 transition-colors"
+										className="w-full bg-white dark:bg-black/30 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500/70 transition-colors"
 									/>
 								</div>
 								<div>
 									<label
 										htmlFor="promo-duration"
-										className="block text-sm font-medium text-gray-300 mb-2"
+										className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2"
 									>
 										Duração (meses)
 									</label>
@@ -152,7 +152,7 @@ export function CreatePromoLinkModal({
 										value={durationMonths}
 										onChange={(e) => setDurationMonths(e.target.value)}
 										placeholder="Ex: 6"
-										className="w-full bg-[#0d0d0f] border border-gray-700 rounded-xl px-4 py-3 text-sm placeholder:text-gray-500 focus:outline-none focus:border-violet-500/50 transition-colors"
+										className="w-full bg-white dark:bg-black/30 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500/70 transition-colors"
 									/>
 								</div>
 							</div>
@@ -160,7 +160,7 @@ export function CreatePromoLinkModal({
 							<div>
 								<label
 									htmlFor="promo-max-redemptions"
-									className="block text-sm font-medium text-gray-300 mb-2"
+									className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2"
 								>
 									Máximo de usos
 								</label>
@@ -171,24 +171,26 @@ export function CreatePromoLinkModal({
 									value={maxRedemptions}
 									onChange={(e) => setMaxRedemptions(e.target.value)}
 									placeholder="Ex: 20"
-									className="w-full bg-[#0d0d0f] border border-gray-700 rounded-xl px-4 py-3 text-sm placeholder:text-gray-500 focus:outline-none focus:border-violet-500/50 transition-colors"
+									className="w-full bg-white dark:bg-black/30 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500/70 transition-colors"
 								/>
 							</div>
 
 							<div>
 								<label
 									htmlFor="promo-expires-at"
-									className="block text-sm font-medium text-gray-300 mb-2"
+									className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2"
 								>
 									Data de expiração{' '}
-									<span className="text-gray-500">(opcional)</span>
+									<span className="text-slate-500 dark:text-gray-500">
+										(opcional)
+									</span>
 								</label>
 								<input
 									id="promo-expires-at"
 									type="datetime-local"
 									value={expiresAt}
 									onChange={(e) => setExpiresAt(e.target.value)}
-									className="w-full bg-[#0d0d0f] border border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-violet-500/50 transition-colors"
+									className="w-full bg-white dark:bg-black/30 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500 dark:focus:border-violet-500/70 transition-colors"
 								/>
 							</div>
 						</div>
@@ -197,7 +199,7 @@ export function CreatePromoLinkModal({
 							<button
 								type="button"
 								onClick={handleClose}
-								className="flex-1 px-5 py-3 rounded-xl font-medium text-sm bg-[#252528] hover:bg-[#2a2a2d] transition-colors"
+								className="flex-1 px-5 py-3 rounded-xl font-medium text-sm bg-slate-100 dark:bg-white/8 hover:bg-slate-200 dark:hover:bg-white/12 text-slate-700 dark:text-gray-300 transition-colors"
 							>
 								Cancelar
 							</button>
@@ -231,11 +233,11 @@ export function CreatePromoLinkModal({
 						</div>
 
 						<div>
-							<span className="block text-sm font-medium text-gray-300 mb-2">
+							<span className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
 								Link promocional
 							</span>
 							<div className="flex items-center gap-2">
-								<code className="flex-1 bg-[#0d0d0f] border border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-200 font-mono truncate block">
+								<code className="flex-1 bg-white dark:bg-black/30 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-gray-200 font-mono truncate block">
 									{result.url}
 								</code>
 								<button
@@ -244,7 +246,7 @@ export function CreatePromoLinkModal({
 									className={`shrink-0 p-3 rounded-xl transition-colors ${
 										copied
 											? 'bg-emerald-500/20 text-emerald-400'
-											: 'bg-[#252528] hover:bg-[#2a2a2d] text-gray-400 hover:text-white'
+											: 'bg-slate-100 dark:bg-white/8 hover:bg-slate-200 dark:hover:bg-white/12 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
 									}`}
 									title="Copiar link"
 								>
@@ -259,30 +261,44 @@ export function CreatePromoLinkModal({
 
 						<div className="grid grid-cols-2 gap-4 text-sm">
 							<div>
-								<span className="text-gray-500">Produto:</span>
-								<p className="text-gray-200 mt-0.5">{result.productName}</p>
+								<span className="text-slate-500 dark:text-gray-500">
+									Produto:
+								</span>
+								<p className="text-slate-800 dark:text-gray-200 mt-0.5">
+									{result.productName}
+								</p>
 							</div>
 							<div>
-								<span className="text-gray-500">Desconto:</span>
-								<p className="text-gray-200 mt-0.5">
+								<span className="text-slate-500 dark:text-gray-500">
+									Desconto:
+								</span>
+								<p className="text-slate-800 dark:text-gray-200 mt-0.5">
 									{result.discountPercent}%
 								</p>
 							</div>
 							<div>
-								<span className="text-gray-500">Máx. usos:</span>
-								<p className="text-gray-200 mt-0.5">{result.maxRedemptions}</p>
+								<span className="text-slate-500 dark:text-gray-500">
+									Máx. usos:
+								</span>
+								<p className="text-slate-800 dark:text-gray-200 mt-0.5">
+									{result.maxRedemptions}
+								</p>
 							</div>
 							<div>
-								<span className="text-gray-500">Duração:</span>
-								<p className="text-gray-200 mt-0.5">
+								<span className="text-slate-500 dark:text-gray-500">
+									Duração:
+								</span>
+								<p className="text-slate-800 dark:text-gray-200 mt-0.5">
 									{result.durationMonths}{' '}
 									{result.durationMonths === 1 ? 'mês' : 'meses'}
 								</p>
 							</div>
 							{result.expiresAt && (
 								<div className="col-span-2">
-									<span className="text-gray-500">Expira em:</span>
-									<p className="text-gray-200 mt-0.5">
+									<span className="text-slate-500 dark:text-gray-500">
+										Expira em:
+									</span>
+									<p className="text-slate-800 dark:text-gray-200 mt-0.5">
 										{new Date(result.expiresAt).toLocaleDateString('pt-BR', {
 											day: '2-digit',
 											month: '2-digit',
@@ -298,7 +314,7 @@ export function CreatePromoLinkModal({
 						<button
 							type="button"
 							onClick={handleClose}
-							className="w-full px-5 py-3 rounded-xl font-medium text-sm bg-[#252528] hover:bg-[#2a2a2d] transition-colors"
+							className="w-full px-5 py-3 rounded-xl font-medium text-sm bg-slate-100 dark:bg-white/8 hover:bg-slate-200 dark:hover:bg-white/12 text-slate-700 dark:text-gray-300 transition-colors"
 						>
 							Fechar
 						</button>

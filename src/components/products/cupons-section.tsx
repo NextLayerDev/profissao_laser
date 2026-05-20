@@ -101,7 +101,7 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between">
-				<h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+				<h2 className="text-2xl font-bold text-slate-900 dark:text-white">
 					Cupons
 				</h2>
 				<button
@@ -110,16 +110,16 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 						resetForm();
 						setShowModal(true);
 					}}
-					className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors shadow-md"
+					className="flex items-center gap-2 px-6 py-3 bg-violet-600 text-white rounded-lg font-semibold hover:bg-violet-700 transition-colors shadow-md"
 				>
 					<Plus className="h-5 w-5" />
 					Criar cupom
 				</button>
 			</div>
 
-			<div className="bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
-				<div className="p-4 border-b border-slate-200 dark:border-slate-700">
-					<span className="text-sm text-slate-600 dark:text-slate-300">
+			<div className="bg-white/60 dark:bg-white/[0.04] backdrop-blur-sm border border-slate-200/80 dark:border-white/8 rounded-xl overflow-hidden shadow-sm">
+				<div className="p-4 border-b border-slate-200 dark:border-white/10">
+					<span className="text-sm text-slate-600 dark:text-gray-300">
 						Total de {coupons.length} registros
 					</span>
 				</div>
@@ -130,7 +130,7 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 					</div>
 				) : coupons.length === 0 ? (
 					<div className="p-12 text-center">
-						<p className="text-slate-500 dark:text-slate-400">
+						<p className="text-slate-500 dark:text-gray-400">
 							Nenhum cupom cadastrado
 						</p>
 						<button
@@ -139,7 +139,7 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 								resetForm();
 								setShowModal(true);
 							}}
-							className="mt-4 text-purple-600 dark:text-purple-400 font-medium hover:underline"
+							className="mt-4 text-violet-600 dark:text-violet-400 font-medium hover:underline"
 						>
 							Criar primeiro cupom
 						</button>
@@ -148,23 +148,23 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 					<div className="overflow-x-auto">
 						<table className="w-full">
 							<thead>
-								<tr className="bg-slate-50 dark:bg-slate-900">
-									<th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase">
+								<tr className="bg-slate-50 dark:bg-black/20">
+									<th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-gray-300 uppercase">
 										Código
 									</th>
-									<th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase">
+									<th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-gray-300 uppercase">
 										Desconto
 									</th>
-									<th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase">
+									<th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-gray-300 uppercase">
 										Duração
 									</th>
-									<th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase">
+									<th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-gray-300 uppercase">
 										Limite de usos
 									</th>
-									<th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase">
+									<th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-gray-300 uppercase">
 										Expira em
 									</th>
-									<th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase">
+									<th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-gray-300 uppercase">
 										Ações
 									</th>
 								</tr>
@@ -173,12 +173,12 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 								{coupons.map((coupon) => (
 									<tr
 										key={coupon.id}
-										className="border-t border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
+										className="border-t border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/8"
 									>
-										<td className="px-4 py-4 font-mono text-sm font-semibold text-slate-900 dark:text-slate-100">
+										<td className="px-4 py-4 font-mono text-sm font-semibold text-slate-900 dark:text-white">
 											{coupon.id}
 										</td>
-										<td className="px-4 py-4 text-slate-900 dark:text-slate-100">
+										<td className="px-4 py-4 text-slate-900 dark:text-white">
 											<span className="text-amber-600 dark:text-amber-400 font-semibold">
 												{coupon.percent_off != null
 													? `${coupon.percent_off}%`
@@ -187,17 +187,17 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 														: '-'}
 											</span>
 										</td>
-										<td className="px-4 py-4 text-slate-600 dark:text-slate-300 text-sm">
+										<td className="px-4 py-4 text-slate-600 dark:text-gray-300 text-sm">
 											{DURATION_LABELS[coupon.duration] ?? coupon.duration}
 											{coupon.duration === 'repeating' &&
 											coupon.duration_in_months
 												? ` (${coupon.duration_in_months} meses)`
 												: ''}
 										</td>
-										<td className="px-4 py-4 text-slate-600 dark:text-slate-300 text-sm">
+										<td className="px-4 py-4 text-slate-600 dark:text-gray-300 text-sm">
 											{coupon.max_redemptions ?? 'Ilimitado'}
 										</td>
-										<td className="px-4 py-4 text-slate-600 dark:text-slate-300 text-sm">
+										<td className="px-4 py-4 text-slate-600 dark:text-gray-300 text-sm">
 											{coupon.redeem_by
 												? new Date(coupon.redeem_by).toLocaleDateString('pt-BR')
 												: 'Sem expiração'}
@@ -222,9 +222,9 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 			{/* Modal */}
 			{showModal && (
 				<div className="fixed inset-0 bg-slate-900/50 dark:bg-slate-950/70 flex items-center justify-center z-50 p-4">
-					<div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-lg w-full">
-						<div className="p-6 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-							<h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+					<div className="bg-white dark:bg-[#1a1a1d] rounded-xl shadow-2xl max-w-lg w-full">
+						<div className="p-6 border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
+							<h3 className="text-xl font-bold text-slate-900 dark:text-white">
 								Criar cupom
 							</h3>
 							<button
@@ -233,9 +233,9 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 									setShowModal(false);
 									resetForm();
 								}}
-								className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+								className="p-2 hover:bg-slate-100 dark:hover:bg-white/8 rounded-lg transition-colors"
 							>
-								<X className="h-5 w-5 text-slate-600 dark:text-slate-300" />
+								<X className="h-5 w-5 text-slate-600 dark:text-gray-300" />
 							</button>
 						</div>
 
@@ -244,7 +244,7 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 							<div>
 								<label
 									htmlFor="coupon-duration"
-									className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2 block"
+									className="text-sm font-medium text-slate-900 dark:text-white mb-2 block"
 								>
 									Duração
 								</label>
@@ -260,7 +260,7 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 												| 'forever',
 										})
 									}
-									className="w-full px-4 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-200 focus:border-purple-500 focus:outline-none"
+									className="w-full px-4 py-2 border border-slate-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-slate-900 dark:text-slate-200 focus:border-violet-500 focus:outline-none"
 								>
 									<option value="once">Uma vez</option>
 									<option value="repeating">Recorrente</option>
@@ -273,7 +273,7 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 								<div>
 									<label
 										htmlFor="coupon-duration-months"
-										className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2 block"
+										className="text-sm font-medium text-slate-900 dark:text-white mb-2 block"
 									>
 										Duração em meses
 									</label>
@@ -288,7 +288,7 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 												duration_in_months: e.target.value,
 											})
 										}
-										className="w-full px-4 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-200 focus:border-purple-500 focus:outline-none"
+										className="w-full px-4 py-2 border border-slate-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-slate-900 dark:text-slate-200 focus:border-violet-500 focus:outline-none"
 									/>
 								</div>
 							)}
@@ -298,7 +298,7 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 								<div>
 									<label
 										htmlFor="coupon-discount-mode"
-										className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2 block"
+										className="text-sm font-medium text-slate-900 dark:text-white mb-2 block"
 									>
 										Tipo de desconto
 									</label>
@@ -308,7 +308,7 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 										onChange={(e) =>
 											setDiscountMode(e.target.value as 'percent' | 'amount')
 										}
-										className="w-full px-4 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-200 focus:border-purple-500 focus:outline-none"
+										className="w-full px-4 py-2 border border-slate-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-slate-900 dark:text-slate-200 focus:border-violet-500 focus:outline-none"
 									>
 										<option value="percent">Percentual (%)</option>
 										<option value="amount">Valor fixo</option>
@@ -317,7 +317,7 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 								<div>
 									<label
 										htmlFor="coupon-discount-value"
-										className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2 block"
+										className="text-sm font-medium text-slate-900 dark:text-white mb-2 block"
 									>
 										{discountMode === 'percent'
 											? 'Percentual (1–100)'
@@ -337,7 +337,7 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 													percent_off: e.target.value,
 												})
 											}
-											className="w-full px-4 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-200 focus:border-purple-500 focus:outline-none"
+											className="w-full px-4 py-2 border border-slate-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-slate-900 dark:text-slate-200 focus:border-violet-500 focus:outline-none"
 										/>
 									) : (
 										<input
@@ -349,7 +349,7 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 											onChange={(e) =>
 												setFormData({ ...formData, amount_off: e.target.value })
 											}
-											className="w-full px-4 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-200 focus:border-purple-500 focus:outline-none"
+											className="w-full px-4 py-2 border border-slate-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-slate-900 dark:text-slate-200 focus:border-violet-500 focus:outline-none"
 										/>
 									)}
 								</div>
@@ -359,7 +359,7 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 							<div>
 								<label
 									htmlFor="coupon-max-redemptions"
-									className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2 block"
+									className="text-sm font-medium text-slate-900 dark:text-white mb-2 block"
 								>
 									Limite de usos (opcional)
 								</label>
@@ -375,7 +375,7 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 										})
 									}
 									placeholder="Ilimitado"
-									className="w-full px-4 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-200 focus:border-purple-500 focus:outline-none"
+									className="w-full px-4 py-2 border border-slate-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-slate-900 dark:text-slate-200 focus:border-violet-500 focus:outline-none"
 								/>
 							</div>
 
@@ -383,7 +383,7 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 							<div>
 								<label
 									htmlFor="coupon-redeem-by"
-									className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2 block"
+									className="text-sm font-medium text-slate-900 dark:text-white mb-2 block"
 								>
 									Expira em (opcional)
 								</label>
@@ -394,24 +394,24 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 									onChange={(e) =>
 										setFormData({ ...formData, redeem_by: e.target.value })
 									}
-									className="w-full px-4 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-200 focus:border-purple-500 focus:outline-none"
+									className="w-full px-4 py-2 border border-slate-200 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-slate-900 dark:text-slate-200 focus:border-violet-500 focus:outline-none"
 								/>
 							</div>
 
-							<p className="text-xs text-slate-500 dark:text-slate-400">
+							<p className="text-xs text-slate-500 dark:text-gray-400">
 								O preço final, após a aplicação do desconto, deve ser de no
 								mínimo R$ 1,00.
 							</p>
 						</div>
 
-						<div className="p-6 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
+						<div className="p-6 border-t border-slate-200 dark:border-white/10 flex justify-end gap-3">
 							<button
 								type="button"
 								onClick={() => {
 									setShowModal(false);
 									resetForm();
 								}}
-								className="px-6 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+								className="px-6 py-2 border border-slate-200 dark:border-white/10 rounded-lg font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/8 transition-colors"
 							>
 								Cancelar
 							</button>
@@ -419,7 +419,7 @@ export function CuponsSection({ product }: CuponsSectionProps) {
 								type="button"
 								onClick={handleSave}
 								disabled={createMutation.isPending}
-								className="px-6 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+								className="px-6 py-2 bg-violet-600 text-white rounded-lg font-medium hover:bg-violet-700 transition-colors disabled:opacity-50 flex items-center gap-2"
 							>
 								{createMutation.isPending && (
 									<Loader2 className="h-4 w-4 animate-spin" />
