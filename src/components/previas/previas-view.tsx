@@ -992,18 +992,20 @@ export function PreviasView() {
 		setSelectedVariantId(null);
 	}, []);
 
-	// When variant is selected, update material hint
+	// When variant is selected, update material hint (only if it matches a valid API enum value)
+	const validMaterials = options?.material?.map((m) => m.value) ?? [];
 	const handleSelectVariant = useCallback(
 		(id: string) => {
 			setSelectedVariantId(id || null);
-			if (selectedProduct?.defaultMaterial) {
+			const dm = selectedProduct?.defaultMaterial;
+			if (dm && validMaterials.includes(dm)) {
 				setLaserSettings((prev) => ({
 					...prev,
-					material: selectedProduct.defaultMaterial ?? prev.material,
+					material: dm,
 				}));
 			}
 		},
-		[selectedProduct],
+		[selectedProduct, validMaterials],
 	);
 
 	// Helper to get range from options or fallback
