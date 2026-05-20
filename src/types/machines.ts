@@ -83,3 +83,40 @@ export interface SaveCustomerMachinePayload {
 	axisOptionId?: string;
 	operationOptionId?: string;
 }
+
+export interface CustomerMachineEntry {
+	id: string;
+	customerId: string;
+	name: string | null;
+	machineId: string;
+	powerOptionId: string | null;
+	lensOptionId: string | null;
+	softwareOptionId: string | null;
+	axisOptionId: string | null;
+	operationOptionId: string | null;
+	isDefault: boolean;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface CreateCustomerMachinePayload {
+	name?: string;
+	machineId: string;
+	powerOptionId?: string | null;
+	lensOptionId?: string | null;
+	softwareOptionId?: string | null;
+	axisOptionId?: string | null;
+	operationOptionId?: string | null;
+	isDefault?: boolean;
+}
+
+export interface UpdateCustomerMachinePayload {
+	name?: string;
+	machineId?: string;
+	powerOptionId?: string | null;
+	lensOptionId?: string | null;
+	softwareOptionId?: string | null;
+	axisOptionId?: string | null;
+	operationOptionId?: string | null;
+	isDefault?: boolean;
+}

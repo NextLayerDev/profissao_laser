@@ -3,22 +3,28 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
+	createCustomerMachine,
 	createMachine,
 	createMachineOption,
 	deleteCustomerMachine,
+	deleteCustomerMachineEntry,
 	deleteMachine,
 	deleteMachineOption,
 	getCustomerMachine,
+	getCustomerMachines,
 	getMachine,
 	getMachines,
 	saveCustomerMachine,
+	updateCustomerMachine,
 	updateMachine,
 	updateMachineOption,
 } from '@/services/machines';
 import type {
+	CreateCustomerMachinePayload,
 	CreateMachineOptionPayload,
 	CreateMachinePayload,
 	SaveCustomerMachinePayload,
+	UpdateCustomerMachinePayload,
 	UpdateMachineOptionPayload,
 	UpdateMachinePayload,
 } from '@/types/machines';
@@ -179,6 +185,62 @@ export function useDeleteCustomerMachine() {
 		mutationFn: () => deleteCustomerMachine(),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: CUSTOMER_MACHINE_KEY });
+			toast.success('Maquina removida!');
+		},
+		onError: () => toast.error('Erro ao remover maquina'),
+	});
+}
+
+// ─── Customer Machines (plural) ────────────────────────────────────────────
+
+const CUSTOMER_MACHINES_KEY = ['customer-machines'] as const;
+
+export function useCustomerMachines(enabled = true) {
+	return useQuery({
+		queryKey: CUSTOMER_MACHINES_KEY,
+		queryFn: getCustomerMachines,
+		enabled,
+		retry: false,
+	});
+}
+
+export function useCreateCustomerMachine() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (payload: CreateCustomerMachinePayload) =>
+			createCustomerMachine(payload),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: CUSTOMER_MACHINES_KEY });
+			toast.success('Maquina adicionada!');
+		},
+		onError: () => toast.error('Erro ao adicionar maquina'),
+	});
+}
+
+export function useUpdateCustomerMachine() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			id,
+			payload,
+		}: {
+			id: string;
+			payload: UpdateCustomerMachinePayload;
+		}) => updateCustomerMachine(id, payload),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: CUSTOMER_MACHINES_KEY });
+			toast.success('Maquina atualizada!');
+		},
+		onError: () => toast.error('Erro ao atualizar maquina'),
+	});
+}
+
+export function useDeleteCustomerMachineEntry() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (id: string) => deleteCustomerMachineEntry(id),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: CUSTOMER_MACHINES_KEY });
 			toast.success('Maquina removida!');
 		},
 		onError: () => toast.error('Erro ao remover maquina'),

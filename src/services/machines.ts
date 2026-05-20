@@ -1,12 +1,15 @@
 import { api } from '@/lib/fetch';
 import type {
+	CreateCustomerMachinePayload,
 	CreateMachineOptionPayload,
 	CreateMachinePayload,
 	CustomerMachine,
+	CustomerMachineEntry,
 	Machine,
 	MachineOption,
 	MachineOptions,
 	SaveCustomerMachinePayload,
+	UpdateCustomerMachinePayload,
 	UpdateMachineOptionPayload,
 	UpdateMachinePayload,
 } from '@/types/machines';
@@ -164,4 +167,48 @@ export async function saveCustomerMachine(
 
 export async function deleteCustomerMachine(): Promise<void> {
 	await api.delete('/me/machine');
+}
+
+// ─── Customer Machines (plural) ────────────────────────────────────────────
+
+// biome-ignore lint/suspicious/noExplicitAny: raw API response
+function normalizeCustomerMachineEntry(raw: any): CustomerMachineEntry {
+	return {
+		id: raw.id,
+		customerId: raw.customer_id ?? raw.customerId ?? '',
+		name: raw.name ?? null,
+		machineId: raw.machine_id ?? raw.machineId ?? '',
+		powerOptionId: raw.power_option_id ?? raw.powerOptionId ?? null,
+		lensOptionId: raw.lens_option_id ?? raw.lensOptionId ?? null,
+		softwareOptionId: raw.software_option_id ?? raw.softwareOptionId ?? null,
+		axisOptionId: raw.axis_option_id ?? raw.axisOptionId ?? null,
+		operationOptionId: raw.operation_option_id ?? raw.operationOptionId ?? null,
+		isDefault: raw.is_default ?? raw.isDefault ?? false,
+		createdAt: raw.created_at ?? raw.createdAt ?? '',
+		updatedAt: raw.updated_at ?? raw.updatedAt ?? '',
+	};
+}
+
+export async function getCustomerMachines(): Promise<CustomerMachineEntry[]> {
+	const { data } = await api.get('/me/machines');
+	return Array.isArray(data) ? data.map(normalizeCustomerMachineEntry) : [];
+}
+
+export async function createCustomerMachine(
+	payload: CreateCustomerMachinePayload,
+): Promise<CustomerMachineEntry> {
+	const { data } = await api.post('/me/machines', payload);
+	return normalizeCustomerMachineEntry(data);
+}
+
+export async function updateCustomerMachine(
+	id: string,
+	payload: UpdateCustomerMachinePayload,
+): Promise<CustomerMachineEntry> {
+	const { data } = await api.patch(`/me/machines/${id}`, payload);
+	return normalizeCustomerMachineEntry(data);
+}
+
+export async function deleteCustomerMachineEntry(id: string): Promise<void> {
+	await api.delete(`/me/machines/${id}`);
 }
