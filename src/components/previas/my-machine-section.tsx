@@ -399,9 +399,9 @@ export function MyMachineSection({ productId }: { productId: string | null }) {
 								const catalog = machineMap.get(m.machineId);
 								const isSelected = selectedId === m.id;
 								return (
-									<button
+									// biome-ignore lint/a11y/useKeyWithClickEvents: inner buttons handle actions
+									<div
 										key={m.id}
-										type="button"
 										className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all w-full text-left ${
 											isSelected
 												? 'border-violet-500 bg-violet-50/50 dark:bg-violet-500/5 ring-1 ring-violet-500/30'
@@ -462,7 +462,7 @@ export function MyMachineSection({ productId }: { productId: string | null }) {
 												<Trash2 className="w-3.5 h-3.5" />
 											</button>
 										</div>
-									</button>
+									</div>
 								);
 							})}
 						</div>
