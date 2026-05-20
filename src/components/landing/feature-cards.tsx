@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { useTilt } from '@/hooks/use-landing';
+import { ScrollReveal, StaggerReveal } from './scroll-reveal';
 
 // ─── Icon map ────────────────────────────────────────────────────────────────
 
@@ -416,7 +417,7 @@ export function FeatureCards() {
 	return (
 		<section id="recursos" className="relative px-5 md:px-8 py-12 md:py-16">
 			<div className="max-w-7xl mx-auto">
-				<div className="text-center mb-12">
+				<ScrollReveal className="text-center mb-12">
 					<h2 className="font-display text-3xl md:text-[2.5rem] font-black text-white tracking-tight">
 						Tudo que você precisa{' '}
 						<span className="grad-brand">em um só lugar</span>
@@ -428,11 +429,13 @@ export function FeatureCards() {
 							[ passe o mouse nos cards pra ver cada ferramenta em ação ]
 						</span>
 					</p>
-				</div>
+				</ScrollReveal>
 
 				<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5">
 					{FEATURES.map((f, i) => (
-						<FeatureCard key={f.title} f={f} delay={i * 30} />
+						<StaggerReveal key={f.title} delay={i * 0.05}>
+							<FeatureCard f={f} delay={i * 30} />
+						</StaggerReveal>
 					))}
 				</div>
 			</div>

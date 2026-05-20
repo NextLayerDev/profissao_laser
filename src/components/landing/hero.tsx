@@ -125,7 +125,7 @@ function AvatarStack() {
 			{items.map((a) => (
 				<div
 					key={a.i}
-					className={`bg-gradient-to-br ${a.g} w-9 h-9 rounded-full border-2 border-[#0d0d0f] grid place-items-center text-[11px] font-bold text-white`}
+					className={`bg-gradient-to-br ${a.g} w-9 h-9 rounded-full border-2 border-ink-900 grid place-items-center text-[11px] font-bold text-white`}
 				>
 					{a.i}
 				</div>
@@ -391,7 +391,7 @@ export function Hero() {
 							<a
 								ref={ctaRef}
 								href="#planos"
-								className="btn-accent group inline-flex items-center gap-2 text-white font-bold px-6 py-3.5 rounded-xl shadow-[0_20px_50px_-10px_rgba(124,58,237,0.45)]"
+								className="btn-accent group inline-flex items-center gap-2 text-white font-bold px-6 py-3.5 rounded-xl shadow-brand-lg"
 							>
 								QUERO FAZER PARTE AGORA
 								<ArrowRight

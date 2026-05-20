@@ -11,6 +11,15 @@
 	--color-workshop-muted: #64748b;
 	--color-workshop-border: #e2e8f0;
 
+	--color-ink-950: #0a0a0d;
+	--color-ink-900: #0d0d0f;
+	--color-ink-800: #12121a;
+
+	--shadow-brand: 0 10px 30px -8px rgba(124, 58, 237, 0.35);
+	--shadow-brand-lg: 0 20px 50px -10px rgba(124, 58, 237, 0.45);
+	--shadow-violet-soft: 0 10px 30px -10px rgba(76, 29, 149, 0.5);
+	--shadow-tile: 0 8px 24px -8px rgba(139, 92, 246, 0.3);
+
 	--font-display: "Syne", ui-sans-serif, system-ui, sans-serif;
 	--font-body: "Outfit", ui-sans-serif, system-ui, sans-serif;
 	--font-mono: "JetBrains Mono", ui-monospace, monospace;
@@ -658,6 +667,13 @@
 }
 
 /* ═══ End landing styles ════════════════════════════════════════════════════ */
+
+.lift {
+	transition: transform 0.25s ease;
+}
+.lift:hover {
+	transform: translateY(-4px);
+}
 
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {

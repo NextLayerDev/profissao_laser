@@ -25,6 +25,7 @@ import {
 	useLaserProducts,
 	useUpdateLaserProduct,
 	useUpdateLaserProductVariant,
+	useUploadLaserProductImage,
 	useUploadLaserProductVariantImage,
 } from '@/hooks/use-laser-products';
 import type {
@@ -66,6 +67,20 @@ function ProductModal({
 		editing?.status ?? 'ativo',
 	);
 
+	const uploadImageMut = useUploadLaserProductImage();
+	const imageInputRef = useRef<HTMLInputElement>(null);
+
+	function handleImageSelect(file: File) {
+		if (!editing) return;
+		uploadImageMut.mutate(
+			{ id: editing.id, file },
+			{
+				onSuccess: () => toast.success('Imagem atualizada!'),
+				onError: () => toast.error('Erro ao subir imagem'),
+			},
+		);
+	}
+
 	const canSave = name.trim() && category.trim();
 
 	return (
@@ -84,6 +99,50 @@ function ProductModal({
 					</button>
 				</div>
 				<div className="p-5 space-y-4">
+					{/* Product image upload (only when editing) */}
+					{editing && (
+						<div>
+							<span className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
+								Imagem do Produto
+							</span>
+							<button
+								type="button"
+								className="relative w-32 h-32 rounded-xl overflow-hidden bg-slate-100 dark:bg-black/30 group cursor-pointer"
+								onClick={() => imageInputRef.current?.click()}
+							>
+								{editing.imageUrl ? (
+									<img
+										src={editing.imageUrl}
+										alt={editing.name}
+										className="w-full h-full object-cover"
+									/>
+								) : (
+									<div className="w-full h-full flex items-center justify-center">
+										<ImageIcon className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+									</div>
+								)}
+								<div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+									{uploadImageMut.isPending ? (
+										<Loader2 className="w-6 h-6 text-white animate-spin" />
+									) : (
+										<Upload className="w-6 h-6 text-white" />
+									)}
+								</div>
+								<input
+									ref={imageInputRef}
+									type="file"
+									accept="image/*"
+									className="hidden"
+									onChange={(e) => {
+										const f = e.target.files?.[0];
+										if (f) handleImageSelect(f);
+										e.target.value = '';
+									}}
+								/>
+							</button>
+						</div>
+					)}
+
 					<div>
 						<span className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
 							Nome *
@@ -215,6 +274,10 @@ function VariantManager({
 	const [showForm, setShowForm] = useState(false);
 	const [editingVariant, setEditingVariant] =
 		useState<LaserProductVariant | null>(null);
+	const [parametersVariant, setParametersVariant] = useState<{
+		id: string;
+		name: string;
+	} | null>(null);
 	const [vName, setVName] = useState('');
 	const [vColorName, setVColorName] = useState('');
 	const [vColorHex, setVColorHex] = useState('');
@@ -308,6 +371,18 @@ function VariantManager({
 	}
 
 	if (!product) return null;
+
+	// If managing parameters for a variant, show the parameters section
+	if (parametersVariant) {
+		return (
+			<ProductParametersSection
+				productId={productId}
+				productName={`${product.name} — ${parametersVariant.name}`}
+				variantId={parametersVariant.id}
+				onBack={() => setParametersVariant(null)}
+			/>
+		);
+	}
 
 	const variants = product.variants ?? [];
 
@@ -424,6 +499,16 @@ function VariantManager({
 									</span>
 								</div>
 								<div className="flex gap-1 mt-2">
+									<button
+										type="button"
+										onClick={() =>
+											setParametersVariant({ id: v.id, name: v.name })
+										}
+										className="flex-1 flex items-center justify-center gap-1 text-xs py-1.5 border border-slate-200 dark:border-white/10 text-amber-600 dark:text-amber-400 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-500/5 transition-colors"
+									>
+										<Sliders className="w-3 h-3" />
+										Params
+									</button>
 									<button
 										type="button"
 										onClick={() => openForm(v)}

@@ -62,7 +62,7 @@ export function TopBar() {
 		<header
 			className={`sticky top-0 z-50 transition-all duration-300 ${
 				scrolled
-					? 'bg-[#0a0a0d]/80 backdrop-blur-xl border-b border-white/[0.06]'
+					? 'bg-ink-950/80 backdrop-blur-xl border-b border-white/[0.06] shadow-brand'
 					: 'bg-transparent'
 			}`}
 		>
@@ -90,7 +90,7 @@ export function TopBar() {
 					</a>
 					<a
 						href="#planos"
-						className="btn-accent inline-flex items-center gap-1.5 text-white text-sm font-bold px-4 py-2.5 rounded-xl shadow-[0_10px_30px_-8px_rgba(124,58,237,0.35)]"
+						className="btn-accent inline-flex items-center gap-1.5 text-white text-sm font-bold px-4 py-2.5 rounded-xl shadow-brand"
 					>
 						Quero fazer parte
 						<ArrowRight size={15} />
@@ -110,7 +110,7 @@ export function TopBar() {
 			</div>
 
 			{open && (
-				<div className="lg:hidden border-t border-white/[0.06] bg-[#0d0d0f]/95 backdrop-blur-xl px-5 py-3 flex flex-col gap-1">
+				<div className="lg:hidden border-t border-white/[0.06] bg-ink-900/95 backdrop-blur-xl px-5 py-3 flex flex-col gap-1">
 					{NAV_LINKS.map(([label, href]) => (
 						<a
 							key={href}

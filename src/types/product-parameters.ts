@@ -8,15 +8,23 @@ export interface ParameterLesson {
 export interface LaserParameter {
 	id: string;
 	material: string;
-	materialType: string;
-	thickness: string;
+	materialType?: string | null;
+	thickness?: string | null;
 	power: number;
 	speed: number;
 	frequency: number;
 	passes: number;
 	mode: string;
-	gas: string | null;
+	gas?: boolean | string | null;
 	notes: string | null;
+	powerWatts?: number | null;
+	lens?: string | null;
+	software?: string | null;
+	line?: number | null;
+	crossHatch?: number | null;
+	angle?: number | null;
+	passesFill?: number | null;
+	defocus?: number | null;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -24,6 +32,7 @@ export interface LaserParameter {
 export interface ProductParameter {
 	id: string;
 	productId: string;
+	variantId: string | null;
 	machineId: string;
 	parameterId: string;
 	powerOptionId: string | null;
@@ -45,20 +54,30 @@ export interface ParameterLookupResult {
 }
 
 export interface InlineParameterPayload {
+	machine: string;
+	powerWatts: number;
+	lens: string;
+	software: string;
 	material: string;
-	materialType: string;
-	thickness: string;
-	power: number;
-	speed: number;
-	frequency: number;
-	passes: number;
 	mode: string;
-	gas?: string;
+	speed: number;
+	power: number;
+	frequency: number;
+	line: number;
+	crossHatch: number;
+	angle: number;
+	passes: number;
+	passesFill: number;
 	notes?: string;
+	defocus?: number;
+	gas?: boolean;
+	materialType?: string;
+	thickness?: string;
 }
 
 export interface CreateProductParameterPayload {
 	machineId: string;
+	variantId?: string | null;
 	parameterId?: string;
 	parameter?: InlineParameterPayload;
 	powerOptionId?: string;
@@ -71,6 +90,7 @@ export interface CreateProductParameterPayload {
 
 export interface UpdateProductParameterPayload {
 	machineId?: string;
+	variantId?: string | null;
 	parameterId?: string;
 	parameter?: InlineParameterPayload;
 	powerOptionId?: string | null;

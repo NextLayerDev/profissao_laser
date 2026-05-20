@@ -102,3 +102,16 @@ export async function uploadLaserProductVariantImage(
 	);
 	return data;
 }
+
+export async function uploadLaserProductImage(
+	id: string,
+	file: File,
+): Promise<LaserProduct> {
+	const fd = new FormData();
+	fd.append('file', file);
+	const { data } = await api.post<LaserProduct>(
+		`/laser-products/${id}/image`,
+		fd,
+	);
+	return data;
+}

@@ -1,6 +1,7 @@
 'use client';
 
 import { Star } from 'lucide-react';
+import { ScrollReveal } from './scroll-reveal';
 
 const TESTIMONIALS = [
 	{
@@ -91,19 +92,19 @@ export function Testimonials() {
 			className="relative px-5 md:px-8 py-14 md:py-20 overflow-hidden"
 		>
 			<div className="max-w-7xl mx-auto">
-				<div className="text-center mb-10">
+				<ScrollReveal className="text-center mb-10">
 					<h2 className="font-display text-3xl md:text-[2.5rem] font-black text-white tracking-tight">
 						O que nossos <span className="grad-brand">membros dizem</span>
 					</h2>
 					<p className="text-slate-400 mt-3 text-sm max-w-xl mx-auto">
 						+2.850 profissionais, 4,9 / 5 de avaliação média.
 					</p>
-				</div>
+				</ScrollReveal>
 			</div>
 
 			<div className="marquee-pause relative">
-				<div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#0d0d0f] to-transparent z-10 pointer-events-none" />
-				<div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-[#0d0d0f] to-transparent z-10 pointer-events-none" />
+				<div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-ink-900 to-transparent z-10 pointer-events-none" />
+				<div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-ink-900 to-transparent z-10 pointer-events-none" />
 				<div className="marquee-track py-4">
 					{[...TESTIMONIALS, ...TESTIMONIALS].map((t, i) => (
 						<QuoteCard key={i} t={t} />

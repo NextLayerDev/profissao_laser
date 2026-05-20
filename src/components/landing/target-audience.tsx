@@ -10,7 +10,8 @@ import {
 	Puzzle,
 	Utensils,
 } from 'lucide-react';
-import { useScrollReveal } from '@/hooks/use-scroll-reveal';
+import { useTilt } from '@/hooks/use-landing';
+import { ScrollReveal, StaggerReveal } from './scroll-reveal';
 
 const segments = [
 	{
@@ -63,58 +64,64 @@ const segments = [
 	},
 ];
 
-export function TargetAudience() {
-	const { ref, isVisible } = useScrollReveal();
-
+function SegmentCard({ segment }: { segment: (typeof segments)[number] }) {
+	const tilt = useTilt(5);
+	const Icon = segment.icon;
 	return (
-		<section className="bg-[#0d0d0f] py-20 md:py-28 px-6">
-			<div
-				ref={ref}
-				className={`max-w-5xl mx-auto transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-			>
-				<p className="text-[#f2295b] uppercase tracking-widest text-sm font-bold text-center mb-3">
-					Para quem é
-				</p>
-				<h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
-					A Comunidade Profissão Laser
-					<br />
-					<span className="text-[#f2295b]">vai funcionar para mim?</span>
-				</h2>
+		<div
+			ref={tilt.ref}
+			{...tilt.handlers}
+			style={tilt.style as React.CSSProperties}
+			className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.08] rounded-2xl p-5 text-center hover:border-violet-500/30 hover:bg-white/[0.06] transition-all duration-500 group"
+		>
+			<div className="w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-violet-500/20 transition-colors">
+				<Icon className="w-6 h-6 text-violet-400" />
+			</div>
+			<h3 className="text-white font-bold text-sm uppercase tracking-wide mb-2">
+				{segment.title}
+			</h3>
+			<p className="text-gray-500 text-xs leading-relaxed">
+				{segment.description}
+			</p>
+		</div>
+	);
+}
 
-				<p className="text-gray-400 text-center text-lg max-w-3xl mx-auto mb-12">
-					A Comunidade pode ajudar inúmeros profissionais e empresas que atuam
-					ou desejam atuar no mercado. Para quem não conhece absolutamente nada,
-					é o ponto de partida essencial. Para quem já é do mercado, é
-					importante para estar por dentro das novidades.
-				</p>
+export function TargetAudience() {
+	return (
+		<section className="bg-ink-900 py-20 md:py-28 px-6">
+			<div className="max-w-5xl mx-auto">
+				<ScrollReveal>
+					<p className="text-violet-400 uppercase tracking-widest text-sm font-bold text-center mb-3">
+						Para quem é
+					</p>
+					<h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
+						A Comunidade Profissão Laser
+						<br />
+						<span className="text-violet-400">vai funcionar para mim?</span>
+					</h2>
+
+					<p className="text-gray-400 text-center text-lg max-w-3xl mx-auto mb-12">
+						A Comunidade pode ajudar inúmeros profissionais e empresas que atuam
+						ou desejam atuar no mercado. Para quem não conhece absolutamente
+						nada, é o ponto de partida essencial. Para quem já é do mercado, é
+						importante para estar por dentro das novidades.
+					</p>
+				</ScrollReveal>
 
 				<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-					{segments.map((segment, i) => {
-						const Icon = segment.icon;
-						return (
-							<div
-								key={segment.title}
-								className={`bg-white/[0.04] backdrop-blur-sm border border-white/[0.08] rounded-2xl p-5 text-center hover:border-[#f2295b]/30 hover:bg-white/[0.06] transition-all duration-500 group ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
-								style={{
-									transitionDelay: `${200 + i * 80}ms`,
-								}}
-							>
-								<div className="w-12 h-12 rounded-xl bg-[#f2295b]/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-[#f2295b]/20 transition-colors">
-									<Icon className="w-6 h-6 text-[#f2295b]" />
-								</div>
-								<h3 className="text-white font-bold text-sm uppercase tracking-wide mb-2">
-									{segment.title}
-								</h3>
-								<p className="text-gray-500 text-xs leading-relaxed">
-									{segment.description}
-								</p>
-							</div>
-						);
-					})}
+					{segments.map((segment, i) => (
+						<StaggerReveal key={segment.title} delay={i * 0.06}>
+							<SegmentCard segment={segment} />
+						</StaggerReveal>
+					))}
 				</div>
 
 				{/* Negócio próprio */}
-				<div className="mt-16 text-center bg-gradient-to-r from-[#f2295b]/10 via-violet-500/10 to-[#f2295b]/10 border border-white/[0.08] rounded-3xl p-10">
+				<ScrollReveal
+					delay={0.2}
+					className="mt-16 text-center bg-gradient-to-r from-violet-500/10 via-violet-500/10 to-violet-500/10 border border-white/[0.08] rounded-3xl p-10"
+				>
 					<h3 className="text-2xl md:text-3xl font-bold text-white uppercase mb-4">
 						Ideal para quem sonha em abrir o próprio negócio do zero!
 					</h3>
@@ -124,7 +131,7 @@ export function TargetAudience() {
 						de dominar o equipamento e ter a estratégia correta de venda. Aqui
 						literalmente o limite é a sua imaginação!
 					</p>
-				</div>
+				</ScrollReveal>
 			</div>
 		</section>
 	);

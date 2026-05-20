@@ -25,6 +25,13 @@ import type {
 	CreateProductParameterPayload,
 	ProductParameter,
 } from '@/types/product-parameters';
+import {
+	LENS_OPTIONS,
+	MACHINE_OPTIONS,
+	MATERIAL_OPTIONS,
+	MODE_OPTIONS,
+	SOFTWARE_OPTIONS,
+} from '@/utils/constants/parameter-options';
 
 const inputCls =
 	'w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/40';
@@ -174,8 +181,29 @@ function AssociationModal({
 	);
 	const [passes, setPasses] = useState(editing?.parameter?.passes ?? 1);
 	const [mode, setMode] = useState(editing?.parameter?.mode ?? '');
-	const [gas, setGas] = useState(editing?.parameter?.gas ?? '');
+	const [gas, setGas] = useState<boolean>(
+		typeof editing?.parameter?.gas === 'boolean'
+			? editing.parameter.gas
+			: false,
+	);
 	const [notes, setNotes] = useState(editing?.parameter?.notes ?? '');
+	const [inlineMachine, setInlineMachine] = useState('');
+	const [powerWatts, setPowerWatts] = useState(
+		editing?.parameter?.powerWatts ?? 0,
+	);
+	const [lens, setLens] = useState(editing?.parameter?.lens ?? '');
+	const [software, setSoftware] = useState(editing?.parameter?.software ?? '');
+	const [line, setLine] = useState(editing?.parameter?.line ?? 0);
+	const [crossHatch, setCrossHatch] = useState(
+		editing?.parameter?.crossHatch ?? 0,
+	);
+	const [angle, setAngle] = useState(editing?.parameter?.angle ?? 0);
+	const [passesFill, setPassesFill] = useState(
+		editing?.parameter?.passesFill ?? 1,
+	);
+	const [defocus, setDefocus] = useState<number | undefined>(
+		editing?.parameter?.defocus ?? undefined,
+	);
 
 	// Machine option selections
 	const [powerOptionId, setPowerOptionId] = useState(
@@ -226,7 +254,7 @@ function AssociationModal({
 
 	return (
 		<div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-700 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-700 rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
 				<div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-gray-700">
 					<h3 className="text-lg font-bold text-slate-900 dark:text-white">
 						{editing ? 'Editar Associacao' : 'Nova Associacao de Parametro'}
@@ -316,6 +344,66 @@ function AssociationModal({
 							<p className="text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
 								Parametros de Gravacao
 							</p>
+
+							{/* Row 1: Machine, Lens, Software */}
+							<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+								<div>
+									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
+										Maquina (param) *
+									</span>
+									<input
+										type="text"
+										list="inline-machine-options"
+										value={inlineMachine}
+										onChange={(e) => setInlineMachine(e.target.value)}
+										placeholder="Ex: Fiber 30W"
+										className={inputCls}
+									/>
+									<datalist id="inline-machine-options">
+										{MACHINE_OPTIONS.map((o) => (
+											<option key={o} value={o} />
+										))}
+									</datalist>
+								</div>
+								<div>
+									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
+										Lente *
+									</span>
+									<input
+										type="text"
+										list="inline-lens-options"
+										value={lens}
+										onChange={(e) => setLens(e.target.value)}
+										placeholder="Ex: 110x110"
+										className={inputCls}
+									/>
+									<datalist id="inline-lens-options">
+										{LENS_OPTIONS.map((o) => (
+											<option key={o} value={o} />
+										))}
+									</datalist>
+								</div>
+								<div>
+									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
+										Software *
+									</span>
+									<input
+										type="text"
+										list="inline-software-options"
+										value={software}
+										onChange={(e) => setSoftware(e.target.value)}
+										placeholder="Ex: Ezcad"
+										className={inputCls}
+									/>
+									<datalist id="inline-software-options">
+										{SOFTWARE_OPTIONS.map((o) => (
+											<option key={o} value={o} />
+										))}
+									</datalist>
+								</div>
+							</div>
+
+							{/* Row 2: Material, Mode, PowerWatts */}
 							<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
 								<div>
 									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
@@ -323,45 +411,62 @@ function AssociationModal({
 									</span>
 									<input
 										type="text"
+										list="inline-material-options"
 										value={material}
 										onChange={(e) => setMaterial(e.target.value)}
-										placeholder="Ex: Aco Inox"
+										placeholder="Ex: Aco inox"
 										className={inputCls}
 									/>
+									<datalist id="inline-material-options">
+										{MATERIAL_OPTIONS.map((o) => (
+											<option key={o} value={o} />
+										))}
+									</datalist>
 								</div>
 								<div>
 									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
-										Tipo Material
+										Modo *
 									</span>
 									<input
 										type="text"
-										value={materialType}
-										onChange={(e) => setMaterialType(e.target.value)}
-										placeholder="Ex: 304"
+										list="inline-mode-options"
+										value={mode}
+										onChange={(e) => setMode(e.target.value)}
+										placeholder="Ex: Gravacao"
 										className={inputCls}
 									/>
+									<datalist id="inline-mode-options">
+										{MODE_OPTIONS.map((o) => (
+											<option key={o} value={o} />
+										))}
+									</datalist>
 								</div>
 								<div>
 									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
-										Espessura
+										Potencia (W) *
 									</span>
 									<input
-										type="text"
-										value={thickness}
-										onChange={(e) => setThickness(e.target.value)}
-										placeholder="Ex: 1mm"
+										type="number"
+										value={powerWatts}
+										onChange={(e) => setPowerWatts(Number(e.target.value))}
+										min={0}
 										className={inputCls}
 									/>
 								</div>
+							</div>
+
+							{/* Row 3: Power%, Speed, Frequency */}
+							<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
 								<div>
 									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
-										Potencia (W)
+										Potencia (%)
 									</span>
 									<input
 										type="number"
 										value={power}
 										onChange={(e) => setPower(Number(e.target.value))}
 										min={0}
+										max={100}
 										className={inputCls}
 									/>
 								</div>
@@ -389,9 +494,61 @@ function AssociationModal({
 										className={inputCls}
 									/>
 								</div>
+							</div>
+
+							{/* Row 4: Line, Angle, Defocus */}
+							<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
 								<div>
 									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
-										Passadas
+										Line
+									</span>
+									<input
+										type="number"
+										value={line}
+										onChange={(e) => setLine(Number(e.target.value))}
+										min={0}
+										step="any"
+										className={inputCls}
+									/>
+								</div>
+								<div>
+									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
+										Angulo
+									</span>
+									<input
+										type="number"
+										value={angle}
+										onChange={(e) => setAngle(Number(e.target.value))}
+										min={0}
+										max={360}
+										className={inputCls}
+									/>
+								</div>
+								<div>
+									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
+										Defocus (0-20)
+									</span>
+									<input
+										type="number"
+										value={defocus ?? ''}
+										onChange={(e) =>
+											setDefocus(
+												e.target.value ? Number(e.target.value) : undefined,
+											)
+										}
+										min={0}
+										max={20}
+										step="any"
+										className={inputCls}
+									/>
+								</div>
+							</div>
+
+							{/* Row 5: Passes, PassesFill, CrossHatch */}
+							<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+								<div>
+									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
+										Passadas/Contorno
 									</span>
 									<input
 										type="number"
@@ -403,29 +560,72 @@ function AssociationModal({
 								</div>
 								<div>
 									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
-										Modo *
+										Passadas/Preenchimento
 									</span>
 									<input
-										type="text"
-										value={mode}
-										onChange={(e) => setMode(e.target.value)}
-										placeholder="Ex: gravacao, corte"
+										type="number"
+										value={passesFill}
+										onChange={(e) => setPassesFill(Number(e.target.value))}
+										min={1}
 										className={inputCls}
 									/>
 								</div>
 								<div>
 									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
-										Gas
+										CrossHatch (0-100)
 									</span>
 									<input
-										type="text"
-										value={gas}
-										onChange={(e) => setGas(e.target.value)}
-										placeholder="Ex: ar, nitrogenio"
+										type="number"
+										value={crossHatch}
+										onChange={(e) => setCrossHatch(Number(e.target.value))}
+										min={0}
+										max={100}
 										className={inputCls}
 									/>
 								</div>
 							</div>
+
+							{/* Row 6: MaterialType, Thickness, Gas */}
+							<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+								<div>
+									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
+										Tipo Material
+									</span>
+									<input
+										type="text"
+										value={materialType}
+										onChange={(e) => setMaterialType(e.target.value)}
+										placeholder="Ex: 304"
+										className={inputCls}
+									/>
+								</div>
+								<div>
+									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
+										Espessura
+									</span>
+									<input
+										type="text"
+										value={thickness}
+										onChange={(e) => setThickness(e.target.value)}
+										placeholder="Ex: 1mm"
+										className={inputCls}
+									/>
+								</div>
+								<div className="flex items-end pb-2">
+									<label className="flex items-center gap-2 cursor-pointer">
+										<input
+											type="checkbox"
+											checked={gas}
+											onChange={(e) => setGas(e.target.checked)}
+											className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+										/>
+										<span className="text-xs text-slate-500 dark:text-gray-400">
+											Gas
+										</span>
+									</label>
+								</div>
+							</div>
+
 							<div>
 								<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
 									Notas
@@ -467,16 +667,25 @@ function AssociationModal({
 							};
 							if (createInline || editing) {
 								payload.parameter = {
+									machine: inlineMachine.trim(),
+									powerWatts,
+									lens: lens.trim(),
+									software: software.trim(),
 									material: material.trim(),
-									materialType: materialType.trim(),
-									thickness: thickness.trim(),
-									power,
-									speed,
-									frequency,
-									passes,
 									mode: mode.trim(),
-									gas: gas.trim() || undefined,
+									speed,
+									power,
+									frequency,
+									line,
+									crossHatch,
+									angle,
+									passes,
+									passesFill,
 									notes: notes.trim() || undefined,
+									defocus,
+									gas: gas || undefined,
+									materialType: materialType.trim() || undefined,
+									thickness: thickness.trim() || undefined,
 								};
 							}
 							onSave(payload);
@@ -499,17 +708,26 @@ function AssociationModal({
 export function ProductParametersSection({
 	productId,
 	productName,
+	variantId,
 	onBack,
 }: {
 	productId: string;
 	productName: string;
+	variantId?: string | null;
 	onBack: () => void;
 }) {
-	const { data: params, isLoading } = useProductParameters(productId);
+	const { data: allParams, isLoading } = useProductParameters(productId);
 	const { data: machines } = useMachines();
 	const createMut = useCreateProductParameter();
 	const updateMut = useUpdateProductParameter();
 	const deleteMut = useDeleteProductParameter();
+
+	// Filter parameters by variantId scope
+	const params = useMemo(() => {
+		if (!allParams) return undefined;
+		if (variantId) return allParams.filter((p) => p.variantId === variantId);
+		return allParams.filter((p) => !p.variantId);
+	}, [allParams, variantId]);
 
 	const [modal, setModal] = useState<{
 		open: boolean;
@@ -520,14 +738,16 @@ export function ProductParametersSection({
 
 	async function handleSave(payload: CreateProductParameterPayload) {
 		try {
+			// Inject variantId into payload when scoped to a variant
+			const finalPayload = variantId ? { ...payload, variantId } : payload;
 			if (modal.editing) {
 				await updateMut.mutateAsync({
 					productId,
 					assocId: modal.editing.id,
-					payload,
+					payload: finalPayload,
 				});
 			} else {
-				await createMut.mutateAsync({ productId, payload });
+				await createMut.mutateAsync({ productId, payload: finalPayload });
 			}
 			setModal({ open: false, editing: null });
 		} catch {
@@ -625,6 +845,7 @@ export function ProductParametersSection({
 						<tbody className="divide-y divide-slate-100 dark:divide-gray-800">
 							{params.map((p) => {
 								const machine = machineMap.get(p.machineId);
+								const par = p.parameter;
 								return (
 									<tr
 										key={p.id}
@@ -635,13 +856,13 @@ export function ProductParametersSection({
 										</td>
 										<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
 											<div className="text-xs">
-												{p.parameter?.material}{' '}
-												{p.parameter?.materialType &&
-													`(${p.parameter.materialType})`}
+												{par?.material}{' '}
+												{par?.materialType && `(${par.materialType})`}
 											</div>
 											<div className="text-xs text-slate-400 dark:text-gray-500">
-												{p.parameter?.power}W · {p.parameter?.speed}mm/s ·{' '}
-												{p.parameter?.frequency}kHz · {p.parameter?.passes}x
+												{par?.power}% · {par?.speed}mm/s · {par?.frequency}kHz ·{' '}
+												{par?.passes}x{par?.lens ? ` · ${par.lens}` : ''}
+												{par?.powerWatts != null ? ` · ${par.powerWatts}W` : ''}
 											</div>
 										</td>
 										<td className="px-4 py-3 text-center">
@@ -660,7 +881,7 @@ export function ProductParametersSection({
 												<Video className="w-4 h-4 text-emerald-500 mx-auto" />
 											) : (
 												<span className="text-slate-300 dark:text-gray-600">
-													—
+													{'\u2014'}
 												</span>
 											)}
 										</td>

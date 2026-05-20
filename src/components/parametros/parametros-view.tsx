@@ -346,14 +346,23 @@ export function ParametrosView() {
 	/* (tabs removed — all 3 sections shown at once) */
 
 	/* ---- data table ------------------------------------------------ */
+	function displayGas(gas: boolean | string | null | undefined): string {
+		if (gas == null) return '\u2014';
+		if (typeof gas === 'boolean') return gas ? 'Sim' : 'Nao';
+		return gas || '\u2014';
+	}
+
 	const columns = [
 		'Material',
-		'Espessura (mm)',
-		'Potencia (%)',
-		'Velocidade (mm/s)',
-		'Frequencia (Hz)',
-		'Passadas',
+		'Maquina',
+		'Lente',
 		'Modo',
+		'Power%',
+		'PowerW',
+		'Velocidade',
+		'Freq',
+		'Line',
+		'Passadas',
 		'Gas',
 		'Acao',
 	];
@@ -425,19 +434,10 @@ export function ParametrosView() {
 									{getMaterialEmoji(p.material, p.materialType)} {p.material}
 								</td>
 								<td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-									{p.thickness}
+									{p.machine || '\u2014'}
 								</td>
 								<td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-									{p.power}
-								</td>
-								<td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-									{p.speed}
-								</td>
-								<td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-									{p.frequency}
-								</td>
-								<td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-									{p.passes}
+									{p.lens ?? '\u2014'}
 								</td>
 								<td className="px-4 py-3">
 									<span
@@ -451,7 +451,25 @@ export function ParametrosView() {
 									</span>
 								</td>
 								<td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-									{p.gas ?? '-'}
+									{p.power}
+								</td>
+								<td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+									{p.powerWatts ?? '\u2014'}
+								</td>
+								<td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+									{p.speed}
+								</td>
+								<td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+									{p.frequency}
+								</td>
+								<td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+									{p.line ?? '\u2014'}
+								</td>
+								<td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+									{p.passes}
+								</td>
+								<td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+									{displayGas(p.gas)}
 								</td>
 								<td className="px-4 py-3">
 									<button
@@ -734,13 +752,53 @@ export function ParametrosView() {
 												{c.passes}
 											</span>
 										</div>
-										{c.gas && (
+										{c.powerWatts != null && (
+											<div className="flex justify-between">
+												<span className="text-slate-400 dark:text-gray-500">
+													PowerW
+												</span>
+												<span className="font-semibold text-slate-800 dark:text-slate-200">
+													{c.powerWatts}W
+												</span>
+											</div>
+										)}
+										{c.lens && (
+											<div className="flex justify-between">
+												<span className="text-slate-400 dark:text-gray-500">
+													Lente
+												</span>
+												<span className="font-semibold text-slate-800 dark:text-slate-200">
+													{c.lens}
+												</span>
+											</div>
+										)}
+										{c.software && (
+											<div className="flex justify-between">
+												<span className="text-slate-400 dark:text-gray-500">
+													Software
+												</span>
+												<span className="font-semibold text-slate-800 dark:text-slate-200 truncate ml-2">
+													{c.software}
+												</span>
+											</div>
+										)}
+										{c.line != null && (
+											<div className="flex justify-between">
+												<span className="text-slate-400 dark:text-gray-500">
+													Line
+												</span>
+												<span className="font-semibold text-slate-800 dark:text-slate-200">
+													{c.line}
+												</span>
+											</div>
+										)}
+										{c.gas != null && (
 											<div className="flex justify-between">
 												<span className="text-slate-400 dark:text-gray-500">
 													Gas
 												</span>
 												<span className="font-semibold text-slate-800 dark:text-slate-200">
-													{c.gas}
+													{displayGas(c.gas)}
 												</span>
 											</div>
 										)}

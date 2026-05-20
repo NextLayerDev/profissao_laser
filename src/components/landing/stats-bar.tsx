@@ -4,6 +4,7 @@ import { BookOpen, Sparkles, Target, Users } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { fmtNumber, useCountUp } from '@/hooks/use-landing';
 import { useScrollReveal } from '@/hooks/use-scroll-reveal';
+import { ScrollReveal } from './scroll-reveal';
 
 interface StatProps {
 	Icon: ComponentType<{ size?: number; className?: string }>;
@@ -29,7 +30,7 @@ function Stat({
 	return (
 		<div ref={ref} className="bg-[#12121a] px-6 py-5 flex items-center gap-4">
 			<div
-				className="rounded-xl p-2.5 grid place-items-center shrink-0 shadow-[0_10px_30px_-10px_rgba(76,29,149,0.5)]"
+				className="rounded-xl p-2.5 grid place-items-center shrink-0 shadow-violet-soft"
 				style={{
 					background: `linear-gradient(135deg, ${gradFrom}, ${gradTo})`,
 				}}
@@ -49,42 +50,44 @@ function Stat({
 export function StatsBar() {
 	return (
 		<section className="px-5 md:px-8 max-w-7xl mx-auto -mt-2 mb-16 md:mb-24 relative z-10">
-			<div className="card-dark relative rounded-2xl overflow-hidden">
-				<div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
-				<div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-violet-500/[0.08]">
-					<Stat
-						Icon={Users}
-						value={2850}
-						gradFrom="#7c3aed"
-						gradTo="#5b21b6"
-						label="Membros ativos"
-					/>
-					<Stat
-						Icon={BookOpen}
-						value={150}
-						gradFrom="#06b6d4"
-						gradTo="#1d4ed8"
-						label="Aulas e conteúdos"
-					/>
-					<Stat
-						Icon={Sparkles}
-						value={14}
-						prefix=""
-						gradFrom="#a855f7"
-						gradTo="#7e22ce"
-						label="Ferramentas exclusivas"
-					/>
-					<Stat
-						Icon={Target}
-						value={100}
-						prefix=""
-						suffix="%"
-						gradFrom="#f97316"
-						gradTo="#dc2626"
-						label="Focado em laser"
-					/>
+			<ScrollReveal>
+				<div className="card-dark relative rounded-2xl overflow-hidden">
+					<div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
+					<div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-violet-500/[0.08]">
+						<Stat
+							Icon={Users}
+							value={2850}
+							gradFrom="#7c3aed"
+							gradTo="#5b21b6"
+							label="Membros ativos"
+						/>
+						<Stat
+							Icon={BookOpen}
+							value={150}
+							gradFrom="#06b6d4"
+							gradTo="#1d4ed8"
+							label="Aulas e conteúdos"
+						/>
+						<Stat
+							Icon={Sparkles}
+							value={14}
+							prefix=""
+							gradFrom="#a855f7"
+							gradTo="#7e22ce"
+							label="Ferramentas exclusivas"
+						/>
+						<Stat
+							Icon={Target}
+							value={100}
+							prefix=""
+							suffix="%"
+							gradFrom="#f97316"
+							gradTo="#dc2626"
+							label="Focado em laser"
+						/>
+					</div>
 				</div>
-			</div>
+			</ScrollReveal>
 		</section>
 	);
 }

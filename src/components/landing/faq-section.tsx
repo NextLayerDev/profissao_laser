@@ -2,6 +2,7 @@
 
 import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
+import { ScrollReveal } from './scroll-reveal';
 
 const FAQ_ITEMS = [
 	{
@@ -86,11 +87,11 @@ export function FaqSection() {
 	return (
 		<section id="faq" className="relative px-5 md:px-8 py-16 md:py-20">
 			<div className="max-w-6xl mx-auto">
-				<div className="text-center mb-10">
+				<ScrollReveal className="text-center mb-10">
 					<h2 className="font-display text-3xl md:text-[2.5rem] font-black text-white tracking-tight">
 						Dúvidas <span className="grad-brand">frequentes</span>
 					</h2>
-				</div>
+				</ScrollReveal>
 
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<div className="flex flex-col gap-3">
