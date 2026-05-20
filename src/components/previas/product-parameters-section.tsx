@@ -27,11 +27,8 @@ import type {
 	ProductParameter,
 } from '@/types/product-parameters';
 import {
-	LENS_OPTIONS,
-	MACHINE_OPTIONS,
 	MATERIAL_OPTIONS,
 	MODE_OPTIONS,
-	SOFTWARE_OPTIONS,
 } from '@/utils/constants/parameter-options';
 
 const inputCls =
@@ -173,13 +170,10 @@ function AssociationModal({
 		useParameters({ limit: 100 }, !createInline && !editing);
 
 	// Inline parameter fields
+	// Nota: machine/lens/software/powerWatts são DERIVADOS dos campos
+	// da máquina acima na hora de salvar — não duplicamos no form.
+	// materialType/thickness/gas saíram do form (são opcionais na API).
 	const [material, setMaterial] = useState(editing?.parameter?.material ?? '');
-	const [materialType, setMaterialType] = useState(
-		editing?.parameter?.materialType ?? '',
-	);
-	const [thickness, setThickness] = useState(
-		editing?.parameter?.thickness ?? '',
-	);
 	const [power, setPower] = useState(editing?.parameter?.power ?? 0);
 	const [speed, setSpeed] = useState(editing?.parameter?.speed ?? 0);
 	const [frequency, setFrequency] = useState(
@@ -187,21 +181,10 @@ function AssociationModal({
 	);
 	const [passes, setPasses] = useState(editing?.parameter?.passes ?? 1);
 	const [mode, setMode] = useState(editing?.parameter?.mode ?? '');
-	const [gas, setGas] = useState<boolean>(
-		typeof editing?.parameter?.gas === 'boolean'
-			? editing.parameter.gas
-			: false,
-	);
 	const [notes, setNotes] = useState(editing?.parameter?.notes ?? '');
-	const [inlineMachine, setInlineMachine] = useState('');
-	const [powerWatts, setPowerWatts] = useState(
-		editing?.parameter?.powerWatts ?? 0,
-	);
-	const [lens, setLens] = useState(editing?.parameter?.lens ?? '');
-	const [software, setSoftware] = useState(editing?.parameter?.software ?? '');
 	const [line, setLine] = useState(editing?.parameter?.line ?? 0);
-	const [crossHatch, setCrossHatch] = useState(
-		editing?.parameter?.crossHatch ?? 0,
+	const [crossHatch, setCrossHatch] = useState<boolean>(
+		editing?.parameter?.crossHatch ?? false,
 	);
 	const [angle, setAngle] = useState(editing?.parameter?.angle ?? 0);
 	const [passesFill, setPassesFill] = useState(
@@ -260,7 +243,11 @@ function AssociationModal({
 		(editing
 			? true
 			: createInline
-				? material.trim() && mode.trim()
+				? material.trim() &&
+					mode.trim() &&
+					!!lensOptionId &&
+					!!softwareOptionId &&
+					!!powerOptionId
 				: !!selectedParameterId);
 
 	return (
@@ -393,66 +380,18 @@ function AssociationModal({
 								Parametros de Gravacao
 							</p>
 
-							{/* Row 1: Machine, Lens, Software */}
-							<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-								<div>
-									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
-										Maquina (param) *
-									</span>
-									<input
-										type="text"
-										list="inline-machine-options"
-										value={inlineMachine}
-										onChange={(e) => setInlineMachine(e.target.value)}
-										placeholder="Ex: Fiber 30W"
-										className={inputCls}
-									/>
-									<datalist id="inline-machine-options">
-										{MACHINE_OPTIONS.map((o) => (
-											<option key={o} value={o} />
-										))}
-									</datalist>
-								</div>
-								<div>
-									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
-										Lente *
-									</span>
-									<input
-										type="text"
-										list="inline-lens-options"
-										value={lens}
-										onChange={(e) => setLens(e.target.value)}
-										placeholder="Ex: 110x110"
-										className={inputCls}
-									/>
-									<datalist id="inline-lens-options">
-										{LENS_OPTIONS.map((o) => (
-											<option key={o} value={o} />
-										))}
-									</datalist>
-								</div>
-								<div>
-									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
-										Software *
-									</span>
-									<input
-										type="text"
-										list="inline-software-options"
-										value={software}
-										onChange={(e) => setSoftware(e.target.value)}
-										placeholder="Ex: Ezcad"
-										className={inputCls}
-									/>
-									<datalist id="inline-software-options">
-										{SOFTWARE_OPTIONS.map((o) => (
-											<option key={o} value={o} />
-										))}
-									</datalist>
-								</div>
-							</div>
+							{/* Hint quando faltam as opções da máquina pra auto-derivar */}
+							{createInline &&
+								(!lensOptionId || !softwareOptionId || !powerOptionId) && (
+									<p className="text-xs text-amber-600 dark:text-amber-400">
+										⚠ Selecione <b>Potência</b>, <b>Lente</b> e <b>Software</b>{' '}
+										nos campos da máquina acima — eles vão preencher
+										automaticamente o parâmetro inline (sem repetir aqui).
+									</p>
+								)}
 
-							{/* Row 2: Material, Mode, PowerWatts */}
-							<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+							{/* Row 1: Material, Modo */}
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 								<div>
 									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
 										Material *
@@ -488,18 +427,6 @@ function AssociationModal({
 											<option key={o} value={o} />
 										))}
 									</datalist>
-								</div>
-								<div>
-									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
-										Potencia (W) *
-									</span>
-									<input
-										type="number"
-										value={powerWatts}
-										onChange={(e) => setPowerWatts(Number(e.target.value))}
-										min={0}
-										className={inputCls}
-									/>
 								</div>
 							</div>
 
@@ -574,19 +501,22 @@ function AssociationModal({
 								</div>
 								<div>
 									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
-										Defocus (0-20)
+										Defocus (-20 a 20 mm)
 									</span>
 									<input
 										type="number"
 										value={defocus ?? ''}
 										onChange={(e) =>
 											setDefocus(
-												e.target.value ? Number(e.target.value) : undefined,
+												e.target.value !== ''
+													? Number(e.target.value)
+													: undefined,
 											)
 										}
-										min={0}
+										min={-20}
 										max={20}
 										step="any"
+										placeholder="- = pra baixo, + = pra cima"
 										className={inputCls}
 									/>
 								</div>
@@ -620,55 +550,17 @@ function AssociationModal({
 								</div>
 								<div>
 									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
-										CrossHatch (0-100)
+										Preenchimento Cruzado
 									</span>
-									<input
-										type="number"
-										value={crossHatch}
-										onChange={(e) => setCrossHatch(Number(e.target.value))}
-										min={0}
-										max={100}
-										className={inputCls}
-									/>
-								</div>
-							</div>
-
-							{/* Row 6: MaterialType, Thickness, Gas */}
-							<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-								<div>
-									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
-										Tipo Material
-									</span>
-									<input
-										type="text"
-										value={materialType}
-										onChange={(e) => setMaterialType(e.target.value)}
-										placeholder="Ex: 304"
-										className={inputCls}
-									/>
-								</div>
-								<div>
-									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
-										Espessura
-									</span>
-									<input
-										type="text"
-										value={thickness}
-										onChange={(e) => setThickness(e.target.value)}
-										placeholder="Ex: 1mm"
-										className={inputCls}
-									/>
-								</div>
-								<div className="flex items-end pb-2">
-									<label className="flex items-center gap-2 cursor-pointer">
+									<label className="flex items-center gap-2 cursor-pointer py-2">
 										<input
 											type="checkbox"
-											checked={gas}
-											onChange={(e) => setGas(e.target.checked)}
+											checked={crossHatch}
+											onChange={(e) => setCrossHatch(e.target.checked)}
 											className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
 										/>
 										<span className="text-xs text-slate-500 dark:text-gray-400">
-											Gas
+											Cross-hatch ativo
 										</span>
 									</label>
 								</div>
@@ -714,11 +606,26 @@ function AssociationModal({
 								lessonId: lessonId || undefined,
 							};
 							if (createInline || editing) {
+								// machine/lens/software/powerWatts derivados das
+								// opções da máquina escolhida acima — sem duplicar
+								// no form do parâmetro inline.
+								const lensOpt = selectedMachine?.options.lens.find(
+									(o) => o.id === lensOptionId,
+								);
+								const swOpt = selectedMachine?.options.software.find(
+									(o) => o.id === softwareOptionId,
+								);
+								const pwOpt = selectedMachine?.options.power.find(
+									(o) => o.id === powerOptionId,
+								);
+								const derivedPowerWatts = pwOpt
+									? Number((pwOpt.value.match(/\d+/) ?? ['0'])[0]) || 0
+									: 0;
 								payload.parameter = {
-									machine: inlineMachine.trim(),
-									powerWatts,
-									lens: lens.trim(),
-									software: software.trim(),
+									machine: selectedMachine?.name ?? '',
+									powerWatts: derivedPowerWatts,
+									lens: lensOpt?.value ?? '',
+									software: swOpt?.value ?? '',
 									material: material.trim(),
 									mode: mode.trim(),
 									speed,
@@ -731,9 +638,6 @@ function AssociationModal({
 									passesFill,
 									notes: notes.trim() || undefined,
 									defocus,
-									gas: gas || undefined,
-									materialType: materialType.trim() || undefined,
-									thickness: thickness.trim() || undefined,
 								};
 							} else {
 								// Toggle OFF: associar a um parâmetro existente.

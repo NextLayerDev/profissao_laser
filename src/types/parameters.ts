@@ -15,7 +15,7 @@ export interface LaserParameter {
 	lens?: string | null;
 	software?: string | null;
 	line?: number | null;
-	crossHatch?: number | null;
+	crossHatch?: boolean | null;
 	angle?: number | null;
 	passesFill?: number | null;
 	defocus?: number | null;

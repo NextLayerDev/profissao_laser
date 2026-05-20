@@ -21,7 +21,7 @@ export interface LaserParameter {
 	lens?: string | null;
 	software?: string | null;
 	line?: number | null;
-	crossHatch?: number | null;
+	crossHatch?: boolean | null;
 	angle?: number | null;
 	passesFill?: number | null;
 	defocus?: number | null;
@@ -64,7 +64,7 @@ export interface InlineParameterPayload {
 	power: number;
 	frequency: number;
 	line: number;
-	crossHatch: number;
+	crossHatch: boolean;
 	angle: number;
 	passes: number;
 	passesFill: number;

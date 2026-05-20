@@ -59,6 +59,9 @@ export function useCreateProductParameter() {
 		}) => createProductParameter(productId, payload),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: QUERY_KEY });
+			// Inline create cria/atualiza pl_parameter — refresca o dropdown
+			// de "selecionar parâmetro existente" também.
+			qc.invalidateQueries({ queryKey: ['parameters'] });
 			toast.success('Parametro associado!');
 		},
 		onError: () => toast.error('Erro ao associar parametro'),
@@ -79,6 +82,7 @@ export function useUpdateProductParameter() {
 		}) => updateProductParameter(productId, assocId, payload),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: QUERY_KEY });
+			qc.invalidateQueries({ queryKey: ['parameters'] });
 			toast.success('Associacao atualizada!');
 		},
 		onError: () => toast.error('Erro ao atualizar associacao'),
