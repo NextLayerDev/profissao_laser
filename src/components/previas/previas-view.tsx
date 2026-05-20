@@ -895,14 +895,12 @@ export function PreviasView() {
 	const { data: watermark } = useWatermark();
 	const uploadWatermarkMutation = useUploadWatermark();
 	const deleteWatermarkMutation = useDeleteWatermark();
-	const [useWatermarkFlag, setUseWatermarkFlag] = useState(true);
+	const [watermarkMode, setWatermarkMode] = useState<
+		'none' | 'corners' | 'tiled'
+	>('corners');
 	const watermarkFileRef = useRef<HTMLInputElement>(null);
 	const hasWatermark = !!watermark;
-
-	// Pre-select watermark when available
-	useEffect(() => {
-		if (hasWatermark) setUseWatermarkFlag(true);
-	}, [hasWatermark]);
+	const useWatermarkFlag = hasWatermark && watermarkMode !== 'none';
 
 	const { data: voxBalance } = useVoxBalance();
 	const { data: voxCosts } = useVoxCosts();
@@ -922,6 +920,7 @@ export function PreviasView() {
 				textoLenteEsquerda: textoLenteEsquerda.trim() || undefined,
 				laserSettings,
 				useWatermark: useWatermarkFlag || undefined,
+				watermarkMode: useWatermarkFlag ? watermarkMode : undefined,
 				useCredits: useCredits || undefined,
 			};
 		},
@@ -936,6 +935,7 @@ export function PreviasView() {
 			textoLenteEsquerda,
 			laserSettings,
 			useWatermarkFlag,
+			watermarkMode,
 		],
 	);
 
@@ -974,8 +974,8 @@ export function PreviasView() {
 		setInstrucoesPersonalizadas('');
 		setLaserSettings(DEFAULT_LASER_SETTINGS);
 		setGeneratedPrevia(null);
-		setUseWatermarkFlag(hasWatermark);
-	}, [hasWatermark]);
+		setWatermarkMode('corners');
+	}, []);
 
 	const updateLS = useCallback(
 		(key: keyof LaserSettings, value: LaserSettings[keyof LaserSettings]) => {
@@ -992,18 +992,20 @@ export function PreviasView() {
 		setSelectedVariantId(null);
 	}, []);
 
-	// When variant is selected, update material hint
+	// When variant is selected, update material hint (only if it matches a valid API enum value)
+	const validMaterials = options?.material?.map((m) => m.value) ?? [];
 	const handleSelectVariant = useCallback(
 		(id: string) => {
 			setSelectedVariantId(id || null);
-			if (selectedProduct?.defaultMaterial) {
+			const dm = selectedProduct?.defaultMaterial;
+			if (dm && validMaterials.includes(dm)) {
 				setLaserSettings((prev) => ({
 					...prev,
-					material: selectedProduct.defaultMaterial ?? prev.material,
+					material: dm,
 				}));
 			}
 		},
-		[selectedProduct],
+		[selectedProduct, validMaterials],
 	);
 
 	// Helper to get range from options or fallback
@@ -1733,40 +1735,68 @@ export function PreviasView() {
 							</div>
 						)}
 
-						{/* Watermark toggle */}
-						<label
-							className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${hasWatermark ? 'border-slate-200 dark:border-white/10 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5' : 'border-slate-100 dark:border-white/5 opacity-50 cursor-not-allowed'}`}
+						{/* Watermark mode selector */}
+						<div
+							className={`rounded-xl border p-4 transition-colors ${hasWatermark ? 'border-slate-200 dark:border-white/10' : 'border-slate-100 dark:border-white/5 opacity-50'}`}
 						>
-							<button
-								type="button"
-								role="switch"
-								aria-checked={useWatermarkFlag}
-								disabled={!hasWatermark}
-								onClick={() => setUseWatermarkFlag(!useWatermarkFlag)}
-								className={`relative w-10 h-[22px] rounded-full transition-colors shrink-0 ${useWatermarkFlag && hasWatermark ? 'bg-violet-600' : 'bg-slate-300 dark:bg-white/20'}`}
-							>
-								<span
-									className={`absolute top-0.5 left-0.5 w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform ${useWatermarkFlag && hasWatermark ? 'translate-x-[18px]' : 'translate-x-0'}`}
-								/>
-							</button>
-							<div className="min-w-0">
+							<div className="flex items-center gap-2 mb-3">
 								<span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-									Adicionar marca d&apos;agua
+									Marca d&apos;agua
 								</span>
-								{!hasWatermark && (
-									<p className="text-xs text-slate-400 dark:text-gray-500">
-										Cadastre no passo 2 para ativar
-									</p>
+								{hasWatermark && watermark?.imageUrl && (
+									<img
+										src={watermark.imageUrl}
+										alt=""
+										className="w-6 h-6 rounded object-contain border border-slate-200 dark:border-white/10 ml-auto shrink-0"
+									/>
 								)}
 							</div>
-							{hasWatermark && watermark?.imageUrl && (
-								<img
-									src={watermark.imageUrl}
-									alt=""
-									className="w-8 h-8 rounded object-contain border border-slate-200 dark:border-white/10 ml-auto shrink-0"
-								/>
+							{!hasWatermark ? (
+								<p className="text-xs text-slate-400 dark:text-gray-500">
+									Cadastre sua marca d&apos;agua no passo 2 para ativar
+								</p>
+							) : (
+								<div className="grid grid-cols-3 gap-2">
+									{[
+										{
+											value: 'none' as const,
+											label: 'Sem marca',
+											desc: 'Sem protecao',
+										},
+										{
+											value: 'corners' as const,
+											label: 'Cantos',
+											desc: 'Logos nos cantos',
+										},
+										{
+											value: 'tiled' as const,
+											label: 'Grade',
+											desc: 'Protecao completa',
+										},
+									].map((opt) => (
+										<button
+											key={opt.value}
+											type="button"
+											onClick={() => setWatermarkMode(opt.value)}
+											className={`flex flex-col items-center gap-1 p-3 rounded-lg border text-center transition-all ${
+												watermarkMode === opt.value
+													? 'border-violet-500 bg-violet-50 dark:bg-violet-500/10 ring-1 ring-violet-500'
+													: 'border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'
+											}`}
+										>
+											<span
+												className={`text-sm font-medium ${watermarkMode === opt.value ? 'text-violet-700 dark:text-violet-300' : 'text-slate-700 dark:text-slate-300'}`}
+											>
+												{opt.label}
+											</span>
+											<span className="text-[10px] text-slate-400 dark:text-gray-500">
+												{opt.desc}
+											</span>
+										</button>
+									))}
+								</div>
 							)}
-						</label>
+						</div>
 
 						{/* My Machine + Parameter Lookup */}
 						<MyMachineSection productId={selectedProductId} />

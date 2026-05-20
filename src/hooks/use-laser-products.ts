@@ -10,6 +10,7 @@ import {
 	getLaserProducts,
 	updateLaserProduct,
 	updateLaserProductVariant,
+	uploadLaserProductImage,
 	uploadLaserProductVariantImage,
 } from '@/services/laser-products';
 import type {
@@ -144,6 +145,17 @@ export function useUploadLaserProductVariantImage() {
 			variantId: string;
 			file: File;
 		}) => uploadLaserProductVariantImage(productId, variantId, file),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: QUERY_KEY });
+		},
+	});
+}
+
+export function useUploadLaserProductImage() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({ id, file }: { id: string; file: File }) =>
+			uploadLaserProductImage(id, file),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: QUERY_KEY });
 		},

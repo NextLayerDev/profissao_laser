@@ -28,6 +28,13 @@ import {
 } from '@/hooks/use-parameters';
 import type { CreateParameterPayload } from '@/services/parameters';
 import type { LaserParameter } from '@/types/parameters';
+import {
+	LENS_OPTIONS,
+	MACHINE_OPTIONS,
+	MATERIAL_OPTIONS,
+	MODE_OPTIONS,
+	SOFTWARE_OPTIONS,
+} from '@/utils/constants/parameter-options';
 
 /* ------------------------------------------------------------------ */
 /*  Stats config                                                       */
@@ -69,18 +76,26 @@ const STATS_CONFIG = [
 /* ------------------------------------------------------------------ */
 
 const EMPTY_FORM: CreateParameterPayload = {
+	machine: '',
+	powerWatts: 0,
+	lens: '',
+	software: '',
 	material: '',
+	mode: 'Gravacao',
+	speed: 0,
+	power: 0,
+	frequency: 0,
+	line: 0,
+	crossHatch: 0,
+	angle: 0,
+	passes: 1,
+	passesFill: 1,
+	gas: false,
+	isPublic: true,
+	notes: '',
+	defocus: undefined,
 	materialType: '',
 	thickness: '',
-	power: 0,
-	speed: 0,
-	frequency: 0,
-	passes: 1,
-	mode: 'Corte',
-	gas: '',
-	machine: '',
-	notes: '',
-	isPublic: true,
 };
 
 /* ------------------------------------------------------------------ */
@@ -170,6 +185,12 @@ export function ParametrosAdminView() {
 	const showingFrom = total === 0 ? 0 : (currentPage - 1) * limit + 1;
 	const showingTo = Math.min(currentPage * limit, total);
 
+	function displayGas(gas: boolean | string | null | undefined): string {
+		if (gas == null) return '\u2014';
+		if (typeof gas === 'boolean') return gas ? 'Sim' : 'Nao';
+		return gas || '\u2014';
+	}
+
 	return (
 		<>
 			{/* Header */}
@@ -196,7 +217,7 @@ export function ParametrosAdminView() {
 			{/* Stats */}
 			<div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 				{STATS_CONFIG.map((s) => {
-					const value = statsData ? statsData[s.key] : '—';
+					const value = statsData ? statsData[s.key] : '\u2014';
 					return (
 						<div
 							key={s.label}
@@ -285,6 +306,8 @@ export function ParametrosAdminView() {
 					<option value="">Modo</option>
 					<option value="Corte">Corte</option>
 					<option value="Gravacao">Gravacao</option>
+					<option value="Preenchimento">Preenchimento</option>
+					<option value="Limpeza">Limpeza</option>
 				</select>
 
 				<div className="ml-auto flex items-center gap-2">
@@ -323,102 +346,112 @@ export function ParametrosAdminView() {
 				</div>
 			) : (
 				<div className="rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden bg-white dark:bg-transparent shadow-sm dark:shadow-none mb-4">
-					<table className="w-full text-sm">
-						<thead>
-							<tr className="bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-left">
-								<th className="px-4 py-3 font-medium">Material</th>
-								<th className="px-4 py-3 font-medium">Tipo</th>
-								<th className="px-4 py-3 font-medium">Espessura</th>
-								<th className="px-4 py-3 font-medium">Potencia</th>
-								<th className="px-4 py-3 font-medium">Velocidade</th>
-								<th className="px-4 py-3 font-medium">Frequencia</th>
-								<th className="px-4 py-3 font-medium">Passadas</th>
-								<th className="px-4 py-3 font-medium">Modo</th>
-								<th className="px-4 py-3 font-medium">Gas</th>
-								<th className="px-4 py-3 font-medium">Maquina</th>
-								<th className="px-4 py-3 font-medium">Publico</th>
-								<th className="px-4 py-3 font-medium text-right">Acoes</th>
-							</tr>
-						</thead>
-						<tbody>
-							{parameters.map((p) => (
-								<tr
-									key={p.id}
-									className="border-t border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors"
-								>
-									<td className="px-4 py-3 font-medium text-slate-900 dark:text-white whitespace-nowrap">
-										{p.material}
-									</td>
-									<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-										{p.materialType}
-									</td>
-									<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-										{p.thickness}
-									</td>
-									<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-										{p.power}
-									</td>
-									<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-										{p.speed}
-									</td>
-									<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-										{p.frequency}
-									</td>
-									<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-										{p.passes}
-									</td>
-									<td className="px-4 py-3">
-										<span
-											className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-												p.mode === 'Corte'
-													? 'bg-blue-50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300'
-													: 'bg-amber-50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300'
-											}`}
-										>
-											{p.mode}
-										</span>
-									</td>
-									<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-										{p.gas || '—'}
-									</td>
-									<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-										{p.machine || '—'}
-									</td>
-									<td className="px-4 py-3">
-										<span
-											className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-												p.isPublic
-													? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300'
-													: 'bg-slate-100 text-slate-500 dark:bg-slate-500/20 dark:text-slate-400'
-											}`}
-										>
-											{p.isPublic ? 'Sim' : 'Nao'}
-										</span>
-									</td>
-									<td className="px-4 py-3 text-right">
-										<div className="flex items-center justify-end gap-1">
-											<button
-												type="button"
-												onClick={() => setEditTarget(p)}
-												className="p-2 text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 rounded-lg transition-colors"
-												title="Editar"
-											>
-												<Pencil className="w-4 h-4" />
-											</button>
-											<button
-												type="button"
-												onClick={() => setDeleteTarget(p)}
-												className="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-												title="Excluir"
-											>
-												<Trash2 className="w-4 h-4" />
-											</button>
-										</div>
-									</td>
+					<div className="overflow-x-auto">
+						<table className="w-full text-sm">
+							<thead>
+								<tr className="bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-left">
+									<th className="px-4 py-3 font-medium">Material</th>
+									<th className="px-4 py-3 font-medium">Maquina</th>
+									<th className="px-4 py-3 font-medium">Lente</th>
+									<th className="px-4 py-3 font-medium">Modo</th>
+									<th className="px-4 py-3 font-medium">Power%</th>
+									<th className="px-4 py-3 font-medium">PowerW</th>
+									<th className="px-4 py-3 font-medium">Velocidade</th>
+									<th className="px-4 py-3 font-medium">Freq</th>
+									<th className="px-4 py-3 font-medium">Line</th>
+									<th className="px-4 py-3 font-medium">Pass(C)</th>
+									<th className="px-4 py-3 font-medium">Pass(P)</th>
+									<th className="px-4 py-3 font-medium">Gas</th>
+									<th className="px-4 py-3 font-medium">Publico</th>
+									<th className="px-4 py-3 font-medium text-right">Acoes</th>
 								</tr>
-							))}
-						</tbody>
-					</table>
+							</thead>
+							<tbody>
+								{parameters.map((p) => (
+									<tr
+										key={p.id}
+										className="border-t border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors"
+									>
+										<td className="px-4 py-3 font-medium text-slate-900 dark:text-white whitespace-nowrap">
+											{p.material}
+										</td>
+										<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
+											{p.machine || '\u2014'}
+										</td>
+										<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
+											{p.lens ?? '\u2014'}
+										</td>
+										<td className="px-4 py-3">
+											<span
+												className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+													p.mode === 'Corte'
+														? 'bg-blue-50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300'
+														: 'bg-amber-50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300'
+												}`}
+											>
+												{p.mode}
+											</span>
+										</td>
+										<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
+											{p.power}
+										</td>
+										<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
+											{p.powerWatts ?? '\u2014'}
+										</td>
+										<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
+											{p.speed}
+										</td>
+										<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
+											{p.frequency}
+										</td>
+										<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
+											{p.line ?? '\u2014'}
+										</td>
+										<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
+											{p.passes}
+										</td>
+										<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
+											{p.passesFill ?? '\u2014'}
+										</td>
+										<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
+											{displayGas(p.gas)}
+										</td>
+										<td className="px-4 py-3">
+											<span
+												className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+													p.isPublic
+														? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300'
+														: 'bg-slate-100 text-slate-500 dark:bg-slate-500/20 dark:text-slate-400'
+												}`}
+											>
+												{p.isPublic ? 'Sim' : 'Nao'}
+											</span>
+										</td>
+										<td className="px-4 py-3 text-right">
+											<div className="flex items-center justify-end gap-1">
+												<button
+													type="button"
+													onClick={() => setEditTarget(p)}
+													className="p-2 text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 rounded-lg transition-colors"
+													title="Editar"
+												>
+													<Pencil className="w-4 h-4" />
+												</button>
+												<button
+													type="button"
+													onClick={() => setDeleteTarget(p)}
+													className="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+													title="Excluir"
+												>
+													<Trash2 className="w-4 h-4" />
+												</button>
+											</div>
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
 				</div>
 			)}
 
@@ -521,18 +554,26 @@ export function ParametrosAdminView() {
 				<ParameterFormModal
 					title="Editar parametro"
 					initial={{
-						material: editTarget.material,
-						materialType: editTarget.materialType,
-						thickness: editTarget.thickness,
-						power: editTarget.power,
-						speed: editTarget.speed,
-						frequency: editTarget.frequency,
-						passes: editTarget.passes,
-						mode: editTarget.mode,
-						gas: editTarget.gas ?? '',
 						machine: editTarget.machine ?? '',
-						notes: editTarget.notes ?? '',
+						powerWatts: editTarget.powerWatts ?? 0,
+						lens: editTarget.lens ?? '',
+						software: editTarget.software ?? '',
+						material: editTarget.material,
+						mode: editTarget.mode,
+						speed: editTarget.speed,
+						power: editTarget.power,
+						frequency: editTarget.frequency,
+						line: editTarget.line ?? 0,
+						crossHatch: editTarget.crossHatch ?? 0,
+						angle: editTarget.angle ?? 0,
+						passes: editTarget.passes,
+						passesFill: editTarget.passesFill ?? 1,
+						gas: typeof editTarget.gas === 'boolean' ? editTarget.gas : false,
 						isPublic: editTarget.isPublic,
+						notes: editTarget.notes ?? '',
+						defocus: editTarget.defocus ?? undefined,
+						materialType: editTarget.materialType ?? '',
+						thickness: editTarget.thickness ?? '',
 					}}
 					isPending={updateMutation.isPending}
 					onClose={() => setEditTarget(null)}
@@ -582,7 +623,7 @@ function ParameterFormModal({
 
 	const set = (
 		field: keyof CreateParameterPayload,
-		value: string | number | boolean,
+		value: string | number | boolean | undefined,
 	) => {
 		setForm((prev) => ({ ...prev, [field]: value }));
 	};
@@ -594,7 +635,7 @@ function ParameterFormModal({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-			<div className="relative w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl p-6">
+			<div className="relative w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl p-6">
 				<div className="flex items-center justify-between mb-6">
 					<h3 className="text-lg font-bold text-slate-900 dark:text-white">
 						{title}
@@ -609,43 +650,114 @@ function ParameterFormModal({
 				</div>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
-					<div className="grid grid-cols-2 gap-4">
+					{/* Row 1: Machine, Lens, Software */}
+					<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+						<div>
+							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+								Maquina *
+							</span>
+							<input
+								required
+								list="machine-options"
+								className={inputCls}
+								value={form.machine}
+								onChange={(e) => set('machine', e.target.value)}
+							/>
+							<datalist id="machine-options">
+								{MACHINE_OPTIONS.map((o) => (
+									<option key={o} value={o} />
+								))}
+							</datalist>
+						</div>
+						<div>
+							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+								Lente *
+							</span>
+							<input
+								required
+								list="lens-options"
+								className={inputCls}
+								value={form.lens}
+								onChange={(e) => set('lens', e.target.value)}
+							/>
+							<datalist id="lens-options">
+								{LENS_OPTIONS.map((o) => (
+									<option key={o} value={o} />
+								))}
+							</datalist>
+						</div>
+						<div>
+							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+								Software *
+							</span>
+							<input
+								required
+								list="software-options"
+								className={inputCls}
+								value={form.software}
+								onChange={(e) => set('software', e.target.value)}
+							/>
+							<datalist id="software-options">
+								{SOFTWARE_OPTIONS.map((o) => (
+									<option key={o} value={o} />
+								))}
+							</datalist>
+						</div>
+					</div>
+
+					{/* Row 2: Material, Mode, Power Watts */}
+					<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 						<div>
 							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 								Material *
 							</span>
 							<input
 								required
+								list="material-options"
 								className={inputCls}
 								value={form.material}
 								onChange={(e) => set('material', e.target.value)}
 							/>
+							<datalist id="material-options">
+								{MATERIAL_OPTIONS.map((o) => (
+									<option key={o} value={o} />
+								))}
+							</datalist>
 						</div>
 						<div>
 							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-								Tipo de material *
+								Modo *
 							</span>
 							<input
 								required
+								list="mode-options"
 								className={inputCls}
-								value={form.materialType}
-								onChange={(e) => set('materialType', e.target.value)}
+								value={form.mode}
+								onChange={(e) => set('mode', e.target.value)}
+							/>
+							<datalist id="mode-options">
+								{MODE_OPTIONS.map((o) => (
+									<option key={o} value={o} />
+								))}
+							</datalist>
+						</div>
+						<div>
+							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+								Potencia (W) *
+							</span>
+							<input
+								required
+								type="number"
+								min={0}
+								className={inputCls}
+								value={form.powerWatts || ''}
+								onChange={(e) => set('powerWatts', Number(e.target.value))}
 							/>
 						</div>
 					</div>
 
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-						<div>
-							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-								Espessura *
-							</span>
-							<input
-								required
-								className={inputCls}
-								value={form.thickness}
-								onChange={(e) => set('thickness', e.target.value)}
-							/>
-						</div>
+					{/* Row 3: Power %, Speed, Frequency */}
+					<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 						<div>
 							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 								Potencia (%) *
@@ -654,6 +766,7 @@ function ParameterFormModal({
 								required
 								type="number"
 								min={0}
+								max={100}
 								className={inputCls}
 								value={form.power || ''}
 								onChange={(e) => set('power', Number(e.target.value))}
@@ -672,12 +785,9 @@ function ParameterFormModal({
 								onChange={(e) => set('speed', Number(e.target.value))}
 							/>
 						</div>
-					</div>
-
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 						<div>
 							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-								Frequencia (Hz) *
+								Frequencia (kHz) *
 							</span>
 							<input
 								required
@@ -688,9 +798,64 @@ function ParameterFormModal({
 								onChange={(e) => set('frequency', Number(e.target.value))}
 							/>
 						</div>
+					</div>
+
+					{/* Row 4: Line, Angle, Defocus */}
+					<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 						<div>
 							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-								Passadas *
+								Line *
+							</span>
+							<input
+								required
+								type="number"
+								min={0}
+								step="any"
+								className={inputCls}
+								value={form.line ?? ''}
+								onChange={(e) => set('line', Number(e.target.value))}
+							/>
+						</div>
+						<div>
+							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+								Angulo *
+							</span>
+							<input
+								required
+								type="number"
+								min={0}
+								max={360}
+								className={inputCls}
+								value={form.angle ?? ''}
+								onChange={(e) => set('angle', Number(e.target.value))}
+							/>
+						</div>
+						<div>
+							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+								Defocus (0-20)
+							</span>
+							<input
+								type="number"
+								min={0}
+								max={20}
+								step="any"
+								className={inputCls}
+								value={form.defocus ?? ''}
+								onChange={(e) =>
+									set(
+										'defocus',
+										e.target.value ? Number(e.target.value) : undefined,
+									)
+								}
+							/>
+						</div>
+					</div>
+
+					{/* Row 5: Passes Contorno, Passes Fill, CrossHatch */}
+					<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+						<div>
+							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+								Passadas/Contorno *
 							</span>
 							<input
 								required
@@ -703,55 +868,86 @@ function ParameterFormModal({
 						</div>
 						<div>
 							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-								Modo *
+								Passadas/Preenchimento *
 							</span>
-							<select
+							<input
 								required
+								type="number"
+								min={1}
 								className={inputCls}
-								value={form.mode}
-								onChange={(e) => set('mode', e.target.value)}
-							>
-								<option value="Corte">Corte</option>
-								<option value="Gravacao">Gravacao</option>
-							</select>
+								value={form.passesFill || ''}
+								onChange={(e) => set('passesFill', Number(e.target.value))}
+							/>
+						</div>
+						<div>
+							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+								CrossHatch (0-100) *
+							</span>
+							<input
+								required
+								type="number"
+								min={0}
+								max={100}
+								className={inputCls}
+								value={form.crossHatch ?? ''}
+								onChange={(e) => set('crossHatch', Number(e.target.value))}
+							/>
 						</div>
 					</div>
 
+					{/* Row 6: MaterialType, Thickness (optional/legacy) */}
 					<div className="grid grid-cols-2 gap-4">
 						<div>
 							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-								Gas
+								Tipo de material
 							</span>
 							<input
 								className={inputCls}
-								value={form.gas ?? ''}
-								onChange={(e) => set('gas', e.target.value)}
+								value={form.materialType ?? ''}
+								onChange={(e) => set('materialType', e.target.value)}
 							/>
 						</div>
 						<div>
 							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-								Maquina
+								Espessura
 							</span>
 							<input
 								className={inputCls}
-								value={form.machine ?? ''}
-								onChange={(e) => set('machine', e.target.value)}
+								value={form.thickness ?? ''}
+								onChange={(e) => set('thickness', e.target.value)}
 							/>
 						</div>
 					</div>
 
-					<div>
-						<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-							Notas
-						</span>
-						<textarea
-							rows={3}
-							className={inputCls}
-							value={form.notes ?? ''}
-							onChange={(e) => set('notes', e.target.value)}
-						/>
+					{/* Row 7: Gas, Notes */}
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+						<div className="flex items-end pb-2">
+							<label className="flex items-center gap-2 cursor-pointer">
+								<input
+									type="checkbox"
+									checked={form.gas ?? false}
+									onChange={(e) => set('gas', e.target.checked)}
+									className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+								/>
+								<span className="text-sm text-slate-700 dark:text-slate-300">
+									Gas
+								</span>
+							</label>
+						</div>
+						<div>
+							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+								Notas
+							</span>
+							<textarea
+								rows={2}
+								className={inputCls}
+								value={form.notes ?? ''}
+								onChange={(e) => set('notes', e.target.value)}
+							/>
+						</div>
 					</div>
 
+					{/* Row 8: isPublic */}
 					<label className="flex items-center gap-2 cursor-pointer">
 						<input
 							type="checkbox"
@@ -821,7 +1017,7 @@ function DeleteParameterModal({
 				<p className="text-sm text-slate-600 dark:text-gray-400 mb-6">
 					Tem certeza que deseja excluir o parametro{' '}
 					<span className="font-semibold text-slate-900 dark:text-white">
-						{parameter.material} — {parameter.thickness}
+						{parameter.material} — {parameter.machine ?? parameter.mode}
 					</span>
 					? Esta acao nao pode ser desfeita.
 				</p>

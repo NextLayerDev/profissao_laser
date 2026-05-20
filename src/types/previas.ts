@@ -1,4 +1,5 @@
 export type PersonalizationType = 'logo' | 'text' | 'both';
+export type WatermarkMode = 'none' | 'corners' | 'tiled';
 
 export interface PreviaOptionItem {
 	value: string;
@@ -114,6 +115,7 @@ export interface GeneratePreviaPayload {
 	notes?: string;
 	laserSettings: LaserSettings;
 	useWatermark?: boolean;
+	watermarkMode?: WatermarkMode;
 	useCredits?: boolean;
 }
 

@@ -9,6 +9,7 @@ import {
 	Sparkles,
 	Volume2,
 } from 'lucide-react';
+import { ScrollReveal } from './scroll-reveal';
 
 function VideoPlayerPlaceholder() {
 	return (
@@ -74,7 +75,7 @@ function VideoPlayerPlaceholder() {
 				type="button"
 				className="absolute inset-0 grid place-items-center group"
 			>
-				<div className="btn-accent w-20 h-20 rounded-full grid place-items-center shadow-[0_20px_50px_-10px_rgba(124,58,237,0.45)] group-hover:scale-105 transition-transform">
+				<div className="btn-accent w-20 h-20 rounded-full grid place-items-center shadow-brand-lg group-hover:scale-105 transition-transform">
 					<Play size={28} className="text-white translate-x-0.5" />
 				</div>
 			</button>
@@ -106,9 +107,11 @@ export function VideoSection() {
 	return (
 		<section id="video" className="relative px-5 md:px-8 py-14 md:py-20">
 			<div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1.05fr_1fr] gap-10 items-center">
-				<VideoPlayerPlaceholder />
+				<ScrollReveal>
+					<VideoPlayerPlaceholder />
+				</ScrollReveal>
 
-				<div>
+				<ScrollReveal delay={0.15}>
 					<h2 className="font-display text-3xl md:text-[2.25rem] font-black text-white leading-tight tracking-tight">
 						Por que milhares de profissionais escolheram a{' '}
 						<span className="grad-brand">Profissão Laser?</span>
@@ -127,12 +130,12 @@ export function VideoSection() {
 
 					<a
 						href="#planos"
-						className="btn-accent mt-8 inline-flex items-center gap-2 text-white font-bold px-6 py-3.5 rounded-xl shadow-[0_20px_50px_-10px_rgba(124,58,237,0.45)]"
+						className="btn-accent mt-8 inline-flex items-center gap-2 text-white font-bold px-6 py-3.5 rounded-xl shadow-brand-lg"
 					>
 						QUERO EVOLUIR AGORA
 						<ArrowRight size={16} />
 					</a>
-				</div>
+				</ScrollReveal>
 			</div>
 		</section>
 	);

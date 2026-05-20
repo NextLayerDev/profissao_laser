@@ -16,8 +16,8 @@ function normalizeParameter(raw: any): LaserParameter {
 	return {
 		id: raw.id,
 		material: raw.material ?? '',
-		materialType: raw.material_type ?? raw.materialType ?? '',
-		thickness: raw.thickness ?? '',
+		materialType: raw.material_type ?? raw.materialType ?? null,
+		thickness: raw.thickness ?? null,
 		power: raw.power ?? 0,
 		speed: raw.speed ?? 0,
 		frequency: raw.frequency ?? 0,
@@ -25,6 +25,14 @@ function normalizeParameter(raw: any): LaserParameter {
 		mode: raw.mode ?? '',
 		gas: raw.gas ?? null,
 		notes: raw.notes ?? null,
+		powerWatts: raw.power_watts ?? raw.powerWatts ?? null,
+		lens: raw.lens ?? null,
+		software: raw.software ?? null,
+		line: raw.line ?? null,
+		crossHatch: raw.cross_hatch ?? raw.crossHatch ?? null,
+		angle: raw.angle ?? null,
+		passesFill: raw.passes_fill ?? raw.passesFill ?? null,
+		defocus: raw.defocus ?? null,
 		createdAt: raw.created_at ?? raw.createdAt ?? '',
 		updatedAt: raw.updated_at ?? raw.updatedAt ?? '',
 	};
@@ -46,6 +54,7 @@ function normalizeProductParameter(raw: any): ProductParameter {
 	return {
 		id: raw.id,
 		productId: raw.product_id ?? raw.productId ?? '',
+		variantId: raw.variant_id ?? raw.variantId ?? null,
 		machineId: raw.machine_id ?? raw.machineId ?? '',
 		parameterId: raw.parameter_id ?? raw.parameterId ?? '',
 		powerOptionId: raw.power_option_id ?? raw.powerOptionId ?? null,

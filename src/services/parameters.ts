@@ -41,18 +41,26 @@ export async function getParameter(id: string): Promise<LaserParameter> {
 }
 
 export interface CreateParameterPayload {
+	machine: string;
+	powerWatts: number;
+	lens: string;
+	software: string;
 	material: string;
-	materialType: string;
-	thickness: string;
-	power: number;
-	speed: number;
-	frequency: number;
-	passes: number;
 	mode: string;
-	gas?: string;
-	machine?: string;
+	speed: number;
+	power: number;
+	frequency: number;
+	line: number;
+	crossHatch: number;
+	angle: number;
+	passes: number;
+	passesFill: number;
 	notes?: string;
+	defocus?: number;
+	gas?: boolean;
 	isPublic?: boolean;
+	materialType?: string;
+	thickness?: string;
 }
 
 export async function createParameter(

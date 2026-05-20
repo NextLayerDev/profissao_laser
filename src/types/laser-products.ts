@@ -7,6 +7,7 @@ export interface LaserProduct {
 	tags: string[];
 	status: 'ativo' | 'inativo';
 	createdBy: string | null;
+	imageUrl: string | null;
 	variants?: LaserProductVariant[];
 	createdAt: string;
 	updatedAt: string;
@@ -48,6 +49,7 @@ export interface CreateLaserProductPayload {
 	defaultMaterial?: string;
 	tags?: string[];
 	status?: 'ativo' | 'inativo';
+	imageUrl?: string;
 }
 
 export interface UpdateLaserProductPayload {
@@ -57,6 +59,7 @@ export interface UpdateLaserProductPayload {
 	defaultMaterial?: string | null;
 	tags?: string[];
 	status?: 'ativo' | 'inativo';
+	imageUrl?: string | null;
 }
 
 export interface CreateLaserProductVariantPayload {
