@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useMachines } from '@/hooks/use-machines';
+import { useParameters } from '@/hooks/use-parameters';
 import {
 	useCreateProductParameter,
 	useDeleteProductParameter,
@@ -165,6 +166,11 @@ function AssociationModal({
 }) {
 	const [machineId, setMachineId] = useState(editing?.machineId ?? '');
 	const [createInline, setCreateInline] = useState(false);
+	// Quando o toggle está OFF (e não está editando), o admin precisa escolher
+	// um parâmetro existente — a API exige `parameterId` OU `parameter` inline.
+	const [selectedParameterId, setSelectedParameterId] = useState('');
+	const { data: existingParamsList, isLoading: loadingExistingParams } =
+		useParameters({ limit: 100 }, !createInline && !editing);
 
 	// Inline parameter fields
 	const [material, setMaterial] = useState(editing?.parameter?.material ?? '');
@@ -250,7 +256,12 @@ function AssociationModal({
 	}, [machineId, editing]);
 
 	const canSave =
-		machineId && (createInline ? material.trim() && mode.trim() : true);
+		machineId &&
+		(editing
+			? true
+			: createInline
+				? material.trim() && mode.trim()
+				: !!selectedParameterId);
 
 	return (
 		<div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
@@ -336,6 +347,43 @@ function AssociationModal({
 								Criar parametro inline
 							</span>
 						</label>
+					)}
+
+					{/* Existing parameter picker (toggle OFF, criando) */}
+					{!editing && !createInline && (
+						<div>
+							<span className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 block">
+								Parametro existente *
+							</span>
+							{loadingExistingParams ? (
+								<div className="flex items-center gap-2 py-2">
+									<Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />
+									<span className="text-xs text-slate-400">
+										Carregando parametros...
+									</span>
+								</div>
+							) : (
+								<select
+									value={selectedParameterId}
+									onChange={(e) => setSelectedParameterId(e.target.value)}
+									className={selectCls}
+								>
+									<option value="">Selecione um parametro</option>
+									{(existingParamsList?.data ?? []).map((p) => (
+										<option key={p.id} value={p.id}>
+											{p.material}
+											{p.mode ? ` · ${p.mode}` : ''}
+											{p.powerWatts != null ? ` · ${p.powerWatts}W` : ''}
+											{p.power != null ? ` · ${p.power}%` : ''}
+											{p.lens ? ` · ${p.lens}` : ''}
+										</option>
+									))}
+								</select>
+							)}
+							<p className="text-xs text-slate-400 dark:text-gray-500 mt-1">
+								Ou ative &quot;Criar parametro inline&quot; pra criar um novo.
+							</p>
+						</div>
 					)}
 
 					{/* Inline parameter form */}
@@ -687,6 +735,9 @@ function AssociationModal({
 									materialType: materialType.trim() || undefined,
 									thickness: thickness.trim() || undefined,
 								};
+							} else {
+								// Toggle OFF: associar a um parâmetro existente.
+								payload.parameterId = selectedParameterId;
 							}
 							onSave(payload);
 						}}
