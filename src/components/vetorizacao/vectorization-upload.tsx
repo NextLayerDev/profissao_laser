@@ -109,15 +109,13 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 		[vectorizeMutation, validateFile],
 	);
 
+	// Guarda re-enviando o ficheiro original com save=true (vectorize + CDN + DB numa chamada)
 	const handleSave = useCallback(
 		async (id: string) => {
 			const item = files.find((f) => f.id === id);
-			if (!item?.result) return;
+			if (!item) return;
 			try {
-				await saveMutation.mutateAsync({
-					svgContent: item.result.svgContent,
-					originalName: item.result.originalName,
-				});
+				await saveMutation.mutateAsync(item.file);
 				setFiles((prev) => prev.filter((f) => f.id !== id));
 				onSuccess?.();
 			} catch {
@@ -219,17 +217,6 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 										<p className="font-medium text-slate-900 dark:text-white truncate">
 											{item.file.name}
 										</p>
-										{item.status === 'success' && item.result && (
-											<span
-												className={`inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full ${
-													item.result.isColor
-														? 'bg-violet-500/20 text-violet-600 dark:text-violet-400'
-														: 'bg-slate-500/20 text-slate-600 dark:text-slate-400'
-												}`}
-											>
-												{item.result.isColor ? 'Colorida' : 'P&B'}
-											</span>
-										)}
 										{item.status === 'error' && (
 											<p className="text-sm text-red-500 mt-0.5">
 												{item.error}

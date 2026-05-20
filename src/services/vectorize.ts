@@ -1,21 +1,39 @@
+import { api } from '@/lib/fetch';
+import type { CustomerVector } from '@/services/vectors';
+
 export interface VectorizeResult {
 	svgContent: string;
 	originalName: string;
-	isColor: boolean;
 }
 
+/**
+ * Vectoriza a imagem e retorna o SVG como texto.
+ * Usa POST /vectorize (sem save) → response body é image/svg+xml.
+ */
 export async function vectorizeImage(file: File): Promise<VectorizeResult> {
 	const formData = new FormData();
-	formData.append('image', file);
+	formData.append('file', file);
 
-	const response = await fetch('/api/vectorize', {
-		method: 'POST',
-		body: formData,
+	const response = await api.post<string>('/vectorize', formData, {
+		responseType: 'text',
 	});
 
-	if (!response.ok) {
-		const data = await response.json().catch(() => ({}));
-		throw new Error(data.error || `Erro ${response.status} ao vetorizar`);
-	}
-	return response.json() as Promise<VectorizeResult>;
+	return {
+		svgContent: response.data,
+		originalName: file.name,
+	};
+}
+
+/**
+ * Vectoriza E guarda na biblioteca do customer numa única chamada.
+ * Usa POST /vectorize com save=true → 201 com objeto CustomerVector.
+ */
+export async function vectorizeAndSave(file: File): Promise<CustomerVector> {
+	const formData = new FormData();
+	formData.append('file', file);
+	formData.append('save', 'true');
+
+	const response = await api.post<CustomerVector>('/vectorize', formData);
+
+	return response.data;
 }

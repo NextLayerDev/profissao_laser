@@ -2,11 +2,10 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { vectorizeImage } from '@/services/vectorize';
+import { vectorizeAndSave, vectorizeImage } from '@/services/vectorize';
 import {
 	deleteCustomerVector,
 	getCustomerVectors,
-	saveVector,
 	updateVector,
 } from '@/services/vectors';
 
@@ -39,16 +38,14 @@ export function useVectorizeImage() {
 	});
 }
 
+/**
+ * Vectoriza e guarda na biblioteca num único POST /vectorize?save=true.
+ * Recebe o File original (não o SVG já convertido).
+ */
 export function useSaveVector() {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: ({
-			svgContent,
-			originalName,
-		}: {
-			svgContent: string;
-			originalName: string;
-		}) => saveVector(svgContent, originalName),
+		mutationFn: (file: File) => vectorizeAndSave(file),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['customer', 'vectors'] });
 			toast.success('Vetor guardado!');
