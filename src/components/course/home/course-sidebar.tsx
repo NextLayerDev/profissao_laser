@@ -15,7 +15,10 @@ interface CourseSidebarProps {
 	mobile?: boolean;
 }
 
-const SECTIONS = ['FERRAMENTAS', 'CONTEUDO', 'COMUNIDADE'] as const;
+// Sidebar (nav lateral): Conteudo / Comunidade primeiro, Ferramentas no fim.
+// O painel de "Acesso Rápido" da home usa ordem diferente (Ferramentas em
+// primeiro) — ver SECTION_ORDER em quick-access-grid.tsx.
+const SECTIONS = ['CONTEUDO', 'COMUNIDADE', 'FERRAMENTAS'] as const;
 
 export function CourseSidebar({
 	isCollapsed,
