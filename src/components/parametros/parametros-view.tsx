@@ -126,6 +126,7 @@ export function ParametrosView() {
 
 	/* community tab */
 	const [communityPage, setCommunityPage] = useState(1);
+	const [communitySearchQuery, setCommunitySearchQuery] = useState('');
 	const [communitySort, setCommunitySort] = useState<
 		'recent' | 'rating' | 'likes'
 	>('rating');
@@ -160,8 +161,9 @@ export function ParametrosView() {
 			page: communityPage,
 			limit: communityLimit,
 			sort: communitySort,
+			search: communitySearchQuery.trim() || undefined,
 		}),
-		[communityPage, communitySort],
+		[communityPage, communitySort, communitySearchQuery],
 	);
 
 	const { data: communityFullData, isLoading: communityLoading } =
@@ -634,7 +636,7 @@ export function ParametrosView() {
 
 	/* ---- community content ---------------------------------------- */
 	const communityContent = (
-		<div>
+		<div className="lg:max-h-[640px] overflow-y-auto lg:pr-2">
 			{communityLoading ? (
 				<div className="animate-pulse grid grid-cols-1 md:grid-cols-2 gap-4">
 					{Array.from({ length: 4 }).map((_, i) => (
@@ -1029,7 +1031,7 @@ export function ParametrosView() {
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
 				{/* Comunidade — 2/3 */}
 				<div className="lg:col-span-2">
-					<div className="flex items-center justify-between mb-4">
+					<div className="flex items-center justify-between mb-3">
 						<h2 className="text-lg font-display font-bold text-slate-900 dark:text-white flex items-center gap-2">
 							<Users className="w-5 h-5 text-violet-600" />
 							Comunidade
@@ -1051,6 +1053,36 @@ export function ParametrosView() {
 							))}
 						</select>
 					</div>
+
+					{/* Pesquisa inteligente — busca server-side via API
+					    em material, materialType, máquina, modo, etc. */}
+					<div className="relative mb-4">
+						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+						<input
+							type="text"
+							placeholder="Buscar por material, máquina, modo, espessura..."
+							value={communitySearchQuery}
+							onChange={(e) => {
+								setCommunitySearchQuery(e.target.value);
+								setCommunityPage(1);
+							}}
+							className="w-full pl-9 pr-9 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-700 dark:text-slate-300 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-600/40"
+						/>
+						{communitySearchQuery ? (
+							<button
+								type="button"
+								onClick={() => {
+									setCommunitySearchQuery('');
+									setCommunityPage(1);
+								}}
+								className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+								aria-label="Limpar busca"
+							>
+								<X className="w-3.5 h-3.5" />
+							</button>
+						) : null}
+					</div>
+
 					{communityContent}
 				</div>
 
