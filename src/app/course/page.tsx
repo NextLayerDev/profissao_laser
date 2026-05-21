@@ -3,13 +3,18 @@
 import { BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { CommunityOpportunities } from '@/components/course/home/community-opportunities';
+import { CommunityRanking } from '@/components/course/home/community-ranking';
 import { CourseFooter } from '@/components/course/home/course-footer';
 import { CourseSidebar } from '@/components/course/home/course-sidebar';
 import { CourseTopHeader } from '@/components/course/home/course-top-header';
 import { HomeGreeting } from '@/components/course/home/home-greeting';
 import { HomeProjectsFeed } from '@/components/course/home/home-projects-feed';
+import { LearningStreak } from '@/components/course/home/learning-streak';
 import { MiniLevelCard } from '@/components/course/home/mini-level-card';
+import { OnlineMembers } from '@/components/course/home/online-members';
 import { QuickAccessGrid } from '@/components/course/home/quick-access-grid';
+import { WeeklyChallenge } from '@/components/course/home/weekly-challenge';
 import { SavedLessonsModal } from '@/components/course/saved-lessons-modal';
 import { DashboardSkeleton } from '@/components/ui/skeletons/dashboard-skeleton';
 import { useCustomerFeatures } from '@/hooks/use-customer-features';
@@ -141,15 +146,16 @@ export default function CoursePage() {
 					{/* Greeting enxuto (substitui o banner antigo) */}
 					<HomeGreeting name={name} />
 
-					{/* Layout social: feed à esquerda, acesso rápido à direita */}
-					<div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_440px] gap-6 items-start">
-						{/* Feed da comunidade (esquerda — coluna principal) */}
-						<div className="min-w-0">
+					{/* Layout social: feed à esquerda, sidebar com tudo à direita.
+					    Cada coluna tem scroll próprio no desktop. */}
+					<div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] gap-6 items-start">
+						{/* Feed da comunidade (esquerda) — scroll próprio no desktop */}
+						<div className="min-w-0 lg:h-[calc(100vh-10rem)] lg:overflow-y-auto lg:pr-2">
 							<HomeProjectsFeed />
 						</div>
 
-						{/* Sidebar direita: nível + acesso rápido compacto */}
-						<aside className="space-y-4 lg:sticky lg:top-20">
+						{/* Sidebar direita: nível + acesso rápido + widgets da comunidade */}
+						<aside className="space-y-4 lg:h-[calc(100vh-10rem)] lg:overflow-y-auto lg:pr-1">
 							<MiniLevelCard />
 							<QuickAccessGrid
 								features={features}
@@ -157,6 +163,11 @@ export default function CoursePage() {
 								onSavedLessonsOpen={() => setSavedLessonsModalOpen(true)}
 								compact
 							/>
+							<LearningStreak />
+							<CommunityOpportunities />
+							<OnlineMembers />
+							<WeeklyChallenge />
+							<CommunityRanking />
 						</aside>
 					</div>
 
