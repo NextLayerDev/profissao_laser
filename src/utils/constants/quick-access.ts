@@ -66,7 +66,7 @@ export const quickAccessItems: QuickAccessItem[] = [
 		label: 'Vetorizacao',
 		description: 'Aprenda a vetorizar',
 		Icon: PenLine,
-		section: 'CONTEUDO',
+		section: 'FERRAMENTAS',
 		featureKey: 'vetorizacao',
 		href: '/course/vetorizacao',
 		gradient: 'from-green-500 to-green-700',

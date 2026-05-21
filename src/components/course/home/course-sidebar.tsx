@@ -15,7 +15,7 @@ interface CourseSidebarProps {
 	mobile?: boolean;
 }
 
-const SECTIONS = ['CONTEUDO', 'COMUNIDADE', 'FERRAMENTAS'] as const;
+const SECTIONS = ['FERRAMENTAS', 'CONTEUDO', 'COMUNIDADE'] as const;
 
 export function CourseSidebar({
 	isCollapsed,

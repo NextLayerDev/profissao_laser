@@ -24,9 +24,9 @@ const SECTION_LABELS: Record<QuickAccessItem['section'], string> = {
 };
 
 const SECTION_ORDER: QuickAccessItem['section'][] = [
+	'FERRAMENTAS',
 	'CONTEUDO',
 	'COMUNIDADE',
-	'FERRAMENTAS',
 ];
 
 export function QuickAccessGrid({
