@@ -10,7 +10,6 @@ import { CourseSidebar } from '@/components/course/home/course-sidebar';
 import { CourseTopHeader } from '@/components/course/home/course-top-header';
 import { HomeGreeting } from '@/components/course/home/home-greeting';
 import { HomeProjectsFeed } from '@/components/course/home/home-projects-feed';
-import { LearningStreak } from '@/components/course/home/learning-streak';
 import { MiniLevelCard } from '@/components/course/home/mini-level-card';
 import { OnlineMembers } from '@/components/course/home/online-members';
 import { QuickAccessGrid } from '@/components/course/home/quick-access-grid';
@@ -148,13 +147,13 @@ export default function CoursePage() {
 
 					{/* Layout social meio-a-meio: feed à esquerda, painel à direita.
 					    Cada coluna scrolla independente no desktop. */}
-					<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-						{/* Feed da comunidade (esquerda) */}
+					<div className="grid grid-cols-1 lg:grid-cols-[1.85fr_1fr] gap-6 items-start">
+						{/* Feed da comunidade (esquerda) — ~65% */}
 						<div className="min-w-0 lg:h-[calc(100vh-10rem)] lg:overflow-y-auto lg:pr-2">
 							<HomeProjectsFeed />
 						</div>
 
-						{/* Painel direito: nível + acesso rápido (cards grandes) + widgets */}
+						{/* Painel direito — ~35% */}
 						<aside className="space-y-5 lg:h-[calc(100vh-10rem)] lg:overflow-y-auto lg:pr-1">
 							<MiniLevelCard />
 							<QuickAccessGrid
@@ -163,7 +162,6 @@ export default function CoursePage() {
 								onSavedLessonsOpen={() => setSavedLessonsModalOpen(true)}
 								compact
 							/>
-							<LearningStreak />
 							<CommunityOpportunities />
 							<OnlineMembers />
 							<WeeklyChallenge />
