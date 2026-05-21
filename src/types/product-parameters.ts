@@ -108,4 +108,8 @@ export interface ParameterLookupParams {
 	softwareOptionId?: string;
 	axisOptionId?: string;
 	operationOptionId?: string;
+	// Variação do produto que o customer está vendo — quando preenchida,
+	// uma associação variant-level (parâmetro + vídeo específicos daquela
+	// variação) vence a product-level no lookup.
+	variantId?: string;
 }

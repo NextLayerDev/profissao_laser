@@ -1799,7 +1799,10 @@ export function PreviasView() {
 						</div>
 
 						{/* My Machine + Parameter Lookup */}
-						<MyMachineSection productId={selectedProductId} />
+						<MyMachineSection
+							productId={selectedProductId}
+							variantId={selectedVariantId}
+						/>
 
 						{/* Action buttons */}
 						<div className="flex flex-wrap gap-3">

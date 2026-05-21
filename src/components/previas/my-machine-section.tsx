@@ -246,7 +246,13 @@ function MachineFormModal({
 /*  Main Section                                                        */
 /* ------------------------------------------------------------------ */
 
-export function MyMachineSection({ productId }: { productId: string | null }) {
+export function MyMachineSection({
+	productId,
+	variantId,
+}: {
+	productId: string | null;
+	variantId?: string | null;
+}) {
 	const { data: machines } = useMachines();
 	const { data: savedMachines, isLoading } = useCustomerMachines();
 	const createMut = useCreateCustomerMachine();
@@ -315,7 +321,8 @@ export function MyMachineSection({ productId }: { productId: string | null }) {
 		}
 	}
 
-	// Build lookup params from selected machine
+	// Build lookup params from selected machine + variação atual
+	// (variantId faz uma associação variant-level do produto bater)
 	const lookupParams: ParameterLookupParams | undefined = selected?.machineId
 		? {
 				machineId: selected.machineId,
@@ -334,6 +341,7 @@ export function MyMachineSection({ productId }: { productId: string | null }) {
 				...(selected.operationOptionId && {
 					operationOptionId: selected.operationOptionId,
 				}),
+				...(variantId && { variantId }),
 			}
 		: undefined;
 
