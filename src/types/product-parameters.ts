@@ -16,6 +16,7 @@ export interface LaserParameter {
 	passes: number;
 	mode: string;
 	gas?: boolean | string | null;
+	machine?: string | null;
 	notes: string | null;
 	powerWatts?: number | null;
 	lens?: string | null;
