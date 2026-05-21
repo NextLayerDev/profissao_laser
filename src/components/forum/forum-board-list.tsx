@@ -37,8 +37,8 @@ export function ForumBoardList() {
 
 	if (categories.length === 0) {
 		return (
-			<div className="py-16 text-center text-sm text-slate-500 dark:text-gray-400">
-				Nenhuma categoria no fórum ainda.
+			<div className="py-10 text-center text-sm text-slate-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl">
+				Sem categorias definidas — veja as discussões recentes abaixo.
 			</div>
 		);
 	}

@@ -3,6 +3,7 @@
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { ForumBoardList } from '@/components/forum/forum-board-list';
+import { ForumRecentDiscussions } from '@/components/forum/forum-recent-discussions';
 
 export default function ForumBoardListPage() {
 	return (
@@ -27,6 +28,7 @@ export default function ForumBoardListPage() {
 			</div>
 
 			<ForumBoardList />
+			<ForumRecentDiscussions limit={20} />
 		</div>
 	);
 }
