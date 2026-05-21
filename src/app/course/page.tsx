@@ -3,18 +3,14 @@
 import { BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { BadgesEarned } from '@/components/course/home/badges-earned';
 import { CommunityOpportunities } from '@/components/course/home/community-opportunities';
 import { CommunityRanking } from '@/components/course/home/community-ranking';
 import { CourseFooter } from '@/components/course/home/course-footer';
-import { CourseHero } from '@/components/course/home/course-hero';
 import { CourseSidebar } from '@/components/course/home/course-sidebar';
 import { CourseTopHeader } from '@/components/course/home/course-top-header';
-import { ForumPreview } from '@/components/course/home/forum-preview';
-import { HighlightsSection } from '@/components/course/home/highlights-section';
-import { LearningPaths } from '@/components/course/home/learning-paths';
-import { LearningStreak } from '@/components/course/home/learning-streak';
-import { NextLiveCard } from '@/components/course/home/next-live-card';
+import { HomeGreeting } from '@/components/course/home/home-greeting';
+import { HomeProjectsFeed } from '@/components/course/home/home-projects-feed';
+import { MiniLevelCard } from '@/components/course/home/mini-level-card';
 import { OnlineMembers } from '@/components/course/home/online-members';
 import { QuickAccessGrid } from '@/components/course/home/quick-access-grid';
 import { WeeklyChallenge } from '@/components/course/home/weekly-challenge';
@@ -22,7 +18,6 @@ import { SavedLessonsModal } from '@/components/course/saved-lessons-modal';
 import { DashboardSkeleton } from '@/components/ui/skeletons/dashboard-skeleton';
 import { useCustomerFeatures } from '@/hooks/use-customer-features';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
-import { useJornadaProgress } from '@/hooks/use-jornada-progress';
 import { getCurrentUser, getToken } from '@/lib/auth';
 import { FULL_FEATURES } from '@/utils/constants/class-features';
 
@@ -96,10 +91,6 @@ export default function CoursePage() {
 		? null
 		: (customerFeatures?.upgradeTiers ?? null);
 
-	const { items: jornadaItems } = useJornadaProgress(
-		activePlans.length > 0 ? activePlans : undefined,
-	);
-
 	const displayName = name ? name.split(' ')[0] : 'bem-vindo';
 
 	if (email === undefined || isLoading) {
@@ -151,41 +142,34 @@ export default function CoursePage() {
 				/>
 
 				<main className="flex-1 mt-16 p-4 md:p-8 overflow-x-hidden">
-					<div className="">
-						<div className="flex flex-col xl:flex-row gap-6">
-							{/* Main column */}
-							<div className="flex-1 min-w-0 space-y-6">
-								<CourseHero displayName={displayName} />
+					{/* Greeting enxuto (substitui o banner antigo) */}
+					<HomeGreeting name={name} />
 
-								<QuickAccessGrid
-									features={features}
-									upgradeTiers={upgradeTiers}
-									onSavedLessonsOpen={() => setSavedLessonsModalOpen(true)}
-								/>
-
-								<HighlightsSection jornadaItems={jornadaItems} />
-
-								<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-									<ForumPreview />
-									<BadgesEarned />
-									<NextLiveCard />
-								</div>
-
-								<LearningPaths />
-							</div>
-
-							{/* Right sidebar */}
-							<aside className="hidden xl:flex flex-col w-[360px] shrink-0 space-y-6">
-								<LearningStreak />
-								<CommunityOpportunities />
-								<OnlineMembers />
-								<WeeklyChallenge />
-								<CommunityRanking />
-							</aside>
+					{/* Layout social meio-a-meio: feed à esquerda, painel à direita.
+					    Cada coluna scrolla independente no desktop. */}
+					<div className="grid grid-cols-1 lg:grid-cols-[1.85fr_1fr] gap-6 items-start">
+						{/* Feed da comunidade (esquerda) — ~65% */}
+						<div className="min-w-0 lg:h-[calc(100vh-10rem)] lg:overflow-y-auto lg:pr-2">
+							<HomeProjectsFeed />
 						</div>
 
-						<CourseFooter />
+						{/* Painel direito — ~35% */}
+						<aside className="space-y-5 lg:h-[calc(100vh-10rem)] lg:overflow-y-auto lg:pr-1">
+							<MiniLevelCard />
+							<QuickAccessGrid
+								features={features}
+								upgradeTiers={upgradeTiers}
+								onSavedLessonsOpen={() => setSavedLessonsModalOpen(true)}
+								compact
+							/>
+							<CommunityOpportunities />
+							<OnlineMembers />
+							<WeeklyChallenge />
+							<CommunityRanking />
+						</aside>
 					</div>
+
+					<CourseFooter />
 				</main>
 			</div>
 
