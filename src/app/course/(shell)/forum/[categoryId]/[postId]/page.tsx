@@ -11,7 +11,7 @@ export default function ForumThreadPage({ params }: PageProps) {
 	const { categoryId, postId } = use(params);
 
 	return (
-		<div className="p-4 md:p-8 max-w-4xl mx-auto">
+		<div className="p-4 md:p-8">
 			<ForumThreadDetail postId={postId} categoryId={categoryId} />
 		</div>
 	);

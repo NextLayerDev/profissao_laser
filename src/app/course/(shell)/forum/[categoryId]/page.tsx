@@ -14,7 +14,7 @@ export default function ForumCategoryPage({ params }: PageProps) {
 	const category = categories.find((c) => c.id === categoryId);
 
 	return (
-		<div className="p-4 md:p-8 space-y-4 max-w-6xl mx-auto">
+		<div className="p-4 md:p-8 space-y-4">
 			<ForumThreadList categoryId={categoryId} categoryName={category?.name} />
 		</div>
 	);

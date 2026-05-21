@@ -44,7 +44,7 @@ export function ForumNewThreadForm() {
 	}
 
 	return (
-		<div className="space-y-4 max-w-3xl">
+		<div className="space-y-4">
 			<Link
 				href="/course/forum"
 				className="inline-flex items-center gap-1 text-sm text-violet-600 dark:text-violet-400 hover:underline"
