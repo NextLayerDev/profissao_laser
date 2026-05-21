@@ -146,16 +146,16 @@ export default function CoursePage() {
 					{/* Greeting enxuto (substitui o banner antigo) */}
 					<HomeGreeting name={name} />
 
-					{/* Layout social: feed à esquerda, sidebar com tudo à direita.
-					    Cada coluna tem scroll próprio no desktop. */}
-					<div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] gap-6 items-start">
-						{/* Feed da comunidade (esquerda) — scroll próprio no desktop */}
+					{/* Layout social meio-a-meio: feed à esquerda, painel à direita.
+					    Cada coluna scrolla independente no desktop. */}
+					<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+						{/* Feed da comunidade (esquerda) */}
 						<div className="min-w-0 lg:h-[calc(100vh-10rem)] lg:overflow-y-auto lg:pr-2">
 							<HomeProjectsFeed />
 						</div>
 
-						{/* Sidebar direita: nível + acesso rápido + widgets da comunidade */}
-						<aside className="space-y-4 lg:h-[calc(100vh-10rem)] lg:overflow-y-auto lg:pr-1">
+						{/* Painel direito: nível + acesso rápido (cards grandes) + widgets */}
+						<aside className="space-y-5 lg:h-[calc(100vh-10rem)] lg:overflow-y-auto lg:pr-1">
 							<MiniLevelCard />
 							<QuickAccessGrid
 								features={features}
