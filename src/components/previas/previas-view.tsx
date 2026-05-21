@@ -492,6 +492,15 @@ function ProductSelector({
 				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
 					{products.map((product) => {
 						const firstVariant = product.variants?.[0];
+						// Prefere a imagem do PRODUTO (parent); cai pra 1ª variant se
+						// o produto não tiver imagem própria cadastrada.
+						const productImage =
+							product.imageUrl && !product.imageUrl.includes('placeholder')
+								? product.imageUrl
+								: firstVariant?.imageUrl &&
+										!firstVariant.imageUrl.includes('placeholder')
+									? firstVariant.imageUrl
+									: null;
 						return (
 							<button
 								key={product.id}
@@ -500,10 +509,9 @@ function ProductSelector({
 								className="rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden text-left hover:border-violet-500/50 transition-colors"
 							>
 								<div className="aspect-[4/3] bg-slate-100 dark:bg-black/30">
-									{firstVariant?.imageUrl &&
-									!firstVariant.imageUrl.includes('placeholder') ? (
+									{productImage ? (
 										<img
-											src={firstVariant.imageUrl}
+											src={productImage}
 											alt={product.name}
 											className="w-full h-full object-cover"
 										/>
