@@ -12,7 +12,7 @@ import {
 	X,
 	Zap,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import {
 	useCreateCustomerMachine,
@@ -238,6 +238,46 @@ function MachineFormModal({
 					</button>
 				</div>
 			</div>
+		</div>
+	);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Parameter display helpers — show TODOS os campos do parâmetro       */
+/* ------------------------------------------------------------------ */
+
+function ParameterField({ label, value }: { label: string; value: ReactNode }) {
+	if (value === null || value === undefined || value === '') return null;
+	return (
+		<div>
+			<span className="text-xs text-slate-500 dark:text-gray-400">{label}</span>
+			<p className="font-medium text-slate-900 dark:text-white">{value}</p>
+		</div>
+	);
+}
+
+function ParameterBadge({
+	label,
+	active,
+}: {
+	label: string;
+	active: boolean | null | undefined;
+}) {
+	if (active === null || active === undefined) return null;
+	return (
+		<div className="flex items-center gap-2">
+			<span className="text-xs text-slate-500 dark:text-gray-400">
+				{label}:
+			</span>
+			<span
+				className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+					active
+						? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400'
+						: 'bg-slate-100 dark:bg-slate-500/20 text-slate-500 dark:text-slate-400'
+				}`}
+			>
+				{active ? 'Sim' : 'Não'}
+			</span>
 		</div>
 	);
 }
@@ -528,57 +568,118 @@ export function MyMachineSection({
 										<X className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
 									</button>
 								</div>
-								<div className="p-4 space-y-3">
+								<div className="p-4 space-y-4">
+									{/* Grid completo com todos os campos preenchidos */}
 									<div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-										<div>
-											<span className="text-xs text-slate-500 dark:text-gray-400">
-												Material
-											</span>
-											<p className="font-medium text-slate-900 dark:text-white">
-												{lookupResult.parameter.material || '\u2014'}
-											</p>
-										</div>
-										<div>
-											<span className="text-xs text-slate-500 dark:text-gray-400">
-												Potencia
-											</span>
-											<p className="font-medium text-slate-900 dark:text-white">
-												{lookupResult.parameter.power}W
-											</p>
-										</div>
-										<div>
-											<span className="text-xs text-slate-500 dark:text-gray-400">
-												Velocidade
-											</span>
-											<p className="font-medium text-slate-900 dark:text-white">
-												{lookupResult.parameter.speed}mm/s
-											</p>
-										</div>
-										<div>
-											<span className="text-xs text-slate-500 dark:text-gray-400">
-												Frequencia
-											</span>
-											<p className="font-medium text-slate-900 dark:text-white">
-												{lookupResult.parameter.frequency}kHz
-											</p>
-										</div>
-										<div>
-											<span className="text-xs text-slate-500 dark:text-gray-400">
-												Passadas
-											</span>
-											<p className="font-medium text-slate-900 dark:text-white">
-												{lookupResult.parameter.passes}x
-											</p>
-										</div>
-										<div>
-											<span className="text-xs text-slate-500 dark:text-gray-400">
-												Modo
-											</span>
-											<p className="font-medium text-slate-900 dark:text-white capitalize">
-												{lookupResult.parameter.mode || '\u2014'}
-											</p>
-										</div>
+										<ParameterField
+											label="M\u00e1quina"
+											value={lookupResult.parameter.machine}
+										/>
+										<ParameterField
+											label="Material"
+											value={lookupResult.parameter.material}
+										/>
+										<ParameterField
+											label="Modo"
+											value={
+												<span className="capitalize">
+													{lookupResult.parameter.mode}
+												</span>
+											}
+										/>
+										<ParameterField
+											label="Pot\u00eancia (W)"
+											value={
+												lookupResult.parameter.powerWatts != null
+													? `${lookupResult.parameter.powerWatts} W`
+													: null
+											}
+										/>
+										<ParameterField
+											label="Lente"
+											value={lookupResult.parameter.lens}
+										/>
+										<ParameterField
+											label="Software"
+											value={lookupResult.parameter.software}
+										/>
+										<ParameterField
+											label="Pot\u00eancia (%)"
+											value={`${lookupResult.parameter.power}%`}
+										/>
+										<ParameterField
+											label="Velocidade"
+											value={`${lookupResult.parameter.speed} mm/s`}
+										/>
+										<ParameterField
+											label="Frequ\u00eancia"
+											value={`${lookupResult.parameter.frequency} Hz`}
+										/>
+										<ParameterField
+											label="Linha"
+											value={
+												lookupResult.parameter.line != null
+													? `${lookupResult.parameter.line} mm`
+													: null
+											}
+										/>
+										<ParameterField
+											label="\u00c2ngulo"
+											value={
+												lookupResult.parameter.angle != null
+													? `${lookupResult.parameter.angle}\u00b0`
+													: null
+											}
+										/>
+										<ParameterField
+											label="Desfoque"
+											value={
+												lookupResult.parameter.defocus != null
+													? `${lookupResult.parameter.defocus > 0 ? '+' : ''}${lookupResult.parameter.defocus} mm`
+													: null
+											}
+										/>
+										<ParameterField
+											label="Passadas (Contorno)"
+											value={`${lookupResult.parameter.passes}x`}
+										/>
+										<ParameterField
+											label="Passadas (Preenchimento)"
+											value={
+												lookupResult.parameter.passesFill != null
+													? `${lookupResult.parameter.passesFill}x`
+													: null
+											}
+										/>
+										<ParameterField
+											label="Tipo de Material"
+											value={lookupResult.parameter.materialType}
+										/>
+										<ParameterField
+											label="Espessura"
+											value={lookupResult.parameter.thickness}
+										/>
 									</div>
+
+									{/* Toggles (liga/desliga) */}
+									{(lookupResult.parameter.crossHatch != null ||
+										typeof lookupResult.parameter.gas === 'boolean') && (
+										<div className="flex flex-wrap items-center gap-4 pt-3 border-t border-emerald-200/40 dark:border-emerald-500/10">
+											<ParameterBadge
+												label="Preenchimento Cruzado"
+												active={lookupResult.parameter.crossHatch}
+											/>
+											<ParameterBadge
+												label="G\u00e1s"
+												active={
+													typeof lookupResult.parameter.gas === 'boolean'
+														? lookupResult.parameter.gas
+														: null
+												}
+											/>
+										</div>
+									)}
+
 									{lookupResult.parameter.notes && (
 										<div className="p-3 rounded-lg bg-white/60 dark:bg-white/5 text-sm text-slate-700 dark:text-gray-300">
 											{lookupResult.parameter.notes}
