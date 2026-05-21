@@ -155,6 +155,14 @@ export function ParametrosView() {
 	const totalParameters = parametersData?.total ?? 0;
 	const totalPages = Math.max(1, Math.ceil(totalParameters / limit));
 
+	/* ---- todos os parâmetros (sem filtro) só pra derivar as opções
+	    dos dropdowns. Garante que o dropdown só ofereça valores que
+	    REALMENTE existem nos dados — selecionar qualquer um filtra
+	    algo. Sem isso, o catálogo de máquinas/materiais podia listar
+	    nomes que ninguém usou nos parâmetros salvos. */
+	const { data: allParamsData } = useParameters({ page: 1, limit: 200 });
+	const allParams = allParamsData?.data ?? [];
+
 	/* community */
 	const communityQueryParams = useMemo(
 		() => ({
@@ -191,16 +199,50 @@ export function ParametrosView() {
 	const exportMutation = useExportParameters();
 	const rateParameterMutation = useRateParameter();
 
-	/* ---- unique thicknesses from materials ---- */
-	const thicknesses = useMemo(() => {
+	/* ---- opções dos dropdowns DERIVADAS dos parâmetros salvos
+	    (não do catálogo) — assim o filtro sempre acha resultado.
+	    Catálogo entra como fallback se não tiver dados ainda. */
+	const availableMachines = useMemo(() => {
 		const set = new Set<string>();
-		for (const m of materials) {
-			m.commonThicknesses?.forEach((t) => {
-				set.add(t);
-			});
+		for (const p of allParams) {
+			if (p.machine?.trim()) set.add(p.machine.trim());
+		}
+		// fallback: usa o catálogo se a lista derivada estiver vazia
+		if (set.size === 0) {
+			for (const m of machines) {
+				if (m.brand) set.add(`${m.brand}${m.model ? ` ${m.model}` : ''}`);
+			}
 		}
 		return Array.from(set).sort();
-	}, [materials]);
+	}, [allParams, machines]);
+
+	const availableMaterials = useMemo(() => {
+		const set = new Set<string>();
+		for (const p of allParams) {
+			if (p.material?.trim()) set.add(p.material.trim());
+		}
+		if (set.size === 0) {
+			for (const m of materials) {
+				if (m.name) set.add(m.name);
+			}
+		}
+		return Array.from(set).sort();
+	}, [allParams, materials]);
+
+	const thicknesses = useMemo(() => {
+		const set = new Set<string>();
+		for (const p of allParams) {
+			if (p.thickness?.trim()) set.add(p.thickness.trim());
+		}
+		if (set.size === 0) {
+			for (const m of materials) {
+				m.commonThicknesses?.forEach((t) => {
+					if (t) set.add(t);
+				});
+			}
+		}
+		return Array.from(set).sort();
+	}, [allParams, materials]);
 
 	/* ---- handlers ------------------------------------------------- */
 	const handleClearFilters = () => {
@@ -283,9 +325,9 @@ export function ParametrosView() {
 				}}
 			>
 				<option value="">Maquina</option>
-				{machines.map((m) => (
-					<option key={m.id} value={m.brand}>
-						{m.brand} {m.model}
+				{availableMachines.map((m) => (
+					<option key={m} value={m}>
+						{m}
 					</option>
 				))}
 			</select>
@@ -299,9 +341,9 @@ export function ParametrosView() {
 				}}
 			>
 				<option value="">Material</option>
-				{materials.map((m) => (
-					<option key={m.id} value={m.name}>
-						{m.name}
+				{availableMaterials.map((m) => (
+					<option key={m} value={m}>
+						{m}
 					</option>
 				))}
 			</select>
