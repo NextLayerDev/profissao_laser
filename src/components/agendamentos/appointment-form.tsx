@@ -57,9 +57,11 @@ export function AppointmentForm({
 	const [notes, setNotes] = useState('');
 	const [machine, setMachine] = useState<string>(APPOINTMENT_MACHINES[0]);
 
-	const { slots: availableSlots } = useAvailableSlots(
-		!hasAvailabilityData && date ? date : null,
-	);
+	const {
+		slots: availableSlots,
+		blocked: slotsBlocked,
+		reason: slotsBlockedReason,
+	} = useAvailableSlots(!hasAvailabilityData && date ? date : null);
 
 	useEffect(() => {
 		if (user?.name) setCustomerName(user.name);
@@ -277,17 +279,23 @@ export function AppointmentForm({
 					</select>
 				</div>
 				<div>
-					<TimeSlotPicker
-						value={time}
-						onChange={setTime}
-						date={date}
-						appointments={hasAvailabilityData ? appointmentsToUse : undefined}
-						technicianIds={hasAvailabilityData ? technicianIds : []}
-						availableSlotsFromApi={
-							!hasAvailabilityData && date ? availableSlots : undefined
-						}
-						disabled={!date}
-					/>
+					{slotsBlocked && slotsBlockedReason ? (
+						<div className="rounded-xl border border-amber-200 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-950/20 p-3 text-sm text-amber-700 dark:text-amber-300">
+							{slotsBlockedReason}
+						</div>
+					) : (
+						<TimeSlotPicker
+							value={time}
+							onChange={setTime}
+							date={date}
+							appointments={hasAvailabilityData ? appointmentsToUse : undefined}
+							technicianIds={hasAvailabilityData ? technicianIds : []}
+							availableSlotsFromApi={
+								!hasAvailabilityData && date ? availableSlots : undefined
+							}
+							disabled={!date}
+						/>
+					)}
 				</div>
 			</div>
 
