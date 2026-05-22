@@ -690,26 +690,37 @@ function TechnicianOverrideCard() {
 
 // ─── Section root ────────────────────────────────────────────────────────
 
+/**
+ * Conteúdo puro da seção de config — sem wrapper de scroll/padding externo.
+ * Usado tanto na tab da página Suporte quanto na tab Configurações de
+ * /agendamentos (admin), com containers diferentes.
+ */
+export function AppointmentConfigBody() {
+	return (
+		<div className="max-w-5xl mx-auto space-y-4">
+			<div>
+				<h2 className="font-display text-xl font-bold text-slate-900 dark:text-white">
+					Configurações de agendamento
+				</h2>
+				<p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
+					Define horários, almoço, feriados e folgas. O slot picker do customer
+					respeita tudo isso automaticamente.
+				</p>
+			</div>
+			<div className="grid gap-4 lg:grid-cols-2">
+				<GlobalHoursCard />
+				<HolidaysCard />
+				<DaysOffCard />
+				<TechnicianOverrideCard />
+			</div>
+		</div>
+	);
+}
+
 export function AppointmentConfigSection() {
 	return (
 		<div className="flex-1 overflow-y-auto px-4 md:px-8 py-6">
-			<div className="max-w-5xl mx-auto space-y-4">
-				<div>
-					<h2 className="font-display text-xl font-bold text-slate-900 dark:text-white">
-						Configurações de agendamento
-					</h2>
-					<p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
-						Define horários, almoço, feriados e folgas. O slot picker do
-						customer respeita tudo isso automaticamente.
-					</p>
-				</div>
-				<div className="grid gap-4 lg:grid-cols-2">
-					<GlobalHoursCard />
-					<HolidaysCard />
-					<DaysOffCard />
-					<TechnicianOverrideCard />
-				</div>
-			</div>
+			<AppointmentConfigBody />
 		</div>
 	);
 }
