@@ -4,7 +4,6 @@ import type {
 	Previa,
 	PreviaOptions,
 	PreviasAdminUsageResponse,
-	PreviasQuota,
 	PreviasResponse,
 	UpdatePreviaPayload,
 	Watermark,
@@ -42,11 +41,6 @@ export async function updatePrevia(
 
 export async function deletePrevia(id: string): Promise<void> {
 	await api.delete(`/previas/${id}`);
-}
-
-export async function getPreviasQuota(): Promise<PreviasQuota> {
-	const { data } = await api.get<PreviasQuota>('/previas/quota');
-	return data;
 }
 
 export async function getPreviasAdminUsage(params?: {

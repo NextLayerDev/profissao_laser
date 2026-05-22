@@ -10,8 +10,21 @@ import {
 	XCircle,
 } from 'lucide-react';
 import { useCallback, useState } from 'react';
+import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
+import { FreeTierQuotaBanner } from '@/components/credits/free-tier-quota-banner';
 import { useSaveVector, useVectorizeImage } from '@/hooks/use-vectors';
 import type { VectorizeResult } from '@/services/vectorize';
+
+interface AxiosLikeError {
+	response?: { status?: number; data?: Record<string, unknown> };
+}
+
+interface FreeTierModalState {
+	limit: number;
+	used: number;
+	period: 'daily' | 'weekly';
+	resetsAt: string;
+}
 
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -45,6 +58,9 @@ function svgToDataUrl(svgContent: string): string {
 export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 	const [isDragging, setIsDragging] = useState(false);
 	const [files, setFiles] = useState<FileWithStatus[]>([]);
+	const [freeTierModal, setFreeTierModal] = useState<FreeTierModalState | null>(
+		null,
+	);
 	const vectorizeMutation = useVectorizeImage();
 	const saveMutation = useSaveVector();
 
@@ -94,18 +110,42 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 							f.id === id ? { ...f, status: 'success' as const, result } : f,
 						),
 					);
-				} catch {
-					setFiles((prev) =>
-						prev.map((f) =>
-							f.id === id
-								? {
-										...f,
-										status: 'error' as const,
-										error: 'Erro ao vetorizar',
-									}
-								: f,
-						),
-					);
+				} catch (err) {
+					const ax = err as AxiosLikeError;
+					const status = ax?.response?.status;
+					const data = ax?.response?.data ?? {};
+					if (status === 429 && data.code === 'FREE_TIER_LIMIT_REACHED') {
+						setFreeTierModal({
+							limit: (data.limit as number) ?? 5,
+							used: (data.used as number) ?? 0,
+							period:
+								(data.period as 'daily' | 'weekly' | undefined) ?? 'daily',
+							resetsAt: (data.resetsAt as string) ?? '',
+						});
+						setFiles((prev) =>
+							prev.map((f) =>
+								f.id === id
+									? {
+											...f,
+											status: 'error' as const,
+											error: 'Limite gratuito atingido',
+										}
+									: f,
+							),
+						);
+					} else {
+						setFiles((prev) =>
+							prev.map((f) =>
+								f.id === id
+									? {
+											...f,
+											status: 'error' as const,
+											error: 'Erro ao vetorizar',
+										}
+									: f,
+							),
+						);
+					}
 				}
 			}
 		},
@@ -168,6 +208,17 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 
 	return (
 		<div className="space-y-6">
+			<FreeTierQuotaBanner feature="vectorize" unitLabel="vetorizações" />
+			{freeTierModal && (
+				<CreditConfirmModal
+					variant="free-tier-exhausted"
+					cost={1}
+					balance={0}
+					freeTier={freeTierModal}
+					onConfirm={() => setFreeTierModal(null)}
+					onClose={() => setFreeTierModal(null)}
+				/>
+			)}
 			<section
 				aria-label="Arraste imagens ou clique para selecionar"
 				onDrop={handleDrop}

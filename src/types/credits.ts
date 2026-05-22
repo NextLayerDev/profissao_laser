@@ -57,17 +57,35 @@ export interface Vox402 {
 	balance: number;
 }
 
-// Erro 429 (somente prévia)
-export interface VoxDailyLimit429 {
-	code: 'DAILY_LIMIT_REACHED';
+// Quota grátis (limite por feature pra usuários sem voxes)
+export const featureQuotaSchema = z.object({
+	feature: z.enum(['previa', 'vectorize', 'editor-ai']),
+	isFree: z.boolean(),
+	limit: z.number().int(),
+	used: z.number().int(),
+	remaining: z.number().int(),
+	period: z.enum(['daily', 'weekly']),
+	resetsAt: z.string(),
+});
+export type FeatureQuota = z.infer<typeof featureQuotaSchema>;
+
+export const quotaResponseSchema = z.object({
+	balance: z.number().int(),
+	quotas: z.array(featureQuotaSchema),
+});
+export type QuotaResponse = z.infer<typeof quotaResponseSchema>;
+
+// Erro 429 (limite grátis atingido — só para usuários com balance 0)
+export interface VoxFreeTierLimit429 {
+	message: string;
+	code: 'FREE_TIER_LIMIT_REACHED';
+	feature: VoxFeature;
 	limit: number;
 	used: number;
+	remaining: number;
+	period: 'daily' | 'weekly';
 	resetsAt: string;
-	creditOption: {
-		cost: number;
-		balance: number;
-		canUseCredits: boolean;
-	} | null;
+	balance: number;
 }
 
 // Payloads admin

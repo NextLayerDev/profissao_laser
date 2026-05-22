@@ -131,13 +131,6 @@ export interface UpdatePreviaPayload {
 	notes?: string;
 }
 
-export interface PreviasQuota {
-	limit: number;
-	used: number;
-	remaining: number;
-	resetsAt: string;
-}
-
 export interface PreviasUserUsage {
 	customerId: string;
 	customerName: string;

@@ -11,6 +11,7 @@ import {
 	getVoxCosts,
 	getVoxHistory,
 	getVoxPackages,
+	getVoxQuotas,
 	setVoxPackageStatus,
 	updateVoxCost,
 	updateVoxPackage,
@@ -23,6 +24,7 @@ import type {
 } from '@/types/credits';
 
 export const VOX_BALANCE_KEY = ['credits', 'balance'] as const;
+export const VOX_QUOTA_KEY = ['credits', 'quota'] as const;
 const COSTS_KEY = ['credits', 'costs'] as const;
 const PACKAGES_KEY = ['credits', 'packages'] as const;
 const ALL_PACKAGES_KEY = ['credits', 'packages', 'all'] as const;
@@ -41,6 +43,16 @@ export function useVoxCosts() {
 		queryKey: COSTS_KEY,
 		queryFn: getVoxCosts,
 		staleTime: 5 * 60_000,
+	});
+}
+
+export function useVoxQuotas(enabled = true) {
+	return useQuery({
+		queryKey: VOX_QUOTA_KEY,
+		queryFn: getVoxQuotas,
+		staleTime: 30_000,
+		refetchInterval: 60_000,
+		enabled,
 	});
 }
 

@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { VOX_BALANCE_KEY, VOX_QUOTA_KEY } from '@/hooks/use-credits';
 import {
 	deletePrevia,
 	deleteWatermark,
@@ -9,7 +10,6 @@ import {
 	getPreviaOptions,
 	getPreviasAdminUsage,
 	getPreviasHistory,
-	getPreviasQuota,
 	getWatermark,
 	updatePrevia,
 	uploadWatermark,
@@ -20,7 +20,6 @@ import type {
 } from '@/types/previas';
 
 const QUERY_KEY = ['previas'] as const;
-const QUOTA_KEY = ['previas', 'quota'] as const;
 const OPTIONS_KEY = ['previas', 'options'] as const;
 
 export function usePreviaOptions(enabled = true) {
@@ -32,22 +31,14 @@ export function usePreviaOptions(enabled = true) {
 	});
 }
 
-export function usePreviasQuota() {
-	return useQuery({
-		queryKey: QUOTA_KEY,
-		queryFn: getPreviasQuota,
-		refetchInterval: 60_000,
-		staleTime: 30_000,
-	});
-}
-
 export function useGeneratePrevia() {
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (payload: GeneratePreviaPayload) => generatePrevia(payload),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: QUERY_KEY });
-			qc.invalidateQueries({ queryKey: QUOTA_KEY });
+			qc.invalidateQueries({ queryKey: VOX_QUOTA_KEY });
+			qc.invalidateQueries({ queryKey: VOX_BALANCE_KEY });
 			toast.success('Previa gerada com sucesso!');
 		},
 		onError: () => toast.error('Erro ao gerar previa'),
