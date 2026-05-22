@@ -98,6 +98,28 @@ export interface Event {
 	time?: string | null;
 	type: 'workshop' | 'live' | 'qa';
 	description?: string | null;
+	streamUrl?: string | null;
+	streamProvider?: 'youtube' | 'vimeo' | null;
+	waitingRoomOpensMinutesBefore?: number;
+	hostId?: string | null;
+}
+
+export interface EventAttendee {
+	customerId: string;
+	customerName: string | null;
+	customerImage: string | null;
+	joinedAt: string;
+}
+
+export interface WaitingRoomState {
+	event: Event;
+	isWaitingRoomOpen: boolean;
+	isLive: boolean;
+	hasEnded: boolean;
+	startsAt: string;
+	waitingRoomOpensAt: string;
+	attendees: EventAttendee[];
+	hasJoined: boolean;
 }
 
 export interface RankingUser {

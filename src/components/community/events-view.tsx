@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowLeft, Calendar, Clock, Video } from 'lucide-react';
+import Link from 'next/link';
 import { useState } from 'react';
 import { ModalOverlay } from '@/components/ui/modal-overlay';
 import { useCommunityEvents } from '@/hooks/use-community';
@@ -284,12 +285,12 @@ export function EventsView({ isAdmin: _isAdmin = false }: EventsViewProps) {
 											<p className="text-slate-600 dark:text-gray-400 mb-4">
 												{event.description ?? ''}
 											</p>
-											<button
-												type="button"
-												className="flex items-center gap-2 px-6 py-2 bg-violet-600 hover:bg-violet-600 text-white font-medium rounded-full"
+											<Link
+												href={`/course/eventos/${event.id}/sala-de-espera`}
+												className="inline-flex items-center gap-2 px-6 py-2 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-full"
 											>
 												<Video className="h-4 w-4" /> Entrar na Sala de Espera
-											</button>
+											</Link>
 										</div>
 									</div>
 								</div>

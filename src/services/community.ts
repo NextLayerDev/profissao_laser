@@ -10,6 +10,7 @@ import type {
 	Project,
 	ProjectComment,
 	RankingUser,
+	WaitingRoomState,
 } from '@/types/community';
 
 export async function getPosts(params?: {
@@ -211,6 +212,9 @@ export async function createEvent(body: {
 	date: string;
 	time?: string;
 	type: Event['type'];
+	streamUrl?: string;
+	streamProvider?: 'youtube' | 'vimeo';
+	waitingRoomOpensMinutesBefore?: number;
 }): Promise<Event> {
 	const { data } = await api.post<Event>('/community/events', body);
 	return data as Event;
@@ -224,6 +228,9 @@ export async function updateEvent(
 		date?: string;
 		time?: string;
 		type?: Event['type'];
+		streamUrl?: string | null;
+		streamProvider?: 'youtube' | 'vimeo' | null;
+		waitingRoomOpensMinutesBefore?: number;
 	},
 ): Promise<Event> {
 	const { data: result } = await api.patch<Event>(
@@ -235,6 +242,29 @@ export async function updateEvent(
 
 export async function deleteEvent(eventId: string): Promise<void> {
 	await api.delete(`/community/events/${encodeURIComponent(eventId)}`);
+}
+
+// ─── Sala de espera ──────────────────────────────────────────────────────
+
+export async function getEventWaitingRoom(
+	eventId: string,
+): Promise<WaitingRoomState> {
+	const { data } = await api.get<WaitingRoomState>(
+		`/community/events/${encodeURIComponent(eventId)}/waiting-room`,
+	);
+	return data;
+}
+
+export async function joinEventWaitingRoom(eventId: string): Promise<void> {
+	await api.post(
+		`/community/events/${encodeURIComponent(eventId)}/waiting-room/join`,
+	);
+}
+
+export async function leaveEventWaitingRoom(eventId: string): Promise<void> {
+	await api.post(
+		`/community/events/${encodeURIComponent(eventId)}/waiting-room/leave`,
+	);
 }
 
 export async function getRanking(params?: {

@@ -57,6 +57,9 @@ interface EventFormData {
 	date: string;
 	time: string;
 	type: Event['type'];
+	streamUrl: string;
+	streamProvider: 'youtube' | 'vimeo' | '';
+	waitingRoomOpensMinutesBefore: number;
 }
 
 const emptyForm: EventFormData = {
@@ -65,6 +68,9 @@ const emptyForm: EventFormData = {
 	date: '',
 	time: '',
 	type: 'workshop',
+	streamUrl: '',
+	streamProvider: '',
+	waitingRoomOpensMinutesBefore: 15,
 };
 
 export function EventsAdminSection() {
@@ -105,6 +111,9 @@ export function EventsAdminSection() {
 			date: dateStr,
 			time: event.time ?? '',
 			type: event.type,
+			streamUrl: event.streamUrl ?? '',
+			streamProvider: event.streamProvider ?? '',
+			waitingRoomOpensMinutesBefore: event.waitingRoomOpensMinutesBefore ?? 15,
 		});
 		setShowModal(true);
 	};
@@ -125,6 +134,9 @@ export function EventsAdminSection() {
 			date: form.date,
 			time: form.time.trim() || undefined,
 			type: form.type,
+			streamUrl: form.streamUrl.trim() || undefined,
+			streamProvider: form.streamProvider || undefined,
+			waitingRoomOpensMinutesBefore: form.waitingRoomOpensMinutesBefore,
 		};
 
 		if (editingEvent) {
@@ -370,6 +382,84 @@ export function EventsAdminSection() {
 									<option value="live">Live</option>
 									<option value="qa">Q&A</option>
 								</select>
+							</div>
+
+							<div className="pt-3 border-t border-slate-200 dark:border-white/10">
+								<p className="text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+									Sala de espera (opcional)
+								</p>
+								<div className="space-y-3">
+									<div>
+										<label
+											htmlFor="event-stream-url"
+											className="text-sm font-medium text-slate-700 dark:text-gray-300 block mb-1"
+										>
+											URL da transmissão
+										</label>
+										<input
+											id="event-stream-url"
+											type="url"
+											value={form.streamUrl}
+											onChange={(e) =>
+												setForm((f) => ({ ...f, streamUrl: e.target.value }))
+											}
+											placeholder="https://youtube.com/watch?v=... ou vimeo.com/..."
+											className="w-full h-12 rounded-xl bg-slate-50 dark:bg-[#252528] border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500 px-4"
+										/>
+									</div>
+									<div className="grid grid-cols-2 gap-4">
+										<div>
+											<label
+												htmlFor="event-stream-provider"
+												className="text-sm font-medium text-slate-700 dark:text-gray-300 block mb-1"
+											>
+												Plataforma
+											</label>
+											<select
+												id="event-stream-provider"
+												value={form.streamProvider}
+												onChange={(e) =>
+													setForm((f) => ({
+														...f,
+														streamProvider: e.target.value as
+															| 'youtube'
+															| 'vimeo'
+															| '',
+													}))
+												}
+												className="w-full h-12 rounded-xl bg-slate-50 dark:bg-[#252528] border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white focus:outline-none focus:border-violet-500 px-4"
+											>
+												<option value="">Auto</option>
+												<option value="youtube">YouTube</option>
+												<option value="vimeo">Vimeo</option>
+											</select>
+										</div>
+										<div>
+											<label
+												htmlFor="event-wr-opens"
+												className="text-sm font-medium text-slate-700 dark:text-gray-300 block mb-1"
+											>
+												Sala abre (min antes)
+											</label>
+											<input
+												id="event-wr-opens"
+												type="number"
+												min={0}
+												max={120}
+												value={form.waitingRoomOpensMinutesBefore}
+												onChange={(e) =>
+													setForm((f) => ({
+														...f,
+														waitingRoomOpensMinutesBefore: Number(
+															e.target.value,
+														),
+													}))
+												}
+												className="w-full h-12 rounded-xl bg-slate-50 dark:bg-[#252528] border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white focus:outline-none focus:border-violet-500 px-4"
+											/>
+										</div>
+									</div>
+								</div>
 							</div>
 						</div>
 
