@@ -386,16 +386,21 @@ export function useCommunityEvents(from?: string, to?: string) {
 	});
 }
 
+export interface EventFormPayload {
+	title: string;
+	description?: string;
+	date: string;
+	time?: string;
+	type: 'workshop' | 'live' | 'qa';
+	streamUrl?: string;
+	streamProvider?: 'youtube' | 'vimeo';
+	waitingRoomOpensMinutesBefore?: number;
+}
+
 export function useCreateEvent() {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: (body: {
-			title: string;
-			description?: string;
-			date: string;
-			time?: string;
-			type: 'workshop' | 'live' | 'qa';
-		}) => createEvent(body),
+		mutationFn: (body: EventFormPayload) => createEvent(body),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['community', 'events'] });
 			toast.success('Evento criado!');
@@ -409,19 +414,8 @@ export function useCreateEvent() {
 export function useUpdateEvent() {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: ({
-			id,
-			data,
-		}: {
-			id: string;
-			data: {
-				title: string;
-				description?: string;
-				date: string;
-				time?: string;
-				type: 'workshop' | 'live' | 'qa';
-			};
-		}) => updateEvent(id, data),
+		mutationFn: ({ id, data }: { id: string; data: EventFormPayload }) =>
+			updateEvent(id, data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['community', 'events'] });
 			toast.success('Evento atualizado!');
