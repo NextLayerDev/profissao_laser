@@ -2,6 +2,7 @@
 
 import {
 	Calendar,
+	CalendarCog,
 	Check,
 	CheckCircle,
 	Loader2,
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { AppointmentConfigBody } from '@/components/suporte/appointment-config-section';
 import {
 	useAppointments,
 	useDeleteAppointment,
@@ -42,7 +44,7 @@ export function AppointmentsTable({
 	showCreateButton = true,
 }: AppointmentsTableProps) {
 	const [viewMode, setViewMode] = useState<
-		'calendario' | 'cliente' | 'tecnico'
+		'calendario' | 'cliente' | 'tecnico' | 'config'
 	>('calendario');
 	const [selectedCustomerSearch, setSelectedCustomerSearch] =
 		useState<string>('');
@@ -209,9 +211,21 @@ export function AppointmentsTable({
 							<UserCog className="w-4 h-4" />
 							Por técnico
 						</button>
+						<button
+							type="button"
+							onClick={() => setViewMode('config')}
+							className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+								viewMode === 'config'
+									? 'bg-violet-600 text-white'
+									: 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/5'
+							}`}
+						>
+							<CalendarCog className="w-4 h-4" />
+							Configurações
+						</button>
 					</div>
 				</div>
-				{showCreateButton && (
+				{showCreateButton && viewMode !== 'config' && (
 					<button
 						type="button"
 						onClick={() => setShowCreateModal(true)}
@@ -445,6 +459,8 @@ export function AppointmentsTable({
 					/>
 				</div>
 			)}
+
+			{viewMode === 'config' && <AppointmentConfigBody />}
 
 			<UpdateStatusModal
 				appointment={statusModal?.appointment ?? null}

@@ -10,16 +10,32 @@ export async function getAppointments(): Promise<Appointment[]> {
 	return appointmentSchema.array().parse(data);
 }
 
+export interface AvailableSlotsResponse {
+	slots: string[];
+	blocked: boolean;
+	reason: string | null;
+}
+
 export async function getAvailableSlots(
 	date: string,
 	technicianId?: string,
-): Promise<string[]> {
+): Promise<AvailableSlotsResponse> {
 	const params: Record<string, string> = { date };
 	if (technicianId) params.technicianId = technicianId;
-	const { data } = await api.get('/appointments/available-slots', {
+	const { data } = await api.get<unknown>('/appointments/available-slots', {
 		params,
 	});
-	return Array.isArray(data) ? data : [];
+
+	// Compat: a API velha retornava string[]; a nova retorna {slots, blocked, reason}.
+	if (Array.isArray(data)) {
+		return { slots: data as string[], blocked: false, reason: null };
+	}
+	const obj = (data ?? {}) as Partial<AvailableSlotsResponse>;
+	return {
+		slots: Array.isArray(obj.slots) ? obj.slots : [],
+		blocked: !!obj.blocked,
+		reason: obj.reason ?? null,
+	};
 }
 
 export async function getAppointmentsByCustomer(
