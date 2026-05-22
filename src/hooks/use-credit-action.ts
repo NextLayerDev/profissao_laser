@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import type { CreditModalVariant } from '@/components/credits/credit-confirm-modal';
-import { VOX_BALANCE_KEY } from '@/hooks/use-credits';
+import { VOX_BALANCE_KEY, VOX_QUOTA_KEY } from '@/hooks/use-credits';
 import type { VoxFeature } from '@/types/credits';
 
 interface AxiosLikeError {
@@ -27,6 +27,13 @@ interface ModalState {
 	cost: number;
 	balance: number;
 	canUseCredits: boolean;
+	/** info adicional para variant='free-tier-exhausted' */
+	freeTier?: {
+		limit: number;
+		used: number;
+		period: 'daily' | 'weekly';
+		resetsAt: string;
+	};
 }
 
 interface UseCreditActionArgs<T> {
@@ -51,6 +58,7 @@ export function useCreditAction<T>({
 
 	const finish = useCallback(() => {
 		qc.invalidateQueries({ queryKey: VOX_BALANCE_KEY });
+		qc.invalidateQueries({ queryKey: VOX_QUOTA_KEY });
 	}, [qc]);
 
 	const execute = useCallback(
@@ -72,17 +80,19 @@ export function useCreditAction<T>({
 						balance: (data.balance as number) ?? balance,
 						canUseCredits: true,
 					});
-				} else if (status === 429 && data.code === 'DAILY_LIMIT_REACHED') {
-					const opt = data.creditOption as {
-						cost: number;
-						balance: number;
-						canUseCredits: boolean;
-					} | null;
+				} else if (status === 429 && data.code === 'FREE_TIER_LIMIT_REACHED') {
 					setModal({
-						variant: 'daily-limit',
-						cost: opt?.cost ?? cost,
-						balance: opt?.balance ?? balance,
-						canUseCredits: !!opt?.canUseCredits,
+						variant: 'free-tier-exhausted',
+						cost,
+						balance: (data.balance as number) ?? 0,
+						canUseCredits: false,
+						freeTier: {
+							limit: (data.limit as number) ?? 0,
+							used: (data.used as number) ?? 0,
+							period:
+								(data.period as 'daily' | 'weekly' | undefined) ?? 'weekly',
+							resetsAt: (data.resetsAt as string) ?? '',
+						},
 					});
 				} else {
 					setModal(null);
@@ -96,25 +106,16 @@ export function useCreditAction<T>({
 		[run, finish, cost, balance],
 	);
 
-	/** Chamada inicial. Para prévia, useFreeQuotaFirst=true tenta sem flag. */
+	/**
+	 * Chamada inicial. Sempre tenta executar sem `useCredits`:
+	 *   • balance == 0 + free-tier disponível → executa e loga uso grátis
+	 *   • balance == 0 + free-tier esgotado → 429 → modal 'free-tier-exhausted'
+	 *   • balance > 0 → 402 confirmation_required → modal 'confirm'
+	 * O parâmetro `useFreeQuotaFirst` é mantido por compatibilidade (no-op).
+	 */
 	const trigger = useCallback(
-		(opts?: { useFreeQuotaFirst?: boolean }) => {
-			if (opts?.useFreeQuotaFirst) {
-				return execute(false);
-			}
-			if (balance < cost) {
-				setModal({
-					variant: 'insufficient',
-					cost,
-					balance,
-					canUseCredits: false,
-				});
-				return Promise.resolve(undefined);
-			}
-			setModal({ variant: 'confirm', cost, balance, canUseCredits: true });
-			return Promise.resolve(undefined);
-		},
-		[balance, cost, execute],
+		(_opts?: { useFreeQuotaFirst?: boolean }) => execute(false),
+		[execute],
 	);
 
 	const confirm = useCallback(() => execute(true), [execute]);

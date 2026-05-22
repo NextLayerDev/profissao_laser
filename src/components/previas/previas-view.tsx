@@ -25,15 +25,15 @@ import {
 	Trash2,
 	Type,
 	Upload,
-	Zap,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
+import { FreeTierQuotaBanner } from '@/components/credits/free-tier-quota-banner';
 import { MyMachineSection } from '@/components/previas/my-machine-section';
 import { PageHeader } from '@/components/ui/page-header';
 import { useCreditAction } from '@/hooks/use-credit-action';
-import { useVoxBalance, useVoxCosts } from '@/hooks/use-credits';
+import { useVoxBalance, useVoxCosts, useVoxQuotas } from '@/hooks/use-credits';
 import { useLaserProduct, useLaserProducts } from '@/hooks/use-laser-products';
 import {
 	useDeletePrevia,
@@ -41,7 +41,6 @@ import {
 	useGeneratePrevia,
 	usePreviaOptions,
 	usePreviasHistory,
-	usePreviasQuota,
 	useUpdatePrevia,
 	useUploadWatermark,
 	useWatermark,
@@ -54,7 +53,6 @@ import type {
 	PreviaFontOption,
 	PreviaOptionItem,
 	PreviaOptions,
-	PreviasQuota,
 } from '@/types/previas';
 
 type WizardStep = 1 | 2 | 3 | 4;
@@ -785,61 +783,6 @@ function Pagination({
 	);
 }
 
-/* ─────────────── Quota Banner ─────────────── */
-
-function QuotaBanner({
-	quota,
-	isLoading,
-}: {
-	quota?: PreviasQuota;
-	isLoading: boolean;
-}) {
-	if (isLoading || !quota) return null;
-
-	const pct = quota.limit > 0 ? (quota.used / quota.limit) * 100 : 0;
-	const isAtLimit = quota.remaining <= 0;
-
-	const resetTime = new Date(quota.resetsAt).toLocaleTimeString('pt-PT', {
-		hour: '2-digit',
-		minute: '2-digit',
-	});
-
-	let barColor = 'bg-violet-600';
-	let borderColor = 'border-violet-200 dark:border-violet-800/40';
-	let bgColor = 'bg-violet-50 dark:bg-violet-950/20';
-	if (isAtLimit) {
-		barColor = 'bg-red-600';
-		borderColor = 'border-red-300 dark:border-red-800/50';
-		bgColor = 'bg-red-50 dark:bg-red-950/20';
-	}
-
-	return (
-		<div className={`rounded-xl border ${borderColor} ${bgColor} p-4 mb-8`}>
-			<div className="flex items-center justify-between mb-2">
-				<div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
-					{isAtLimit ? (
-						<AlertTriangle className="w-4 h-4 text-red-500" />
-					) : (
-						<Zap className="w-4 h-4 text-violet-600" />
-					)}
-					{isAtLimit
-						? 'Limite diario atingido'
-						: `${quota.remaining} de ${quota.limit} previas restantes hoje`}
-				</div>
-				<span className="text-xs text-slate-500 dark:text-gray-400">
-					Renova as {resetTime}
-				</span>
-			</div>
-			<div className="w-full h-2 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
-				<div
-					className={`h-full rounded-full transition-all ${barColor}`}
-					style={{ width: `${Math.min(pct, 100)}%` }}
-				/>
-			</div>
-		</div>
-	);
-}
-
 /* ─────────────── Main View ─────────────── */
 
 export function PreviasView() {
@@ -890,8 +833,13 @@ export function PreviasView() {
 	const histLimit = 12;
 
 	const generateMutation = useGeneratePrevia();
-	const { data: quota, isLoading: quotaLoading } = usePreviasQuota();
-	const isAtLimit = quota ? quota.remaining <= 0 : false;
+	const { data: quotaData } = useVoxQuotas();
+	const previaQuota = quotaData?.quotas.find((q) => q.feature === 'previa');
+	// Só free-tier (balance == 0) tem limite. Paid users nunca ficam "at limit".
+	const isAtLimit =
+		quotaData?.balance === 0 && previaQuota
+			? previaQuota.remaining <= 0
+			: false;
 	const { data: historyData, isLoading: histLoading } = usePreviasHistory(
 		histPage,
 		histLimit,
@@ -1046,14 +994,19 @@ export function PreviasView() {
 				icon={Eye}
 			/>
 
-			{/* Quota Banner */}
-			<QuotaBanner quota={quota} isLoading={quotaLoading} />
+			{/* Banner de quota grátis — só visível pra balance 0 */}
+			<FreeTierQuotaBanner
+				feature="previa"
+				unitLabel="prévias"
+				className="mb-8"
+			/>
 			{creditAction.modal && (
 				<CreditConfirmModal
 					variant={creditAction.modal.variant}
 					cost={creditAction.modal.cost}
 					balance={creditAction.modal.balance}
 					canUseCredits={creditAction.modal.canUseCredits}
+					freeTier={creditAction.modal.freeTier}
 					pending={creditAction.pending}
 					onConfirm={creditAction.confirm}
 					onClose={creditAction.close}

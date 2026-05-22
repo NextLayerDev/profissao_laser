@@ -2,6 +2,8 @@ import { api } from '@/lib/fetch';
 import {
 	type AdjustVoxPayload,
 	type CreateVoxPackagePayload,
+	type QuotaResponse,
+	quotaResponseSchema,
 	type UpdateVoxPackagePayload,
 	type VoxBalance,
 	type VoxCheckoutResponse,
@@ -26,6 +28,11 @@ export async function getVoxBalance(): Promise<VoxBalance> {
 export async function getVoxCosts(): Promise<VoxCost[]> {
 	const { data } = await api.get('/credits/costs');
 	return voxCostSchema.array().parse(data);
+}
+
+export async function getVoxQuotas(): Promise<QuotaResponse> {
+	const { data } = await api.get('/credits/quota');
+	return quotaResponseSchema.parse(data);
 }
 
 export async function getVoxPackages(): Promise<VoxPackage[]> {

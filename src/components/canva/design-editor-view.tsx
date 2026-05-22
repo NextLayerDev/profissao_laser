@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
+import { FreeTierQuotaBanner } from '@/components/credits/free-tier-quota-banner';
 import { useCreditAction } from '@/hooks/use-credit-action';
 import { useVoxBalance, useVoxCosts } from '@/hooks/use-credits';
 import {
@@ -322,6 +323,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 					cost={generateAction.modal.cost}
 					balance={generateAction.modal.balance}
 					canUseCredits={generateAction.modal.canUseCredits}
+					freeTier={generateAction.modal.freeTier}
 					pending={generateAction.pending}
 					onConfirm={generateAction.confirm}
 					onClose={generateAction.close}
@@ -333,11 +335,17 @@ export function DesignEditorView({ designId }: { designId: string }) {
 					cost={removeBgAction.modal.cost}
 					balance={removeBgAction.modal.balance}
 					canUseCredits={removeBgAction.modal.canUseCredits}
+					freeTier={removeBgAction.modal.freeTier}
 					pending={removeBgAction.pending}
 					onConfirm={removeBgAction.confirm}
 					onClose={removeBgAction.close}
 				/>
 			)}
+			<FreeTierQuotaBanner
+				feature="editor-ai"
+				unitLabel="edições IA"
+				className="mb-4"
+			/>
 			{/* Header */}
 			<div className="flex items-center justify-between gap-4 mb-6">
 				<div className="flex items-center gap-3 min-w-0">
