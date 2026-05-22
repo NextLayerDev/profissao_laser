@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { DesignEditorView } from '@/components/canva/design-editor-view';
+import { CanvaEditor } from '@/components/canva-editor';
 import { AccessGate } from '@/components/ui/access-gate';
 import { EditorSkeleton } from '@/components/ui/skeletons/editor-skeleton';
 import { useCustomerFeatures } from '@/hooks/use-customer-features';
@@ -45,5 +45,5 @@ export default function DesignEditorPage() {
 		);
 	}
 
-	return <DesignEditorView designId={id} />;
+	return <CanvaEditor designId={id} />;
 }
