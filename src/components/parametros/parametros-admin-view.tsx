@@ -4,6 +4,7 @@ import {
 	Cpu,
 	Download,
 	Filter,
+	Image as ImgIcon,
 	Layers,
 	Loader2,
 	Pencil,
@@ -16,6 +17,8 @@ import {
 	X,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { LaserLineTypesAdminSection } from '@/components/parametros/laser-line-types-admin-section';
+import { useLaserLineTypes } from '@/hooks/use-laser-line-types';
 import {
 	useCreateParameter,
 	useDeleteParameter,
@@ -27,6 +30,7 @@ import {
 	useUpdateParameter,
 } from '@/hooks/use-parameters';
 import type { CreateParameterPayload } from '@/services/parameters';
+import type { LaserLineTypeSoftware } from '@/types/laser-line-type';
 import type { LaserParameter } from '@/types/parameters';
 import {
 	LENS_OPTIONS,
@@ -96,6 +100,12 @@ const EMPTY_FORM: CreateParameterPayload = {
 	defocus: undefined,
 	materialType: '',
 	thickness: '',
+	tamanhoLinha: null,
+	tamanhoDivisao: null,
+	sobreposicao: null,
+	forcarSeparacao: null,
+	axisRotative: null,
+	lineTypeId: null,
 };
 
 /* ------------------------------------------------------------------ */
@@ -112,7 +122,10 @@ const inputCls =
 /*  Main component                                                     */
 /* ------------------------------------------------------------------ */
 
+type AdminTab = 'parameters' | 'line-types';
+
 export function ParametrosAdminView() {
+	const [activeTab, setActiveTab] = useState<AdminTab>('parameters');
 	const [currentPage, setCurrentPage] = useState(1);
 	const [searchQuery, setSearchQuery] = useState('');
 	const [filterMachine, setFilterMachine] = useState('');
@@ -194,7 +207,7 @@ export function ParametrosAdminView() {
 	return (
 		<>
 			{/* Header */}
-			<div className="flex items-center justify-between mb-6">
+			<div className="flex items-center justify-between mb-6 flex-wrap gap-3">
 				<div>
 					<h2 className="text-2xl font-bold tracking-tight flex items-center gap-2 text-slate-900 dark:text-white">
 						<SlidersHorizontal className="w-6 h-6 text-violet-500" />
@@ -204,336 +217,373 @@ export function ParametrosAdminView() {
 						Crie, edite e exclua parametros de corte e gravacao laser.
 					</p>
 				</div>
+				{activeTab === 'parameters' && (
+					<button
+						type="button"
+						onClick={() => setShowCreate(true)}
+						className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-xl transition-colors"
+					>
+						<Plus className="w-4 h-4" />
+						Novo parametro
+					</button>
+				)}
+			</div>
+
+			{/* Tabs */}
+			<div className="flex gap-1 mb-6 border-b border-slate-200 dark:border-white/10">
 				<button
 					type="button"
-					onClick={() => setShowCreate(true)}
-					className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-xl transition-colors"
+					onClick={() => setActiveTab('parameters')}
+					className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+						activeTab === 'parameters'
+							? 'text-violet-600 dark:text-violet-400 border-violet-500'
+							: 'text-slate-600 dark:text-gray-400 border-transparent hover:text-slate-900 dark:hover:text-white'
+					}`}
 				>
-					<Plus className="w-4 h-4" />
-					Novo parametro
+					<Table className="w-4 h-4" />
+					Parametros
+				</button>
+				<button
+					type="button"
+					onClick={() => setActiveTab('line-types')}
+					className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+						activeTab === 'line-types'
+							? 'text-violet-600 dark:text-violet-400 border-violet-500'
+							: 'text-slate-600 dark:text-gray-400 border-transparent hover:text-slate-900 dark:hover:text-white'
+					}`}
+				>
+					<ImgIcon className="w-4 h-4" />
+					Tipos de Linha
 				</button>
 			</div>
 
-			{/* Stats */}
-			<div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-				{STATS_CONFIG.map((s) => {
-					const value = statsData ? statsData[s.key] : '\u2014';
-					return (
-						<div
-							key={s.label}
-							className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-4"
+			{activeTab === 'line-types' && <LaserLineTypesAdminSection />}
+			{activeTab === 'parameters' && (
+				<>
+					{/* Stats */}
+					<div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+						{STATS_CONFIG.map((s) => {
+							const value = statsData ? statsData[s.key] : '\u2014';
+							return (
+								<div
+									key={s.label}
+									className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-4"
+								>
+									<div
+										className={`flex items-center justify-center w-10 h-10 rounded-lg ${s.bg}`}
+									>
+										<s.icon className={`w-5 h-5 ${s.color}`} />
+									</div>
+									<div>
+										<p className="text-xl font-bold text-slate-900 dark:text-white">
+											{typeof value === 'number'
+												? value.toLocaleString('pt-BR')
+												: value}
+										</p>
+										<p className="text-xs text-slate-500 dark:text-slate-400">
+											{s.label}
+										</p>
+									</div>
+								</div>
+							);
+						})}
+					</div>
+
+					{/* Filter bar */}
+					<div className="flex flex-wrap items-center gap-3 mb-6 p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5">
+						<Filter className="w-4 h-4 text-slate-400" />
+
+						<select
+							className={selectCls}
+							value={filterMachine}
+							onChange={(e) => {
+								setFilterMachine(e.target.value);
+								setCurrentPage(1);
+							}}
 						>
-							<div
-								className={`flex items-center justify-center w-10 h-10 rounded-lg ${s.bg}`}
+							<option value="">Maquina</option>
+							{machines.map((m) => (
+								<option key={m.id} value={m.brand}>
+									{m.brand} {m.model}
+								</option>
+							))}
+						</select>
+
+						<select
+							className={selectCls}
+							value={filterMaterial}
+							onChange={(e) => {
+								setFilterMaterial(e.target.value);
+								setCurrentPage(1);
+							}}
+						>
+							<option value="">Material</option>
+							{materials.map((m) => (
+								<option key={m.id} value={m.name}>
+									{m.name}
+								</option>
+							))}
+						</select>
+
+						<select
+							className={selectCls}
+							value={filterThickness}
+							onChange={(e) => {
+								setFilterThickness(e.target.value);
+								setCurrentPage(1);
+							}}
+						>
+							<option value="">Espessura</option>
+							{thicknesses.map((t) => (
+								<option key={t} value={t}>
+									{t}
+								</option>
+							))}
+						</select>
+
+						<select
+							className={selectCls}
+							value={filterMode}
+							onChange={(e) => {
+								setFilterMode(e.target.value);
+								setCurrentPage(1);
+							}}
+						>
+							<option value="">Modo</option>
+							<option value="Corte">Corte</option>
+							<option value="Gravacao">Gravacao</option>
+							<option value="Preenchimento">Preenchimento</option>
+							<option value="Limpeza">Limpeza</option>
+						</select>
+
+						<div className="ml-auto flex items-center gap-2">
+							<button
+								type="button"
+								onClick={handleClearFilters}
+								className="px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
 							>
-								<s.icon className={`w-5 h-5 ${s.color}`} />
-							</div>
-							<div>
-								<p className="text-xl font-bold text-slate-900 dark:text-white">
-									{typeof value === 'number'
-										? value.toLocaleString('pt-BR')
-										: value}
-								</p>
-								<p className="text-xs text-slate-500 dark:text-slate-400">
-									{s.label}
-								</p>
+								Limpar
+							</button>
+							<div className="relative">
+								<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+								<input
+									type="text"
+									placeholder="Buscar..."
+									value={searchQuery}
+									onChange={(e) => setSearchQuery(e.target.value)}
+									onKeyDown={(e) => e.key === 'Enter' && setCurrentPage(1)}
+									className="pl-9 pr-4 py-2 w-40 md:w-52 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition"
+								/>
 							</div>
 						</div>
-					);
-				})}
-			</div>
-
-			{/* Filter bar */}
-			<div className="flex flex-wrap items-center gap-3 mb-6 p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5">
-				<Filter className="w-4 h-4 text-slate-400" />
-
-				<select
-					className={selectCls}
-					value={filterMachine}
-					onChange={(e) => {
-						setFilterMachine(e.target.value);
-						setCurrentPage(1);
-					}}
-				>
-					<option value="">Maquina</option>
-					{machines.map((m) => (
-						<option key={m.id} value={m.brand}>
-							{m.brand} {m.model}
-						</option>
-					))}
-				</select>
-
-				<select
-					className={selectCls}
-					value={filterMaterial}
-					onChange={(e) => {
-						setFilterMaterial(e.target.value);
-						setCurrentPage(1);
-					}}
-				>
-					<option value="">Material</option>
-					{materials.map((m) => (
-						<option key={m.id} value={m.name}>
-							{m.name}
-						</option>
-					))}
-				</select>
-
-				<select
-					className={selectCls}
-					value={filterThickness}
-					onChange={(e) => {
-						setFilterThickness(e.target.value);
-						setCurrentPage(1);
-					}}
-				>
-					<option value="">Espessura</option>
-					{thicknesses.map((t) => (
-						<option key={t} value={t}>
-							{t}
-						</option>
-					))}
-				</select>
-
-				<select
-					className={selectCls}
-					value={filterMode}
-					onChange={(e) => {
-						setFilterMode(e.target.value);
-						setCurrentPage(1);
-					}}
-				>
-					<option value="">Modo</option>
-					<option value="Corte">Corte</option>
-					<option value="Gravacao">Gravacao</option>
-					<option value="Preenchimento">Preenchimento</option>
-					<option value="Limpeza">Limpeza</option>
-				</select>
-
-				<div className="ml-auto flex items-center gap-2">
-					<button
-						type="button"
-						onClick={handleClearFilters}
-						className="px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
-					>
-						Limpar
-					</button>
-					<div className="relative">
-						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-						<input
-							type="text"
-							placeholder="Buscar..."
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-							onKeyDown={(e) => e.key === 'Enter' && setCurrentPage(1)}
-							className="pl-9 pr-4 py-2 w-40 md:w-52 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition"
-						/>
 					</div>
-				</div>
-			</div>
 
-			{/* Table */}
-			{isLoading ? (
-				<div className="flex justify-center py-20">
-					<Loader2 className="w-8 h-8 animate-spin text-violet-500" />
-				</div>
-			) : parameters.length === 0 ? (
-				<div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500">
-					<Table className="w-12 h-12 mb-3" />
-					<p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-						Nenhum parametro encontrado
-					</p>
-				</div>
-			) : (
-				<div className="rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden bg-white dark:bg-transparent shadow-sm dark:shadow-none mb-4">
-					<div className="overflow-x-auto">
-						<table className="w-full text-sm">
-							<thead>
-								<tr className="bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-left">
-									<th className="px-4 py-3 font-medium">Material</th>
-									<th className="px-4 py-3 font-medium">Maquina</th>
-									<th className="px-4 py-3 font-medium">Lente</th>
-									<th className="px-4 py-3 font-medium">Modo</th>
-									<th className="px-4 py-3 font-medium">Power%</th>
-									<th className="px-4 py-3 font-medium">PowerW</th>
-									<th className="px-4 py-3 font-medium">Velocidade</th>
-									<th className="px-4 py-3 font-medium">Freq</th>
-									<th className="px-4 py-3 font-medium">Line</th>
-									<th className="px-4 py-3 font-medium">Pass(C)</th>
-									<th className="px-4 py-3 font-medium">Pass(P)</th>
-									<th className="px-4 py-3 font-medium">Gas</th>
-									<th className="px-4 py-3 font-medium">Publico</th>
-									<th className="px-4 py-3 font-medium text-right">Acoes</th>
-								</tr>
-							</thead>
-							<tbody>
-								{parameters.map((p) => (
-									<tr
-										key={p.id}
-										className="border-t border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors"
-									>
-										<td className="px-4 py-3 font-medium text-slate-900 dark:text-white whitespace-nowrap">
-											{p.material}
-										</td>
-										<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-											{p.machine || '\u2014'}
-										</td>
-										<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-											{p.lens ?? '\u2014'}
-										</td>
-										<td className="px-4 py-3">
-											<span
-												className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-													p.mode === 'Corte'
-														? 'bg-blue-50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300'
-														: 'bg-amber-50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300'
-												}`}
+					{/* Table */}
+					{isLoading ? (
+						<div className="flex justify-center py-20">
+							<Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+						</div>
+					) : parameters.length === 0 ? (
+						<div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500">
+							<Table className="w-12 h-12 mb-3" />
+							<p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+								Nenhum parametro encontrado
+							</p>
+						</div>
+					) : (
+						<div className="rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden bg-white dark:bg-transparent shadow-sm dark:shadow-none mb-4">
+							<div className="overflow-x-auto">
+								<table className="w-full text-sm">
+									<thead>
+										<tr className="bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-left">
+											<th className="px-4 py-3 font-medium">Material</th>
+											<th className="px-4 py-3 font-medium">Maquina</th>
+											<th className="px-4 py-3 font-medium">Lente</th>
+											<th className="px-4 py-3 font-medium">Modo</th>
+											<th className="px-4 py-3 font-medium">Power%</th>
+											<th className="px-4 py-3 font-medium">PowerW</th>
+											<th className="px-4 py-3 font-medium">Velocidade</th>
+											<th className="px-4 py-3 font-medium">Freq</th>
+											<th className="px-4 py-3 font-medium">Line</th>
+											<th className="px-4 py-3 font-medium">Pass(C)</th>
+											<th className="px-4 py-3 font-medium">Pass(P)</th>
+											<th className="px-4 py-3 font-medium">Gas</th>
+											<th className="px-4 py-3 font-medium">Publico</th>
+											<th className="px-4 py-3 font-medium text-right">
+												Acoes
+											</th>
+										</tr>
+									</thead>
+									<tbody>
+										{parameters.map((p) => (
+											<tr
+												key={p.id}
+												className="border-t border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors"
 											>
-												{p.mode}
-											</span>
-										</td>
-										<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-											{p.power}
-										</td>
-										<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-											{p.powerWatts ?? '\u2014'}
-										</td>
-										<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-											{p.speed}
-										</td>
-										<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-											{p.frequency}
-										</td>
-										<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-											{p.line ?? '\u2014'}
-										</td>
-										<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-											{p.passes}
-										</td>
-										<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-											{p.passesFill ?? '\u2014'}
-										</td>
-										<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-											{displayGas(p.gas)}
-										</td>
-										<td className="px-4 py-3">
-											<span
-												className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-													p.isPublic
-														? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300'
-														: 'bg-slate-100 text-slate-500 dark:bg-slate-500/20 dark:text-slate-400'
-												}`}
-											>
-												{p.isPublic ? 'Sim' : 'Nao'}
-											</span>
-										</td>
-										<td className="px-4 py-3 text-right">
-											<div className="flex items-center justify-end gap-1">
-												<button
-													type="button"
-													onClick={() => setEditTarget(p)}
-													className="p-2 text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 rounded-lg transition-colors"
-													title="Editar"
-												>
-													<Pencil className="w-4 h-4" />
-												</button>
-												<button
-													type="button"
-													onClick={() => setDeleteTarget(p)}
-													className="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-													title="Excluir"
-												>
-													<Trash2 className="w-4 h-4" />
-												</button>
-											</div>
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
-				</div>
-			)}
-
-			{/* Pagination + Export */}
-			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-				<p className="text-sm text-slate-500 dark:text-slate-400">
-					Mostrando{' '}
-					<span className="font-semibold text-slate-700 dark:text-slate-300">
-						{showingFrom} a {showingTo}
-					</span>{' '}
-					de{' '}
-					<span className="font-semibold text-slate-700 dark:text-slate-300">
-						{total.toLocaleString('pt-BR')}
-					</span>
-				</p>
-
-				<div className="flex items-center gap-3">
-					{totalPages > 1 && (
-						<div className="flex items-center gap-1">
-							<button
-								type="button"
-								disabled={currentPage === 1}
-								onClick={() => setCurrentPage((p) => p - 1)}
-								className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:border-violet-400 transition-colors"
-							>
-								Anterior
-							</button>
-
-							{Array.from({ length: totalPages }, (_, i) => i + 1)
-								.filter((page) => {
-									if (totalPages <= 7) return true;
-									if (page === 1 || page === totalPages) return true;
-									return Math.abs(page - currentPage) <= 1;
-								})
-								.map((page, idx, arr) => {
-									const showEllipsis = idx > 0 && page - arr[idx - 1] > 1;
-									return (
-										<span key={page} className="flex items-center">
-											{showEllipsis && (
-												<span className="px-1 text-slate-400">...</span>
-											)}
-											<button
-												type="button"
-												onClick={() => setCurrentPage(page)}
-												className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-													page === currentPage
-														? 'bg-violet-600 text-white'
-														: 'text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-500/10'
-												}`}
-											>
-												{page}
-											</button>
-										</span>
-									);
-								})}
-
-							<button
-								type="button"
-								disabled={currentPage === totalPages}
-								onClick={() => setCurrentPage((p) => p + 1)}
-								className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:border-violet-400 transition-colors"
-							>
-								Proximo
-							</button>
+												<td className="px-4 py-3 font-medium text-slate-900 dark:text-white whitespace-nowrap">
+													{p.material}
+												</td>
+												<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
+													{p.machine || '\u2014'}
+												</td>
+												<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
+													{p.lens ?? '\u2014'}
+												</td>
+												<td className="px-4 py-3">
+													<span
+														className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+															p.mode === 'Corte'
+																? 'bg-blue-50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300'
+																: 'bg-amber-50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300'
+														}`}
+													>
+														{p.mode}
+													</span>
+												</td>
+												<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
+													{p.power}
+												</td>
+												<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
+													{p.powerWatts ?? '\u2014'}
+												</td>
+												<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
+													{p.speed}
+												</td>
+												<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
+													{p.frequency}
+												</td>
+												<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
+													{p.line ?? '\u2014'}
+												</td>
+												<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
+													{p.passes}
+												</td>
+												<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
+													{p.passesFill ?? '\u2014'}
+												</td>
+												<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
+													{displayGas(p.gas)}
+												</td>
+												<td className="px-4 py-3">
+													<span
+														className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+															p.isPublic
+																? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300'
+																: 'bg-slate-100 text-slate-500 dark:bg-slate-500/20 dark:text-slate-400'
+														}`}
+													>
+														{p.isPublic ? 'Sim' : 'Nao'}
+													</span>
+												</td>
+												<td className="px-4 py-3 text-right">
+													<div className="flex items-center justify-end gap-1">
+														<button
+															type="button"
+															onClick={() => setEditTarget(p)}
+															className="p-2 text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 rounded-lg transition-colors"
+															title="Editar"
+														>
+															<Pencil className="w-4 h-4" />
+														</button>
+														<button
+															type="button"
+															onClick={() => setDeleteTarget(p)}
+															className="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+															title="Excluir"
+														>
+															<Trash2 className="w-4 h-4" />
+														</button>
+													</div>
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
 						</div>
 					)}
 
-					<button
-						type="button"
-						onClick={handleExport}
-						disabled={exportMutation.isPending}
-						className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors disabled:opacity-50"
-					>
-						{exportMutation.isPending ? (
-							<Loader2 className="w-4 h-4 animate-spin" />
-						) : (
-							<Download className="w-4 h-4" />
-						)}
-						Exportar CSV
-					</button>
-				</div>
-			</div>
+					{/* Pagination + Export */}
+					<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+						<p className="text-sm text-slate-500 dark:text-slate-400">
+							Mostrando{' '}
+							<span className="font-semibold text-slate-700 dark:text-slate-300">
+								{showingFrom} a {showingTo}
+							</span>{' '}
+							de{' '}
+							<span className="font-semibold text-slate-700 dark:text-slate-300">
+								{total.toLocaleString('pt-BR')}
+							</span>
+						</p>
+
+						<div className="flex items-center gap-3">
+							{totalPages > 1 && (
+								<div className="flex items-center gap-1">
+									<button
+										type="button"
+										disabled={currentPage === 1}
+										onClick={() => setCurrentPage((p) => p - 1)}
+										className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:border-violet-400 transition-colors"
+									>
+										Anterior
+									</button>
+
+									{Array.from({ length: totalPages }, (_, i) => i + 1)
+										.filter((page) => {
+											if (totalPages <= 7) return true;
+											if (page === 1 || page === totalPages) return true;
+											return Math.abs(page - currentPage) <= 1;
+										})
+										.map((page, idx, arr) => {
+											const showEllipsis = idx > 0 && page - arr[idx - 1] > 1;
+											return (
+												<span key={page} className="flex items-center">
+													{showEllipsis && (
+														<span className="px-1 text-slate-400">...</span>
+													)}
+													<button
+														type="button"
+														onClick={() => setCurrentPage(page)}
+														className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+															page === currentPage
+																? 'bg-violet-600 text-white'
+																: 'text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-500/10'
+														}`}
+													>
+														{page}
+													</button>
+												</span>
+											);
+										})}
+
+									<button
+										type="button"
+										disabled={currentPage === totalPages}
+										onClick={() => setCurrentPage((p) => p + 1)}
+										className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:border-violet-400 transition-colors"
+									>
+										Proximo
+									</button>
+								</div>
+							)}
+
+							<button
+								type="button"
+								onClick={handleExport}
+								disabled={exportMutation.isPending}
+								className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors disabled:opacity-50"
+							>
+								{exportMutation.isPending ? (
+									<Loader2 className="w-4 h-4 animate-spin" />
+								) : (
+									<Download className="w-4 h-4" />
+								)}
+								Exportar CSV
+							</button>
+						</div>
+					</div>
+				</>
+			)}
 
 			{/* Modals */}
 			{showCreate && (
@@ -574,6 +624,12 @@ export function ParametrosAdminView() {
 						defocus: editTarget.defocus ?? undefined,
 						materialType: editTarget.materialType ?? '',
 						thickness: editTarget.thickness ?? '',
+						tamanhoLinha: editTarget.tamanhoLinha ?? null,
+						tamanhoDivisao: editTarget.tamanhoDivisao ?? null,
+						sobreposicao: editTarget.sobreposicao ?? null,
+						forcarSeparacao: editTarget.forcarSeparacao ?? null,
+						axisRotative: editTarget.axisRotative ?? null,
+						lineTypeId: editTarget.lineTypeId ?? null,
 					}}
 					isPending={updateMutation.isPending}
 					onClose={() => setEditTarget(null)}
@@ -621,9 +677,9 @@ function ParameterFormModal({
 }) {
 	const [form, setForm] = useState<CreateParameterPayload>(initial);
 
-	const set = (
-		field: keyof CreateParameterPayload,
-		value: string | number | boolean | undefined,
+	const set = <K extends keyof CreateParameterPayload>(
+		field: K,
+		value: CreateParameterPayload[K],
 	) => {
 		setForm((prev) => ({ ...prev, [field]: value }));
 	};
@@ -898,6 +954,9 @@ function ParameterFormModal({
 						</div>
 					</div>
 
+					{/* Software-specific fields (Ezcad/Lightburn) */}
+					<SoftwareSpecificFields form={form} set={set} />
+
 					{/* Row 6: MaterialType, Thickness (optional/legacy) */}
 					<div className="grid grid-cols-2 gap-4">
 						<div>
@@ -1044,6 +1103,214 @@ function DeleteParameterModal({
 					</button>
 				</div>
 			</div>
+		</div>
+	);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Software-specific fields (Ezcad / Lightburn)                       */
+/* ------------------------------------------------------------------ */
+
+function SoftwareSpecificFields({
+	form,
+	set,
+}: {
+	form: CreateParameterPayload;
+	set: <K extends keyof CreateParameterPayload>(
+		key: K,
+		value: CreateParameterPayload[K],
+	) => void;
+}) {
+	const software = form.software as LaserLineTypeSoftware | '';
+	const isEzcad = software === 'Ezcad';
+	const isLightburn = software === 'Lightburn';
+
+	const { data: lineTypes = [] } = useLaserLineTypes(software || undefined);
+
+	if (!isEzcad && !isLightburn) {
+		// Sem software selecionado → não mostra bloco
+		return null;
+	}
+
+	const selectedLineType = form.lineTypeId
+		? lineTypes.find((lt) => lt.id === form.lineTypeId)
+		: null;
+
+	return (
+		<div className="rounded-xl border border-violet-200 dark:border-violet-800/40 bg-violet-50/50 dark:bg-violet-950/10 p-4 space-y-4">
+			<p className="text-xs font-semibold text-violet-700 dark:text-violet-300 uppercase tracking-wide">
+				Campos do {software}
+			</p>
+
+			{/* Tipo de Linhas (catálogo por software) */}
+			<div>
+				<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+					Tipo de Linhas
+				</span>
+				<div className="flex items-center gap-3">
+					<select
+						className={selectCls}
+						value={form.lineTypeId ?? ''}
+						onChange={(e) => set('lineTypeId', e.target.value || null)}
+					>
+						<option value="">Selecione...</option>
+						{lineTypes.map((lt) => (
+							<option key={lt.id} value={lt.id}>
+								{lt.name}
+							</option>
+						))}
+					</select>
+					{selectedLineType?.imageUrl && (
+						<img
+							src={selectedLineType.imageUrl}
+							alt={selectedLineType.name}
+							className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-white/10"
+						/>
+					)}
+				</div>
+				{lineTypes.length === 0 && (
+					<p className="text-xs text-slate-500 dark:text-gray-400 mt-1">
+						Nenhum tipo cadastrado para {software}. Adicione em "Tipos de
+						Linha".
+					</p>
+				)}
+			</div>
+
+			{/* Eixo rotativo (todos os softwares) */}
+			<div>
+				<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+					Eixo rotativo *
+				</span>
+				<div className="flex gap-4">
+					<label className="flex items-center gap-2 cursor-pointer">
+						<input
+							type="radio"
+							name="axisRotative"
+							checked={form.axisRotative === true}
+							onChange={() => set('axisRotative', true)}
+							className="w-4 h-4 text-violet-600 focus:ring-violet-500"
+						/>
+						<span className="text-sm text-slate-700 dark:text-slate-300">
+							Sim
+						</span>
+					</label>
+					<label className="flex items-center gap-2 cursor-pointer">
+						<input
+							type="radio"
+							name="axisRotative"
+							checked={form.axisRotative === false}
+							onChange={() => set('axisRotative', false)}
+							className="w-4 h-4 text-violet-600 focus:ring-violet-500"
+						/>
+						<span className="text-sm text-slate-700 dark:text-slate-300">
+							Não
+						</span>
+					</label>
+				</div>
+			</div>
+
+			{/* Ezcad: Tamanho da Divisão + Sobreposição */}
+			{isEzcad && (
+				<div className="grid grid-cols-2 gap-4">
+					<div>
+						<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+							Tamanho da Divisão (mm)
+						</span>
+						<input
+							type="number"
+							step="0.01"
+							min={0}
+							max={10}
+							placeholder="0,00 até 10,00"
+							className={inputCls}
+							value={form.tamanhoDivisao ?? ''}
+							onChange={(e) =>
+								set(
+									'tamanhoDivisao',
+									e.target.value === '' ? null : Number(e.target.value),
+								)
+							}
+						/>
+					</div>
+					<div>
+						<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+							Sobreposição (mm)
+						</span>
+						<input
+							type="number"
+							step="0.01"
+							min={0}
+							max={10}
+							placeholder="0,00 até 10,00"
+							className={inputCls}
+							value={form.sobreposicao ?? ''}
+							onChange={(e) =>
+								set(
+									'sobreposicao',
+									e.target.value === '' ? null : Number(e.target.value),
+								)
+							}
+						/>
+					</div>
+				</div>
+			)}
+
+			{/* Lightburn: Tamanho da Linha + Forçar Separação */}
+			{isLightburn && (
+				<>
+					<div>
+						<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+							Tamanho da Linha (mm)
+						</span>
+						<input
+							type="number"
+							step="0.01"
+							min={0}
+							max={50}
+							placeholder="0,00 até 50,00"
+							className={inputCls}
+							value={form.tamanhoLinha ?? ''}
+							onChange={(e) =>
+								set(
+									'tamanhoLinha',
+									e.target.value === '' ? null : Number(e.target.value),
+								)
+							}
+						/>
+					</div>
+					<div>
+						<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+							Forçar Separação *
+						</span>
+						<div className="flex gap-4">
+							<label className="flex items-center gap-2 cursor-pointer">
+								<input
+									type="radio"
+									name="forcarSeparacao"
+									checked={form.forcarSeparacao === true}
+									onChange={() => set('forcarSeparacao', true)}
+									className="w-4 h-4 text-violet-600 focus:ring-violet-500"
+								/>
+								<span className="text-sm text-slate-700 dark:text-slate-300">
+									Sim
+								</span>
+							</label>
+							<label className="flex items-center gap-2 cursor-pointer">
+								<input
+									type="radio"
+									name="forcarSeparacao"
+									checked={form.forcarSeparacao === false}
+									onChange={() => set('forcarSeparacao', false)}
+									className="w-4 h-4 text-violet-600 focus:ring-violet-500"
+								/>
+								<span className="text-sm text-slate-700 dark:text-slate-300">
+									Não
+								</span>
+							</label>
+						</div>
+					</div>
+				</>
+			)}
 		</div>
 	);
 }

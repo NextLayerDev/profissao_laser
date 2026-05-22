@@ -19,6 +19,13 @@ export interface LaserParameter {
 	angle?: number | null;
 	passesFill?: number | null;
 	defocus?: number | null;
+	// Software-specific (Ezcad / Lightburn)
+	tamanhoLinha?: number | null;
+	tamanhoDivisao?: number | null;
+	sobreposicao?: number | null;
+	forcarSeparacao?: boolean | null;
+	axisRotative?: boolean | null;
+	lineTypeId?: string | null;
 	createdBy: string;
 	createdByName?: string | null;
 	isPublic: boolean;

@@ -61,6 +61,13 @@ export interface CreateParameterPayload {
 	isPublic?: boolean;
 	materialType?: string;
 	thickness?: string;
+	// Software-specific (Ezcad / Lightburn)
+	tamanhoLinha?: number | null;
+	tamanhoDivisao?: number | null;
+	sobreposicao?: number | null;
+	forcarSeparacao?: boolean | null;
+	axisRotative?: boolean | null;
+	lineTypeId?: string | null;
 }
 
 export async function createParameter(

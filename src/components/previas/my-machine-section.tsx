@@ -1,7 +1,6 @@
 'use client';
 
 import {
-	ChevronDown,
 	Loader2,
 	Pencil,
 	Play,
@@ -13,7 +12,7 @@ import {
 	Zap,
 } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
-import { toast } from 'sonner';
+import { ParameterCard } from '@/components/parametros/parameter-card';
 import {
 	useCreateCustomerMachine,
 	useCustomerMachines,
@@ -26,6 +25,7 @@ import type {
 	CustomerMachineEntry,
 	MachineOptionCategory,
 } from '@/types/machines';
+import type { LaserParameter } from '@/types/parameters';
 import type { ParameterLookupParams } from '@/types/product-parameters';
 
 const selectCls =
@@ -246,7 +246,13 @@ function MachineFormModal({
 /*  Parameter display helpers — show TODOS os campos do parâmetro       */
 /* ------------------------------------------------------------------ */
 
-function ParameterField({ label, value }: { label: string; value: ReactNode }) {
+function _ParameterField({
+	label,
+	value,
+}: {
+	label: string;
+	value: ReactNode;
+}) {
 	if (value === null || value === undefined || value === '') return null;
 	return (
 		<div>
@@ -256,7 +262,7 @@ function ParameterField({ label, value }: { label: string; value: ReactNode }) {
 	);
 }
 
-function ParameterBadge({
+function _ParameterBadge({
 	label,
 	active,
 }: {
@@ -555,160 +561,48 @@ export function MyMachineSection({
 								</div>
 							</div>
 						) : (
-							<div className="rounded-xl border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/5 overflow-hidden">
-								<div className="flex items-center justify-between px-4 py-2.5 bg-emerald-100 dark:bg-emerald-500/10">
-									<p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+							<div className="space-y-3">
+								<div className="flex items-center justify-between">
+									<p className="text-xs font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wider">
 										Parametro de Gravacao
 									</p>
 									<button
 										type="button"
 										onClick={() => setShowLookup(false)}
-										className="p-1 hover:bg-emerald-200 dark:hover:bg-emerald-500/20 rounded"
+										className="p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white"
 									>
-										<X className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+										<X className="w-3.5 h-3.5" />
 									</button>
 								</div>
-								<div className="p-4 space-y-4">
-									{/* Grid completo com todos os campos preenchidos */}
-									<div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-										<ParameterField
-											label="M\u00e1quina"
-											value={lookupResult.parameter.machine}
-										/>
-										<ParameterField
-											label="Material"
-											value={lookupResult.parameter.material}
-										/>
-										<ParameterField
-											label="Modo"
-											value={
-												<span className="capitalize">
-													{lookupResult.parameter.mode}
-												</span>
-											}
-										/>
-										<ParameterField
-											label="Pot\u00eancia (W)"
-											value={
-												lookupResult.parameter.powerWatts != null
-													? `${lookupResult.parameter.powerWatts} W`
-													: null
-											}
-										/>
-										<ParameterField
-											label="Lente"
-											value={lookupResult.parameter.lens}
-										/>
-										<ParameterField
-											label="Software"
-											value={lookupResult.parameter.software}
-										/>
-										<ParameterField
-											label="Pot\u00eancia (%)"
-											value={`${lookupResult.parameter.power}%`}
-										/>
-										<ParameterField
-											label="Velocidade"
-											value={`${lookupResult.parameter.speed} mm/s`}
-										/>
-										<ParameterField
-											label="Frequ\u00eancia"
-											value={`${lookupResult.parameter.frequency} Hz`}
-										/>
-										<ParameterField
-											label="Linha"
-											value={
-												lookupResult.parameter.line != null
-													? `${lookupResult.parameter.line} mm`
-													: null
-											}
-										/>
-										<ParameterField
-											label="\u00c2ngulo"
-											value={
-												lookupResult.parameter.angle != null
-													? `${lookupResult.parameter.angle}\u00b0`
-													: null
-											}
-										/>
-										<ParameterField
-											label="Desfoque"
-											value={
-												lookupResult.parameter.defocus != null
-													? `${lookupResult.parameter.defocus > 0 ? '+' : ''}${lookupResult.parameter.defocus} mm`
-													: null
-											}
-										/>
-										<ParameterField
-											label="Passadas (Contorno)"
-											value={`${lookupResult.parameter.passes}x`}
-										/>
-										<ParameterField
-											label="Passadas (Preenchimento)"
-											value={
-												lookupResult.parameter.passesFill != null
-													? `${lookupResult.parameter.passesFill}x`
-													: null
-											}
-										/>
-										<ParameterField
-											label="Tipo de Material"
-											value={lookupResult.parameter.materialType}
-										/>
-										<ParameterField
-											label="Espessura"
-											value={lookupResult.parameter.thickness}
-										/>
-									</div>
-
-									{/* Toggles (liga/desliga) */}
-									{(lookupResult.parameter.crossHatch != null ||
-										typeof lookupResult.parameter.gas === 'boolean') && (
-										<div className="flex flex-wrap items-center gap-4 pt-3 border-t border-emerald-200/40 dark:border-emerald-500/10">
-											<ParameterBadge
-												label="Preenchimento Cruzado"
-												active={lookupResult.parameter.crossHatch}
-											/>
-											<ParameterBadge
-												label="G\u00e1s"
-												active={
-													typeof lookupResult.parameter.gas === 'boolean'
-														? lookupResult.parameter.gas
-														: null
-												}
-											/>
-										</div>
-									)}
-
-									{lookupResult.parameter.notes && (
-										<div className="p-3 rounded-lg bg-white/60 dark:bg-white/5 text-sm text-slate-700 dark:text-gray-300">
-											{lookupResult.parameter.notes}
-										</div>
-									)}
-									{lookupResult.lesson && (
-										<div className="flex items-center gap-3 p-3 rounded-lg bg-white/60 dark:bg-white/5 border border-slate-200 dark:border-white/10">
-											<Play className="w-8 h-8 text-violet-600 shrink-0" />
-											<div className="min-w-0 flex-1">
-												<p className="font-medium text-sm text-slate-900 dark:text-white truncate">
-													{lookupResult.lesson.title}
+								<ParameterCard
+									parameter={
+										lookupResult.parameter as unknown as LaserParameter
+									}
+									variant="lookup"
+								/>
+								{lookupResult.lesson && (
+									<div className="flex items-center gap-3 p-3 rounded-lg bg-white/60 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+										<Play className="w-8 h-8 text-violet-600 shrink-0" />
+										<div className="min-w-0 flex-1">
+											<p className="font-medium text-sm text-slate-900 dark:text-white truncate">
+												{lookupResult.lesson.title}
+											</p>
+											{lookupResult.lesson.duration && (
+												<p className="text-xs text-slate-500 dark:text-gray-400">
+													{Math.ceil(lookupResult.lesson.duration / 60)} min
 												</p>
-												{lookupResult.lesson.duration && (
-													<p className="text-xs text-slate-500 dark:text-gray-400">
-														{Math.ceil(lookupResult.lesson.duration / 60)} min
-													</p>
-												)}
-											</div>
-											<a
-												href={lookupResult.lesson.videoUrl}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="px-3 py-1.5 text-xs bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-medium transition-colors shrink-0"
-											>
-												Assistir
-											</a>
+											)}
 										</div>
-									)}
-								</div>
+										<a
+											href={lookupResult.lesson.videoUrl}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="px-3 py-1.5 text-xs bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-medium transition-colors shrink-0"
+										>
+											Assistir
+										</a>
+									</div>
+								)}
 							</div>
 						)}
 					</div>

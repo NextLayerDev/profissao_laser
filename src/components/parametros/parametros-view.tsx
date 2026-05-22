@@ -13,17 +13,18 @@ import {
 	Lightbulb,
 	Loader2,
 	Search,
-	Star,
 	Table,
 	TestTube,
-	ThumbsUp,
 	Users,
 	Wrench,
 	X,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { ParameterCard } from '@/components/parametros/parameter-card';
 import { PageHeader } from '@/components/ui/page-header';
+import { useDebouncedValue } from '@/hooks/use-debounced-value';
+import { useCustomerMachines } from '@/hooks/use-machines';
 import {
 	useCommunityParameters,
 	useExportParameters,
@@ -119,10 +120,21 @@ function getMaterialEmoji(
 export function ParametrosView() {
 	const [currentPage, setCurrentPage] = useState(1);
 	const [searchQuery, setSearchQuery] = useState('');
+	const debouncedSearch = useDebouncedValue(searchQuery, 400);
 	const [filterMachine, setFilterMachine] = useState('');
 	const [filterMaterial, setFilterMaterial] = useState('');
 	const [filterThickness, setFilterThickness] = useState('');
 	const limit = 12;
+
+	// Pré-seleciona a máquina default do customer (se houver) na 1ª carga.
+	const { data: customerMachines = [] } = useCustomerMachines();
+	useEffect(() => {
+		if (filterMachine !== '' || customerMachines.length === 0) return;
+		const def =
+			customerMachines.find((m) => m.isDefault) ?? customerMachines[0];
+		const label = def?.name ?? '';
+		if (label) setFilterMachine(label);
+	}, [customerMachines, filterMachine]);
 
 	/* community tab */
 	const [communityPage, setCommunityPage] = useState(1);
@@ -141,12 +153,18 @@ export function ParametrosView() {
 		() => ({
 			page: currentPage,
 			limit,
-			...(searchQuery && { search: searchQuery }),
+			...(debouncedSearch && { search: debouncedSearch }),
 			...(filterMachine && { machine: filterMachine }),
 			...(filterMaterial && { material: filterMaterial }),
 			...(filterThickness && { thickness: filterThickness }),
 		}),
-		[currentPage, searchQuery, filterMachine, filterMaterial, filterThickness],
+		[
+			currentPage,
+			debouncedSearch,
+			filterMachine,
+			filterMaterial,
+			filterThickness,
+		],
 	);
 
 	const { data: parametersData, isLoading: parametersLoading } =
@@ -372,16 +390,26 @@ export function ParametrosView() {
 				>
 					Limpar
 				</button>
-				<div className="relative">
-					<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-					<input
-						type="text"
-						placeholder="Buscar..."
-						value={searchQuery}
-						onChange={(e) => setSearchQuery(e.target.value)}
-						onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-						className="pl-9 pr-4 py-2 w-40 md:w-52 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition"
-					/>
+				<div className="flex items-center gap-2">
+					<div className="relative">
+						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+						<input
+							type="text"
+							placeholder="Buscar..."
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+							onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+							className="pl-9 pr-4 py-2 w-40 md:w-52 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition"
+						/>
+					</div>
+					<button
+						type="button"
+						onClick={handleSearch}
+						className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-violet-600 hover:bg-violet-700 text-white transition-colors"
+					>
+						<Search className="w-4 h-4" />
+						Buscar
+					</button>
 				</div>
 			</div>
 		</div>
@@ -624,7 +652,7 @@ export function ParametrosView() {
 	);
 
 	/* ---- saved sidebar -------------------------------------------- */
-	const savedSidebar = (
+	const _savedSidebar = (
 		<div className="rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-5">
 			<div className="space-y-3">
 				{savedParams.length === 0 ? (
@@ -722,226 +750,16 @@ export function ParametrosView() {
 				</div>
 			) : (
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-					{communityFullParams.map((c) => {
-						const isCorte = c.mode === 'Corte';
-						return (
-							<div
-								key={c.id}
-								className="rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] overflow-hidden hover:border-violet-500/30 transition-all duration-300 group"
-							>
-								{/* Header with emoji avatar */}
-								<div className="p-5 pb-0">
-									<div className="flex items-center gap-3 mb-4">
-										<div
-											className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 ${
-												isCorte
-													? 'bg-blue-50 dark:bg-blue-500/10'
-													: 'bg-violet-50 dark:bg-violet-500/10'
-											}`}
-										>
-											{getMaterialEmoji(c.material, c.materialType)}
-										</div>
-										<div className="flex-1 min-w-0">
-											<p className="font-semibold text-slate-900 dark:text-white truncate">
-												{c.material}
-											</p>
-											<p className="text-xs text-slate-500 dark:text-gray-400">
-												{c.thickness} &middot; {c.materialType}
-											</p>
-										</div>
-										<span
-											className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold ${
-												isCorte
-													? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300'
-													: 'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300'
-											}`}
-										>
-											{c.mode}
-										</span>
-									</div>
-								</div>
-
-								{/* Parameter details grid */}
-								<div className="mx-5 mb-4 rounded-xl bg-slate-50/80 dark:bg-white/5 p-3">
-									<div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-										<div className="flex justify-between">
-											<span className="text-slate-400 dark:text-gray-500">
-												Potencia
-											</span>
-											<span className="font-semibold text-slate-800 dark:text-slate-200">
-												{c.power}%
-											</span>
-										</div>
-										<div className="flex justify-between">
-											<span className="text-slate-400 dark:text-gray-500">
-												Velocidade
-											</span>
-											<span className="font-semibold text-slate-800 dark:text-slate-200">
-												{c.speed}mm/s
-											</span>
-										</div>
-										<div className="flex justify-between">
-											<span className="text-slate-400 dark:text-gray-500">
-												Frequencia
-											</span>
-											<span className="font-semibold text-slate-800 dark:text-slate-200">
-												{c.frequency}Hz
-											</span>
-										</div>
-										<div className="flex justify-between">
-											<span className="text-slate-400 dark:text-gray-500">
-												Passadas
-											</span>
-											<span className="font-semibold text-slate-800 dark:text-slate-200">
-												{c.passes}
-											</span>
-										</div>
-										{c.powerWatts != null && (
-											<div className="flex justify-between">
-												<span className="text-slate-400 dark:text-gray-500">
-													PowerW
-												</span>
-												<span className="font-semibold text-slate-800 dark:text-slate-200">
-													{c.powerWatts}W
-												</span>
-											</div>
-										)}
-										{c.lens && (
-											<div className="flex justify-between">
-												<span className="text-slate-400 dark:text-gray-500">
-													Lente
-												</span>
-												<span className="font-semibold text-slate-800 dark:text-slate-200">
-													{c.lens}
-												</span>
-											</div>
-										)}
-										{c.software && (
-											<div className="flex justify-between">
-												<span className="text-slate-400 dark:text-gray-500">
-													Software
-												</span>
-												<span className="font-semibold text-slate-800 dark:text-slate-200 truncate ml-2">
-													{c.software}
-												</span>
-											</div>
-										)}
-										{c.line != null && (
-											<div className="flex justify-between">
-												<span className="text-slate-400 dark:text-gray-500">
-													Line
-												</span>
-												<span className="font-semibold text-slate-800 dark:text-slate-200">
-													{c.line}
-												</span>
-											</div>
-										)}
-										{c.gas != null && (
-											<div className="flex justify-between">
-												<span className="text-slate-400 dark:text-gray-500">
-													Gas
-												</span>
-												<span className="font-semibold text-slate-800 dark:text-slate-200">
-													{displayGas(c.gas)}
-												</span>
-											</div>
-										)}
-										{c.machine && (
-											<div className="flex justify-between">
-												<span className="text-slate-400 dark:text-gray-500">
-													Maquina
-												</span>
-												<span className="font-semibold text-slate-800 dark:text-slate-200 truncate ml-2">
-													{c.machine}
-												</span>
-											</div>
-										)}
-									</div>
-								</div>
-
-								{/* Creator + notes */}
-								<div className="px-5 pb-4">
-									<p className="text-xs text-slate-500 dark:text-gray-400">
-										por{' '}
-										<span className="font-medium text-slate-700 dark:text-slate-300">
-											{c.createdByName ?? 'Anonimo'}
-										</span>
-									</p>
-
-									{c.notes && (
-										<div className="mt-2 pl-3 border-l-2 border-violet-300 dark:border-violet-500/40">
-											<p className="text-xs text-slate-600 dark:text-slate-300 italic leading-relaxed">
-												{c.notes}
-											</p>
-										</div>
-									)}
-								</div>
-
-								{/* Social actions footer */}
-								<div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5">
-									{/* Rating stars (clickable) */}
-									<div className="flex items-center gap-0.5">
-										{Array.from({ length: 5 }).map((_, i) => (
-											<button
-												key={`star-${i}`}
-												type="button"
-												onClick={() => handleRate(c.id, i + 1)}
-												className="p-0.5 hover:scale-125 transition-transform"
-												title={`Avaliar ${i + 1} estrela${i > 0 ? 's' : ''}`}
-											>
-												<Star
-													className={`w-4 h-4 ${
-														i < (c.userRating ?? 0)
-															? 'text-violet-400 fill-violet-400'
-															: i < (c.rating ?? 0)
-																? 'text-violet-300 fill-violet-300/50'
-																: 'text-slate-300 dark:text-slate-600'
-													}`}
-												/>
-											</button>
-										))}
-										{c.rating != null && (
-											<span className="ml-1 text-xs font-medium text-slate-500 dark:text-gray-400">
-												{c.rating.toFixed(1)}
-											</span>
-										)}
-									</div>
-
-									{/* Like + Save */}
-									<div className="flex items-center gap-3">
-										<button
-											type="button"
-											onClick={() => handleLike(c.id)}
-											className={`flex items-center gap-1 text-xs font-medium hover:text-violet-600 transition-colors ${
-												c.isLiked
-													? 'text-violet-600'
-													: 'text-slate-500 dark:text-gray-400'
-											}`}
-										>
-											<ThumbsUp
-												className={`w-3.5 h-3.5 ${c.isLiked ? 'fill-current' : ''}`}
-											/>
-											{c.likesCount ?? 0}
-										</button>
-										<button
-											type="button"
-											onClick={() => handleSave(c)}
-											className={`flex items-center gap-1 text-xs font-medium hover:text-emerald-500 transition-colors ${
-												c.isSaved
-													? 'text-emerald-500'
-													: 'text-slate-500 dark:text-gray-400'
-											}`}
-										>
-											<Bookmark
-												className={`w-3.5 h-3.5 ${c.isSaved ? 'fill-current' : ''}`}
-											/>
-											{c.isSaved ? 'Salvo' : 'Salvar'}
-										</button>
-									</div>
-								</div>
-							</div>
-						);
-					})}
+					{communityFullParams.map((c) => (
+						<ParameterCard
+							key={c.id}
+							parameter={c}
+							variant="community"
+							onLike={() => handleLike(c.id)}
+							onSave={() => handleSave(c)}
+							onRate={(n) => handleRate(c.id, n)}
+						/>
+					))}
 				</div>
 			)}
 
@@ -1069,73 +887,57 @@ export function ParametrosView() {
 				{pagination}
 			</div>
 
-			{/* Section 2: Comunidade + Salvos side by side */}
-			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-				{/* Comunidade — 2/3 */}
-				<div className="lg:col-span-2">
-					<div className="flex items-center justify-between mb-3">
-						<h2 className="text-lg font-display font-bold text-slate-900 dark:text-white flex items-center gap-2">
-							<Users className="w-5 h-5 text-violet-600" />
-							Comunidade
-						</h2>
-						<select
-							className="px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-600"
-							value={communitySort}
-							onChange={(e) => {
-								setCommunitySort(
-									e.target.value as 'recent' | 'rating' | 'likes',
-								);
-								setCommunityPage(1);
-							}}
-						>
-							{COMMUNITY_SORT_OPTIONS.map((opt) => (
-								<option key={opt.value} value={opt.value}>
-									{opt.label}
-								</option>
-							))}
-						</select>
-					</div>
-
-					{/* Pesquisa inteligente — busca server-side via API
-					    em material, materialType, máquina, modo, etc. */}
-					<div className="relative mb-4">
-						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-						<input
-							type="text"
-							placeholder="Buscar por material, máquina, modo, espessura..."
-							value={communitySearchQuery}
-							onChange={(e) => {
-								setCommunitySearchQuery(e.target.value);
-								setCommunityPage(1);
-							}}
-							className="w-full pl-9 pr-9 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-700 dark:text-slate-300 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-600/40"
-						/>
-						{communitySearchQuery ? (
-							<button
-								type="button"
-								onClick={() => {
-									setCommunitySearchQuery('');
-									setCommunityPage(1);
-								}}
-								className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
-								aria-label="Limpar busca"
-							>
-								<X className="w-3.5 h-3.5" />
-							</button>
-						) : null}
-					</div>
-
-					{communityContent}
-				</div>
-
-				{/* Salvos — 1/3 */}
-				<div>
-					<h2 className="text-lg font-display font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-						<Bookmark className="w-5 h-5 text-violet-600" />
-						Meus salvos
+			{/* Section 2: Comunidade — full width (Meus salvos removido — separar em tela futura) */}
+			<div className="mb-10">
+				<div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+					<h2 className="text-lg font-display font-bold text-slate-900 dark:text-white flex items-center gap-2">
+						<Users className="w-5 h-5 text-violet-600" />
+						Comunidade
 					</h2>
-					{savedSidebar}
+					<select
+						className="px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-600"
+						value={communitySort}
+						onChange={(e) => {
+							setCommunitySort(e.target.value as 'recent' | 'rating' | 'likes');
+							setCommunityPage(1);
+						}}
+					>
+						{COMMUNITY_SORT_OPTIONS.map((opt) => (
+							<option key={opt.value} value={opt.value}>
+								{opt.label}
+							</option>
+						))}
+					</select>
 				</div>
+
+				<div className="relative mb-4">
+					<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+					<input
+						type="text"
+						placeholder="Buscar por material, máquina, modo, espessura..."
+						value={communitySearchQuery}
+						onChange={(e) => {
+							setCommunitySearchQuery(e.target.value);
+							setCommunityPage(1);
+						}}
+						className="w-full pl-9 pr-9 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-700 dark:text-slate-300 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-600/40"
+					/>
+					{communitySearchQuery ? (
+						<button
+							type="button"
+							onClick={() => {
+								setCommunitySearchQuery('');
+								setCommunityPage(1);
+							}}
+							className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+							aria-label="Limpar busca"
+						>
+							<X className="w-3.5 h-3.5" />
+						</button>
+					) : null}
+				</div>
+
+				{communityContent}
 			</div>
 
 			{expertTip}
