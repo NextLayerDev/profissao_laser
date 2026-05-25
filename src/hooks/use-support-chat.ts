@@ -34,6 +34,33 @@ export function useSendSupportMessage(id: string | null) {
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (content: string) => sendSupportMessage(id ?? '', content),
+		// Mostra a mensagem do cliente na hora (sem esperar a resposta da IA).
+		onMutate: async (content: string) => {
+			const key = [...KEY, 'chat', id];
+			await qc.cancelQueries({ queryKey: key });
+			const prev = qc.getQueryData<SupportChat>(key);
+			if (prev) {
+				qc.setQueryData<SupportChat>(key, {
+					...prev,
+					messages: [
+						...prev.messages,
+						{
+							id: `tmp-${Date.now()}`,
+							chatId: prev.id,
+							role: 'customer',
+							authorId: prev.customerId,
+							authorName: prev.customerName ?? 'Você',
+							content,
+							createdAt: new Date().toISOString(),
+						},
+					],
+				});
+			}
+			return { key, prev };
+		},
+		onError: (_err, _content, ctx) => {
+			if (ctx?.prev) qc.setQueryData(ctx.key, ctx.prev);
+		},
 		onSuccess: (chat: SupportChat) => {
 			qc.setQueryData([...KEY, 'chat', chat.id], chat);
 		},

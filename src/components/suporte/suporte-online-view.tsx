@@ -902,24 +902,28 @@ export function SuporteOnlineView({
 				</section>
 			)}
 
-			{/* ── 6. Widget lateral (fixed) ──────────────────────────────────── */}
-			<div className="fixed bottom-6 right-6 z-30">
-				<button
-					type="button"
-					onClick={() => setSupportChatOpen(true)}
-					className="group flex items-center gap-3 pl-5 pr-4 py-3 bg-violet-600 hover:bg-violet-400 text-white font-semibold rounded-lg shadow-xl shadow-violet-500/25 transition-all hover:shadow-violet-500/40"
-				>
-					<div className="flex flex-col items-start">
-						<span className="text-xs text-violet-200 font-normal leading-tight">
-							Precisa de ajuda urgente?
-						</span>
-						<span className="text-sm font-bold leading-tight">Abrir chat</span>
-					</div>
-					<div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
-						<MessageSquare className="w-5 h-5" />
-					</div>
-				</button>
-			</div>
+			{/* ── 6. Widget lateral (fixo no viewport via portal) ─────────────── */}
+			<ModalPortal>
+				<div className="fixed bottom-6 right-6 z-40">
+					<button
+						type="button"
+						onClick={() => setSupportChatOpen(true)}
+						className="group flex items-center gap-3 pl-5 pr-4 py-3 bg-violet-600 hover:bg-violet-400 text-white font-semibold rounded-lg shadow-xl shadow-violet-500/25 transition-all hover:shadow-violet-500/40"
+					>
+						<div className="flex flex-col items-start">
+							<span className="text-xs text-violet-200 font-normal leading-tight">
+								Precisa de ajuda urgente?
+							</span>
+							<span className="text-sm font-bold leading-tight">
+								Abrir chat
+							</span>
+						</div>
+						<div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+							<MessageSquare className="w-5 h-5" />
+						</div>
+					</button>
+				</div>
+			</ModalPortal>
 
 			{/* ── Chat modal (ticket existente) ─────────────────────────────── */}
 			{selectedChatId && selectedChat && (

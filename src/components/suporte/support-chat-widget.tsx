@@ -41,7 +41,7 @@ export interface SupportChatWidgetProps {
 export function SupportChatWidget({ isOpen, onClose }: SupportChatWidgetProps) {
 	const [chatId, setChatId] = useState<string | null>(null);
 	const [input, setInput] = useState('');
-	const endRef = useRef<HTMLDivElement>(null);
+	const listRef = useRef<HTMLDivElement>(null);
 
 	const createChat = useCreateSupportChat();
 	const { data: chat } = useSupportChat(chatId, isOpen);
@@ -60,9 +60,10 @@ export function SupportChatWidget({ isOpen, onClose }: SupportChatWidgetProps) {
 		}
 	}, [isOpen]);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: rola ao mudar mensagens
+	// biome-ignore lint/correctness/useExhaustiveDependencies: rola pro fim ao mudar mensagens
 	useEffect(() => {
-		endRef.current?.scrollIntoView({ behavior: 'smooth' });
+		const el = listRef.current;
+		if (el) el.scrollTop = el.scrollHeight;
 	}, [chat?.messages?.length]);
 
 	if (!isOpen) return null;
@@ -84,7 +85,7 @@ export function SupportChatWidget({ isOpen, onClose }: SupportChatWidgetProps) {
 		<ModalPortal>
 			<div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm">
 				<div
-					className="w-full sm:max-w-lg h-[100dvh] sm:h-auto sm:max-h-[85vh] flex flex-col bg-white dark:bg-[#0d0d0f] sm:border border-slate-200 dark:border-white/10 sm:rounded-2xl shadow-2xl overflow-hidden"
+					className="w-full sm:max-w-lg h-[100dvh] sm:h-[600px] sm:max-h-[85vh] flex flex-col bg-white dark:bg-[#0d0d0f] sm:border border-slate-200 dark:border-white/10 sm:rounded-2xl shadow-2xl overflow-hidden"
 					role="dialog"
 					aria-modal="true"
 					aria-label="Chat de suporte"
@@ -123,8 +124,11 @@ export function SupportChatWidget({ isOpen, onClose }: SupportChatWidgetProps) {
 							: banner.label}
 					</div>
 
-					{/* Messages */}
-					<div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[260px]">
+					{/* Messages — área de rolagem própria, sempre no fim */}
+					<div
+						ref={listRef}
+						className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3"
+					>
 						{!chat ? (
 							<div className="flex items-center justify-center h-full text-slate-400">
 								<Loader2 className="w-6 h-6 animate-spin" />
@@ -134,7 +138,6 @@ export function SupportChatWidget({ isOpen, onClose }: SupportChatWidgetProps) {
 								<SupportMessageBubble key={m.id} msg={m} />
 							))
 						)}
-						<div ref={endRef} />
 					</div>
 
 					{/* Falar com atendente */}
