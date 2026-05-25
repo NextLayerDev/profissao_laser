@@ -67,7 +67,6 @@ export function HomeProjectsFeed() {
 									href={`/course/vitrine?project=${p.id}`}
 									className="block mt-2"
 								>
-									{/* biome-ignore lint/performance/noImgElement: feed externo, sem otimização do Next/Image */}
 									<img
 										src={p.img}
 										alt={p.title}

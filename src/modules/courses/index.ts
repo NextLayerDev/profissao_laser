@@ -43,7 +43,14 @@ export {
 	listCourseModules,
 	updateCourseModule,
 } from './services/modules.service';
-
+export type {
+	CatalogPlanItem,
+	CatalogPlansResponse,
+} from './types/course-catalog';
+export {
+	catalogPlanItemSchema,
+	catalogPlansResponseSchema,
+} from './types/course-catalog';
 export type {
 	Course,
 	CreateCoursePayload,

@@ -63,6 +63,28 @@ export default function PlanoDetalhe() {
 									{data.plan.description}
 								</p>
 							)}
+							{/* Preços do plano (provisionados no Stripe na criação) */}
+							{(data.plan.price_monthly_cents != null ||
+								data.plan.price_yearly_cents != null) && (
+								<div className="flex items-center gap-4 mt-3">
+									{data.plan.price_monthly_cents != null && (
+										<span className="text-sm text-slate-700 dark:text-slate-300">
+											<span className="text-slate-500 mr-1">Mensal</span>
+											<span className="font-semibold tabular-nums">
+												R$ {(data.plan.price_monthly_cents / 100).toFixed(2)}
+											</span>
+										</span>
+									)}
+									{data.plan.price_yearly_cents != null && (
+										<span className="text-sm text-slate-700 dark:text-slate-300">
+											<span className="text-slate-500 mr-1">Anual</span>
+											<span className="font-semibold tabular-nums">
+												R$ {(data.plan.price_yearly_cents / 100).toFixed(2)}
+											</span>
+										</span>
+									)}
+								</div>
+							)}
 						</div>
 
 						<div className="space-y-10">

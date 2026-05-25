@@ -30,7 +30,7 @@ export function PlansAdminSection() {
 			<div className="flex items-center justify-between mb-6">
 				<p className="text-sm text-slate-600 dark:text-gray-400">
 					Tier templates (ex: <code>basic</code>, <code>pro</code>,{' '}
-					<code>max</code>). Preço é configurado em cada curso.
+					<code>max</code>). Preço é definido na criação do plano.
 				</p>
 				<button
 					type="button"
@@ -143,10 +143,40 @@ function PlanCard({
 						</span>
 					</div>
 
-					<p className="text-sm text-slate-500 mt-2 line-clamp-3 min-h-[3.75rem]">
+					<p className="text-sm text-slate-500 mt-2 line-clamp-2">
 						{plan.description ?? ''}
 					</p>
 				</Link>
+
+				{(plan.price_monthly_cents != null ||
+					plan.price_yearly_cents != null) && (
+					<div className="flex items-center gap-3 mt-3">
+						{plan.price_monthly_cents != null && (
+							<div className="flex flex-col">
+								<span className="text-[10px] font-medium text-slate-400 dark:text-gray-500 uppercase tracking-wide">
+									Mensal
+								</span>
+								<span className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">
+									R$ {(plan.price_monthly_cents / 100).toFixed(2)}
+								</span>
+							</div>
+						)}
+						{plan.price_monthly_cents != null &&
+							plan.price_yearly_cents != null && (
+								<div className="w-px h-6 bg-slate-200 dark:bg-white/10" />
+							)}
+						{plan.price_yearly_cents != null && (
+							<div className="flex flex-col">
+								<span className="text-[10px] font-medium text-slate-400 dark:text-gray-500 uppercase tracking-wide">
+									Anual
+								</span>
+								<span className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">
+									R$ {(plan.price_yearly_cents / 100).toFixed(2)}
+								</span>
+							</div>
+						)}
+					</div>
+				)}
 
 				<div className="mt-auto pt-4 flex gap-2">
 					<button

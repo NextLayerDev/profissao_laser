@@ -11,12 +11,7 @@ interface Props {
 	excludeSlugs: string[];
 	pending: boolean;
 	onClose: () => void;
-	onSubmit: (args: {
-		slug: string;
-		price_monthly_cents: number | null;
-		price_yearly_cents: number | null;
-		published: boolean;
-	}) => void;
+	onSubmit: (args: { slug: string; published: boolean }) => void;
 }
 
 export function CoursePlanFormModal({
@@ -29,12 +24,6 @@ export function CoursePlanFormModal({
 	const courses = useAdminCourses();
 
 	const [slug, setSlug] = useState(editing?.course.slug ?? '');
-	const [monthly, setMonthly] = useState(
-		centsToReais(editing?.course_plan.price_monthly_cents ?? null),
-	);
-	const [yearly, setYearly] = useState(
-		centsToReais(editing?.course_plan.price_yearly_cents ?? null),
-	);
 	const [published, setPublished] = useState(
 		editing?.course_plan.published ?? true,
 	);
@@ -43,13 +32,13 @@ export function CoursePlanFormModal({
 		(c) => !excludeSlugs.includes(c.slug),
 	);
 
-	const canSubmit = !pending && !!slug && (monthly.trim() || yearly.trim());
+	const canSubmit = !pending && !!slug;
 
 	return (
 		<ModalOverlay onClose={onClose} tone="plans">
 			<div className="p-6 space-y-4">
 				<h3 className="text-lg font-bold text-slate-900 dark:text-white">
-					{editing ? 'Editar preços do curso' : 'Vincular curso'}
+					{editing ? 'Editar vínculo de curso' : 'Vincular curso'}
 				</h3>
 
 				{editing ? (
@@ -83,35 +72,6 @@ export function CoursePlanFormModal({
 					</Field>
 				)}
 
-				<div className="grid grid-cols-2 gap-3">
-					<Field label="Preço mensal (R$)">
-						<input
-							type="number"
-							min={0}
-							step="0.01"
-							value={monthly}
-							onChange={(e) => setMonthly(e.target.value)}
-							placeholder="opcional"
-							className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm"
-						/>
-					</Field>
-					<Field label="Preço anual (R$)">
-						<input
-							type="number"
-							min={0}
-							step="0.01"
-							value={yearly}
-							onChange={(e) => setYearly(e.target.value)}
-							placeholder="opcional"
-							className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm"
-						/>
-					</Field>
-				</div>
-				<p className="text-xs text-slate-500">
-					Pelo menos um dos preços precisa ser informado. Stripe Product/Prices
-					são criados automaticamente pelo backend.
-				</p>
-
 				<label className="flex items-center gap-2 text-sm">
 					<input
 						type="checkbox"
@@ -132,14 +92,7 @@ export function CoursePlanFormModal({
 					<button
 						type="button"
 						disabled={!canSubmit}
-						onClick={() =>
-							onSubmit({
-								slug,
-								price_monthly_cents: reaisToCents(monthly),
-								price_yearly_cents: reaisToCents(yearly),
-								published,
-							})
-						}
+						onClick={() => onSubmit({ slug, published })}
 						className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-violet-600 text-white disabled:opacity-60"
 					>
 						{pending ? 'Salvando...' : 'Salvar'}
@@ -148,19 +101,6 @@ export function CoursePlanFormModal({
 			</div>
 		</ModalOverlay>
 	);
-}
-
-function centsToReais(cents: number | null): string {
-	if (cents == null) return '';
-	return (cents / 100).toFixed(2);
-}
-
-function reaisToCents(raw: string): number | null {
-	const trimmed = raw.trim();
-	if (!trimmed) return null;
-	const n = Number(trimmed);
-	if (!Number.isFinite(n) || n < 0) return null;
-	return Math.round(n * 100);
 }
 
 function Field({

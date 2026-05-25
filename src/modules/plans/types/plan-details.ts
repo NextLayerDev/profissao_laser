@@ -3,8 +3,8 @@ import { planSchema } from './plans';
 
 /**
  * Resposta de GET /v1/plan/:id/details (admin/staff).
- * Agrega plan + entitlements (com metadado da tool) + cursos vinculados
- * (com preços do course_plan), tudo em um único request.
+ * Agrega plan (com preços) + entitlements (com metadado da tool) + cursos
+ * vinculados (sem preços — eles estão em plan.price_*), tudo em um request.
  */
 
 // ─── Tool embedded no entitlement ─────────────────────────────────
@@ -33,10 +33,6 @@ export const planDetailsCourseMetaSchema = z.object({
 });
 
 export const planDetailsCoursePlanSchema = z.object({
-	price_monthly_cents: z.number().int().nullable(),
-	price_yearly_cents: z.number().int().nullable(),
-	stripe_price_monthly_id: z.string().nullable().optional(),
-	stripe_price_yearly_id: z.string().nullable().optional(),
 	published: z.boolean(),
 });
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, CalendarDays, Pencil, Plus, Trash2 } from 'lucide-react';
+import { BookOpen, Pencil, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import {
@@ -36,7 +36,7 @@ export function PlanCoursesSection({ planId, planKey, courses }: Props) {
 						Cursos vinculados
 					</h3>
 					<p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
-						Cursos com este plano e respectivos preços (mensal e/ou anual).
+						Cursos que incluem este plano. Os preços são definidos no plano.
 					</p>
 				</div>
 				<button
@@ -59,7 +59,7 @@ export function PlanCoursesSection({ planId, planKey, courses }: Props) {
 						Nenhum curso vinculado
 					</p>
 					<p className="text-xs text-slate-500 mt-1">
-						Vincule um curso pra definir o preço deste plano nele.
+						Vincule um curso para que ele apareça no catálogo com este plano.
 					</p>
 				</div>
 			) : (
@@ -96,20 +96,10 @@ export function PlanCoursesSection({ planId, planKey, courses }: Props) {
 					excludeSlugs={editing ? [] : linkedSlugs}
 					pending={createMut.isPending || updateMut.isPending}
 					onClose={() => setOpen(false)}
-					onSubmit={({
-						slug,
-						price_monthly_cents,
-						price_yearly_cents,
-						published,
-					}) => {
-						const payload = {
-							price_monthly_cents,
-							price_yearly_cents,
-							published,
-						};
+					onSubmit={({ slug, published }) => {
 						const mut = editing ? updateMut : createMut;
 						mut.mutate(
-							{ slug, planKey, payload },
+							{ slug, planKey, payload: { published } },
 							{ onSuccess: () => setOpen(false) },
 						);
 					}}
@@ -183,20 +173,6 @@ function CoursePlanCard({
 					</span>
 				</div>
 
-				{/* Prices */}
-				<div className="mt-auto pt-4 grid grid-cols-2 gap-3">
-					<PriceCard
-						label="Mensal"
-						cents={course_plan.price_monthly_cents}
-						accent="sky"
-					/>
-					<PriceCard
-						label="Anual"
-						cents={course_plan.price_yearly_cents}
-						accent="indigo"
-					/>
-				</div>
-
 				{/* Footer */}
 				<div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-end gap-2">
 					<button
@@ -218,39 +194,6 @@ function CoursePlanCard({
 					</button>
 				</div>
 			</div>
-		</div>
-	);
-}
-
-function PriceCard({
-	label,
-	cents,
-	accent,
-}: {
-	label: string;
-	cents: number | null;
-	accent: 'sky' | 'indigo';
-}) {
-	const empty = cents == null;
-	const accentText = accent === 'sky' ? 'text-sky-500' : 'text-indigo-500';
-	return (
-		<div className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#0d0d0f] p-3">
-			<div
-				className={`flex items-center gap-1.5 text-xs font-medium ${accentText} mb-1.5`}
-			>
-				<CalendarDays className="w-3.5 h-3.5" />
-				{label}
-			</div>
-			{empty ? (
-				<p className="text-lg font-semibold text-slate-400 dark:text-gray-600">
-					—
-				</p>
-			) : (
-				<p className="text-lg font-semibold text-slate-900 dark:text-white tabular-nums">
-					<span className="text-xs text-slate-500 mr-0.5">R$</span>
-					{(cents / 100).toFixed(2)}
-				</p>
-			)}
 		</div>
 	);
 }
