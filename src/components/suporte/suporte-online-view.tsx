@@ -3,6 +3,8 @@
 import {
 	ArrowLeft,
 	BookOpen,
+	CalendarClock,
+	CalendarPlus,
 	ChevronRight,
 	Clock,
 	FileText,
@@ -11,12 +13,20 @@ import {
 	Loader2,
 	MessageSquare,
 	Play,
+	Trash2,
 	X,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { AppointmentForm } from '@/components/agendamentos/appointment-form';
 import { DoubtChatView } from '@/components/duvidas/doubt-chat-view';
 import { NewDoubtFlow } from '@/components/duvidas/new-doubt-flow';
+import { SupportChatWidget } from '@/components/suporte/support-chat-widget';
+import { ModalOverlay } from '@/components/ui/modal-overlay';
 import { PageHeader } from '@/components/ui/page-header';
+import {
+	useAppointments,
+	useCancelMyAppointment,
+} from '@/hooks/use-appointments';
 import {
 	useDoubtChat,
 	useDoubtChatStats,
@@ -224,6 +234,100 @@ function ArticleReader({
 
 /* ─── Props ───────────────────────────────────────────────────────────────── */
 
+/* ─── Agendamento (modal: criar + Meus agendamentos) ──────────────────────── */
+
+function SchedulingModal({ onClose }: { onClose: () => void }) {
+	const { appointments = [], isLoading } = useAppointments();
+	const cancelMutation = useCancelMyAppointment();
+
+	const sorted = useMemo(
+		() =>
+			[...(appointments ?? [])].sort(
+				(a, b) =>
+					new Date(`${b.date}T${b.time || '00:00'}`).getTime() -
+					new Date(`${a.date}T${a.time || '00:00'}`).getTime(),
+			),
+		[appointments],
+	);
+
+	return (
+		<ModalOverlay onClose={onClose}>
+			<div className="p-6">
+				<div className="flex items-center justify-between mb-4">
+					<div className="flex items-center gap-3">
+						<div className="w-10 h-10 rounded-xl bg-violet-500/15 flex items-center justify-center">
+							<CalendarClock className="w-5 h-5 text-violet-500" />
+						</div>
+						<h3 className="text-lg font-bold text-slate-900 dark:text-white">
+							Agendar atendimento
+						</h3>
+					</div>
+					<button
+						type="button"
+						onClick={onClose}
+						aria-label="Fechar"
+						className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
+					>
+						<X className="w-5 h-5" />
+					</button>
+				</div>
+
+				<AppointmentForm onSuccess={onClose} />
+
+				<div className="mt-6">
+					<h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+						<CalendarPlus className="w-4 h-4 text-violet-500" />
+						Meus agendamentos
+					</h4>
+					{isLoading ? (
+						<div className="flex justify-center py-6">
+							<Loader2 className="w-5 h-5 animate-spin text-violet-500" />
+						</div>
+					) : sorted.length === 0 ? (
+						<p className="text-sm text-slate-500 dark:text-gray-400 py-2">
+							Voce ainda nao tem agendamentos.
+						</p>
+					) : (
+						<ul className="space-y-2">
+							{sorted.map((a) => {
+								const canCancel =
+									a.status === 'pendente' || a.status === 'confirmado';
+								return (
+									<li
+										key={a.id}
+										className="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5"
+									>
+										<div className="min-w-0">
+											<p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+												{a.service}
+											</p>
+											<p className="text-xs text-slate-500 dark:text-gray-400">
+												{formatDate(a.date)} as {a.time} ·{' '}
+												<span className="capitalize">{a.status}</span>
+											</p>
+										</div>
+										{canCancel && (
+											<button
+												type="button"
+												onClick={() => cancelMutation.mutate(a.id)}
+												disabled={cancelMutation.isPending}
+												className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors disabled:opacity-50 shrink-0"
+											>
+												<Trash2 className="w-3.5 h-3.5" />
+												Cancelar
+											</button>
+										)}
+									</li>
+								);
+							})}
+						</ul>
+					)}
+				</div>
+			</div>
+		</ModalOverlay>
+	);
+}
+
 export interface SuporteOnlineViewProps {
 	customerId: string;
 	customerName: string;
@@ -238,6 +342,8 @@ export function SuporteOnlineView({
 	hasAccess,
 }: SuporteOnlineViewProps) {
 	const [newDoubtOpen, setNewDoubtOpen] = useState(false);
+	const [supportChatOpen, setSupportChatOpen] = useState(false);
+	const [schedulingOpen, setSchedulingOpen] = useState(false);
 	const [activeSection, setActiveSection] = useState<
 		'home' | 'faq' | 'base' | 'videos'
 	>('home');
@@ -350,6 +456,46 @@ export function SuporteOnlineView({
 							</p>
 						</div>
 					))}
+				</section>
+			)}
+
+			{/* ── CTAs principais: abrir chamado + agendar ───────────────────── */}
+			{activeSection === 'home' && (
+				<section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+					<button
+						type="button"
+						onClick={() => setNewDoubtOpen(true)}
+						className="group flex items-center gap-4 p-6 rounded-2xl bg-linear-to-br from-violet-600 to-fuchsia-600 text-white text-left transition-all hover:shadow-xl hover:shadow-violet-500/30"
+					>
+						<div className="w-14 h-14 shrink-0 rounded-2xl bg-white/15 flex items-center justify-center">
+							<MessageSquare className="w-7 h-7" />
+						</div>
+						<div className="min-w-0">
+							<p className="font-display text-lg font-bold">Abrir chamado</p>
+							<p className="text-sm text-white/80">
+								Envie sua duvida e acompanhe a resposta dos tecnicos
+							</p>
+						</div>
+						<ChevronRight className="w-5 h-5 ml-auto shrink-0 opacity-80 group-hover:translate-x-0.5 transition-transform" />
+					</button>
+					<button
+						type="button"
+						onClick={() => setSchedulingOpen(true)}
+						className="group flex items-center gap-4 p-6 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-left transition-all hover:border-violet-500/40 hover:shadow-lg"
+					>
+						<div className="w-14 h-14 shrink-0 rounded-2xl bg-violet-500/10 flex items-center justify-center">
+							<CalendarClock className="w-7 h-7 text-violet-600" />
+						</div>
+						<div className="min-w-0">
+							<p className="font-display text-lg font-bold text-slate-900 dark:text-white">
+								Agendar atendimento
+							</p>
+							<p className="text-sm text-slate-500 dark:text-gray-400">
+								Marque um horario com um dos nossos tecnicos
+							</p>
+						</div>
+						<ChevronRight className="w-5 h-5 ml-auto shrink-0 text-slate-400 group-hover:text-violet-600 group-hover:translate-x-0.5 transition-all" />
+					</button>
 				</section>
 			)}
 
@@ -723,7 +869,7 @@ export function SuporteOnlineView({
 					</p>
 					<button
 						type="button"
-						onClick={() => setNewDoubtOpen(true)}
+						onClick={() => setSupportChatOpen(true)}
 						className="inline-flex items-center gap-2 px-6 py-3 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors"
 					>
 						<MessageSquare className="w-4 h-4" />
@@ -736,7 +882,7 @@ export function SuporteOnlineView({
 			<div className="fixed bottom-6 right-6 z-30">
 				<button
 					type="button"
-					onClick={() => setNewDoubtOpen(true)}
+					onClick={() => setSupportChatOpen(true)}
 					className="group flex items-center gap-3 pl-5 pr-4 py-3 bg-violet-600 hover:bg-violet-400 text-white font-semibold rounded-lg shadow-xl shadow-violet-500/25 transition-all hover:shadow-violet-500/40"
 				>
 					<div className="flex flex-col items-start">
@@ -810,6 +956,17 @@ export function SuporteOnlineView({
 				customerName={customerName}
 				onChatCreated={handleChatCreated}
 			/>
+
+			{/* ── Chat de suporte ao vivo (IA + atendente) ───────────────────── */}
+			<SupportChatWidget
+				isOpen={supportChatOpen}
+				onClose={() => setSupportChatOpen(false)}
+			/>
+
+			{/* ── Agendamento de atendimento ─────────────────────────────────── */}
+			{schedulingOpen && (
+				<SchedulingModal onClose={() => setSchedulingOpen(false)} />
+			)}
 
 			{/* ── Video player modal ─────────────────────────────────────────── */}
 			{playingVideo?.videoUrl && (

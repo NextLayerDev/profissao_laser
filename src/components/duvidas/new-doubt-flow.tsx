@@ -121,14 +121,9 @@ export function NewDoubtFlow({
 	if (!isOpen) return null;
 
 	return (
-		<>
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
 			<div
-				className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
-				onClick={handleClose}
-				aria-hidden
-			/>
-			<div
-				className="fixed inset-4 md:inset-y-12 md:inset-x-[15%] lg:inset-y-16 lg:inset-x-[22%] z-50 flex flex-col bg-white dark:bg-[#0d0d0f] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+				className="w-full max-w-2xl max-h-[90vh] flex flex-col bg-white dark:bg-[#0d0d0f] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="new-doubt-title"
@@ -326,6 +321,6 @@ export function NewDoubtFlow({
 					</div>
 				)}
 			</div>
-		</>
+		</div>
 	);
 }

@@ -5,6 +5,7 @@ import {
 	useQueryClient,
 } from '@tanstack/react-query';
 import {
+	cancelMyAppointment,
 	createAppointment,
 	deleteAppointment,
 	getAppointments,
@@ -131,6 +132,16 @@ export function useDeleteAppointment() {
 	const queryClient = useQueryClient();
 	return useMutation({
 		mutationFn: (id: string) => deleteAppointment(id),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['appointments'] });
+		},
+	});
+}
+
+export function useCancelMyAppointment() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: (id: string) => cancelMyAppointment(id),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['appointments'] });
 		},
