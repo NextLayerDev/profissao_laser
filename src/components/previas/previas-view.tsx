@@ -1126,7 +1126,7 @@ export function PreviasView() {
 							onSelectVariant={handleSelectVariant}
 						/>
 
-						{/* Side-by-side: Selected variant preview + Logo upload */}
+						{/* Variante selecionada */}
 						{selectedVariantId && selectedVariant && (
 							<div className="flex flex-col sm:flex-row items-center justify-center gap-4">
 								{/* Variant preview */}
@@ -1158,48 +1158,6 @@ export function PreviasView() {
 											</p>
 										)}
 									</div>
-								</div>
-
-								{/* Logo upload */}
-								<div className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 min-w-0">
-									{imageLogo ? (
-										<>
-											<div className="w-28 h-28 rounded-lg border border-slate-200 dark:border-white/10 overflow-hidden bg-white dark:bg-[#1a1a1d] shrink-0 relative">
-												<img
-													src={imageLogo}
-													alt="Logo"
-													className="w-full h-full object-contain"
-												/>
-												<button
-													type="button"
-													onClick={() => setImageLogo(null)}
-													className="absolute top-0.5 right-0.5 p-1 bg-white/90 dark:bg-black/60 rounded-md hover:bg-white dark:hover:bg-black/80 transition-colors"
-												>
-													<RotateCcw className="w-3 h-3 text-slate-600 dark:text-slate-300" />
-												</button>
-											</div>
-											<div className="min-w-0">
-												<p className="text-xs text-slate-500 dark:text-gray-400">
-													Logo
-												</p>
-												<p className="text-sm font-semibold text-slate-900 dark:text-white">
-													Enviada
-												</p>
-											</div>
-										</>
-									) : (
-										<>
-											<LogoUploadZone preview={null} onSelect={setImageLogo} />
-											<div className="min-w-0">
-												<p className="text-xs text-slate-500 dark:text-gray-400">
-													Logo
-												</p>
-												<p className="text-sm text-slate-500 dark:text-gray-400">
-													Opcional
-												</p>
-											</div>
-										</>
-									)}
 								</div>
 							</div>
 						)}
@@ -1276,6 +1234,58 @@ export function PreviasView() {
 								))}
 							</div>
 						</div>
+
+						{/* Logo (quando a personalizacao usa logo) */}
+						{(personalizationType === 'logo' ||
+							personalizationType === 'both') && (
+							<div>
+								<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+									Logo{personalizationType === 'both' ? ' (opcional)' : ''}
+								</span>
+								<div className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5">
+									{imageLogo ? (
+										<>
+											<div className="w-28 h-28 rounded-lg border border-slate-200 dark:border-white/10 overflow-hidden bg-white dark:bg-[#1a1a1d] shrink-0 relative">
+												<img
+													src={imageLogo}
+													alt="Logo"
+													className="w-full h-full object-contain"
+												/>
+												<button
+													type="button"
+													onClick={() => setImageLogo(null)}
+													className="absolute top-0.5 right-0.5 p-1 bg-white/90 dark:bg-black/60 rounded-md hover:bg-white dark:hover:bg-black/80 transition-colors"
+												>
+													<RotateCcw className="w-3 h-3 text-slate-600 dark:text-slate-300" />
+												</button>
+											</div>
+											<div className="min-w-0">
+												<p className="text-xs text-slate-500 dark:text-gray-400">
+													Logo
+												</p>
+												<p className="text-sm font-semibold text-slate-900 dark:text-white">
+													Enviada
+												</p>
+											</div>
+										</>
+									) : (
+										<>
+											<LogoUploadZone preview={null} onSelect={setImageLogo} />
+											<div className="min-w-0">
+												<p className="text-xs text-slate-500 dark:text-gray-400">
+													Logo
+												</p>
+												<p className="text-sm text-slate-500 dark:text-gray-400">
+													{personalizationType === 'logo'
+														? 'Envie sua logo'
+														: 'Opcional'}
+												</p>
+											</div>
+										</>
+									)}
+								</div>
+							</div>
+						)}
 
 						{/* Custom Name (if text or both) */}
 						{(personalizationType === 'text' ||
