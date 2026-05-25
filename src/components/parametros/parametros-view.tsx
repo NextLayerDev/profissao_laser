@@ -30,12 +30,15 @@ import {
 	useCommunityParameters,
 	useExportParameters,
 	useLikeParameter,
-	useParameterMaterials,
 	useParameterStats,
 	useRateParameter,
 	useSaveParameter,
 } from '@/hooks/use-parameters';
 import type { LaserParameter } from '@/types/parameters';
+import {
+	MODE_OPTIONS,
+	SOFTWARE_OPTIONS,
+} from '@/utils/constants/parameter-options';
 
 /* ------------------------------------------------------------------ */
 /*  Quick access config                                                */
@@ -121,8 +124,8 @@ export function ParametrosView() {
 	const [searchQuery, setSearchQuery] = useState('');
 	const debouncedSearch = useDebouncedValue(searchQuery, 400);
 	const [filterMachine, setFilterMachine] = useState('');
-	const [filterMaterial, setFilterMaterial] = useState('');
-	const [filterThickness, setFilterThickness] = useState('');
+	const [filterSoftware, setFilterSoftware] = useState('');
+	const [filterMode, setFilterMode] = useState('');
 	const limit = 5;
 
 	const tableRef = useRef<HTMLDivElement>(null);
@@ -139,7 +142,6 @@ export function ParametrosView() {
 	/* ---- hooks ---------------------------------------------------- */
 	const { data: statsData } = useParameterStats();
 	const { data: machineCatalog = [] } = useMachines();
-	const { data: materials = [] } = useParameterMaterials();
 
 	// Tabela: públicos ordenados salvos→mais curtidos (sort=relevant), 5/pág.
 	const queryParams = useMemo(
@@ -149,16 +151,10 @@ export function ParametrosView() {
 			sort: 'relevant' as const,
 			...(debouncedSearch && { search: debouncedSearch }),
 			...(filterMachine && { machine: filterMachine }),
-			...(filterMaterial && { material: filterMaterial }),
-			...(filterThickness && { thickness: filterThickness }),
+			...(filterSoftware && { software: filterSoftware }),
+			...(filterMode && { mode: filterMode }),
 		}),
-		[
-			currentPage,
-			debouncedSearch,
-			filterMachine,
-			filterMaterial,
-			filterThickness,
-		],
+		[currentPage, debouncedSearch, filterMachine, filterSoftware, filterMode],
 	);
 
 	const { data: parametersData, isLoading: parametersLoading } =
@@ -229,35 +225,11 @@ export function ParametrosView() {
 		[machineCatalog],
 	);
 
-	const availableMaterials = useMemo(
-		() =>
-			Array.from(
-				new Set(
-					materials.map((m) => m.name?.trim()).filter((n): n is string => !!n),
-				),
-			).sort(),
-		[materials],
-	);
-
-	// Espessuras em cascata: do material selecionado (ou união de todos).
-	const thicknesses = useMemo(() => {
-		const set = new Set<string>();
-		const source = filterMaterial
-			? materials.filter((m) => m.name === filterMaterial)
-			: materials;
-		for (const m of source) {
-			m.commonThicknesses?.forEach((t) => {
-				if (t?.trim()) set.add(t.trim());
-			});
-		}
-		return Array.from(set).sort();
-	}, [materials, filterMaterial]);
-
 	/* ---- handlers ------------------------------------------------- */
 	const handleClearFilters = () => {
 		setFilterMachine('');
-		setFilterMaterial('');
-		setFilterThickness('');
+		setFilterSoftware('');
+		setFilterMode('');
 		setSearchQuery('');
 		setCurrentPage(1);
 	};
@@ -343,32 +315,32 @@ export function ParametrosView() {
 
 			<select
 				className="px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-600"
-				value={filterMaterial}
+				value={filterSoftware}
 				onChange={(e) => {
-					setFilterMaterial(e.target.value);
+					setFilterSoftware(e.target.value);
 					setCurrentPage(1);
 				}}
 			>
-				<option value="">Material</option>
-				{availableMaterials.map((m) => (
-					<option key={m} value={m}>
-						{m}
+				<option value="">Software</option>
+				{SOFTWARE_OPTIONS.map((s) => (
+					<option key={s} value={s}>
+						{s}
 					</option>
 				))}
 			</select>
 
 			<select
 				className="px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-600"
-				value={filterThickness}
+				value={filterMode}
 				onChange={(e) => {
-					setFilterThickness(e.target.value);
+					setFilterMode(e.target.value);
 					setCurrentPage(1);
 				}}
 			>
-				<option value="">Espessura</option>
-				{thicknesses.map((t) => (
-					<option key={t} value={t}>
-						{t}
+				<option value="">Modo</option>
+				{MODE_OPTIONS.map((m) => (
+					<option key={m} value={m}>
+						{m}
 					</option>
 				))}
 			</select>

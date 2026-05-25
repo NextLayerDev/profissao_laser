@@ -18,6 +18,7 @@ export interface ParametersQueryParams {
 	thickness?: string;
 	search?: string;
 	mode?: string;
+	software?: string;
 }
 
 export interface CommunityParametersQueryParams extends ParametersQueryParams {
