@@ -55,9 +55,13 @@
 		opacity: 0;
 		transform: translateY(12px);
 	}
+	/* termina em `none` (não `translateY(0)`): com fill-mode `both`, um
+	   `translateY(0)` persistente cria um containing block que quebra
+	   `position: fixed` de modais dentro de ancestrais animados (ex.: o
+	   <main> do course shell). `none` é idêntico visualmente e não cria. */
 	to {
 		opacity: 1;
-		transform: translateY(0);
+		transform: none;
 	}
 }
 

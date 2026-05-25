@@ -1,6 +1,12 @@
 'use client';
 
-import { BookOpen, CalendarCog, FileText, Headphones } from 'lucide-react';
+import {
+	BookOpen,
+	CalendarCog,
+	FileText,
+	Headphones,
+	MessageSquare,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Header } from '@/components/dashboard/header';
@@ -9,12 +15,14 @@ import { KBAdminSection } from '@/components/duvidas-admin/kb-admin-section';
 import { AppointmentConfigSection } from '@/components/suporte/appointment-config-section';
 import { SuporteAdminView } from '@/components/suporte/suporte-admin-view';
 import { SuporteQuickBooking } from '@/components/suporte/suporte-quick-booking';
+import { SupportChatAdmin } from '@/components/suporte/support-chat-admin';
 import { usePermissions } from '@/hooks/use-permissions';
 
-type Tab = 'chamados' | 'faq' | 'kb' | 'agendamentos';
+type Tab = 'chamados' | 'chat-online' | 'faq' | 'kb' | 'agendamentos';
 
 const TABS: { key: Tab; label: string; icon: typeof Headphones }[] = [
 	{ key: 'chamados', label: 'Chamados', icon: Headphones },
+	{ key: 'chat-online', label: 'Chat ao vivo', icon: MessageSquare },
 	{ key: 'faq', label: 'FAQ', icon: BookOpen },
 	{ key: 'kb', label: 'Base de Conhecimento', icon: FileText },
 	{ key: 'agendamentos', label: 'Agendamentos', icon: CalendarCog },
@@ -73,6 +81,11 @@ export default function SuportePage() {
 			</div>
 
 			{activeTab === 'chamados' && <SuporteAdminView />}
+			{activeTab === 'chat-online' && (
+				<div className="flex-1 overflow-y-auto px-4 md:px-8 py-6">
+					<SupportChatAdmin />
+				</div>
+			)}
 			{activeTab === 'faq' && (
 				<div className="flex-1 overflow-y-auto px-4 md:px-8 py-6">
 					<FAQAdminSection />

@@ -157,29 +157,20 @@ export interface CreateDoubtChatPayload {
 export async function createDoubtChat(
 	payload: CreateDoubtChatPayload,
 ): Promise<DoubtChat> {
-	if (payload.file) {
-		const fd = new FormData();
-		fd.append('categoryId', payload.categoryId);
-		fd.append('initialMessage', payload.initialMessage);
-		if (payload.technicianId) fd.append('technicianId', payload.technicianId);
-		if (payload.qualificationAnswers)
-			fd.append(
-				'qualificationAnswers',
-				JSON.stringify(payload.qualificationAnswers),
-			);
-		fd.append('file', payload.file);
-		const { data } = await api.post<DoubtChat>('/doubt-chats', fd);
-		return data;
-	}
-
-	const body: Record<string, unknown> = {
-		categoryId: payload.categoryId,
-		initialMessage: payload.initialMessage,
-	};
-	if (payload.technicianId) body.technicianId = payload.technicianId;
+	// O endpoint da API é sempre multipart/form-data (usa request.parts()),
+	// então enviamos FormData mesmo sem arquivo — senão a API responde
+	// "the request is not multipart".
+	const fd = new FormData();
+	fd.append('categoryId', payload.categoryId);
+	fd.append('initialMessage', payload.initialMessage);
+	if (payload.technicianId) fd.append('technicianId', payload.technicianId);
 	if (payload.qualificationAnswers)
-		body.qualificationAnswers = payload.qualificationAnswers;
-	const { data } = await api.post<DoubtChat>('/doubt-chats', body);
+		fd.append(
+			'qualificationAnswers',
+			JSON.stringify(payload.qualificationAnswers),
+		);
+	if (payload.file) fd.append('file', payload.file);
+	const { data } = await api.post<DoubtChat>('/doubt-chats', fd);
 	return data;
 }
 

@@ -71,6 +71,12 @@ export async function deleteAppointment(id: string): Promise<void> {
 	await api.delete(`/appointment/${id}`);
 }
 
+/** Cliente cancela o próprio agendamento (validação por e-mail no backend). */
+export async function cancelMyAppointment(id: string): Promise<Appointment> {
+	const { data } = await api.patch(`/appointment/${id}/cancel`);
+	return appointmentSchema.parse(data);
+}
+
 export async function updateAppointmentTechnician(
 	id: string,
 	technicianId: string,
