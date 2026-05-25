@@ -4,6 +4,7 @@ import type {
 	VectorLibraryContents,
 	VectorLibraryFile,
 	VectorLibraryFolder,
+	VectorLibraryFormat,
 	VectorLibraryStats,
 } from '@/types/vector-library';
 
@@ -65,6 +66,15 @@ export async function getVectorLibraryCategories(): Promise<
 > {
 	const { data } = await api.get<VectorLibraryCategory[]>(
 		'/community/vector-library/categories',
+	);
+	return Array.isArray(data) ? data : [];
+}
+
+export async function getVectorLibraryFormats(): Promise<
+	VectorLibraryFormat[]
+> {
+	const { data } = await api.get<VectorLibraryFormat[]>(
+		'/community/vector-library/formats',
 	);
 	return Array.isArray(data) ? data : [];
 }

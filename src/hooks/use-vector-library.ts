@@ -14,6 +14,7 @@ import {
 	getVectorLibraryCategories,
 	getVectorLibraryFavorites,
 	getVectorLibraryFeatured,
+	getVectorLibraryFormats,
 	getVectorLibraryStats,
 	unfavoriteFile,
 	updateFile,
@@ -54,6 +55,14 @@ export function useVectorLibraryCategories(enabled = true) {
 	return useQuery({
 		queryKey: [...VECTOR_LIBRARY_KEYS.all, 'categories'] as const,
 		queryFn: getVectorLibraryCategories,
+		enabled,
+	});
+}
+
+export function useVectorLibraryFormats(enabled = true) {
+	return useQuery({
+		queryKey: [...VECTOR_LIBRARY_KEYS.all, 'formats'] as const,
+		queryFn: getVectorLibraryFormats,
 		enabled,
 	});
 }
