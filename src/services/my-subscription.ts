@@ -1,5 +1,5 @@
 import { isAxiosError } from 'axios';
-import { api } from '@/lib/fetch';
+import { api } from '@/shared/lib/fetch';
 import {
 	type MySubscription,
 	mySubscriptionSchema,

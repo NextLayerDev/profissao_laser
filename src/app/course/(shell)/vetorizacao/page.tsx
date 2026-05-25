@@ -7,19 +7,19 @@ import { VetorizacaoView } from '@/components/vetorizacao/vetorizacao-view';
 import { useCustomerFeatures } from '@/hooks/use-customer-features';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { useCustomerVectors } from '@/hooks/use-vectors';
-import { getCurrentUser, getToken } from '@/lib/auth';
+import { useIsAdmin } from '@/modules/me';
+import { getCurrentUser } from '@/shared/lib/auth';
 import { FULL_FEATURES } from '@/utils/constants/class-features';
 
 export default function VetorizacaoCoursePage() {
 	const [email, setEmail] = useState<string | null | undefined>(undefined);
-	const [isAdmin, setIsAdmin] = useState(false);
 	const [page, _setPage] = useState(1);
 	const [search, _setSearch] = useState('');
+	const isAdmin = useIsAdmin();
 
 	useEffect(() => {
 		const user = getCurrentUser();
 		setEmail(user?.email ?? null);
-		setIsAdmin(!!getToken('user') && user?.role != null);
 	}, []);
 
 	const { data: plans, isLoading } = useCustomerPlans(email ?? null);

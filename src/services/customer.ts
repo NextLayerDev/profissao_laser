@@ -1,6 +1,9 @@
-import { api } from '@/lib/fetch';
-import type { UpdateCustomerPayload } from '@/types/auth';
-import { type Customer, customerSchema } from '@/types/customer';
+import { api } from '@/shared/lib/fetch';
+import {
+	type Customer,
+	customerSchema,
+	type UpdateCustomerPayload,
+} from '@/types/customer';
 
 export async function updateCustomer(
 	id: string,

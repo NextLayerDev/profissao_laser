@@ -25,7 +25,7 @@ import {
 } from '@/hooks/use-my-subscription';
 import { useProducts } from '@/hooks/use-products';
 import { useSystemClasses } from '@/hooks/use-system-classes';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser } from '@/shared/lib/auth';
 import type { MySubscription } from '@/types/my-subscription';
 import type { Product } from '@/types/products';
 import type { SystemClassWithRelations } from '@/types/system-classes';

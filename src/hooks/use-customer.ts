@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateCustomer } from '@/services/customer';
-import type { UpdateCustomerPayload } from '@/types/auth';
+import type { UpdateCustomerPayload } from '@/types/customer';
 
 export function useUpdateCustomer() {
 	const queryClient = useQueryClient();

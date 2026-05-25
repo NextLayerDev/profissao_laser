@@ -4,24 +4,27 @@ import { Loader2, Store } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { forgotPassword } from '@/services/auth';
+import { useForgotPassword } from '@/modules/auth';
+import { getApiErrorMessage } from '@/shared/lib/api-error';
 
 export default function ForgotPassword() {
 	const [email, setEmail] = useState('');
-	const [loading, setLoading] = useState(false);
 	const [sent, setSent] = useState(false);
 
-	async function handleSubmit(e: React.FormEvent) {
+	const forgotMutation = useForgotPassword();
+
+	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
-		setLoading(true);
-		try {
-			await forgotPassword(email);
-			setSent(true);
-		} catch {
-			toast.error('Erro ao enviar email de recuperacao');
-		} finally {
-			setLoading(false);
-		}
+		forgotMutation.mutate(
+			{ email },
+			{
+				onSuccess: () => setSent(true),
+				onError: (err) =>
+					toast.error(
+						getApiErrorMessage(err, 'Erro ao enviar email de recuperacao'),
+					),
+			},
+		);
 	}
 
 	return (
@@ -74,10 +77,10 @@ export default function ForgotPassword() {
 
 							<button
 								type="submit"
-								disabled={loading}
+								disabled={forgotMutation.isPending}
 								className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors duration-200 cursor-pointer mt-2"
 							>
-								{loading ? (
+								{forgotMutation.isPending ? (
 									<>
 										<Loader2 className="w-4 h-4 animate-spin" />
 										Enviando...

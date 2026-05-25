@@ -1,4 +1,4 @@
-import { api } from '@/lib/fetch';
+import { api } from '@/shared/lib/fetch';
 import { type Material, materialSchema } from '@/types/materials';
 
 export async function getLessonMaterials(

@@ -17,7 +17,7 @@ import {
 	useDowngradeSubscription,
 	useUpgradeSubscription,
 } from '@/hooks/use-subscription';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser } from '@/shared/lib/auth';
 import type { OwnershipStatus } from '@/utils/ownership';
 
 interface CheckoutConfirmButtonProps {

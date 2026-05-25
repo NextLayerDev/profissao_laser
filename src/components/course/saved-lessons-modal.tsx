@@ -7,7 +7,7 @@ import {
 	useRemoveSavedLesson,
 	useSavedLessons,
 } from '@/hooks/use-saved-lessons';
-import { getToken } from '@/lib/auth';
+import { getToken } from '@/shared/lib/auth';
 import type { SavedLesson } from '@/types/saved-lessons';
 
 interface SavedLessonsModalProps {
@@ -67,7 +67,7 @@ function SavedLessonItem({
 }
 
 export function SavedLessonsModal({ isOpen, onClose }: SavedLessonsModalProps) {
-	const isLoggedIn = !!getToken('customer') || !!getToken('user');
+	const isLoggedIn = !!getToken();
 	const { data: savedLessons = [], isLoading } = useSavedLessons();
 
 	if (!isOpen) return null;

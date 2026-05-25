@@ -2,21 +2,22 @@
 
 import { Loader2, Store } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { toast } from 'sonner';
-import { resetPassword } from '@/services/auth';
+import { useResetPassword } from '@/modules/auth';
+import { getApiErrorMessage } from '@/shared/lib/api-error';
 
 function ResetPasswordForm() {
 	const searchParams = useSearchParams();
-	const router = useRouter();
 	const token = searchParams.get('token') ?? '';
 
 	const [newPassword, setNewPassword] = useState('');
 	const [confirmPassword, setConfirmPassword] = useState('');
-	const [loading, setLoading] = useState(false);
 
-	async function handleSubmit(e: React.FormEvent) {
+	const resetMutation = useResetPassword();
+
+	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		if (newPassword !== confirmPassword) {
 			toast.error('As senhas nao coincidem');
@@ -26,16 +27,20 @@ function ResetPasswordForm() {
 			toast.error('Token invalido');
 			return;
 		}
-		setLoading(true);
-		try {
-			const message = await resetPassword(token, newPassword);
-			toast.success(message || 'Senha redefinida com sucesso!');
-			router.push('/login');
-		} catch {
-			toast.error('Erro ao redefinir senha. O token pode ter expirado.');
-		} finally {
-			setLoading(false);
-		}
+		resetMutation.mutate(
+			{ access_token: token, new_password: newPassword },
+			{
+				onSuccess: (message) =>
+					toast.success(message || 'Senha redefinida com sucesso!'),
+				onError: (err) =>
+					toast.error(
+						getApiErrorMessage(
+							err,
+							'Erro ao redefinir senha. O token pode ter expirado.',
+						),
+					),
+			},
+		);
 	}
 
 	return (
@@ -57,7 +62,7 @@ function ResetPasswordForm() {
 						id="newPassword"
 						type="password"
 						required
-						minLength={6}
+						minLength={8}
 						value={newPassword}
 						onChange={(e) => setNewPassword(e.target.value)}
 						placeholder="••••••••"
@@ -76,7 +81,7 @@ function ResetPasswordForm() {
 						id="confirmPassword"
 						type="password"
 						required
-						minLength={6}
+						minLength={8}
 						value={confirmPassword}
 						onChange={(e) => setConfirmPassword(e.target.value)}
 						placeholder="••••••••"
@@ -86,10 +91,10 @@ function ResetPasswordForm() {
 
 				<button
 					type="submit"
-					disabled={loading}
+					disabled={resetMutation.isPending}
 					className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors duration-200 cursor-pointer mt-2"
 				>
-					{loading ? (
+					{resetMutation.isPending ? (
 						<>
 							<Loader2 className="w-4 h-4 animate-spin" />
 							Redefinindo...

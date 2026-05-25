@@ -1,4 +1,4 @@
-import { api } from '@/lib/fetch';
+import { api } from '@/shared/lib/fetch';
 import type { SavedLesson, SavedLessonsResponse } from '@/types/saved-lessons';
 import { savedLessonSchema } from '@/types/saved-lessons';
 

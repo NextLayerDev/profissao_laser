@@ -1,4 +1,4 @@
-import { api } from '@/lib/fetch';
+import { api } from '@/shared/lib/fetch';
 import { type Course, courseSchema } from '@/types/course';
 
 export async function getCourse(slug: string): Promise<Course> {

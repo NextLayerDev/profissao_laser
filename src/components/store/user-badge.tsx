@@ -4,28 +4,24 @@ import { KeyRound, LogOut, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { ChangePasswordModal } from '@/components/auth/change-password-modal';
-import {
-	clearToken,
-	getCurrentUser,
-	getToken,
-	type JwtPayload,
-} from '@/lib/auth';
+import { ChangePasswordModal } from '@/modules/auth';
+import { useIsAdmin } from '@/modules/me';
+import { clearToken, getCurrentUser, type JwtPayload } from '@/shared/lib/auth';
 
 export function UserBadge() {
 	const pathname = usePathname();
 	const router = useRouter();
 	const [user, setUser] = useState<JwtPayload | null>(null);
 	const [showChangePassword, setShowChangePassword] = useState(false);
+	const isAdminUser = useIsAdmin();
 
 	useEffect(() => {
 		setUser(getCurrentUser());
 	}, []);
 
 	function handleLogout() {
-		const wasAdmin = !!getToken('user');
-		clearToken('customer');
-		clearToken('user');
+		const wasAdmin = isAdminUser;
+		clearToken();
 		setUser(null);
 		if (wasAdmin) {
 			router.replace('/login/admin');
@@ -41,7 +37,6 @@ export function UserBadge() {
 		pathname.startsWith('/vetorizacao') ||
 		pathname.startsWith('/biblioteca-vetores');
 	const loginHref = isCustomerArea ? '/login' : '/login/admin';
-	const isAdminUser = !!getToken('user');
 
 	if (!user) {
 		return (

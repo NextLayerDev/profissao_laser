@@ -18,7 +18,8 @@ import { SavedLessonsModal } from '@/components/course/saved-lessons-modal';
 import { DashboardSkeleton } from '@/components/ui/skeletons/dashboard-skeleton';
 import { useCustomerFeatures } from '@/hooks/use-customer-features';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
-import { getCurrentUser, getToken } from '@/lib/auth';
+import { useIsAdmin } from '@/modules/me';
+import { getCurrentUser } from '@/shared/lib/auth';
 import { FULL_FEATURES } from '@/utils/constants/class-features';
 
 const TIER_ORDER: Record<string, number> = { prata: 0, ouro: 1, platina: 2 };
@@ -27,15 +28,14 @@ const SIDEBAR_KEY = 'course-sidebar-collapsed';
 export default function CoursePage() {
 	const [email, setEmail] = useState<string | null | undefined>(undefined);
 	const [name, setName] = useState<string>('');
-	const [isAdmin, setIsAdmin] = useState(false);
 	const [savedLessonsModalOpen, setSavedLessonsModalOpen] = useState(false);
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+	const isAdmin = useIsAdmin();
 
 	useEffect(() => {
 		const user = getCurrentUser();
 		setEmail(user?.email ?? null);
 		setName(user?.name ?? '');
-		setIsAdmin(!!getToken('user'));
 		const stored = localStorage.getItem(SIDEBAR_KEY);
 		if (stored !== null) setSidebarCollapsed(stored === 'true');
 	}, []);

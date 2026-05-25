@@ -1,11 +1,11 @@
 'use client';
 
 import { MessageCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { DoubtsModal } from '@/components/dashboard/doubts-modal';
 import { useDoubtsByModules } from '@/hooks/use-admin-doubts';
 import { useDoubtChatsAdmin } from '@/hooks/use-doubt-chat-admin';
-import { getToken } from '@/lib/auth';
+import { useIsAdmin } from '@/modules/me';
 
 type ChatButtonVariant = 'inline' | 'floating';
 
@@ -15,11 +15,7 @@ interface ChatButtonProps {
 
 export function ChatButton({ variant = 'inline' }: ChatButtonProps) {
 	const [open, setOpen] = useState(false);
-	const [isAdmin, setIsAdmin] = useState(false);
-
-	useEffect(() => {
-		setIsAdmin(!!getToken('user'));
-	}, []);
+	const isAdmin = useIsAdmin();
 
 	const { data: productsWithDoubts = [] } = useDoubtsByModules(isAdmin);
 	const { data: doubtChats = [] } = useDoubtChatsAdmin(undefined, isAdmin);

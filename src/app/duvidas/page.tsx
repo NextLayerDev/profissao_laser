@@ -19,7 +19,8 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { useCustomerFeatures } from '@/hooks/use-customer-features';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { useDoubtChats } from '@/hooks/use-doubt-chat';
-import { getCurrentUser, getToken } from '@/lib/auth';
+import { useIsAdmin } from '@/modules/me';
+import { getCurrentUser } from '@/shared/lib/auth';
 import { FULL_FEATURES } from '@/utils/constants/class-features';
 
 const Background = () => (
@@ -33,16 +34,15 @@ const Background = () => (
 export default function DuvidasPage() {
 	const [email, setEmail] = useState<string | null | undefined>(undefined);
 	const [name, setName] = useState<string>('');
-	const [isAdmin, setIsAdmin] = useState(false);
 	const [mainTab, setMainTab] = useState<
 		'faq' | 'forum' | 'pending' | 'answered'
 	>('faq');
+	const isAdmin = useIsAdmin();
 
 	useEffect(() => {
 		const user = getCurrentUser();
 		setEmail(user?.email ?? null);
 		setName(user?.name ?? '');
-		setIsAdmin(!!getToken('user') && user?.role != null);
 	}, []);
 
 	const { data: plans } = useCustomerPlans(email ?? null);

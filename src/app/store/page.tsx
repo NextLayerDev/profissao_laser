@@ -2,19 +2,13 @@
 
 import { BookOpen, CalendarClock, LayoutDashboard, Store } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 import { StoreContent } from '@/components/store/store-content';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { getCurrentUser, getToken } from '@/lib/auth';
+import { useIsAdmin } from '@/modules/me';
 
 export default function Loja() {
-	const [isAdmin, setIsAdmin] = useState(false);
-
-	useEffect(() => {
-		const user = getCurrentUser();
-		setIsAdmin(!!getToken('user') && user?.role != null);
-	}, []);
+	const isAdmin = useIsAdmin();
 
 	return (
 		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] text-slate-900 dark:text-white font-sans">

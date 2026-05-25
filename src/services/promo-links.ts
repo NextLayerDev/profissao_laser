@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { api } from '@/lib/fetch';
+import { api } from '@/shared/lib/fetch';
 import {
 	type CreatePromoLinkPayload,
 	type CreatePromoLinkResponse,

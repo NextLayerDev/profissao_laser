@@ -17,7 +17,7 @@ import { useClasses } from '@/hooks/use-classes';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { useProducts } from '@/hooks/use-products';
 import { useSystemClasses } from '@/hooks/use-system-classes';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser } from '@/shared/lib/auth';
 import type { ClassWithProducts } from '@/types/classes';
 import type { Product } from '@/types/products';
 import type { SystemClassWithRelations } from '@/types/system-classes';

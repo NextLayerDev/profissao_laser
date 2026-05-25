@@ -4,8 +4,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { registerUser } from '@/services/auth';
+import { signup } from '@/modules/auth';
 import { ROLES } from '@/utils/constants/roles';
+
+// TODO(modules/users): após criar o módulo users, chamar PATCH /v1/user/{id}/role
+// para aplicar role/Permissions. O endpoint /v1/auth/signup não aceita role.
 
 interface CreateUserModalProps {
 	isOpen: boolean;
@@ -17,6 +20,7 @@ export function CreateUserModal({ isOpen, onClose }: CreateUserModalProps) {
 	const [name, setName] = useState('');
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
+	const [phone, setPhone] = useState('');
 	const [role, setRole] = useState(ROLES[0].role);
 	const [permissions, setPermissions] = useState(ROLES[0].id);
 
@@ -25,9 +29,8 @@ export function CreateUserModal({ isOpen, onClose }: CreateUserModalProps) {
 			name: string;
 			email: string;
 			password: string;
-			role: string;
-			Permissions: number | null;
-		}) => registerUser(payload),
+			phone: string;
+		}) => signup(payload),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['users'] });
 			toast.success('Utilizador criado com sucesso.');
@@ -60,6 +63,7 @@ export function CreateUserModal({ isOpen, onClose }: CreateUserModalProps) {
 		setName('');
 		setEmail('');
 		setPassword('');
+		setPhone('');
 		setRole(ROLES[0].role);
 		setPermissions(ROLES[0].id);
 		onClose();
@@ -67,15 +71,26 @@ export function CreateUserModal({ isOpen, onClose }: CreateUserModalProps) {
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
-		if (!name.trim() || !email.trim() || !password.trim()) return;
-		if (password.length < 6) return;
+		if (!name.trim() || !email.trim() || !password.trim() || !phone.trim())
+			return;
+		if (password.length < 8) return;
+
+		const digits = phone.trim().replace(/\D/g, '');
+		const phoneE164 = phone.trim().startsWith('+')
+			? phone.trim()
+			: digits.startsWith('55')
+				? `+${digits}`
+				: `+55${digits}`;
+
+		// role/permissions são persistidos via PATCH /v1/user/{id}/role no módulo users (pendente).
+		void role;
+		void permissions;
 
 		mutation.mutate({
 			name: name.trim(),
 			email: email.trim(),
 			password,
-			role,
-			Permissions: permissions,
+			phone: phoneE164,
 		});
 	}
 
@@ -146,6 +161,24 @@ export function CreateUserModal({ isOpen, onClose }: CreateUserModalProps) {
 
 					<div>
 						<label
+							htmlFor="create-phone"
+							className="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1.5"
+						>
+							Telefone
+						</label>
+						<input
+							id="create-phone"
+							type="tel"
+							required
+							value={phone}
+							onChange={(e) => setPhone(e.target.value)}
+							placeholder="(11) 99999-9999"
+							className="w-full bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 transition-colors"
+						/>
+					</div>
+
+					<div>
+						<label
 							htmlFor="create-password"
 							className="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1.5"
 						>
@@ -155,10 +188,10 @@ export function CreateUserModal({ isOpen, onClose }: CreateUserModalProps) {
 							id="create-password"
 							type="password"
 							required
-							minLength={6}
+							minLength={8}
 							value={password}
 							onChange={(e) => setPassword(e.target.value)}
-							placeholder="Mínimo 6 caracteres"
+							placeholder="Mínimo 8 caracteres"
 							className="w-full bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 transition-colors"
 						/>
 					</div>

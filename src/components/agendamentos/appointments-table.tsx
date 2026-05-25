@@ -22,7 +22,8 @@ import {
 	useUpdateAppointmentTechnician,
 } from '@/hooks/use-appointments';
 import { useUsers } from '@/hooks/use-users';
-import { getCurrentUser, getToken } from '@/lib/auth';
+import { useIsAdmin } from '@/modules/me';
+import { getCurrentUser } from '@/shared/lib/auth';
 import type { Appointment } from '@/types/appointments';
 import {
 	APPOINTMENT_STATUS_LABELS,
@@ -64,6 +65,7 @@ export function AppointmentsTable({
 	const updateStatus = useUpdateAppointmentStatus();
 	const updateTechnician = useUpdateAppointmentTechnician();
 	const currentUser = getCurrentUser();
+	const isAdminUser = useIsAdmin();
 	const technicians = useMemo(
 		() =>
 			users.filter(
@@ -73,8 +75,8 @@ export function AppointmentsTable({
 			),
 		[users],
 	);
-	/** Mostra "Pegar para mim" quando o utilizador logado tem token admin/colaborador (pl_user_token) e tem sub no JWT */
-	const canAssignToSelf = Boolean(getToken('user') && currentUser?.sub);
+	/** Mostra "Pegar para mim" quando o utilizador logado é admin/colaborador e tem sub no JWT */
+	const canAssignToSelf = Boolean(isAdminUser && currentUser?.sub);
 	const userNameMap = useMemo(
 		() => Object.fromEntries(users.map((u) => [u.id, u.name])),
 		[users],

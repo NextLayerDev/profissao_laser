@@ -1,5 +1,5 @@
-import { getActiveToken } from '@/lib/auth';
-import { api } from '@/lib/fetch';
+import { getToken } from '@/shared/lib/auth';
+import { api } from '@/shared/lib/fetch';
 import { type Product, productSchema } from '@/types/products';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -67,7 +67,7 @@ export async function uploadProductImage(
 	const formData = new FormData();
 	formData.append('file', file, file.name);
 
-	const token = getActiveToken();
+	const token = getToken();
 	const headers: Record<string, string> = {};
 	if (token) headers.Authorization = `Bearer ${token}`;
 

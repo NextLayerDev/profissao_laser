@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { CourseSidebar } from '@/components/course/home/course-sidebar';
 import { CourseTopHeader } from '@/components/course/home/course-top-header';
-import { getToken } from '@/lib/auth';
+import { useIsAdmin } from '@/modules/me';
 
 const STORAGE_KEY = 'course-sidebar-collapsed';
 
@@ -16,11 +16,10 @@ export default function CourseShellLayout({
 }) {
 	const pathname = usePathname();
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-	const [isAdmin, setIsAdmin] = useState(false);
 	const [mobileOpen, setMobileOpen] = useState(false);
+	const isAdmin = useIsAdmin();
 
 	useEffect(() => {
-		setIsAdmin(!!getToken('user'));
 		const stored = localStorage.getItem(STORAGE_KEY);
 		if (stored !== null) setSidebarCollapsed(stored === 'true');
 	}, []);

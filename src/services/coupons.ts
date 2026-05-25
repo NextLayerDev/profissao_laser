@@ -1,4 +1,4 @@
-import { api } from '@/lib/fetch';
+import { api } from '@/shared/lib/fetch';
 import type { Coupon, CreateCouponPayload } from '@/types/coupons';
 
 export type { Coupon, CreateCouponPayload };

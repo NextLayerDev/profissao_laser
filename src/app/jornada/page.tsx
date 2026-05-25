@@ -17,7 +17,7 @@ import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { useJornadaProgress } from '@/hooks/use-jornada-progress';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser } from '@/shared/lib/auth';
 
 const Background = () => (
 	<>

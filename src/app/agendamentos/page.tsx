@@ -2,20 +2,15 @@
 
 import { BookOpen, CalendarClock, LayoutDashboard, Store } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 import { AppointmentsTable } from '@/components/agendamentos/appointments-table';
 import { ClientAppointmentsView } from '@/components/agendamentos/client-appointments-view';
 import { Header } from '@/components/dashboard/header';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { getToken } from '@/lib/auth';
+import { useIsAdmin, useMe } from '@/modules/me';
 
 function CustomerHeader() {
-	const [isAdmin, setIsAdmin] = useState(false);
-
-	useEffect(() => {
-		setIsAdmin(!!getToken('user'));
-	}, []);
+	const isAdmin = useIsAdmin();
 
 	return (
 		<header className="border-b border-slate-200 dark:border-gray-800 bg-slate-50/80 dark:bg-[#0d0d0f]/80 backdrop-blur-sm sticky top-0 z-10">
@@ -60,13 +55,10 @@ function CustomerHeader() {
 }
 
 export default function AgendamentosPage() {
-	const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+	const { isLoading } = useMe();
+	const isAdmin = useIsAdmin();
 
-	useEffect(() => {
-		setIsAdmin(!!getToken('user'));
-	}, []);
-
-	if (isAdmin === null) {
+	if (isLoading) {
 		return (
 			<div className="min-h-screen flex items-center justify-center">
 				<div className="text-slate-600 dark:text-gray-400">A carregar...</div>

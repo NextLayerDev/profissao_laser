@@ -2,25 +2,20 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { getCurrentUser, isAdmin } from '@/lib/auth';
+import { useMe } from '@/modules/me';
+import { getCurrentUser } from '@/shared/lib/auth';
 
 const PUBLIC_PATHS = [
 	'/login',
 	'/register',
+	'/forgot-password',
+	'/reset-password',
 	'/store',
 	'/',
 	'/checkout',
 	'/payment-link',
 	'/promo-link',
 	'/global-promo-link',
-];
-
-const CUSTOMER_PATHS = [
-	'/store',
-	'/course',
-	'/comunity',
-	'/agendamentos',
-	'/biblioteca-vetores',
 ];
 
 const ADMIN_PATHS = [
@@ -34,13 +29,6 @@ const ADMIN_PATHS = [
 	'/forum',
 ];
 
-function getLoginRedirect(pathname: string): string {
-	if (CUSTOMER_PATHS.some((p) => pathname.startsWith(p))) {
-		return '/login';
-	}
-	return '/login/admin';
-}
-
 function isAdminPath(pathname: string): boolean {
 	return ADMIN_PATHS.some((p) =>
 		p === '/'
@@ -52,6 +40,7 @@ function isAdminPath(pathname: string): boolean {
 export function AuthGuard({ children }: { children: React.ReactNode }) {
 	const router = useRouter();
 	const pathname = usePathname();
+	const me = useMe();
 	const [ready, setReady] = useState(false);
 
 	useEffect(() => {
@@ -59,18 +48,30 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 			p === '/' ? pathname === '/' : pathname.startsWith(p),
 		);
 
-		if (!isPublic && !getCurrentUser()) {
-			router.replace(getLoginRedirect(pathname));
+		if (isPublic) {
+			setReady(true);
 			return;
 		}
 
-		if (!isPublic && getCurrentUser() && !isAdmin() && isAdminPath(pathname)) {
+		const jwt = getCurrentUser();
+		if (!jwt) {
+			router.replace('/login');
+			return;
+		}
+
+		// Determina role: prefere /me, com fallback no JWT se /me falhar
+		if (me.isLoading) return;
+
+		const role = me.data?.role ?? jwt.role;
+		const isAdmin = role === 'admin' || role === 'staff';
+
+		if (!isAdmin && isAdminPath(pathname)) {
 			router.replace('/store');
 			return;
 		}
 
 		setReady(true);
-	}, [pathname, router]);
+	}, [pathname, router, me.isLoading, me.data]);
 
 	if (!ready) return null;
 

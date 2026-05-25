@@ -1,5 +1,5 @@
 import { Upload as TusUpload } from 'tus-js-client';
-import { api } from '@/lib/fetch';
+import { api } from '@/shared/lib/fetch';
 import type {
 	CreateLessonPayload,
 	CreateModulePayload,

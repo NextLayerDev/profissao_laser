@@ -1,4 +1,4 @@
-import { api } from '@/lib/fetch';
+import { api } from '@/shared/lib/fetch';
 import type { LessonRating } from '@/types/doubts';
 
 export async function getLessonRating(lessonId: string): Promise<LessonRating> {

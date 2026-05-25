@@ -9,25 +9,22 @@ import {
 	MessagesSquare,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { CategoriesSection } from '@/components/duvidas-admin/categories-section';
 import { DefaultQuestionsSection } from '@/components/duvidas-admin/default-questions-section';
 import { FAQAdminSection } from '@/components/duvidas-admin/faq-admin-section';
 import { ForumCategoriesSection } from '@/components/duvidas-admin/forum-categories-section';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { getToken } from '@/lib/auth';
+import { useIsAdmin, useMe } from '@/modules/me';
 
 export default function DuvidasAdminPage() {
-	const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+	const { isLoading } = useMe();
+	const isAdmin = useIsAdmin();
 	const [activeTab, setActiveTab] = useState<
 		'faq' | 'categories' | 'questions' | 'forum-categories'
 	>('faq');
 
-	useEffect(() => {
-		setIsAdmin(!!getToken('user'));
-	}, []);
-
-	if (isAdmin === null) {
+	if (isLoading) {
 		return (
 			<div className="min-h-screen flex items-center justify-center">
 				<Loader2 className="w-8 h-8 text-violet-500 animate-spin" />

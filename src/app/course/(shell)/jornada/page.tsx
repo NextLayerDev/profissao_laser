@@ -15,7 +15,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { CardListSkeleton } from '@/components/ui/skeletons/card-list-skeleton';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { useJornadaProgress } from '@/hooks/use-jornada-progress';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser } from '@/shared/lib/auth';
 
 export default function JornadaCoursePage() {
 	const [email, setEmail] = useState<string | null | undefined>(undefined);

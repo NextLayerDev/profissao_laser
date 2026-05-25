@@ -8,7 +8,7 @@ import {
 	useCreateAppointment,
 } from '@/hooks/use-appointments';
 import { useUsers } from '@/hooks/use-users';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser } from '@/shared/lib/auth';
 import type { CreateAppointmentPayload } from '@/types/appointments';
 import { getAvailableTechniciansAtSlot } from '@/utils/agendamentos/technician-availability';
 import { APPOINTMENT_MACHINES } from '@/utils/constants/appointment-machines';

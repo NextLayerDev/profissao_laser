@@ -14,7 +14,8 @@ import {
 	useVectorLibraryBreadcrumbs,
 	useVectorLibraryContents,
 } from '@/hooks/use-vector-library';
-import { getCurrentUser, getToken } from '@/lib/auth';
+import { useIsAdmin } from '@/modules/me';
+import { getCurrentUser } from '@/shared/lib/auth';
 import type { VectorLibraryFile } from '@/types/vector-library';
 import { FULL_FEATURES } from '@/utils/constants/class-features';
 
@@ -26,12 +27,11 @@ export default function BibliotecaVetoresPage() {
 	const router = useRouter();
 	const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
 	const [email, setEmail] = useState<string | null | undefined>(undefined);
-	const [isAdmin, setIsAdmin] = useState(false);
+	const isAdmin = useIsAdmin();
 
 	useEffect(() => {
 		const user = getCurrentUser();
 		setEmail(user?.email ?? null);
-		setIsAdmin(!!getToken('user') && user?.role != null);
 	}, []);
 
 	const { data: plans, isLoading } = useCustomerPlans(email ?? null);

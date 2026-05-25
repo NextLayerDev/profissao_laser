@@ -46,7 +46,8 @@ import {
 	useSavedLessons,
 	useSaveLesson,
 } from '@/hooks/use-saved-lessons';
-import { getCurrentUser, getToken } from '@/lib/auth';
+import { useIsAdmin } from '@/modules/me';
+import { getCurrentUser, getToken } from '@/shared/lib/auth';
 import type { CourseLesson } from '@/types/course';
 import type { MaterialType } from '@/types/materials';
 import type { Quiz } from '@/types/quiz';
@@ -344,13 +345,12 @@ export default function CourseSlugPage() {
 	const searchParams = useSearchParams();
 	const lessonIdFromUrl = searchParams.get('lesson');
 	const [email, setEmail] = useState<string | null | undefined>(undefined);
-	const [isAdmin, setIsAdmin] = useState(false);
 	const [savedLessonsModalOpen, setSavedLessonsModalOpen] = useState(false);
+	const isAdmin = useIsAdmin();
 
 	useEffect(() => {
 		const user = getCurrentUser();
 		setEmail(user?.email ?? null);
-		setIsAdmin(!!getToken('user'));
 	}, []);
 
 	const { data: plans } = useCustomerPlans(isAdmin ? null : (email ?? null));
@@ -373,7 +373,7 @@ export default function CourseSlugPage() {
 	// Hooks devem ser chamados sempre na mesma ordem (antes de qualquer early return)
 	const { data: ratingData } = useLessonRating(activeLesson?.id ?? '');
 	const submitRating = useSubmitRating(activeLesson?.id ?? '');
-	const isLoggedIn = !!getToken('customer') || !!getToken('user');
+	const isLoggedIn = !!getToken();
 	const { data: savedLessons = [] } = useSavedLessons();
 	const saveLessonMutation = useSaveLesson();
 	const removeSavedLessonMutation = useRemoveSavedLesson();

@@ -7,20 +7,20 @@ import { AccessGate } from '@/components/ui/access-gate';
 import { CardGridSkeleton } from '@/components/ui/skeletons/card-grid-skeleton';
 import { useCustomerFeatures } from '@/hooks/use-customer-features';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
-import { getCurrentUser, getToken } from '@/lib/auth';
+import { useIsAdmin } from '@/modules/me';
+import { getCurrentUser } from '@/shared/lib/auth';
 import { FULL_FEATURES } from '@/utils/constants/class-features';
 
 export default function VitrineCoursePage() {
 	const router = useRouter();
 	const [email, setEmail] = useState<string | null | undefined>(undefined);
 	const [name, setName] = useState('');
-	const [isAdmin, setIsAdmin] = useState(false);
+	const isAdmin = useIsAdmin();
 
 	useEffect(() => {
 		const user = getCurrentUser();
 		setEmail(user?.email ?? null);
 		setName(user?.name ?? '');
-		setIsAdmin(!!getToken('user') && user?.role != null);
 	}, []);
 
 	const { data: plans, isLoading } = useCustomerPlans(email ?? null);

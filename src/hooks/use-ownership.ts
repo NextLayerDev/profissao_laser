@@ -1,7 +1,7 @@
 'use client';
 
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser } from '@/shared/lib/auth';
 import {
 	type OwnershipStatus,
 	type ProductVariantRef,

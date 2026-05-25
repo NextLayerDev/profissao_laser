@@ -1,13 +1,14 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getCurrentUser, getToken } from '@/lib/auth';
+import { useIsAdmin } from '@/modules/me';
 import { getUser } from '@/services/users';
+import { getCurrentUser } from '@/shared/lib/auth';
 import { getRoleByPermissionId } from '@/utils/constants/roles';
 
 export function usePermissions() {
 	const currentUser = getCurrentUser();
-	const hasUserToken = !!getToken('user');
+	const hasUserToken = useIsAdmin();
 	const userId = currentUser?.sub ?? null;
 
 	const { data: user, isLoading } = useQuery({

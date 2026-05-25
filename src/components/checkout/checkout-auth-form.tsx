@@ -3,8 +3,17 @@
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { saveToken } from '@/lib/auth';
-import { loginCustomer, registerCustomer } from '@/services/auth';
+import { login, signup } from '@/modules/auth';
+import { getApiErrorMessage } from '@/shared/lib/api-error';
+import { saveToken } from '@/shared/lib/auth';
+
+function toE164(raw: string): string {
+	const trimmed = raw.trim();
+	if (trimmed.startsWith('+')) return trimmed;
+	const digits = trimmed.replace(/\D/g, '');
+	if (!digits) return '';
+	return digits.startsWith('55') ? `+${digits}` : `+55${digits}`;
+}
 
 interface CheckoutAuthFormProps {
 	onAuthenticated: () => void;
@@ -29,34 +38,19 @@ export function CheckoutAuthForm({ onAuthenticated }: CheckoutAuthFormProps) {
 
 		setIsLoading(true);
 		try {
-			// 1. Registrar conta
-			await registerCustomer({
+			// signup já retorna access_token + user (auto-login)
+			const { access_token } = await signup({
 				name: name.trim(),
 				email: email.trim(),
 				password: password.trim(),
-				phone: phone.trim().replace(/\D/g, ''), // Send only digits
+				phone: toE164(phone),
 			});
-
-			// 2. Login para pegar token
-			const { token } = await loginCustomer({ email, password });
-			saveToken('customer', token);
+			saveToken(access_token);
 
 			toast.success('Conta criada com sucesso!');
 			onAuthenticated();
 		} catch (err: unknown) {
-			const message =
-				err instanceof Error ? err.message : 'Erro ao criar conta';
-			const isAxiosError =
-				typeof err === 'object' &&
-				err !== null &&
-				'response' in err &&
-				typeof (err as { response?: { data?: { message?: string } } }).response
-					?.data?.message === 'string';
-			const serverMessage = isAxiosError
-				? (err as { response: { data: { message: string } } }).response.data
-						.message
-				: message;
-			toast.error(serverMessage);
+			toast.error(getApiErrorMessage(err, 'Erro ao criar conta'));
 		} finally {
 			setIsLoading(false);
 		}
@@ -68,8 +62,8 @@ export function CheckoutAuthForm({ onAuthenticated }: CheckoutAuthFormProps) {
 
 		setIsLoading(true);
 		try {
-			const { token } = await loginCustomer({ email, password });
-			saveToken('customer', token);
+			const { access_token } = await login({ email, password });
+			saveToken(access_token);
 
 			toast.success('Login realizado!');
 			onAuthenticated();

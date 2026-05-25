@@ -17,3 +17,10 @@ export const customerSchema = z.object({
 
 export type Customer = z.infer<typeof customerSchema>;
 export type CustomerSubscription = z.infer<typeof subscriptionSchema>;
+
+export const updateCustomerSchema = z.object({
+	name: z.string().min(2).optional(),
+	email: z.string().email().optional(),
+	phone: z.string().optional(),
+});
+export type UpdateCustomerPayload = z.infer<typeof updateCustomerSchema>;

@@ -7,7 +7,7 @@ import { useClasses } from '@/hooks/use-classes';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { useProducts } from '@/hooks/use-products';
 import { useSystemClasses } from '@/hooks/use-system-classes';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser } from '@/shared/lib/auth';
 
 export function StoreContent() {
 	const [search, setSearch] = useState('');

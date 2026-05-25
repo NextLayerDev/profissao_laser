@@ -1,4 +1,4 @@
-import { api } from '@/lib/fetch';
+import { api } from '@/shared/lib/fetch';
 import { type User, userSchema } from '@/types/users';
 
 export interface UpdateColaboradorPayload {
