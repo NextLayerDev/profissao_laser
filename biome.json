@@ -12,7 +12,8 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"includes": ["**", "!/.claude"]
+		"includes": ["**", "!/.claude"],
+		"maxSize": 2048576
 	},
 	"formatter": {
 		"enabled": true,

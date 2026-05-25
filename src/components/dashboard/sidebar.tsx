@@ -20,7 +20,6 @@ export function Sidebar({ collapsed, onToggle }: Props) {
 		if (item.name === 'Acessos' || item.name === 'Alunos') return canAdmin;
 		if (
 			item.name === 'Vendas' ||
-			item.name === 'Relatórios' ||
 			item.name === 'Links' ||
 			item.name === 'Analytics'
 		)

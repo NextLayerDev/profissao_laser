@@ -22,12 +22,12 @@ const ADMIN_PATHS = [
 	'/dashboard',
 	'/products',
 	'/courses',
-	'/planos',
+	'/plans',
 	'/sales',
 	'/links',
 	'/reports',
 	'/community',
-	'/acessos',
+	'/access',
 	'/forum',
 ];
 

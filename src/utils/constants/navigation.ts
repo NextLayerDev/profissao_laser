@@ -1,6 +1,5 @@
 import {
 	BarChart2,
-	BarChart3,
 	CalendarClock,
 	Eye,
 	Headphones,
@@ -22,12 +21,6 @@ export const navItems: NavItem[] = [
 	{ name: 'Produtos', icon: Package, href: '/products', hasDropdown: false },
 	{ name: 'Vendas', icon: ShoppingCart, href: '/sales', hasDropdown: false },
 	{ name: 'Links', icon: Link2, href: '/links', hasDropdown: false },
-	{
-		name: 'Relatórios',
-		icon: BarChart3,
-		href: '/reports',
-		hasDropdown: false,
-	},
 	{
 		name: 'Analytics',
 		icon: BarChart2,
@@ -59,7 +52,7 @@ export const navItems: NavItem[] = [
 		href: '/parametros',
 		hasDropdown: false,
 	},
-	{ name: 'Acessos', icon: ShieldCheck, href: '/acessos', hasDropdown: false },
+	{ name: 'Acessos', icon: ShieldCheck, href: '/access', hasDropdown: false },
 	{ name: 'Alunos', icon: Users, href: '/alunos', hasDropdown: false },
 	{ name: 'Previas IA', icon: Eye, href: '/previas-admin', hasDropdown: false },
 	{

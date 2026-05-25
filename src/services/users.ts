@@ -6,6 +6,43 @@ export async function getUsers(): Promise<User[]> {
 	return userSchema.array().parse(data);
 }
 
+export async function getUsersFiltered(
+	role?: 'admin' | 'staff' | 'customer',
+): Promise<User[]> {
+	const params = new URLSearchParams({ limit: '100' });
+	if (role) params.set('role', role);
+	const { data } = await api.get(`/v1/users?${params.toString()}`);
+	return userSchema.array().parse(data);
+}
+
+export async function blockUser(id: string, blocked: boolean): Promise<User> {
+	const { data } = await api.patch(`/v1/user/${id}/block`, { blocked });
+	return userSchema.parse(data);
+}
+
+export async function changeUserPassword(
+	id: string,
+	new_password: string,
+): Promise<void> {
+	await api.patch(`/v1/user/${id}/password`, { new_password });
+}
+
+export async function promoteUser(
+	id: string,
+	role: 'staff' | 'admin',
+): Promise<User> {
+	const { data } = await api.post(`/v1/user/${id}/promote`, { role });
+	return userSchema.parse(data);
+}
+
+export async function demoteUser(
+	id: string,
+	role: 'staff' | 'customer',
+): Promise<User> {
+	const { data } = await api.post(`/v1/user/${id}/demote`, { role });
+	return userSchema.parse(data);
+}
+
 export async function getUser(id: string): Promise<User> {
 	const { data } = await api.get(`/user/${id}`);
 	return userSchema.parse(data);

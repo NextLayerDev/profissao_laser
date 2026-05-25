@@ -122,7 +122,7 @@ function PlanCard({
 			<div className="pointer-events-none absolute -bottom-20 -left-10 w-40 h-40 rounded-full bg-fuchsia-500/10 dark:bg-fuchsia-500/10 blur-3xl" />
 
 			<div className="relative flex flex-col flex-1">
-				<Link href={`/planos/${plan.id}`} className="block">
+				<Link href={`/plans/${plan.id}`} className="block">
 					<div className="flex items-start justify-between gap-2">
 						<div className="flex-1 min-w-0">
 							<p className="font-bold text-slate-900 dark:text-white truncate">

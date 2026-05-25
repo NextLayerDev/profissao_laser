@@ -13,7 +13,7 @@ function CustomerHeader() {
 	const isAdmin = useIsAdmin();
 
 	return (
-		<header className="border-b border-slate-200 dark:border-gray-800 bg-slate-50/80 dark:bg-[#0d0d0f]/80 backdrop-blur-sm sticky top-0 z-10">
+		<header className="border-b border-slate-200 dark:border-gray-800 bg-slate-50/80 dark:bg-ink-900/80 backdrop-blur-sm sticky top-0 z-10">
 			<div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-6">
 				<div className="flex items-center gap-2">
 					<CalendarClock className="w-6 h-6 text-violet-400" />
