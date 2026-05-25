@@ -32,7 +32,7 @@ export function CommunityCard({ features, upgradeTiers }: CommunityCardProps) {
 			{features?.comunidade ? (
 				<Link
 					href="/comunity"
-					className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-violet-600 hover:opacity-90 text-white font-semibold py-2.5 rounded-xl transition-all text-sm shadow-[0_0_15px_rgba(108,56,255,0.25)]"
+					className="w-full flex items-center justify-center gap-2 bg-linear-to-r from-violet-600 to-violet-600 hover:opacity-90 text-white font-semibold py-2.5 rounded-xl transition-all text-sm shadow-[0_0_15px_rgba(108,56,255,0.25)]"
 				>
 					<Users className="w-5 h-5" />
 					Acessar comunidade

@@ -85,7 +85,7 @@ function PackagesPanel() {
 					{(packages ?? []).map((p) => (
 						<div
 							key={p.id}
-							className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-gradient-to-br from-white via-amber-50/40 to-orange-50/30 dark:from-[#1a1a1d] dark:via-amber-950/20 dark:to-orange-950/10 p-5 flex flex-col"
+							className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-linear-to-br from-white via-amber-50/40 to-orange-50/30 dark:from-[#1a1a1d] dark:via-amber-950/20 dark:to-orange-950/10 p-5 flex flex-col"
 						>
 							<div className="pointer-events-none absolute -top-16 -right-16 w-44 h-44 rounded-full bg-amber-500/15 dark:bg-amber-500/10 blur-3xl" />
 							<div className="pointer-events-none absolute -bottom-20 -left-10 w-40 h-40 rounded-full bg-orange-500/10 dark:bg-orange-500/10 blur-3xl" />

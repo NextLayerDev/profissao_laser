@@ -101,7 +101,7 @@ function CompactQuickAccess({
 							<p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-gray-400">
 								{SECTION_LABELS[section]}
 							</p>
-							<div className="h-px flex-1 bg-gradient-to-r from-slate-200 dark:from-white/10 to-transparent" />
+							<div className="h-px flex-1 bg-linear-to-r from-slate-200 dark:from-white/10 to-transparent" />
 						</div>
 						<div className="grid grid-cols-2 gap-3">
 							{items.map((item) => (
@@ -154,7 +154,7 @@ function QuickAccessCard({
 			<div
 				className={`relative w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
 					isLocked
-						? 'bg-slate-200 dark:bg-white/[0.06]'
+						? 'bg-slate-200 dark:bg-white/6'
 						: 'bg-white/20 backdrop-blur-sm'
 				}`}
 			>
@@ -184,7 +184,7 @@ function QuickAccessCard({
 	);
 
 	const hoverLine = !isLocked ? (
-		<div className="absolute top-0 left-0 right-0 h-[2px] rounded-t-xl bg-gradient-to-r from-transparent via-white/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+		<div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-xl bg-linear-to-r from-transparent via-white/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 	) : null;
 
 	if (isLocked) {
