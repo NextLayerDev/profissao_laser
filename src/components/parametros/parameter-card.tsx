@@ -168,38 +168,46 @@ export function ParameterCard({
 				/>
 			</div>
 
-			{/* Linha 5 — Cross Hatch | Tipo de Linha | Eixo rotativo */}
-			<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+			{/* Linha 5 — Cross Hatch | Eixo rotativo */}
+			<div className="grid grid-cols-2 gap-2 mb-3">
 				<MiniCard
 					icon={Grid3x3}
 					label="Cross Hatch"
 					value={p.crossHatch ? 'Sim' : 'Não'}
 				/>
 				<MiniCard
-					icon={Square}
-					label="Tipo de Linha"
-					value={
-						lineType ? (
-							<span className="inline-flex items-center gap-1.5">
-								{lineType.imageUrl && (
-									<img
-										src={lineType.imageUrl}
-										alt={lineType.name}
-										className="w-5 h-5 rounded object-cover"
-									/>
-								)}
-								<span className="truncate">{lineType.name}</span>
-							</span>
-						) : (
-							'—'
-						)
-					}
-				/>
-				<MiniCard
 					icon={Repeat}
 					label="Eixo rotativo"
 					value={p.axisRotative ? 'Sim' : 'Não'}
 				/>
+			</div>
+
+			{/* Tipo de Linha — card dedicado com imagem grande (visível) */}
+			<div className="rounded-xl border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] px-4 py-3 mb-3">
+				<div className="flex items-center gap-2 mb-2">
+					<Square className="w-5 h-5 text-violet-500 shrink-0" />
+					<span className="text-xs text-slate-500 dark:text-gray-400">
+						Tipo de Linha
+					</span>
+				</div>
+				{lineType ? (
+					<div className="flex items-center gap-4">
+						{lineType.imageUrl && (
+							<img
+								src={lineType.imageUrl}
+								alt={lineType.name}
+								className="h-24 w-auto max-w-[220px] rounded-lg border border-slate-200 dark:border-white/10 bg-white object-contain"
+							/>
+						)}
+						<span className="text-sm font-bold text-slate-900 dark:text-white">
+							{lineType.name}
+						</span>
+					</div>
+				) : (
+					<span className="text-sm font-bold text-slate-900 dark:text-white">
+						—
+					</span>
+				)}
 			</div>
 
 			{/* Linha 6 — campos software-specific */}
