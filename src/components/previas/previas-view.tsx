@@ -27,6 +27,7 @@ import {
 	Upload,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
 import { FreeTierQuotaBanner } from '@/components/credits/free-tier-quota-banner';
@@ -842,6 +843,10 @@ function Pagination({
 
 export function PreviasView() {
 	const [step, setStep] = useState<WizardStep>(1);
+	const [mounted, setMounted] = useState(false);
+	useEffect(() => {
+		setMounted(true);
+	}, []);
 
 	// Options from API
 	const { data: options, isLoading: optionsLoading } = usePreviaOptions();
@@ -1126,47 +1131,20 @@ export function PreviasView() {
 							onSelectVariant={handleSelectVariant}
 						/>
 
-						{/* Barra de acao fixa no rodape do viewport: continuar sem rolar ate o fim */}
-						{selectedVariantId && selectedVariant && (
-							<div className="sticky bottom-4 z-20">
-								<div className="flex items-center gap-3 rounded-2xl border border-violet-200 dark:border-violet-500/30 bg-white/95 dark:bg-[#1a1a1d]/95 backdrop-blur px-3 py-2.5 shadow-lg shadow-black/10">
-									<div className="w-11 h-11 rounded-lg border border-slate-200 dark:border-white/10 overflow-hidden bg-white dark:bg-[#0e0e10] shrink-0">
-										{selectedVariant.imageUrl &&
-										!selectedVariant.imageUrl.includes('placeholder') ? (
-											<img
-												src={selectedVariant.imageUrl}
-												alt={selectedVariant.name}
-												className="w-full h-full object-contain"
-											/>
-										) : (
-											<div className="w-full h-full flex items-center justify-center">
-												<Package className="w-5 h-5 text-slate-300 dark:text-slate-600" />
-											</div>
-										)}
-									</div>
-									<div className="min-w-0 flex-1">
-										<p className="text-[11px] text-slate-500 dark:text-gray-400 leading-tight">
-											Variante selecionada
-										</p>
-										<p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-											{selectedVariant.name}
-											{selectedVariant.colorName
-												? ` · ${selectedVariant.colorName}`
-												: ''}
-										</p>
-									</div>
-									<button
-										type="button"
-										disabled={!canProceedStep1}
-										onClick={() => setStep(2)}
-										className="flex items-center gap-2 px-5 py-2.5 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-40 shrink-0"
-									>
-										Continuar
-										<ArrowRight className="w-4 h-4" />
-									</button>
-								</div>
-							</div>
-						)}
+						{/* Botao Continuar flutuante: fixo no canto, sempre visivel ao escolher variante */}
+						{mounted &&
+							canProceedStep1 &&
+							createPortal(
+								<button
+									type="button"
+									onClick={() => setStep(2)}
+									className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-6 py-3.5 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-full shadow-xl shadow-violet-900/30 transition-colors"
+								>
+									Continuar
+									<ArrowRight className="w-5 h-5" />
+								</button>,
+								document.body,
+							)}
 					</div>
 				)}
 
