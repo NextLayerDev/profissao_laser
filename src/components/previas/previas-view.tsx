@@ -27,6 +27,7 @@ import {
 	Upload,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
 import { FreeTierQuotaBanner } from '@/components/credits/free-tier-quota-banner';
@@ -355,6 +356,7 @@ function ProductSelector({
 	onSelectVariant: (id: string) => void;
 }) {
 	const [searchQuery, setSearchQuery] = useState('');
+	const [variantSearch, setVariantSearch] = useState('');
 	const { data: productsData, isLoading } = useLaserProducts({
 		search: searchQuery.trim() || undefined,
 		limit: 50,
@@ -371,6 +373,14 @@ function ProductSelector({
 		const variants = (selectedProduct.variants ?? []).filter(
 			(v) => v.status === 'ativo',
 		);
+		const vq = variantSearch.trim().toLowerCase();
+		const filteredVariants = vq
+			? variants.filter((v) =>
+					[v.name, v.colorName, v.tipo].some((s) =>
+						s?.toLowerCase().includes(vq),
+					),
+				)
+			: variants;
 
 		return (
 			<div className="space-y-5">
@@ -397,7 +407,7 @@ function ProductSelector({
 					</button>
 				</div>
 
-				{/* Variant selection as small horizontal chips */}
+				{/* Variant selection — pesquisa + seleção rápida + grade de imagens */}
 				<div>
 					<p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
 						Escolha a variante (cor/tipo):
@@ -407,51 +417,97 @@ function ProductSelector({
 							Nenhuma variante disponivel para este produto.
 						</p>
 					) : (
-						<div className="flex flex-wrap gap-2">
-							{variants.map((variant) => (
-								<button
-									key={variant.id}
-									type="button"
-									onClick={() => onSelectVariant(variant.id)}
-									className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-left transition-all ${
-										selectedVariantId === variant.id
-											? 'border-violet-500 bg-violet-50 dark:bg-violet-500/10 ring-2 ring-violet-500/30'
-											: 'border-slate-200 dark:border-white/10 hover:border-violet-500/50'
-									}`}
-								>
-									{variant.imageUrl &&
-									!variant.imageUrl.includes('placeholder') ? (
-										<img
-											src={variant.imageUrl}
-											alt={variant.name}
-											className="w-10 h-10 rounded-lg object-cover shrink-0"
-										/>
-									) : (
-										<div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-white/10 flex items-center justify-center shrink-0">
-											<Package className="w-5 h-5 text-slate-400" />
-										</div>
-									)}
-									<div className="min-w-0">
-										<p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
-											{variant.name}
-										</p>
-										<div className="flex items-center gap-1 mt-0.5">
-											{variant.colorHex && (
-												<span
-													className="w-2.5 h-2.5 rounded-full border border-slate-200 dark:border-gray-600"
-													style={{
-														backgroundColor: variant.colorHex,
-													}}
-												/>
-											)}
-											<span className="text-[10px] text-slate-500 dark:text-gray-400 truncate">
-												{variant.colorName ?? variant.tipo ?? ''}
-											</span>
-										</div>
-									</div>
-								</button>
-							))}
-						</div>
+						<>
+							{/* Pesquisa inteligente (esquerda) + seleção rápida por texto (direita) */}
+							<div className="flex flex-col sm:flex-row gap-2 mb-3">
+								<div className="relative flex-1">
+									<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+									<input
+										type="text"
+										value={variantSearch}
+										onChange={(e) => setVariantSearch(e.target.value)}
+										placeholder="Pesquisar variante (cor, tipo, nome)..."
+										className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+									/>
+								</div>
+								<div className="relative sm:w-56">
+									<select
+										value={selectedVariantId ?? ''}
+										onChange={(e) => onSelectVariant(e.target.value)}
+										className="w-full appearance-none pl-3 pr-9 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500"
+									>
+										<option value="">Seleção rápida...</option>
+										{variants.map((variant) => (
+											<option key={variant.id} value={variant.id}>
+												{variant.colorName || variant.tipo
+													? `${variant.name} — ${variant.colorName ?? variant.tipo}`
+													: variant.name}
+											</option>
+										))}
+									</select>
+									<ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+								</div>
+							</div>
+
+							{filteredVariants.length === 0 ? (
+								<p className="text-sm text-slate-500 dark:text-gray-400 py-4 text-center">
+									Nenhuma variante encontrada para "{variantSearch}".
+								</p>
+							) : (
+								<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+									{filteredVariants.map((variant) => (
+										<button
+											key={variant.id}
+											type="button"
+											onClick={() => onSelectVariant(variant.id)}
+											className={`group flex flex-col rounded-2xl border overflow-hidden text-left transition-all ${
+												selectedVariantId === variant.id
+													? 'border-violet-500 ring-2 ring-violet-500/40 shadow-lg shadow-violet-500/10'
+													: 'border-slate-200 dark:border-white/10 hover:border-violet-500/50 hover:shadow-md'
+											}`}
+										>
+											<div className="relative aspect-square w-full bg-slate-100 dark:bg-white/5">
+												{variant.imageUrl &&
+												!variant.imageUrl.includes('placeholder') ? (
+													<img
+														src={variant.imageUrl}
+														alt={variant.name}
+														className="w-full h-full object-cover"
+													/>
+												) : (
+													<div className="w-full h-full flex items-center justify-center">
+														<Package className="w-10 h-10 text-slate-400" />
+													</div>
+												)}
+												{selectedVariantId === variant.id && (
+													<div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-violet-600 flex items-center justify-center shadow">
+														<Check className="w-4 h-4 text-white" />
+													</div>
+												)}
+											</div>
+											<div className="p-3 min-w-0">
+												<p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+													{variant.name}
+												</p>
+												<div className="flex items-center gap-1.5 mt-1">
+													{variant.colorHex && (
+														<span
+															className="w-3 h-3 rounded-full border border-slate-200 dark:border-gray-600 shrink-0"
+															style={{
+																backgroundColor: variant.colorHex,
+															}}
+														/>
+													)}
+													<span className="text-xs text-slate-500 dark:text-gray-400 truncate">
+														{variant.colorName ?? variant.tipo ?? ''}
+													</span>
+												</div>
+											</div>
+										</button>
+									))}
+								</div>
+							)}
+						</>
 					)}
 				</div>
 			</div>
@@ -787,6 +843,10 @@ function Pagination({
 
 export function PreviasView() {
 	const [step, setStep] = useState<WizardStep>(1);
+	const [mounted, setMounted] = useState(false);
+	useEffect(() => {
+		setMounted(true);
+	}, []);
 
 	// Options from API
 	const { data: options, isLoading: optionsLoading } = usePreviaOptions();
@@ -827,6 +887,11 @@ export function PreviasView() {
 	const [generatedPrevia, setGeneratedPrevia] = useState<{
 		previewUrl: string;
 	} | null>(null);
+
+	// Refs pra centralizar o conteúdo ativo no scroll conforme o step muda
+	// ou quando a prévia gerada aparece (o conteúdo cresce/diminui).
+	const wizardRef = useRef<HTMLDivElement>(null);
+	const previewRef = useRef<HTMLDivElement>(null);
 
 	// History
 	const [histPage, setHistPage] = useState(1);
@@ -933,6 +998,32 @@ export function PreviasView() {
 		setWatermarkMode('corners');
 	}, []);
 
+	// Ao trocar de step, traz o topo do wizard pro topo visível (com folga
+	// pro header) — o conteúdo de cada step tem altura bem diferente.
+	useEffect(() => {
+		// `step` é a dependência real: re-scrolla a cada navegação de step.
+		if (!step) return;
+		const el = wizardRef.current;
+		if (!el) return;
+		const id = window.setTimeout(() => {
+			const top = el.getBoundingClientRect().top + window.scrollY - 88;
+			window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+		}, 60);
+		return () => window.clearTimeout(id);
+	}, [step]);
+
+	// Quando a prévia é gerada (imagem aparece/muda de tamanho), centraliza o
+	// resultado no viewport.
+	useEffect(() => {
+		if (!generatedPrevia) return;
+		const el = previewRef.current;
+		if (!el) return;
+		const id = window.setTimeout(() => {
+			el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		}, 80);
+		return () => window.clearTimeout(id);
+	}, [generatedPrevia]);
+
 	const updateLS = useCallback(
 		(key: keyof LaserSettings, value: LaserSettings[keyof LaserSettings]) => {
 			setLaserSettings((prev) => ({ ...prev, [key]: value }));
@@ -1014,7 +1105,10 @@ export function PreviasView() {
 			)}
 
 			{/* Wizard card */}
-			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-6 mb-8">
+			<div
+				ref={wizardRef}
+				className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-6 mb-8 scroll-mt-24"
+			>
 				<StepIndicator current={step} />
 
 				{/* Options loading state */}
@@ -1037,95 +1131,20 @@ export function PreviasView() {
 							onSelectVariant={handleSelectVariant}
 						/>
 
-						{/* Side-by-side: Selected variant preview + Logo upload */}
-						{selectedVariantId && selectedVariant && (
-							<div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-								{/* Variant preview */}
-								<div className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 min-w-0">
-									<div className="w-28 h-28 rounded-lg border border-slate-200 dark:border-white/10 overflow-hidden bg-white dark:bg-[#1a1a1d] shrink-0">
-										{selectedVariant.imageUrl &&
-										!selectedVariant.imageUrl.includes('placeholder') ? (
-											<img
-												src={selectedVariant.imageUrl}
-												alt={selectedVariant.name}
-												className="w-full h-full object-contain"
-											/>
-										) : (
-											<div className="w-full h-full flex items-center justify-center">
-												<Package className="w-8 h-8 text-slate-300 dark:text-slate-600" />
-											</div>
-										)}
-									</div>
-									<div className="min-w-0">
-										<p className="text-xs text-slate-500 dark:text-gray-400">
-											Produto
-										</p>
-										<p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-											{selectedVariant.name}
-										</p>
-										{selectedVariant.colorName && (
-											<p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
-												{selectedVariant.colorName}
-											</p>
-										)}
-									</div>
-								</div>
-
-								{/* Logo upload */}
-								<div className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 min-w-0">
-									{imageLogo ? (
-										<>
-											<div className="w-28 h-28 rounded-lg border border-slate-200 dark:border-white/10 overflow-hidden bg-white dark:bg-[#1a1a1d] shrink-0 relative">
-												<img
-													src={imageLogo}
-													alt="Logo"
-													className="w-full h-full object-contain"
-												/>
-												<button
-													type="button"
-													onClick={() => setImageLogo(null)}
-													className="absolute top-0.5 right-0.5 p-1 bg-white/90 dark:bg-black/60 rounded-md hover:bg-white dark:hover:bg-black/80 transition-colors"
-												>
-													<RotateCcw className="w-3 h-3 text-slate-600 dark:text-slate-300" />
-												</button>
-											</div>
-											<div className="min-w-0">
-												<p className="text-xs text-slate-500 dark:text-gray-400">
-													Logo
-												</p>
-												<p className="text-sm font-semibold text-slate-900 dark:text-white">
-													Enviada
-												</p>
-											</div>
-										</>
-									) : (
-										<>
-											<LogoUploadZone preview={null} onSelect={setImageLogo} />
-											<div className="min-w-0">
-												<p className="text-xs text-slate-500 dark:text-gray-400">
-													Logo
-												</p>
-												<p className="text-sm text-slate-500 dark:text-gray-400">
-													Opcional
-												</p>
-											</div>
-										</>
-									)}
-								</div>
-							</div>
-						)}
-
-						<div className="flex justify-end">
-							<button
-								type="button"
-								disabled={!canProceedStep1}
-								onClick={() => setStep(2)}
-								className="flex items-center gap-2 px-6 py-3 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-40"
-							>
-								Continuar
-								<ArrowRight className="w-4 h-4" />
-							</button>
-						</div>
+						{/* Botao Continuar flutuante: fixo no canto, sempre visivel ao escolher variante */}
+						{mounted &&
+							canProceedStep1 &&
+							createPortal(
+								<button
+									type="button"
+									onClick={() => setStep(2)}
+									className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-6 py-3.5 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-full shadow-xl shadow-violet-900/30 transition-colors"
+								>
+									Continuar
+									<ArrowRight className="w-5 h-5" />
+								</button>,
+								document.body,
+							)}
 					</div>
 				)}
 
@@ -1187,6 +1206,58 @@ export function PreviasView() {
 								))}
 							</div>
 						</div>
+
+						{/* Logo (quando a personalizacao usa logo) */}
+						{(personalizationType === 'logo' ||
+							personalizationType === 'both') && (
+							<div>
+								<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+									Logo{personalizationType === 'both' ? ' (opcional)' : ''}
+								</span>
+								<div className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5">
+									{imageLogo ? (
+										<>
+											<div className="w-28 h-28 rounded-lg border border-slate-200 dark:border-white/10 overflow-hidden bg-white dark:bg-[#1a1a1d] shrink-0 relative">
+												<img
+													src={imageLogo}
+													alt="Logo"
+													className="w-full h-full object-contain"
+												/>
+												<button
+													type="button"
+													onClick={() => setImageLogo(null)}
+													className="absolute top-0.5 right-0.5 p-1 bg-white/90 dark:bg-black/60 rounded-md hover:bg-white dark:hover:bg-black/80 transition-colors"
+												>
+													<RotateCcw className="w-3 h-3 text-slate-600 dark:text-slate-300" />
+												</button>
+											</div>
+											<div className="min-w-0">
+												<p className="text-xs text-slate-500 dark:text-gray-400">
+													Logo
+												</p>
+												<p className="text-sm font-semibold text-slate-900 dark:text-white">
+													Enviada
+												</p>
+											</div>
+										</>
+									) : (
+										<>
+											<LogoUploadZone preview={null} onSelect={setImageLogo} />
+											<div className="min-w-0">
+												<p className="text-xs text-slate-500 dark:text-gray-400">
+													Logo
+												</p>
+												<p className="text-sm text-slate-500 dark:text-gray-400">
+													{personalizationType === 'logo'
+														? 'Envie sua logo'
+														: 'Opcional'}
+												</p>
+											</div>
+										</>
+									)}
+								</div>
+							</div>
+						)}
 
 						{/* Custom Name (if text or both) */}
 						{(personalizationType === 'text' ||
@@ -1642,7 +1713,10 @@ export function PreviasView() {
 
 						{/* Generated result */}
 						{generatedPrevia && (
-							<div className="rounded-2xl border-2 border-violet-200 dark:border-violet-500/30 bg-gradient-to-b from-violet-50 to-white dark:from-violet-500/5 dark:to-[#1a1a1d] p-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+							<div
+								ref={previewRef}
+								className="rounded-2xl border-2 border-violet-200 dark:border-violet-500/30 bg-gradient-to-b from-violet-50 to-white dark:from-violet-500/5 dark:to-[#1a1a1d] p-5 scroll-mt-24 animate-in fade-in slide-in-from-bottom-4 duration-500"
+							>
 								<div className="flex items-center gap-2 mb-4">
 									<div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-green-400 flex items-center justify-center">
 										<Check className="w-4 h-4 text-white" />

@@ -33,6 +33,14 @@ function normalizeParameter(raw: any): LaserParameter {
 		angle: raw.angle ?? null,
 		passesFill: raw.passes_fill ?? raw.passesFill ?? null,
 		defocus: raw.defocus ?? null,
+		// Software-specific — vinham sendo dropados aqui (Máquina/Tipo de Linha "—")
+		machine: raw.machine ?? null,
+		tamanhoLinha: raw.tamanho_linha ?? raw.tamanhoLinha ?? null,
+		tamanhoDivisao: raw.tamanho_divisao ?? raw.tamanhoDivisao ?? null,
+		sobreposicao: raw.sobreposicao ?? null,
+		forcarSeparacao: raw.forcar_separacao ?? raw.forcarSeparacao ?? null,
+		axisRotative: raw.axis_rotative ?? raw.axisRotative ?? null,
+		lineTypeId: raw.line_type_id ?? raw.lineTypeId ?? null,
 		createdAt: raw.created_at ?? raw.createdAt ?? '',
 		updatedAt: raw.updated_at ?? raw.updatedAt ?? '',
 	};

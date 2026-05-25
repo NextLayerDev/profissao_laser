@@ -11,6 +11,7 @@ import {
 	X,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { SoftwareSpecificFields } from '@/components/parametros/software-specific-fields';
 import { useMachines } from '@/hooks/use-machines';
 import { useParameters } from '@/hooks/use-parameters';
 import {
@@ -192,6 +193,25 @@ function AssociationModal({
 	);
 	const [defocus, setDefocus] = useState<number | undefined>(
 		editing?.parameter?.defocus ?? undefined,
+	);
+	// Software-specific (Ezcad / Lightburn)
+	const [lineTypeId, setLineTypeId] = useState<string | null>(
+		editing?.parameter?.lineTypeId ?? null,
+	);
+	const [axisRotative, setAxisRotative] = useState<boolean | null>(
+		editing?.parameter?.axisRotative ?? null,
+	);
+	const [tamanhoDivisao, setTamanhoDivisao] = useState<number | null>(
+		editing?.parameter?.tamanhoDivisao ?? null,
+	);
+	const [sobreposicao, setSobreposicao] = useState<number | null>(
+		editing?.parameter?.sobreposicao ?? null,
+	);
+	const [tamanhoLinha, setTamanhoLinha] = useState<number | null>(
+		editing?.parameter?.tamanhoLinha ?? null,
+	);
+	const [forcarSeparacao, setForcarSeparacao] = useState<boolean | null>(
+		editing?.parameter?.forcarSeparacao ?? null,
 	);
 
 	// Machine option selections
@@ -578,6 +598,38 @@ function AssociationModal({
 									className={`${inputCls} resize-none`}
 								/>
 							</div>
+
+							{/* Campos software-specific (Ezcad/Lightburn) — software vem da
+							    opção de software da máquina selecionada acima. */}
+							<SoftwareSpecificFields
+								idPrefix="inline-param"
+								values={{
+									software:
+										selectedMachine?.options.software.find(
+											(o) => o.id === softwareOptionId,
+										)?.value ?? null,
+									lineTypeId,
+									axisRotative,
+									tamanhoDivisao,
+									sobreposicao,
+									tamanhoLinha,
+									forcarSeparacao,
+								}}
+								onChange={(patch) => {
+									if ('lineTypeId' in patch)
+										setLineTypeId(patch.lineTypeId ?? null);
+									if ('axisRotative' in patch)
+										setAxisRotative(patch.axisRotative ?? null);
+									if ('tamanhoDivisao' in patch)
+										setTamanhoDivisao(patch.tamanhoDivisao ?? null);
+									if ('sobreposicao' in patch)
+										setSobreposicao(patch.sobreposicao ?? null);
+									if ('tamanhoLinha' in patch)
+										setTamanhoLinha(patch.tamanhoLinha ?? null);
+									if ('forcarSeparacao' in patch)
+										setForcarSeparacao(patch.forcarSeparacao ?? null);
+								}}
+							/>
 						</div>
 					)}
 
@@ -638,6 +690,13 @@ function AssociationModal({
 									passesFill,
 									notes: notes.trim() || undefined,
 									defocus,
+									// Software-specific (Ezcad / Lightburn)
+									lineTypeId,
+									axisRotative,
+									tamanhoDivisao,
+									sobreposicao,
+									tamanhoLinha,
+									forcarSeparacao,
 								};
 							} else {
 								// Toggle OFF: associar a um parâmetro existente.
