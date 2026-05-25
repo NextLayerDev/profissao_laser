@@ -21,6 +21,8 @@ const PUBLIC_PATHS = [
 const ADMIN_PATHS = [
 	'/dashboard',
 	'/products',
+	'/courses',
+	'/planos',
 	'/sales',
 	'/links',
 	'/reports',

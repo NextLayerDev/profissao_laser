@@ -8,6 +8,8 @@ import { Sidebar } from '@/components/dashboard/sidebar';
 const ADMIN_PATHS = [
 	'/dashboard',
 	'/products',
+	'/courses',
+	'/planos',
 	'/sales',
 	'/links',
 	'/reports',
