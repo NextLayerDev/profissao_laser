@@ -1,11 +1,18 @@
 import { z } from 'zod';
 
+export const userOverridesSchema = z.object({
+	granted: z.array(z.string()).default([]),
+	revoked: z.array(z.string()).default([]),
+});
+export type UserOverrides = z.infer<typeof userOverridesSchema>;
+
 export const userSchema = z.object({
 	id: z.string().uuid(),
 	name: z.string(),
 	email: z.string().email(),
 	role: z.string(),
 	Permissions: z.number().nullable(),
+	overrides: userOverridesSchema.nullable().optional(),
 	created_at: z.string(),
 });
 
@@ -16,6 +23,7 @@ export const updateUserPayloadSchema = z.object({
 	email: z.string().email().optional(),
 	role: z.string().optional(),
 	Permissions: z.number().nullable().optional(),
+	overrides: userOverridesSchema.optional(),
 	password: z.string().min(6).optional(),
 });
 
