@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { LaserLineTypesAdminSection } from '@/components/parametros/laser-line-types-admin-section';
-import { useLaserLineTypes } from '@/hooks/use-laser-line-types';
+import { SoftwareSpecificFields as SharedSoftwareSpecificFields } from '@/components/parametros/software-specific-fields';
 import {
 	useCreateParameter,
 	useDeleteParameter,
@@ -30,7 +30,6 @@ import {
 	useUpdateParameter,
 } from '@/hooks/use-parameters';
 import type { CreateParameterPayload } from '@/services/parameters';
-import type { LaserLineTypeSoftware } from '@/types/laser-line-type';
 import type { LaserParameter } from '@/types/parameters';
 import {
 	LENS_OPTIONS,
@@ -1121,196 +1120,25 @@ function SoftwareSpecificFields({
 		value: CreateParameterPayload[K],
 	) => void;
 }) {
-	const software = form.software as LaserLineTypeSoftware | '';
-	const isEzcad = software === 'Ezcad';
-	const isLightburn = software === 'Lightburn';
-
-	const { data: lineTypes = [] } = useLaserLineTypes(software || undefined);
-
-	if (!isEzcad && !isLightburn) {
-		// Sem software selecionado → não mostra bloco
-		return null;
-	}
-
-	const selectedLineType = form.lineTypeId
-		? lineTypes.find((lt) => lt.id === form.lineTypeId)
-		: null;
-
 	return (
-		<div className="rounded-xl border border-violet-200 dark:border-violet-800/40 bg-violet-50/50 dark:bg-violet-950/10 p-4 space-y-4">
-			<p className="text-xs font-semibold text-violet-700 dark:text-violet-300 uppercase tracking-wide">
-				Campos do {software}
-			</p>
-
-			{/* Tipo de Linhas (catálogo por software) */}
-			<div>
-				<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-					Tipo de Linhas
-				</span>
-				<div className="flex items-center gap-3">
-					<select
-						className={selectCls}
-						value={form.lineTypeId ?? ''}
-						onChange={(e) => set('lineTypeId', e.target.value || null)}
-					>
-						<option value="">Selecione...</option>
-						{lineTypes.map((lt) => (
-							<option key={lt.id} value={lt.id}>
-								{lt.name}
-							</option>
-						))}
-					</select>
-					{selectedLineType?.imageUrl && (
-						<img
-							src={selectedLineType.imageUrl}
-							alt={selectedLineType.name}
-							className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-white/10"
-						/>
-					)}
-				</div>
-				{lineTypes.length === 0 && (
-					<p className="text-xs text-slate-500 dark:text-gray-400 mt-1">
-						Nenhum tipo cadastrado para {software}. Adicione em "Tipos de
-						Linha".
-					</p>
-				)}
-			</div>
-
-			{/* Eixo rotativo (todos os softwares) */}
-			<div>
-				<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-					Eixo rotativo *
-				</span>
-				<div className="flex gap-4">
-					<label className="flex items-center gap-2 cursor-pointer">
-						<input
-							type="radio"
-							name="axisRotative"
-							checked={form.axisRotative === true}
-							onChange={() => set('axisRotative', true)}
-							className="w-4 h-4 text-violet-600 focus:ring-violet-500"
-						/>
-						<span className="text-sm text-slate-700 dark:text-slate-300">
-							Sim
-						</span>
-					</label>
-					<label className="flex items-center gap-2 cursor-pointer">
-						<input
-							type="radio"
-							name="axisRotative"
-							checked={form.axisRotative === false}
-							onChange={() => set('axisRotative', false)}
-							className="w-4 h-4 text-violet-600 focus:ring-violet-500"
-						/>
-						<span className="text-sm text-slate-700 dark:text-slate-300">
-							Não
-						</span>
-					</label>
-				</div>
-			</div>
-
-			{/* Ezcad: Tamanho da Divisão + Sobreposição */}
-			{isEzcad && (
-				<div className="grid grid-cols-2 gap-4">
-					<div>
-						<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-							Tamanho da Divisão (mm)
-						</span>
-						<input
-							type="number"
-							step="0.01"
-							min={0}
-							max={10}
-							placeholder="0,00 até 10,00"
-							className={inputCls}
-							value={form.tamanhoDivisao ?? ''}
-							onChange={(e) =>
-								set(
-									'tamanhoDivisao',
-									e.target.value === '' ? null : Number(e.target.value),
-								)
-							}
-						/>
-					</div>
-					<div>
-						<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-							Sobreposição (mm)
-						</span>
-						<input
-							type="number"
-							step="0.01"
-							min={0}
-							max={10}
-							placeholder="0,00 até 10,00"
-							className={inputCls}
-							value={form.sobreposicao ?? ''}
-							onChange={(e) =>
-								set(
-									'sobreposicao',
-									e.target.value === '' ? null : Number(e.target.value),
-								)
-							}
-						/>
-					</div>
-				</div>
-			)}
-
-			{/* Lightburn: Tamanho da Linha + Forçar Separação */}
-			{isLightburn && (
-				<>
-					<div>
-						<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-							Tamanho da Linha (mm)
-						</span>
-						<input
-							type="number"
-							step="0.01"
-							min={0}
-							max={50}
-							placeholder="0,00 até 50,00"
-							className={inputCls}
-							value={form.tamanhoLinha ?? ''}
-							onChange={(e) =>
-								set(
-									'tamanhoLinha',
-									e.target.value === '' ? null : Number(e.target.value),
-								)
-							}
-						/>
-					</div>
-					<div>
-						<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-							Forçar Separação *
-						</span>
-						<div className="flex gap-4">
-							<label className="flex items-center gap-2 cursor-pointer">
-								<input
-									type="radio"
-									name="forcarSeparacao"
-									checked={form.forcarSeparacao === true}
-									onChange={() => set('forcarSeparacao', true)}
-									className="w-4 h-4 text-violet-600 focus:ring-violet-500"
-								/>
-								<span className="text-sm text-slate-700 dark:text-slate-300">
-									Sim
-								</span>
-							</label>
-							<label className="flex items-center gap-2 cursor-pointer">
-								<input
-									type="radio"
-									name="forcarSeparacao"
-									checked={form.forcarSeparacao === false}
-									onChange={() => set('forcarSeparacao', false)}
-									className="w-4 h-4 text-violet-600 focus:ring-violet-500"
-								/>
-								<span className="text-sm text-slate-700 dark:text-slate-300">
-									Não
-								</span>
-							</label>
-						</div>
-					</div>
-				</>
-			)}
-		</div>
+		<SharedSoftwareSpecificFields
+			idPrefix="admin-param"
+			selectClassName={selectCls}
+			inputClassName={inputCls}
+			values={{
+				software: form.software,
+				lineTypeId: form.lineTypeId,
+				axisRotative: form.axisRotative,
+				tamanhoDivisao: form.tamanhoDivisao,
+				sobreposicao: form.sobreposicao,
+				tamanhoLinha: form.tamanhoLinha,
+				forcarSeparacao: form.forcarSeparacao,
+			}}
+			onChange={(patch) => {
+				for (const [k, v] of Object.entries(patch)) {
+					set(k as keyof CreateParameterPayload, v as never);
+				}
+			}}
+		/>
 	);
 }
