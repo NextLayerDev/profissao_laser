@@ -20,8 +20,11 @@ import {
 	Star,
 	ThumbsUp,
 	Triangle,
+	X,
 	Zap,
+	ZoomIn,
 } from 'lucide-react';
+import { useState } from 'react';
 import { useLaserLineTypes } from '@/hooks/use-laser-line-types';
 import type { LaserParameter } from '@/types/parameters';
 
@@ -84,6 +87,7 @@ export function ParameterCard({
 	onRate,
 }: ParameterCardProps) {
 	const Icon = materialIcon(p.material);
+	const [zoomed, setZoomed] = useState(false);
 
 	// Resolve nome do tipo de linha pelo lineTypeId (se houver)
 	const { data: lineTypes = [] } = useLaserLineTypes(
@@ -193,11 +197,21 @@ export function ParameterCard({
 				{lineType ? (
 					<div className="flex items-center gap-4">
 						{lineType.imageUrl && (
-							<img
-								src={lineType.imageUrl}
-								alt={lineType.name}
-								className="h-24 w-auto max-w-[220px] rounded-lg border border-slate-200 dark:border-white/10 bg-white object-contain"
-							/>
+							<button
+								type="button"
+								onClick={() => setZoomed(true)}
+								title="Clique para ampliar"
+								className="group relative h-24 w-auto max-w-[220px] rounded-lg border border-slate-200 dark:border-white/10 bg-white overflow-hidden cursor-zoom-in"
+							>
+								<img
+									src={lineType.imageUrl}
+									alt={lineType.name}
+									className="h-24 w-auto max-w-[220px] object-contain"
+								/>
+								<span className="absolute bottom-1 right-1 w-6 h-6 rounded-md bg-black/55 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+									<ZoomIn className="w-3.5 h-3.5" />
+								</span>
+							</button>
 						)}
 						<span className="text-sm font-bold text-slate-900 dark:text-white">
 							{lineType.name}
@@ -316,6 +330,30 @@ export function ParameterCard({
 						</button>
 					</div>
 				</div>
+			)}
+
+			{/* Lightbox do Tipo de Linha — clicar na imagem amplia */}
+			{zoomed && lineType?.imageUrl && (
+				<button
+					type="button"
+					onClick={() => setZoomed(false)}
+					className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-6 cursor-zoom-out"
+				>
+					<div className="relative max-w-2xl w-full">
+						<img
+							src={lineType.imageUrl}
+							alt={lineType.name}
+							className="w-full max-h-[80vh] object-contain rounded-xl border border-white/10 bg-white"
+						/>
+						<div className="mt-3 flex items-center justify-center gap-2 text-white">
+							<Square className="w-4 h-4 text-violet-400" />
+							<span className="text-sm font-semibold">{lineType.name}</span>
+						</div>
+						<span className="absolute top-2 right-2 w-8 h-8 rounded-lg bg-black/55 text-white flex items-center justify-center">
+							<X className="w-4 h-4" />
+						</span>
+					</div>
+				</button>
 			)}
 		</div>
 	);
