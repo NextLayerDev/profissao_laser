@@ -1,4 +1,5 @@
 import {
+	BarChart2,
 	BarChart3,
 	CalendarClock,
 	Eye,
@@ -25,6 +26,12 @@ export const navItems: NavItem[] = [
 		name: 'Relatórios',
 		icon: BarChart3,
 		href: '/reports',
+		hasDropdown: false,
+	},
+	{
+		name: 'Analytics',
+		icon: BarChart2,
+		href: '/analytics',
 		hasDropdown: false,
 	},
 	{

@@ -21,7 +21,8 @@ export function Sidebar({ collapsed, onToggle }: Props) {
 		if (
 			item.name === 'Vendas' ||
 			item.name === 'Relatórios' ||
-			item.name === 'Links'
+			item.name === 'Links' ||
+			item.name === 'Analytics'
 		)
 			return canPrice;
 		return true;

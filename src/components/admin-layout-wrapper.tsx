@@ -13,6 +13,7 @@ const ADMIN_PATHS = [
 	'/sales',
 	'/links',
 	'/reports',
+	'/analytics',
 	'/community',
 	'/forum',
 	'/agendamentos',
