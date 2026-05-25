@@ -28,6 +28,10 @@ interface VectorLibraryAdminGridProps {
 	onRenameFolder: (folder: VectorLibraryFolder) => void;
 	onDeleteFolder: (folder: VectorLibraryFolder) => void;
 	onDeleteFile: (file: VectorLibraryFile) => void;
+	selectedFileIds: Set<string>;
+	selectedFolderIds: Set<string>;
+	onToggleFile: (id: string) => void;
+	onToggleFolder: (id: string) => void;
 }
 
 export function VectorLibraryAdminGrid({
@@ -39,6 +43,10 @@ export function VectorLibraryAdminGrid({
 	onRenameFolder,
 	onDeleteFolder,
 	onDeleteFile,
+	selectedFileIds,
+	selectedFolderIds,
+	onToggleFile,
+	onToggleFolder,
 }: VectorLibraryAdminGridProps) {
 	const sortedFolders = [...folders].sort((a, b) =>
 		a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
@@ -73,8 +81,19 @@ export function VectorLibraryAdminGrid({
 						{sortedFolders.map((folder) => (
 							<div
 								key={folder.id}
-								className="group flex items-center gap-3 p-3 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl hover:border-emerald-400 dark:hover:border-emerald-500/40 transition-colors"
+								className={`group flex items-center gap-3 p-3 bg-white dark:bg-[#1a1a1d] border rounded-xl transition-colors ${
+									selectedFolderIds.has(folder.id)
+										? 'border-emerald-500 ring-1 ring-emerald-500/40'
+										: 'border-slate-200 dark:border-white/10 hover:border-emerald-400 dark:hover:border-emerald-500/40'
+								}`}
 							>
+								<input
+									type="checkbox"
+									checked={selectedFolderIds.has(folder.id)}
+									onChange={() => onToggleFolder(folder.id)}
+									aria-label={`Selecionar pasta ${folder.name}`}
+									className="w-4 h-4 shrink-0 rounded border-slate-300 dark:border-gray-600 text-emerald-500 focus:ring-emerald-500/40 cursor-pointer"
+								/>
 								<button
 									type="button"
 									onClick={() => onFolderClick(folder.id)}
@@ -130,10 +149,24 @@ export function VectorLibraryAdminGrid({
 							return (
 								<div
 									key={file.id}
-									className="group flex flex-col bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden hover:border-emerald-400 dark:hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-200"
+									className={`group flex flex-col bg-white dark:bg-[#1a1a1d] border rounded-2xl overflow-hidden transition-all duration-200 ${
+										selectedFileIds.has(file.id)
+											? 'border-emerald-500 ring-1 ring-emerald-500/40'
+											: 'border-slate-200 dark:border-white/10 hover:border-emerald-400 dark:hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/5'
+									}`}
 								>
 									{/* Thumbnail */}
 									<div className="aspect-square bg-slate-50 dark:bg-[#141416] relative overflow-hidden">
+										{/* Selection checkbox */}
+										<label className="absolute top-2 left-2 z-10 flex items-center justify-center w-6 h-6 rounded-md bg-white/90 dark:bg-slate-900/80 shadow cursor-pointer">
+											<input
+												type="checkbox"
+												checked={selectedFileIds.has(file.id)}
+												onChange={() => onToggleFile(file.id)}
+												aria-label={`Selecionar ${file.name}`}
+												className="w-4 h-4 rounded border-slate-300 dark:border-gray-600 text-emerald-500 focus:ring-emerald-500/40 cursor-pointer"
+											/>
+										</label>
 										{showThumbnail ? (
 											<img
 												src={file.fileUrl}
@@ -158,9 +191,9 @@ export function VectorLibraryAdminGrid({
 											</span>
 										)}
 
-										{/* Formats badge */}
+										{/* Formats badge (bottom para não colidir com o checkbox) */}
 										{fileFormats.length > 0 && (
-											<span className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase bg-slate-900/70 text-white">
+											<span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase bg-slate-900/70 text-white">
 												{fileFormats[0]}
 												{fileFormats.length > 1 &&
 													` +${fileFormats.length - 1}`}

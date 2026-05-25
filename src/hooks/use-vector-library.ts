@@ -3,11 +3,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type {
+	BulkUpdateFilesPayload,
 	FolderContentsParams,
 	UpdateFilePayload,
 	VectorFileConfig,
 } from '@/services/vector-library';
 import {
+	bulkUpdateFiles,
 	createFile,
 	createFolder,
 	deleteFile,
@@ -210,5 +212,17 @@ export function useDeleteFile() {
 			toast.success('Ficheiro excluído!');
 		},
 		onError: () => toast.error('Erro ao excluir ficheiro'),
+	});
+}
+
+export function useBulkUpdateFiles() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: (payload: BulkUpdateFilesPayload) => bulkUpdateFiles(payload),
+		onSuccess: (res) => {
+			invalidateContents(queryClient);
+			toast.success(`${res.updated} ficheiro(s) atualizado(s)!`);
+		},
+		onError: () => toast.error('Erro ao atualizar em massa'),
 	});
 }

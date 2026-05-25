@@ -4,18 +4,23 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
 	FolderOpen,
 	FolderPlus,
+	Layers,
 	Loader2,
 	Plus,
 	UploadIcon,
 	X,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { VectorLibraryAdminGrid } from '@/components/community/vector-library-admin-grid';
 import { VectorLibraryBreadcrumbs } from '@/components/community/vector-library-breadcrumbs';
-import { FileConfigFields } from '@/components/community/vector-library-file-config-fields';
+import {
+	COMMON_FORMATS,
+	FileConfigFields,
+} from '@/components/community/vector-library-file-config-fields';
 import { ModalOverlay } from '@/components/ui/modal-overlay';
 import {
+	useBulkUpdateFiles,
 	useCreateFile,
 	useCreateFolder,
 	useDeleteFile,
@@ -67,6 +72,20 @@ export function VectorLibraryAdminSection() {
 	const [editFormats, setEditFormats] = useState<string[]>([]);
 	const [editFeatured, setEditFeatured] = useState(false);
 
+	// Seleção / ação em massa
+	const [selectedFileIds, setSelectedFileIds] = useState<Set<string>>(
+		new Set(),
+	);
+	const [selectedFolderIds, setSelectedFolderIds] = useState<Set<string>>(
+		new Set(),
+	);
+	const [showBulkModal, setShowBulkModal] = useState(false);
+	const [bulkCategory, setBulkCategory] = useState('');
+	const [bulkFormats, setBulkFormats] = useState<string[]>([]);
+	const [bulkFeatured, setBulkFeatured] = useState<'keep' | 'set' | 'unset'>(
+		'keep',
+	);
+
 	const [showUploadFolderModal, setShowUploadFolderModal] = useState(false);
 	const [uploadFolderState, setUploadFolderState] = useState<
 		'idle' | 'uploading' | 'success' | 'error'
@@ -97,6 +116,79 @@ export function VectorLibraryAdminSection() {
 	const updateFileMutation = useUpdateFile();
 	const deleteFolderMutation = useDeleteFolder();
 	const deleteFileMutation = useDeleteFile();
+	const bulkUpdateMutation = useBulkUpdateFiles();
+
+	// Limpa a seleção ao navegar entre pastas (evita seleção "fantasma").
+	// biome-ignore lint/correctness/useExhaustiveDependencies: limpar só ao trocar de pasta
+	useEffect(() => {
+		setSelectedFileIds(new Set());
+		setSelectedFolderIds(new Set());
+	}, [currentFolderId]);
+
+	const selectionCount = selectedFileIds.size + selectedFolderIds.size;
+
+	const toggleFile = (id: string) =>
+		setSelectedFileIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
+
+	const toggleFolder = (id: string) =>
+		setSelectedFolderIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
+
+	const clearSelection = () => {
+		setSelectedFileIds(new Set());
+		setSelectedFolderIds(new Set());
+	};
+
+	const selectAllVisible = () => {
+		setSelectedFileIds(new Set((contents?.files ?? []).map((f) => f.id)));
+		setSelectedFolderIds(new Set((contents?.folders ?? []).map((f) => f.id)));
+	};
+
+	const toggleBulkFormat = (f: string) =>
+		setBulkFormats((prev) =>
+			prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f],
+		);
+
+	const hasBulkChanges =
+		bulkCategory.trim() !== '' ||
+		bulkFormats.length > 0 ||
+		bulkFeatured !== 'keep';
+
+	const handleBulkApply = () => {
+		if (selectionCount === 0 || !hasBulkChanges) return;
+		bulkUpdateMutation.mutate(
+			{
+				fileIds: [...selectedFileIds],
+				folderIds: [...selectedFolderIds],
+				category: bulkCategory.trim() ? bulkCategory.trim() : undefined,
+				addFormats: bulkFormats.length > 0 ? bulkFormats : undefined,
+				featured:
+					bulkFeatured === 'set'
+						? true
+						: bulkFeatured === 'unset'
+							? false
+							: undefined,
+			},
+			{
+				onSuccess: () => {
+					setShowBulkModal(false);
+					setBulkCategory('');
+					setBulkFormats([]);
+					setBulkFeatured('keep');
+					clearSelection();
+				},
+			},
+		);
+	};
 
 	const resetUploadState = () => {
 		setUploadFile(null);
@@ -408,6 +500,38 @@ export function VectorLibraryAdminSection() {
 				</button>
 			</div>
 
+			{/* Barra de ação em massa */}
+			{selectionCount > 0 && (
+				<div className="flex flex-wrap items-center gap-3 p-3 rounded-xl border border-emerald-300 dark:border-emerald-500/40 bg-emerald-50 dark:bg-emerald-500/10">
+					<span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+						{selectionCount} selecionado(s)
+					</span>
+					<div className="flex-1" />
+					<button
+						type="button"
+						onClick={selectAllVisible}
+						className="px-3 py-1.5 rounded-lg text-sm font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors"
+					>
+						Selecionar tudo
+					</button>
+					<button
+						type="button"
+						onClick={() => setShowBulkModal(true)}
+						className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-colors"
+					>
+						<Layers className="h-4 w-4" />
+						Definir em massa
+					</button>
+					<button
+						type="button"
+						onClick={clearSelection}
+						className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+					>
+						Limpar
+					</button>
+				</div>
+			)}
+
 			{contentsLoading ? (
 				<div className="flex justify-center py-16">
 					<Loader2 className="w-10 h-10 text-violet-500 animate-spin" />
@@ -422,6 +546,10 @@ export function VectorLibraryAdminSection() {
 					onRenameFolder={openRenameFolder}
 					onDeleteFolder={(f) => openDelete(f, 'folder')}
 					onDeleteFile={(f) => openDelete(f, 'file')}
+					selectedFileIds={selectedFileIds}
+					selectedFolderIds={selectedFolderIds}
+					onToggleFile={toggleFile}
+					onToggleFolder={toggleFolder}
 				/>
 			)}
 
@@ -655,6 +783,139 @@ export function VectorLibraryAdminSection() {
 								</button>
 							</div>
 						</form>
+					</div>
+				</ModalOverlay>
+			)}
+
+			{/* Modal Definir em massa */}
+			{showBulkModal && (
+				<ModalOverlay
+					onClose={() => setShowBulkModal(false)}
+					widthClassName="max-w-lg"
+				>
+					<div className="p-6">
+						<div className="flex items-center justify-between mb-4">
+							<h3 className="text-lg font-bold text-slate-900 dark:text-white">
+								Definir em massa
+							</h3>
+							<button
+								type="button"
+								onClick={() => setShowBulkModal(false)}
+								className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-[#252528]"
+							>
+								<X className="h-5 w-5" />
+							</button>
+						</div>
+
+						<p className="text-sm text-slate-500 dark:text-gray-400 mb-5">
+							Aplicado a{' '}
+							<span className="font-semibold text-slate-700 dark:text-slate-300">
+								{selectedFileIds.size} ficheiro(s)
+							</span>{' '}
+							e{' '}
+							<span className="font-semibold text-slate-700 dark:text-slate-300">
+								{selectedFolderIds.size} pasta(s)
+							</span>
+							. As pastas incluem todos os ficheiros dentro (subpastas
+							inclusas).
+						</p>
+
+						<div className="space-y-4">
+							{/* Categoria */}
+							<div>
+								<label
+									htmlFor="bulk-category"
+									className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2"
+								>
+									Categoria
+								</label>
+								<input
+									id="bulk-category"
+									type="text"
+									list="bulk-category-list"
+									value={bulkCategory}
+									onChange={(e) => setBulkCategory(e.target.value)}
+									placeholder="Deixe vazio para não alterar"
+									className="w-full px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#252528] border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50"
+								/>
+								{categorySuggestions.length > 0 && (
+									<datalist id="bulk-category-list">
+										{categorySuggestions.map((c) => (
+											<option key={c} value={c} />
+										))}
+									</datalist>
+								)}
+							</div>
+
+							{/* Formatos (merge) */}
+							<div>
+								<span className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
+									Formatos (adicionar)
+								</span>
+								<div className="flex flex-wrap gap-2">
+									{COMMON_FORMATS.map((f) => {
+										const active = bulkFormats.includes(f);
+										return (
+											<button
+												key={f}
+												type="button"
+												onClick={() => toggleBulkFormat(f)}
+												className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase border transition-colors ${
+													active
+														? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+														: 'border-slate-200 dark:border-gray-700 text-slate-500 dark:text-gray-400 hover:border-emerald-500/50'
+												}`}
+											>
+												{f}
+											</button>
+										);
+									})}
+								</div>
+								<p className="text-xs text-slate-500 dark:text-gray-500 mt-1.5">
+									Somados aos formatos já existentes (não remove nada).
+								</p>
+							</div>
+
+							{/* Destaque */}
+							<div>
+								<label
+									htmlFor="bulk-featured"
+									className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2"
+								>
+									Destaque
+								</label>
+								<select
+									id="bulk-featured"
+									value={bulkFeatured}
+									onChange={(e) =>
+										setBulkFeatured(e.target.value as 'keep' | 'set' | 'unset')
+									}
+									className="w-full px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#252528] border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500/50"
+								>
+									<option value="keep">Não alterar</option>
+									<option value="set">Marcar como destaque</option>
+									<option value="unset">Remover destaque</option>
+								</select>
+							</div>
+						</div>
+
+						<div className="flex gap-3 pt-5">
+							<button
+								type="button"
+								onClick={() => setShowBulkModal(false)}
+								className="flex-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-gray-700 text-slate-700 dark:text-gray-300"
+							>
+								Cancelar
+							</button>
+							<button
+								type="button"
+								onClick={handleBulkApply}
+								disabled={!hasBulkChanges || bulkUpdateMutation.isPending}
+								className="flex-1 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-medium"
+							>
+								Aplicar
+							</button>
+						</div>
 					</div>
 				</ModalOverlay>
 			)}

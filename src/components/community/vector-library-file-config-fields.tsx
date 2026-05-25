@@ -2,7 +2,16 @@
 
 import { Star } from 'lucide-react';
 
-const COMMON_FORMATS = ['SVG', 'DXF', 'CDR', 'AI', 'PDF', 'EPS', 'PNG', 'JPG'];
+export const COMMON_FORMATS = [
+	'SVG',
+	'DXF',
+	'CDR',
+	'AI',
+	'PDF',
+	'EPS',
+	'PNG',
+	'JPG',
+];
 
 interface FileConfigFieldsProps {
 	category: string;

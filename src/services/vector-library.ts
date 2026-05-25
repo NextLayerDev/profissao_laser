@@ -204,6 +204,31 @@ export async function updateFile(
 	return res as VectorLibraryFile;
 }
 
+/** Payload da atualização em massa (admin). */
+export interface BulkUpdateFilesPayload {
+	fileIds?: string[];
+	folderIds?: string[];
+	/** Presença = aplicar; ausência = não alterar. */
+	category?: string | null;
+	/** Formatos a adicionar (merge com os existentes). */
+	addFormats?: string[];
+	featured?: boolean;
+}
+
+/**
+ * Atualiza vários ficheiros de uma vez (admin). Aplica também a todos os
+ * ficheiros dentro das `folderIds` (recursivo, no servidor).
+ */
+export async function bulkUpdateFiles(
+	payload: BulkUpdateFilesPayload,
+): Promise<{ updated: number }> {
+	const { data } = await api.patch<{ updated: number }>(
+		'/community/vector-library/files/bulk',
+		payload,
+	);
+	return data ?? { updated: 0 };
+}
+
 /** Exclui ficheiro (admin). */
 export async function deleteFile(id: string): Promise<void> {
 	await api.delete(`/community/vector-library/files/${encodeURIComponent(id)}`);
