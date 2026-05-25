@@ -153,15 +153,34 @@ export async function deleteFolder(id: string): Promise<void> {
 	);
 }
 
+/** Config opcional de um vetor (categoria/formatos/destaque). */
+export interface VectorFileConfig {
+	category?: string | null;
+	formats?: string[] | null;
+	featured?: boolean;
+}
+
+/** Payload de atualização de ficheiro (admin). */
+export interface UpdateFilePayload extends VectorFileConfig {
+	name?: string;
+}
+
 /** Upload de ficheiro (admin). folderId como query param. */
 export async function createFile(
 	file: File,
 	folderId: string | null,
 	name?: string,
+	config?: VectorFileConfig,
 ): Promise<VectorLibraryFile> {
 	const formData = new FormData();
 	formData.append('file', file);
 	if (name?.trim()) formData.append('name', name.trim());
+	if (config?.category != null && config.category !== '')
+		formData.append('category', config.category);
+	if (config?.formats && config.formats.length > 0)
+		formData.append('formats', config.formats.join(','));
+	if (config?.featured != null)
+		formData.append('featured', String(config.featured));
 
 	const { data } = await api.post<VectorLibraryFile>(
 		'/community/vector-library/files',
@@ -173,16 +192,16 @@ export async function createFile(
 	return data as VectorLibraryFile;
 }
 
-/** Renomeia ficheiro (admin). */
+/** Atualiza ficheiro (admin): nome, categoria, formatos e/ou destaque. */
 export async function updateFile(
 	id: string,
-	name: string,
+	data: UpdateFilePayload,
 ): Promise<VectorLibraryFile> {
-	const { data } = await api.patch<VectorLibraryFile>(
+	const { data: res } = await api.patch<VectorLibraryFile>(
 		`/community/vector-library/files/${encodeURIComponent(id)}`,
-		{ name },
+		data,
 	);
-	return data as VectorLibraryFile;
+	return res as VectorLibraryFile;
 }
 
 /** Exclui ficheiro (admin). */
