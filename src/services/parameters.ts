@@ -21,7 +21,7 @@ export interface ParametersQueryParams {
 }
 
 export interface CommunityParametersQueryParams extends ParametersQueryParams {
-	sort?: 'recent' | 'rating' | 'likes';
+	sort?: 'recent' | 'rating' | 'likes' | 'relevant';
 }
 
 // ─── CRUD ────────────────────────────────────────────────────────────────────

@@ -225,7 +225,7 @@ export function ParameterCard({
 			</div>
 
 			{/* Linha 6 — campos software-specific */}
-			{isEzcad && (p.tamanhoDivisao != null || p.sobreposicao != null) && (
+			{isLightburn && (p.tamanhoDivisao != null || p.sobreposicao != null) && (
 				<div className="grid grid-cols-2 gap-2 mb-3">
 					{p.tamanhoDivisao != null && (
 						<MiniCard
@@ -243,7 +243,7 @@ export function ParameterCard({
 					)}
 				</div>
 			)}
-			{isLightburn && (p.tamanhoLinha != null || p.forcarSeparacao != null) && (
+			{isEzcad && (p.tamanhoLinha != null || p.forcarSeparacao != null) && (
 				<div className="grid grid-cols-2 gap-2 mb-3">
 					{p.tamanhoLinha != null && (
 						<MiniCard
