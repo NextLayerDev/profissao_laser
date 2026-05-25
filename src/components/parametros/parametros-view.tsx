@@ -15,28 +15,30 @@ import {
 	Search,
 	Table,
 	TestTube,
+	ThumbsUp,
 	Users,
 	Wrench,
 	X,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { ParameterCard } from '@/components/parametros/parameter-card';
 import { PageHeader } from '@/components/ui/page-header';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
-import { useCustomerMachines } from '@/hooks/use-machines';
+import { useMachines } from '@/hooks/use-machines';
 import {
 	useCommunityParameters,
 	useExportParameters,
 	useLikeParameter,
-	useParameterMachines,
-	useParameterMaterials,
 	useParameterStats,
-	useParameters,
 	useRateParameter,
 	useSaveParameter,
 } from '@/hooks/use-parameters';
 import type { LaserParameter } from '@/types/parameters';
+import {
+	MODE_OPTIONS,
+	SOFTWARE_OPTIONS,
+} from '@/utils/constants/parameter-options';
 
 /* ------------------------------------------------------------------ */
 /*  Quick access config                                                */
@@ -122,19 +124,12 @@ export function ParametrosView() {
 	const [searchQuery, setSearchQuery] = useState('');
 	const debouncedSearch = useDebouncedValue(searchQuery, 400);
 	const [filterMachine, setFilterMachine] = useState('');
-	const [filterMaterial, setFilterMaterial] = useState('');
-	const [filterThickness, setFilterThickness] = useState('');
-	const limit = 12;
+	const [filterSoftware, setFilterSoftware] = useState('');
+	const [filterMode, setFilterMode] = useState('');
+	const limit = 5;
 
-	// Pré-seleciona a máquina default do customer (se houver) na 1ª carga.
-	const { data: customerMachines = [] } = useCustomerMachines();
-	useEffect(() => {
-		if (filterMachine !== '' || customerMachines.length === 0) return;
-		const def =
-			customerMachines.find((m) => m.isDefault) ?? customerMachines[0];
-		const label = def?.name ?? '';
-		if (label) setFilterMachine(label);
-	}, [customerMachines, filterMachine]);
+	const tableRef = useRef<HTMLDivElement>(null);
+	const communityRef = useRef<HTMLDivElement>(null);
 
 	/* community tab */
 	const [communityPage, setCommunityPage] = useState(1);
@@ -146,40 +141,27 @@ export function ParametrosView() {
 
 	/* ---- hooks ---------------------------------------------------- */
 	const { data: statsData } = useParameterStats();
-	const { data: machines = [] } = useParameterMachines();
-	const { data: materials = [] } = useParameterMaterials();
+	const { data: machineCatalog = [] } = useMachines();
 
+	// Tabela: públicos ordenados salvos→mais curtidos (sort=relevant), 5/pág.
 	const queryParams = useMemo(
 		() => ({
 			page: currentPage,
 			limit,
+			sort: 'relevant' as const,
 			...(debouncedSearch && { search: debouncedSearch }),
 			...(filterMachine && { machine: filterMachine }),
-			...(filterMaterial && { material: filterMaterial }),
-			...(filterThickness && { thickness: filterThickness }),
+			...(filterSoftware && { software: filterSoftware }),
+			...(filterMode && { mode: filterMode }),
 		}),
-		[
-			currentPage,
-			debouncedSearch,
-			filterMachine,
-			filterMaterial,
-			filterThickness,
-		],
+		[currentPage, debouncedSearch, filterMachine, filterSoftware, filterMode],
 	);
 
 	const { data: parametersData, isLoading: parametersLoading } =
-		useParameters(queryParams);
+		useCommunityParameters(queryParams);
 	const parameters = parametersData?.data ?? [];
 	const totalParameters = parametersData?.total ?? 0;
 	const totalPages = Math.max(1, Math.ceil(totalParameters / limit));
-
-	/* ---- todos os parâmetros (sem filtro) só pra derivar as opções
-	    dos dropdowns. Garante que o dropdown só ofereça valores que
-	    REALMENTE existem nos dados — selecionar qualquer um filtra
-	    algo. Sem isso, o catálogo de máquinas/materiais podia listar
-	    nomes que ninguém usou nos parâmetros salvos. */
-	const { data: allParamsData } = useParameters({ page: 1, limit: 200 });
-	const allParams = allParamsData?.data ?? [];
 
 	/* community */
 	const communityQueryParams = useMemo(
@@ -217,56 +199,37 @@ export function ParametrosView() {
 	const exportMutation = useExportParameters();
 	const rateParameterMutation = useRateParameter();
 
-	/* ---- opções dos dropdowns DERIVADAS dos parâmetros salvos
-	    (não do catálogo) — assim o filtro sempre acha resultado.
-	    Catálogo entra como fallback se não tiver dados ainda. */
-	const availableMachines = useMemo(() => {
-		const set = new Set<string>();
-		for (const p of allParams) {
-			if (p.machine?.trim()) set.add(p.machine.trim());
-		}
-		// fallback: usa o catálogo se a lista derivada estiver vazia
-		if (set.size === 0) {
-			for (const m of machines) {
-				if (m.brand) set.add(`${m.brand}${m.model ? ` ${m.model}` : ''}`);
-			}
-		}
-		return Array.from(set).sort();
-	}, [allParams, machines]);
+	/* Scroll dinâmico: ao paginar, traz a lista pro topo visível. */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: rola ao trocar de página
+	useEffect(() => {
+		tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}, [currentPage]);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: rola ao trocar de página
+	useEffect(() => {
+		communityRef.current?.scrollIntoView({
+			behavior: 'smooth',
+			block: 'start',
+		});
+	}, [communityPage]);
 
-	const availableMaterials = useMemo(() => {
-		const set = new Set<string>();
-		for (const p of allParams) {
-			if (p.material?.trim()) set.add(p.material.trim());
-		}
-		if (set.size === 0) {
-			for (const m of materials) {
-				if (m.name) set.add(m.name);
-			}
-		}
-		return Array.from(set).sort();
-	}, [allParams, materials]);
-
-	const thicknesses = useMemo(() => {
-		const set = new Set<string>();
-		for (const p of allParams) {
-			if (p.thickness?.trim()) set.add(p.thickness.trim());
-		}
-		if (set.size === 0) {
-			for (const m of materials) {
-				m.commonThicknesses?.forEach((t) => {
-					if (t) set.add(t);
-				});
-			}
-		}
-		return Array.from(set).sort();
-	}, [allParams, materials]);
+	/* ---- opções dos dropdowns a partir do CATÁLOGO configurado ----- */
+	const availableMachines = useMemo(
+		() =>
+			Array.from(
+				new Set(
+					machineCatalog
+						.map((m) => m.name?.trim())
+						.filter((n): n is string => !!n),
+				),
+			).sort(),
+		[machineCatalog],
+	);
 
 	/* ---- handlers ------------------------------------------------- */
 	const handleClearFilters = () => {
 		setFilterMachine('');
-		setFilterMaterial('');
-		setFilterThickness('');
+		setFilterSoftware('');
+		setFilterMode('');
 		setSearchQuery('');
 		setCurrentPage(1);
 	};
@@ -352,32 +315,32 @@ export function ParametrosView() {
 
 			<select
 				className="px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-600"
-				value={filterMaterial}
+				value={filterSoftware}
 				onChange={(e) => {
-					setFilterMaterial(e.target.value);
+					setFilterSoftware(e.target.value);
 					setCurrentPage(1);
 				}}
 			>
-				<option value="">Material</option>
-				{availableMaterials.map((m) => (
-					<option key={m} value={m}>
-						{m}
+				<option value="">Software</option>
+				{SOFTWARE_OPTIONS.map((s) => (
+					<option key={s} value={s}>
+						{s}
 					</option>
 				))}
 			</select>
 
 			<select
 				className="px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-600"
-				value={filterThickness}
+				value={filterMode}
 				onChange={(e) => {
-					setFilterThickness(e.target.value);
+					setFilterMode(e.target.value);
 					setCurrentPage(1);
 				}}
 			>
-				<option value="">Espessura</option>
-				{thicknesses.map((t) => (
-					<option key={t} value={t}>
-						{t}
+				<option value="">Modo</option>
+				{MODE_OPTIONS.map((m) => (
+					<option key={m} value={m}>
+						{m}
 					</option>
 				))}
 			</select>
@@ -544,17 +507,33 @@ export function ParametrosView() {
 									{displayGas(p.gas)}
 								</td>
 								<td className="px-4 py-3">
-									<button
-										type="button"
-										onClick={() => handleSave(p)}
-										className={`text-xs font-medium hover:underline ${
-											p.isSaved
-												? 'text-emerald-600 dark:text-emerald-400'
-												: 'text-violet-700 dark:text-violet-400'
-										}`}
-									>
-										{p.isSaved ? 'Salvo' : 'Salvar'}
-									</button>
+									<div className="flex items-center gap-3">
+										<button
+											type="button"
+											onClick={() => handleLike(p.id)}
+											className={`inline-flex items-center gap-1 text-xs font-medium hover:underline ${
+												p.isLiked
+													? 'text-violet-600 dark:text-violet-400'
+													: 'text-slate-500 dark:text-gray-400'
+											}`}
+										>
+											<ThumbsUp
+												className={`w-3.5 h-3.5 ${p.isLiked ? 'fill-violet-500' : ''}`}
+											/>
+											{p.likesCount ?? 0}
+										</button>
+										<button
+											type="button"
+											onClick={() => handleSave(p)}
+											className={`text-xs font-medium hover:underline ${
+												p.isSaved
+													? 'text-emerald-600 dark:text-emerald-400'
+													: 'text-violet-700 dark:text-violet-400'
+											}`}
+										>
+											{p.isSaved ? 'Salvo' : 'Salvar'}
+										</button>
+									</div>
 								</td>
 							</tr>
 						))}
@@ -877,7 +856,7 @@ export function ParametrosView() {
 			{statsCards}
 
 			{/* Section 1: Tabela de parametros */}
-			<div className="mb-10">
+			<div ref={tableRef} className="mb-10 scroll-mt-20">
 				<h2 className="text-lg font-display font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
 					<Table className="w-5 h-5 text-violet-600" />
 					Tabela de parametros
@@ -888,7 +867,7 @@ export function ParametrosView() {
 			</div>
 
 			{/* Section 2: Comunidade — full width (Meus salvos removido — separar em tela futura) */}
-			<div className="mb-10">
+			<div ref={communityRef} className="mb-10 scroll-mt-20">
 				<div className="flex items-center justify-between mb-3 flex-wrap gap-2">
 					<h2 className="text-lg font-display font-bold text-slate-900 dark:text-white flex items-center gap-2">
 						<Users className="w-5 h-5 text-violet-600" />

@@ -24,7 +24,8 @@ import {
 	Zap,
 	ZoomIn,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLaserLineTypes } from '@/hooks/use-laser-line-types';
 import type { LaserParameter } from '@/types/parameters';
 
@@ -88,6 +89,10 @@ export function ParameterCard({
 }: ParameterCardProps) {
 	const Icon = materialIcon(p.material);
 	const [zoomed, setZoomed] = useState(false);
+	const [mounted, setMounted] = useState(false);
+	useEffect(() => {
+		setMounted(true);
+	}, []);
 
 	// Resolve nome do tipo de linha pelo lineTypeId (se houver)
 	const { data: lineTypes = [] } = useLaserLineTypes(
@@ -225,7 +230,7 @@ export function ParameterCard({
 			</div>
 
 			{/* Linha 6 — campos software-specific */}
-			{isEzcad && (p.tamanhoDivisao != null || p.sobreposicao != null) && (
+			{isLightburn && (p.tamanhoDivisao != null || p.sobreposicao != null) && (
 				<div className="grid grid-cols-2 gap-2 mb-3">
 					{p.tamanhoDivisao != null && (
 						<MiniCard
@@ -243,7 +248,7 @@ export function ParameterCard({
 					)}
 				</div>
 			)}
-			{isLightburn && (p.tamanhoLinha != null || p.forcarSeparacao != null) && (
+			{isEzcad && (p.tamanhoLinha != null || p.forcarSeparacao != null) && (
 				<div className="grid grid-cols-2 gap-2 mb-3">
 					{p.tamanhoLinha != null && (
 						<MiniCard
@@ -332,29 +337,34 @@ export function ParameterCard({
 				</div>
 			)}
 
-			{/* Lightbox do Tipo de Linha — clicar na imagem amplia */}
-			{zoomed && lineType?.imageUrl && (
-				<button
-					type="button"
-					onClick={() => setZoomed(false)}
-					className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-6 cursor-zoom-out"
-				>
-					<div className="relative max-w-2xl w-full">
-						<img
-							src={lineType.imageUrl}
-							alt={lineType.name}
-							className="w-full max-h-[80vh] object-contain rounded-xl border border-white/10 bg-white"
-						/>
-						<div className="mt-3 flex items-center justify-center gap-2 text-white">
-							<Square className="w-4 h-4 text-violet-400" />
-							<span className="text-sm font-semibold">{lineType.name}</span>
+			{/* Lightbox do Tipo de Linha — clicar amplia. Via portal no body pra
+			    centralizar no viewport (o course shell transforma o <main>). */}
+			{mounted &&
+				zoomed &&
+				lineType?.imageUrl &&
+				createPortal(
+					<button
+						type="button"
+						onClick={() => setZoomed(false)}
+						className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-6 cursor-zoom-out"
+					>
+						<div className="relative max-w-2xl w-full">
+							<img
+								src={lineType.imageUrl}
+								alt={lineType.name}
+								className="w-full max-h-[80vh] object-contain rounded-xl border border-white/10 bg-white"
+							/>
+							<div className="mt-3 flex items-center justify-center gap-2 text-white">
+								<Square className="w-4 h-4 text-violet-400" />
+								<span className="text-sm font-semibold">{lineType.name}</span>
+							</div>
+							<span className="absolute top-2 right-2 w-8 h-8 rounded-lg bg-black/55 text-white flex items-center justify-center">
+								<X className="w-4 h-4" />
+							</span>
 						</div>
-						<span className="absolute top-2 right-2 w-8 h-8 rounded-lg bg-black/55 text-white flex items-center justify-center">
-							<X className="w-4 h-4" />
-						</span>
-					</div>
-				</button>
-			)}
+					</button>,
+					document.body,
+				)}
 		</div>
 	);
 }

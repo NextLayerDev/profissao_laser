@@ -19,11 +19,11 @@ import {
 import { useMemo, useState } from 'react';
 import { LaserLineTypesAdminSection } from '@/components/parametros/laser-line-types-admin-section';
 import { SoftwareSpecificFields as SharedSoftwareSpecificFields } from '@/components/parametros/software-specific-fields';
+import { useMachines } from '@/hooks/use-machines';
 import {
 	useCreateParameter,
 	useDeleteParameter,
 	useExportParameters,
-	useParameterMachines,
 	useParameterMaterials,
 	useParameterStats,
 	useParameters,
@@ -140,7 +140,7 @@ export function ParametrosAdminView() {
 
 	/* hooks */
 	const { data: statsData } = useParameterStats();
-	const { data: machines = [] } = useParameterMachines();
+	const { data: machineCatalog = [] } = useMachines();
 	const { data: materials = [] } = useParameterMaterials();
 
 	const queryParams = useMemo(
@@ -175,13 +175,16 @@ export function ParametrosAdminView() {
 
 	const thicknesses = useMemo(() => {
 		const set = new Set<string>();
-		for (const m of materials) {
+		const source = filterMaterial
+			? materials.filter((m) => m.name === filterMaterial)
+			: materials;
+		for (const m of source) {
 			m.commonThicknesses?.forEach((t) => {
-				set.add(t);
+				if (t?.trim()) set.add(t.trim());
 			});
 		}
 		return Array.from(set).sort();
-	}, [materials]);
+	}, [materials, filterMaterial]);
 
 	const handleClearFilters = () => {
 		setFilterMachine('');
@@ -301,9 +304,9 @@ export function ParametrosAdminView() {
 							}}
 						>
 							<option value="">Maquina</option>
-							{machines.map((m) => (
-								<option key={m.id} value={m.brand}>
-									{m.brand} {m.model}
+							{machineCatalog.map((m) => (
+								<option key={m.id} value={m.name}>
+									{m.name}
 								</option>
 							))}
 						</select>
@@ -907,11 +910,11 @@ function ParameterFormModal({
 						</div>
 					</div>
 
-					{/* Row 5: Passes Contorno, Passes Fill, CrossHatch */}
-					<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+					{/* Row 5: Passadas, CrossHatch */}
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 						<div>
 							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-								Passadas/Contorno *
+								Passadas *
 							</span>
 							<input
 								required
@@ -920,19 +923,6 @@ function ParameterFormModal({
 								className={inputCls}
 								value={form.passes || ''}
 								onChange={(e) => set('passes', Number(e.target.value))}
-							/>
-						</div>
-						<div>
-							<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-								Passadas/Preenchimento *
-							</span>
-							<input
-								required
-								type="number"
-								min={1}
-								className={inputCls}
-								value={form.passesFill || ''}
-								onChange={(e) => set('passesFill', Number(e.target.value))}
 							/>
 						</div>
 						<div>

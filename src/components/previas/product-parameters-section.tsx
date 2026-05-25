@@ -188,9 +188,8 @@ function AssociationModal({
 		editing?.parameter?.crossHatch ?? false,
 	);
 	const [angle, setAngle] = useState(editing?.parameter?.angle ?? 0);
-	const [passesFill, setPassesFill] = useState(
-		editing?.parameter?.passesFill ?? 1,
-	);
+	// Passadas único; passesFill mantido só pra compat do payload (= 1/edição).
+	const [passesFill] = useState(editing?.parameter?.passesFill ?? 1);
 	const [defocus, setDefocus] = useState<number | undefined>(
 		editing?.parameter?.defocus ?? undefined,
 	);
@@ -542,28 +541,16 @@ function AssociationModal({
 								</div>
 							</div>
 
-							{/* Row 5: Passes, PassesFill, CrossHatch */}
-							<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+							{/* Row 5: Passadas, CrossHatch */}
+							<div className="grid grid-cols-2 gap-3">
 								<div>
 									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
-										Passadas/Contorno
+										Passadas
 									</span>
 									<input
 										type="number"
 										value={passes}
 										onChange={(e) => setPasses(Number(e.target.value))}
-										min={1}
-										className={inputCls}
-									/>
-								</div>
-								<div>
-									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
-										Passadas/Preenchimento
-									</span>
-									<input
-										type="number"
-										value={passesFill}
-										onChange={(e) => setPassesFill(Number(e.target.value))}
 										min={1}
 										className={inputCls}
 									/>

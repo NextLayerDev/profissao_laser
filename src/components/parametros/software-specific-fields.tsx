@@ -124,8 +124,8 @@ export function SoftwareSpecificFields({
 				</div>
 			</div>
 
-			{/* Ezcad: Tamanho da Divisão + Sobreposição */}
-			{isEzcad && (
+			{/* Lightburn: Tamanho da Divisão + Sobreposição */}
+			{isLightburn && (
 				<div className="grid grid-cols-2 gap-4">
 					<div>
 						<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -170,8 +170,8 @@ export function SoftwareSpecificFields({
 				</div>
 			)}
 
-			{/* Lightburn: Tamanho da Linha + Forçar Separação */}
-			{isLightburn && (
+			{/* Ezcad: Tamanho da Linha + Forçar Separação */}
+			{isEzcad && (
 				<>
 					<div>
 						<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
