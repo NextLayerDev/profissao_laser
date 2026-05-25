@@ -835,6 +835,11 @@ export function PreviasView() {
 		previewUrl: string;
 	} | null>(null);
 
+	// Refs pra centralizar o conteúdo ativo no scroll conforme o step muda
+	// ou quando a prévia gerada aparece (o conteúdo cresce/diminui).
+	const wizardRef = useRef<HTMLDivElement>(null);
+	const previewRef = useRef<HTMLDivElement>(null);
+
 	// History
 	const [histPage, setHistPage] = useState(1);
 	const histLimit = 12;
@@ -940,6 +945,32 @@ export function PreviasView() {
 		setWatermarkMode('corners');
 	}, []);
 
+	// Ao trocar de step, traz o topo do wizard pro topo visível (com folga
+	// pro header) — o conteúdo de cada step tem altura bem diferente.
+	useEffect(() => {
+		// `step` é a dependência real: re-scrolla a cada navegação de step.
+		if (!step) return;
+		const el = wizardRef.current;
+		if (!el) return;
+		const id = window.setTimeout(() => {
+			const top = el.getBoundingClientRect().top + window.scrollY - 88;
+			window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+		}, 60);
+		return () => window.clearTimeout(id);
+	}, [step]);
+
+	// Quando a prévia é gerada (imagem aparece/muda de tamanho), centraliza o
+	// resultado no viewport.
+	useEffect(() => {
+		if (!generatedPrevia) return;
+		const el = previewRef.current;
+		if (!el) return;
+		const id = window.setTimeout(() => {
+			el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		}, 80);
+		return () => window.clearTimeout(id);
+	}, [generatedPrevia]);
+
 	const updateLS = useCallback(
 		(key: keyof LaserSettings, value: LaserSettings[keyof LaserSettings]) => {
 			setLaserSettings((prev) => ({ ...prev, [key]: value }));
@@ -1021,7 +1052,10 @@ export function PreviasView() {
 			)}
 
 			{/* Wizard card */}
-			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-6 mb-8">
+			<div
+				ref={wizardRef}
+				className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-6 mb-8 scroll-mt-24"
+			>
 				<StepIndicator current={step} />
 
 				{/* Options loading state */}
@@ -1649,7 +1683,10 @@ export function PreviasView() {
 
 						{/* Generated result */}
 						{generatedPrevia && (
-							<div className="rounded-2xl border-2 border-violet-200 dark:border-violet-500/30 bg-gradient-to-b from-violet-50 to-white dark:from-violet-500/5 dark:to-[#1a1a1d] p-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+							<div
+								ref={previewRef}
+								className="rounded-2xl border-2 border-violet-200 dark:border-violet-500/30 bg-gradient-to-b from-violet-50 to-white dark:from-violet-500/5 dark:to-[#1a1a1d] p-5 scroll-mt-24 animate-in fade-in slide-in-from-bottom-4 duration-500"
+							>
 								<div className="flex items-center gap-2 mb-4">
 									<div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-green-400 flex items-center justify-center">
 										<Check className="w-4 h-4 text-white" />
