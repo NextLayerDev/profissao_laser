@@ -16,7 +16,7 @@ import {
 	Trash2,
 	X,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AppointmentForm } from '@/components/agendamentos/appointment-form';
 import { DoubtChatView } from '@/components/duvidas/doubt-chat-view';
 import { NewDoubtFlow } from '@/components/duvidas/new-doubt-flow';
@@ -344,6 +344,7 @@ export function SuporteOnlineView({
 	const [newDoubtOpen, setNewDoubtOpen] = useState(false);
 	const [supportChatOpen, setSupportChatOpen] = useState(false);
 	const [schedulingOpen, setSchedulingOpen] = useState(false);
+	const sectionRef = useRef<HTMLDivElement>(null);
 	const [activeSection, setActiveSection] = useState<
 		'home' | 'faq' | 'base' | 'videos'
 	>('home');
@@ -386,6 +387,19 @@ export function SuporteOnlineView({
 		? sortedChats
 		: sortedChats.slice(0, VISIBLE_LIMIT);
 	const hasMore = sortedChats.length > VISIBLE_LIMIT;
+
+	// Ao navegar pra uma sub-seção (FAQ / Base / Vídeos), traz o conteúdo pro
+	// topo da área visível — o scroll acontece no <main> do course shell.
+	useEffect(() => {
+		if (activeSection === 'home') return;
+		const id = window.setTimeout(() => {
+			sectionRef.current?.scrollIntoView({
+				behavior: 'smooth',
+				block: 'start',
+			});
+		}, 60);
+		return () => window.clearTimeout(id);
+	}, [activeSection]);
 
 	function handleChatCreated(_chat: DoubtChat) {
 		setNewDoubtOpen(false);
@@ -528,6 +542,9 @@ export function SuporteOnlineView({
 					})}
 				</div>
 			</section>
+
+			{/* Âncora de scroll: ao abrir uma sub-seção, rola até aqui */}
+			<div ref={sectionRef} className="scroll-mt-20" />
 
 			{/* ── Navigation back to home when on sub-section ────────────────── */}
 			{activeSection !== 'home' && (
