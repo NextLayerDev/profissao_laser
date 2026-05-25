@@ -1126,12 +1126,11 @@ export function PreviasView() {
 							onSelectVariant={handleSelectVariant}
 						/>
 
-						{/* Variante selecionada */}
+						{/* Barra de acao fixa no rodape do viewport: continuar sem rolar ate o fim */}
 						{selectedVariantId && selectedVariant && (
-							<div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-								{/* Variant preview */}
-								<div className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 min-w-0">
-									<div className="w-28 h-28 rounded-lg border border-slate-200 dark:border-white/10 overflow-hidden bg-white dark:bg-[#1a1a1d] shrink-0">
+							<div className="sticky bottom-4 z-20">
+								<div className="flex items-center gap-3 rounded-2xl border border-violet-200 dark:border-violet-500/30 bg-white/95 dark:bg-[#1a1a1d]/95 backdrop-blur px-3 py-2.5 shadow-lg shadow-black/10">
+									<div className="w-11 h-11 rounded-lg border border-slate-200 dark:border-white/10 overflow-hidden bg-white dark:bg-[#0e0e10] shrink-0">
 										{selectedVariant.imageUrl &&
 										!selectedVariant.imageUrl.includes('placeholder') ? (
 											<img
@@ -1141,38 +1140,33 @@ export function PreviasView() {
 											/>
 										) : (
 											<div className="w-full h-full flex items-center justify-center">
-												<Package className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+												<Package className="w-5 h-5 text-slate-300 dark:text-slate-600" />
 											</div>
 										)}
 									</div>
-									<div className="min-w-0">
-										<p className="text-xs text-slate-500 dark:text-gray-400">
-											Produto
+									<div className="min-w-0 flex-1">
+										<p className="text-[11px] text-slate-500 dark:text-gray-400 leading-tight">
+											Variante selecionada
 										</p>
 										<p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
 											{selectedVariant.name}
+											{selectedVariant.colorName
+												? ` · ${selectedVariant.colorName}`
+												: ''}
 										</p>
-										{selectedVariant.colorName && (
-											<p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
-												{selectedVariant.colorName}
-											</p>
-										)}
 									</div>
+									<button
+										type="button"
+										disabled={!canProceedStep1}
+										onClick={() => setStep(2)}
+										className="flex items-center gap-2 px-5 py-2.5 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-40 shrink-0"
+									>
+										Continuar
+										<ArrowRight className="w-4 h-4" />
+									</button>
 								</div>
 							</div>
 						)}
-
-						<div className="flex justify-end">
-							<button
-								type="button"
-								disabled={!canProceedStep1}
-								onClick={() => setStep(2)}
-								className="flex items-center gap-2 px-6 py-3 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-40"
-							>
-								Continuar
-								<ArrowRight className="w-4 h-4" />
-							</button>
-						</div>
 					</div>
 				)}
 
