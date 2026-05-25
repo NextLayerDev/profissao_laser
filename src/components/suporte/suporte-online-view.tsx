@@ -256,7 +256,7 @@ function SchedulingModal({ onClose }: { onClose: () => void }) {
 	);
 
 	return (
-		<ModalOverlay onClose={onClose}>
+		<ModalOverlay onClose={onClose} widthClassName="max-w-5xl">
 			<div className="p-6">
 				<div className="flex items-center justify-between mb-4">
 					<div className="flex items-center gap-3">
@@ -277,56 +277,58 @@ function SchedulingModal({ onClose }: { onClose: () => void }) {
 					</button>
 				</div>
 
-				<AppointmentForm onSuccess={onClose} />
+				<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+					<AppointmentForm onSuccess={onClose} />
 
-				<div className="mt-6">
-					<h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
-						<CalendarPlus className="w-4 h-4 text-violet-500" />
-						Meus agendamentos
-					</h4>
-					{isLoading ? (
-						<div className="flex justify-center py-6">
-							<Loader2 className="w-5 h-5 animate-spin text-violet-500" />
-						</div>
-					) : sorted.length === 0 ? (
-						<p className="text-sm text-slate-500 dark:text-gray-400 py-2">
-							Voce ainda nao tem agendamentos.
-						</p>
-					) : (
-						<ul className="space-y-2">
-							{sorted.map((a) => {
-								const canCancel =
-									a.status === 'pendente' || a.status === 'confirmado';
-								return (
-									<li
-										key={a.id}
-										className="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5"
-									>
-										<div className="min-w-0">
-											<p className="text-sm font-medium text-slate-900 dark:text-white truncate">
-												{a.service}
-											</p>
-											<p className="text-xs text-slate-500 dark:text-gray-400">
-												{formatDate(a.date)} as {a.time} ·{' '}
-												<span className="capitalize">{a.status}</span>
-											</p>
-										</div>
-										{canCancel && (
-											<button
-												type="button"
-												onClick={() => cancelMutation.mutate(a.id)}
-												disabled={cancelMutation.isPending}
-												className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors disabled:opacity-50 shrink-0"
-											>
-												<Trash2 className="w-3.5 h-3.5" />
-												Cancelar
-											</button>
-										)}
-									</li>
-								);
-							})}
-						</ul>
-					)}
+					<div>
+						<h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+							<CalendarPlus className="w-4 h-4 text-violet-500" />
+							Meus agendamentos
+						</h4>
+						{isLoading ? (
+							<div className="flex justify-center py-6">
+								<Loader2 className="w-5 h-5 animate-spin text-violet-500" />
+							</div>
+						) : sorted.length === 0 ? (
+							<p className="text-sm text-slate-500 dark:text-gray-400 py-2">
+								Voce ainda nao tem agendamentos.
+							</p>
+						) : (
+							<ul className="space-y-2">
+								{sorted.map((a) => {
+									const canCancel =
+										a.status === 'pendente' || a.status === 'confirmado';
+									return (
+										<li
+											key={a.id}
+											className="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5"
+										>
+											<div className="min-w-0">
+												<p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+													{a.service}
+												</p>
+												<p className="text-xs text-slate-500 dark:text-gray-400">
+													{formatDate(a.date)} as {a.time} ·{' '}
+													<span className="capitalize">{a.status}</span>
+												</p>
+											</div>
+											{canCancel && (
+												<button
+													type="button"
+													onClick={() => cancelMutation.mutate(a.id)}
+													disabled={cancelMutation.isPending}
+													className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors disabled:opacity-50 shrink-0"
+												>
+													<Trash2 className="w-3.5 h-3.5" />
+													Cancelar
+												</button>
+											)}
+										</li>
+									);
+								})}
+							</ul>
+						)}
+					</div>
 				</div>
 			</div>
 		</ModalOverlay>
