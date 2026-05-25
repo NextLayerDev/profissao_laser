@@ -36,10 +36,17 @@ const STATUS_BANNER: Record<SupportChatStatus, { label: string; cls: string }> =
 export interface SupportChatWidgetProps {
 	isOpen: boolean;
 	onClose: () => void;
+	/** id do chat ativo (controlado pelo pai pra detectar novas msgs fechado) */
+	chatId: string | null;
+	onChatId: (id: string | null) => void;
 }
 
-export function SupportChatWidget({ isOpen, onClose }: SupportChatWidgetProps) {
-	const [chatId, setChatId] = useState<string | null>(null);
+export function SupportChatWidget({
+	isOpen,
+	onClose,
+	chatId,
+	onChatId,
+}: SupportChatWidgetProps) {
 	const [input, setInput] = useState('');
 	const listRef = useRef<HTMLDivElement>(null);
 
@@ -48,15 +55,19 @@ export function SupportChatWidget({ isOpen, onClose }: SupportChatWidgetProps) {
 	const sendMessage = useSendSupportMessage(chatId);
 	const requestHumanMutation = useRequestHuman(chatId);
 
+	function startNew() {
+		createChat.mutate(undefined, {
+			onSuccess: (c) => onChatId(c.id),
+			onError: () =>
+				toast.error('Não foi possível abrir o chat. Tente novamente.'),
+		});
+	}
+
 	// Cria o chat ao abrir (uma vez); reaproveita se já existir.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: dispara só ao abrir
 	useEffect(() => {
 		if (isOpen && !chatId && !createChat.isPending) {
-			createChat.mutate(undefined, {
-				onSuccess: (c) => setChatId(c.id),
-				onError: () =>
-					toast.error('Não foi possível abrir o chat. Tente novamente.'),
-			});
+			startNew();
 		}
 	}, [isOpen]);
 
@@ -155,43 +166,61 @@ export function SupportChatWidget({ isOpen, onClose }: SupportChatWidgetProps) {
 						</div>
 					)}
 
-					{/* Composer */}
-					<form
-						onSubmit={(e) => {
-							e.preventDefault();
-							doSend();
-						}}
-						className="flex items-end gap-2 p-4 border-t border-slate-200 dark:border-white/10 shrink-0"
-					>
-						<textarea
-							value={input}
-							onChange={(e) => setInput(e.target.value)}
-							onKeyDown={(e) => {
-								if (e.key === 'Enter' && !e.shiftKey) {
-									e.preventDefault();
-									doSend();
-								}
+					{/* Composer (ou iniciar novo atendimento quando encerrado) */}
+					{isClosed ? (
+						<div className="p-4 border-t border-slate-200 dark:border-white/10 shrink-0">
+							<button
+								type="button"
+								onClick={startNew}
+								disabled={createChat.isPending}
+								className="w-full flex items-center justify-center gap-2 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
+							>
+								{createChat.isPending ? (
+									<Loader2 className="w-5 h-5 animate-spin" />
+								) : (
+									<>
+										<MessageSquare className="w-4 h-4" />
+										Iniciar novo atendimento
+									</>
+								)}
+							</button>
+						</div>
+					) : (
+						<form
+							onSubmit={(e) => {
+								e.preventDefault();
+								doSend();
 							}}
-							disabled={isClosed || !chatId}
-							placeholder={
-								isClosed ? 'Atendimento encerrado' : 'Escreva sua mensagem...'
-							}
-							rows={1}
-							className="flex-1 px-3 py-2 bg-slate-50 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-violet-600 focus:outline-none text-sm resize-none max-h-32 disabled:opacity-60"
-						/>
-						<button
-							type="submit"
-							disabled={!input.trim() || isClosed || sendMessage.isPending}
-							className="px-4 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white rounded-xl transition-colors shrink-0"
-							aria-label="Enviar"
+							className="flex items-end gap-2 p-4 border-t border-slate-200 dark:border-white/10 shrink-0"
 						>
-							{sendMessage.isPending ? (
-								<Loader2 className="w-5 h-5 animate-spin" />
-							) : (
-								<Send className="w-5 h-5" />
-							)}
-						</button>
-					</form>
+							<textarea
+								value={input}
+								onChange={(e) => setInput(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === 'Enter' && !e.shiftKey) {
+										e.preventDefault();
+										doSend();
+									}
+								}}
+								disabled={!chatId}
+								placeholder="Escreva sua mensagem..."
+								rows={1}
+								className="flex-1 px-3 py-2 bg-slate-50 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-violet-600 focus:outline-none text-sm resize-none max-h-32 disabled:opacity-60"
+							/>
+							<button
+								type="submit"
+								disabled={!input.trim() || sendMessage.isPending}
+								className="px-4 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white rounded-xl transition-colors shrink-0"
+								aria-label="Enviar"
+							>
+								{sendMessage.isPending ? (
+									<Loader2 className="w-5 h-5 animate-spin" />
+								) : (
+									<Send className="w-5 h-5" />
+								)}
+							</button>
+						</form>
+					)}
 				</div>
 			</div>
 		</ModalPortal>

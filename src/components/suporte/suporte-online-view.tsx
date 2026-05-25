@@ -36,6 +36,7 @@ import {
 } from '@/hooks/use-doubt-chat';
 import { useFAQs } from '@/hooks/use-faq';
 import { useKnowledgeBase } from '@/hooks/use-knowledge-base';
+import { useSupportChat } from '@/hooks/use-support-chat';
 import type { DoubtChat } from '@/types/doubt-chat';
 import type { KnowledgeBaseArticle } from '@/types/knowledge-base';
 import { getEmbedUrl, getVideoType } from '@/utils/video';
@@ -350,8 +351,19 @@ export function SuporteOnlineView({
 }: SuporteOnlineViewProps) {
 	const [newDoubtOpen, setNewDoubtOpen] = useState(false);
 	const [supportChatOpen, setSupportChatOpen] = useState(false);
+	const [supportChatId, setSupportChatId] = useState<string | null>(null);
+	const [supportChatSeen, setSupportChatSeen] = useState(0);
 	const [schedulingOpen, setSchedulingOpen] = useState(false);
 	const sectionRef = useRef<HTMLDivElement>(null);
+
+	// Mantém o chat em polling mesmo fechado, pra avisar de novas mensagens
+	// (IA/atendente) com um badge no botão flutuante.
+	const { data: supportChat } = useSupportChat(supportChatId, !!supportChatId);
+	const supportMsgCount = supportChat?.messages.length ?? 0;
+	const supportUnread =
+		!supportChatOpen && supportChat
+			? Math.max(0, supportMsgCount - supportChatSeen)
+			: 0;
 	const [activeSection, setActiveSection] = useState<
 		'home' | 'faq' | 'base' | 'videos'
 	>('home');
@@ -407,6 +419,11 @@ export function SuporteOnlineView({
 		}, 60);
 		return () => window.clearTimeout(id);
 	}, [activeSection]);
+
+	// Enquanto o chat está aberto, marca tudo como visto (zera o badge).
+	useEffect(() => {
+		if (supportChatOpen) setSupportChatSeen(supportMsgCount);
+	}, [supportChatOpen, supportMsgCount]);
 
 	function handleChatCreated(_chat: DoubtChat) {
 		setNewDoubtOpen(false);
@@ -908,14 +925,21 @@ export function SuporteOnlineView({
 					<button
 						type="button"
 						onClick={() => setSupportChatOpen(true)}
-						className="group flex items-center gap-3 pl-5 pr-4 py-3 bg-violet-600 hover:bg-violet-400 text-white font-semibold rounded-lg shadow-xl shadow-violet-500/25 transition-all hover:shadow-violet-500/40"
+						className="group relative flex items-center gap-3 pl-5 pr-4 py-3 bg-violet-600 hover:bg-violet-400 text-white font-semibold rounded-lg shadow-xl shadow-violet-500/25 transition-all hover:shadow-violet-500/40"
 					>
+						{supportUnread > 0 && (
+							<span className="absolute -top-2 -right-2 min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-[#0d0d0f] animate-pulse">
+								{supportUnread > 9 ? '9+' : supportUnread}
+							</span>
+						)}
 						<div className="flex flex-col items-start">
 							<span className="text-xs text-violet-200 font-normal leading-tight">
-								Precisa de ajuda urgente?
+								{supportUnread > 0
+									? 'Nova mensagem no suporte'
+									: 'Precisa de ajuda urgente?'}
 							</span>
 							<span className="text-sm font-bold leading-tight">
-								Abrir chat
+								{supportUnread > 0 ? 'Ver atendimento' : 'Abrir chat'}
 							</span>
 						</div>
 						<div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
@@ -994,6 +1018,8 @@ export function SuporteOnlineView({
 			<SupportChatWidget
 				isOpen={supportChatOpen}
 				onClose={() => setSupportChatOpen(false)}
+				chatId={supportChatId}
+				onChatId={setSupportChatId}
 			/>
 
 			{/* ── Agendamento de atendimento ─────────────────────────────────── */}
