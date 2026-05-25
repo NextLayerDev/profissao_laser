@@ -29,8 +29,8 @@ export default function AcessosPage() {
 		updateUser,
 		deleteUser,
 		isDeleting,
-	} = useUsers();
-	const { roles } = useRoles();
+	} = useUsers(allowed);
+	const { roles } = useRoles(allowed);
 
 	const [tab, setTab] = useState<Tab>('users');
 	const [showCreate, setShowCreate] = useState(false);

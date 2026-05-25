@@ -22,7 +22,10 @@ function getMonthRange(year: number, month: number) {
 
 export function MonthSummary() {
 	const { sales, isLoading } = useSales();
-	const { canPrice } = usePermissions();
+	const { canPrice, can } = usePermissions();
+
+	// Sem permissão de ver vendas, nada de resumo de vendas/receita na home.
+	if (!can('vendas.view')) return null;
 
 	const now = new Date();
 	const curYear = now.getFullYear();
