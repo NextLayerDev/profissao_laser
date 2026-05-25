@@ -8,6 +8,19 @@ export function formatFileSize(bytes?: number): string {
 	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+export function isImageMime(mimeType: string): boolean {
+	const t = mimeType.toLowerCase();
+	return (
+		t.includes('image') ||
+		t.includes('svg') ||
+		t.includes('png') ||
+		t.includes('jpg') ||
+		t.includes('jpeg') ||
+		t.includes('webp') ||
+		t.includes('gif')
+	);
+}
+
 export function getFileIcon(mimeType: string): LucideIcon {
 	const t = mimeType.toLowerCase();
 	if (t.includes('pdf')) return FileText;

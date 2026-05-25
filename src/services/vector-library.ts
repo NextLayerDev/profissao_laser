@@ -4,6 +4,7 @@ import type {
 	VectorLibraryContents,
 	VectorLibraryFile,
 	VectorLibraryFolder,
+	VectorLibraryFormat,
 	VectorLibraryStats,
 } from '@/types/vector-library';
 
@@ -65,6 +66,15 @@ export async function getVectorLibraryCategories(): Promise<
 > {
 	const { data } = await api.get<VectorLibraryCategory[]>(
 		'/community/vector-library/categories',
+	);
+	return Array.isArray(data) ? data : [];
+}
+
+export async function getVectorLibraryFormats(): Promise<
+	VectorLibraryFormat[]
+> {
+	const { data } = await api.get<VectorLibraryFormat[]>(
+		'/community/vector-library/formats',
 	);
 	return Array.isArray(data) ? data : [];
 }
@@ -143,15 +153,34 @@ export async function deleteFolder(id: string): Promise<void> {
 	);
 }
 
+/** Config opcional de um vetor (categoria/formatos/destaque). */
+export interface VectorFileConfig {
+	category?: string | null;
+	formats?: string[] | null;
+	featured?: boolean;
+}
+
+/** Payload de atualização de ficheiro (admin). */
+export interface UpdateFilePayload extends VectorFileConfig {
+	name?: string;
+}
+
 /** Upload de ficheiro (admin). folderId como query param. */
 export async function createFile(
 	file: File,
 	folderId: string | null,
 	name?: string,
+	config?: VectorFileConfig,
 ): Promise<VectorLibraryFile> {
 	const formData = new FormData();
 	formData.append('file', file);
 	if (name?.trim()) formData.append('name', name.trim());
+	if (config?.category != null && config.category !== '')
+		formData.append('category', config.category);
+	if (config?.formats && config.formats.length > 0)
+		formData.append('formats', config.formats.join(','));
+	if (config?.featured != null)
+		formData.append('featured', String(config.featured));
 
 	const { data } = await api.post<VectorLibraryFile>(
 		'/community/vector-library/files',
@@ -163,16 +192,41 @@ export async function createFile(
 	return data as VectorLibraryFile;
 }
 
-/** Renomeia ficheiro (admin). */
+/** Atualiza ficheiro (admin): nome, categoria, formatos e/ou destaque. */
 export async function updateFile(
 	id: string,
-	name: string,
+	data: UpdateFilePayload,
 ): Promise<VectorLibraryFile> {
-	const { data } = await api.patch<VectorLibraryFile>(
+	const { data: res } = await api.patch<VectorLibraryFile>(
 		`/community/vector-library/files/${encodeURIComponent(id)}`,
-		{ name },
+		data,
 	);
-	return data as VectorLibraryFile;
+	return res as VectorLibraryFile;
+}
+
+/** Payload da atualização em massa (admin). */
+export interface BulkUpdateFilesPayload {
+	fileIds?: string[];
+	folderIds?: string[];
+	/** Presença = aplicar; ausência = não alterar. */
+	category?: string | null;
+	/** Formatos a adicionar (merge com os existentes). */
+	addFormats?: string[];
+	featured?: boolean;
+}
+
+/**
+ * Atualiza vários ficheiros de uma vez (admin). Aplica também a todos os
+ * ficheiros dentro das `folderIds` (recursivo, no servidor).
+ */
+export async function bulkUpdateFiles(
+	payload: BulkUpdateFilesPayload,
+): Promise<{ updated: number }> {
+	const { data } = await api.patch<{ updated: number }>(
+		'/community/vector-library/files/bulk',
+		payload,
+	);
+	return data ?? { updated: 0 };
 }
 
 /** Exclui ficheiro (admin). */

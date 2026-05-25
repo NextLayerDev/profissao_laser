@@ -367,7 +367,7 @@ export function CommunitySection() {
 					}`}
 				>
 					<FolderOpen className="h-4 w-4" />
-					Biblioteca de Vetores
+					Biblioteca
 				</button>
 			</div>
 

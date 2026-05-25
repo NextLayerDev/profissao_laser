@@ -2,8 +2,14 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import type { FolderContentsParams } from '@/services/vector-library';
+import type {
+	BulkUpdateFilesPayload,
+	FolderContentsParams,
+	UpdateFilePayload,
+	VectorFileConfig,
+} from '@/services/vector-library';
 import {
+	bulkUpdateFiles,
 	createFile,
 	createFolder,
 	deleteFile,
@@ -14,6 +20,7 @@ import {
 	getVectorLibraryCategories,
 	getVectorLibraryFavorites,
 	getVectorLibraryFeatured,
+	getVectorLibraryFormats,
 	getVectorLibraryStats,
 	unfavoriteFile,
 	updateFile,
@@ -54,6 +61,14 @@ export function useVectorLibraryCategories(enabled = true) {
 	return useQuery({
 		queryKey: [...VECTOR_LIBRARY_KEYS.all, 'categories'] as const,
 		queryFn: getVectorLibraryCategories,
+		enabled,
+	});
+}
+
+export function useVectorLibraryFormats(enabled = true) {
+	return useQuery({
+		queryKey: [...VECTOR_LIBRARY_KEYS.all, 'formats'] as const,
+		queryFn: getVectorLibraryFormats,
 		enabled,
 	});
 }
@@ -135,11 +150,13 @@ export function useCreateFile() {
 			file,
 			folderId,
 			name,
+			config,
 		}: {
 			file: File;
 			folderId: string | null;
 			name?: string;
-		}) => createFile(file, folderId, name),
+			config?: VectorFileConfig;
+		}) => createFile(file, folderId, name, config),
 		onSuccess: () => {
 			invalidateContents(queryClient);
 			toast.success('Ficheiro adicionado!');
@@ -164,13 +181,13 @@ export function useUpdateFolder() {
 export function useUpdateFile() {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: ({ id, name }: { id: string; name: string }) =>
-			updateFile(id, name),
+		mutationFn: ({ id, data }: { id: string; data: UpdateFilePayload }) =>
+			updateFile(id, data),
 		onSuccess: () => {
 			invalidateContents(queryClient);
-			toast.success('Ficheiro renomeado!');
+			toast.success('Ficheiro atualizado!');
 		},
-		onError: () => toast.error('Erro ao renomear ficheiro'),
+		onError: () => toast.error('Erro ao atualizar ficheiro'),
 	});
 }
 
@@ -195,5 +212,17 @@ export function useDeleteFile() {
 			toast.success('Ficheiro excluído!');
 		},
 		onError: () => toast.error('Erro ao excluir ficheiro'),
+	});
+}
+
+export function useBulkUpdateFiles() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: (payload: BulkUpdateFilesPayload) => bulkUpdateFiles(payload),
+		onSuccess: (res) => {
+			invalidateContents(queryClient);
+			toast.success(`${res.updated} ficheiro(s) atualizado(s)!`);
+		},
+		onError: () => toast.error('Erro ao atualizar em massa'),
 	});
 }

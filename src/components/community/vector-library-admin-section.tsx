@@ -4,16 +4,23 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
 	FolderOpen,
 	FolderPlus,
+	Layers,
 	Loader2,
 	Plus,
 	UploadIcon,
 	X,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { VectorLibraryAdminGrid } from '@/components/community/vector-library-admin-grid';
 import { VectorLibraryBreadcrumbs } from '@/components/community/vector-library-breadcrumbs';
-import { VectorLibraryTable } from '@/components/community/vector-library-table';
 import {
+	COMMON_FORMATS,
+	FileConfigFields,
+} from '@/components/community/vector-library-file-config-fields';
+import { ModalOverlay } from '@/components/ui/modal-overlay';
+import {
+	useBulkUpdateFiles,
 	useCreateFile,
 	useCreateFolder,
 	useDeleteFile,
@@ -21,6 +28,7 @@ import {
 	useUpdateFile,
 	useUpdateFolder,
 	useVectorLibraryBreadcrumbs,
+	useVectorLibraryCategories,
 	useVectorLibraryContents,
 } from '@/hooks/use-vector-library';
 import { uploadFolderStructure } from '@/services/vector-library';
@@ -39,18 +47,45 @@ export function VectorLibraryAdminSection() {
 	const [showUploadModal, setShowUploadModal] = useState(false);
 	const [showRenameModal, setShowRenameModal] = useState(false);
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
+	const [showEditModal, setShowEditModal] = useState(false);
 	const [newFolderName, setNewFolderName] = useState('');
-	const [renameTarget, setRenameTarget] = useState<{
-		type: 'folder' | 'file';
-		item: VectorLibraryFolder | VectorLibraryFile;
-	} | null>(null);
+	const [renameTarget, setRenameTarget] = useState<VectorLibraryFolder | null>(
+		null,
+	);
 	const [renameValue, setRenameValue] = useState('');
 	const [deleteTarget, setDeleteTarget] = useState<{
 		type: 'folder' | 'file';
 		item: VectorLibraryFolder | VectorLibraryFile;
 	} | null>(null);
+
+	// Upload ficheiro (+ config)
 	const [uploadFile, setUploadFile] = useState<File | null>(null);
 	const [uploadFileName, setUploadFileName] = useState('');
+	const [uploadCategory, setUploadCategory] = useState('');
+	const [uploadFormats, setUploadFormats] = useState<string[]>([]);
+	const [uploadFeatured, setUploadFeatured] = useState(false);
+
+	// Edição de ficheiro (nome + config)
+	const [editTarget, setEditTarget] = useState<VectorLibraryFile | null>(null);
+	const [editName, setEditName] = useState('');
+	const [editCategory, setEditCategory] = useState('');
+	const [editFormats, setEditFormats] = useState<string[]>([]);
+	const [editFeatured, setEditFeatured] = useState(false);
+
+	// Seleção / ação em massa
+	const [selectedFileIds, setSelectedFileIds] = useState<Set<string>>(
+		new Set(),
+	);
+	const [selectedFolderIds, setSelectedFolderIds] = useState<Set<string>>(
+		new Set(),
+	);
+	const [showBulkModal, setShowBulkModal] = useState(false);
+	const [bulkCategory, setBulkCategory] = useState('');
+	const [bulkFormats, setBulkFormats] = useState<string[]>([]);
+	const [bulkFeatured, setBulkFeatured] = useState<'keep' | 'set' | 'unset'>(
+		'keep',
+	);
+
 	const [showUploadFolderModal, setShowUploadFolderModal] = useState(false);
 	const [uploadFolderState, setUploadFolderState] = useState<
 		'idle' | 'uploading' | 'success' | 'error'
@@ -72,6 +107,8 @@ export function VectorLibraryAdminSection() {
 		useVectorLibraryContents(currentFolderId);
 	const { data: breadcrumbs = [] } =
 		useVectorLibraryBreadcrumbs(currentFolderId);
+	const { data: categories = [] } = useVectorLibraryCategories();
+	const categorySuggestions = categories.map((c) => c.name);
 
 	const createFolderMutation = useCreateFolder();
 	const createFileMutation = useCreateFile();
@@ -79,6 +116,89 @@ export function VectorLibraryAdminSection() {
 	const updateFileMutation = useUpdateFile();
 	const deleteFolderMutation = useDeleteFolder();
 	const deleteFileMutation = useDeleteFile();
+	const bulkUpdateMutation = useBulkUpdateFiles();
+
+	// Limpa a seleção ao navegar entre pastas (evita seleção "fantasma").
+	// biome-ignore lint/correctness/useExhaustiveDependencies: limpar só ao trocar de pasta
+	useEffect(() => {
+		setSelectedFileIds(new Set());
+		setSelectedFolderIds(new Set());
+	}, [currentFolderId]);
+
+	const selectionCount = selectedFileIds.size + selectedFolderIds.size;
+
+	const toggleFile = (id: string) =>
+		setSelectedFileIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
+
+	const toggleFolder = (id: string) =>
+		setSelectedFolderIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
+
+	const clearSelection = () => {
+		setSelectedFileIds(new Set());
+		setSelectedFolderIds(new Set());
+	};
+
+	const selectAllVisible = () => {
+		setSelectedFileIds(new Set((contents?.files ?? []).map((f) => f.id)));
+		setSelectedFolderIds(new Set((contents?.folders ?? []).map((f) => f.id)));
+	};
+
+	const toggleBulkFormat = (f: string) =>
+		setBulkFormats((prev) =>
+			prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f],
+		);
+
+	const hasBulkChanges =
+		bulkCategory.trim() !== '' ||
+		bulkFormats.length > 0 ||
+		bulkFeatured !== 'keep';
+
+	const handleBulkApply = () => {
+		if (selectionCount === 0 || !hasBulkChanges) return;
+		bulkUpdateMutation.mutate(
+			{
+				fileIds: [...selectedFileIds],
+				folderIds: [...selectedFolderIds],
+				category: bulkCategory.trim() ? bulkCategory.trim() : undefined,
+				addFormats: bulkFormats.length > 0 ? bulkFormats : undefined,
+				featured:
+					bulkFeatured === 'set'
+						? true
+						: bulkFeatured === 'unset'
+							? false
+							: undefined,
+			},
+			{
+				onSuccess: () => {
+					setShowBulkModal(false);
+					setBulkCategory('');
+					setBulkFormats([]);
+					setBulkFeatured('keep');
+					clearSelection();
+				},
+			},
+		);
+	};
+
+	const resetUploadState = () => {
+		setUploadFile(null);
+		setUploadFileName('');
+		setUploadCategory('');
+		setUploadFormats([]);
+		setUploadFeatured(false);
+		setShowUploadModal(false);
+		if (fileInputRef.current) fileInputRef.current.value = '';
+	};
 
 	const handleCreateFolder = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -102,44 +222,51 @@ export function VectorLibraryAdminSection() {
 				file: uploadFile,
 				folderId: currentFolderId,
 				name: uploadFileName.trim() || undefined,
-			},
-			{
-				onSuccess: () => {
-					setUploadFile(null);
-					setUploadFileName('');
-					setShowUploadModal(false);
-					if (fileInputRef.current) fileInputRef.current.value = '';
+				config: {
+					category: uploadCategory.trim() || null,
+					formats: uploadFormats,
+					featured: uploadFeatured,
 				},
 			},
+			{ onSuccess: resetUploadState },
 		);
 	};
 
 	const handleRename = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!renameTarget || !renameValue.trim()) return;
-		if (renameTarget.type === 'folder') {
-			updateFolderMutation.mutate(
-				{ id: renameTarget.item.id, name: renameValue.trim() },
-				{
-					onSuccess: () => {
-						setRenameTarget(null);
-						setRenameValue('');
-						setShowRenameModal(false);
-					},
+		updateFolderMutation.mutate(
+			{ id: renameTarget.id, name: renameValue.trim() },
+			{
+				onSuccess: () => {
+					setRenameTarget(null);
+					setRenameValue('');
+					setShowRenameModal(false);
 				},
-			);
-		} else {
-			updateFileMutation.mutate(
-				{ id: renameTarget.item.id, name: renameValue.trim() },
-				{
-					onSuccess: () => {
-						setRenameTarget(null);
-						setRenameValue('');
-						setShowRenameModal(false);
-					},
+			},
+		);
+	};
+
+	const handleEditSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!editTarget) return;
+		updateFileMutation.mutate(
+			{
+				id: editTarget.id,
+				data: {
+					name: editName.trim() || undefined,
+					category: editCategory.trim() ? editCategory.trim() : null,
+					formats: editFormats,
+					featured: editFeatured,
 				},
-			);
-		}
+			},
+			{
+				onSuccess: () => {
+					setShowEditModal(false);
+					setEditTarget(null);
+				},
+			},
+		);
 	};
 
 	const handleDelete = () => {
@@ -161,13 +288,19 @@ export function VectorLibraryAdminSection() {
 		}
 	};
 
-	const openRename = (
-		item: VectorLibraryFolder | VectorLibraryFile,
-		type: 'folder' | 'file',
-	) => {
-		setRenameTarget({ type, item });
-		setRenameValue(item.name);
+	const openRenameFolder = (folder: VectorLibraryFolder) => {
+		setRenameTarget(folder);
+		setRenameValue(folder.name);
 		setShowRenameModal(true);
+	};
+
+	const openEditFile = (file: VectorLibraryFile) => {
+		setEditTarget(file);
+		setEditName(file.name);
+		setEditCategory(file.category ?? '');
+		setEditFormats(file.formats?.filter(Boolean) ?? []);
+		setEditFeatured(!!file.featured);
+		setShowEditModal(true);
 	};
 
 	const openDelete = (
@@ -273,30 +406,6 @@ export function VectorLibraryAdminSection() {
 		}
 	};
 
-	const ModalOverlay = ({
-		onClose,
-		children,
-	}: {
-		onClose: () => void;
-		children: React.ReactNode;
-	}) => (
-		<div
-			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm"
-			onClick={(e) => e.target === e.currentTarget && onClose()}
-			onKeyDown={(e) => e.key === 'Escape' && onClose()}
-			role="dialog"
-			aria-modal="true"
-			aria-label="Fechar"
-		>
-			<div
-				className="relative z-10 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-2xl shadow-xl max-w-md w-full"
-				role="document"
-			>
-				{children}
-			</div>
-		</div>
-	);
-
 	return (
 		<div className="space-y-6">
 			<div className="flex flex-col gap-4">
@@ -305,11 +414,12 @@ export function VectorLibraryAdminSection() {
 						<div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600">
 							<FolderOpen className="h-6 w-6 text-white" />
 						</div>
-						Biblioteca de Vetores
+						Biblioteca
 					</h2>
 					<p className="text-slate-600 dark:text-gray-400 mt-1 text-sm">
-						Organize ficheiros em pastas. Os clientes com acesso à vetorização
-						podem visualizar e descarregar.
+						Organize ficheiros em pastas e configure categoria, formatos e
+						destaque. Os clientes com acesso à vetorização podem visualizar e
+						descarregar.
 					</p>
 				</div>
 
@@ -390,27 +500,65 @@ export function VectorLibraryAdminSection() {
 				</button>
 			</div>
 
+			{/* Barra de ação em massa */}
+			{selectionCount > 0 && (
+				<div className="flex flex-wrap items-center gap-3 p-3 rounded-xl border border-emerald-300 dark:border-emerald-500/40 bg-emerald-50 dark:bg-emerald-500/10">
+					<span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+						{selectionCount} selecionado(s)
+					</span>
+					<div className="flex-1" />
+					<button
+						type="button"
+						onClick={selectAllVisible}
+						className="px-3 py-1.5 rounded-lg text-sm font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors"
+					>
+						Selecionar tudo
+					</button>
+					<button
+						type="button"
+						onClick={() => setShowBulkModal(true)}
+						className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-colors"
+					>
+						<Layers className="h-4 w-4" />
+						Definir em massa
+					</button>
+					<button
+						type="button"
+						onClick={clearSelection}
+						className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+					>
+						Limpar
+					</button>
+				</div>
+			)}
+
 			{contentsLoading ? (
 				<div className="flex justify-center py-16">
 					<Loader2 className="w-10 h-10 text-violet-500 animate-spin" />
 				</div>
 			) : (
-				<VectorLibraryTable
+				<VectorLibraryAdminGrid
 					folders={contents?.folders ?? []}
 					files={contents?.files ?? []}
 					onFolderClick={setCurrentFolderId}
-					onFileDownload={(file) => window.open(file.fileUrl, '_blank')}
-					isAdmin
-					onRenameFolder={(f) => openRename(f, 'folder')}
-					onRenameFile={(f) => openRename(f, 'file')}
+					onDownload={(file) => window.open(file.fileUrl, '_blank')}
+					onEditFile={openEditFile}
+					onRenameFolder={openRenameFolder}
 					onDeleteFolder={(f) => openDelete(f, 'folder')}
 					onDeleteFile={(f) => openDelete(f, 'file')}
+					selectedFileIds={selectedFileIds}
+					selectedFolderIds={selectedFolderIds}
+					onToggleFile={toggleFile}
+					onToggleFolder={toggleFolder}
 				/>
 			)}
 
 			{/* Modal Nova Pasta */}
 			{showCreateFolderModal && (
-				<ModalOverlay onClose={() => setShowCreateFolderModal(false)}>
+				<ModalOverlay
+					onClose={() => setShowCreateFolderModal(false)}
+					widthClassName="max-w-md"
+				>
 					<div className="p-6">
 						<div className="flex items-center justify-between mb-6">
 							<h3 className="text-lg font-bold text-slate-900 dark:text-white">
@@ -466,7 +614,7 @@ export function VectorLibraryAdminSection() {
 
 			{/* Modal Upload */}
 			{showUploadModal && (
-				<ModalOverlay onClose={() => setShowUploadModal(false)}>
+				<ModalOverlay onClose={resetUploadState} widthClassName="max-w-lg">
 					<div className="p-6">
 						<div className="flex items-center justify-between mb-6">
 							<h3 className="text-lg font-bold text-slate-900 dark:text-white">
@@ -474,7 +622,7 @@ export function VectorLibraryAdminSection() {
 							</h3>
 							<button
 								type="button"
-								onClick={() => setShowUploadModal(false)}
+								onClick={resetUploadState}
 								className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-[#252528]"
 							>
 								<X className="h-5 w-5" />
@@ -529,10 +677,22 @@ export function VectorLibraryAdminSection() {
 									className="w-full px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#252528] border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50"
 								/>
 							</div>
-							<div className="flex gap-3">
+
+							<FileConfigFields
+								idPrefix="upload"
+								category={uploadCategory}
+								onCategoryChange={setUploadCategory}
+								formats={uploadFormats}
+								onFormatsChange={setUploadFormats}
+								featured={uploadFeatured}
+								onFeaturedChange={setUploadFeatured}
+								categorySuggestions={categorySuggestions}
+							/>
+
+							<div className="flex gap-3 pt-2">
 								<button
 									type="button"
-									onClick={() => setShowUploadModal(false)}
+									onClick={resetUploadState}
 									className="flex-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-gray-700 text-slate-700 dark:text-gray-300"
 								>
 									Cancelar
@@ -550,7 +710,217 @@ export function VectorLibraryAdminSection() {
 				</ModalOverlay>
 			)}
 
-			{/* Modal Renomear */}
+			{/* Modal Editar ficheiro */}
+			{showEditModal && editTarget && (
+				<ModalOverlay
+					onClose={() => {
+						setShowEditModal(false);
+						setEditTarget(null);
+					}}
+					widthClassName="max-w-lg"
+				>
+					<div className="p-6">
+						<div className="flex items-center justify-between mb-6">
+							<h3 className="text-lg font-bold text-slate-900 dark:text-white">
+								Editar vetor
+							</h3>
+							<button
+								type="button"
+								onClick={() => {
+									setShowEditModal(false);
+									setEditTarget(null);
+								}}
+								className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-[#252528]"
+							>
+								<X className="h-5 w-5" />
+							</button>
+						</div>
+						<form onSubmit={handleEditSubmit} className="space-y-4">
+							<div>
+								<label
+									htmlFor="edit-file-name"
+									className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2"
+								>
+									Nome
+								</label>
+								<input
+									id="edit-file-name"
+									type="text"
+									value={editName}
+									onChange={(e) => setEditName(e.target.value)}
+									className="w-full px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#252528] border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500/50"
+								/>
+							</div>
+
+							<FileConfigFields
+								idPrefix="edit"
+								category={editCategory}
+								onCategoryChange={setEditCategory}
+								formats={editFormats}
+								onFormatsChange={setEditFormats}
+								featured={editFeatured}
+								onFeaturedChange={setEditFeatured}
+								categorySuggestions={categorySuggestions}
+							/>
+
+							<div className="flex gap-3 pt-2">
+								<button
+									type="button"
+									onClick={() => {
+										setShowEditModal(false);
+										setEditTarget(null);
+									}}
+									className="flex-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-gray-700 text-slate-700 dark:text-gray-300"
+								>
+									Cancelar
+								</button>
+								<button
+									type="submit"
+									disabled={!editName.trim() || updateFileMutation.isPending}
+									className="flex-1 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-medium"
+								>
+									Guardar
+								</button>
+							</div>
+						</form>
+					</div>
+				</ModalOverlay>
+			)}
+
+			{/* Modal Definir em massa */}
+			{showBulkModal && (
+				<ModalOverlay
+					onClose={() => setShowBulkModal(false)}
+					widthClassName="max-w-lg"
+				>
+					<div className="p-6">
+						<div className="flex items-center justify-between mb-4">
+							<h3 className="text-lg font-bold text-slate-900 dark:text-white">
+								Definir em massa
+							</h3>
+							<button
+								type="button"
+								onClick={() => setShowBulkModal(false)}
+								className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-[#252528]"
+							>
+								<X className="h-5 w-5" />
+							</button>
+						</div>
+
+						<p className="text-sm text-slate-500 dark:text-gray-400 mb-5">
+							Aplicado a{' '}
+							<span className="font-semibold text-slate-700 dark:text-slate-300">
+								{selectedFileIds.size} ficheiro(s)
+							</span>{' '}
+							e{' '}
+							<span className="font-semibold text-slate-700 dark:text-slate-300">
+								{selectedFolderIds.size} pasta(s)
+							</span>
+							. As pastas incluem todos os ficheiros dentro (subpastas
+							inclusas).
+						</p>
+
+						<div className="space-y-4">
+							{/* Categoria */}
+							<div>
+								<label
+									htmlFor="bulk-category"
+									className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2"
+								>
+									Categoria
+								</label>
+								<input
+									id="bulk-category"
+									type="text"
+									list="bulk-category-list"
+									value={bulkCategory}
+									onChange={(e) => setBulkCategory(e.target.value)}
+									placeholder="Deixe vazio para não alterar"
+									className="w-full px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#252528] border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50"
+								/>
+								{categorySuggestions.length > 0 && (
+									<datalist id="bulk-category-list">
+										{categorySuggestions.map((c) => (
+											<option key={c} value={c} />
+										))}
+									</datalist>
+								)}
+							</div>
+
+							{/* Formatos (merge) */}
+							<div>
+								<span className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
+									Formatos (adicionar)
+								</span>
+								<div className="flex flex-wrap gap-2">
+									{COMMON_FORMATS.map((f) => {
+										const active = bulkFormats.includes(f);
+										return (
+											<button
+												key={f}
+												type="button"
+												onClick={() => toggleBulkFormat(f)}
+												className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase border transition-colors ${
+													active
+														? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+														: 'border-slate-200 dark:border-gray-700 text-slate-500 dark:text-gray-400 hover:border-emerald-500/50'
+												}`}
+											>
+												{f}
+											</button>
+										);
+									})}
+								</div>
+								<p className="text-xs text-slate-500 dark:text-gray-500 mt-1.5">
+									Somados aos formatos já existentes (não remove nada).
+								</p>
+							</div>
+
+							{/* Destaque */}
+							<div>
+								<label
+									htmlFor="bulk-featured"
+									className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2"
+								>
+									Destaque
+								</label>
+								<select
+									id="bulk-featured"
+									value={bulkFeatured}
+									onChange={(e) =>
+										setBulkFeatured(e.target.value as 'keep' | 'set' | 'unset')
+									}
+									className="w-full px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#252528] border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500/50"
+								>
+									<option value="keep">Não alterar</option>
+									<option value="set">Marcar como destaque</option>
+									<option value="unset">Remover destaque</option>
+								</select>
+							</div>
+						</div>
+
+						<div className="flex gap-3 pt-5">
+							<button
+								type="button"
+								onClick={() => setShowBulkModal(false)}
+								className="flex-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-gray-700 text-slate-700 dark:text-gray-300"
+							>
+								Cancelar
+							</button>
+							<button
+								type="button"
+								onClick={handleBulkApply}
+								disabled={!hasBulkChanges || bulkUpdateMutation.isPending}
+								className="flex-1 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-medium"
+							>
+								Aplicar
+							</button>
+						</div>
+					</div>
+				</ModalOverlay>
+			)}
+
+			{/* Modal Renomear pasta */}
 			{showRenameModal && renameTarget && (
 				<ModalOverlay
 					onClose={() => {
@@ -558,11 +928,12 @@ export function VectorLibraryAdminSection() {
 						setRenameTarget(null);
 						setRenameValue('');
 					}}
+					widthClassName="max-w-md"
 				>
 					<div className="p-6">
 						<div className="flex items-center justify-between mb-6">
 							<h3 className="text-lg font-bold text-slate-900 dark:text-white">
-								Renomear
+								Renomear pasta
 							</h3>
 							<button
 								type="button"
@@ -607,9 +978,7 @@ export function VectorLibraryAdminSection() {
 								<button
 									type="submit"
 									disabled={
-										!renameValue.trim() ||
-										updateFolderMutation.isPending ||
-										updateFileMutation.isPending
+										!renameValue.trim() || updateFolderMutation.isPending
 									}
 									className="flex-1 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-medium"
 								>
@@ -628,6 +997,7 @@ export function VectorLibraryAdminSection() {
 						setShowDeleteModal(false);
 						setDeleteTarget(null);
 					}}
+					widthClassName="max-w-md"
 				>
 					<div className="p-6">
 						<h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
@@ -674,6 +1044,7 @@ export function VectorLibraryAdminSection() {
 							setUploadFolderResult(null);
 						}
 					}}
+					widthClassName="max-w-md"
 				>
 					<div className="p-6">
 						<div className="flex items-center justify-between mb-6">

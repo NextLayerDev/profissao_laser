@@ -46,3 +46,8 @@ export type VectorLibraryCategory = {
 	icon?: string | null;
 	count: number;
 };
+
+export type VectorLibraryFormat = {
+	name: string;
+	count: number;
+};
