@@ -21,7 +21,7 @@ function Divider() {
 
 export default function LandingPage() {
 	return (
-		<div className="min-h-screen bg-ink-900 antialiased">
+		<div className="min-h-screen bg-ink-950 antialiased">
 			<ScrollProgress />
 			<TopBar />
 			<Hero />

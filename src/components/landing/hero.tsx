@@ -178,57 +178,6 @@ const HERO_BULLETS = [
 	'Ferramentas exclusivas do mundo do laser a um click',
 ];
 
-// ─── Mockup de dispositivos (aproximação CSS da plataforma) ──────────────────
-
-const DASH_TILES = [
-	'from-violet-500 to-purple-700',
-	'from-amber-400 to-orange-600',
-	'from-cyan-400 to-blue-600',
-	'from-pink-500 to-rose-600',
-	'from-emerald-400 to-teal-600',
-	'from-fuchsia-500 to-purple-600',
-	'from-sky-400 to-indigo-600',
-	'from-orange-400 to-red-600',
-	'from-violet-400 to-indigo-700',
-	'from-teal-400 to-cyan-600',
-];
-
-function DashboardMock() {
-	return (
-		<div className="absolute inset-0 p-2.5 flex flex-col gap-2">
-			<div className="flex items-center gap-2">
-				<div className="w-5 h-5 rounded-full bg-gradient-to-br from-violet-500 to-indigo-700" />
-				<div className="h-1.5 w-16 rounded-full bg-white/15" />
-				<div className="ml-auto h-1.5 w-8 rounded-full bg-violet-500/40" />
-			</div>
-			<div className="text-[8px] text-white/50 font-semibold">
-				Olá, bem-vindo!
-			</div>
-			<div className="grid grid-cols-5 gap-1.5 flex-1">
-				{DASH_TILES.map((g) => (
-					<div key={g} className={`rounded-md bg-gradient-to-br ${g}`} />
-				))}
-			</div>
-		</div>
-	);
-}
-
-function PhoneMock() {
-	return (
-		<div className="absolute inset-0 p-1.5 flex flex-col gap-1">
-			<div className="h-1 w-8 rounded-full bg-white/15 mx-auto" />
-			<div className="grid grid-cols-3 gap-1 flex-1 mt-1">
-				{Array.from({ length: 9 }).map((_, i) => (
-					<div
-						key={`pm-${i}`}
-						className={`rounded bg-gradient-to-br ${DASH_TILES[i % DASH_TILES.length]}`}
-					/>
-				))}
-			</div>
-		</div>
-	);
-}
-
 // ─── Main Hero ───────────────────────────────────────────────────────────────
 
 export function Hero() {
@@ -305,21 +254,27 @@ export function Hero() {
 					</div>
 
 					{/* Mockup de dispositivos + foto do profissional + citação */}
-					<div className="relative h-[440px] md:h-[560px]">
-						<div className="absolute -inset-8 bg-violet-700/25 blur-[80px] rounded-full" />
+					<div className="relative h-[460px] md:h-[580px]">
+						<div className="absolute -inset-8 bg-violet-700/25 blur-[90px] rounded-full" />
 
 						{/* Notebook (atrás, à esquerda) */}
-						<div className="absolute top-4 left-0 w-[64%]">
-							<div className="rounded-lg bg-[#15131f] border border-violet-500/20 p-1.5 shadow-2xl shadow-violet-900/40">
-								<div className="relative rounded-md overflow-hidden bg-[#0c0a14] aspect-video">
-									<DashboardMock />
+						<div className="absolute top-2 left-0 w-[74%] z-10">
+							<div className="rounded-lg bg-[#0b0a12] border border-white/10 p-1.5 shadow-2xl shadow-black/60">
+								<div className="relative rounded overflow-hidden aspect-video">
+									<Image
+										src="/img/plataforma-desktop.png"
+										alt="Plataforma Profissão Laser no computador"
+										fill
+										sizes="(max-width: 1024px) 80vw, 520px"
+										className="object-cover object-left-top"
+									/>
 								</div>
 							</div>
-							<div className="mx-auto h-2 w-[112%] -ml-[6%] rounded-b-lg bg-gradient-to-b from-[#1a1726] to-[#0e0c16] border-x border-b border-violet-500/10" />
+							<div className="mx-auto h-2 w-[112%] -ml-[6%] rounded-b-lg bg-gradient-to-b from-[#16141f] to-[#0b0a12] border-x border-b border-white/5" />
 						</div>
 
 						{/* Foto do profissional (recorte) com glow roxo pulsante + float */}
-						<div className="absolute bottom-0 right-0 w-[62%] h-[94%]">
+						<div className="absolute bottom-0 right-[1%] w-[60%] h-[86%] z-30">
 							<motion.div
 								className="absolute inset-0 grid place-items-center"
 								animate={{ opacity: [0.55, 0.9, 0.55], scale: [1, 1.07, 1] }}
@@ -353,16 +308,22 @@ export function Hero() {
 						</div>
 
 						{/* Celular (canto inferior esquerdo) */}
-						<div className="absolute bottom-3 left-1 w-[84px] md:w-[100px]">
-							<div className="rounded-[1.1rem] bg-[#15131f] border border-violet-500/25 p-1 shadow-2xl shadow-violet-900/50">
-								<div className="relative rounded-[0.85rem] overflow-hidden bg-[#0c0a14] aspect-[9/18]">
-									<PhoneMock />
+						<div className="absolute top-12 right-0 w-[27%] max-w-[140px] z-20">
+							<div className="rounded-[1.3rem] bg-[#0b0a12] border border-white/10 p-1 shadow-2xl shadow-black/60">
+								<div className="relative rounded-[1.05rem] overflow-hidden aspect-[9/19]">
+									<Image
+										src="/img/plataforma-mobile.png"
+										alt="Plataforma Profissão Laser no celular"
+										fill
+										sizes="140px"
+										className="object-cover object-top"
+									/>
 								</div>
 							</div>
 						</div>
 
 						{/* Card de citação (sobreposto) */}
-						<div className="absolute bottom-2 left-1/2 -translate-x-1/2 md:left-[26%] card-dark rounded-2xl p-3.5 max-w-[250px] backdrop-blur-md border border-violet-500/25 shadow-brand">
+						<div className="absolute bottom-3 left-0 z-40 card-dark rounded-2xl p-3.5 max-w-[250px] backdrop-blur-md border border-violet-500/25 shadow-brand">
 							<p className="text-white text-[12.5px] font-semibold leading-snug">
 								"O mercado não está difícil, o mercado está se{' '}
 								<span className="grad-brand">PROFISSIONALIZANDO!</span>"
