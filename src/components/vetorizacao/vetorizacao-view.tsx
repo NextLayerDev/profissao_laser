@@ -9,6 +9,7 @@ import {
 	ChevronUp,
 	Crown,
 	Download,
+	FolderOpen,
 	HelpCircle,
 	Image,
 	Layers,
@@ -24,18 +25,24 @@ import {
 	Zap,
 } from 'lucide-react';
 import NextImage from 'next/image';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
 import { PageHeader } from '@/components/ui/page-header';
 import { useCreditAction } from '@/hooks/use-credit-action';
 import { useVoxBalance, useVoxCosts } from '@/hooks/use-credits';
-import { useSaveVector, useVectorizeImage } from '@/hooks/use-vectors';
+import {
+	useCustomerVectors,
+	useSaveVector,
+	useVectorizeImage,
+} from '@/hooks/use-vectors';
 import type {
 	VectorizeParams,
 	VectorizePreset,
 	VectorizeResult,
 } from '@/services/vectorize';
+import { VectorList } from './vector-list';
 
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -1252,6 +1259,24 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 		presetParams('rapido'),
 	);
 
+	// portal só após montar (evita mismatch de hidratação)
+	const [mounted, setMounted] = useState(false);
+	useEffect(() => setMounted(true), []);
+
+	// scroll-follow do passo atual / resultado (igual à prévia)
+	const wizardRef = useRef<HTMLDivElement>(null);
+	const resultRef = useRef<HTMLDivElement>(null);
+
+	// vetores salvos do aluno (lista embaixo)
+	const vecLimit = 12;
+	const [vecPage, setVecPage] = useState(1);
+	const [vecSearch, setVecSearch] = useState('');
+	const { data: vectorsData, refetch: refetchVectors } = useCustomerVectors({
+		page: vecPage,
+		limit: vecLimit,
+		search: vecSearch || undefined,
+	});
+
 	const vectorizeMutation = useVectorizeImage();
 	const { data: voxBalance } = useVoxBalance();
 	const { data: voxCosts } = useVoxCosts();
@@ -1283,6 +1308,7 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 			});
 			setResult(res);
 			setStep(3);
+			refetchVectors();
 			return res;
 		},
 	});
@@ -1323,11 +1349,35 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 				svgContent: result.svgContent,
 				originalName: result.originalName,
 			});
+			refetchVectors();
 			onRefetch?.();
 		} catch {
 			// toast handled by mutation
 		}
-	}, [result, saveMutation, onRefetch]);
+	}, [result, saveMutation, onRefetch, refetchVectors]);
+
+	// scroll acompanha a navegação do wizard
+	useEffect(() => {
+		if (!step) return; // `step` é a dependência real (re-scrolla a cada passo)
+		const el = wizardRef.current;
+		if (!el) return;
+		const id = window.setTimeout(() => {
+			const top = el.getBoundingClientRect().top + window.scrollY - 88;
+			window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+		}, 60);
+		return () => window.clearTimeout(id);
+	}, [step]);
+
+	// centraliza o resultado quando ele aparece
+	useEffect(() => {
+		if (!result) return;
+		const el = resultRef.current;
+		if (!el) return;
+		const id = window.setTimeout(() => {
+			el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		}, 80);
+		return () => window.clearTimeout(id);
+	}, [result]);
 
 	return (
 		<div className="p-4 md:p-8">
@@ -1337,7 +1387,10 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 				icon={PenLine}
 			/>
 
-			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-6 mb-8">
+			<div
+				ref={wizardRef}
+				className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-6 mb-8"
+			>
 				<StepIndicator current={step} />
 
 				{step === 1 && (
@@ -1375,21 +1428,83 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 				)}
 
 				{step === 3 && result && (
-					<StepResult
-						result={result}
-						onGoToStep2={() => setStep(2)}
-						onReset={handleReset}
-						onSave={handleSave}
-						isSaving={saveMutation.isPending}
-					/>
+					<div ref={resultRef}>
+						<StepResult
+							result={result}
+							onGoToStep2={() => setStep(2)}
+							onReset={handleReset}
+							onSave={handleSave}
+							isSaving={saveMutation.isPending}
+						/>
+					</div>
 				)}
 			</div>
 
 			<div className="space-y-8" id="vetorizacao-historico">
+				<section>
+					<h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+						<FolderOpen className="w-5 h-5 text-violet-600" />
+						Meus vetores
+					</h3>
+					<VectorList
+						data={vectorsData?.data ?? []}
+						total={vectorsData?.total ?? 0}
+						page={vecPage}
+						limit={vecLimit}
+						search={vecSearch}
+						onPageChange={setVecPage}
+						onSearchChange={(s) => {
+							setVecSearch(s);
+							setVecPage(1);
+						}}
+						onRefetch={refetchVectors}
+					/>
+				</section>
 				<HelpSection />
 				<BatchBanner />
 				<ProWidget />
 			</div>
+
+			{/* CTA flutuante (continuar/gerar sempre visível, igual à prévia) */}
+			{mounted &&
+				step === 1 &&
+				file &&
+				createPortal(
+					<button
+						type="button"
+						onClick={() => setStep(2)}
+						className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-6 py-3.5 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-full shadow-xl shadow-violet-900/30 transition-colors"
+					>
+						Continuar
+						<ArrowRight className="w-5 h-5" />
+					</button>,
+					document.body,
+				)}
+
+			{mounted &&
+				step === 2 &&
+				file &&
+				createPortal(
+					<button
+						type="button"
+						onClick={handleVectorize}
+						disabled={vectorizeMutation.isPending}
+						className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-6 py-3.5 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-full shadow-xl shadow-violet-900/30 transition-colors disabled:opacity-60"
+					>
+						{vectorizeMutation.isPending ? (
+							<>
+								<Loader2 className="w-5 h-5 animate-spin" />
+								Vetorizando...
+							</>
+						) : (
+							<>
+								<Wand2 className="w-5 h-5" />
+								Vetorizar
+							</>
+						)}
+					</button>,
+					document.body,
+				)}
 
 			{creditAction.modal && (
 				<CreditConfirmModal
