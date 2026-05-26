@@ -10,6 +10,7 @@ import {
 	useVoxHistory,
 	useVoxPackages,
 } from '@/hooks/use-credits';
+import { useIsTestUnlimited } from '@/hooks/use-is-test-unlimited';
 import type { VoxHistoryEntry } from '@/types/credits';
 
 const TYPE_LABEL: Record<VoxHistoryEntry['type'], string> = {
@@ -33,6 +34,7 @@ export function CreditsView() {
 	const { data: balance, refetch: refetchBalance } = useVoxBalance();
 	const { data: packages, isLoading: pkgLoading } = useVoxPackages();
 	const checkout = useCreateVoxCheckout();
+	const unlimited = useIsTestUnlimited();
 
 	const [page, setPage] = useState(1);
 	const limit = 10;
@@ -87,8 +89,21 @@ export function CreditsView() {
 						Saldo atual
 					</p>
 					<p className="text-3xl font-bold text-slate-900 dark:text-white tabular-nums">
-						{balance?.balance ?? '—'}{' '}
-						<span className="text-base font-medium text-slate-500">voxes</span>
+						{unlimited ? (
+							<>
+								Ilimitado{' '}
+								<span className="text-base font-medium text-slate-500">
+									(conta teste)
+								</span>
+							</>
+						) : (
+							<>
+								{balance?.balance ?? '—'}{' '}
+								<span className="text-base font-medium text-slate-500">
+									voxes
+								</span>
+							</>
+						)}
 					</p>
 				</div>
 			</div>
