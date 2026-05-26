@@ -192,8 +192,8 @@ function PlanCard({ p, billing }: { p: Plan; billing: 'annual' | 'monthly' }) {
 			animate={{ y: p.featured ? -8 : 0 }}
 			whileHover={{ y: p.featured ? -14 : -6 }}
 			transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-			className={`tile-hairline shine relative rounded-2xl border p-6 flex flex-col ${
-				p.featured ? 'border-violet-500/50 aura' : 'card-dark'
+			className={`tile-hairline relative rounded-2xl border p-6 flex flex-col ${
+				p.featured ? 'border-violet-500/50 aura' : 'card-dark shine'
 			}`}
 			style={
 				p.featured
@@ -212,7 +212,7 @@ function PlanCard({ p, billing }: { p: Plan; billing: 'annual' | 'monthly' }) {
 			{p.featured && <FeaturedSparkles />}
 
 			{p.badge && (
-				<div className="btn-accent absolute -top-3 left-1/2 -translate-x-1/2 text-white text-[10px] font-bold uppercase tracking-[0.18em] px-3 py-1 rounded-full shadow-brand whitespace-nowrap">
+				<div className="btn-accent absolute -top-3 left-1/2 -translate-x-1/2 z-20 text-white text-[10px] font-bold uppercase tracking-[0.18em] px-3 py-1 rounded-full shadow-brand whitespace-nowrap">
 					{p.badge}
 				</div>
 			)}
