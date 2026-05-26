@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { vectorizeImage } from '@/services/vectorize';
+import { type VectorizeParams, vectorizeImage } from '@/services/vectorize';
 import {
 	deleteCustomerVector,
 	getCustomerVectors,
@@ -29,8 +29,15 @@ export function useCustomerVectors(params?: {
 
 export function useVectorizeImage() {
 	return useMutation({
-		mutationFn: ({ file, useCredits }: { file: File; useCredits: boolean }) =>
-			vectorizeImage(file, { useCredits }),
+		mutationFn: ({
+			file,
+			useCredits,
+			params,
+		}: {
+			file: File;
+			useCredits: boolean;
+			params?: VectorizeParams;
+		}) => vectorizeImage(file, { useCredits, params }),
 		onSuccess: () => {
 			toast.success('Imagem vetorizada com sucesso!');
 		},
