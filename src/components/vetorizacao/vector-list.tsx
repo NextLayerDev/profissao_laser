@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useDeleteCustomerVector, useUpdateVector } from '@/hooks/use-vectors';
 import type { CustomerVector } from '@/services/vectors';
 import { formatDate } from '@/utils/formatDate';
@@ -55,6 +56,7 @@ export function VectorList({
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [editName, setEditName] = useState('');
 	const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+	const [mounted, setMounted] = useState(false);
 
 	const updateMutation = useUpdateVector();
 	const deleteMutation = useDeleteCustomerVector();
@@ -69,6 +71,8 @@ export function VectorList({
 	useEffect(() => {
 		setSearchInput(search);
 	}, [search]);
+
+	useEffect(() => setMounted(true), []);
 
 	const startEdit = useCallback((v: CustomerVector) => {
 		setEditingId(v.id);
@@ -262,39 +266,42 @@ export function VectorList({
 				</>
 			)}
 
-			{/* Delete confirmation */}
-			{deleteConfirm && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-					<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl border border-slate-200 dark:border-white/10 p-6 w-full max-w-sm shadow-xl">
-						<h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
-							Excluir vetor?
-						</h3>
-						<p className="text-slate-600 dark:text-gray-400 text-sm mb-6">
-							Esta ação não pode ser desfeita.
-						</p>
-						<div className="flex gap-2">
-							<button
-								type="button"
-								onClick={() => setDeleteConfirm(null)}
-								className="flex-1 px-4 py-2 rounded-lg border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/5"
-							>
-								Cancelar
-							</button>
-							<button
-								type="button"
-								onClick={() => handleDelete(deleteConfirm)}
-								disabled={deleteMutation.isPending}
-								className="flex-1 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2"
-							>
-								{deleteMutation.isPending && (
-									<Loader2 className="w-4 h-4 animate-spin" />
-								)}
-								Excluir
-							</button>
+			{/* Delete confirmation (portal p/ centralizar no viewport, escapa transform de ancestral) */}
+			{mounted &&
+				deleteConfirm &&
+				createPortal(
+					<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+						<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl border border-slate-200 dark:border-white/10 p-6 w-full max-w-sm shadow-xl">
+							<h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+								Excluir vetor?
+							</h3>
+							<p className="text-slate-600 dark:text-gray-400 text-sm mb-6">
+								Esta ação não pode ser desfeita.
+							</p>
+							<div className="flex gap-2">
+								<button
+									type="button"
+									onClick={() => setDeleteConfirm(null)}
+									className="flex-1 px-4 py-2 rounded-lg border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/5"
+								>
+									Cancelar
+								</button>
+								<button
+									type="button"
+									onClick={() => handleDelete(deleteConfirm)}
+									disabled={deleteMutation.isPending}
+									className="flex-1 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+								>
+									{deleteMutation.isPending && (
+										<Loader2 className="w-4 h-4 animate-spin" />
+									)}
+									Excluir
+								</button>
+							</div>
 						</div>
-					</div>
-				</div>
-			)}
+					</div>,
+					document.body,
+				)}
 		</div>
 	);
 }
