@@ -20,6 +20,12 @@ import {
 
 // ─── Cliente ────────────────────────────────────────────────────────────────
 
+/** Conta de teste ilimitada (GET /me/unlimited). */
+export async function getMeUnlimited(): Promise<{ unlimited: boolean }> {
+	const { data } = await api.get('/me/unlimited');
+	return { unlimited: (data as { unlimited?: boolean })?.unlimited === true };
+}
+
 export async function getVoxBalance(): Promise<VoxBalance> {
 	const { data } = await api.get('/credits/balance');
 	return voxBalanceSchema.parse(data);

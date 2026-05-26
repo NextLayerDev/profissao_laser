@@ -3,6 +3,7 @@
 import { AlertTriangle, Sparkles, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useVoxQuotas } from '@/hooks/use-credits';
+import { useIsTestUnlimited } from '@/hooks/use-is-test-unlimited';
 import type { VoxFeature } from '@/types/credits';
 
 interface FreeTierQuotaBannerProps {
@@ -30,7 +31,10 @@ export function FreeTierQuotaBanner({
 	className = '',
 }: FreeTierQuotaBannerProps) {
 	const { data, isLoading } = useVoxQuotas();
+	const unlimited = useIsTestUnlimited();
 
+	// Conta de teste ilimitada: sem limites grátis, sem banner.
+	if (unlimited) return null;
 	if (isLoading || !data) return null;
 	// Usuários com saldo > 0 não veem o banner — não têm cota grátis.
 	if (data.balance > 0) return null;

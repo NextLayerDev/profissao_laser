@@ -2,13 +2,23 @@
 
 import { useMemo } from 'react';
 import { useClasses } from '@/hooks/use-classes';
+import { useIsTestUnlimited } from '@/hooks/use-is-test-unlimited';
 import type {
 	CustomerFeatures,
 	FeatureKey,
 	FeatureUpgradeTiers,
 } from '@/types/classes';
 import type { CustomerPlan } from '@/types/plans';
+import { FULL_FEATURES } from '@/utils/constants/class-features';
 import { TIER_STYLES } from '@/utils/constants/tier-styles';
+
+const NO_UPGRADE_TIERS: FeatureUpgradeTiers = {
+	aula: null,
+	chat: null,
+	vetorizacao: null,
+	suporte: null,
+	comunidade: null,
+};
 
 const TIER_ORDER: Record<string, number> = { prata: 0, ouro: 1, platina: 2 };
 
@@ -55,8 +65,13 @@ export function useCustomerFeatures(
 	plans: CustomerPlan[] | undefined,
 ): CustomerFeaturesResult | null {
 	const { classes } = useClasses();
+	const isUnlimited = useIsTestUnlimited();
 
 	return useMemo(() => {
+		// Conta de teste ilimitada: todas as features liberadas.
+		if (isUnlimited) {
+			return { features: FULL_FEATURES, upgradeTiers: NO_UPGRADE_TIERS };
+		}
 		if (!plans || classes.length === 0) return null;
 
 		// Build a map: slug → highest tier order the customer has for it
@@ -100,7 +115,7 @@ export function useCustomerFeatures(
 		const upgradeTiers = computeUpgradeTiers(allUserClasses, features);
 
 		return { features, upgradeTiers };
-	}, [plans, classes]);
+	}, [plans, classes, isUnlimited]);
 }
 
 /** Features apenas para um curso específico (por slug) */
@@ -109,8 +124,12 @@ export function useCustomerFeaturesForCourse(
 	courseSlug: string | undefined,
 ): CustomerFeaturesResult | null {
 	const { classes } = useClasses();
+	const isUnlimited = useIsTestUnlimited();
 
 	return useMemo(() => {
+		if (isUnlimited) {
+			return { features: FULL_FEATURES, upgradeTiers: NO_UPGRADE_TIERS };
+		}
 		if (
 			!plans ||
 			!courseSlug ||
@@ -152,5 +171,5 @@ export function useCustomerFeaturesForCourse(
 		const upgradeTiers = computeUpgradeTiers(allClassesForCourse, features);
 
 		return { features, upgradeTiers };
-	}, [plans, courseSlug, classes]);
+	}, [plans, courseSlug, classes, isUnlimited]);
 }

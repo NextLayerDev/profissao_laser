@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useVoxBalance } from '@/hooks/use-credits';
+import { useIsTestUnlimited } from '@/hooks/use-is-test-unlimited';
 
 interface CourseTopHeaderProps {
 	isAdmin: boolean;
@@ -29,6 +30,7 @@ export function CourseTopHeader({
 	onMobileMenuToggle,
 }: CourseTopHeaderProps) {
 	const { data: voxBalance } = useVoxBalance();
+	const unlimited = useIsTestUnlimited();
 	return (
 		<header
 			className={`fixed top-0 right-0 h-16 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.03)] z-30 bg-white/80 dark:bg-[#0d0d0f]/90 backdrop-blur-lg flex items-center justify-between px-4 md:px-6 lg:px-8 transition-all duration-300 ${
@@ -51,6 +53,11 @@ export function CourseTopHeader({
 						<span className="font-display font-semibold text-slate-900 dark:text-slate-100">
 							{userName}
 						</span>
+					</span>
+				)}
+				{unlimited && (
+					<span className="hidden md:inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400 whitespace-nowrap">
+						Conta teste — tudo desbloqueado
 					</span>
 				)}
 				<div className="flex-1 max-w-md">
@@ -97,7 +104,7 @@ export function CourseTopHeader({
 				>
 					<Coins className="w-[18px] h-[18px] text-violet-500" />
 					<span className="text-sm font-semibold tabular-nums">
-						{voxBalance?.balance ?? '—'}
+						{unlimited ? '∞' : (voxBalance?.balance ?? '—')}
 					</span>
 				</Link>
 				<Link
