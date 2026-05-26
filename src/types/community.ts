@@ -78,7 +78,9 @@ export interface Project {
 	technique?: string | null;
 	time?: string;
 	likes?: number;
+	liked?: boolean;
 	comments?: number;
+	commentList?: ProjectComment[];
 	createdAt?: string;
 }
 

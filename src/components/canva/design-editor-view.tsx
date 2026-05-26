@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
 import { FreeTierQuotaBanner } from '@/components/credits/free-tier-quota-banner';
 import { useCreditAction } from '@/hooks/use-credit-action';
-import { useVoxBalance, useVoxCosts } from '@/hooks/use-credits';
+import { useVoxCosts } from '@/hooks/use-credits';
 import {
 	useDesign,
 	useUpdateDesign,
@@ -30,6 +30,7 @@ import {
 	useEditorAiGenerate,
 	useRemoveBackground,
 } from '@/hooks/use-editor-ai';
+import { useMyVoxes } from '@/modules/voxes';
 import type { EditorAiMode } from '@/types/editor-ai';
 
 const MAX_HISTORY = 10;
@@ -86,7 +87,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 	const aiGenerate = useEditorAiGenerate();
 	const removeBg = useRemoveBackground();
 	const applyColorMutation = useApplyColor();
-	const { data: voxBalance } = useVoxBalance();
+	const { data: voxBalance } = useMyVoxes();
 	const { data: voxCosts } = useVoxCosts();
 	const editorCost =
 		voxCosts?.find((c) => c.feature === 'editor-ai')?.cost ?? 1;

@@ -5,13 +5,11 @@ import {
 	type QuotaResponse,
 	quotaResponseSchema,
 	type UpdateVoxPackagePayload,
-	type VoxBalance,
 	type VoxCheckoutResponse,
 	type VoxCost,
 	type VoxFeature,
 	type VoxHistoryResponse,
 	type VoxPackage,
-	voxBalanceSchema,
 	voxCheckoutResponseSchema,
 	voxCostSchema,
 	voxHistoryResponseSchema,
@@ -19,11 +17,6 @@ import {
 } from '@/types/credits';
 
 // ─── Cliente ────────────────────────────────────────────────────────────────
-
-export async function getVoxBalance(): Promise<VoxBalance> {
-	const { data } = await api.get('/credits/balance');
-	return voxBalanceSchema.parse(data);
-}
 
 export async function getVoxCosts(): Promise<VoxCost[]> {
 	const { data } = await api.get('/credits/costs');

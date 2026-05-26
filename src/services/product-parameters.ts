@@ -88,7 +88,7 @@ function normalizeLookup(raw: any): ParameterLookupResult {
 export async function getProductParameters(
 	productId: string,
 ): Promise<ProductParameter[]> {
-	const { data } = await api.get(`/laser-products/${productId}/parameters`);
+	const { data } = await api.get(`/v1/laser-product/${productId}/parameters`);
 	return Array.isArray(data) ? data.map(normalizeProductParameter) : [];
 }
 
@@ -97,7 +97,7 @@ export async function createProductParameter(
 	payload: CreateProductParameterPayload,
 ): Promise<ProductParameter> {
 	const { data } = await api.post(
-		`/laser-products/${productId}/parameters`,
+		`/v1/laser-product/${productId}/parameters`,
 		payload,
 	);
 	return normalizeProductParameter(data);
@@ -109,7 +109,7 @@ export async function updateProductParameter(
 	payload: UpdateProductParameterPayload,
 ): Promise<ProductParameter> {
 	const { data } = await api.patch(
-		`/laser-products/${productId}/parameters/${assocId}`,
+		`/v1/laser-product/${productId}/parameters/${assocId}`,
 		payload,
 	);
 	return normalizeProductParameter(data);
@@ -119,7 +119,7 @@ export async function deleteProductParameter(
 	productId: string,
 	assocId: string,
 ): Promise<void> {
-	await api.delete(`/laser-products/${productId}/parameters/${assocId}`);
+	await api.delete(`/v1/laser-product/${productId}/parameters/${assocId}`);
 }
 
 // ─── Lookup ─────────────────────────────────────────────────────────────────
@@ -130,7 +130,7 @@ export async function lookupProductParameter(
 ): Promise<ParameterLookupResult | null> {
 	try {
 		const { data } = await api.get(
-			`/laser-products/${productId}/parameter-lookup`,
+			`/v1/laser-product/${productId}/parameter-lookup`,
 			{ params },
 		);
 		return normalizeLookup(data);

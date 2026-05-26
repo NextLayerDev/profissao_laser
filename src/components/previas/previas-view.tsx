@@ -33,7 +33,7 @@ import { FreeTierQuotaBanner } from '@/components/credits/free-tier-quota-banner
 import { MyMachineSection } from '@/components/previas/my-machine-section';
 import { PageHeader } from '@/components/ui/page-header';
 import { useCreditAction } from '@/hooks/use-credit-action';
-import { useVoxBalance, useVoxCosts, useVoxQuotas } from '@/hooks/use-credits';
+import { useVoxCosts, useVoxQuotas } from '@/hooks/use-credits';
 import { useLaserProduct, useLaserProducts } from '@/hooks/use-laser-products';
 import {
 	useDeletePrevia,
@@ -45,6 +45,7 @@ import {
 	useUploadWatermark,
 	useWatermark,
 } from '@/hooks/use-previas';
+import { useMyVoxes } from '@/modules/voxes';
 import type {
 	GeneratePreviaPayload,
 	LaserSettings,
@@ -858,7 +859,7 @@ export function PreviasView() {
 	const hasWatermark = !!watermark;
 	const useWatermarkFlag = hasWatermark && watermarkMode !== 'none';
 
-	const { data: voxBalance } = useVoxBalance();
+	const { data: voxBalance } = useMyVoxes();
 	const { data: voxCosts } = useVoxCosts();
 	const previaCost = voxCosts?.find((c) => c.feature === 'previa')?.cost ?? 1;
 

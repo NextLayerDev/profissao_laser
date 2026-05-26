@@ -7,11 +7,12 @@ import { toast } from 'sonner';
 import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
 import type { CanvasRegion } from '@/hooks/canva-editor/use-canvas-region';
 import { useCreditAction } from '@/hooks/use-credit-action';
-import { useVoxBalance, useVoxCosts } from '@/hooks/use-credits';
+import { useVoxCosts } from '@/hooks/use-credits';
 import {
 	useEditorAiGenerate,
 	useRemoveBackground,
 } from '@/hooks/use-editor-ai';
+import { useMyVoxes } from '@/modules/voxes';
 import type { EditorTool } from './editor-toolbar';
 
 interface EditorSidebarProps {
@@ -78,7 +79,7 @@ function AiPanel({
 	const [prompt, setPrompt] = useState('');
 	const aiGenerate = useEditorAiGenerate();
 	const removeBg = useRemoveBackground();
-	const { data: voxBalance } = useVoxBalance();
+	const { data: voxBalance } = useMyVoxes();
 	const { data: voxCosts } = useVoxCosts();
 	const cost = voxCosts?.find((c) => c.feature === 'editor-ai')?.cost ?? 1;
 

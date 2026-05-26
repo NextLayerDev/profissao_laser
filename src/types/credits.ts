@@ -2,11 +2,6 @@ import { z } from 'zod';
 
 export type VoxFeature = 'previa' | 'vectorize' | 'editor-ai';
 
-export const voxBalanceSchema = z.object({
-	balance: z.number(),
-});
-export type VoxBalance = z.infer<typeof voxBalanceSchema>;
-
 export const voxCostSchema = z.object({
 	feature: z.string(),
 	cost: z.number(),

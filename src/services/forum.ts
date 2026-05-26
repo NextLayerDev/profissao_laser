@@ -9,7 +9,7 @@ import type {
 // ─── Categorias ───────────────────────────────────────────────────────────────
 
 export async function getForumCategories(): Promise<ForumCategory[]> {
-	const { data } = await api.get<ForumCategory[]>('/forum/categories');
+	const { data } = await api.get<ForumCategory[]>('/v1/forum/categories');
 	return Array.isArray(data) ? data : [];
 }
 
@@ -17,7 +17,7 @@ export async function createForumCategory(payload: {
 	name: string;
 	color: string;
 }): Promise<ForumCategory> {
-	const { data } = await api.post<ForumCategory>('/forum/category', payload);
+	const { data } = await api.post<ForumCategory>('/v1/forum/category', payload);
 	return data;
 }
 
@@ -26,14 +26,14 @@ export async function updateForumCategory(
 	payload: { name?: string; color?: string },
 ): Promise<ForumCategory> {
 	const { data } = await api.patch<ForumCategory>(
-		`/forum/category/${id}`,
+		`/v1/forum/category/${id}`,
 		payload,
 	);
 	return data;
 }
 
 export async function deleteForumCategory(id: string): Promise<void> {
-	await api.delete(`/forum/category/${id}`);
+	await api.delete(`/v1/forum/category/${id}`);
 }
 
 // ─── Posts ────────────────────────────────────────────────────────────────────
@@ -55,7 +55,7 @@ export async function getForumPosts(
 	if (params.search) query.set('search', params.search);
 	const qs = query.toString();
 	const { data } = await api.get<ForumPostsResponse>(
-		`/forum/posts${qs ? `?${qs}` : ''}`,
+		`/v1/forum/posts${qs ? `?${qs}` : ''}`,
 	);
 	if (Array.isArray(data)) {
 		return { posts: data, total: data.length, page: 1, limit: 20 };
@@ -64,7 +64,7 @@ export async function getForumPosts(
 }
 
 export async function getForumPost(id: string): Promise<ForumPost> {
-	const { data } = await api.get<ForumPost>(`/forum/post/${id}`);
+	const { data } = await api.get<ForumPost>(`/v1/forum/post/${id}`);
 	return data;
 }
 
@@ -73,7 +73,7 @@ export async function createForumPost(payload: {
 	content: string;
 	categoryId?: string;
 }): Promise<ForumPost> {
-	const { data } = await api.post<ForumPost>('/forum/post', payload);
+	const { data } = await api.post<ForumPost>('/v1/forum/post', payload);
 	return data;
 }
 
@@ -81,16 +81,16 @@ export async function updateForumPost(
 	id: string,
 	payload: { title?: string; content?: string; categoryId?: string },
 ): Promise<ForumPost> {
-	const { data } = await api.patch<ForumPost>(`/forum/post/${id}`, payload);
+	const { data } = await api.patch<ForumPost>(`/v1/forum/post/${id}`, payload);
 	return data;
 }
 
 export async function deleteForumPost(id: string): Promise<void> {
-	await api.delete(`/forum/post/${id}`);
+	await api.delete(`/v1/forum/post/${id}`);
 }
 
 export async function upvoteForumPost(id: string): Promise<ForumPost> {
-	const { data } = await api.post<ForumPost>(`/forum/post/${id}/upvote`);
+	const { data } = await api.post<ForumPost>(`/v1/forum/post/${id}/upvote`);
 	return data;
 }
 
@@ -100,9 +100,12 @@ export async function createForumReply(
 	postId: string,
 	content: string,
 ): Promise<ForumReply> {
-	const { data } = await api.post<ForumReply>(`/forum/post/${postId}/reply`, {
-		content,
-	});
+	const { data } = await api.post<ForumReply>(
+		`/v1/forum/post/${postId}/reply`,
+		{
+			content,
+		},
+	);
 	return data;
 }
 
@@ -112,7 +115,7 @@ export async function updateForumReply(
 	content: string,
 ): Promise<ForumReply> {
 	const { data } = await api.patch<ForumReply>(
-		`/forum/post/${postId}/reply/${replyId}`,
+		`/v1/forum/post/${postId}/reply/${replyId}`,
 		{ content },
 	);
 	return data;
@@ -122,7 +125,7 @@ export async function deleteForumReply(
 	postId: string,
 	replyId: string,
 ): Promise<void> {
-	await api.delete(`/forum/post/${postId}/reply/${replyId}`);
+	await api.delete(`/v1/forum/post/${postId}/reply/${replyId}`);
 }
 
 export async function acceptForumReply(
@@ -130,7 +133,7 @@ export async function acceptForumReply(
 	replyId: string,
 ): Promise<ForumPost> {
 	const { data } = await api.post<ForumPost>(
-		`/forum/post/${postId}/reply/${replyId}/accept`,
+		`/v1/forum/post/${postId}/reply/${replyId}/accept`,
 	);
 	return data;
 }
@@ -140,7 +143,7 @@ export async function upvoteForumReply(
 	replyId: string,
 ): Promise<ForumReply> {
 	const { data } = await api.post<ForumReply>(
-		`/forum/post/${postId}/reply/${replyId}/upvote`,
+		`/v1/forum/post/${postId}/reply/${replyId}/upvote`,
 	);
 	return data;
 }

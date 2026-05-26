@@ -20,19 +20,19 @@ export interface CreateProductPayload {
 }
 
 export async function getProducts(): Promise<Product[]> {
-	const { data } = await api.get('/products');
+	const { data } = await api.get('/v1/laser-products');
 	return productSchema.array().parse(data);
 }
 
 export async function createProduct(
 	payload: CreateProductPayload,
 ): Promise<Product> {
-	const { data } = await api.post('/product', payload);
+	const { data } = await api.post('/v1/laser-product', payload);
 	return productSchema.parse(data);
 }
 
 export async function deleteProduct(id: string): Promise<void> {
-	await api.delete(`/product/${id}`);
+	await api.delete(`/v1/laser-product/${id}`);
 }
 
 export interface UpdateProductPayload {
@@ -49,7 +49,7 @@ export async function updateProduct(
 	id: string,
 	payload: UpdateProductPayload,
 ): Promise<Product> {
-	const { data } = await api.patch(`/product/${id}`, payload);
+	const { data } = await api.patch(`/v1/laser-product/${id}`, payload);
 	return productSchema.parse(data);
 }
 
@@ -57,7 +57,7 @@ export async function updateProductStatus(
 	id: string,
 	active: boolean,
 ): Promise<void> {
-	await api.patch(`/product/${id}/status`, { active });
+	await api.patch(`/v1/laser-product/${id}/status`, { active });
 }
 
 export async function uploadProductImage(
@@ -71,7 +71,7 @@ export async function uploadProductImage(
 	const headers: Record<string, string> = {};
 	if (token) headers.Authorization = `Bearer ${token}`;
 
-	const res = await fetch(`${API_URL}/product/${id}/image`, {
+	const res = await fetch(`${API_URL}/v1/laser-product/${id}/image`, {
 		method: 'POST',
 		headers,
 		body: formData,

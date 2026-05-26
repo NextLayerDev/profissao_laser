@@ -87,19 +87,19 @@ function normalizeCustomerMachine(raw: any): CustomerMachine {
 // ─── Machines CRUD ──────────────────────────────────────────────────────────
 
 export async function getMachines(): Promise<Machine[]> {
-	const { data } = await api.get('/machines');
+	const { data } = await api.get('/v1/machines');
 	return Array.isArray(data) ? data.map(normalizeMachine) : [];
 }
 
 export async function getMachine(id: string): Promise<Machine> {
-	const { data } = await api.get(`/machines/${id}`);
+	const { data } = await api.get(`/v1/machine/${id}`);
 	return normalizeMachine(data);
 }
 
 export async function createMachine(
 	payload: CreateMachinePayload,
 ): Promise<Machine> {
-	const { data } = await api.post('/machines', payload);
+	const { data } = await api.post('/v1/machines', payload);
 	return normalizeMachine(data);
 }
 
@@ -107,12 +107,12 @@ export async function updateMachine(
 	id: string,
 	payload: UpdateMachinePayload,
 ): Promise<Machine> {
-	const { data } = await api.patch(`/machines/${id}`, payload);
+	const { data } = await api.patch(`/v1/machine/${id}`, payload);
 	return normalizeMachine(data);
 }
 
 export async function deleteMachine(id: string): Promise<void> {
-	await api.delete(`/machines/${id}`);
+	await api.delete(`/v1/machine/${id}`);
 }
 
 // ─── Machine Options ────────────────────────────────────────────────────────
@@ -121,7 +121,7 @@ export async function createMachineOption(
 	machineId: string,
 	payload: CreateMachineOptionPayload,
 ): Promise<MachineOption> {
-	const { data } = await api.post(`/machines/${machineId}/options`, payload);
+	const { data } = await api.post(`/v1/machine/${machineId}/options`, payload);
 	return normalizeOption(data);
 }
 
@@ -131,7 +131,7 @@ export async function updateMachineOption(
 	payload: UpdateMachineOptionPayload,
 ): Promise<MachineOption> {
 	const { data } = await api.patch(
-		`/machines/${machineId}/options/${optionId}`,
+		`/v1/machine/${machineId}/options/${optionId}`,
 		payload,
 	);
 	return normalizeOption(data);
@@ -141,14 +141,14 @@ export async function deleteMachineOption(
 	machineId: string,
 	optionId: string,
 ): Promise<void> {
-	await api.delete(`/machines/${machineId}/options/${optionId}`);
+	await api.delete(`/v1/machine/${machineId}/options/${optionId}`);
 }
 
 // ─── Customer Machine ───────────────────────────────────────────────────────
 
 export async function getCustomerMachine(): Promise<CustomerMachine | null> {
 	try {
-		const { data } = await api.get('/me/machine');
+		const { data } = await api.get('/v1/me/machine');
 		return normalizeCustomerMachine(data);
 	} catch (err: unknown) {
 		const status = (err as { response?: { status?: number } })?.response
@@ -161,12 +161,12 @@ export async function getCustomerMachine(): Promise<CustomerMachine | null> {
 export async function saveCustomerMachine(
 	payload: SaveCustomerMachinePayload,
 ): Promise<CustomerMachine> {
-	const { data } = await api.put('/me/machine', payload);
+	const { data } = await api.put('/v1/me/machine', payload);
 	return normalizeCustomerMachine(data);
 }
 
 export async function deleteCustomerMachine(): Promise<void> {
-	await api.delete('/me/machine');
+	await api.delete('/v1/me/machine');
 }
 
 // ─── Customer Machines (plural) ────────────────────────────────────────────
@@ -190,14 +190,14 @@ function normalizeCustomerMachineEntry(raw: any): CustomerMachineEntry {
 }
 
 export async function getCustomerMachines(): Promise<CustomerMachineEntry[]> {
-	const { data } = await api.get('/me/machines');
+	const { data } = await api.get('/v1/me/machines');
 	return Array.isArray(data) ? data.map(normalizeCustomerMachineEntry) : [];
 }
 
 export async function createCustomerMachine(
 	payload: CreateCustomerMachinePayload,
 ): Promise<CustomerMachineEntry> {
-	const { data } = await api.post('/me/machines', payload);
+	const { data } = await api.post('/v1/me/machines', payload);
 	return normalizeCustomerMachineEntry(data);
 }
 
@@ -205,10 +205,10 @@ export async function updateCustomerMachine(
 	id: string,
 	payload: UpdateCustomerMachinePayload,
 ): Promise<CustomerMachineEntry> {
-	const { data } = await api.patch(`/me/machines/${id}`, payload);
+	const { data } = await api.patch(`/v1/me/machine/${id}`, payload);
 	return normalizeCustomerMachineEntry(data);
 }
 
 export async function deleteCustomerMachineEntry(id: string): Promise<void> {
-	await api.delete(`/me/machines/${id}`);
+	await api.delete(`/v1/me/machine/${id}`);
 }

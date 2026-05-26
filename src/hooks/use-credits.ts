@@ -2,12 +2,12 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { myVoxesQueryKey } from '@/modules/voxes';
 import {
 	adjustVox,
 	createVoxCheckout,
 	createVoxPackage,
 	getAllVoxPackages,
-	getVoxBalance,
 	getVoxCosts,
 	getVoxHistory,
 	getVoxPackages,
@@ -23,20 +23,10 @@ import type {
 	VoxFeature,
 } from '@/types/credits';
 
-export const VOX_BALANCE_KEY = ['credits', 'balance'] as const;
 export const VOX_QUOTA_KEY = ['credits', 'quota'] as const;
 const COSTS_KEY = ['credits', 'costs'] as const;
 const PACKAGES_KEY = ['credits', 'packages'] as const;
 const ALL_PACKAGES_KEY = ['credits', 'packages', 'all'] as const;
-
-export function useVoxBalance(enabled = true) {
-	return useQuery({
-		queryKey: VOX_BALANCE_KEY,
-		queryFn: getVoxBalance,
-		staleTime: 30_000,
-		enabled,
-	});
-}
 
 export function useVoxCosts() {
 	return useQuery({
@@ -151,7 +141,7 @@ export function useAdjustVox() {
 	return useMutation({
 		mutationFn: (payload: AdjustVoxPayload) => adjustVox(payload),
 		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: VOX_BALANCE_KEY });
+			qc.invalidateQueries({ queryKey: myVoxesQueryKey });
 			toast.success('Saldo ajustado!');
 		},
 		onError: () => toast.error('Erro ao ajustar saldo'),

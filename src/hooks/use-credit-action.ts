@@ -4,7 +4,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import type { CreditModalVariant } from '@/components/credits/credit-confirm-modal';
-import { VOX_BALANCE_KEY, VOX_QUOTA_KEY } from '@/hooks/use-credits';
+import { VOX_QUOTA_KEY } from '@/hooks/use-credits';
+import { myVoxesQueryKey } from '@/modules/voxes';
 import type { VoxFeature } from '@/types/credits';
 
 interface AxiosLikeError {
@@ -40,7 +41,7 @@ interface UseCreditActionArgs<T> {
 	feature: VoxFeature;
 	/** custo unitário da feature (de useVoxCosts); fallback 1 */
 	cost: number;
-	/** saldo atual (de useVoxBalance) */
+	/** saldo atual (de useMyVoxes) */
 	balance: number;
 	/** executa a chamada real; recebe a flag useCredits */
 	run: (opts: { useCredits: boolean }) => Promise<T>;
@@ -57,7 +58,7 @@ export function useCreditAction<T>({
 	const [pending, setPending] = useState(false);
 
 	const finish = useCallback(() => {
-		qc.invalidateQueries({ queryKey: VOX_BALANCE_KEY });
+		qc.invalidateQueries({ queryKey: myVoxesQueryKey });
 		qc.invalidateQueries({ queryKey: VOX_QUOTA_KEY });
 	}, [qc]);
 

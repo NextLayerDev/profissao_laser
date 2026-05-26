@@ -2,7 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { VOX_BALANCE_KEY, VOX_QUOTA_KEY } from '@/hooks/use-credits';
+import { VOX_QUOTA_KEY } from '@/hooks/use-credits';
+import { myVoxesQueryKey } from '@/modules/voxes';
 import {
 	deletePrevia,
 	deleteWatermark,
@@ -38,7 +39,7 @@ export function useGeneratePrevia() {
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: QUERY_KEY });
 			qc.invalidateQueries({ queryKey: VOX_QUOTA_KEY });
-			qc.invalidateQueries({ queryKey: VOX_BALANCE_KEY });
+			qc.invalidateQueries({ queryKey: myVoxesQueryKey });
 			toast.success('Previa gerada com sucesso!');
 		},
 		onError: () => toast.error('Erro ao gerar previa'),

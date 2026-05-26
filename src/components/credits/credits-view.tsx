@@ -6,10 +6,10 @@ import { useEffect, useRef, useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import {
 	useCreateVoxCheckout,
-	useVoxBalance,
 	useVoxHistory,
 	useVoxPackages,
 } from '@/hooks/use-credits';
+import { useMyVoxes } from '@/modules/voxes';
 import type { VoxHistoryEntry } from '@/types/credits';
 
 const TYPE_LABEL: Record<VoxHistoryEntry['type'], string> = {
@@ -30,7 +30,7 @@ export function CreditsView() {
 	const searchParams = useSearchParams();
 	const hasSession = !!searchParams.get('session_id');
 
-	const { data: balance, refetch: refetchBalance } = useVoxBalance();
+	const { data: balance, refetch: refetchBalance } = useMyVoxes();
 	const { data: packages, isLoading: pkgLoading } = useVoxPackages();
 	const checkout = useCreateVoxCheckout();
 

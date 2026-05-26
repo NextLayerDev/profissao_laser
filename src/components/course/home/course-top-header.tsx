@@ -13,7 +13,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { useVoxBalance } from '@/hooks/use-credits';
+import { useMyVoxes } from '@/modules/voxes';
 
 interface CourseTopHeaderProps {
 	isAdmin: boolean;
@@ -28,7 +28,7 @@ export function CourseTopHeader({
 	userName,
 	onMobileMenuToggle,
 }: CourseTopHeaderProps) {
-	const { data: voxBalance } = useVoxBalance();
+	const { data: voxBalance } = useMyVoxes();
 	return (
 		<header
 			className={`fixed top-0 right-0 h-16 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.03)] z-30 bg-white/80 dark:bg-[#0d0d0f]/90 backdrop-blur-lg flex items-center justify-between px-4 md:px-6 lg:px-8 transition-all duration-300 ${

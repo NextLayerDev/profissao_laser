@@ -128,7 +128,7 @@ export async function getProjects(params?: {
 	search?: string;
 	sort?: 'recent' | 'likes';
 }): Promise<Project[]> {
-	const { data } = await api.get<Project[]>('/community/projects', {
+	const { data } = await api.get<Project[]>('/v1/community/projects', {
 		params: params ?? undefined,
 	});
 	return data ?? [];
@@ -136,7 +136,7 @@ export async function getProjects(params?: {
 
 export async function getProject(projectId: string): Promise<Project> {
 	const { data } = await api.get<Project>(
-		`/community/projects/${encodeURIComponent(projectId)}`,
+		`/v1/community/projects/${encodeURIComponent(projectId)}`,
 	);
 	return data as Project;
 }
@@ -149,7 +149,7 @@ export async function createProject(body: {
 	material?: string;
 	technique?: string;
 }): Promise<Project> {
-	const { data } = await api.post<Project>('/community/projects', body);
+	const { data } = await api.post<Project>('/v1/community/projects', body);
 	return data as Project;
 }
 
@@ -164,14 +164,33 @@ export async function updateProject(
 	},
 ): Promise<Project> {
 	const { data } = await api.patch<Project>(
-		`/community/projects/${encodeURIComponent(projectId)}`,
+		`/v1/community/projects/${encodeURIComponent(projectId)}`,
 		body,
 	);
 	return data as Project;
 }
 
 export async function deleteProject(projectId: string): Promise<void> {
-	await api.delete(`/community/projects/${encodeURIComponent(projectId)}`);
+	await api.delete(`/v1/community/projects/${encodeURIComponent(projectId)}`);
+}
+
+export async function likeProject(
+	projectId: string,
+): Promise<{ liked: boolean; likes: number }> {
+	const { data } = await api.post<{ liked: boolean; likes: number }>(
+		`/v1/community/projects/${encodeURIComponent(projectId)}/like`,
+	);
+	return data;
+}
+
+export async function uploadProjectImage(file: File): Promise<{ url: string }> {
+	const formData = new FormData();
+	formData.append('file', file);
+	const { data } = await api.post<{ url: string }>(
+		'/v1/community/projects/upload',
+		formData,
+	);
+	return data;
 }
 
 export async function getProjectComments(
@@ -179,7 +198,7 @@ export async function getProjectComments(
 	params?: { page?: number; limit?: number },
 ): Promise<ProjectComment[]> {
 	const { data } = await api.get<ProjectComment[]>(
-		`/community/projects/${encodeURIComponent(projectId)}/comments`,
+		`/v1/community/projects/${encodeURIComponent(projectId)}/comments`,
 		{ params: params ?? undefined },
 	);
 	return data ?? [];
@@ -190,7 +209,7 @@ export async function createProjectComment(
 	body: { content: string },
 ): Promise<ProjectComment> {
 	const { data } = await api.post<ProjectComment>(
-		`/community/projects/${encodeURIComponent(projectId)}/comments`,
+		`/v1/community/projects/${encodeURIComponent(projectId)}/comments`,
 		body,
 	);
 	return data as ProjectComment;

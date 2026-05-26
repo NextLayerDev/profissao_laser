@@ -28,8 +28,9 @@ import { toast } from 'sonner';
 import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
 import { PageHeader } from '@/components/ui/page-header';
 import { useCreditAction } from '@/hooks/use-credit-action';
-import { useVoxBalance, useVoxCosts } from '@/hooks/use-credits';
+import { useVoxCosts } from '@/hooks/use-credits';
 import { useSaveVector, useVectorizeImage } from '@/hooks/use-vectors';
+import { useMyVoxes } from '@/modules/voxes';
 import type { VectorizeResult } from '@/services/vectorize';
 
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
@@ -767,7 +768,7 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 	const [toggles, setToggles] = useState({ pb: false, invertColors: false });
 
 	const vectorizeMutation = useVectorizeImage();
-	const { data: voxBalance } = useVoxBalance();
+	const { data: voxBalance } = useMyVoxes();
 	const { data: voxCosts } = useVoxCosts();
 	const vectorizeCost =
 		voxCosts?.find((c) => c.feature === 'vectorize')?.cost ?? 1;

@@ -15,21 +15,21 @@ import type {
 export async function getLaserProducts(
 	params?: LaserProductsParams,
 ): Promise<LaserProductsResponse> {
-	const { data } = await api.get<LaserProductsResponse>('/laser-products', {
+	const { data } = await api.get<LaserProductsResponse>('/v1/laser-products', {
 		params,
 	});
 	return data ?? { data: [], total: 0, page: 1, limit: 20 };
 }
 
 export async function getLaserProduct(id: string): Promise<LaserProduct> {
-	const { data } = await api.get<LaserProduct>(`/laser-products/${id}`);
+	const { data } = await api.get<LaserProduct>(`/v1/laser-product/${id}`);
 	return data;
 }
 
 export async function createLaserProduct(
 	payload: CreateLaserProductPayload,
 ): Promise<LaserProduct> {
-	const { data } = await api.post<LaserProduct>('/laser-products', payload);
+	const { data } = await api.post<LaserProduct>('/v1/laser-products', payload);
 	return data;
 }
 
@@ -38,14 +38,14 @@ export async function updateLaserProduct(
 	payload: UpdateLaserProductPayload,
 ): Promise<LaserProduct> {
 	const { data } = await api.patch<LaserProduct>(
-		`/laser-products/${id}`,
+		`/v1/laser-product/${id}`,
 		payload,
 	);
 	return data;
 }
 
 export async function deleteLaserProduct(id: string): Promise<void> {
-	await api.delete(`/laser-products/${id}`);
+	await api.delete(`/v1/laser-product/${id}`);
 }
 
 // ─── Variants ───────────────────────────────────────────────────────────────
@@ -54,7 +54,7 @@ export async function getLaserProductVariants(
 	productId: string,
 ): Promise<LaserProductVariant[]> {
 	const { data } = await api.get<LaserProductVariant[]>(
-		`/laser-products/${productId}/variants`,
+		`/v1/laser-product/${productId}/variants`,
 	);
 	return Array.isArray(data) ? data : [];
 }
@@ -64,7 +64,7 @@ export async function createLaserProductVariant(
 	payload: CreateLaserProductVariantPayload,
 ): Promise<LaserProductVariant> {
 	const { data } = await api.post<LaserProductVariant>(
-		`/laser-products/${productId}/variants`,
+		`/v1/laser-product/${productId}/variants`,
 		payload,
 	);
 	return data;
@@ -76,7 +76,7 @@ export async function updateLaserProductVariant(
 	payload: UpdateLaserProductVariantPayload,
 ): Promise<LaserProductVariant> {
 	const { data } = await api.patch<LaserProductVariant>(
-		`/laser-products/${productId}/variants/${variantId}`,
+		`/v1/laser-product/${productId}/variants/${variantId}`,
 		payload,
 	);
 	return data;
@@ -86,7 +86,7 @@ export async function deleteLaserProductVariant(
 	productId: string,
 	variantId: string,
 ): Promise<void> {
-	await api.delete(`/laser-products/${productId}/variants/${variantId}`);
+	await api.delete(`/v1/laser-product/${productId}/variants/${variantId}`);
 }
 
 export async function uploadLaserProductVariantImage(
@@ -97,7 +97,7 @@ export async function uploadLaserProductVariantImage(
 	const fd = new FormData();
 	fd.append('file', file);
 	const { data } = await api.post<LaserProductVariant>(
-		`/laser-products/${productId}/variants/${variantId}/image`,
+		`/v1/laser-product/${productId}/variants/${variantId}/image`,
 		fd,
 	);
 	return data;
@@ -110,7 +110,7 @@ export async function uploadLaserProductImage(
 	const fd = new FormData();
 	fd.append('file', file);
 	const { data } = await api.post<LaserProduct>(
-		`/laser-products/${id}/image`,
+		`/v1/laser-product/${id}/image`,
 		fd,
 	);
 	return data;

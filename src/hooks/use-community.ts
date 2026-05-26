@@ -23,11 +23,14 @@ import {
 	getProjects,
 	getRanking,
 	getStats,
+	likeProject,
 	sendChannelMessage,
 	updateChannel,
 	updateEvent,
 	updateProject,
+	uploadProjectImage,
 } from '@/services/community';
+import type { Project } from '@/types/community';
 
 const COMMUNITY_KEYS = {
 	posts: (page?: number, limit?: number) =>
@@ -345,16 +348,52 @@ export function useProjectComments(
 	projectId: string | null,
 	options?: { page?: number; limit?: number },
 ) {
+	const queryClient = useQueryClient();
+	const page = options?.page;
 	return useQuery({
-		queryKey: COMMUNITY_KEYS.projectComments(projectId, options?.page),
+		queryKey: COMMUNITY_KEYS.projectComments(projectId, page),
 		queryFn: () => {
 			if (!projectId) return Promise.reject(new Error('Project ID required'));
 			return getProjectComments(projectId, {
-				page: options?.page,
+				page,
 				limit: options?.limit ?? 50,
 			});
 		},
 		enabled: !!projectId,
+		initialData: () => {
+			if (!projectId || (page !== undefined && page !== 1)) return undefined;
+			const cached = queryClient.getQueryData<Project>(
+				COMMUNITY_KEYS.project(projectId),
+			);
+			return cached?.commentList;
+		},
+	});
+}
+
+export function useLikeProject() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: (projectId: string) => likeProject(projectId),
+		onSuccess: (result, projectId) => {
+			queryClient.setQueryData<Project | undefined>(
+				COMMUNITY_KEYS.project(projectId),
+				(prev) =>
+					prev ? { ...prev, liked: result.liked, likes: result.likes } : prev,
+			);
+			queryClient.invalidateQueries({ queryKey: ['community', 'projects'] });
+		},
+		onError: () => {
+			toast.error('Erro ao curtir projeto');
+		},
+	});
+}
+
+export function useUploadProjectImage() {
+	return useMutation({
+		mutationFn: (file: File) => uploadProjectImage(file),
+		onError: () => {
+			toast.error('Erro ao enviar imagem');
+		},
 	});
 }
 

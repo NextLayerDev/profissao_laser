@@ -29,14 +29,14 @@ export interface CommunityParametersQueryParams extends ParametersQueryParams {
 export async function getParameters(
 	params?: ParametersQueryParams,
 ): Promise<ParametersResponse> {
-	const { data } = await api.get<ParametersResponse>('/parameters', {
+	const { data } = await api.get<ParametersResponse>('/v1/parameters', {
 		params,
 	});
 	return data ?? { data: [], total: 0 };
 }
 
 export async function getParameter(id: string): Promise<LaserParameter> {
-	const { data } = await api.get<LaserParameter>(`/parameters/${id}`);
+	const { data } = await api.get<LaserParameter>(`/v1/parameter/${id}`);
 	return data;
 }
 
@@ -73,7 +73,7 @@ export interface CreateParameterPayload {
 export async function createParameter(
 	payload: CreateParameterPayload,
 ): Promise<LaserParameter> {
-	const { data } = await api.post<LaserParameter>('/parameters', payload);
+	const { data } = await api.post<LaserParameter>('/v1/parameters', payload);
 	return data;
 }
 
@@ -81,12 +81,15 @@ export async function updateParameter(
 	id: string,
 	payload: Partial<CreateParameterPayload>,
 ): Promise<LaserParameter> {
-	const { data } = await api.put<LaserParameter>(`/parameters/${id}`, payload);
+	const { data } = await api.put<LaserParameter>(
+		`/v1/parameter/${id}`,
+		payload,
+	);
 	return data;
 }
 
 export async function deleteParameter(id: string): Promise<void> {
-	await api.delete(`/parameters/${id}`);
+	await api.delete(`/v1/parameter/${id}`);
 }
 
 // ─── Community ───────────────────────────────────────────────────────────────
@@ -94,46 +97,51 @@ export async function deleteParameter(id: string): Promise<void> {
 export async function getCommunityParameters(
 	params?: CommunityParametersQueryParams,
 ): Promise<ParametersResponse> {
-	const { data } = await api.get<ParametersResponse>('/parameters/community', {
-		params,
-	});
+	const { data } = await api.get<ParametersResponse>(
+		'/v1/parameters/community',
+		{ params },
+	);
 	return data ?? { data: [], total: 0 };
 }
 
 // ─── Stats / Machines / Materials ────────────────────────────────────────────
 
 export async function getParameterStats(): Promise<ParameterStats> {
-	const { data } = await api.get<ParameterStats>('/parameters/stats');
+	const { data } = await api.get<ParameterStats>('/v1/parameters/stats');
 	return data;
 }
 
 export async function getParameterMachines(): Promise<ParameterMachine[]> {
-	const { data } = await api.get<ParameterMachine[]>('/parameters/machines');
+	const { data } = await api.get<ParameterMachine[]>('/v1/parameters/machines');
 	return Array.isArray(data) ? data : [];
 }
 
 export async function getParameterMaterials(): Promise<ParameterMaterial[]> {
-	const { data } = await api.get<ParameterMaterial[]>('/parameters/materials');
+	const { data } = await api.get<ParameterMaterial[]>(
+		'/v1/parameters/materials',
+	);
 	return Array.isArray(data) ? data : [];
 }
 
 // ─── Social: like / rate / save ──────────────────────────────────────────────
 
 export async function likeParameter(id: string): Promise<{ liked: boolean }> {
-	const { data } = await api.post<{ liked: boolean }>(`/parameters/${id}/like`);
+	const { data } = await api.post<{ liked: boolean }>(
+		`/v1/parameter/${id}/like`,
+	);
 	return data;
 }
 
 export async function rateParameter(id: string, rating: number): Promise<void> {
-	await api.post(`/parameters/${id}/rate`, { rating });
+	await api.post(`/v1/parameter/${id}/rate`, { rating });
 }
 
 export async function saveParameter(id: string): Promise<void> {
-	await api.post(`/parameters/${id}/save`);
+	await api.post(`/v1/parameter/${id}/save`);
 }
 
 export async function unsaveParameter(id: string): Promise<void> {
-	await api.delete(`/parameters/${id}/save`);
+	await api.delete(`/v1/parameter/${id}/save`);
 }
 
 // ─── Export CSV ──────────────────────────────────────────────────────────────
@@ -141,7 +149,7 @@ export async function unsaveParameter(id: string): Promise<void> {
 export async function exportParameters(
 	params?: ParametersQueryParams,
 ): Promise<Blob> {
-	const { data } = await api.get('/parameters/export', {
+	const { data } = await api.get('/v1/parameters/export', {
 		params: { ...params, format: 'csv' },
 		responseType: 'blob',
 	});
