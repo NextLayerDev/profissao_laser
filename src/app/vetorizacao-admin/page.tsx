@@ -17,16 +17,17 @@ const TABS: { key: Tab; label: string; icon: typeof BookOpen }[] = [
 
 export default function VetorizacaoAdminPage() {
 	const router = useRouter();
-	const { canAdmin, isLoading: permissionsLoading } = usePermissions();
+	const { can, isLoading: permissionsLoading } = usePermissions();
+	const allowed = can('vetorizacao.view');
 	const [activeTab, setActiveTab] = useState<Tab>('suporte');
 
 	useEffect(() => {
-		if (!permissionsLoading && !canAdmin) {
+		if (!permissionsLoading && !allowed) {
 			router.replace('/dashboard');
 		}
-	}, [canAdmin, permissionsLoading, router]);
+	}, [allowed, permissionsLoading, router]);
 
-	if (permissionsLoading || !canAdmin) {
+	if (permissionsLoading || !allowed) {
 		return (
 			<div className="min-h-screen flex items-center justify-center">
 				<div className="text-slate-600 dark:text-gray-400">A carregar...</div>

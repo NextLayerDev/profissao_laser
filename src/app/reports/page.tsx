@@ -19,7 +19,8 @@ import { filterByDateRange } from '@/utils/sales-analytics';
 export default function Relatorios() {
 	const router = useRouter();
 	const { sales, isLoading } = useSales();
-	const { canPrice, isLoading: permissionsLoading } = usePermissions();
+	const { can, isLoading: permissionsLoading } = usePermissions();
+	const allowed = can('relatorios.view');
 	const [period, setPeriod] = useState<Period>('30d');
 	const contentRef = useRef<HTMLDivElement>(null);
 
@@ -31,12 +32,12 @@ export default function Relatorios() {
 	);
 
 	useEffect(() => {
-		if (!permissionsLoading && !canPrice) {
+		if (!permissionsLoading && !allowed) {
 			router.replace('/dashboard');
 		}
-	}, [canPrice, permissionsLoading, router]);
+	}, [allowed, permissionsLoading, router]);
 
-	if (!canPrice && !permissionsLoading) {
+	if (!allowed && !permissionsLoading) {
 		return null;
 	}
 

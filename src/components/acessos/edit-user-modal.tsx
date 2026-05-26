@@ -1,24 +1,25 @@
 'use client';
 
 import { Loader2, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { usePermissionCatalog, useRoles } from '@/hooks/use-roles';
 import type { User } from '@/types/users';
-import { ROLES } from '@/utils/constants/roles';
+import { PermissionMatrix } from './permission-matrix';
+
+interface EditUserSavePayload {
+	name: string;
+	email: string;
+	role: string;
+	Permissions: number | null;
+	overrides: { granted: string[]; revoked: string[] };
+}
 
 interface EditUserModalProps {
 	user: User | null;
 	isOpen: boolean;
 	onClose: () => void;
-	onSave: (
-		id: string,
-		payload: {
-			name: string;
-			email: string;
-			role: string;
-			Permissions: number | null;
-		},
-	) => Promise<void>;
+	onSave: (id: string, payload: EditUserSavePayload) => Promise<void>;
 }
 
 export function EditUserModal({
@@ -27,52 +28,71 @@ export function EditUserModal({
 	onClose,
 	onSave,
 }: EditUserModalProps) {
+	const { roles } = useRoles(isOpen);
+	const { data: catalog = [] } = usePermissionCatalog(isOpen);
+
 	const [name, setName] = useState('');
 	const [email, setEmail] = useState('');
-	const [role, setRole] = useState(ROLES[0].role);
-	const [permissions, setPermissions] = useState(ROLES[0].id);
+	const [permId, setPermId] = useState<number | null>(null);
+	const [effective, setEffective] = useState<string[]>([]);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
+	const allKeys = useMemo(
+		() => catalog.flatMap((m) => m.actions.map((a) => `${m.module}.${a}`)),
+		[catalog],
+	);
+
+	const selectedRole = roles.find((r) => r.id === permId) ?? null;
+
+	// Inicializa a partir do usuário (cargo + overrides) quando abre / roles carregam.
 	useEffect(() => {
-		if (user) {
-			setName(user.name);
-			setEmail(user.email);
-			const roleConfig =
-				ROLES.find((r) => r.id === (user.Permissions ?? 0)) ?? ROLES[0];
-			setRole(user.role || roleConfig.role);
-			setPermissions(user.Permissions ?? roleConfig.id);
+		if (!isOpen || !user) return;
+		setName(user.name);
+		setEmail(user.email);
+		const pid = user.Permissions ?? roles[0]?.id ?? null;
+		setPermId(pid);
+		const role = roles.find((r) => r.id === pid) ?? null;
+		if (role?.isSuperAdmin) {
+			setEffective(allKeys);
+		} else {
+			const base = new Set(role?.grants ?? []);
+			for (const k of user.overrides?.granted ?? []) base.add(k);
+			for (const k of user.overrides?.revoked ?? []) base.delete(k);
+			setEffective([...base]);
 		}
-	}, [user]);
+	}, [isOpen, user, roles, allKeys]);
 
 	if (!isOpen || !user) return null;
 
-	function handleRoleChange(newRole: string) {
-		const config = ROLES.find((r) => r.role === newRole);
-		if (config) {
-			setRole(config.role);
-			setPermissions(config.id);
-		}
-	}
-
-	function handlePermissionsChange(permId: number) {
-		const config = ROLES.find((r) => r.id === permId);
-		if (config) {
-			setPermissions(config.id);
-			setRole(config.role);
-		}
+	function handleRoleChange(id: number) {
+		setPermId(id);
+		const role = roles.find((r) => r.id === id) ?? null;
+		// Ao trocar de cargo, parte dos padrões do novo cargo (sem overrides).
+		setEffective(role?.isSuperAdmin ? allKeys : (role?.grants ?? []));
 	}
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
-		if (!user || !name.trim() || !email.trim()) return;
+		if (!user || !name.trim() || !email.trim() || permId == null) return;
+
+		// Override = diff entre o conjunto efetivo escolhido e os grants do cargo.
+		const base = new Set(selectedRole?.grants ?? []);
+		const effSet = new Set(effective);
+		const overrides = selectedRole?.isSuperAdmin
+			? { granted: [], revoked: [] }
+			: {
+					granted: effective.filter((k) => !base.has(k)),
+					revoked: [...base].filter((k) => !effSet.has(k)),
+				};
 
 		setIsSubmitting(true);
 		try {
 			await onSave(user.id, {
 				name: name.trim(),
 				email: email.trim(),
-				role,
-				Permissions: permissions,
+				role: selectedRole?.role ?? user.role,
+				Permissions: permId,
+				overrides,
 			});
 			toast.success('Utilizador atualizado com sucesso.');
 			onClose();
@@ -84,7 +104,7 @@ export function EditUserModal({
 	}
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center">
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
 			<button
 				type="button"
 				className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -96,7 +116,7 @@ export function EditUserModal({
 				<span className="sr-only">Fechar modal</span>
 			</button>
 
-			<div className="relative bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-2xl w-full max-w-md mx-4 p-6 shadow-2xl">
+			<div className="relative bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl">
 				<div className="flex items-center justify-between mb-6">
 					<h2 className="text-xl font-bold text-slate-900 dark:text-white">
 						Editar utilizador
@@ -111,41 +131,40 @@ export function EditUserModal({
 				</div>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
-					<div>
-						<label
-							htmlFor="edit-name"
-							className="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1.5"
-						>
-							Nome
-						</label>
-						<input
-							id="edit-name"
-							type="text"
-							required
-							minLength={2}
-							value={name}
-							onChange={(e) => setName(e.target.value)}
-							placeholder="Nome completo"
-							className="w-full bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 transition-colors"
-						/>
-					</div>
-
-					<div>
-						<label
-							htmlFor="edit-email"
-							className="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1.5"
-						>
-							E-mail
-						</label>
-						<input
-							id="edit-email"
-							type="email"
-							required
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-							placeholder="email@exemplo.com"
-							className="w-full bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 transition-colors"
-						/>
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+						<div>
+							<label
+								htmlFor="edit-name"
+								className="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1.5"
+							>
+								Nome
+							</label>
+							<input
+								id="edit-name"
+								type="text"
+								required
+								minLength={2}
+								value={name}
+								onChange={(e) => setName(e.target.value)}
+								className="w-full bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50"
+							/>
+						</div>
+						<div>
+							<label
+								htmlFor="edit-email"
+								className="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1.5"
+							>
+								E-mail
+							</label>
+							<input
+								id="edit-email"
+								type="email"
+								required
+								value={email}
+								onChange={(e) => setEmail(e.target.value)}
+								className="w-full bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50"
+							/>
+						</div>
 					</div>
 
 					<div>
@@ -157,53 +176,56 @@ export function EditUserModal({
 						</label>
 						<select
 							id="edit-role"
-							value={role}
-							onChange={(e) => handleRoleChange(e.target.value)}
-							className="w-full bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50 transition-colors appearance-none"
+							value={permId ?? ''}
+							onChange={(e) =>
+								handleRoleChange(Number.parseInt(e.target.value, 10))
+							}
+							className="w-full bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50 appearance-none"
 						>
-							{ROLES.map((r) => (
-								<option key={r.id} value={r.role}>
-									{r.role}
+							{roles.map((r) => (
+								<option key={r.id} value={r.id}>
+									{r.label || r.role} (ID {r.id})
 								</option>
 							))}
 						</select>
 					</div>
 
 					<div>
-						<label
-							htmlFor="edit-permissions"
-							className="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1.5"
-						>
-							Permissões
-						</label>
-						<select
-							id="edit-permissions"
-							value={permissions}
-							onChange={(e) =>
-								handlePermissionsChange(Number.parseInt(e.target.value, 10))
-							}
-							className="w-full bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50 transition-colors appearance-none"
-						>
-							{ROLES.map((r) => (
-								<option key={r.id} value={r.id}>
-									{r.role} (ID {r.id})
-								</option>
-							))}
-						</select>
+						<div className="flex items-center justify-between mb-2">
+							<p className="text-sm font-medium text-slate-600 dark:text-gray-400">
+								Permissões deste usuário
+							</p>
+							{!selectedRole?.isSuperAdmin && (
+								<span className="text-xs text-slate-400 dark:text-gray-500">
+									Começa do cargo; ajuste para criar exceções
+								</span>
+							)}
+						</div>
+						{selectedRole?.isSuperAdmin ? (
+							<p className="text-sm text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10 rounded-xl px-4 py-3">
+								Cargo super admin: acesso total a tudo.
+							</p>
+						) : (
+							<PermissionMatrix
+								catalog={catalog}
+								value={effective}
+								onChange={setEffective}
+							/>
+						)}
 					</div>
 
 					<div className="flex gap-3 pt-2">
 						<button
 							type="button"
 							onClick={onClose}
-							className="flex-1 px-5 py-3 rounded-xl font-medium text-sm bg-slate-100 dark:bg-[#252528] hover:bg-slate-200 dark:hover:bg-[#2a2a2d] text-slate-700 dark:text-gray-300 transition-colors"
+							className="flex-1 px-5 py-3 rounded-xl font-medium text-sm bg-slate-100 dark:bg-[#252528] text-slate-700 dark:text-gray-300"
 						>
 							Cancelar
 						</button>
 						<button
 							type="submit"
 							disabled={isSubmitting}
-							className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-medium text-sm bg-violet-600 hover:bg-violet-700 text-white transition-colors disabled:opacity-50"
+							className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-medium text-sm bg-violet-600 hover:bg-violet-700 text-white disabled:opacity-50"
 						>
 							{isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
 							Guardar

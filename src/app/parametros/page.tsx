@@ -8,15 +8,16 @@ import { usePermissions } from '@/hooks/use-permissions';
 
 export default function ParametrosAdminPage() {
 	const router = useRouter();
-	const { canAdmin, isLoading } = usePermissions();
+	const { can, isLoading } = usePermissions();
+	const allowed = can('parametros.view');
 
 	useEffect(() => {
-		if (!isLoading && !canAdmin) {
+		if (!isLoading && !allowed) {
 			router.replace('/dashboard');
 		}
-	}, [canAdmin, isLoading, router]);
+	}, [allowed, isLoading, router]);
 
-	if (isLoading || !canAdmin) {
+	if (isLoading || !allowed) {
 		return (
 			<div className="min-h-screen flex items-center justify-center">
 				<div className="text-slate-600 dark:text-gray-400">A carregar...</div>

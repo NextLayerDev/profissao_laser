@@ -44,7 +44,10 @@ function timeAgo(dateStr: string) {
 
 export function RecentActivity() {
 	const { sales, isLoading } = useSales();
-	const { canPrice } = usePermissions();
+	const { canPrice, can } = usePermissions();
+
+	// Atividade recente é de vendas: oculta sem permissão de ver vendas.
+	if (!can('vendas.view')) return null;
 
 	const recent = [...(sales ?? [])]
 		.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())

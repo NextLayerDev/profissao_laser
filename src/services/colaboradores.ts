@@ -6,6 +6,7 @@ export interface UpdateColaboradorPayload {
 	email?: string;
 	role?: string;
 	Permissions?: number | null;
+	overrides?: { granted: string[]; revoked: string[] };
 }
 
 export async function updateColaborador(

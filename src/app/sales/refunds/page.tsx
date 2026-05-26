@@ -13,7 +13,8 @@ const LIMIT = 50;
 
 export default function RefundsPage() {
 	const router = useRouter();
-	const { canPrice, isLoading: permissionsLoading } = usePermissions();
+	const { can, isLoading: permissionsLoading } = usePermissions();
+	const allowed = can('vendas.view');
 
 	const [cursorStack, setCursorStack] = useState<string[]>([]);
 	const [startingAfter, setStartingAfter] = useState<string | undefined>(
@@ -26,10 +27,10 @@ export default function RefundsPage() {
 	});
 
 	useEffect(() => {
-		if (!permissionsLoading && !canPrice) {
+		if (!permissionsLoading && !allowed) {
 			router.replace('/dashboard');
 		}
-	}, [canPrice, permissionsLoading, router]);
+	}, [allowed, permissionsLoading, router]);
 
 	const handleLoadMore = useCallback(() => {
 		if (refunds.length === 0) return;
@@ -47,7 +48,7 @@ export default function RefundsPage() {
 		});
 	}, []);
 
-	if (!canPrice && !permissionsLoading) return null;
+	if (!allowed && !permissionsLoading) return null;
 
 	return (
 		<div className="min-h-screen text-slate-900 dark:text-white">

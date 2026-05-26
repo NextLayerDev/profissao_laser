@@ -1,29 +1,40 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getCurrentUser, getToken } from '@/lib/auth';
-import { getUser } from '@/services/users';
-import { getRoleByPermissionId } from '@/utils/constants/roles';
+import { useCallback, useMemo } from 'react';
+import { getToken } from '@/lib/auth';
+import { getMyPermissions } from '@/services/roles';
 
+/**
+ * Permissões efetivas do staff logado (cargo + overrides), vindas de
+ * `GET /me/permissions`. Expõe `can(key)` granular e mantém `canAdmin`/
+ * `canPrice` por compatibilidade durante o cutover.
+ */
 export function usePermissions() {
-	const currentUser = getCurrentUser();
 	const hasUserToken = !!getToken('user');
-	const userId = currentUser?.sub ?? null;
 
-	const { data: user, isLoading } = useQuery({
-		queryKey: ['user', userId],
-		queryFn: () => {
-			if (!userId) throw new Error('User ID required');
-			return getUser(userId);
-		},
-		enabled: !!userId && hasUserToken,
+	const { data, isLoading } = useQuery({
+		queryKey: ['me-permissions'],
+		queryFn: getMyPermissions,
+		enabled: hasUserToken,
+		staleTime: 5 * 60 * 1000,
 	});
 
-	const roleConfig = getRoleByPermissionId(user?.Permissions ?? null);
+	const permSet = useMemo(() => new Set(data?.permissions ?? []), [data]);
+	const isSuperAdmin = data?.isSuperAdmin ?? false;
+
+	const can = useCallback(
+		(key: string) => (data?.isSuperAdmin ?? false) || permSet.has(key),
+		[data, permSet],
+	);
 
 	return {
-		canPrice: roleConfig?.canPrice ?? false,
-		canAdmin: roleConfig?.canAdmin ?? false,
-		isLoading: hasUserToken && !!userId && isLoading,
+		isSuperAdmin,
+		permissions: data?.permissions ?? [],
+		can,
+		// Back-compat com o modelo binário antigo.
+		canAdmin: isSuperAdmin,
+		canPrice: isSuperAdmin || permSet.has('produtos.price'),
+		isLoading: hasUserToken && isLoading,
 	};
 }

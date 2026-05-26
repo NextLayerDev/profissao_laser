@@ -16,7 +16,8 @@ type StatusFilter = 'active' | 'trialing' | 'all';
 
 export default function RecurringSales() {
 	const router = useRouter();
-	const { canPrice, isLoading: permissionsLoading } = usePermissions();
+	const { can, isLoading: permissionsLoading } = usePermissions();
+	const allowed = can('vendas.view');
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 	const [currentPage, setCurrentPage] = useState(1);
 
@@ -26,10 +27,10 @@ export default function RecurringSales() {
 	});
 
 	useEffect(() => {
-		if (!permissionsLoading && !canPrice) {
+		if (!permissionsLoading && !allowed) {
 			router.replace('/dashboard');
 		}
-	}, [canPrice, permissionsLoading, router]);
+	}, [allowed, permissionsLoading, router]);
 
 	const sorted = useMemo<RecurringSubscription[]>(
 		() =>
@@ -52,7 +53,7 @@ export default function RecurringSales() {
 		setCurrentPage(1);
 	}
 
-	if (!canPrice && !permissionsLoading) return null;
+	if (!allowed && !permissionsLoading) return null;
 
 	return (
 		<div className="min-h-screen text-slate-900 dark:text-white">

@@ -30,16 +30,17 @@ const TABS: { key: Tab; label: string; icon: typeof Headphones }[] = [
 
 export default function SuportePage() {
 	const router = useRouter();
-	const { canAdmin, isLoading } = usePermissions();
+	const { can, isLoading } = usePermissions();
+	const allowed = can('suporte.view');
 	const [activeTab, setActiveTab] = useState<Tab>('chamados');
 
 	useEffect(() => {
-		if (!isLoading && !canAdmin) {
+		if (!isLoading && !allowed) {
 			router.replace('/dashboard');
 		}
-	}, [canAdmin, isLoading, router]);
+	}, [allowed, isLoading, router]);
 
-	if (isLoading || !canAdmin) {
+	if (isLoading || !allowed) {
 		return (
 			<div className="min-h-screen flex items-center justify-center">
 				<div className="text-slate-600 dark:text-gray-400">A carregar...</div>
