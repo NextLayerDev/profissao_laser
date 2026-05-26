@@ -57,6 +57,7 @@ export function StatsBar() {
 						<Stat
 							Icon={Users}
 							value={3500}
+							prefix="+ de "
 							gradFrom="#7c3aed"
 							gradTo="#5b21b6"
 							label="Membros treinados"
@@ -64,6 +65,7 @@ export function StatsBar() {
 						<Stat
 							Icon={BookOpen}
 							value={250}
+							prefix="+ de "
 							gradFrom="#06b6d4"
 							gradTo="#1d4ed8"
 							label="Aulas"
@@ -71,6 +73,7 @@ export function StatsBar() {
 						<Stat
 							Icon={Sparkles}
 							value={15}
+							prefix="+ de "
 							gradFrom="#a855f7"
 							gradTo="#7e22ce"
 							label="Ferramentas exclusivas"

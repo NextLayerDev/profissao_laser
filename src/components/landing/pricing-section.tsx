@@ -6,6 +6,14 @@ import { ScrollReveal, StaggerReveal } from './scroll-reveal';
 
 // ─── Planos (estáticos, fiéis ao print) ──────────────────────────────────────
 
+interface PlanAccent {
+	name: string; // cor do nome do plano
+	iconText: string; // cor do check
+	iconBg: string; // fundo do check
+	glow: string; // cor do glow no topo do card
+	cta: string; // classes do botão (não-destaque)
+}
+
 interface Plan {
 	id: string;
 	name: string;
@@ -14,6 +22,7 @@ interface Plan {
 	installment: number; // 12x R$
 	monthly: number; // R$/mês
 	features: string[];
+	accent: PlanAccent;
 	featured?: boolean;
 	badge?: string;
 }
@@ -26,6 +35,13 @@ const PLANS: Plan[] = [
 		annual: 299,
 		installment: 29.9,
 		monthly: 49,
+		accent: {
+			name: 'text-emerald-300',
+			iconText: 'text-emerald-400',
+			iconBg: 'bg-emerald-500/15',
+			glow: 'from-emerald-500/20',
+			cta: 'bg-white/[0.04] text-white border border-emerald-500/30 hover:bg-emerald-500/10 hover:border-emerald-500/50',
+		},
 		features: [
 			'Aulas Gravadas',
 			'Suporte online',
@@ -45,6 +61,13 @@ const PLANS: Plan[] = [
 		annual: 399,
 		installment: 39.9,
 		monthly: 59,
+		accent: {
+			name: 'text-sky-300',
+			iconText: 'text-sky-400',
+			iconBg: 'bg-sky-500/15',
+			glow: 'from-sky-500/20',
+			cta: 'bg-white/[0.04] text-white border border-sky-500/30 hover:bg-sky-500/10 hover:border-sky-500/50',
+		},
 		features: [
 			'Aulas Gravadas',
 			'Suporte online',
@@ -67,6 +90,13 @@ const PLANS: Plan[] = [
 		monthly: 69,
 		featured: true,
 		badge: 'MAIS ESCOLHIDO',
+		accent: {
+			name: 'text-violet-200',
+			iconText: 'text-violet-200',
+			iconBg: 'bg-violet-400/25',
+			glow: 'from-violet-500/25',
+			cta: 'btn-accent text-white shadow-brand',
+		},
 		features: [
 			'Aulas Gravadas',
 			'Suporte online',
@@ -87,6 +117,13 @@ const PLANS: Plan[] = [
 		annual: 999,
 		installment: 99.9,
 		monthly: 119,
+		accent: {
+			name: 'text-amber-300',
+			iconText: 'text-amber-400',
+			iconBg: 'bg-amber-500/15',
+			glow: 'from-amber-500/20',
+			cta: 'bg-white/[0.04] text-white border border-amber-500/30 hover:bg-amber-500/10 hover:border-amber-500/50',
+		},
 		features: [
 			'Aulas Gravadas',
 			'Suporte online',
@@ -148,12 +185,13 @@ function FeaturedSparkles() {
 
 function PlanCard({ p, billing }: { p: Plan; billing: 'annual' | 'monthly' }) {
 	const isAnnual = billing === 'annual';
+	const a = p.accent;
 	return (
 		<div
 			className={`tile-hairline shine relative rounded-2xl border p-6 flex flex-col transition-all duration-300 ${
 				p.featured
 					? 'border-violet-500/50 aura lg:-translate-y-2'
-					: 'card-dark hover:border-violet-500/30'
+					: 'card-dark hover:-translate-y-1'
 			}`}
 			style={
 				p.featured
@@ -164,6 +202,11 @@ function PlanCard({ p, billing }: { p: Plan; billing: 'annual' | 'monthly' }) {
 					: {}
 			}
 		>
+			{/* glow colorido no topo (cor do plano) */}
+			<div
+				className={`pointer-events-none absolute inset-x-0 top-0 h-24 rounded-t-2xl bg-gradient-to-b ${a.glow} to-transparent`}
+			/>
+
 			{p.featured && <FeaturedSparkles />}
 
 			{p.badge && (
@@ -173,7 +216,9 @@ function PlanCard({ p, billing }: { p: Plan; billing: 'annual' | 'monthly' }) {
 			)}
 
 			<div className="relative text-center pt-2">
-				<h3 className="font-display text-xl font-bold tracking-tight text-white">
+				<h3
+					className={`font-display text-xl font-bold tracking-tight ${a.name}`}
+				>
 					{p.name}
 				</h3>
 				<p className="text-slate-400 text-[13px] mt-1 min-h-[1.5rem]">
@@ -218,18 +263,14 @@ function PlanCard({ p, billing }: { p: Plan; billing: 'annual' | 'monthly' }) {
 				)}
 			</div>
 
-			<div className="relative border-t border-violet-500/10 pt-5 mb-5 flex-1">
+			<div className="relative border-t border-white/10 pt-5 mb-5 flex-1">
 				<ul className="space-y-2.5">
 					{p.features.map((line) => (
 						<li key={line} className="flex items-start gap-2.5">
 							<div
-								className={`w-4 h-4 rounded-full mt-0.5 grid place-items-center shrink-0 ${
-									p.featured ? 'bg-violet-400/25' : 'bg-violet-500/15'
-								}`}
+								className={`w-4 h-4 rounded-full mt-0.5 grid place-items-center shrink-0 ${a.iconBg}`}
 							>
-								<Check
-									className={`w-2.5 h-2.5 ${p.featured ? 'text-violet-200' : 'text-violet-400'}`}
-								/>
+								<Check className={`w-2.5 h-2.5 ${a.iconText}`} />
 							</div>
 							<span className="text-slate-200 text-[13.5px] leading-snug">
 								{line}
@@ -242,11 +283,7 @@ function PlanCard({ p, billing }: { p: Plan; billing: 'annual' | 'monthly' }) {
 			{/* CTA inerte por ora (sem destino) */}
 			<button
 				type="button"
-				className={`relative w-full font-bold uppercase tracking-wider text-[13px] py-3.5 rounded-xl transition-all cursor-pointer ${
-					p.featured
-						? 'btn-accent text-white shadow-brand'
-						: 'bg-white/[0.04] hover:bg-violet-500/10 text-white border border-violet-500/15 hover:border-violet-500/40'
-				}`}
+				className={`relative w-full font-bold uppercase tracking-wider text-[13px] py-3.5 rounded-xl transition-all cursor-pointer ${a.cta}`}
 			>
 				Quero este plano
 			</button>
@@ -282,7 +319,7 @@ export function PricingSection() {
 						>
 							Anual
 							<span className="ml-2 inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-white/20">
-								Até 20% off
+								Até 20% desconto
 							</span>
 						</button>
 						<button
