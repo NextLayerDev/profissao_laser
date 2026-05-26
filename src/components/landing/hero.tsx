@@ -317,15 +317,18 @@ export function Hero() {
 							<div className="mx-auto h-2 w-[112%] -ml-[6%] rounded-b-lg bg-gradient-to-b from-[#1a1726] to-[#0e0c16] border-x border-b border-violet-500/10" />
 						</div>
 
-						{/* Foto do profissional (emoldurada, à direita, na frente) */}
-						<div className="absolute bottom-0 right-0 w-[58%] h-[86%] rounded-2xl overflow-hidden border border-violet-500/25 shadow-2xl shadow-violet-900/50 hero-img isolate">
-							<div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-violet-500/60 to-transparent z-10" />
+						{/* Foto do profissional (recorte) com glow roxo atrás */}
+						<div className="absolute bottom-0 right-0 w-[62%] h-[94%]">
+							<div className="absolute inset-0 grid place-items-center">
+								<div className="w-[80%] h-[72%] rounded-full bg-violet-600/45 blur-[70px]" />
+								<div className="absolute w-[55%] h-[55%] rounded-full bg-fuchsia-500/30 blur-[60px]" />
+							</div>
 							<Image
-								src="/img/profissional-hero.jpeg"
+								src="/img/profissional-hero.png"
 								alt="Fernando Nucci — Especialista em Laser"
 								fill
-								sizes="(max-width: 1024px) 100vw, 340px"
-								className="object-cover object-top"
+								sizes="(max-width: 1024px) 100vw, 380px"
+								className="relative z-10 object-contain object-bottom drop-shadow-[0_10px_40px_rgba(139,92,246,0.5)]"
 								priority
 							/>
 						</div>

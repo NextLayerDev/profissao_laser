@@ -15,16 +15,13 @@ const NAV_LINKS = [
 function Logo({ size = 40 }: { size?: number }) {
 	return (
 		<div className="flex items-center gap-2.5">
-			<div
-				className="relative rounded-full overflow-hidden ring-1 ring-violet-400/40 shrink-0"
-				style={{ width: size, height: size }}
-			>
+			<div className="relative shrink-0" style={{ width: size, height: size }}>
 				<Image
-					src="/img/logo-profissao-laser.jpeg"
+					src="/img/logo-profissao-laser.png"
 					alt="Comunidade Profissão Laser"
 					fill
 					sizes="44px"
-					className="object-cover scale-110"
+					className="object-contain"
 				/>
 			</div>
 			<div className="leading-tight">
