@@ -543,146 +543,141 @@ function TechnicianOverrideCard() {
 					))}
 				</select>
 
-				{selectedTech && (
-					<>
-						{isLoading ? (
-							<Loader2 className="w-5 h-5 animate-spin text-violet-600" />
-						) : (
-							<>
-								<p className="text-xs text-slate-500 dark:text-gray-400">
-									Campos vazios = usa config global. Preencha só o que quer
-									sobrescrever.
-								</p>
+				{selectedTech &&
+					(isLoading ? (
+						<Loader2 className="w-5 h-5 animate-spin text-violet-600" />
+					) : (
+						<>
+							<p className="text-xs text-slate-500 dark:text-gray-400">
+								Campos vazios = usa config global. Preencha só o que quer
+								sobrescrever.
+							</p>
+							<div>
+								<span className="text-xs font-medium text-slate-500 dark:text-gray-400 block mb-2">
+									Dias úteis (override)
+								</span>
+								<div className="flex flex-wrap gap-1.5">
+									{DAY_LABELS.map((d) => (
+										<button
+											key={d.key}
+											type="button"
+											onClick={() => toggleDay(d.key)}
+											className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+												workingDays?.[d.key]
+													? 'bg-violet-600 text-white'
+													: 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-200 dark:hover:bg-white/10'
+											}`}
+										>
+											{d.label}
+										</button>
+									))}
+								</div>
+							</div>
+							<div className="grid grid-cols-2 gap-3">
 								<div>
-									<span className="text-xs font-medium text-slate-500 dark:text-gray-400 block mb-2">
-										Dias úteis (override)
-									</span>
-									<div className="flex flex-wrap gap-1.5">
-										{DAY_LABELS.map((d) => (
-											<button
-												key={d.key}
-												type="button"
-												onClick={() => toggleDay(d.key)}
-												className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-													workingDays?.[d.key]
-														? 'bg-violet-600 text-white'
-														: 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-200 dark:hover:bg-white/10'
-												}`}
-											>
-												{d.label}
-											</button>
-										))}
-									</div>
-								</div>
-								<div className="grid grid-cols-2 gap-3">
-									<div>
-										<label
-											htmlFor={`tech-start-${selectedTech}`}
-											className="text-xs font-medium text-slate-500 dark:text-gray-400 block mb-1"
-										>
-											Abre
-										</label>
-										<input
-											id={`tech-start-${selectedTech}`}
-											type="time"
-											value={value('workingHourStart')}
-											onChange={(e) =>
-												setForm((f) => ({
-													...f,
-													workingHourStart: e.target.value || null,
-												}))
-											}
-											className="w-full h-10 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white px-3 focus:outline-none focus:border-violet-500"
-										/>
-									</div>
-									<div>
-										<label
-											htmlFor={`tech-end-${selectedTech}`}
-											className="text-xs font-medium text-slate-500 dark:text-gray-400 block mb-1"
-										>
-											Fecha
-										</label>
-										<input
-											id={`tech-end-${selectedTech}`}
-											type="time"
-											value={value('workingHourEnd')}
-											onChange={(e) =>
-												setForm((f) => ({
-													...f,
-													workingHourEnd: e.target.value || null,
-												}))
-											}
-											className="w-full h-10 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white px-3 focus:outline-none focus:border-violet-500"
-										/>
-									</div>
-									<div>
-										<label
-											htmlFor={`tech-lunch-start-${selectedTech}`}
-											className="text-xs font-medium text-slate-500 dark:text-gray-400 block mb-1"
-										>
-											Almoço (início)
-										</label>
-										<input
-											id={`tech-lunch-start-${selectedTech}`}
-											type="time"
-											value={value('lunchStart')}
-											onChange={(e) =>
-												setForm((f) => ({
-													...f,
-													lunchStart: e.target.value || null,
-												}))
-											}
-											className="w-full h-10 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white px-3 focus:outline-none focus:border-violet-500"
-										/>
-									</div>
-									<div>
-										<label
-											htmlFor={`tech-lunch-end-${selectedTech}`}
-											className="text-xs font-medium text-slate-500 dark:text-gray-400 block mb-1"
-										>
-											Almoço (fim)
-										</label>
-										<input
-											id={`tech-lunch-end-${selectedTech}`}
-											type="time"
-											value={value('lunchEnd')}
-											onChange={(e) =>
-												setForm((f) => ({
-													...f,
-													lunchEnd: e.target.value || null,
-												}))
-											}
-											className="w-full h-10 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white px-3 focus:outline-none focus:border-violet-500"
-										/>
-									</div>
-								</div>
-								<div className="flex justify-end gap-2">
-									<button
-										type="button"
-										onClick={onReset}
-										disabled={Object.keys(form).length === 0}
-										className="px-3 py-2 text-sm text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-50 rounded-lg"
+									<label
+										htmlFor={`tech-start-${selectedTech}`}
+										className="text-xs font-medium text-slate-500 dark:text-gray-400 block mb-1"
 									>
-										Cancelar
-									</button>
-									<button
-										type="button"
-										onClick={onSubmit}
-										disabled={
-											Object.keys(form).length === 0 || upsert.isPending
+										Abre
+									</label>
+									<input
+										id={`tech-start-${selectedTech}`}
+										type="time"
+										value={value('workingHourStart')}
+										onChange={(e) =>
+											setForm((f) => ({
+												...f,
+												workingHourStart: e.target.value || null,
+											}))
 										}
-										className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg"
-									>
-										{upsert.isPending && (
-											<Loader2 className="w-4 h-4 animate-spin" />
-										)}
-										Salvar override
-									</button>
+										className="w-full h-10 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white px-3 focus:outline-none focus:border-violet-500"
+									/>
 								</div>
-							</>
-						)}
-					</>
-				)}
+								<div>
+									<label
+										htmlFor={`tech-end-${selectedTech}`}
+										className="text-xs font-medium text-slate-500 dark:text-gray-400 block mb-1"
+									>
+										Fecha
+									</label>
+									<input
+										id={`tech-end-${selectedTech}`}
+										type="time"
+										value={value('workingHourEnd')}
+										onChange={(e) =>
+											setForm((f) => ({
+												...f,
+												workingHourEnd: e.target.value || null,
+											}))
+										}
+										className="w-full h-10 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white px-3 focus:outline-none focus:border-violet-500"
+									/>
+								</div>
+								<div>
+									<label
+										htmlFor={`tech-lunch-start-${selectedTech}`}
+										className="text-xs font-medium text-slate-500 dark:text-gray-400 block mb-1"
+									>
+										Almoço (início)
+									</label>
+									<input
+										id={`tech-lunch-start-${selectedTech}`}
+										type="time"
+										value={value('lunchStart')}
+										onChange={(e) =>
+											setForm((f) => ({
+												...f,
+												lunchStart: e.target.value || null,
+											}))
+										}
+										className="w-full h-10 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white px-3 focus:outline-none focus:border-violet-500"
+									/>
+								</div>
+								<div>
+									<label
+										htmlFor={`tech-lunch-end-${selectedTech}`}
+										className="text-xs font-medium text-slate-500 dark:text-gray-400 block mb-1"
+									>
+										Almoço (fim)
+									</label>
+									<input
+										id={`tech-lunch-end-${selectedTech}`}
+										type="time"
+										value={value('lunchEnd')}
+										onChange={(e) =>
+											setForm((f) => ({
+												...f,
+												lunchEnd: e.target.value || null,
+											}))
+										}
+										className="w-full h-10 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white px-3 focus:outline-none focus:border-violet-500"
+									/>
+								</div>
+							</div>
+							<div className="flex justify-end gap-2">
+								<button
+									type="button"
+									onClick={onReset}
+									disabled={Object.keys(form).length === 0}
+									className="px-3 py-2 text-sm text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-50 rounded-lg"
+								>
+									Cancelar
+								</button>
+								<button
+									type="button"
+									onClick={onSubmit}
+									disabled={Object.keys(form).length === 0 || upsert.isPending}
+									className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg"
+								>
+									{upsert.isPending && (
+										<Loader2 className="w-4 h-4 animate-spin" />
+									)}
+									Salvar override
+								</button>
+							</div>
+						</>
+					))}
 			</div>
 		</CardShell>
 	);
