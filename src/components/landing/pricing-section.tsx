@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, Shield } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useState } from 'react';
 import { ScrollReveal, StaggerReveal } from './scroll-reveal';
 
@@ -187,11 +188,12 @@ function PlanCard({ p, billing }: { p: Plan; billing: 'annual' | 'monthly' }) {
 	const isAnnual = billing === 'annual';
 	const a = p.accent;
 	return (
-		<div
-			className={`tile-hairline shine relative rounded-2xl border p-6 flex flex-col transition-all duration-300 ${
-				p.featured
-					? 'border-violet-500/50 aura lg:-translate-y-2'
-					: 'card-dark hover:-translate-y-1'
+		<motion.div
+			animate={{ y: p.featured ? -8 : 0 }}
+			whileHover={{ y: p.featured ? -14 : -6 }}
+			transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+			className={`tile-hairline shine relative rounded-2xl border p-6 flex flex-col ${
+				p.featured ? 'border-violet-500/50 aura' : 'card-dark'
 			}`}
 			style={
 				p.featured
@@ -287,7 +289,7 @@ function PlanCard({ p, billing }: { p: Plan; billing: 'annual' | 'monthly' }) {
 			>
 				Quero este plano
 			</button>
-		</div>
+		</motion.div>
 	);
 }
 

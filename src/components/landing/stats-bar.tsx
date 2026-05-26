@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, Sparkles, Target, Users } from 'lucide-react';
+import { GraduationCap, Rocket, Target, Users } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { fmtNumber, useCountUp } from '@/hooks/use-landing';
 import { useScrollReveal } from '@/hooks/use-scroll-reveal';
@@ -63,7 +63,7 @@ export function StatsBar() {
 							label="Membros treinados"
 						/>
 						<Stat
-							Icon={BookOpen}
+							Icon={GraduationCap}
 							value={250}
 							prefix="+ de "
 							gradFrom="#06b6d4"
@@ -71,7 +71,7 @@ export function StatsBar() {
 							label="Aulas"
 						/>
 						<Stat
-							Icon={Sparkles}
+							Icon={Rocket}
 							value={15}
 							prefix="+ de "
 							gradFrom="#a855f7"

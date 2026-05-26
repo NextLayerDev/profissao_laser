@@ -35,7 +35,7 @@ function QuoteCard({ t }: { t: (typeof TESTIMONIALS)[number] }) {
 		.slice(0, 2);
 
 	return (
-		<div className="card-dark tile-hairline shine relative w-full h-full rounded-2xl p-6 hover:border-violet-500/30 transition-colors">
+		<div className="card-dark tile-hairline shine relative w-full h-full rounded-2xl p-6 hover:border-violet-500/30 hover:-translate-y-1 transition-all duration-300">
 			<div className="font-display text-violet-400/80 text-4xl leading-none mb-2">
 				&ldquo;
 			</div>

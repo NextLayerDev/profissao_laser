@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowRight, Check, Play } from 'lucide-react';
+import { motion } from 'motion/react';
 import Image from 'next/image';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useMagnetic } from '@/hooks/use-landing';
@@ -317,20 +318,38 @@ export function Hero() {
 							<div className="mx-auto h-2 w-[112%] -ml-[6%] rounded-b-lg bg-gradient-to-b from-[#1a1726] to-[#0e0c16] border-x border-b border-violet-500/10" />
 						</div>
 
-						{/* Foto do profissional (recorte) com glow roxo atrás */}
+						{/* Foto do profissional (recorte) com glow roxo pulsante + float */}
 						<div className="absolute bottom-0 right-0 w-[62%] h-[94%]">
-							<div className="absolute inset-0 grid place-items-center">
+							<motion.div
+								className="absolute inset-0 grid place-items-center"
+								animate={{ opacity: [0.55, 0.9, 0.55], scale: [1, 1.07, 1] }}
+								transition={{
+									duration: 6,
+									repeat: Number.POSITIVE_INFINITY,
+									ease: 'easeInOut',
+								}}
+							>
 								<div className="w-[80%] h-[72%] rounded-full bg-violet-600/45 blur-[70px]" />
 								<div className="absolute w-[55%] h-[55%] rounded-full bg-fuchsia-500/30 blur-[60px]" />
-							</div>
-							<Image
-								src="/img/profissional-hero.png"
-								alt="Fernando Nucci — Especialista em Laser"
-								fill
-								sizes="(max-width: 1024px) 100vw, 380px"
-								className="relative z-10 object-contain object-bottom drop-shadow-[0_10px_40px_rgba(139,92,246,0.5)]"
-								priority
-							/>
+							</motion.div>
+							<motion.div
+								className="absolute inset-0 z-10"
+								animate={{ y: [0, -12, 0] }}
+								transition={{
+									duration: 5.5,
+									repeat: Number.POSITIVE_INFINITY,
+									ease: 'easeInOut',
+								}}
+							>
+								<Image
+									src="/img/profissional-hero.png"
+									alt="Fernando Nucci — Especialista em Laser"
+									fill
+									sizes="(max-width: 1024px) 100vw, 380px"
+									className="object-contain object-bottom drop-shadow-[0_10px_40px_rgba(139,92,246,0.5)]"
+									priority
+								/>
+							</motion.div>
 						</div>
 
 						{/* Celular (canto inferior esquerdo) */}

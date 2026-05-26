@@ -8,6 +8,7 @@ import {
 	Sparkles,
 	Volume2,
 } from 'lucide-react';
+import Image from 'next/image';
 import { ScrollReveal } from './scroll-reveal';
 
 function VideoPlayerPlaceholder() {
@@ -91,7 +92,7 @@ export function VideoSection() {
 
 	return (
 		<section id="video" className="relative px-5 md:px-8 py-14 md:py-20">
-			<div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1.05fr_1fr] gap-10 items-center">
+			<div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_0.9fr_0.5fr] gap-10 items-center">
 				<ScrollReveal>
 					<VideoPlayerPlaceholder />
 				</ScrollReveal>
@@ -117,6 +118,22 @@ export function VideoSection() {
 							</li>
 						))}
 					</ul>
+				</ScrollReveal>
+
+				<ScrollReveal
+					delay={0.25}
+					className="relative hidden lg:block h-[360px]"
+				>
+					<div className="absolute inset-0 grid place-items-center">
+						<div className="w-[78%] h-[62%] rounded-full bg-violet-600/35 blur-[60px]" />
+					</div>
+					<Image
+						src="/img/profissional-hero.png"
+						alt="Fernando Nucci — Especialista em Laser"
+						fill
+						sizes="260px"
+						className="relative z-10 object-contain object-bottom drop-shadow-[0_10px_30px_rgba(139,92,246,0.45)]"
+					/>
 				</ScrollReveal>
 			</div>
 		</section>

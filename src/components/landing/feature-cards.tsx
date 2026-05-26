@@ -18,6 +18,7 @@ import {
 	UserPlus,
 	Users,
 } from 'lucide-react';
+import { motion } from 'motion/react';
 import { ScrollReveal, StaggerReveal } from './scroll-reveal';
 
 // ─── Data (estilo do print: card escuro + ícone roxo) ────────────────────────
@@ -111,7 +112,11 @@ const FEATURES: Feature[] = [
 function FeatureCard({ f }: { f: Feature }) {
 	const { Icon } = f;
 	return (
-		<div className="card-dark group relative rounded-2xl p-5 h-full transition-all duration-300 hover:-translate-y-1 hover:border-violet-500/40 hover:shadow-brand">
+		<motion.div
+			whileHover={{ y: -6 }}
+			transition={{ type: 'spring', stiffness: 280, damping: 18 }}
+			className="card-dark group relative rounded-2xl p-5 h-full transition-colors hover:border-violet-500/40 hover:shadow-brand"
+		>
 			<div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-500/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 			<div className="w-11 h-11 rounded-xl grid place-items-center mb-4 bg-gradient-to-br from-violet-600 to-violet-800 border border-violet-400/20 shadow-violet-soft group-hover:scale-105 transition-transform">
 				<Icon size={20} className="text-white" />
@@ -120,7 +125,7 @@ function FeatureCard({ f }: { f: Feature }) {
 				{f.title}
 			</h3>
 			<p className="text-slate-400 text-[13px] leading-relaxed">{f.desc}</p>
-		</div>
+		</motion.div>
 	);
 }
 
