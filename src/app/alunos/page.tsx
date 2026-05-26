@@ -2,6 +2,7 @@
 
 import {
 	ArrowUpDown,
+	FlaskConical,
 	KeyRound,
 	Search,
 	ShieldCheck,
@@ -114,6 +115,7 @@ export default function AlunosPage() {
 		isBlocking,
 		changePassword,
 		isChangingPassword,
+		setTestUnlimited,
 	} = useCustomers();
 
 	const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null);
@@ -259,6 +261,27 @@ export default function AlunosPage() {
 													title={customer.banned ? 'Desbloquear' : 'Bloquear'}
 												>
 													<ShieldOff className="w-4 h-4" />
+												</button>
+												<button
+													type="button"
+													onClick={() =>
+														setTestUnlimited({
+															id: customer.id,
+															unlimited: !customer.isTestUnlimited,
+														})
+													}
+													className={`p-2 rounded-lg transition-colors ${
+														customer.isTestUnlimited
+															? 'text-emerald-500 bg-emerald-500/10'
+															: 'text-slate-500 dark:text-gray-400 hover:text-emerald-500 hover:bg-emerald-500/10'
+													}`}
+													title={
+														customer.isTestUnlimited
+															? 'Remover conta teste (ilimitado)'
+															: 'Tornar conta teste (tudo desbloqueado)'
+													}
+												>
+													<FlaskConical className="w-4 h-4" />
 												</button>
 												<button
 													type="button"

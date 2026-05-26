@@ -1,10 +1,12 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
 	blockCustomer,
 	deleteCustomer,
 	getCustomers,
+	setCustomerTestUnlimited,
 	updateCustomerPassword,
 } from '@/services/customer';
 
@@ -40,6 +42,20 @@ export function useCustomers() {
 			updateCustomerPassword(id, password),
 	});
 
+	const testUnlimitedMutation = useMutation({
+		mutationFn: ({ id, unlimited }: { id: string; unlimited: boolean }) =>
+			setCustomerTestUnlimited(id, unlimited),
+		onSuccess: (_data, { unlimited }) => {
+			queryClient.invalidateQueries({ queryKey: ['customers'] });
+			toast.success(
+				unlimited
+					? 'Conta marcada como teste ilimitada'
+					: 'Conta teste removida',
+			);
+		},
+		onError: () => toast.error('Erro ao atualizar conta teste'),
+	});
+
 	return {
 		customers: customers ?? [],
 		isLoading,
@@ -50,5 +66,7 @@ export function useCustomers() {
 		isBlocking: blockMutation.isPending,
 		changePassword: changePasswordMutation.mutateAsync,
 		isChangingPassword: changePasswordMutation.isPending,
+		setTestUnlimited: testUnlimitedMutation.mutateAsync,
+		isSettingTestUnlimited: testUnlimitedMutation.isPending,
 	};
 }
