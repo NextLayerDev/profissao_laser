@@ -77,26 +77,26 @@ export function FinalCTA() {
 						</div>
 
 						<div className="flex flex-col items-start md:items-end gap-3">
-							<a
+							<button
 								ref={ctaRef}
-								href="#planos"
-								className="btn-accent inline-flex items-center gap-2 text-white font-bold px-6 py-3.5 rounded-xl shadow-brand-lg"
+								type="button"
+								className="btn-accent inline-flex items-center gap-2 text-white font-bold px-6 py-3.5 rounded-xl shadow-brand-lg uppercase tracking-wider"
 								style={{
 									transition:
 										'transform .25s cubic-bezier(.2,.8,.2,1), background .2s ease, box-shadow .2s ease',
 								}}
 							>
-								QUERO FAZER PARTE AGORA
+								Quero fazer parte agora
 								<ArrowRight size={16} />
-							</a>
+							</button>
 
 							<div className="flex items-center gap-2.5">
 								<AvatarStack />
 								<div className="text-slate-300 text-xs leading-tight">
 									<div className="text-white text-sm font-bold">
-										+2.850 profissionais
+										+3.500 profissionais
 									</div>
-									já estão evoluindo. Você pode ser o próximo.
+									já estão evoluindo com a gente!
 								</div>
 							</div>
 						</div>

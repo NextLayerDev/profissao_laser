@@ -1,7 +1,6 @@
 'use client';
 
 import {
-	ArrowRight,
 	Check,
 	Download,
 	Maximize,
@@ -57,19 +56,6 @@ function VideoPlayerPlaceholder() {
 				</svg>
 			</div>
 
-			{/* Headline overlay */}
-			<div className="absolute left-6 bottom-6 max-w-[60%]">
-				<div className="font-display text-white text-2xl md:text-3xl font-black leading-tight tracking-tight">
-					Mais que uma
-					<br />
-					comunidade.
-					<br />
-					<span className="grad-brand">Um ecossistema</span>
-					<br />
-					para você crescer.
-				</div>
-			</div>
-
 			{/* Play button */}
 			<button
 				type="button"
@@ -97,11 +83,10 @@ function VideoPlayerPlaceholder() {
 
 export function VideoSection() {
 	const bullets = [
-		'Conteúdo prático e direto ao ponto',
-		'Acompanhamento de especialistas',
-		'Ferramentas que facilitam sua rotina',
-		'Network com quem vive o laser',
-		'Novas oportunidades de negócio',
+		'Aprendizado contínuo',
+		'Networking qualificado',
+		'Suporte de verdade',
+		'Oportunidades reais',
 	];
 
 	return (
@@ -113,11 +98,16 @@ export function VideoSection() {
 
 				<ScrollReveal delay={0.15}>
 					<h2 className="font-display text-3xl md:text-[2.25rem] font-black text-white leading-tight tracking-tight">
-						Por que milhares de profissionais escolheram a{' '}
-						<span className="grad-brand">Profissão Laser?</span>
+						Mais que uma comunidade. Um ecossistema completo para você{' '}
+						<span className="grad-brand">evoluir.</span>
 					</h2>
 
-					<ul className="mt-6 space-y-3">
+					<p className="text-slate-400 mt-4 text-[15px] leading-relaxed max-w-xl">
+						Conteúdo prático, networking, suporte e oportunidades reais para
+						transformar sua carreira no mercado laser.
+					</p>
+
+					<ul className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
 						{bullets.map((b) => (
 							<li key={b} className="flex items-center gap-3 text-slate-200">
 								<div className="w-6 h-6 rounded-full bg-violet-500/15 border border-violet-500/30 grid place-items-center shrink-0">
@@ -127,14 +117,6 @@ export function VideoSection() {
 							</li>
 						))}
 					</ul>
-
-					<a
-						href="#planos"
-						className="btn-accent mt-8 inline-flex items-center gap-2 text-white font-bold px-6 py-3.5 rounded-xl shadow-brand-lg"
-					>
-						QUERO EVOLUIR AGORA
-						<ArrowRight size={16} />
-					</a>
 				</ScrollReveal>
 			</div>
 		</section>

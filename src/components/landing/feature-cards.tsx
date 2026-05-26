@@ -1,21 +1,21 @@
 'use client';
 
 import {
-	ArrowRight,
 	BookOpen,
-	Check,
+	Headphones,
 	Image as ImageIcon,
 	Layers,
 	MessageCircle,
 	MessageSquare,
 	Palette,
-	Phone,
 	PlayCircle,
 	Radio,
 	ShoppingCart,
 	Sliders,
 	Star,
+	Store,
 	UserPlus,
+	Users,
 	Wrench,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
@@ -30,6 +30,7 @@ const ICON_MAP: Record<
 > = {
 	PlayCircle,
 	Wrench,
+	Headphones,
 	BookOpen,
 	Palette,
 	ImageIcon,
@@ -39,9 +40,10 @@ const ICON_MAP: Record<
 	ShoppingCart,
 	Radio,
 	UserPlus,
+	Users,
 	Star,
 	Layers,
-	Phone,
+	Store,
 };
 
 // ─── Data ────────────────────────────────────────────────────────────────────
@@ -60,15 +62,15 @@ const FEATURES: Feature[] = [
 		icon: 'PlayCircle',
 		title: 'Aulas Gravadas',
 		anim: 'pulse',
-		desc: 'Assista quando e onde quiser. Conteúdo completo e atualizado para Fiber, UV, CO₂ e Diodo (Ezcad e Lightburn).',
+		desc: 'Aprenda no seu tempo e de onde estiver.',
 		from: '#7c3aed',
 		to: '#4c1d95',
 	},
 	{
-		icon: 'Wrench',
-		title: 'Suporte on-line',
-		anim: 'spark',
-		desc: 'Suporte técnico especializado com acesso remoto direto no seu equipamento.',
+		icon: 'Headphones',
+		title: 'Suporte online',
+		anim: 'radio',
+		desc: 'Tire dúvidas e tenha apoio sempre que precisar.',
 		from: '#fb923c',
 		to: '#c2410c',
 	},
@@ -76,7 +78,7 @@ const FEATURES: Feature[] = [
 		icon: 'BookOpen',
 		title: 'Biblioteca de Vetores',
 		anim: 'book',
-		desc: 'Vetores SVG testados e prontos para gravação — temas, 360 e atualizações constantes.',
+		desc: 'Vetores organizados para acelerar seus projetos.',
 		from: '#f59e0b',
 		to: '#b45309',
 	},
@@ -84,7 +86,7 @@ const FEATURES: Feature[] = [
 		icon: 'Palette',
 		title: 'Vetorização',
 		anim: 'trace',
-		desc: 'Ferramenta instantânea ou equipe que vetoriza os projetos mais complicados pra você.',
+		desc: 'Equipe especializada para vetorização de qualidade.',
 		from: '#22c55e',
 		to: '#15803d',
 	},
@@ -92,7 +94,7 @@ const FEATURES: Feature[] = [
 		icon: 'ImageIcon',
 		title: 'Prévias',
 		anim: 'img',
-		desc: 'Envie prévias com marca d\u2019água, parâmetros e tutorial de execução do projeto.',
+		desc: 'Visualize e teste seus projetos antes da produção.',
 		from: '#ec4899',
 		to: '#9d174d',
 	},
@@ -100,7 +102,7 @@ const FEATURES: Feature[] = [
 		icon: 'Sliders',
 		title: 'Parâmetros',
 		anim: 'slider',
-		desc: 'Tabela completa para Fiber, UV, CO₂ e Diodo — configurações ideais para cada material.',
+		desc: 'Configurações testadas e validadas para cada material e máquina.',
 		from: '#06b6d4',
 		to: '#0e7490',
 	},
@@ -108,7 +110,7 @@ const FEATURES: Feature[] = [
 		icon: 'MessageSquare',
 		title: 'Fórum',
 		anim: 'chat',
-		desc: 'Discussões, dúvidas e compartilhamento de experiências em um único lugar.',
+		desc: 'Troque experiências, aprenda e cresça com a comunidade.',
 		from: '#a855f7',
 		to: '#6b21a8',
 	},
@@ -116,7 +118,7 @@ const FEATURES: Feature[] = [
 		icon: 'MessageCircle',
 		title: 'Chat',
 		anim: 'chat',
-		desc: 'Converse ao vivo com a comunidade e tenha um network direto pra alavancar o negócio.',
+		desc: 'Converse em tempo real com membros e especialistas.',
 		from: '#14b8a6',
 		to: '#0f766e',
 	},
@@ -124,31 +126,31 @@ const FEATURES: Feature[] = [
 		icon: 'ShoppingCart',
 		title: 'Lista de Fornecedores',
 		anim: 'cart',
-		desc: 'Encontre os melhores e mais confiáveis fornecedores do Brasil para os seus produtos.',
+		desc: 'Encontre os melhores fornecedores e parceiros.',
 		from: '#f59e0b',
 		to: '#b45309',
 	},
 	{
 		icon: 'Radio',
-		title: 'Eventos e Lives',
+		title: 'Eventos Online',
 		anim: 'radio',
-		desc: 'Participe de eventos e lives exclusivas, fechados para membros da comunidade.',
+		desc: 'Lives e eventos exclusivos para membros.',
 		from: '#f43f5e',
 		to: '#9f1239',
 	},
 	{
 		icon: 'UserPlus',
-		title: 'Membros',
+		title: 'Network Membros',
 		anim: 'network',
-		desc: 'Conecte-se com outros profissionais e amplie o seu network no mercado de laser.',
+		desc: 'Conecte-se com profissionais e gere novas oportunidades.',
 		from: '#8b5cf6',
 		to: '#4338ca',
 	},
 	{
 		icon: 'Star',
-		title: 'Vitrine de Projetos',
+		title: 'Vitrine de projetos',
 		anim: 'spark',
-		desc: 'Inspire-se com projetos incríveis pra aumentar o mix de produtos da sua loja.',
+		desc: 'Inspire-se e mostre seu trabalho para a comunidade.',
 		from: '#ec4899',
 		to: '#be185d',
 	},
@@ -156,17 +158,25 @@ const FEATURES: Feature[] = [
 		icon: 'Layers',
 		title: 'Canva com IA',
 		anim: 'grid',
-		desc: 'Templates e artes editáveis com IA — edite suas artes ou prévias de forma simples.',
+		desc: 'Crie artes profissionais de forma rápida e inteligente.',
 		from: '#06b6d4',
 		to: '#1e40af',
 	},
 	{
-		icon: 'Phone',
-		title: 'Grupo WhatsApp',
-		anim: 'wa',
-		desc: 'Conecte-se diariamente com os outros membros e compartilhe tudo do mercado do laser.',
-		from: '#10b981',
-		to: '#047857',
+		icon: 'Users',
+		title: 'Equipe de Vetores',
+		anim: 'trace',
+		desc: 'Suporte especializado em vetorização para membros.',
+		from: '#8b5cf6',
+		to: '#6d28d9',
+	},
+	{
+		icon: 'Store',
+		title: 'Fornecedores Vendas Diretas',
+		anim: 'cart',
+		desc: 'Compre direto com fornecedores parceiros em condições especiais.',
+		from: '#f59e0b',
+		to: '#92400e',
 	},
 ];
 
@@ -349,13 +359,6 @@ function MiniAnim({ kind }: { kind: string }) {
 				<div className="wave w3 h-1 w-10 rounded-full bg-white" />
 			</div>
 		);
-	if (kind === 'wa')
-		return (
-			<div className="mini-wa absolute top-3 right-3 flex items-center gap-1">
-				<Check size={13} className="check text-white" />
-				<Check size={13} className="check text-white -ml-2.5" />
-			</div>
-		);
 	return null;
 }
 
@@ -395,16 +398,6 @@ function FeatureCard({ f, delay }: { f: Feature; delay: number }) {
 					<p className="text-white/80 text-[13px] leading-relaxed line-clamp-3">
 						{f.desc}
 					</p>
-					<a
-						href="#planos"
-						className="mt-3.5 inline-flex items-center gap-1.5 text-white/95 hover:text-white text-xs font-bold uppercase tracking-wider"
-					>
-						Explorar
-						<ArrowRight
-							size={13}
-							className="group-hover:translate-x-0.5 transition-transform"
-						/>
-					</a>
 				</div>
 			</div>
 		</div>
@@ -419,15 +412,12 @@ export function FeatureCards() {
 			<div className="max-w-7xl mx-auto">
 				<ScrollReveal className="text-center mb-12">
 					<h2 className="font-display text-3xl md:text-[2.5rem] font-black text-white tracking-tight">
-						Tudo que você precisa{' '}
-						<span className="grad-brand">em um só lugar</span>
+						Uma plataforma completa{' '}
+						<span className="grad-brand">com tudo que você precisa</span>
 					</h2>
 					<p className="text-slate-400 mt-3 max-w-2xl mx-auto">
-						Aprenda, conecte-se, crie, venda e cresça com as melhores
-						ferramentas do mercado.
-						<span className="block text-violet-400/80 text-xs mt-2 font-mono">
-							[ passe o mouse nos cards pra ver cada ferramenta em ação ]
-						</span>
+						Ferramentas exclusivas para transformar conhecimento em resultados
+						reais.
 					</p>
 				</ScrollReveal>
 

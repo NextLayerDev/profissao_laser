@@ -1,3 +1,4 @@
+import { FaqSection } from '@/components/landing/faq-section';
 import { FeatureCards } from '@/components/landing/feature-cards';
 import { FinalCTA } from '@/components/landing/final-cta';
 import { Hero } from '@/components/landing/hero';
@@ -27,9 +28,11 @@ export default function LandingPage() {
 			<Divider />
 			<VideoSection />
 			<Divider />
+			<PricingSection />
+			<Divider />
 			<Testimonials />
 			<Divider />
-			<PricingSection />
+			<FaqSection />
 			<FinalCTA />
 			<LandingFooter />
 			<WhatsAppButton />

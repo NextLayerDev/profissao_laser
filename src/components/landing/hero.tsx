@@ -1,138 +1,11 @@
 'use client';
 
-import { ArrowRight, Play, Zap } from 'lucide-react';
+import { ArrowRight, Check, Play } from 'lucide-react';
+import Image from 'next/image';
 import { Fragment, useEffect, useRef, useState } from 'react';
-import { fmtNumber, useCountUp, useMagnetic } from '@/hooks/use-landing';
-import { useScrollReveal } from '@/hooks/use-scroll-reveal';
+import { useMagnetic } from '@/hooks/use-landing';
 
-// ─── Sub-components ──────────────────────────────────────────────────────────
-
-function HeroImage() {
-	return (
-		<div className="relative h-full w-full overflow-hidden hero-img rounded-2xl border border-violet-500/10 isolate">
-			<div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/60 to-transparent z-10" />
-			<svg
-				aria-hidden="true"
-				viewBox="0 0 600 700"
-				preserveAspectRatio="xMidYMid slice"
-				className="absolute inset-0 w-full h-full"
-			>
-				<defs>
-					<pattern
-						id="hex"
-						width="34"
-						height="30"
-						patternUnits="userSpaceOnUse"
-					>
-						<circle cx="17" cy="15" r="2" fill="rgba(255,255,255,0.18)" />
-					</pattern>
-					<radialGradient id="glow" cx="0.65" cy="0.55" r="0.55">
-						<stop offset="0" stopColor="#f0abfc" stopOpacity="0.9" />
-						<stop offset="0.4" stopColor="#a855f7" stopOpacity="0.55" />
-						<stop offset="1" stopColor="#000" stopOpacity="0" />
-					</radialGradient>
-					<linearGradient id="beam" x1="0" x2="0" y1="0" y2="1">
-						<stop offset="0" stopColor="#e9d5ff" stopOpacity="0" />
-						<stop offset="0.5" stopColor="#c084fc" stopOpacity="0.7" />
-						<stop offset="1" stopColor="#e9d5ff" stopOpacity="1" />
-					</linearGradient>
-				</defs>
-				<g transform="skewY(-6) translate(0, 320)">
-					<rect x="0" y="0" width="600" height="380" fill="rgba(15,5,30,0.7)" />
-					<rect x="0" y="0" width="600" height="380" fill="url(#hex)" />
-				</g>
-				<ellipse cx="380" cy="320" rx="290" ry="220" fill="url(#glow)" />
-				<g transform="translate(370, 70)">
-					<rect
-						x="-30"
-						y="0"
-						width="60"
-						height="90"
-						rx="6"
-						fill="#1a1430"
-						stroke="#2a1f4a"
-						strokeWidth="1.5"
-					/>
-					<rect
-						x="-22"
-						y="90"
-						width="44"
-						height="40"
-						rx="4"
-						fill="#23173d"
-						stroke="#2a1f4a"
-						strokeWidth="1.5"
-					/>
-					<rect
-						x="-14"
-						y="130"
-						width="28"
-						height="60"
-						rx="3"
-						fill="#1a1430"
-						stroke="#2a1f4a"
-						strokeWidth="1.5"
-					/>
-					<circle cx="0" cy="195" r="6" fill="#0a0815" stroke="#2a1f4a" />
-				</g>
-				<rect
-					x="368"
-					y="205"
-					width="4"
-					height="120"
-					fill="url(#beam)"
-					className="laser-ray"
-				/>
-				<g transform="translate(370, 330)">
-					<circle r="22" fill="#fdf4ff" opacity="0.35" className="laser-dot" />
-					<circle r="10" fill="#f0abfc" opacity="0.9" className="laser-dot" />
-					<circle r="3" fill="#fff" />
-				</g>
-				{Array.from({ length: 12 }).map((_, i) => {
-					const a = (i * 30 * Math.PI) / 180;
-					const r = 30 + (i % 4) * 8;
-					return (
-						<line
-							key={i}
-							x1={370}
-							y1={330}
-							x2={370 + Math.cos(a) * r}
-							y2={330 + Math.sin(a) * r}
-							stroke="#f0abfc"
-							strokeWidth="1.4"
-							opacity={0.7 - (i % 4) * 0.15}
-						/>
-					);
-				})}
-			</svg>
-			<div className="absolute bottom-3 right-3 text-[10px] font-mono text-white/30 tracking-wide uppercase">
-				[foto: cabeçote fiber em ação]
-			</div>
-		</div>
-	);
-}
-
-function AvatarStack() {
-	const items = [
-		{ i: 'MR', g: 'from-violet-500 to-purple-700' },
-		{ i: 'JC', g: 'from-fuchsia-500 to-pink-600' },
-		{ i: 'AL', g: 'from-cyan-500 to-blue-600' },
-		{ i: 'FP', g: 'from-orange-500 to-amber-400' },
-		{ i: 'SP', g: 'from-violet-600 to-indigo-600' },
-	];
-	return (
-		<div className="flex -space-x-2">
-			{items.map((a) => (
-				<div
-					key={a.i}
-					className={`bg-gradient-to-br ${a.g} w-9 h-9 rounded-full border-2 border-ink-900 grid place-items-center text-[11px] font-bold text-white`}
-				>
-					{a.i}
-				</div>
-			))}
-		</div>
-	);
-}
+// ─── Headline com efeito de gravação (typewriter) ────────────────────────────
 
 interface HeadlinePart {
 	text: string;
@@ -141,10 +14,9 @@ interface HeadlinePart {
 
 function EngravedHeadline() {
 	const parts: HeadlinePart[] = [
-		{ text: 'O ecossistema completo\npara ', cls: '' },
-		{ text: 'profissionais do laser', cls: 'grad-brand' },
-		{ text: '\naprenderem, evoluírem e\n', cls: '' },
-		{ text: 'viverem do que amam.', cls: 'grad-brand' },
+		{ text: 'Tudo que um ', cls: '' },
+		{ text: 'profissional', cls: 'grad-brand' },
+		{ text: ' precisa para crescer em um só lugar.', cls: '' },
 	];
 	const total = parts.reduce((n, p) => n + p.text.length, 0);
 	const [shown, setShown] = useState(0);
@@ -180,12 +52,14 @@ function EngravedHeadline() {
 	const done = shown >= total;
 
 	return (
-		<h1 className="font-display text-4xl md:text-5xl lg:text-[3.6rem] font-black text-white leading-[1.05] tracking-tight min-h-[5em]">
+		<h1 className="font-display text-4xl md:text-5xl lg:text-[3.6rem] font-black text-white leading-[1.05] tracking-tight min-h-[3.5em]">
 			{rendered}
 			{!done && <span className="engrave-caret" />}
 		</h1>
 	);
 }
+
+// ─── Sparks (partículas) + spotlight do mouse ────────────────────────────────
 
 function SparksCanvas() {
 	const ref = useRef<HTMLCanvasElement>(null);
@@ -293,63 +167,15 @@ function Spotlight() {
 	);
 }
 
-const TICKER_EVENTS = [
-	{ who: 'Rafael S.', what: 'acabou de entrar', tag: 'novo membro' },
-	{ who: 'Juliana C.', what: 'concluiu a Aula 12', tag: 'evolução' },
-	{ who: 'André L.', what: 'fez upgrade pro plano Pro', tag: 'upgrade' },
-	{ who: 'Marcos P.', what: 'baixou 24 vetores', tag: 'biblioteca' },
-	{
-		who: 'Camila R.',
-		what: 'entrou no Grupo WhatsApp',
-		tag: 'comunidade',
-	},
-	{
-		who: 'Diego S.',
-		what: 'enviou uma prévia aprovada',
-		tag: 'projeto',
-	},
+// ─── Bullets do hero (print) ─────────────────────────────────────────────────
+
+const HERO_BULLETS = [
+	'Aprenda com especialistas',
+	'Acesse parâmetros e conteúdos exclusivos',
+	'Conecte-se com profissionais de todo o Brasil',
+	'Encontre fornecedores e oportunidades reais',
+	'Ferramentas exclusivas do mundo do laser a um click',
 ];
-
-function LiveTicker() {
-	const [idx, setIdx] = useState(0);
-	useEffect(() => {
-		const t = setInterval(
-			() => setIdx((i) => (i + 1) % TICKER_EVENTS.length),
-			2800,
-		);
-		return () => clearInterval(t);
-	}, []);
-	const cur = TICKER_EVENTS[idx];
-	return (
-		<div className="card-dark inline-flex items-center gap-3 rounded-full px-3 py-2 text-xs backdrop-blur-sm">
-			<span className="relative flex w-2.5 h-2.5">
-				<span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-60" />
-				<span className="relative w-2.5 h-2.5 rounded-full bg-emerald-400" />
-			</span>
-			<span className="text-white font-bold">{cur.who}</span>
-			<span className="text-slate-400">{cur.what}</span>
-			<span className="px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-300 text-[10px] font-bold uppercase tracking-wider font-mono">
-				{cur.tag}
-			</span>
-		</div>
-	);
-}
-
-function AvatarsAndStats() {
-	const { ref, isVisible } = useScrollReveal(0.4);
-	const n = useCountUp(2850, isVisible);
-	return (
-		<div ref={ref} className="flex items-center gap-3 mt-6">
-			<AvatarStack />
-			<div>
-				<div className="text-white text-sm font-bold">
-					{fmtNumber(n, { prefix: '+' })} membros ativos
-				</div>
-				<div className="text-slate-500 text-xs">e crescendo todos os dias</div>
-			</div>
-		</div>
-	);
-}
 
 // ─── Main Hero ───────────────────────────────────────────────────────────────
 
@@ -374,64 +200,81 @@ export function Hero() {
 				<div className="grid grid-cols-1 lg:grid-cols-[1.05fr_1fr] gap-10 items-center">
 					<div className="animate-fade-in-up">
 						<div className="inline-flex items-center gap-2 bg-violet-500/10 border border-violet-500/30 text-violet-200 text-[11px] font-semibold uppercase tracking-[0.16em] px-3 py-1.5 rounded-full mb-6">
-							<Zap size={13} className="text-violet-300" />A maior comunidade de
-							laser do Brasil
+							<span className="relative flex w-2 h-2">
+								<span className="absolute inset-0 rounded-full bg-violet-400 animate-ping opacity-60" />
+								<span className="relative w-2 h-2 rounded-full bg-violet-400" />
+							</span>
+							A maior comunidade de profissionais do laser do Brasil
 						</div>
 
 						<EngravedHeadline />
 
 						<p className="text-slate-400 text-base md:text-lg max-w-xl mt-6 leading-relaxed">
-							Cursos completos, comunidade ativa, ferramentas exclusivas e
-							conteúdo prático para transformar conhecimento em resultados.
+							A comunidade Profissão Laser é a plataforma completa para você
+							aprender, se conectar, trocar experiências e acelerar seus
+							resultados.
 						</p>
 
-						<AvatarsAndStats />
+						<ul className="mt-7 space-y-3">
+							{HERO_BULLETS.map((b) => (
+								<li key={b} className="flex items-center gap-3">
+									<span className="w-5 h-5 rounded-full bg-violet-500/20 border border-violet-500/30 grid place-items-center shrink-0">
+										<Check size={12} className="text-violet-300" />
+									</span>
+									<span className="text-slate-200 text-sm md:text-[15px]">
+										{b}
+									</span>
+								</li>
+							))}
+						</ul>
 
-						<div className="flex flex-wrap items-center gap-3 mt-7">
-							<a
+						<div className="flex flex-wrap items-center gap-3 mt-8">
+							<button
 								ref={ctaRef}
-								href="#planos"
-								className="btn-accent group inline-flex items-center gap-2 text-white font-bold px-6 py-3.5 rounded-xl shadow-brand-lg"
+								type="button"
+								className="btn-accent group inline-flex items-center gap-2 text-white font-bold px-6 py-3.5 rounded-xl shadow-brand-lg uppercase tracking-wider text-sm"
 							>
-								QUERO FAZER PARTE AGORA
+								Quero fazer parte agora
 								<ArrowRight
 									size={16}
 									className="group-hover:translate-x-0.5 transition-transform"
 								/>
-							</a>
-							<a
-								href="#video"
-								className="inline-flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] text-white font-semibold px-5 py-3.5 rounded-xl border border-violet-500/15 hover:border-violet-500/40 transition-colors"
+							</button>
+							<button
+								type="button"
+								className="inline-flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] text-white font-semibold px-5 py-3.5 rounded-xl border border-violet-500/15 hover:border-violet-500/40 transition-colors uppercase tracking-wider text-sm"
 							>
 								<span className="btn-accent w-7 h-7 grid place-items-center rounded-full">
 									<Play size={11} className="text-white translate-x-px" />
 								</span>
-								ASSISTIR AO VÍDEO
-							</a>
-						</div>
-
-						<div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-6 text-xs text-slate-500">
-							<span className="inline-flex items-center gap-1.5">
-								<span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
-								Acesso imediato
-							</span>
-							<span className="inline-flex items-center gap-1.5">
-								<span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
-								Cancelamento fácil
-							</span>
-							<span className="inline-flex items-center gap-1.5">
-								<span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
-								Ambiente 100% seguro
-							</span>
-						</div>
-
-						<div className="mt-5">
-							<LiveTicker />
+								Assistir ao vídeo
+							</button>
 						</div>
 					</div>
 
-					<div className="relative h-[420px] md:h-[520px] lg:h-[560px]">
-						<HeroImage />
+					{/* Foto do profissional + card de citação */}
+					<div className="relative h-[440px] md:h-[540px] lg:h-[580px]">
+						<div className="absolute -inset-6 bg-violet-700/20 blur-3xl rounded-full" />
+						<div className="relative h-full w-full rounded-2xl overflow-hidden border border-violet-500/20 hero-img isolate">
+							<div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/60 to-transparent z-10" />
+							<Image
+								src="/img/profissional-hero.jpeg"
+								alt="Fernando Nucci — Especialista em Laser"
+								fill
+								sizes="(max-width: 1024px) 100vw, 560px"
+								className="object-cover object-top"
+								priority
+							/>
+						</div>
+						<div className="absolute -bottom-4 -left-3 md:-left-6 card-dark rounded-2xl p-4 max-w-[280px] backdrop-blur-md border border-violet-500/25 shadow-brand">
+							<p className="text-white text-[13.5px] font-semibold leading-snug">
+								"O mercado não está difícil, o mercado está se{' '}
+								<span className="grad-brand">PROFISSIONALIZANDO!</span>"
+							</p>
+							<p className="text-slate-400 text-xs mt-2">
+								— Fernando Nucci · Especialista em Laser
+							</p>
+						</div>
 					</div>
 				</div>
 			</div>

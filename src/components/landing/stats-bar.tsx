@@ -56,22 +56,21 @@ export function StatsBar() {
 					<div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-violet-500/[0.08]">
 						<Stat
 							Icon={Users}
-							value={2850}
+							value={3500}
 							gradFrom="#7c3aed"
 							gradTo="#5b21b6"
-							label="Membros ativos"
+							label="Membros treinados"
 						/>
 						<Stat
 							Icon={BookOpen}
-							value={150}
+							value={250}
 							gradFrom="#06b6d4"
 							gradTo="#1d4ed8"
-							label="Aulas e conteúdos"
+							label="Aulas"
 						/>
 						<Stat
 							Icon={Sparkles}
-							value={14}
-							prefix=""
+							value={15}
 							gradFrom="#a855f7"
 							gradTo="#7e22ce"
 							label="Ferramentas exclusivas"
@@ -83,7 +82,7 @@ export function StatsBar() {
 							suffix="%"
 							gradFrom="#f97316"
 							gradTo="#dc2626"
-							label="Focado em laser"
+							label="Foco no laser"
 						/>
 					</div>
 				</div>
