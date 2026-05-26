@@ -12,6 +12,7 @@ export const customerSchema = z.object({
 	email: z.string().email(),
 	phone: z.string().nullable().optional(),
 	banned: z.boolean().default(false),
+	isTestUnlimited: z.boolean().optional(),
 	subscription: subscriptionSchema.nullable().optional(),
 });
 
