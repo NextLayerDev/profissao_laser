@@ -574,19 +574,19 @@ function StepParams({
 	}[] = [
 		{
 			key: 'rapido',
-			label: 'Rápido',
+			label: 'Essencial',
 			desc: 'Traço P&B simples e veloz',
 			icon: <Zap className="w-6 h-6" />,
 		},
 		{
 			key: 'detalhado',
-			label: 'Detalhado',
+			label: 'Profissional',
 			desc: 'Posterize com tons e curvas',
 			icon: <Layers className="w-6 h-6" />,
 		},
 		{
 			key: 'svg',
-			label: 'Apenas SVG',
+			label: 'Vetor bruto',
 			desc: 'Traço puro, SVG limpo',
 			icon: <PenLine className="w-6 h-6" />,
 		},
