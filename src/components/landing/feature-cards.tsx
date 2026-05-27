@@ -139,7 +139,7 @@ function FeatureCard({ f }: { f: Feature }) {
 			>
 				<Icon size={20} className="text-white" />
 			</div>
-			<h3 className="font-display text-white text-[15px] font-bold tracking-tight mb-1.5">
+			<h3 className="font-display text-white text-[15px] font-bold tracking-tight leading-snug min-h-[2.5em] mb-1.5">
 				{f.title}
 			</h3>
 			<p className="text-slate-400 text-[13px] leading-relaxed">{f.desc}</p>

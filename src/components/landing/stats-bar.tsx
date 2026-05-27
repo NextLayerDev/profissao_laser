@@ -38,7 +38,7 @@ function Stat({
 				<Icon size={20} className="text-white" />
 			</div>
 			<div>
-				<div className="font-display text-white font-extrabold text-xl md:text-2xl leading-none tracking-tight">
+				<div className="font-display text-white font-extrabold text-xl md:text-2xl leading-tight tracking-tight">
 					{fmtNumber(n, { prefix, suffix })}
 				</div>
 				<div className="text-slate-400 text-xs md:text-sm mt-1">{label}</div>

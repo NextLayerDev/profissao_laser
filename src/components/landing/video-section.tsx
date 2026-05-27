@@ -98,7 +98,7 @@ export function VideoSection() {
 				</ScrollReveal>
 
 				<ScrollReveal delay={0.15}>
-					<h2 className="font-display text-3xl md:text-[2.25rem] font-black text-white leading-tight tracking-tight">
+					<h2 className="font-display text-3xl md:text-[2.25rem] font-black text-white leading-[1.15] tracking-tight">
 						Mais que uma comunidade. Um ecossistema completo para você{' '}
 						<span className="grad-brand">evoluir.</span>
 					</h2>

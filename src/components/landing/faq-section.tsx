@@ -89,7 +89,7 @@ function FaqItem({
 				onClick={onClick}
 				className="w-full flex items-center justify-between px-5 py-4 text-left cursor-pointer"
 			>
-				<span className="font-display text-white font-bold text-sm pr-4">
+				<span className="font-display text-white font-bold text-sm leading-snug pr-4">
 					{item.q}
 				</span>
 				<ChevronDown
