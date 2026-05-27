@@ -80,10 +80,12 @@ export function CommunitySection() {
 	const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
 	const [newChannelName, setNewChannelName] = useState('');
 	const [newChannelAdminOnly, setNewChannelAdminOnly] = useState(false);
+	const [newChannelAdminView, setNewChannelAdminView] = useState(false);
 	const [newChannelOrder, setNewChannelOrder] = useState(0);
 	const [editChannelName, setEditChannelName] = useState('');
 	const [editChannelDescription, setEditChannelDescription] = useState('');
 	const [editChannelAdminOnly, setEditChannelAdminOnly] = useState(false);
+	const [editChannelAdminView, setEditChannelAdminView] = useState(false);
 	const [editChannelOrder, setEditChannelOrder] = useState(0);
 	const [messageInput, setMessageInput] = useState('');
 	const [messageFile, setMessageFile] = useState<File | null>(null);
@@ -166,12 +168,14 @@ export function CommunitySection() {
 			{
 				name: newChannelName.trim(),
 				adminOnly: newChannelAdminOnly,
+				adminView: newChannelAdminView,
 				order: newChannelOrder,
 			},
 			{
 				onSuccess: () => {
 					setNewChannelName('');
 					setNewChannelAdminOnly(false);
+					setNewChannelAdminView(false);
 					setNewChannelOrder(0);
 					setShowCreateModal(false);
 				},
@@ -184,6 +188,7 @@ export function CommunitySection() {
 			setEditChannelName(selectedChannel.label);
 			setEditChannelDescription(selectedChannel.description ?? '');
 			setEditChannelAdminOnly(selectedChannel.adminOnly ?? false);
+			setEditChannelAdminView(selectedChannel.adminView ?? false);
 			setEditChannelOrder(selectedChannel.order ?? 0);
 			setShowEditModal(true);
 		}
@@ -198,6 +203,7 @@ export function CommunitySection() {
 					name: editChannelName.trim(),
 					description: editChannelDescription.trim(),
 					adminOnly: editChannelAdminOnly,
+					adminView: editChannelAdminView,
 					order: editChannelOrder,
 				},
 			},
@@ -871,6 +877,17 @@ export function CommunitySection() {
 										Apenas admins podem enviar mensagens
 									</span>
 								</label>
+								<label className="flex items-center gap-3 mt-3 cursor-pointer">
+									<input
+										type="checkbox"
+										checked={newChannelAdminView}
+										onChange={(e) => setNewChannelAdminView(e.target.checked)}
+										className="rounded border-slate-300 dark:border-gray-600 text-violet-600 focus:ring-violet-500"
+									/>
+									<span className="text-sm text-slate-700 dark:text-gray-300">
+										Ocultar dos alunos (só admin vê)
+									</span>
+								</label>
 								<button
 									type="button"
 									onClick={handleCreateChannel}
@@ -982,6 +999,19 @@ export function CommunitySection() {
 										/>
 										<span className="text-sm text-slate-700 dark:text-gray-300">
 											Apenas admins podem enviar mensagens
+										</span>
+									</label>
+									<label className="flex items-center gap-3 cursor-pointer">
+										<input
+											type="checkbox"
+											checked={editChannelAdminView}
+											onChange={(e) =>
+												setEditChannelAdminView(e.target.checked)
+											}
+											className="rounded border-slate-300 dark:border-gray-600 text-violet-600 focus:ring-violet-500"
+										/>
+										<span className="text-sm text-slate-700 dark:text-gray-300">
+											Ocultar dos alunos (só admin vê)
 										</span>
 									</label>
 								</div>

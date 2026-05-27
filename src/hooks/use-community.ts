@@ -101,8 +101,12 @@ export function useCommunityChannels() {
 export function useCreateChannel() {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: (body: { name: string; adminOnly?: boolean; order?: number }) =>
-			createChannel(body),
+		mutationFn: (body: {
+			name: string;
+			adminOnly?: boolean;
+			adminView?: boolean;
+			order?: number;
+		}) => createChannel(body),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: COMMUNITY_KEYS.channels() });
 			toast.success('Canal criado!');
@@ -125,6 +129,7 @@ export function useUpdateChannel() {
 				name: string;
 				description: string;
 				adminOnly?: boolean;
+				adminView?: boolean;
 				order?: number;
 			};
 		}) => updateChannel(channelId, data),

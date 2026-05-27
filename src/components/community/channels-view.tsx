@@ -136,6 +136,15 @@ export function ChannelsView({
 			);
 	}, [channels]);
 
+	// Auto-seleciona o 1º canal visível (ex.: só "Fiber" sobrando após ocultar os demais)
+	useEffect(() => {
+		if (activeChannel || channels.length === 0) return;
+		const first = [...channels].sort(
+			(a, b) => (a.order ?? 0) - (b.order ?? 0),
+		)[0];
+		if (first) setActiveChannel(first.id);
+	}, [activeChannel, channels]);
+
 	const activeChannelData = channels.find((c) => c.id === activeChannel);
 	const activeChannelLabel = (() => {
 		const label = activeChannelData?.label ?? activeChannel;

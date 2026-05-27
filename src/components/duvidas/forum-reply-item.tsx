@@ -1,7 +1,7 @@
 'use client';
 
 import { CheckCircle2, ChevronUp, Pencil, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import {
 	useAcceptForumReply,
@@ -9,6 +9,7 @@ import {
 	useUpdateForumReply,
 	useUpvoteForumReply,
 } from '@/hooks/use-forum';
+import { isAdmin } from '@/lib/auth';
 import type { ForumReply } from '@/types/forum';
 
 interface ForumReplyItemProps {
@@ -40,6 +41,9 @@ export function ForumReplyItem({
 	const accept = useAcceptForumReply(postId);
 	const remove = useDeleteForumReply(postId);
 	const update = useUpdateForumReply(postId);
+
+	const [admin, setAdmin] = useState(false);
+	useEffect(() => setAdmin(isAdmin()), []);
 
 	const isOwner = reply.authorId === currentUserId;
 
@@ -184,25 +188,25 @@ export function ForumReplyItem({
 						</button>
 					)}
 					{isOwner && (
-						<>
-							<button
-								type="button"
-								onClick={handleStartEdit}
-								title="Editar resposta"
-								className="p-1.5 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors"
-							>
-								<Pencil className="w-4 h-4" />
-							</button>
-							<button
-								type="button"
-								onClick={handleDelete}
-								disabled={remove.isPending}
-								title="Deletar resposta"
-								className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-							>
-								<Trash2 className="w-4 h-4" />
-							</button>
-						</>
+						<button
+							type="button"
+							onClick={handleStartEdit}
+							title="Editar resposta"
+							className="p-1.5 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors"
+						>
+							<Pencil className="w-4 h-4" />
+						</button>
+					)}
+					{(isOwner || admin) && (
+						<button
+							type="button"
+							onClick={handleDelete}
+							disabled={remove.isPending}
+							title="Deletar resposta"
+							className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+						>
+							<Trash2 className="w-4 h-4" />
+						</button>
 					)}
 				</div>
 			</div>

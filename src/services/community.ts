@@ -39,6 +39,7 @@ export async function getChannels(): Promise<Channel[]> {
 export async function createChannel(body: {
 	name: string;
 	adminOnly?: boolean;
+	adminView?: boolean;
 	order?: number;
 }): Promise<{ id: string }> {
 	const { data } = await api.post<{ id: string }>('/community/channels', {
@@ -54,6 +55,7 @@ export async function updateChannel(
 		name: string;
 		description: string;
 		adminOnly?: boolean;
+		adminView?: boolean;
 		order?: number;
 	},
 ): Promise<Channel> {
