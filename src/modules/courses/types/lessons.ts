@@ -7,6 +7,7 @@ export const lessonSchema = z.object({
 	description: z.string().nullable().optional(),
 	body_md: z.string().nullable().optional(),
 	video_id: z.string().nullable().optional(),
+	video_playback_url: z.string().nullable().optional(),
 	duration_seconds: z.number().int().nullable().optional(),
 	position: z.number().int(),
 	is_free: z.boolean(),

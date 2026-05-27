@@ -8,6 +8,7 @@ import {
 	deleteLesson,
 	listModuleLessons,
 	updateLesson,
+	uploadLessonVideo,
 } from '../services/lessons.service';
 import type {
 	CreateLessonPayload,
@@ -54,6 +55,27 @@ export function useUpdateLesson(moduleId: string) {
 		},
 		onError: (err) =>
 			toast.error(getApiErrorMessage(err, 'Erro ao atualizar lição')),
+	});
+}
+
+export function useUploadLessonVideo(moduleId: string) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			id,
+			file,
+			onProgress,
+		}: {
+			id: string;
+			file: File;
+			onProgress?: (percent: number) => void;
+		}) => uploadLessonVideo(id, file, onProgress),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: moduleLessonsQueryKey(moduleId) });
+			toast.success('Vídeo enviado!');
+		},
+		onError: (err) =>
+			toast.error(getApiErrorMessage(err, 'Erro ao enviar vídeo')),
 	});
 }
 

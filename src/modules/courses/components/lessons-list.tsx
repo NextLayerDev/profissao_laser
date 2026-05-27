@@ -47,45 +47,56 @@ export function LessonsList({ moduleId, expanded }: Props) {
 			) : (
 				<ul className="space-y-1.5">
 					{(lessons ?? []).map((l) => (
-						<li
-							key={l.id}
-							className="group flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5"
-						>
-							<span className="text-xs text-slate-400 w-6 tabular-nums">
-								{l.position}
-							</span>
-							<FileText className="w-4 h-4 text-slate-400 shrink-0" />
-							<span className="flex-1 text-sm text-slate-900 dark:text-white truncate">
-								{l.title}
-							</span>
-							{l.is_free ? (
-								<span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600">
-									grátis
-								</span>
-							) : (
-								<Lock className="w-3.5 h-3.5 text-slate-400" />
-							)}
+						<li key={l.id} className="group relative">
 							<button
 								type="button"
 								onClick={() => {
 									setEditing(l);
 									setOpen(true);
 								}}
-								className="opacity-0 group-hover:opacity-100 p-1.5 rounded text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10"
+								className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200/70 dark:border-white/10 bg-gradient-to-r from-sky-50/50 via-white to-indigo-50/40 dark:from-sky-950/20 dark:via-white/[0.02] dark:to-indigo-950/15 hover:from-sky-100/70 hover:to-indigo-100/60 dark:hover:from-sky-900/30 dark:hover:to-indigo-900/25 text-left transition-colors"
 							>
-								<Pencil className="w-3.5 h-3.5" />
+								<span className="text-xs text-slate-400 w-6 tabular-nums">
+									{l.position}
+								</span>
+								<FileText className="w-4 h-4 text-slate-400 shrink-0" />
+								<span className="flex-1 text-sm text-slate-900 dark:text-white truncate">
+									{l.title}
+								</span>
+								{l.is_free ? (
+									<span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600">
+										grátis
+									</span>
+								) : (
+									<Lock className="w-3.5 h-3.5 text-slate-400" />
+								)}
+								<span className="w-14" aria-hidden />
 							</button>
-							<button
-								type="button"
-								onClick={() => {
-									if (confirm(`Remover a lição "${l.title}"?`)) {
-										deleteMut.mutate(l.id);
-									}
-								}}
-								className="opacity-0 group-hover:opacity-100 p-1.5 rounded text-red-500 hover:bg-red-500/10"
-							>
-								<Trash2 className="w-3.5 h-3.5" />
-							</button>
+							<div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100">
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										setEditing(l);
+										setOpen(true);
+									}}
+									className="p-1.5 rounded text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10"
+								>
+									<Pencil className="w-3.5 h-3.5" />
+								</button>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										if (confirm(`Remover a lição "${l.title}"?`)) {
+											deleteMut.mutate(l.id);
+										}
+									}}
+									className="p-1.5 rounded text-red-500 hover:bg-red-500/10"
+								>
+									<Trash2 className="w-3.5 h-3.5" />
+								</button>
+							</div>
 						</li>
 					))}
 				</ul>
@@ -110,16 +121,15 @@ export function LessonsList({ moduleId, expanded }: Props) {
 					onClose={() => setOpen(false)}
 					onSubmit={(payload) => {
 						if (editing) {
-							updateMut.mutate(
-								{ id: editing.id, payload: payload as UpdateLessonPayload },
-								{ onSuccess: () => setOpen(false) },
-							);
-						} else {
-							createMut.mutate(
-								{ ...(payload as CreateLessonPayload), module_id: moduleId },
-								{ onSuccess: () => setOpen(false) },
-							);
+							return updateMut.mutateAsync({
+								id: editing.id,
+								payload: payload as UpdateLessonPayload,
+							});
 						}
+						return createMut.mutateAsync({
+							...(payload as CreateLessonPayload),
+							module_id: moduleId,
+						});
 					}}
 				/>
 			)}

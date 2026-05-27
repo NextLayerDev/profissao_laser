@@ -42,7 +42,7 @@ export function ModuleFormModal({
 					<input
 						value={title}
 						onChange={(e) => setTitle(e.target.value)}
-						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm"
+						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-gradient-to-br from-sky-50/60 via-white to-indigo-50/40 dark:from-sky-950/25 dark:via-white/[0.03] dark:to-indigo-950/20 text-slate-900 dark:text-white placeholder:text-slate-500 px-3 py-2 text-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 focus:outline-none transition-colors"
 					/>
 				</Field>
 
@@ -51,7 +51,7 @@ export function ModuleFormModal({
 						value={description ?? ''}
 						onChange={(e) => setDescription(e.target.value)}
 						rows={3}
-						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm"
+						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-gradient-to-br from-sky-50/60 via-white to-indigo-50/40 dark:from-sky-950/25 dark:via-white/[0.03] dark:to-indigo-950/20 text-slate-900 dark:text-white placeholder:text-slate-500 px-3 py-2 text-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 focus:outline-none transition-colors"
 					/>
 				</Field>
 
@@ -61,7 +61,7 @@ export function ModuleFormModal({
 						min={1}
 						value={position}
 						onChange={(e) => setPosition(e.target.value)}
-						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm"
+						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-gradient-to-br from-sky-50/60 via-white to-indigo-50/40 dark:from-sky-950/25 dark:via-white/[0.03] dark:to-indigo-950/20 text-slate-900 dark:text-white placeholder:text-slate-500 px-3 py-2 text-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 focus:outline-none transition-colors"
 					/>
 				</Field>
 
@@ -69,7 +69,7 @@ export function ModuleFormModal({
 					<button
 						type="button"
 						onClick={onClose}
-						className="flex-1 px-4 py-2.5 rounded-xl text-sm border border-slate-200 dark:border-white/10"
+						className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-gray-200 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
 					>
 						Cancelar
 					</button>
