@@ -1,20 +1,16 @@
 'use client';
 
-import { Check, Loader2, Shield } from 'lucide-react';
+import { Check, Shield } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
-import {
-	type LandingPlan,
-	useLandingPlans,
-	usePlanCheckout,
-} from '@/hooks/use-landing-plans';
-import { getActiveToken } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { type LandingPlan, useLandingPlans } from '@/hooks/use-landing-plans';
 import type { PlanInterval } from '@/services/landing-plans';
+import { PLAN_FEATURES, PLAN_TAGLINES } from '@/utils/constants/plans-content';
 import { ScrollReveal, StaggerReveal } from './scroll-reveal';
 
-// ─── Conteúdo por plano (cores + features + tagline), indexado pela `key` ─────
-// Preços/nome/ordem vêm da API; estes textos são a vitrine (fiéis ao print).
+// ─── Cores por plano (presentacional), indexadas pela `key` ──────────────────
+// Preços/nome/ordem vêm da API; features/taglines de plans-content.
 
 interface PlanAccent {
 	name: string; // cor do nome do plano
@@ -56,66 +52,7 @@ const ACCENTS: Record<string, PlanAccent> = {
 };
 const DEFAULT_ACCENT: PlanAccent = ACCENTS.avan;
 const accentFor = (key: string): PlanAccent => ACCENTS[key] ?? DEFAULT_ACCENT;
-
-const TAGLINES_BY_KEY: Record<string, string> = {
-	basic: 'Para começar e aprender',
-	pro: 'Para quem quer ir além',
-	avan: 'Para quem busca resultados',
-	max: 'Para quem quer o máximo',
-};
-
-const FEATURES_BY_KEY: Record<string, string[]> = {
-	basic: [
-		'Aulas Gravadas',
-		'Suporte online',
-		'Biblioteca de vetores',
-		'Parâmetros',
-		'Fórum',
-		'Chat',
-		'Lista de fornecedores',
-		'Eventos e Lives fechadas',
-		'Vitrine de Projetos',
-	],
-	pro: [
-		'Aulas Gravadas',
-		'Suporte online',
-		'Biblioteca de vetores',
-		'Parâmetros',
-		'Fórum',
-		'Chat',
-		'Lista de fornecedores',
-		'Eventos e Lives fechadas',
-		'Vitrine de Projetos',
-		'Grupo de Whatsapp',
-	],
-	avan: [
-		'Aulas Gravadas',
-		'Suporte online',
-		'Biblioteca de vetores',
-		'Parâmetros',
-		'Fórum',
-		'Chat',
-		'Lista de fornecedores',
-		'Garantias e Lives fechadas',
-		'Integração de Projetos',
-		'Vetorização (equipe de suporte online)',
-	],
-	max: [
-		'Aulas Gravadas',
-		'Suporte online',
-		'Biblioteca de vetores',
-		'Parâmetros',
-		'Chat',
-		'Lista de fornecedores',
-		'Eventos e Lives fechadas e suporte online',
-		'Prévias',
-		'Canva com IA',
-		'Pacote de 150 Voxxys',
-		'10 Horas de mentoria online',
-		'Gravação 360° - Grupo de 5 pessoas',
-	],
-};
-const featuresFor = (key: string): string[] => FEATURES_BY_KEY[key] ?? [];
+const featuresFor = (key: string): string[] => PLAN_FEATURES[key] ?? [];
 
 // Fallback (mesmos valores do print) — usado se a API pública ainda não responder.
 const FALLBACK_PLANS: LandingPlan[] = [
@@ -236,17 +173,15 @@ function PlanCard({
 	p,
 	billing,
 	onBuy,
-	isPending,
 }: {
 	p: LandingPlan;
 	billing: 'annual' | 'monthly';
 	onBuy: (p: LandingPlan) => void;
-	isPending: boolean;
 }) {
 	const isAnnual = billing === 'annual';
 	const a = accentFor(p.key);
 	const features = featuresFor(p.key);
-	const tagline = p.tagline || TAGLINES_BY_KEY[p.key] || '';
+	const tagline = p.tagline || PLAN_TAGLINES[p.key] || '';
 	const annualP = p.annual != null ? splitPrice(p.annual) : null;
 	const monthlyP = p.monthly != null ? splitPrice(p.monthly) : null;
 
@@ -366,17 +301,9 @@ function PlanCard({
 			<button
 				type="button"
 				onClick={() => onBuy(p)}
-				disabled={isPending}
-				className={`relative w-full font-bold uppercase tracking-wider text-[13px] py-3.5 rounded-xl transition-all cursor-pointer disabled:opacity-60 disabled:cursor-wait inline-flex items-center justify-center gap-2 ${a.cta}`}
+				className={`relative w-full font-bold uppercase tracking-wider text-[13px] py-3.5 rounded-xl transition-all cursor-pointer ${a.cta}`}
 			>
-				{isPending ? (
-					<>
-						<Loader2 className="w-4 h-4 animate-spin" />
-						Processando...
-					</>
-				) : (
-					'Quero este plano'
-				)}
+				Quero este plano
 			</button>
 		</motion.div>
 	);
@@ -384,57 +311,18 @@ function PlanCard({
 
 // ─── Seção ────────────────────────────────────────────────────────────────────
 
-const PENDING_KEY = 'pending_subscribe';
-
 export function PricingSection() {
 	const [billing, setBilling] = useState<'annual' | 'monthly'>('annual');
 	const { data, isLoading } = useLandingPlans();
-	const checkout = usePlanCheckout();
-	const resumedRef = useRef(false);
+	const router = useRouter();
 
 	const plans: LandingPlan[] = data && data.length > 0 ? data : FALLBACK_PLANS;
 
-	function startCheckout(payload: {
-		plan_key: string;
-		interval: PlanInterval;
-	}) {
-		checkout.mutate(payload, {
-			onError: () =>
-				toast.error('Não foi possível iniciar a compra. Tente novamente.'),
-		});
-	}
-
 	function onBuy(p: LandingPlan) {
 		const interval: PlanInterval = billing === 'annual' ? 'yearly' : 'monthly';
-		const payload = { plan_key: p.key, interval };
-		// Precisa de login para assinar — se anônimo, guarda a intenção e manda pro login.
-		if (!getActiveToken()) {
-			try {
-				sessionStorage.setItem(PENDING_KEY, JSON.stringify(payload));
-			} catch {
-				// ignore storage errors
-			}
-			window.location.href = `/login?redirect=${encodeURIComponent('/?subscribe=1#planos')}`;
-			return;
-		}
-		startCheckout(payload);
+		// Leva pra tela de checkout do plano (criar conta / login → pagamento).
+		router.push(`/checkout/plano/${p.key}?interval=${interval}`);
 	}
-
-	// Retoma a compra após login (se voltou pra landing com a intenção guardada).
-	// biome-ignore lint/correctness/useExhaustiveDependencies: roda só uma vez no mount
-	useEffect(() => {
-		if (resumedRef.current) return;
-		resumedRef.current = true;
-		if (typeof window === 'undefined' || !getActiveToken()) return;
-		const pending = sessionStorage.getItem(PENDING_KEY);
-		if (!pending) return;
-		sessionStorage.removeItem(PENDING_KEY);
-		try {
-			startCheckout(JSON.parse(pending));
-		} catch {
-			// payload inválido — ignora
-		}
-	}, []);
 
 	return (
 		<section id="planos" className="relative px-5 md:px-8 py-16 md:py-24">
@@ -483,12 +371,7 @@ export function PricingSection() {
 							))
 						: plans.map((p, i) => (
 								<StaggerReveal key={p.id} delay={i * 0.08}>
-									<PlanCard
-										p={p}
-										billing={billing}
-										onBuy={onBuy}
-										isPending={checkout.isPending}
-									/>
+									<PlanCard p={p} billing={billing} onBuy={onBuy} />
 								</StaggerReveal>
 							))}
 				</div>
