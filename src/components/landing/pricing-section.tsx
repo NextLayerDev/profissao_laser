@@ -300,7 +300,7 @@ export function PricingSection() {
 
 	return (
 		<section id="planos" className="relative px-5 md:px-8 py-16 md:py-24">
-			<div className="max-w-7xl mx-auto">
+			<div className="max-w-[1600px] mx-auto">
 				<ScrollReveal className="text-center mb-8">
 					<h2 className="font-display text-3xl md:text-[2.5rem] font-black text-white tracking-tight">
 						Escolha o plano <span className="grad-brand">ideal para você</span>

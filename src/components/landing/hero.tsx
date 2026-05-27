@@ -195,7 +195,7 @@ export function Hero() {
 				<Spotlight />
 			</div>
 
-			<div className="relative max-w-7xl mx-auto px-5 md:px-8 pt-8 md:pt-12 pb-12 md:pb-16">
+			<div className="relative max-w-[1600px] mx-auto px-5 md:px-8 pt-8 md:pt-12 pb-12 md:pb-16">
 				<div className="hairline-violet absolute top-0 left-0 right-0" />
 
 				<div className="grid grid-cols-1 lg:grid-cols-[1.05fr_1fr] gap-10 items-center">

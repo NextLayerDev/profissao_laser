@@ -125,7 +125,7 @@ export function FaqSection() {
 
 	return (
 		<section id="faq" className="relative px-5 md:px-8 py-16 md:py-20">
-			<div className="max-w-6xl mx-auto">
+			<div className="max-w-[1600px] mx-auto">
 				<ScrollReveal className="text-center mb-10">
 					<h2 className="font-display text-3xl md:text-[2.5rem] font-black text-white tracking-tight">
 						Perguntas <span className="grad-brand">Frequentes</span>

@@ -31,7 +31,7 @@ export function FinalCTA() {
 
 	return (
 		<section className="relative px-5 md:px-8 pb-16">
-			<ScrollReveal className="max-w-7xl mx-auto">
+			<ScrollReveal className="max-w-[1600px] mx-auto">
 				<div
 					className="card-dark relative overflow-hidden rounded-2xl p-7 md:p-10"
 					style={{

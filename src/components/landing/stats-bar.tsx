@@ -49,7 +49,7 @@ function Stat({
 
 export function StatsBar() {
 	return (
-		<section className="px-5 md:px-8 max-w-7xl mx-auto -mt-2 mb-16 md:mb-24 relative z-10">
+		<section className="px-5 md:px-8 max-w-[1600px] mx-auto -mt-2 mb-16 md:mb-24 relative z-10">
 			<ScrollReveal>
 				<div className="card-dark relative rounded-2xl overflow-hidden">
 					<div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />

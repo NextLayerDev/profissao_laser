@@ -92,7 +92,7 @@ export function VideoSection() {
 
 	return (
 		<section id="video" className="relative px-5 md:px-8 py-14 md:py-20">
-			<div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_0.9fr_0.5fr] gap-10 items-center">
+			<div className="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_0.9fr_0.5fr] gap-10 items-center">
 				<ScrollReveal>
 					<VideoPlayerPlaceholder />
 				</ScrollReveal>
