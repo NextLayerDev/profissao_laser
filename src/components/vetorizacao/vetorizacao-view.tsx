@@ -10,6 +10,7 @@ import {
 	Crown,
 	Download,
 	FolderOpen,
+	Headphones,
 	HelpCircle,
 	Image,
 	Layers,
@@ -43,6 +44,7 @@ import type {
 	VectorizeResult,
 } from '@/services/vectorize';
 import { VectorList } from './vector-list';
+import { VectorSupportPanel } from './vector-support-panel';
 
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -1004,12 +1006,14 @@ function StepResult({
 	onGoToStep2,
 	onReset,
 	onSave,
+	onSendToSupport,
 	isSaving,
 }: {
 	result: VectorizeResult;
 	onGoToStep2: () => void;
 	onReset: () => void;
 	onSave: () => void;
+	onSendToSupport: () => void;
 	isSaving: boolean;
 }) {
 	const [bgMode, setBgMode] = useState<BgMode>('transparent');
@@ -1127,6 +1131,14 @@ function StepResult({
 						<Save className="w-4 h-4" />
 					)}
 					Salvar no banco
+				</button>
+				<button
+					type="button"
+					onClick={onSendToSupport}
+					className="flex items-center gap-2 px-4 py-2.5 border border-violet-300 dark:border-violet-500/40 bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-300 font-medium rounded-xl transition-colors hover:bg-violet-100 dark:hover:bg-violet-500/20"
+				>
+					<Headphones className="w-4 h-4" />
+					Enviar ao suporte
 				</button>
 			</div>
 		</div>
@@ -1254,6 +1266,12 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 	);
 	const [result, setResult] = useState<VectorizeResult | null>(null);
 
+	// Suporte de Vetor (chat com a equipe)
+	const [supportOpen, setSupportOpen] = useState(false);
+	const [supportFiles, setSupportFiles] = useState<File[] | undefined>(
+		undefined,
+	);
+
 	const [preset, setPreset] = useState<VectorizePreset>('rapido');
 	const [params, setParams] = useState<VectorizeParams>(() =>
 		presetParams('rapido'),
@@ -1356,6 +1374,11 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 		}
 	}, [result, saveMutation, onRefetch, refetchVectors]);
 
+	const handleSendToSupport = useCallback(() => {
+		setSupportFiles(file ? [file] : undefined);
+		setSupportOpen(true);
+	}, [file]);
+
 	// scroll acompanha a navegação do wizard
 	useEffect(() => {
 		if (!step) return; // `step` é a dependência real (re-scrolla a cada passo)
@@ -1381,11 +1404,24 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 
 	return (
 		<div className="p-4 md:p-8">
-			<PageHeader
-				title="Vetorização"
-				subtitle="Converta imagens PNG, JPG ou WEBP em SVG vetorial."
-				icon={PenLine}
-			/>
+			<div className="flex flex-wrap items-start justify-between gap-3">
+				<PageHeader
+					title="Vetorização"
+					subtitle="Converta imagens PNG, JPG ou WEBP em SVG vetorial."
+					icon={PenLine}
+				/>
+				<button
+					type="button"
+					onClick={() => {
+						setSupportFiles(undefined);
+						setSupportOpen(true);
+					}}
+					className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold text-sm transition-colors shadow-sm shrink-0"
+				>
+					<Headphones className="w-4 h-4" />
+					Suporte de Vetor
+				</button>
+			</div>
 
 			<div
 				ref={wizardRef}
@@ -1434,6 +1470,7 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 							onGoToStep2={() => setStep(2)}
 							onReset={handleReset}
 							onSave={handleSave}
+							onSendToSupport={handleSendToSupport}
 							isSaving={saveMutation.isPending}
 						/>
 					</div>
@@ -1517,6 +1554,12 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 					onClose={creditAction.close}
 				/>
 			)}
+
+			<VectorSupportPanel
+				open={supportOpen}
+				onClose={() => setSupportOpen(false)}
+				initialFiles={supportFiles}
+			/>
 		</div>
 	);
 }
