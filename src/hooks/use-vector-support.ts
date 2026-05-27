@@ -15,15 +15,24 @@ const QUERY_KEY = ['vector-support'] as const;
 
 // ─── Customer ───────────────────────────────────────────────────────────────
 
-export function useVectorSupportTickets(status?: string, enabled = true) {
+export function useVectorSupportTickets(
+	status?: string,
+	enabled = true,
+	refetchInterval?: number,
+) {
 	return useQuery({
 		queryKey: [...QUERY_KEY, 'customer', status] as const,
 		queryFn: () => getVectorSupportTickets(status),
 		enabled,
+		refetchInterval,
 	});
 }
 
-export function useVectorSupportTicket(id: string | null, enabled = true) {
+export function useVectorSupportTicket(
+	id: string | null,
+	enabled = true,
+	refetchInterval?: number,
+) {
 	return useQuery({
 		queryKey: [...QUERY_KEY, 'ticket', id] as const,
 		queryFn: () => {
@@ -31,6 +40,7 @@ export function useVectorSupportTicket(id: string | null, enabled = true) {
 			return getVectorSupportTicket(id);
 		},
 		enabled: !!id && enabled,
+		refetchInterval,
 	});
 }
 
