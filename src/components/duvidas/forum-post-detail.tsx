@@ -8,7 +8,7 @@ import {
 	Send,
 	Trash2,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { ForumReplyItem } from '@/components/duvidas/forum-reply-item';
 import {
@@ -17,6 +17,7 @@ import {
 	useForumPost,
 	useUpvoteForumPost,
 } from '@/hooks/use-forum';
+import { isAdmin } from '@/lib/auth';
 
 interface ForumPostDetailProps {
 	postId: string;
@@ -46,6 +47,8 @@ export function ForumPostDetail({
 	const upvote = useUpvoteForumPost();
 	const createReply = useCreateForumReply(postId);
 	const deletePost = useDeleteForumPost();
+	const [admin, setAdmin] = useState(false);
+	useEffect(() => setAdmin(isAdmin()), []);
 
 	function handleUpvote() {
 		upvote.mutate(postId);
@@ -132,7 +135,7 @@ export function ForumPostDetail({
 									</span>
 								)}
 							</div>
-							{isOwner && (
+							{(isOwner || admin) && (
 								<button
 									type="button"
 									onClick={handleDeletePost}

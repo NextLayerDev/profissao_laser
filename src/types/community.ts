@@ -28,6 +28,8 @@ export interface Channel {
 	description?: string | null;
 	category: string;
 	adminOnly?: boolean;
+	/** Visível apenas para admin (oculto dos alunos). */
+	adminView?: boolean;
 	order?: number;
 }
 
