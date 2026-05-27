@@ -9,6 +9,7 @@ import {
 	RefreshCw,
 	ShieldCheck,
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -130,6 +131,37 @@ export default function PlanCheckoutPage() {
 						<div className="relative card-dark rounded-2xl border border-white/10 p-7 overflow-hidden">
 							<div className="pointer-events-none absolute inset-x-0 top-0 h-24 rounded-t-2xl bg-gradient-to-b from-violet-500/25 to-transparent" />
 							<div className="relative">
+								{/* Banner do produto (a plataforma que o plano libera) */}
+								<div className="relative h-32 rounded-xl overflow-hidden mb-5 border border-white/10">
+									<Image
+										src="/img/plataforma-desktop.png"
+										alt="Plataforma Comunidade Profissão Laser"
+										fill
+										sizes="(max-width: 1024px) 100vw, 520px"
+										className="object-cover object-left-top"
+									/>
+									<div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/70 to-violet-900/30" />
+									<div className="absolute inset-0 flex items-center gap-3 px-4">
+										<div className="relative w-11 h-11 rounded-full overflow-hidden border border-white/20 bg-ink-950 shrink-0">
+											<Image
+												src="/img/logo-profissao-laser.png"
+												alt="Profissão Laser"
+												fill
+												sizes="44px"
+												className="object-contain p-1"
+											/>
+										</div>
+										<div className="leading-tight">
+											<p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-200/90">
+												Comunidade
+											</p>
+											<p className="font-display text-white font-extrabold">
+												Profissão Laser
+											</p>
+										</div>
+									</div>
+								</div>
+
 								<div className="flex items-center justify-between">
 									<span className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-300">
 										Plano selecionado
