@@ -66,7 +66,7 @@ export function useTilt(intensity = 8) {
 // ─── useMagnetic ─────────────────────────────────────────────────────────────
 
 export function useMagnetic(strength = 0.25) {
-	const ref = useRef<HTMLAnchorElement>(null);
+	const ref = useRef<HTMLButtonElement>(null);
 	useEffect(() => {
 		const el = ref.current;
 		if (!el) return;

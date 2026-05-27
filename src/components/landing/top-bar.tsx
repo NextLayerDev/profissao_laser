@@ -1,38 +1,28 @@
 'use client';
 
 import { ArrowRight } from 'lucide-react';
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 const NAV_LINKS = [
 	['Início', '#hero'],
-	['Recursos', '#recursos'],
+	['Ferramentas', '#recursos'],
 	['Depoimentos', '#depoimentos'],
 	['Planos', '#planos'],
-	['FAQ', '#faq'],
+	['Perguntas', '#faq'],
 ] as const;
 
-function Logo({ size = 28 }: { size?: number }) {
+function Logo({ size = 40 }: { size?: number }) {
 	return (
 		<div className="flex items-center gap-2.5">
-			<div
-				className="tile-grad rounded-lg p-1.5 grid place-items-center"
-				style={{ width: size + 6, height: size + 6 }}
-			>
-				<svg
-					viewBox="0 0 32 32"
-					width={size - 4}
-					height={size - 4}
-					fill="none"
-					role="img"
-					aria-label="Profissão Laser"
-				>
-					<title>Profissão Laser</title>
-					<path
-						d="M16 2l2.3 6.7 6.9.5-5.3 4.5 1.8 6.8L16 17l-5.7 3.5 1.8-6.8-5.3-4.5 6.9-.5z"
-						fill="#fff"
-					/>
-					<circle cx="16" cy="13" r="1.4" fill="#7c3aed" />
-				</svg>
+			<div className="relative shrink-0" style={{ width: size, height: size }}>
+				<Image
+					src="/img/logo-profissao-laser.png"
+					alt="Comunidade Profissão Laser"
+					fill
+					sizes="44px"
+					className="object-contain"
+				/>
 			</div>
 			<div className="leading-tight">
 				<div className="text-[10px] uppercase tracking-[0.20em] text-violet-300/80 font-semibold">
@@ -82,19 +72,13 @@ export function TopBar() {
 				</nav>
 
 				<div className="flex items-center gap-2">
-					<a
-						href="#login"
-						className="hidden sm:inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-200 hover:text-white border border-white/[0.1] hover:border-white/[0.2] rounded-xl transition-colors"
+					<button
+						type="button"
+						className="btn-accent hidden sm:inline-flex items-center gap-1.5 text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-xl shadow-brand"
 					>
-						Entrar
-					</a>
-					<a
-						href="#planos"
-						className="btn-accent inline-flex items-center gap-1.5 text-white text-sm font-bold px-4 py-2.5 rounded-xl shadow-brand"
-					>
-						Quero fazer parte
+						Quero fazer parte agora
 						<ArrowRight size={15} />
-					</a>
+					</button>
 					<button
 						type="button"
 						onClick={() => setOpen((v) => !v)}

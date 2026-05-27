@@ -1,8 +1,10 @@
+import { FaqSection } from '@/components/landing/faq-section';
 import { FeatureCards } from '@/components/landing/feature-cards';
 import { FinalCTA } from '@/components/landing/final-cta';
 import { Hero } from '@/components/landing/hero';
 import { LandingFooter } from '@/components/landing/landing-footer';
 import { PricingSection } from '@/components/landing/pricing-section';
+import { ScrollProgress } from '@/components/landing/scroll-progress';
 import { StatsBar } from '@/components/landing/stats-bar';
 import { Testimonials } from '@/components/landing/testimonials';
 import { TopBar } from '@/components/landing/top-bar';
@@ -19,7 +21,8 @@ function Divider() {
 
 export default function LandingPage() {
 	return (
-		<div className="min-h-screen bg-ink-900 antialiased">
+		<div className="min-h-screen bg-ink-950 antialiased">
+			<ScrollProgress />
 			<TopBar />
 			<Hero />
 			<StatsBar />
@@ -27,9 +30,11 @@ export default function LandingPage() {
 			<Divider />
 			<VideoSection />
 			<Divider />
+			<PricingSection />
+			<Divider />
 			<Testimonials />
 			<Divider />
-			<PricingSection />
+			<FaqSection />
 			<FinalCTA />
 			<LandingFooter />
 			<WhatsAppButton />

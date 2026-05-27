@@ -1,7 +1,7 @@
 'use client';
 
 import { Star } from 'lucide-react';
-import { ScrollReveal } from './scroll-reveal';
+import { ScrollReveal, StaggerReveal } from './scroll-reveal';
 
 const TESTIMONIALS = [
 	{
@@ -13,7 +13,7 @@ const TESTIMONIALS = [
 	},
 	{
 		quote:
-			'Os parâmetros e as aulas avançadas me ajudaram a entregar resultados muito melhores pra meus clientes.',
+			'Os parâmetros e as aulas avançadas me ajudaram a entregar resultados muito melhores para meus clientes.',
 		name: 'Juliana C.',
 		role: 'Empresária',
 		grad: 'from-fuchsia-500 to-pink-600',
@@ -22,29 +22,8 @@ const TESTIMONIALS = [
 		quote:
 			'Aqui encontrei networking, fornecedores confiáveis e várias oportunidades de parcerias.',
 		name: 'André L.',
-		role: 'Designer & Laserista',
+		role: 'Designer e Laserista',
 		grad: 'from-cyan-500 to-blue-600',
-	},
-	{
-		quote:
-			'A vetorização e a biblioteca economizam horas do meu dia. Vale cada centavo.',
-		name: 'Marcos P.',
-		role: 'Personalizados Premium',
-		grad: 'from-orange-500 to-amber-400',
-	},
-	{
-		quote:
-			'O grupo do WhatsApp é ouro puro. Tirei dúvidas que custariam horas em segundos.',
-		name: 'Camila R.',
-		role: 'Atelier Laser',
-		grad: 'from-emerald-500 to-teal-600',
-	},
-	{
-		quote:
-			'Os parâmetros prontos pra Fiber e UV economizaram dias de testes na minha máquina.',
-		name: 'Diego S.',
-		role: 'Lojista de Personalizados',
-		grad: 'from-rose-500 to-red-600',
 	},
 ];
 
@@ -56,17 +35,17 @@ function QuoteCard({ t }: { t: (typeof TESTIMONIALS)[number] }) {
 		.slice(0, 2);
 
 	return (
-		<div className="card-dark tile-hairline shine relative w-[340px] md:w-[380px] shrink-0 rounded-2xl p-6 hover:border-violet-500/30 transition-colors">
+		<div className="card-dark tile-hairline shine relative w-full h-full rounded-2xl p-6 hover:border-violet-500/30 hover:-translate-y-1 transition-all duration-300">
 			<div className="font-display text-violet-400/80 text-4xl leading-none mb-2">
 				&ldquo;
 			</div>
-			<p className="text-slate-200 text-[15px] leading-relaxed mb-5 line-clamp-4">
+			<p className="text-slate-200 text-[15px] leading-relaxed mb-5">
 				{t.quote}
 			</p>
 
 			<div className="flex items-center gap-1 text-amber-300 mb-4">
 				{Array.from({ length: 5 }).map((_, i) => (
-					<Star key={i} size={14} />
+					<Star key={`star-${t.name}-${i}`} size={14} fill="currentColor" />
 				))}
 			</div>
 
@@ -87,27 +66,19 @@ function QuoteCard({ t }: { t: (typeof TESTIMONIALS)[number] }) {
 
 export function Testimonials() {
 	return (
-		<section
-			id="depoimentos"
-			className="relative px-5 md:px-8 py-14 md:py-20 overflow-hidden"
-		>
+		<section id="depoimentos" className="relative px-5 md:px-8 py-14 md:py-20">
 			<div className="max-w-7xl mx-auto">
 				<ScrollReveal className="text-center mb-10">
 					<h2 className="font-display text-3xl md:text-[2.5rem] font-black text-white tracking-tight">
 						O que nossos <span className="grad-brand">membros dizem</span>
 					</h2>
-					<p className="text-slate-400 mt-3 text-sm max-w-xl mx-auto">
-						+2.850 profissionais, 4,9 / 5 de avaliação média.
-					</p>
 				</ScrollReveal>
-			</div>
 
-			<div className="marquee-pause relative">
-				<div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-ink-900 to-transparent z-10 pointer-events-none" />
-				<div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-ink-900 to-transparent z-10 pointer-events-none" />
-				<div className="marquee-track py-4">
-					{[...TESTIMONIALS, ...TESTIMONIALS].map((t, i) => (
-						<QuoteCard key={i} t={t} />
+				<div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
+					{TESTIMONIALS.map((t, i) => (
+						<StaggerReveal key={t.name} delay={i * 0.1}>
+							<QuoteCard t={t} />
+						</StaggerReveal>
 					))}
 				</div>
 			</div>

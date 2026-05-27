@@ -1,7 +1,6 @@
 'use client';
 
 import {
-	ArrowRight,
 	Check,
 	Download,
 	Maximize,
@@ -9,6 +8,7 @@ import {
 	Sparkles,
 	Volume2,
 } from 'lucide-react';
+import Image from 'next/image';
 import { ScrollReveal } from './scroll-reveal';
 
 function VideoPlayerPlaceholder() {
@@ -57,19 +57,6 @@ function VideoPlayerPlaceholder() {
 				</svg>
 			</div>
 
-			{/* Headline overlay */}
-			<div className="absolute left-6 bottom-6 max-w-[60%]">
-				<div className="font-display text-white text-2xl md:text-3xl font-black leading-tight tracking-tight">
-					Mais que uma
-					<br />
-					comunidade.
-					<br />
-					<span className="grad-brand">Um ecossistema</span>
-					<br />
-					para você crescer.
-				</div>
-			</div>
-
 			{/* Play button */}
 			<button
 				type="button"
@@ -97,27 +84,31 @@ function VideoPlayerPlaceholder() {
 
 export function VideoSection() {
 	const bullets = [
-		'Conteúdo prático e direto ao ponto',
-		'Acompanhamento de especialistas',
-		'Ferramentas que facilitam sua rotina',
-		'Network com quem vive o laser',
-		'Novas oportunidades de negócio',
+		'Aprendizado contínuo',
+		'Networking qualificado',
+		'Suporte de verdade',
+		'Oportunidades reais',
 	];
 
 	return (
 		<section id="video" className="relative px-5 md:px-8 py-14 md:py-20">
-			<div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1.05fr_1fr] gap-10 items-center">
+			<div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_0.9fr_0.5fr] gap-10 items-center">
 				<ScrollReveal>
 					<VideoPlayerPlaceholder />
 				</ScrollReveal>
 
 				<ScrollReveal delay={0.15}>
 					<h2 className="font-display text-3xl md:text-[2.25rem] font-black text-white leading-tight tracking-tight">
-						Por que milhares de profissionais escolheram a{' '}
-						<span className="grad-brand">Profissão Laser?</span>
+						Mais que uma comunidade. Um ecossistema completo para você{' '}
+						<span className="grad-brand">evoluir.</span>
 					</h2>
 
-					<ul className="mt-6 space-y-3">
+					<p className="text-slate-400 mt-4 text-[15px] leading-relaxed max-w-xl">
+						Conteúdo prático, networking, suporte e oportunidades reais para
+						transformar sua carreira no mercado laser.
+					</p>
+
+					<ul className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
 						{bullets.map((b) => (
 							<li key={b} className="flex items-center gap-3 text-slate-200">
 								<div className="w-6 h-6 rounded-full bg-violet-500/15 border border-violet-500/30 grid place-items-center shrink-0">
@@ -127,14 +118,22 @@ export function VideoSection() {
 							</li>
 						))}
 					</ul>
+				</ScrollReveal>
 
-					<a
-						href="#planos"
-						className="btn-accent mt-8 inline-flex items-center gap-2 text-white font-bold px-6 py-3.5 rounded-xl shadow-brand-lg"
-					>
-						QUERO EVOLUIR AGORA
-						<ArrowRight size={16} />
-					</a>
+				<ScrollReveal
+					delay={0.25}
+					className="relative hidden lg:block h-[360px]"
+				>
+					<div className="absolute inset-0 grid place-items-center">
+						<div className="w-[78%] h-[62%] rounded-full bg-violet-600/35 blur-[60px]" />
+					</div>
+					<Image
+						src="/img/profissional-hero.png"
+						alt="Fernando Nucci — Especialista em Laser"
+						fill
+						sizes="260px"
+						className="relative z-10 object-contain object-bottom drop-shadow-[0_10px_30px_rgba(139,92,246,0.45)]"
+					/>
 				</ScrollReveal>
 			</div>
 		</section>

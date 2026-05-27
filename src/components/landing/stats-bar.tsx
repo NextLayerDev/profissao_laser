@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, Sparkles, Target, Users } from 'lucide-react';
+import { GraduationCap, Rocket, Target, Users } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { fmtNumber, useCountUp } from '@/hooks/use-landing';
 import { useScrollReveal } from '@/hooks/use-scroll-reveal';
@@ -56,22 +56,24 @@ export function StatsBar() {
 					<div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-violet-500/[0.08]">
 						<Stat
 							Icon={Users}
-							value={2850}
+							value={3500}
+							prefix="+ de "
 							gradFrom="#7c3aed"
 							gradTo="#5b21b6"
-							label="Membros ativos"
+							label="Membros treinados"
 						/>
 						<Stat
-							Icon={BookOpen}
-							value={150}
+							Icon={GraduationCap}
+							value={250}
+							prefix="+ de "
 							gradFrom="#06b6d4"
 							gradTo="#1d4ed8"
-							label="Aulas e conteúdos"
+							label="Aulas"
 						/>
 						<Stat
-							Icon={Sparkles}
-							value={14}
-							prefix=""
+							Icon={Rocket}
+							value={15}
+							prefix="+ de "
 							gradFrom="#a855f7"
 							gradTo="#7e22ce"
 							label="Ferramentas exclusivas"
@@ -83,7 +85,7 @@ export function StatsBar() {
 							suffix="%"
 							gradFrom="#f97316"
 							gradTo="#dc2626"
-							label="Focado em laser"
+							label="Foco no laser"
 						/>
 					</div>
 				</div>
