@@ -5,7 +5,7 @@ import { Logo } from './top-bar';
 export function LandingFooter() {
 	return (
 		<footer className="border-t border-violet-500/10 mt-8">
-			<div className="max-w-7xl mx-auto px-5 md:px-8 py-10 grid grid-cols-1 md:grid-cols-[1.3fr_1fr_1fr_1fr] gap-8">
+			<div className="max-w-[1600px] mx-auto px-5 md:px-8 py-10 grid grid-cols-1 md:grid-cols-[1.3fr_1fr_1fr_1fr] gap-8">
 				<div>
 					<Logo size={26} />
 					<p className="text-slate-400 text-sm mt-4 max-w-xs leading-relaxed">
@@ -95,7 +95,7 @@ export function LandingFooter() {
 					</ul>
 				</div>
 			</div>
-			<div className="border-t border-violet-500/10 px-5 md:px-8 py-5 max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+			<div className="border-t border-violet-500/10 px-5 md:px-8 py-5 max-w-[1600px] mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
 				<div className="text-slate-500 text-xs font-mono">
 					© 2026 Profissão Laser · Todos os direitos reservados
 				</div>

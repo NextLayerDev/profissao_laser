@@ -67,7 +67,7 @@ function QuoteCard({ t }: { t: (typeof TESTIMONIALS)[number] }) {
 export function Testimonials() {
 	return (
 		<section id="depoimentos" className="relative px-5 md:px-8 py-14 md:py-20">
-			<div className="max-w-7xl mx-auto">
+			<div className="max-w-[1600px] mx-auto">
 				<ScrollReveal className="text-center mb-10">
 					<h2 className="font-display text-3xl md:text-[2.5rem] font-black text-white tracking-tight">
 						O que nossos <span className="grad-brand">membros dizem</span>

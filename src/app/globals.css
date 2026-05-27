@@ -162,6 +162,9 @@
 	background-clip: text;
 	color: transparent;
 	font-style: italic;
+	/* itálico inclina à direita: respiro lateral pra a palavra em destaque
+	   não encostar/cortar na palavra seguinte (background-clip:text aperta o box) */
+	padding-inline: 0.02em 0.16em;
 }
 
 .grad-text {

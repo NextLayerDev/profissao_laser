@@ -2,10 +2,15 @@
 
 import { Check, Shield } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { type LandingPlan, useLandingPlans } from '@/hooks/use-landing-plans';
+import type { PlanInterval } from '@/services/landing-plans';
+import { PLAN_FEATURES, PLAN_TAGLINES } from '@/utils/constants/plans-content';
 import { ScrollReveal, StaggerReveal } from './scroll-reveal';
 
-// ─── Planos (estáticos, fiéis ao print) ──────────────────────────────────────
+// ─── Cores por plano (presentacional), indexadas pela `key` ──────────────────
+// Preços/nome/ordem vêm da API; features/taglines de plans-content.
 
 interface PlanAccent {
 	name: string; // cor do nome do plano
@@ -15,135 +20,97 @@ interface PlanAccent {
 	cta: string; // classes do botão (não-destaque)
 }
 
-interface Plan {
-	id: string;
-	name: string;
-	tagline: string;
-	annual: number; // R$/ano
-	installment: number; // 12x R$
-	monthly: number; // R$/mês
-	features: string[];
-	accent: PlanAccent;
-	featured?: boolean;
-	badge?: string;
-}
+const ACCENTS: Record<string, PlanAccent> = {
+	basic: {
+		name: 'text-emerald-300',
+		iconText: 'text-emerald-400',
+		iconBg: 'bg-emerald-500/15',
+		glow: 'from-emerald-500/20',
+		cta: 'bg-white/[0.04] text-white border border-emerald-500/30 hover:bg-emerald-500/10 hover:border-emerald-500/50',
+	},
+	pro: {
+		name: 'text-sky-300',
+		iconText: 'text-sky-400',
+		iconBg: 'bg-sky-500/15',
+		glow: 'from-sky-500/20',
+		cta: 'bg-white/[0.04] text-white border border-sky-500/30 hover:bg-sky-500/10 hover:border-sky-500/50',
+	},
+	avan: {
+		name: 'text-violet-200',
+		iconText: 'text-violet-200',
+		iconBg: 'bg-violet-400/25',
+		glow: 'from-violet-500/25',
+		cta: 'btn-accent text-white shadow-brand',
+	},
+	max: {
+		name: 'text-amber-300',
+		iconText: 'text-amber-400',
+		iconBg: 'bg-amber-500/15',
+		glow: 'from-amber-500/20',
+		cta: 'bg-white/[0.04] text-white border border-amber-500/30 hover:bg-amber-500/10 hover:border-amber-500/50',
+	},
+};
+const DEFAULT_ACCENT: PlanAccent = ACCENTS.avan;
+const accentFor = (key: string): PlanAccent => ACCENTS[key] ?? DEFAULT_ACCENT;
+const featuresFor = (key: string): string[] => PLAN_FEATURES[key] ?? [];
 
-const PLANS: Plan[] = [
+// Fallback (mesmos valores do print) — usado se a API pública ainda não responder.
+const FALLBACK_PLANS: LandingPlan[] = [
 	{
-		id: 'starter',
+		id: 'basic',
+		key: 'basic',
 		name: 'Starter',
 		tagline: 'Para começar e aprender',
+		monthly: 49,
 		annual: 299,
 		installment: 29.9,
-		monthly: 49,
-		accent: {
-			name: 'text-emerald-300',
-			iconText: 'text-emerald-400',
-			iconBg: 'bg-emerald-500/15',
-			glow: 'from-emerald-500/20',
-			cta: 'bg-white/[0.04] text-white border border-emerald-500/30 hover:bg-emerald-500/10 hover:border-emerald-500/50',
-		},
-		features: [
-			'Aulas Gravadas',
-			'Suporte online',
-			'Biblioteca de vetores',
-			'Parâmetros',
-			'Fórum',
-			'Chat',
-			'Lista de fornecedores',
-			'Eventos e Lives fechadas',
-			'Vitrine de Projetos',
-		],
+		featured: false,
 	},
 	{
-		id: 'profissional',
+		id: 'pro',
+		key: 'pro',
 		name: 'Profissional',
 		tagline: 'Para quem quer ir além',
+		monthly: 59,
 		annual: 399,
 		installment: 39.9,
-		monthly: 59,
-		accent: {
-			name: 'text-sky-300',
-			iconText: 'text-sky-400',
-			iconBg: 'bg-sky-500/15',
-			glow: 'from-sky-500/20',
-			cta: 'bg-white/[0.04] text-white border border-sky-500/30 hover:bg-sky-500/10 hover:border-sky-500/50',
-		},
-		features: [
-			'Aulas Gravadas',
-			'Suporte online',
-			'Biblioteca de vetores',
-			'Parâmetros',
-			'Fórum',
-			'Chat',
-			'Lista de fornecedores',
-			'Eventos e Lives fechadas',
-			'Vitrine de Projetos',
-			'Grupo de Whatsapp',
-		],
+		featured: false,
 	},
 	{
-		id: 'avancado',
+		id: 'avan',
+		key: 'avan',
 		name: 'Avançado',
 		tagline: 'Para quem busca resultados',
+		monthly: 69,
 		annual: 599,
 		installment: 59.9,
-		monthly: 69,
 		featured: true,
 		badge: 'MAIS ESCOLHIDO',
-		accent: {
-			name: 'text-violet-200',
-			iconText: 'text-violet-200',
-			iconBg: 'bg-violet-400/25',
-			glow: 'from-violet-500/25',
-			cta: 'btn-accent text-white shadow-brand',
-		},
-		features: [
-			'Aulas Gravadas',
-			'Suporte online',
-			'Biblioteca de vetores',
-			'Parâmetros',
-			'Fórum',
-			'Chat',
-			'Lista de fornecedores',
-			'Garantias e Lives fechadas',
-			'Integração de Projetos',
-			'Vetorização (equipe de suporte online)',
-		],
 	},
 	{
-		id: 'elite',
+		id: 'max',
+		key: 'max',
 		name: 'Elite',
 		tagline: 'Para quem quer o máximo',
+		monthly: 119,
 		annual: 999,
 		installment: 99.9,
-		monthly: 119,
-		accent: {
-			name: 'text-amber-300',
-			iconText: 'text-amber-400',
-			iconBg: 'bg-amber-500/15',
-			glow: 'from-amber-500/20',
-			cta: 'bg-white/[0.04] text-white border border-amber-500/30 hover:bg-amber-500/10 hover:border-amber-500/50',
-		},
-		features: [
-			'Aulas Gravadas',
-			'Suporte online',
-			'Biblioteca de vetores',
-			'Parâmetros',
-			'Chat',
-			'Lista de fornecedores',
-			'Eventos e Lives fechadas e suporte online',
-			'Prévias',
-			'Canva com IA',
-			'Pacote de 150 Voxxys',
-			'10 Horas de mentoria online',
-			'Gravação 360° - Grupo de 5 pessoas',
-		],
+		featured: false,
 	},
 ];
 
+// ─── Helpers de preço ──────────────────────────────────────────────────────────
+
 function fmt(v: number): string {
 	return v.toFixed(2).replace('.', ',');
+}
+
+function splitPrice(v: number): { int: number; cents: string } {
+	const int = Math.floor(v);
+	const cents = Math.round((v - int) * 100)
+		.toString()
+		.padStart(2, '0');
+	return { int, cents };
 }
 
 // ─── Sparkles do plano em destaque ───────────────────────────────────────────
@@ -182,11 +149,42 @@ function FeaturedSparkles() {
 	);
 }
 
+// ─── Skeleton (loading) ─────────────────────────────────────────────────────────
+
+function SkeletonCard() {
+	return (
+		<div className="card-dark rounded-2xl border p-6 animate-pulse">
+			<div className="h-5 w-24 mx-auto rounded bg-white/10" />
+			<div className="h-3 w-32 mx-auto mt-3 rounded bg-white/5" />
+			<div className="h-12 w-36 mx-auto my-6 rounded bg-white/10" />
+			<div className="border-t border-white/10 pt-5 space-y-3">
+				{Array.from({ length: 6 }).map((_, i) => (
+					<div key={`sk-${i}`} className="h-3 w-full rounded bg-white/5" />
+				))}
+			</div>
+			<div className="h-11 w-full mt-5 rounded-xl bg-white/10" />
+		</div>
+	);
+}
+
 // ─── Card de plano ────────────────────────────────────────────────────────────
 
-function PlanCard({ p, billing }: { p: Plan; billing: 'annual' | 'monthly' }) {
+function PlanCard({
+	p,
+	billing,
+	onBuy,
+}: {
+	p: LandingPlan;
+	billing: 'annual' | 'monthly';
+	onBuy: (p: LandingPlan) => void;
+}) {
 	const isAnnual = billing === 'annual';
-	const a = p.accent;
+	const a = accentFor(p.key);
+	const features = featuresFor(p.key);
+	const tagline = p.tagline || PLAN_TAGLINES[p.key] || '';
+	const annualP = p.annual != null ? splitPrice(p.annual) : null;
+	const monthlyP = p.monthly != null ? splitPrice(p.monthly) : null;
+
 	return (
 		<motion.div
 			animate={{ y: p.featured ? -8 : 0 }}
@@ -224,50 +222,68 @@ function PlanCard({ p, billing }: { p: Plan; billing: 'annual' | 'monthly' }) {
 					{p.name}
 				</h3>
 				<p className="text-slate-400 text-[13px] mt-1 min-h-[1.5rem]">
-					{p.tagline}
+					{tagline}
 				</p>
 			</div>
 
 			<div className="relative text-center my-5">
 				{isAnnual ? (
+					annualP ? (
+						<>
+							<div className="flex items-baseline justify-center gap-1">
+								<span className="text-slate-400 text-base font-bold mr-1">
+									R$
+								</span>
+								<span className="font-display text-white text-5xl font-black tracking-tight tabular-nums">
+									{annualP.int}
+								</span>
+								<span className="text-slate-400 text-sm font-bold">
+									,{annualP.cents}/ano
+								</span>
+							</div>
+							{p.installment != null && (
+								<div className="text-slate-500 text-xs mt-2 font-mono">
+									ou 12x de R$ {fmt(p.installment)}
+								</div>
+							)}
+							{p.monthly != null && (
+								<div className="text-slate-500 text-xs font-mono">
+									ou R$ {fmt(p.monthly)}/mês
+								</div>
+							)}
+						</>
+					) : (
+						<div className="text-slate-400 text-lg font-bold py-4">
+							Sob consulta
+						</div>
+					)
+				) : monthlyP ? (
 					<>
 						<div className="flex items-baseline justify-center gap-1">
 							<span className="text-slate-400 text-base font-bold mr-1">
 								R$
 							</span>
 							<span className="font-display text-white text-5xl font-black tracking-tight tabular-nums">
-								{p.annual}
+								{monthlyP.int}
 							</span>
-							<span className="text-slate-400 text-sm font-bold">,00/ano</span>
-						</div>
-						<div className="text-slate-500 text-xs mt-2 font-mono">
-							ou 12x de R$ {fmt(p.installment)}
-						</div>
-						<div className="text-slate-500 text-xs font-mono">
-							ou R$ {p.monthly},00/mês
-						</div>
-					</>
-				) : (
-					<>
-						<div className="flex items-baseline justify-center gap-1">
-							<span className="text-slate-400 text-base font-bold mr-1">
-								R$
+							<span className="text-slate-400 text-sm font-bold">
+								,{monthlyP.cents}/mês
 							</span>
-							<span className="font-display text-white text-5xl font-black tracking-tight tabular-nums">
-								{p.monthly}
-							</span>
-							<span className="text-slate-400 text-sm font-bold">,00/mês</span>
 						</div>
 						<div className="text-slate-500 text-xs mt-2 font-mono">
 							cobrado mensalmente
 						</div>
 					</>
+				) : (
+					<div className="text-slate-400 text-lg font-bold py-4">
+						Sob consulta
+					</div>
 				)}
 			</div>
 
 			<div className="relative border-t border-white/10 pt-5 mb-5 flex-1">
 				<ul className="space-y-2.5">
-					{p.features.map((line) => (
+					{features.map((line) => (
 						<li key={line} className="flex items-start gap-2.5">
 							<div
 								className={`w-4 h-4 rounded-full mt-0.5 grid place-items-center shrink-0 ${a.iconBg}`}
@@ -282,9 +298,9 @@ function PlanCard({ p, billing }: { p: Plan; billing: 'annual' | 'monthly' }) {
 				</ul>
 			</div>
 
-			{/* CTA inerte por ora (sem destino) */}
 			<button
 				type="button"
+				onClick={() => onBuy(p)}
 				className={`relative w-full font-bold uppercase tracking-wider text-[13px] py-3.5 rounded-xl transition-all cursor-pointer ${a.cta}`}
 			>
 				Quero este plano
@@ -297,10 +313,20 @@ function PlanCard({ p, billing }: { p: Plan; billing: 'annual' | 'monthly' }) {
 
 export function PricingSection() {
 	const [billing, setBilling] = useState<'annual' | 'monthly'>('annual');
+	const { data, isLoading } = useLandingPlans();
+	const router = useRouter();
+
+	const plans: LandingPlan[] = data && data.length > 0 ? data : FALLBACK_PLANS;
+
+	function onBuy(p: LandingPlan) {
+		const interval: PlanInterval = billing === 'annual' ? 'yearly' : 'monthly';
+		// Leva pra tela de checkout do plano (criar conta / login → pagamento).
+		router.push(`/checkout/plano/${p.key}?interval=${interval}`);
+	}
 
 	return (
 		<section id="planos" className="relative px-5 md:px-8 py-16 md:py-24">
-			<div className="max-w-7xl mx-auto">
+			<div className="max-w-[1600px] mx-auto">
 				<ScrollReveal className="text-center mb-8">
 					<h2 className="font-display text-3xl md:text-[2.5rem] font-black text-white tracking-tight">
 						Escolha o plano <span className="grad-brand">ideal para você</span>
@@ -339,11 +365,15 @@ export function PricingSection() {
 				</ScrollReveal>
 
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-start">
-					{PLANS.map((p, i) => (
-						<StaggerReveal key={p.id} delay={i * 0.08}>
-							<PlanCard p={p} billing={billing} />
-						</StaggerReveal>
-					))}
+					{isLoading && !data
+						? Array.from({ length: 4 }).map((_, i) => (
+								<SkeletonCard key={`skeleton-${i}`} />
+							))
+						: plans.map((p, i) => (
+								<StaggerReveal key={p.id} delay={i * 0.08}>
+									<PlanCard p={p} billing={billing} onBuy={onBuy} />
+								</StaggerReveal>
+							))}
 				</div>
 
 				<div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-10 text-slate-400 text-sm">

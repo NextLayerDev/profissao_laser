@@ -53,7 +53,7 @@ function EngravedHeadline() {
 	const done = shown >= total;
 
 	return (
-		<h1 className="font-display text-4xl md:text-5xl lg:text-[3.6rem] font-black text-white leading-[1.05] tracking-tight min-h-[3.5em]">
+		<h1 className="font-display text-4xl md:text-5xl lg:text-[3.6rem] font-black text-white leading-[1.12] tracking-tight min-h-[3.5em]">
 			{rendered}
 			{!done && <span className="engrave-caret" />}
 		</h1>
@@ -195,7 +195,7 @@ export function Hero() {
 				<Spotlight />
 			</div>
 
-			<div className="relative max-w-7xl mx-auto px-5 md:px-8 pt-8 md:pt-12 pb-12 md:pb-16">
+			<div className="relative max-w-[1600px] mx-auto px-5 md:px-8 pt-8 md:pt-12 pb-12 md:pb-16">
 				<div className="hairline-violet absolute top-0 left-0 right-0" />
 
 				<div className="grid grid-cols-1 lg:grid-cols-[1.05fr_1fr] gap-10 items-center">
@@ -323,8 +323,8 @@ export function Hero() {
 						</div>
 
 						{/* Card de citação (sobreposto) */}
-						<div className="absolute bottom-3 left-0 z-40 card-dark rounded-2xl p-3.5 max-w-[250px] backdrop-blur-md border border-violet-500/25 shadow-brand">
-							<p className="text-white text-[12.5px] font-semibold leading-snug">
+						<div className="absolute bottom-3 left-0 z-40 card-dark rounded-2xl p-3.5 max-w-[270px] backdrop-blur-md border border-violet-500/25 shadow-brand">
+							<p className="text-white text-[12.5px] font-semibold leading-snug break-words">
 								"O mercado não está difícil, o mercado está se{' '}
 								<span className="grad-brand">PROFISSIONALIZANDO!</span>"
 							</p>

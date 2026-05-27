@@ -13,7 +13,7 @@ import { WhatsAppButton } from '@/components/landing/whatsapp-button';
 
 function Divider() {
 	return (
-		<div className="max-w-5xl mx-auto px-6">
+		<div className="max-w-[1600px] mx-auto px-6">
 			<div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 		</div>
 	);

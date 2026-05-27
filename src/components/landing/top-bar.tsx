@@ -56,7 +56,7 @@ export function TopBar() {
 					: 'bg-transparent'
 			}`}
 		>
-			<div className="max-w-7xl mx-auto px-5 md:px-8 h-16 flex items-center justify-between">
+			<div className="max-w-[1600px] mx-auto px-5 md:px-8 h-16 flex items-center justify-between">
 				<Logo />
 
 				<nav className="hidden lg:flex items-center gap-1">

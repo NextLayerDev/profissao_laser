@@ -38,7 +38,7 @@ function Stat({
 				<Icon size={20} className="text-white" />
 			</div>
 			<div>
-				<div className="font-display text-white font-extrabold text-xl md:text-2xl leading-none tracking-tight">
+				<div className="font-display text-white font-extrabold text-xl md:text-2xl leading-tight tracking-tight">
 					{fmtNumber(n, { prefix, suffix })}
 				</div>
 				<div className="text-slate-400 text-xs md:text-sm mt-1">{label}</div>
@@ -49,7 +49,7 @@ function Stat({
 
 export function StatsBar() {
 	return (
-		<section className="px-5 md:px-8 max-w-7xl mx-auto -mt-2 mb-16 md:mb-24 relative z-10">
+		<section className="px-5 md:px-8 max-w-[1600px] mx-auto -mt-2 mb-16 md:mb-24 relative z-10">
 			<ScrollReveal>
 				<div className="card-dark relative rounded-2xl overflow-hidden">
 					<div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />

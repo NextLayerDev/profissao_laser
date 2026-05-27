@@ -139,7 +139,7 @@ function FeatureCard({ f }: { f: Feature }) {
 			>
 				<Icon size={20} className="text-white" />
 			</div>
-			<h3 className="font-display text-white text-[15px] font-bold tracking-tight mb-1.5">
+			<h3 className="font-display text-white text-[15px] font-bold tracking-tight leading-snug min-h-[2.5em] mb-1.5">
 				{f.title}
 			</h3>
 			<p className="text-slate-400 text-[13px] leading-relaxed">{f.desc}</p>
@@ -152,7 +152,7 @@ function FeatureCard({ f }: { f: Feature }) {
 export function FeatureCards() {
 	return (
 		<section id="recursos" className="relative px-5 md:px-8 py-12 md:py-16">
-			<div className="max-w-7xl mx-auto">
+			<div className="max-w-[1600px] mx-auto">
 				<ScrollReveal className="text-center mb-12">
 					<h2 className="font-display text-3xl md:text-[2.5rem] font-black text-white tracking-tight">
 						Uma plataforma completa{' '}

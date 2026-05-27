@@ -31,7 +31,7 @@ export function FinalCTA() {
 
 	return (
 		<section className="relative px-5 md:px-8 pb-16">
-			<ScrollReveal className="max-w-7xl mx-auto">
+			<ScrollReveal className="max-w-[1600px] mx-auto">
 				<div
 					className="card-dark relative overflow-hidden rounded-2xl p-7 md:p-10"
 					style={{
@@ -65,7 +65,7 @@ export function FinalCTA() {
 
 					<div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
 						<div className="md:pl-32">
-							<h3 className="font-display text-white text-2xl md:text-3xl font-black leading-tight tracking-tight">
+							<h3 className="font-display text-white text-2xl md:text-3xl font-black leading-[1.15] tracking-tight">
 								Pronto para acelerar sua carreira
 								<br />e{' '}
 								<span className="grad-brand">transformar seu negócio?</span>
