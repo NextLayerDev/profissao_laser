@@ -10,7 +10,7 @@ import {
 	Plus,
 	X,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { ModalPortal } from '@/components/ui/modal-portal';
 import { VectorSupportChat } from '@/components/vetorizacao-admin/vector-support-chat';
@@ -84,6 +84,24 @@ export function VectorSupportPanel({
 		);
 	const createMutation = useCreateVectorSupportTicket();
 	const sendMutation = useSendVectorSupportMessage();
+
+	// Pré-visualização (thumbnail) das imagens anexadas ao novo chamado.
+	const previews = useMemo(
+		() =>
+			newFiles.map((file) => ({
+				name: file.name,
+				isImage: file.type.startsWith('image/'),
+				url: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+			})),
+		[newFiles],
+	);
+	useEffect(() => {
+		return () => {
+			for (const p of previews) {
+				if (p.url) URL.revokeObjectURL(p.url);
+			}
+		};
+	}, [previews]);
 
 	// Decide a view inicial só na transição "fechado → aberto" (não reseta a
 	// navegação interna quando initialFiles muda de referência).
@@ -353,27 +371,48 @@ export function VectorSupportPanel({
 									<Paperclip className="w-4 h-4" />
 									Anexar imagem
 								</button>
-								{newFiles.length > 0 && (
-									<div className="flex flex-wrap gap-1.5 mt-2.5">
-										{newFiles.map((file, i) => (
-											<div
-												key={`${file.name}-${i}`}
-												className="flex items-center gap-1.5 px-2 py-1 bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/30 rounded-lg"
-											>
-												<Paperclip className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400 shrink-0" />
-												<span className="text-xs text-violet-700 dark:text-violet-400 truncate max-w-[150px]">
-													{file.name}
-												</span>
-												<button
-													type="button"
-													onClick={() => removeFile(i)}
-													className="ml-0.5 text-violet-600 hover:text-violet-700 dark:hover:text-violet-200 shrink-0"
-													aria-label={`Remover ${file.name}`}
+								{previews.length > 0 && (
+									<div className="flex flex-wrap gap-2 mt-3">
+										{previews.map((p, i) =>
+											p.isImage && p.url ? (
+												<div
+													key={`${p.name}-${i}`}
+													className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5"
 												>
-													<X className="w-3.5 h-3.5" />
-												</button>
-											</div>
-										))}
+													<img
+														src={p.url}
+														alt={p.name}
+														className="w-full h-full object-cover"
+													/>
+													<button
+														type="button"
+														onClick={() => removeFile(i)}
+														className="absolute top-1 right-1 grid place-items-center w-5 h-5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
+														aria-label={`Remover ${p.name}`}
+													>
+														<X className="w-3 h-3" />
+													</button>
+												</div>
+											) : (
+												<div
+													key={`${p.name}-${i}`}
+													className="flex items-center gap-1.5 px-2 py-1 bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/30 rounded-lg"
+												>
+													<Paperclip className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400 shrink-0" />
+													<span className="text-xs text-violet-700 dark:text-violet-400 truncate max-w-[150px]">
+														{p.name}
+													</span>
+													<button
+														type="button"
+														onClick={() => removeFile(i)}
+														className="ml-0.5 text-violet-600 hover:text-violet-700 dark:hover:text-violet-200 shrink-0"
+														aria-label={`Remover ${p.name}`}
+													>
+														<X className="w-3.5 h-3.5" />
+													</button>
+												</div>
+											),
+										)}
 									</div>
 								)}
 							</div>
