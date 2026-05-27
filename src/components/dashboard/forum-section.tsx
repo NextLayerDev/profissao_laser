@@ -6,14 +6,17 @@ import {
 	Loader2,
 	MessageSquare,
 	Send,
+	Trash2,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import {
 	useCreateForumReply,
+	useDeleteForumPost,
 	useForumPost,
 	useForumPosts,
 } from '@/hooks/use-forum';
+import { isAdmin } from '@/lib/auth';
 import type { ForumPost } from '@/types/forum';
 
 function timeAgo(dateStr: string): string {
@@ -122,53 +125,77 @@ function PostReplyPanel({ postId }: { postId: string }) {
 
 function PostItem({ post }: { post: ForumPost }) {
 	const [expanded, setExpanded] = useState(false);
+	const [admin, setAdmin] = useState(false);
+	useEffect(() => setAdmin(isAdmin()), []);
+	const deletePost = useDeleteForumPost();
+
+	function handleDelete() {
+		if (!confirm('Excluir esta dúvida e todas as respostas?')) return;
+		deletePost.mutate(post.id, {
+			onSuccess: () => toast.success('Dúvida removida'),
+			onError: () => toast.error('Erro ao remover'),
+		});
+	}
 
 	return (
 		<div className="border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden">
-			<button
-				type="button"
-				onClick={() => setExpanded((v) => !v)}
-				className="w-full flex items-start gap-3 p-3 text-left bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
-			>
-				<div className="flex-1 min-w-0">
-					<div className="flex items-center gap-2 flex-wrap mb-1">
-						{post.categoryName && (
-							<span
-								className="px-2 py-0.5 text-[11px] font-semibold rounded-full shrink-0"
-								style={{
-									backgroundColor: `${post.categoryColor ?? '#7c3aed'}20`,
-									color: post.categoryColor ?? '#7c3aed',
-								}}
-							>
-								{post.categoryName}
+			<div className="flex items-stretch bg-white dark:bg-white/5">
+				<button
+					type="button"
+					onClick={() => setExpanded((v) => !v)}
+					className="flex-1 min-w-0 flex items-start gap-3 p-3 text-left hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
+				>
+					<div className="flex-1 min-w-0">
+						<div className="flex items-center gap-2 flex-wrap mb-1">
+							{post.categoryName && (
+								<span
+									className="px-2 py-0.5 text-[11px] font-semibold rounded-full shrink-0"
+									style={{
+										backgroundColor: `${post.categoryColor ?? '#7c3aed'}20`,
+										color: post.categoryColor ?? '#7c3aed',
+									}}
+								>
+									{post.categoryName}
+								</span>
+							)}
+							{post.repliesCount === 0 && (
+								<span className="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 shrink-0">
+									Sem resposta
+								</span>
+							)}
+						</div>
+						<p className="text-sm font-semibold text-slate-900 dark:text-white leading-snug truncate">
+							{post.title}
+						</p>
+						<div className="flex items-center gap-2 mt-1 text-xs text-slate-400 dark:text-slate-500">
+							<span>{post.author}</span>
+							<span>•</span>
+							<span>{timeAgo(post.createdAt)}</span>
+							<span>•</span>
+							<span className="flex items-center gap-1">
+								<MessageSquare className="w-3 h-3" />
+								{post.repliesCount}
 							</span>
-						)}
-						{post.repliesCount === 0 && (
-							<span className="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 shrink-0">
-								Sem resposta
-							</span>
-						)}
+						</div>
 					</div>
-					<p className="text-sm font-semibold text-slate-900 dark:text-white leading-snug truncate">
-						{post.title}
-					</p>
-					<div className="flex items-center gap-2 mt-1 text-xs text-slate-400 dark:text-slate-500">
-						<span>{post.author}</span>
-						<span>•</span>
-						<span>{timeAgo(post.createdAt)}</span>
-						<span>•</span>
-						<span className="flex items-center gap-1">
-							<MessageSquare className="w-3 h-3" />
-							{post.repliesCount}
-						</span>
-					</div>
-				</div>
-				{expanded ? (
-					<ChevronUp className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-				) : (
-					<ChevronDown className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+					{expanded ? (
+						<ChevronUp className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+					) : (
+						<ChevronDown className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+					)}
+				</button>
+				{admin && (
+					<button
+						type="button"
+						onClick={handleDelete}
+						disabled={deletePost.isPending}
+						title="Excluir dúvida (admin)"
+						className="shrink-0 px-3 flex items-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors border-l border-slate-100 dark:border-white/5"
+					>
+						<Trash2 className="w-4 h-4" />
+					</button>
 				)}
-			</button>
+			</div>
 
 			{expanded && (
 				<div className="px-3 pb-3 bg-white dark:bg-white/5 border-t border-slate-100 dark:border-white/5">
