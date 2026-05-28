@@ -2,6 +2,7 @@
 
 import { Eye, Heart, Loader2, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
+import { Avatar } from '@/components/ui/avatar';
 import { useCommunityProjects } from '@/hooks/use-community';
 
 export function HomeProjectsFeed() {
@@ -48,9 +49,11 @@ export function HomeProjectsFeed() {
 						>
 							{/* Header: autor + tempo (compacto) */}
 							<div className="flex items-center gap-2.5 px-3 pt-3">
-								<div className="w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300 flex items-center justify-center text-xs font-bold shrink-0">
-									{p.author?.[0]?.toUpperCase() ?? '?'}
-								</div>
+								<Avatar
+									src={p.authorAvatar}
+									name={p.author}
+									className="w-8 h-8 text-xs"
+								/>
 								<div className="min-w-0 flex-1">
 									<p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
 										{p.author || 'Anônimo'}

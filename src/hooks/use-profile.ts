@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
 	changeMyPassword,
 	getMyProfile,
+	removeMyAvatar,
 	updateMyProfile,
 	uploadMyAvatar,
 } from '@/services/profile';
@@ -39,6 +40,16 @@ export function useUploadMyAvatar() {
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (file: File) => uploadMyAvatar(file),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: PROFILE_KEY });
+		},
+	});
+}
+
+export function useRemoveMyAvatar() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: () => removeMyAvatar(),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: PROFILE_KEY });
 		},

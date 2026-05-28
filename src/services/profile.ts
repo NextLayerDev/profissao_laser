@@ -24,6 +24,11 @@ export async function uploadMyAvatar(file: File): Promise<{ avatar: string }> {
 	return data;
 }
 
+export async function removeMyAvatar(): Promise<{ avatar: string | null }> {
+	const { data } = await api.delete<{ avatar: string | null }>('/me/avatar');
+	return data;
+}
+
 export async function changeMyPassword(
 	payload: ChangePasswordPayload,
 ): Promise<void> {

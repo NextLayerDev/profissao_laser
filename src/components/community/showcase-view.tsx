@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type React from 'react';
 import { useMemo, useRef, useState } from 'react';
+import { Avatar } from '@/components/ui/avatar';
 import { ModalOverlay } from '@/components/ui/modal-overlay';
 import {
 	useCommunityProjects,
@@ -182,7 +183,14 @@ export function ShowcaseView({
 								<h3 className="text-2xl font-bold text-slate-900 dark:text-white">
 									{currentProject.title}
 								</h3>
-								<p className="text-violet-400">por {currentProject.author}</p>
+								<div className="flex items-center gap-2 mt-1">
+									<Avatar
+										src={currentProject.authorAvatar}
+										name={currentProject.author}
+										className="w-6 h-6 text-[10px]"
+									/>
+									<p className="text-violet-400">por {currentProject.author}</p>
+								</div>
 								{currentProject.img && (
 									<div className="rounded-xl overflow-hidden mt-4">
 										<img
@@ -621,9 +629,16 @@ export function ShowcaseView({
 										<h3 className="font-bold text-lg text-slate-900 dark:text-white mb-1">
 											{item.title}
 										</h3>
-										<p className="text-sm text-slate-600 dark:text-gray-400 mb-3">
-											por {item.author}
-										</p>
+										<div className="flex items-center gap-2 mb-3">
+											<Avatar
+												src={item.authorAvatar}
+												name={item.author}
+												className="w-5 h-5 text-[9px]"
+											/>
+											<p className="text-sm text-slate-600 dark:text-gray-400">
+												por {item.author}
+											</p>
+										</div>
 										<div className="flex gap-2 mb-4 flex-wrap">
 											{item.material && (
 												<span className="px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-400 text-xs">
