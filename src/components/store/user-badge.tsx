@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ChangePasswordModal } from '@/components/auth/change-password-modal';
+import { Avatar } from '@/components/ui/avatar';
+import { useMyProfile } from '@/hooks/use-profile';
 import {
 	clearToken,
 	getCurrentUser,
@@ -43,6 +45,9 @@ export function UserBadge() {
 	const loginHref = isCustomerArea ? '/login' : '/login/admin';
 	const isAdminUser = !!getToken('user');
 
+	// Só customers têm perfil próprio (foto). Admin mantém só as iniciais.
+	const { data: profile } = useMyProfile(!!user && !isAdminUser);
+
 	if (!user) {
 		return (
 			<Link
@@ -55,26 +60,31 @@ export function UserBadge() {
 		);
 	}
 
-	const initials = (user.name ?? user.email ?? '?')
-		.split(' ')
-		.slice(0, 2)
-		.map((w) => w[0])
-		.join('')
-		.toUpperCase();
-
 	const displayName = user.name?.split(' ')[0] ?? user.email ?? 'Usuário';
 
 	return (
 		<>
 			<div className="flex items-center gap-2">
 				<div className="flex items-center gap-2 bg-slate-100 dark:bg-transparent border border-slate-200 dark:border-transparent px-3 py-1.5 rounded-lg">
-					<span className="w-6 h-6 rounded-full bg-violet-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
-						{initials}
-					</span>
+					<Avatar
+						src={profile?.avatar}
+						name={user.name}
+						email={user.email}
+						className="w-6 h-6 text-[10px]"
+					/>
 					<span className="text-sm text-slate-900 dark:text-white font-medium max-w-[120px] truncate">
 						{displayName}
 					</span>
 				</div>
+				{!isAdminUser && (
+					<Link
+						href="/course/perfil"
+						title="Meu perfil"
+						className="p-1.5 rounded-lg text-slate-500 dark:text-gray-400 hover:text-violet-400 dark:hover:text-violet-300 hover:bg-violet-500/10 transition-all duration-200"
+					>
+						<User className="w-4 h-4" />
+					</Link>
+				)}
 				{isAdminUser && user.sub && (
 					<button
 						type="button"

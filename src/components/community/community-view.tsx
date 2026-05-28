@@ -36,6 +36,7 @@ import {
 import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Avatar } from '@/components/ui/avatar';
 import {
 	useChannelMessages,
 	useCommunityChannels,
@@ -574,26 +575,32 @@ export function CommunityView({
 									<div className="p-4 flex items-start gap-4">
 										<button
 											type="button"
-											className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold cursor-pointer shrink-0"
+											className="shrink-0 cursor-pointer"
 											onClick={() =>
 												handleViewProfile(
 													post.author,
-													post.avatar ??
-														post.author.substring(0, 2).toUpperCase(),
+													post.author.substring(0, 2).toUpperCase(),
 													'Especialista em Personalização Laser',
+													post.avatar ?? undefined,
 												)
 											}
 											onKeyDown={(e) =>
 												e.key === 'Enter' &&
 												handleViewProfile(
 													post.author,
-													post.avatar ??
-														post.author.substring(0, 2).toUpperCase(),
+													post.author.substring(0, 2).toUpperCase(),
 													'Especialista em Personalização Laser',
+													post.avatar ?? undefined,
 												)
 											}
 										>
-											{post.avatar ?? post.author.substring(0, 2).toUpperCase()}
+											<Avatar
+												src={post.avatar}
+												name={post.author}
+												rounded="rounded-xl"
+												className="w-12 h-12 text-base"
+												fallbackClassName="bg-gradient-to-br from-violet-500 to-purple-600"
+											/>
 										</button>
 										<div className="flex-1 min-w-0">
 											<div className="flex items-center justify-between">
@@ -603,9 +610,9 @@ export function CommunityView({
 														onClick={() =>
 															handleViewProfile(
 																post.author,
-																post.avatar ??
-																	post.author.substring(0, 2).toUpperCase(),
+																post.author.substring(0, 2).toUpperCase(),
 																'Especialista em Personalização Laser',
+																post.avatar ?? undefined,
 															)
 														}
 														className="font-bold text-slate-900 dark:text-white hover:text-violet-400 text-sm"
@@ -909,17 +916,12 @@ export function CommunityView({
 										className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6 hover:border-violet-500/40 transition-all"
 									>
 										<div className="flex flex-col items-center">
-											<div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-2xl font-bold text-white mb-4 overflow-hidden">
-												{member.image ? (
-													<img
-														src={member.image}
-														alt=""
-														className="w-full h-full object-cover"
-													/>
-												) : (
-													member.name[0]
-												)}
-											</div>
+											<Avatar
+												src={member.image}
+												name={member.name}
+												className="w-24 h-24 text-2xl mb-4"
+												fallbackClassName="bg-gradient-to-br from-violet-500 to-purple-600"
+											/>
 											<h3 className="font-bold text-lg text-slate-900 dark:text-white">
 												{member.name}
 											</h3>
@@ -1505,9 +1507,12 @@ export function CommunityView({
 					<div className="p-6">
 						<div className="h-32 -m-6 mb-0 rounded-t-2xl bg-gradient-to-br from-violet-600 to-purple-600" />
 						<div className="flex flex-col items-center -mt-16">
-							<div className="w-28 h-28 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-3xl font-bold text-white border-4 border-white dark:border-[#12103a]">
-								{selectedProfile.avatar}
-							</div>
+							<Avatar
+								src={selectedProfile.image}
+								name={selectedProfile.name}
+								className="w-28 h-28 text-3xl border-4 border-white dark:border-[#12103a]"
+								fallbackClassName="bg-gradient-to-br from-violet-500 to-purple-600"
+							/>
 							<h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-4">
 								{selectedProfile.name}
 							</h3>
