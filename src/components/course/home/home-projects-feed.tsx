@@ -11,6 +11,7 @@ import {
 } from '@/hooks/use-community';
 import type { Project } from '@/types/community';
 import { formatMessageTime } from '@/utils/formatDate';
+import { PublishComposer } from './publish-composer';
 
 export function HomeProjectsFeed() {
 	const { data: projects = [], isLoading } = useCommunityProjects(1, 12, {
@@ -30,6 +31,8 @@ export function HomeProjectsFeed() {
 					Ver toda a vitrine →
 				</Link>
 			</div>
+
+			<PublishComposer />
 
 			{isLoading ? (
 				<div className="flex items-center justify-center py-10">
