@@ -82,10 +82,18 @@ export function CreditsView() {
 
 			{/* Saldo */}
 			<div className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d]">
-				<div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-600/10 via-transparent to-fuchsia-500/10" />
-				<div className="relative p-6 flex items-center gap-4">
-					<div className="w-16 h-16 rounded-2xl bg-violet-500/15 grid place-items-center shrink-0">
-						<VoxxysIcon className="w-11 h-11" />
+				<div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-600/15 via-transparent to-fuchsia-500/10" />
+				<div className="relative p-6 flex items-center gap-5">
+					<div className="relative shrink-0">
+						<div
+							aria-hidden
+							className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full bg-violet-500/30 blur-2xl"
+						/>
+						<img
+							src="/img/voxxys-3d.png"
+							alt="Voxxys"
+							className="relative h-24 w-auto sm:h-28 object-contain drop-shadow-[0_10px_28px_rgba(124,58,237,0.45)]"
+						/>
 					</div>
 					<div>
 						<p className="text-sm text-slate-500 dark:text-gray-400">
