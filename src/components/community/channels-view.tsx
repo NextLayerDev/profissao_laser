@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Avatar } from '@/components/ui/avatar';
 import { ModalOverlay } from '@/components/ui/modal-overlay';
 import {
 	useChannelMessages,
@@ -494,12 +495,12 @@ export function ChannelsView({
 										data-message-id={msg.id}
 										className={`flex gap-4 ${msg.isMe ? 'flex-row-reverse' : ''}`}
 									>
-										<div className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold shrink-0">
-											{msg.avatar ??
-												getMessageDisplayName(msg, userMap)
-													.substring(0, 2)
-													.toUpperCase()}
-										</div>
+										<Avatar
+											src={msg.avatar}
+											name={getMessageDisplayName(msg, userMap)}
+											className="w-11 h-11 text-base"
+											fallbackClassName="bg-gradient-to-br from-cyan-500 to-blue-600"
+										/>
 										<div
 											className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'} max-w-[75%]`}
 										>

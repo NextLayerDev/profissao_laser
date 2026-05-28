@@ -2,6 +2,7 @@
 
 import { Eye, MessageSquare, Search, Users } from 'lucide-react';
 import { useState } from 'react';
+import { Avatar } from '@/components/ui/avatar';
 import { ModalOverlay } from '@/components/ui/modal-overlay';
 import { useCommunityMembers } from '@/hooks/use-community';
 
@@ -43,9 +44,11 @@ export function MembersView({ isAdmin: _isAdmin = false }: MembersViewProps) {
 					<div className="p-6">
 						<div className="h-32 -m-6 mb-0 rounded-t-2xl bg-violet-600" />
 						<div className="flex flex-col items-center -mt-16">
-							<div className="w-28 h-28 rounded-full bg-violet-600 flex items-center justify-center text-3xl font-bold text-white border-4 border-white dark:border-[#1a1a1d]">
-								{selectedProfile.avatar}
-							</div>
+							<Avatar
+								src={selectedProfile.image}
+								name={selectedProfile.name}
+								className="w-28 h-28 text-3xl border-4 border-white dark:border-[#1a1a1d]"
+							/>
 							<h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-4">
 								{selectedProfile.name}
 							</h3>
@@ -147,17 +150,11 @@ export function MembersView({ isAdmin: _isAdmin = false }: MembersViewProps) {
 								className="bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-6 hover:border-violet-500/40 hover:shadow-xl hover:shadow-violet-500/10 transition-all duration-300"
 							>
 								<div className="flex flex-col items-center">
-									<div className="w-24 h-24 rounded-full bg-violet-600 flex items-center justify-center text-2xl font-bold text-white mb-4 overflow-hidden">
-										{member.image ? (
-											<img
-												src={member.image}
-												alt=""
-												className="w-full h-full object-cover"
-											/>
-										) : (
-											member.name[0]
-										)}
-									</div>
+									<Avatar
+										src={member.image}
+										name={member.name}
+										className="w-24 h-24 text-2xl mb-4"
+									/>
 									<h3 className="font-bold text-lg text-slate-900 dark:text-white">
 										{member.name}
 									</h3>

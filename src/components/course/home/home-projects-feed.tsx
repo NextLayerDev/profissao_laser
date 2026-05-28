@@ -3,6 +3,7 @@
 import { Eye, Heart, Loader2, MessageSquare, Send } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import { Avatar } from '@/components/ui/avatar';
 import {
 	useCommunityProjects,
 	useCreateProjectComment,
@@ -82,9 +83,11 @@ function FeedCard({ p }: { p: Project }) {
 		<article className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden hover:border-violet-300 dark:hover:border-violet-500/40 transition-colors">
 			{/* Header: autor + tempo */}
 			<div className="flex items-center gap-2.5 px-3 pt-3">
-				<div className="w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300 flex items-center justify-center text-xs font-bold shrink-0">
-					{p.author?.[0]?.toUpperCase() ?? '?'}
-				</div>
+				<Avatar
+					src={p.authorAvatar}
+					name={p.author}
+					className="w-8 h-8 text-xs"
+				/>
 				<div className="min-w-0 flex-1">
 					<p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
 						{p.author || 'Anônimo'}

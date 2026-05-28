@@ -143,7 +143,7 @@ export default function CoursePage() {
 
 				<main className="flex-1 mt-16 p-4 md:p-8 overflow-x-hidden">
 					{/* Greeting enxuto (substitui o banner antigo) */}
-					<HomeGreeting name={name} />
+					<HomeGreeting name={name} email={email} isAdmin={isAdmin} />
 
 					{/* Layout social meio-a-meio: feed à esquerda, painel à direita.
 					    Cada coluna scrolla independente no desktop. */}

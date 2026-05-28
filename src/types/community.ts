@@ -74,6 +74,7 @@ export interface Project {
 	id: string;
 	title: string;
 	author: string;
+	authorAvatar?: string | null;
 	img?: string | null;
 	description?: string | null;
 	material?: string | null;
