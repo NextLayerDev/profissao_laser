@@ -19,6 +19,7 @@ import {
 	Users,
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { TOOL_COLORS } from '@/utils/constants/tool-colors';
 import { ScrollReveal, StaggerReveal } from './scroll-reveal';
 
 // ─── Data (card escuro + ícone colorido, mesma paleta do início do aluno) ─────
@@ -35,91 +36,91 @@ const FEATURES: Feature[] = [
 		Icon: PlayCircle,
 		title: 'Aulas Gravadas',
 		desc: 'Aprenda no seu tempo e de onde estiver.',
-		gradient: 'from-violet-600 to-violet-900',
+		gradient: TOOL_COLORS.aulas.gradient,
 	},
 	{
 		Icon: Headphones,
 		title: 'Suporte online',
 		desc: 'Tire dúvidas e tenha apoio sempre que precisar.',
-		gradient: 'from-orange-400 to-orange-700',
+		gradient: TOOL_COLORS.suporte.gradient,
 	},
 	{
 		Icon: BookOpen,
 		title: 'Biblioteca de Vetores',
 		desc: 'Vetores organizados para acelerar seus projetos.',
-		gradient: 'from-amber-400 to-amber-700',
+		gradient: TOOL_COLORS.biblioteca.gradient,
 	},
 	{
 		Icon: Palette,
 		title: 'Vetorização',
 		desc: 'Equipe especializada para vetorização de qualidade.',
-		gradient: 'from-green-500 to-green-700',
+		gradient: TOOL_COLORS.vetorizacao.gradient,
 	},
 	{
 		Icon: ImageIcon,
 		title: 'Prévias',
 		desc: 'Visualize e teste seus projetos antes da produção.',
-		gradient: 'from-pink-500 to-pink-800',
+		gradient: TOOL_COLORS.previas.gradient,
 	},
 	{
 		Icon: Sliders,
 		title: 'Parâmetros',
 		desc: 'Configurações testadas e validadas para cada material e máquina.',
-		gradient: 'from-cyan-500 to-cyan-700',
+		gradient: TOOL_COLORS.parametros.gradient,
 	},
 	{
 		Icon: MessageSquare,
 		title: 'Fórum',
 		desc: 'Troque experiências, aprenda e cresça com a comunidade.',
-		gradient: 'from-purple-600 to-purple-800',
+		gradient: TOOL_COLORS.forum.gradient,
 	},
 	{
 		Icon: MessageCircle,
 		title: 'Chat',
 		desc: 'Converse em tempo real com membros e especialistas.',
-		gradient: 'from-teal-500 to-teal-700',
+		gradient: TOOL_COLORS.chat.gradient,
 	},
 	{
 		Icon: ShoppingCart,
 		title: 'Lista de Fornecedores',
 		desc: 'Encontre os melhores fornecedores e parceiros.',
-		gradient: 'from-amber-400 to-amber-700',
+		gradient: TOOL_COLORS.fornecedores.gradient,
 	},
 	{
 		Icon: Radio,
 		title: 'Eventos Online',
 		desc: 'Lives e eventos exclusivos para membros.',
-		gradient: 'from-rose-500 to-rose-800',
+		gradient: TOOL_COLORS.eventos.gradient,
 	},
 	{
 		Icon: UserPlus,
 		title: 'Network Membros',
 		desc: 'Conecte-se com profissionais e gere novas oportunidades.',
-		gradient: 'from-violet-600 to-indigo-600',
+		gradient: TOOL_COLORS.membros.gradient,
 	},
 	{
 		Icon: Star,
 		title: 'Vitrine de projetos',
 		desc: 'Inspire-se e mostre seu trabalho para a comunidade.',
-		gradient: 'from-pink-500 to-pink-700',
+		gradient: TOOL_COLORS.vitrine.gradient,
 	},
 	{
 		Icon: Layers,
 		title: 'Canva com IA',
 		desc: 'Crie artes profissionais de forma rápida e inteligente.',
-		gradient: 'from-cyan-500 to-blue-800',
+		gradient: TOOL_COLORS.canva.gradient,
 	},
 	{
 		Icon: Users,
 		title: 'Equipe de Vetores',
 		desc: 'Suporte especializado em vetorização para membros.',
-		gradient: 'from-green-500 to-green-700',
+		gradient: TOOL_COLORS.equipeVetores.gradient,
 	},
 	{
 		Icon: Store,
 		title: 'Fornecedores Vendas Diretas',
 		desc: 'Compre direto com fornecedores parceiros em condições especiais.',
-		gradient: 'from-emerald-500 to-emerald-700',
+		gradient: TOOL_COLORS.fornecedoresVendas.gradient,
 	},
 ];
 
