@@ -20,6 +20,7 @@ import {
 	useCreateProject,
 	useCreateProjectComment,
 	useProjectComments,
+	useToggleProjectLike,
 } from '@/hooks/use-community';
 import type { Project } from '@/types/community';
 import { formatDate, formatMessageTime } from '@/utils/formatDate';
@@ -42,9 +43,6 @@ export function ShowcaseView({
 	const [projectMaterialFilter, setProjectMaterialFilter] = useState('');
 	const [projectTechniqueFilter, setProjectTechniqueFilter] = useState('');
 	const [projectSearch, setProjectSearch] = useState('');
-	const [likedProjectIds, setLikedProjectIds] = useState<Set<string>>(
-		new Set(),
-	);
 	const [projectCommentInput, setProjectCommentInput] = useState('');
 	const [showSubmitProjectModal, setShowSubmitProjectModal] = useState(false);
 	const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -103,14 +101,8 @@ export function ShowcaseView({
 		setShowDetailsModal(true);
 	};
 
-	const handleLikeProject = (projectId: string) => {
-		setLikedProjectIds((prev) => {
-			const next = new Set(prev);
-			if (next.has(projectId)) next.delete(projectId);
-			else next.add(projectId);
-			return next;
-		});
-	};
+	const toggleLike = useToggleProjectLike();
+	const handleLikeProject = (projectId: string) => toggleLike.mutate(projectId);
 
 	const handleSubmitProject = () => {
 		if (!newProject.title.trim() || !newProject.description.trim()) return;
@@ -238,16 +230,14 @@ export function ShowcaseView({
 										type="button"
 										onClick={() => handleLikeProject(selectedProject.id)}
 										className={`flex items-center gap-2 ${
-											likedProjectIds.has(selectedProject.id)
+											currentProject.liked
 												? 'text-pink-500'
 												: 'text-slate-600 dark:text-gray-400 hover:text-pink-500'
 										}`}
 									>
 										<Heart
 											className={`h-5 w-5 ${
-												likedProjectIds.has(selectedProject.id)
-													? 'fill-pink-500'
-													: ''
+												currentProject.liked ? 'fill-pink-500' : ''
 											}`}
 										/>{' '}
 										{currentProject.likes ?? 0} curtidas
@@ -663,7 +653,7 @@ export function ShowcaseView({
 											>
 												<Heart
 													className={`h-4 w-4 ${
-														likedProjectIds.has(item.id)
+														item.liked
 															? 'fill-pink-500 text-pink-500'
 															: 'text-pink-400'
 													}`}

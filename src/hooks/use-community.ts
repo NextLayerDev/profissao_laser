@@ -24,10 +24,12 @@ import {
 	getRanking,
 	getStats,
 	sendChannelMessage,
+	toggleProjectLike,
 	updateChannel,
 	updateEvent,
 	updateProject,
 } from '@/services/community';
+import type { Project } from '@/types/community';
 
 const COMMUNITY_KEYS = {
 	posts: (page?: number, limit?: number) =>
@@ -342,6 +344,52 @@ export function useDeleteProject() {
 		},
 		onError: () => {
 			toast.error('Erro ao remover projeto');
+		},
+	});
+}
+
+export function useToggleProjectLike() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: (projectId: string) => toggleProjectLike(projectId),
+		onMutate: async (projectId: string) => {
+			await queryClient.cancelQueries({ queryKey: ['community', 'projects'] });
+			const prev = queryClient.getQueriesData<Project[]>({
+				queryKey: ['community', 'projects'],
+			});
+			// Otimista: alterna liked + ajusta a contagem nas listas em cache.
+			queryClient.setQueriesData<Project[]>(
+				{ queryKey: ['community', 'projects'] },
+				(old) =>
+					old?.map((p) =>
+						p.id === projectId
+							? {
+									...p,
+									liked: !p.liked,
+									likes: Math.max(0, (p.likes ?? 0) + (p.liked ? -1 : 1)),
+								}
+							: p,
+					),
+			);
+			return { prev };
+		},
+		onError: (_err, _projectId, ctx) => {
+			for (const [key, data] of ctx?.prev ?? []) {
+				queryClient.setQueryData(key, data);
+			}
+			toast.error('Erro ao curtir');
+		},
+		onSuccess: (result, projectId) => {
+			// Reconcilia com o servidor (liked + likes autoritativos).
+			queryClient.setQueriesData<Project[]>(
+				{ queryKey: ['community', 'projects'] },
+				(old) =>
+					old?.map((p) =>
+						p.id === projectId
+							? { ...p, liked: result.liked, likes: result.likes }
+							: p,
+					),
+			);
 		},
 	});
 }
