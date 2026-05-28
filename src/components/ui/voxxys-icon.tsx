@@ -30,3 +30,18 @@ export function VoxxysIcon({
 		</>
 	);
 }
+
+/** Variante 3D do Voxxys (coin renderizado) — ícone do card na home. */
+export function Voxxys3DIcon({
+	className = 'w-5 h-5',
+}: {
+	className?: string;
+}) {
+	return (
+		<img
+			src="/img/voxxys-3d.png"
+			alt="Voxxys"
+			className={`object-contain ${className}`}
+		/>
+	);
+}

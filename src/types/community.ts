@@ -81,6 +81,7 @@ export interface Project {
 	time?: string;
 	likes?: number;
 	comments?: number;
+	liked?: boolean;
 	createdAt?: string;
 }
 

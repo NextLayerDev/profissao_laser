@@ -176,6 +176,15 @@ export async function deleteProject(projectId: string): Promise<void> {
 	await api.delete(`/community/projects/${encodeURIComponent(projectId)}`);
 }
 
+export async function toggleProjectLike(
+	projectId: string,
+): Promise<{ liked: boolean; likes: number }> {
+	const { data } = await api.post<{ liked: boolean; likes: number }>(
+		`/community/projects/${encodeURIComponent(projectId)}/like`,
+	);
+	return data;
+}
+
 export async function getProjectComments(
 	projectId: string,
 	params?: { page?: number; limit?: number },
