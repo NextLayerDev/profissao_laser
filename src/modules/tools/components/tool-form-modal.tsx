@@ -63,7 +63,7 @@ export function ToolFormModal({ editing, pending, onClose, onSubmit }: Props) {
 					/>
 				</Field>
 
-				<Field label="Custo em voxes por uso">
+				<Field label="Custo em voxxys por uso">
 					<input
 						type="number"
 						min={0}

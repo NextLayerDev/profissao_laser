@@ -1,7 +1,8 @@
 'use client';
 
-import { Coins, Plus, Trash2, Wrench } from 'lucide-react';
+import { Plus, Trash2, Wrench } from 'lucide-react';
 import { useState } from 'react';
+import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 import { useCreateTool, useDeleteTool } from '../hooks/use-tool-mutations';
 import { useTools } from '../hooks/use-tools';
 import { useUpdateTool } from '../hooks/use-update-tool';
@@ -26,7 +27,7 @@ export function ToolsAdminSection() {
 			<div className="flex items-center justify-between mb-6">
 				<p className="text-sm text-slate-600 dark:text-gray-400">
 					Registry de funcionalidades pagas. Cada plano libera tools via
-					entitlements; cobrança em voxes acontece após a free_quota.
+					entitlements; cobrança em voxxys acontece após a free_quota.
 				</p>
 				<button
 					type="button"
@@ -143,9 +144,9 @@ function ToolCard({
 				</p>
 
 				<div className="mt-3 flex items-center gap-1.5 text-sm text-slate-600 dark:text-gray-300">
-					<Coins className="w-4 h-4 text-amber-500" />
+					<VoxxysIcon className="w-4 h-4" />
 					<span className="tabular-nums font-medium">{tool.vox_cost}</span>
-					<span className="text-xs text-slate-500">voxes/uso</span>
+					<span className="text-xs text-slate-500">voxxys/uso</span>
 				</div>
 
 				<div className="mt-auto pt-4 flex gap-2">

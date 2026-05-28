@@ -1,8 +1,9 @@
 'use client';
 
-import { Coins, Infinity as InfinityIcon, Search } from 'lucide-react';
+import { Infinity as InfinityIcon, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ModalOverlay } from '@/components/ui/modal-overlay';
+import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 import { useTools } from '@/modules/tools';
 
 interface Props {
@@ -125,7 +126,7 @@ export function AddToolModal({ excludeKeys, pending, onClose, onAdd }: Props) {
 											)}
 										</div>
 										<div className="flex items-center gap-1 text-sm text-slate-500 tabular-nums shrink-0">
-											<Coins className="w-3.5 h-3.5" />
+											<VoxxysIcon className="w-3.5 h-3.5" />
 											{t.vox_cost}
 										</div>
 									</button>
@@ -146,7 +147,7 @@ export function AddToolModal({ excludeKeys, pending, onClose, onAdd }: Props) {
 								onClick={() => setQuotaMode('unlimited')}
 								icon={<InfinityIcon className="w-3.5 h-3.5" />}
 								label="Ilimitado"
-								hint="nunca cobra voxes"
+								hint="nunca cobra voxxys"
 							/>
 							<QuotaModeButton
 								active={quotaMode === 'int'}
@@ -158,9 +159,9 @@ export function AddToolModal({ excludeKeys, pending, onClose, onAdd }: Props) {
 							<QuotaModeButton
 								active={quotaMode === 'gated'}
 								onClick={() => setQuotaMode('gated')}
-								icon={<Coins className="w-3.5 h-3.5" />}
+								icon={<VoxxysIcon className="w-3.5 h-3.5" />}
 								label="Sem cota"
-								hint="sempre cobra voxes"
+								hint="sempre cobra voxxys"
 							/>
 						</div>
 						{quotaMode === 'int' && (

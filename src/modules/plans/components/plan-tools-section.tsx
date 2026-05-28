@@ -1,14 +1,9 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import {
-	Coins,
-	Infinity as InfinityIcon,
-	Plus,
-	Trash2,
-	Wrench,
-} from 'lucide-react';
+import { Infinity as InfinityIcon, Plus, Trash2, Wrench } from 'lucide-react';
 import { useState } from 'react';
+import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 import { useTools, useUpdateTool } from '@/modules/tools';
 import { planDetailsQueryKey } from '../hooks/use-plan-details';
 import { useRemovePlanTool, useSetPlanTool } from '../hooks/use-plan-tools';
@@ -51,7 +46,7 @@ export function PlanToolsSection({ planId, entitlements }: Props) {
 						Funcionalidades
 					</h3>
 					<p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
-						Tools que este plano libera, com custo em voxes e cota grátis por
+						Tools que este plano libera, com custo em voxxys e cota grátis por
 						mês.
 					</p>
 				</div>
@@ -169,8 +164,8 @@ function EntitlementCard({
 				<div className="mt-auto pt-4 grid grid-cols-2 gap-3">
 					<NumberControl
 						label="Custo"
-						hint="voxes/uso"
-						icon={<Coins className="w-3.5 h-3.5 text-amber-500" />}
+						hint="voxxys/uso"
+						icon={<VoxxysIcon className="w-3.5 h-3.5" />}
 						initial={tool.vox_cost}
 						min={0}
 						disabled={voxCostPending}

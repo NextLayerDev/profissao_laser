@@ -60,7 +60,7 @@ function PackagesPanel() {
 		<div>
 			<div className="flex items-center justify-between mb-6">
 				<p className="text-sm text-slate-600 dark:text-gray-400">
-					Pacotes de voxes. Stripe é integrado via{' '}
+					Pacotes de voxxys. Stripe é integrado via{' '}
 					<code className="text-xs">stripe_price_id</code>.
 				</p>
 				<button
@@ -110,7 +110,7 @@ function PackagesPanel() {
 									<span className="text-2xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">
 										{p.vox_amount}
 									</span>
-									<span className="text-sm text-slate-500">voxes</span>
+									<span className="text-sm text-slate-500">voxxys</span>
 								</div>
 								<p className="text-sm text-slate-600 dark:text-gray-300 tabular-nums">
 									<span className="text-xs text-slate-500 mr-0.5">R$</span>
@@ -218,7 +218,7 @@ function PackageModal({
 					/>
 				</Field>
 				<div className="grid grid-cols-2 gap-3">
-					<Field label="Voxes">
+					<Field label="Voxxys">
 						<input
 							type="number"
 							min={1}

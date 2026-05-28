@@ -1,8 +1,9 @@
 'use client';
 
-import { Coins, Sparkles, Wallet, X } from 'lucide-react';
+import { Sparkles, Wallet, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ModalOverlay } from '@/components/ui/modal-overlay';
+import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 
 export type CreditModalVariant =
 	| 'confirm'
@@ -72,7 +73,7 @@ export function CreditConfirmModal({
 		isFreeTierExhausted ||
 		(variant === 'daily-limit' && !canUseCredits);
 
-	// ── Free-tier exhausted: CTA é "Comprar voxes", sem opção de confirmar ──
+	// ── Free-tier exhausted: CTA é "Comprar voxxys", sem opção de confirmar ──
 	if (isFreeTierExhausted) {
 		const periodLabel = freeTier?.period === 'daily' ? 'hoje' : 'esta semana';
 		const periodLabelDe = freeTier?.period === 'daily' ? 'dia' : 'semana';
@@ -117,13 +118,13 @@ export function CreditConfirmModal({
 						) : (
 							`no próximo ${periodLabelDe}. `
 						)}
-						Compre voxes para continuar usando sem limite.
+						Compre voxxys para continuar usando sem limite.
 					</p>
 
 					<div className="rounded-xl border border-violet-200 dark:border-violet-800/40 bg-violet-50 dark:bg-violet-950/20 p-3 mb-6">
 						<div className="flex items-center gap-2 text-sm text-violet-700 dark:text-violet-300">
-							<Coins className="w-4 h-4" />
-							<span>Com voxes você não tem limite — só o custo por uso.</span>
+							<VoxxysIcon className="w-4 h-4" />
+							<span>Com voxxys você não tem limite — só o custo por uso.</span>
 						</div>
 					</div>
 
@@ -140,7 +141,7 @@ export function CreditConfirmModal({
 							onClick={goBuy}
 							className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 transition-colors"
 						>
-							Comprar voxes
+							Comprar voxxys
 						</button>
 					</div>
 				</div>
@@ -157,11 +158,13 @@ export function CreditConfirmModal({
 							{isInsufficient ? (
 								<Wallet className="w-5 h-5 text-violet-500" />
 							) : (
-								<Coins className="w-5 h-5 text-violet-500" />
+								<VoxxysIcon className="w-5 h-5" />
 							)}
 						</div>
 						<h3 className="text-lg font-bold text-slate-900 dark:text-white">
-							{isInsufficient ? 'Saldo insuficiente' : 'Confirmar uso de voxes'}
+							{isInsufficient
+								? 'Saldo insuficiente'
+								: 'Confirmar uso de voxxys'}
 						</h3>
 					</div>
 					<button
@@ -178,23 +181,23 @@ export function CreditConfirmModal({
 						<>
 							Esta ação custa{' '}
 							<strong className="text-slate-900 dark:text-white">
-								{cost} {cost === 1 ? 'vox' : 'voxes'}
+								{cost} {cost === 1 ? 'voxxy' : 'voxxys'}
 							</strong>{' '}
 							e você tem apenas{' '}
 							<strong className="text-slate-900 dark:text-white">
 								{balance}
 							</strong>
-							. Compre voxes para continuar.
+							. Compre voxxys para continuar.
 						</>
 					) : (
 						<>
 							Esta ação custa{' '}
 							<strong className="text-slate-900 dark:text-white">
-								{cost} {cost === 1 ? 'vox' : 'voxes'}
+								{cost} {cost === 1 ? 'voxxy' : 'voxxys'}
 							</strong>
 							. Seu saldo:{' '}
 							<strong className="text-slate-900 dark:text-white">
-								{balance} {balance === 1 ? 'vox' : 'voxes'}
+								{balance} {balance === 1 ? 'voxxy' : 'voxxys'}
 							</strong>
 							. Deseja continuar?
 						</>
@@ -215,7 +218,7 @@ export function CreditConfirmModal({
 							onClick={goBuy}
 							className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 transition-colors"
 						>
-							Comprar voxes
+							Comprar voxxys
 						</button>
 					) : (
 						<button
@@ -226,7 +229,7 @@ export function CreditConfirmModal({
 						>
 							{pending
 								? 'Processando...'
-								: `Usar ${cost} ${cost === 1 ? 'vox' : 'voxes'}`}
+								: `Usar ${cost} ${cost === 1 ? 'voxxy' : 'voxxys'}`}
 						</button>
 					)}
 				</div>
