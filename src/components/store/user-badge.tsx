@@ -75,6 +75,15 @@ export function UserBadge() {
 						{displayName}
 					</span>
 				</div>
+				{!isAdminUser && (
+					<Link
+						href="/course/perfil"
+						title="Meu perfil"
+						className="p-1.5 rounded-lg text-slate-500 dark:text-gray-400 hover:text-violet-400 dark:hover:text-violet-300 hover:bg-violet-500/10 transition-all duration-200"
+					>
+						<User className="w-4 h-4" />
+					</Link>
+				)}
 				{isAdminUser && user.sub && (
 					<button
 						type="button"
