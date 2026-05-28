@@ -1869,7 +1869,7 @@ export function PreviasView() {
 									<Sparkles className="w-5 h-5" />
 								)}
 								{isAtLimit
-									? 'Gerar com voxes'
+									? 'Gerar com voxxys'
 									: generatedPrevia
 										? 'Gerar Novamente'
 										: 'Gerar Previa com IA'}

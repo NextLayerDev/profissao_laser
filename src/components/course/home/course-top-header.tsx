@@ -2,7 +2,6 @@
 
 import {
 	Bell,
-	Coins,
 	CreditCard,
 	Menu,
 	MessageCircle,
@@ -13,6 +12,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 import { useVoxBalance } from '@/hooks/use-credits';
 import { useIsTestUnlimited } from '@/hooks/use-is-test-unlimited';
 
@@ -99,10 +99,10 @@ export function CourseTopHeader({
 				<ThemeToggle />
 				<Link
 					href="/course/voxes"
-					title="Meus voxes"
+					title="Meus voxxys"
 					className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
 				>
-					<Coins className="w-[18px] h-[18px] text-violet-500" />
+					<VoxxysIcon className="w-[18px] h-[18px]" />
 					<span className="text-sm font-semibold tabular-nums">
 						{unlimited ? '∞' : (voxBalance?.balance ?? '—')}
 					</span>

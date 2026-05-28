@@ -15,12 +15,12 @@ import { RemoveAddonModal } from './remove-addon-modal';
 
 const FRIENDLY_ERRORS: Record<string, string> = {
 	'Addon already attached to subscription':
-		'Esse vox já está ativo na sua assinatura.',
+		'Esse voxxy já está ativo na sua assinatura.',
 	'No active or trialing Stripe subscription found':
-		'Você precisa ter uma assinatura ativa pra adicionar voxes.',
-	'Product is not an addon': 'Esse produto não é um vox.',
+		'Você precisa ter uma assinatura ativa pra adicionar voxxys.',
+	'Product is not an addon': 'Esse produto não é um voxxy.',
 	'Addon not configured for payments':
-		'Esse vox ainda não está configurado pra cobrança.',
+		'Esse voxxy ainda não está configurado pra cobrança.',
 	'Cannot remove the main plan item':
 		'Não é possível remover o plano principal por aqui.',
 	'Subscription item not found': 'Esse item de assinatura não foi encontrado.',
@@ -60,9 +60,9 @@ export function AddonsSection() {
 
 	function handleAttach(productId: string) {
 		attach.mutate(productId, {
-			onSuccess: () => toast.success('Vox adicionado à sua assinatura.'),
+			onSuccess: () => toast.success('Voxxy adicionado à sua assinatura.'),
 			onError: (err) =>
-				toast.error(friendlyError(err, 'Erro ao adicionar vox.')),
+				toast.error(friendlyError(err, 'Erro ao adicionar voxxy.')),
 		});
 	}
 
@@ -71,11 +71,12 @@ export function AddonsSection() {
 		remove.mutate(removeTarget.itemId, {
 			onSuccess: () => {
 				toast.success(
-					'Vox removido. A proração será creditada no próximo invoice.',
+					'Voxxy removido. A proração será creditada no próximo invoice.',
 				);
 				setRemoveTarget(null);
 			},
-			onError: (err) => toast.error(friendlyError(err, 'Erro ao remover vox.')),
+			onError: (err) =>
+				toast.error(friendlyError(err, 'Erro ao remover voxxy.')),
 		});
 	}
 
@@ -85,7 +86,7 @@ export function AddonsSection() {
 		<section className="bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-2xl p-6 mt-6">
 			<header className="mb-4">
 				<h2 className="text-base font-semibold text-slate-900 dark:text-white">
-					Voxes
+					Voxxys
 				</h2>
 				<p className="text-sm text-slate-600 dark:text-gray-400 mt-1">
 					Funcionalidades extras que você pode anexar à sua assinatura. A
@@ -101,11 +102,11 @@ export function AddonsSection() {
 				<>
 					<div className="mb-6">
 						<h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400 mb-2">
-							Meus voxes
+							Meus voxxys
 						</h3>
 						{(myAddons ?? []).length === 0 ? (
 							<p className="text-sm text-slate-500 dark:text-gray-500">
-								Você ainda não tem voxes ativos.
+								Você ainda não tem voxxys ativos.
 							</p>
 						) : (
 							<ul className="space-y-2">
@@ -139,11 +140,11 @@ export function AddonsSection() {
 
 					<div>
 						<h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400 mb-2">
-							Voxes disponíveis
+							Voxxys disponíveis
 						</h3>
 						{availableAddons.length === 0 ? (
 							<p className="text-sm text-slate-500 dark:text-gray-500">
-								Nenhum vox disponível no momento.
+								Nenhum voxxy disponível no momento.
 							</p>
 						) : (
 							<ul className="space-y-2">

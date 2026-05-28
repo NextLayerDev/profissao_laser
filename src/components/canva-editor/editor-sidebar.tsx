@@ -195,7 +195,7 @@ function AiPanel({
 				) : (
 					<Sparkles className="w-4 h-4" />
 				)}
-				Aplicar IA ({cost} {cost === 1 ? 'vox' : 'voxes'})
+				Aplicar IA ({cost} {cost === 1 ? 'voxxy' : 'voxxys'})
 			</button>
 
 			<div className="pt-3 border-t border-slate-200 dark:border-white/10">

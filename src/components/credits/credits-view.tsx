@@ -1,9 +1,10 @@
 'use client';
 
-import { Coins, History, Loader2, Package } from 'lucide-react';
+import { History, Loader2, Package } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
+import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 import {
 	useCreateVoxCheckout,
 	useVoxBalance,
@@ -68,7 +69,7 @@ export function CreditsView() {
 
 	return (
 		<div className="px-4 md:px-8 py-6 space-y-8">
-			<PageHeader title="Voxes" subtitle="Seu saldo, pacotes e histórico" />
+			<PageHeader title="Voxxys" subtitle="Seu saldo, pacotes e histórico" />
 
 			{processing && (
 				<div className="rounded-xl border border-violet-200 dark:border-violet-800/40 bg-violet-50 dark:bg-violet-950/20 p-4 flex items-center gap-3">
@@ -80,30 +81,61 @@ export function CreditsView() {
 			)}
 
 			{/* Saldo */}
-			<div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-6 flex items-center gap-4">
-				<div className="w-12 h-12 rounded-xl bg-violet-500/15 flex items-center justify-center">
-					<Coins className="w-6 h-6 text-violet-500" />
+			<div className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d]">
+				<div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-600/15 via-transparent to-fuchsia-500/10" />
+				<div className="relative p-6 flex items-center gap-5">
+					<div className="relative shrink-0">
+						<div
+							aria-hidden
+							className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full bg-violet-500/30 blur-2xl"
+						/>
+						<img
+							src="/img/voxxys-3d.png"
+							alt="Voxxys"
+							className="relative h-24 w-auto sm:h-28 object-contain drop-shadow-[0_10px_28px_rgba(124,58,237,0.45)]"
+						/>
+					</div>
+					<div>
+						<p className="text-sm text-slate-500 dark:text-gray-400">
+							Saldo atual
+						</p>
+						<p className="text-3xl font-bold text-slate-900 dark:text-white tabular-nums">
+							{unlimited ? (
+								<>
+									Ilimitado{' '}
+									<span className="text-base font-medium text-slate-500">
+										(conta teste)
+									</span>
+								</>
+							) : (
+								<>
+									{balance?.balance ?? '—'}{' '}
+									<span className="text-base font-medium text-slate-500">
+										voxxys
+									</span>
+								</>
+							)}
+						</p>
+						<p className="text-xs text-violet-600/80 dark:text-violet-400/80 font-medium mt-0.5">
+							A moeda da plataforma
+						</p>
+					</div>
+				</div>
+			</div>
+
+			{/* O que são Voxxys? */}
+			<div className="rounded-2xl border border-violet-200/70 dark:border-violet-500/20 bg-violet-50/60 dark:bg-violet-500/[0.06] p-5 flex gap-4">
+				<div className="w-11 h-11 rounded-xl bg-violet-500/15 grid place-items-center shrink-0">
+					<VoxxysIcon className="w-6 h-6" />
 				</div>
 				<div>
-					<p className="text-sm text-slate-500 dark:text-gray-400">
-						Saldo atual
-					</p>
-					<p className="text-3xl font-bold text-slate-900 dark:text-white tabular-nums">
-						{unlimited ? (
-							<>
-								Ilimitado{' '}
-								<span className="text-base font-medium text-slate-500">
-									(conta teste)
-								</span>
-							</>
-						) : (
-							<>
-								{balance?.balance ?? '—'}{' '}
-								<span className="text-base font-medium text-slate-500">
-									voxes
-								</span>
-							</>
-						)}
+					<h3 className="font-semibold text-slate-900 dark:text-white">
+						O que são Voxxys?
+					</h3>
+					<p className="text-sm text-slate-600 dark:text-gray-300 mt-1 leading-relaxed">
+						Voxxys são a moeda da plataforma. Você usa voxxys para acessar as
+						ferramentas (como a vetorização de imagens): cada uso consome uma
+						quantidade de voxxys. Compre um pacote e gaste conforme o uso.
 					</p>
 				</div>
 			</div>
@@ -111,7 +143,7 @@ export function CreditsView() {
 			{/* Pacotes */}
 			<section>
 				<h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-slate-500 dark:text-gray-400 mb-4">
-					<Package className="w-4 h-4" /> Comprar voxes
+					<Package className="w-4 h-4" /> Comprar voxxys
 				</h3>
 				{pkgLoading ? (
 					<div className="flex justify-center py-12">
@@ -132,10 +164,11 @@ export function CreditsView() {
 										{p.description}
 									</p>
 								)}
-								<p className="mt-4 text-2xl font-bold text-violet-600">
+								<p className="mt-4 flex items-center gap-1.5 text-2xl font-bold text-violet-600">
+									<VoxxysIcon className="w-5 h-5" />
 									{p.credits}{' '}
 									<span className="text-sm font-medium text-slate-500">
-										voxes
+										voxxys
 									</span>
 								</p>
 								<p className="text-sm text-slate-500 dark:text-gray-400">

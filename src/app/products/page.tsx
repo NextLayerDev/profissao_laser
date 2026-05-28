@@ -31,7 +31,7 @@ const TABS: TabDef[] = [
 	},
 	{
 		key: 'voxes',
-		label: 'Voxes',
+		label: 'Voxxys',
 		icon: Puzzle,
 		activeClasses:
 			'bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/30',
@@ -68,7 +68,7 @@ export default function Catalogo() {
 						Catálogo
 					</h2>
 					<p className="text-slate-600 dark:text-gray-400 mt-1">
-						Cursos, planos, voxes e tools em um só lugar.
+						Cursos, planos, voxxys e tools em um só lugar.
 					</p>
 				</div>
 

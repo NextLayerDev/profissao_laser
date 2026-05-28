@@ -23,7 +23,7 @@ const FEATURE_LABEL: Record<VoxFeature, string> = {
 /**
  * Banner sutil que aparece apenas para usuários sem saldo (balance == 0),
  * mostrando "X de Y usos gratuitos restantes esta semana/hoje" e CTA pra
- * comprar voxes. Para usuários com saldo, retorna null.
+ * comprar voxxys. Para usuários com saldo, retorna null.
  */
 export function FreeTierQuotaBanner({
 	feature,
@@ -82,7 +82,7 @@ export function FreeTierQuotaBanner({
 					className="inline-flex items-center gap-1 text-xs font-semibold text-violet-600 dark:text-violet-400 hover:underline shrink-0"
 				>
 					<Sparkles className="w-3 h-3" />
-					Comprar voxes
+					Comprar voxxys
 				</Link>
 			</div>
 			<div className="w-full h-2 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden mb-1.5">

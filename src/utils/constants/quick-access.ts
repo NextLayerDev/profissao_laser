@@ -1,10 +1,8 @@
 import {
 	BookOpen,
-	Coins,
 	Eye,
 	Headphones,
 	LayoutGrid,
-	type LucideIcon,
 	MessageCircle,
 	MessageSquare,
 	Palette,
@@ -16,12 +14,14 @@ import {
 	Truck,
 	Users,
 } from 'lucide-react';
+import type { ComponentType } from 'react';
+import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 import type { FeatureKey } from '@/types/classes';
 
 export type QuickAccessItem = {
 	label: string;
 	description: string;
-	Icon: LucideIcon;
+	Icon: ComponentType<{ className?: string }>;
 	section: 'CONTEUDO' | 'COMUNIDADE' | 'FERRAMENTAS';
 	featureKey?: FeatureKey;
 	href?: string;
@@ -82,9 +82,9 @@ export const quickAccessItems: QuickAccessItem[] = [
 		iconBg: 'bg-pink-500/15 text-pink-600 dark:text-pink-400',
 	},
 	{
-		label: 'Voxes',
+		label: 'Voxxys',
 		description: 'Saldo e pacotes',
-		Icon: Coins,
+		Icon: VoxxysIcon,
 		section: 'FERRAMENTAS',
 		href: '/course/voxes',
 		gradient: 'from-yellow-400 to-amber-600',
