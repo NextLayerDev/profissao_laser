@@ -30,6 +30,8 @@ export type QuickAccessItem = {
 	gradient: string;
 	/** Cor sólida sutil pro ícone no modo compacto (sidebar). */
 	iconBg: string;
+	/** Ícone-imagem (ex.: logo 3D): renderiza maior e sem o box branco atrás. */
+	iconBare?: boolean;
 };
 
 export const quickAccessItems: QuickAccessItem[] = [
@@ -83,6 +85,7 @@ export const quickAccessItems: QuickAccessItem[] = [
 		Icon: Voxxys3DIcon,
 		section: 'FERRAMENTAS',
 		href: '/course/voxes',
+		iconBare: true,
 		...TOOL_COLORS.voxxys,
 	},
 	{

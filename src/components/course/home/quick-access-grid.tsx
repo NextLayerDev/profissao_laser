@@ -130,7 +130,8 @@ function QuickAccessCard({
 	item: QuickAccessItem;
 	features: CustomerFeatures | null;
 }) {
-	const { label, description, Icon, featureKey, href, gradient } = item;
+	const { label, description, Icon, featureKey, href, gradient, iconBare } =
+		item;
 	const hasAccess = featureKey ? (features?.[featureKey] ?? false) : true;
 	const isComingSoon = !href && !featureKey;
 	const isLocked = featureKey && !hasAccess;
@@ -152,14 +153,18 @@ function QuickAccessCard({
 			)}
 
 			<div
-				className={`relative w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+				className={`relative flex items-center justify-center shrink-0 ${
 					isLocked
-						? 'bg-slate-200 dark:bg-white/[0.06]'
-						: 'bg-white/20 backdrop-blur-sm'
+						? 'w-10 h-10 rounded-lg bg-slate-200 dark:bg-white/[0.06]'
+						: iconBare
+							? 'w-12 h-12'
+							: 'w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm'
 				}`}
 			>
 				{isLocked ? (
 					<Lock className="w-4 h-4 text-slate-400 dark:text-gray-500" />
+				) : iconBare ? (
+					<Icon className="w-12 h-12 drop-shadow-md" />
 				) : (
 					<Icon className="w-5 h-5 text-white" />
 				)}
