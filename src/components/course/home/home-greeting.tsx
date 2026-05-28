@@ -14,14 +14,16 @@ export function HomeGreeting({
 	email,
 	isAdmin = false,
 }: HomeGreetingProps) {
-	const firstName = name ? name.split(' ')[0] : 'bem-vindo';
+	const firstName = name ? name.split(' ')[0] : '';
 	const { data: profile } = useMyProfile(!isAdmin);
+	// Prioriza o apelido do customer; senão o primeiro nome; senão genérico.
+	const displayName = profile?.nickname?.trim() || firstName || 'bem-vindo';
 
 	return (
 		<header className="mb-6 flex items-center gap-4">
 			<Avatar
 				src={profile?.avatar}
-				name={name}
+				name={profile?.nickname || name}
 				email={email}
 				className="w-12 h-12 sm:w-14 sm:h-14 text-base shrink-0 ring-2 ring-violet-500/20"
 			/>
@@ -29,7 +31,7 @@ export function HomeGreeting({
 				<h1 className="font-display text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
 					Olá,{' '}
 					<span className="bg-gradient-to-r from-violet-600 to-violet-400 bg-clip-text text-transparent">
-						{firstName}
+						{displayName}
 					</span>
 					! 👋
 				</h1>
