@@ -164,7 +164,7 @@ function QuickAccessCard({
 				{isLocked ? (
 					<Lock className="w-4 h-4 text-slate-400 dark:text-gray-500" />
 				) : iconBare ? (
-					<Icon className="w-14 h-14 -ml-1 drop-shadow-md" />
+					<Icon className="w-16 h-16 -ml-2 drop-shadow-md" />
 				) : (
 					<Icon className="w-5 h-5 text-white" />
 				)}
