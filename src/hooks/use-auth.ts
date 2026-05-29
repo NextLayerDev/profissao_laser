@@ -2,27 +2,36 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { saveToken } from '@/lib/auth';
-import {
-	loginCustomer,
-	loginUser,
-	registerCustomer,
-	registerUser,
-} from '@/services/auth';
+import { saveRefreshToken, saveToken } from '@/lib/auth';
+import { registerCustomer, registerUser } from '@/services/auth';
+import { loginCourses } from '@/services/courses-auth';
 import type {
 	LoginCustomerPayload,
-	LoginUserPayload,
 	RegisterCustomerPayload,
 	RegisterUserPayload,
 } from '@/types/auth';
 
-export function useLoginCustomer() {
+/** Roles que acessam o painel administrativo (token de "user"). */
+const PANEL_ROLES = ['admin', 'staff'];
+
+/**
+ * Login único: a API de cursos retorna o role do usuário (customer | admin |
+ * staff) e roteamos de acordo. admin/staff vão para o painel (token "user");
+ * customer vai para a área de aluno (token "customer").
+ */
+export function useLogin() {
 	const router = useRouter();
 	return useMutation({
-		mutationFn: (payload: LoginCustomerPayload) => loginCustomer(payload),
-		onSuccess: ({ token }) => {
-			saveToken('customer', token);
-			router.push('/course');
+		mutationFn: (payload: LoginCustomerPayload) => loginCourses(payload),
+		onSuccess: ({ accessToken, refreshToken, user }) => {
+			if (refreshToken) saveRefreshToken(refreshToken);
+			if (PANEL_ROLES.includes(user?.role ?? '')) {
+				saveToken('user', accessToken);
+				router.push('/dashboard');
+			} else {
+				saveToken('customer', accessToken);
+				router.push('/course');
+			}
 		},
 	});
 }
@@ -37,23 +46,12 @@ export function useRegisterCustomer() {
 	});
 }
 
-export function useLoginUser() {
-	const router = useRouter();
-	return useMutation({
-		mutationFn: (payload: LoginUserPayload) => loginUser(payload),
-		onSuccess: ({ token }) => {
-			saveToken('user', token);
-			router.push('/dashboard');
-		},
-	});
-}
-
 export function useRegisterUser() {
 	const router = useRouter();
 	return useMutation({
 		mutationFn: (payload: RegisterUserPayload) => registerUser(payload),
 		onSuccess: () => {
-			router.push('/login/admin');
+			router.push('/login');
 		},
 	});
 }

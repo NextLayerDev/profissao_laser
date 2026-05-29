@@ -3,6 +3,8 @@ const KEYS = {
 	customer: 'pl_customer_token',
 } as const;
 
+const REFRESH_KEY = 'pl_refresh_token';
+
 export type AuthRole = keyof typeof KEYS;
 
 export function saveToken(role: AuthRole, token: string) {
@@ -15,6 +17,18 @@ export function getToken(role: AuthRole): string | null {
 
 export function clearToken(role: AuthRole) {
 	localStorage.removeItem(KEYS[role]);
+}
+
+export function saveRefreshToken(token: string) {
+	localStorage.setItem(REFRESH_KEY, token);
+}
+
+export function getRefreshToken(): string | null {
+	return localStorage.getItem(REFRESH_KEY);
+}
+
+export function clearRefreshToken() {
+	localStorage.removeItem(REFRESH_KEY);
 }
 
 /** Retorna o primeiro token disponível: user tem prioridade sobre customer */
@@ -63,6 +77,7 @@ export function isTokenValid(token: string): boolean {
 export function clearAllTokens() {
 	clearToken('user');
 	clearToken('customer');
+	clearRefreshToken();
 }
 
 /** Retorna o payload do token ativo, ou null se não logado ou expirado */

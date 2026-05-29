@@ -3,7 +3,7 @@
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { saveToken } from '@/lib/auth';
+import { saveRefreshToken, saveToken } from '@/lib/auth';
 import { loginCourses, signupCourses } from '@/services/courses-auth';
 
 type Tab = 'register' | 'login';
@@ -45,13 +45,14 @@ export function PlanAuthForm({
 			return;
 		setIsLoading(true);
 		try {
-			const token = await signupCourses({
+			const { accessToken, refreshToken } = await signupCourses({
 				name: name.trim(),
 				email: email.trim(),
 				password: password.trim(),
 				phone: phone.trim(),
 			});
-			saveToken('customer', token);
+			saveToken('customer', accessToken);
+			if (refreshToken) saveRefreshToken(refreshToken);
 			toast.success('Conta criada com sucesso!');
 			onAuthenticated();
 		} catch (err) {
@@ -66,11 +67,12 @@ export function PlanAuthForm({
 		if (!email.trim() || !password.trim()) return;
 		setIsLoading(true);
 		try {
-			const token = await loginCourses({
+			const { accessToken, refreshToken } = await loginCourses({
 				email: email.trim(),
 				password: password.trim(),
 			});
-			saveToken('customer', token);
+			saveToken('customer', accessToken);
+			if (refreshToken) saveRefreshToken(refreshToken);
 			toast.success('Login realizado!');
 			onAuthenticated();
 		} catch (err) {

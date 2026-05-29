@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { toast } from 'sonner';
-import { resetPassword } from '@/services/auth';
+import { resetPasswordCourses } from '@/services/courses-auth';
 
 function ResetPasswordForm() {
 	const searchParams = useSearchParams();
@@ -28,8 +28,8 @@ function ResetPasswordForm() {
 		}
 		setLoading(true);
 		try {
-			const message = await resetPassword(token, newPassword);
-			toast.success(message || 'Senha redefinida com sucesso!');
+			await resetPasswordCourses(token, newPassword);
+			toast.success('Senha redefinida com sucesso!');
 			router.push('/login');
 		} catch {
 			toast.error('Erro ao redefinir senha. O token pode ter expirado.');

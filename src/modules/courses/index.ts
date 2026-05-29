@@ -14,15 +14,34 @@ export {
 	useCourseModules,
 	useCreateCourseModule,
 	useDeleteCourseModule,
+	useReorderCourseModules,
 	useUpdateCourseModule,
 } from './hooks/use-course-modules';
+export {
+	lessonMaterialsQueryKey,
+	useDeleteMaterial,
+	useLessonMaterials,
+	useUploadLessonMaterial,
+} from './hooks/use-lesson-materials';
 export {
 	moduleLessonsQueryKey,
 	useCreateLesson,
 	useDeleteLesson,
 	useModuleLessons,
+	useReorderLessons,
 	useUpdateLesson,
+	useUploadLessonVideo,
 } from './hooks/use-lessons';
+export {
+	lessonQuizQueryKey,
+	useAttemptQuiz,
+	useCreateLessonQuiz,
+	useCreateQuestion,
+	useDeleteQuestion,
+	useDeleteQuiz,
+	useLessonQuiz,
+	useUpdateQuestion,
+} from './hooks/use-quizzes';
 
 export {
 	createCourse,
@@ -34,15 +53,30 @@ export {
 export {
 	createLesson,
 	deleteLesson,
+	deleteMaterial,
+	listLessonMaterials,
 	listModuleLessons,
+	reorderLessons,
 	updateLesson,
+	uploadLessonMaterial,
+	uploadLessonVideo,
 } from './services/lessons.service';
 export {
 	createCourseModule,
 	deleteCourseModule,
 	listCourseModules,
+	reorderCourseModules,
 	updateCourseModule,
 } from './services/modules.service';
+export {
+	attemptLessonQuiz,
+	createLessonQuiz,
+	createQuestion,
+	deleteQuestion,
+	deleteQuiz,
+	getLessonQuiz,
+	updateQuestion,
+} from './services/quizzes.service';
 
 export type {
 	Course,
@@ -64,6 +98,8 @@ export {
 	lessonSchema,
 	updateLessonSchema,
 } from './types/lessons';
+export type { Material } from './types/materials';
+export { materialSchema } from './types/materials';
 export type {
 	CourseModule,
 	CreateCourseModulePayload,
@@ -74,3 +110,21 @@ export {
 	createCourseModuleSchema,
 	updateCourseModuleSchema,
 } from './types/modules';
+export type {
+	CreateQuestionPayload,
+	CreateQuizPayload,
+	Quiz,
+	QuizAttemptAnswer,
+	QuizAttemptResult,
+	QuizOption,
+	QuizQuestion,
+	UpdateQuestionPayload,
+} from './types/quizzes';
+export {
+	createQuestionSchema,
+	createQuizSchema,
+	quizAttemptResultSchema,
+	quizQuestionSchema,
+	quizSchema,
+	updateQuestionSchema,
+} from './types/quizzes';

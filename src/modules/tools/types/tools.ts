@@ -27,3 +27,11 @@ export type CreateToolPayload = z.infer<typeof createToolSchema>;
 
 export const updateToolSchema = createToolSchema.partial();
 export type UpdateToolPayload = z.infer<typeof updateToolSchema>;
+
+export const invokeToolResultSchema = z.object({
+	invocation_id: z.string(),
+	quota_consumed: z.number().int(),
+	voxes_spent: z.number().int(),
+	balance: z.number().int(),
+});
+export type InvokeToolResult = z.infer<typeof invokeToolResultSchema>;

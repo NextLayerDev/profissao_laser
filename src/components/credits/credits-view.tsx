@@ -5,25 +5,18 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { VoxxysIcon } from '@/components/ui/voxxys-icon';
-import {
-	useCreateVoxCheckout,
-	useVoxBalance,
-	useVoxHistory,
-	useVoxPackages,
-} from '@/hooks/use-credits';
 import { useIsTestUnlimited } from '@/hooks/use-is-test-unlimited';
-import type { VoxHistoryEntry } from '@/types/credits';
+import {
+	useMyVoxes,
+	usePurchaseVoxes,
+	useVoxPackages,
+	VOX_LEDGER_REASON_LABELS,
+	type VoxLedgerReason,
+} from '@/modules/voxes';
 
-const TYPE_LABEL: Record<VoxHistoryEntry['type'], string> = {
-	purchase: 'Compra',
-	debit: 'Uso',
-	refund: 'Estorno',
-	adjustment: 'Ajuste',
-};
-
-const TYPE_CLASS: Record<VoxHistoryEntry['type'], string> = {
+const REASON_CLASS: Record<VoxLedgerReason, string> = {
 	purchase: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
-	debit: 'bg-slate-500/15 text-slate-600 dark:text-slate-300',
+	spend: 'bg-slate-500/15 text-slate-600 dark:text-slate-300',
 	refund: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
 	adjustment: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
 };
@@ -32,14 +25,13 @@ export function CreditsView() {
 	const searchParams = useSearchParams();
 	const hasSession = !!searchParams.get('session_id');
 
-	const { data: balance, refetch: refetchBalance } = useVoxBalance();
+	const { data: voxes, isLoading: voxesLoading, refetch } = useMyVoxes();
 	const { data: packages, isLoading: pkgLoading } = useVoxPackages();
-	const checkout = useCreateVoxCheckout();
+	const purchase = usePurchaseVoxes();
 	const unlimited = useIsTestUnlimited();
 
-	const [page, setPage] = useState(1);
-	const limit = 10;
-	const { data: history, isLoading: histLoading } = useVoxHistory(page, limit);
+	const balance = voxes?.balance ?? null;
+	const ledger = voxes?.ledger ?? [];
 
 	// Polling pós-Stripe: revalida saldo até ~6x quando volta com session_id
 	const [processing, setProcessing] = useState(hasSession);
@@ -48,11 +40,11 @@ export function CreditsView() {
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — polling effect only re-runs when session_id appears
 	useEffect(() => {
 		if (!hasSession) return;
-		baselineRef.current = balance?.balance ?? 0;
+		baselineRef.current = voxes?.balance ?? 0;
 		let attempts = 0;
 		const id = setInterval(async () => {
 			attempts += 1;
-			const res = await refetchBalance();
+			const res = await refetch();
 			const current = res.data?.balance ?? 0;
 			if (baselineRef.current !== null && current > baselineRef.current) {
 				setProcessing(false);
@@ -64,8 +56,6 @@ export function CreditsView() {
 		}, 4000);
 		return () => clearInterval(id);
 	}, [hasSession]);
-
-	const totalPages = history ? Math.ceil(history.total / limit) : 1;
 
 	return (
 		<div className="px-4 md:px-8 py-6 space-y-8">
@@ -109,7 +99,7 @@ export function CreditsView() {
 								</>
 							) : (
 								<>
-									{balance?.balance ?? '—'}{' '}
+									{balance ?? '—'}{' '}
 									<span className="text-base font-medium text-slate-500">
 										voxxys
 									</span>
@@ -149,6 +139,10 @@ export function CreditsView() {
 					<div className="flex justify-center py-12">
 						<Loader2 className="w-6 h-6 animate-spin text-violet-500" />
 					</div>
+				) : (packages ?? []).length === 0 ? (
+					<p className="text-center text-sm text-slate-500 dark:text-gray-400 py-12">
+						Nenhum pacote disponível no momento.
+					</p>
 				) : (
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 						{(packages ?? []).map((p) => (
@@ -159,28 +153,30 @@ export function CreditsView() {
 								<p className="font-bold text-slate-900 dark:text-white">
 									{p.name}
 								</p>
-								{p.description && (
-									<p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
-										{p.description}
-									</p>
-								)}
 								<p className="mt-4 flex items-center gap-1.5 text-2xl font-bold text-violet-600">
 									<VoxxysIcon className="w-5 h-5" />
-									{p.credits}{' '}
+									{p.vox_amount}{' '}
 									<span className="text-sm font-medium text-slate-500">
 										voxxys
 									</span>
 								</p>
 								<p className="text-sm text-slate-500 dark:text-gray-400">
-									R$ {p.price.toFixed(2)}
+									R$ {(p.price_cents / 100).toFixed(2)}
 								</p>
+								{!p.stripe_price_id && (
+									<p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+										Pacote indisponível para compra no momento.
+									</p>
+								)}
 								<button
 									type="button"
-									onClick={() => checkout.mutate(p.id)}
-									disabled={checkout.isPending}
-									className="mt-4 w-full px-4 py-2.5 rounded-xl text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 transition-colors disabled:opacity-60"
+									onClick={() => purchase.mutate({ package_id: p.id })}
+									disabled={purchase.isPending || !p.stripe_price_id}
+									className="mt-4 w-full px-4 py-2.5 rounded-xl text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
 								>
-									{checkout.isPending ? 'Redirecionando...' : 'Comprar'}
+									{purchase.isPending && purchase.variables?.package_id === p.id
+										? 'Redirecionando...'
+										: 'Comprar'}
 								</button>
 							</div>
 						))}
@@ -194,41 +190,37 @@ export function CreditsView() {
 					<History className="w-4 h-4" /> Extrato
 				</h3>
 				<div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] overflow-hidden">
-					{histLoading ? (
+					{voxesLoading ? (
 						<div className="flex justify-center py-12">
 							<Loader2 className="w-6 h-6 animate-spin text-violet-500" />
 						</div>
-					) : (history?.data.length ?? 0) === 0 ? (
+					) : ledger.length === 0 ? (
 						<p className="text-center text-sm text-slate-500 dark:text-gray-400 py-12">
 							Nenhuma movimentação ainda.
 						</p>
 					) : (
 						<ul className="divide-y divide-slate-100 dark:divide-white/5">
-							{history?.data.map((h) => (
+							{ledger.map((entry) => (
 								<li
-									key={h.id}
+									key={entry.id}
 									className="flex items-center justify-between px-5 py-3.5"
 								>
 									<div className="flex items-center gap-3">
 										<span
-											className={`text-xs font-semibold px-2 py-1 rounded-md ${TYPE_CLASS[h.type]}`}
+											className={`text-xs font-semibold px-2 py-1 rounded-md ${REASON_CLASS[entry.reason]}`}
 										>
-											{TYPE_LABEL[h.type]}
-										</span>
-										<span className="text-sm text-slate-600 dark:text-gray-300">
-											{h.feature ?? '—'}
+											{VOX_LEDGER_REASON_LABELS[entry.reason]}
 										</span>
 									</div>
 									<div className="text-right">
 										<p
-											className={`text-sm font-semibold tabular-nums ${h.amount >= 0 ? 'text-emerald-600' : 'text-slate-700 dark:text-gray-200'}`}
+											className={`text-sm font-semibold tabular-nums ${entry.delta >= 0 ? 'text-emerald-600' : 'text-slate-700 dark:text-gray-200'}`}
 										>
-											{h.amount >= 0 ? '+' : ''}
-											{h.amount}
+											{entry.delta >= 0 ? '+' : ''}
+											{entry.delta}
 										</p>
 										<p className="text-xs text-slate-400">
-											{new Date(h.createdAt).toLocaleDateString('pt-BR')} ·{' '}
-											saldo {h.balanceAfter}
+											{new Date(entry.created_at).toLocaleDateString('pt-BR')}
 										</p>
 									</div>
 								</li>
@@ -236,29 +228,6 @@ export function CreditsView() {
 						</ul>
 					)}
 				</div>
-				{totalPages > 1 && (
-					<div className="flex items-center justify-center gap-3 mt-4">
-						<button
-							type="button"
-							disabled={page <= 1}
-							onClick={() => setPage((p) => p - 1)}
-							className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 dark:border-white/10 disabled:opacity-40"
-						>
-							Anterior
-						</button>
-						<span className="text-sm text-slate-500">
-							{page} / {totalPages}
-						</span>
-						<button
-							type="button"
-							disabled={page >= totalPages}
-							onClick={() => setPage((p) => p + 1)}
-							className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 dark:border-white/10 disabled:opacity-40"
-						>
-							Próxima
-						</button>
-					</div>
-				)}
 			</section>
 		</div>
 	);

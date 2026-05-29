@@ -7,6 +7,7 @@ import {
 	createLesson,
 	deleteLesson,
 	listModuleLessons,
+	reorderLessons,
 	updateLesson,
 	uploadLessonVideo,
 } from '../services/lessons.service';
@@ -76,6 +77,18 @@ export function useUploadLessonVideo(moduleId: string) {
 		},
 		onError: (err) =>
 			toast.error(getApiErrorMessage(err, 'Erro ao enviar vídeo')),
+	});
+}
+
+export function useReorderLessons(moduleId: string) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (lessonIds: string[]) => reorderLessons(moduleId, lessonIds),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: moduleLessonsQueryKey(moduleId) });
+		},
+		onError: (err) =>
+			toast.error(getApiErrorMessage(err, 'Erro ao reordenar lições')),
 	});
 }
 

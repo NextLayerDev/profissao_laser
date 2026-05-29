@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { clearAllTokens, getActiveToken, isAdmin } from './auth';
+import { clearAllTokens, getActiveToken } from './auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -42,9 +42,8 @@ api.interceptors.response.use(
 				path === '/' || PUBLIC_PAGE_PREFIXES.some((p) => path.startsWith(p));
 
 			if (!isPublicPage) {
-				const wasAdmin = isAdmin();
 				clearAllTokens();
-				window.location.href = wasAdmin ? '/login/admin' : '/login';
+				window.location.href = '/login';
 			}
 		}
 		return Promise.reject(error);
