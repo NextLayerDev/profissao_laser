@@ -1105,14 +1105,14 @@ export function CommunityView({
 											}
 											className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden text-left hover:border-violet-500/40 transition-all group cursor-pointer"
 										>
-											<div className="aspect-square overflow-hidden">
+											<div className="aspect-square overflow-hidden bg-slate-100 dark:bg-[#111]">
 												<img
 													src={
 														item.img ??
 														'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?q=80&w=2940&auto=format&fit=crop'
 													}
 													alt={item.title}
-													className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+													className="w-full h-full object-contain group-hover:scale-105 transition-transform"
 												/>
 											</div>
 											<div className="p-5">
@@ -1598,11 +1598,11 @@ export function CommunityView({
 								</h3>
 								<p className="text-violet-400">por {currentProject.author}</p>
 								{currentProject.img && (
-									<div className="rounded-xl overflow-hidden mt-4">
+									<div className="rounded-xl overflow-hidden mt-4 bg-slate-100 dark:bg-[#111]">
 										<img
 											src={currentProject.img}
 											alt={currentProject.title}
-											className="w-full h-64 object-cover"
+											className="w-full max-h-[60vh] object-contain"
 										/>
 									</div>
 								)}
@@ -1801,11 +1801,11 @@ export function CommunityView({
 									className="hidden"
 								/>
 								{newProject.image ? (
-									<div className="relative rounded-xl overflow-hidden">
+									<div className="relative rounded-xl overflow-hidden bg-slate-100 dark:bg-[#111]">
 										<img
 											src={newProject.image}
 											alt="Preview"
-											className="w-full h-48 object-cover rounded-xl"
+											className="w-full max-h-56 object-contain rounded-xl"
 										/>
 										<button
 											type="button"
