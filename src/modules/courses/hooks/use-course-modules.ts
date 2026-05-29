@@ -7,6 +7,7 @@ import {
 	createCourseModule,
 	deleteCourseModule,
 	listCourseModules,
+	reorderCourseModules,
 	updateCourseModule,
 } from '../services/modules.service';
 import type {
@@ -55,6 +56,24 @@ export function useUpdateCourseModule(slug: string) {
 		},
 		onError: (err) =>
 			toast.error(getApiErrorMessage(err, 'Erro ao atualizar módulo')),
+	});
+}
+
+export function useReorderCourseModules(slug: string) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			courseId,
+			moduleIds,
+		}: {
+			courseId: string;
+			moduleIds: string[];
+		}) => reorderCourseModules(courseId, moduleIds),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: courseModulesQueryKey(slug) });
+		},
+		onError: (err) =>
+			toast.error(getApiErrorMessage(err, 'Erro ao reordenar módulos')),
 	});
 }
 

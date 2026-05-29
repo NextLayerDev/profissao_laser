@@ -6,6 +6,7 @@ import {
 	lessonSchema,
 	type UpdateLessonPayload,
 } from '../types/lessons';
+import { type Material, materialSchema } from '../types/materials';
 
 export async function listModuleLessons(moduleId: string): Promise<Lesson[]> {
 	const { data } = await api.get(`/v1/module/${moduleId}/lessons`);
@@ -34,6 +35,40 @@ export async function updateLesson(
 
 export async function deleteLesson(id: string): Promise<void> {
 	await api.delete(`/v1/lesson/${id}`);
+}
+
+/** Reordena as lições de um módulo na ordem do array de ids. */
+export async function reorderLessons(
+	moduleId: string,
+	lessonIds: string[],
+): Promise<Lesson[]> {
+	const { data } = await api.patch('/v1/lessons/reorder', {
+		module_id: moduleId,
+		lesson_ids: lessonIds,
+	});
+	return lessonSchema.array().parse(data);
+}
+
+export async function listLessonMaterials(
+	lessonId: string,
+): Promise<Material[]> {
+	const { data } = await api.get(`/v1/lesson/${lessonId}/materials`);
+	return materialSchema.array().parse(data);
+}
+
+export async function uploadLessonMaterial(
+	lessonId: string,
+	file: File,
+): Promise<Material> {
+	const form = new FormData();
+	form.append('file', file);
+	// Content-Type é removido pelo interceptor quando data é FormData.
+	const { data } = await api.post(`/v1/lesson/${lessonId}/material`, form);
+	return materialSchema.parse(data);
+}
+
+export async function deleteMaterial(id: string): Promise<void> {
+	await api.delete(`/v1/material/${id}`);
 }
 
 export async function uploadLessonVideo(

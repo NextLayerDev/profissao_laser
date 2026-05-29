@@ -1,40 +1,37 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { getToken } from '@/lib/auth';
-import { getMyPermissions } from '@/services/roles';
+import { useMe } from '@/modules/account';
 
 /**
- * Permissões efetivas do staff logado (cargo + overrides), vindas de
- * `GET /me/permissions`. Expõe `can(key)` granular e mantém `canAdmin`/
- * `canPrice` por compatibilidade durante o cutover.
+ * Durante o cutover para a API de cursos, o modelo granular de permissões
+ * (`GET /me/permissions` da API antiga) deixou de valer: a API de cursos só
+ * expõe o `role` (customer | staff | admin) via `GET /v1/me`. Aqui derivamos
+ * o acesso a partir desse role — admin/staff têm acesso total ao painel — e
+ * mantemos a mesma interface (`can`, `canPrice`, `canAdmin`, `isSuperAdmin`)
+ * para não quebrar os consumidores.
  */
+const PANEL_ROLES = ['admin', 'staff'];
+
 export function usePermissions() {
 	const hasUserToken = !!getToken('user');
 
-	const { data, isLoading } = useQuery({
-		queryKey: ['me-permissions'],
-		queryFn: getMyPermissions,
-		enabled: hasUserToken,
-		staleTime: 5 * 60 * 1000,
-	});
+	const { data: me, isLoading } = useMe(hasUserToken);
 
-	const permSet = useMemo(() => new Set(data?.permissions ?? []), [data]);
-	const isSuperAdmin = data?.isSuperAdmin ?? false;
+	const isSuperAdmin = !!me && PANEL_ROLES.includes(me.role);
 
-	const can = useCallback(
-		(key: string) => (data?.isSuperAdmin ?? false) || permSet.has(key),
-		[data, permSet],
-	);
+	// Mantém a assinatura (key: string) => boolean dos consumidores; sob o novo
+	// modelo, quem é admin/staff pode tudo, então a chave é ignorada.
+	const can = useCallback((_key: string) => isSuperAdmin, [isSuperAdmin]);
 
 	return {
 		isSuperAdmin,
-		permissions: data?.permissions ?? [],
+		permissions: [] as string[],
 		can,
 		// Back-compat com o modelo binário antigo.
 		canAdmin: isSuperAdmin,
-		canPrice: isSuperAdmin || permSet.has('produtos.price'),
+		canPrice: isSuperAdmin,
 		isLoading: hasUserToken && isLoading,
 	};
 }

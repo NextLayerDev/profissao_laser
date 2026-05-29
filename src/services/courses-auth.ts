@@ -7,18 +7,25 @@ import { apiCourses } from '@/shared/lib/api-courses';
  * e o interceptor do apiCourses o anexa nas chamadas seguintes.
  */
 
+export interface CoursesUser {
+	id: string;
+	email: string;
+	phone?: string | null;
+	name?: string | null;
+	role?: string;
+	blocked?: boolean;
+	created_at?: string;
+	updated_at?: string;
+}
+
 interface CoursesAuthResponse {
 	access_token: string;
 	refresh_token?: string;
 	expires_at?: number | null;
+	user?: CoursesUser;
 }
 
-export interface CoursesMe {
-	id: string;
-	email: string;
-	name?: string | null;
-	role?: string;
-}
+export type CoursesMe = CoursesUser;
 
 /** Telefone BR digitado → E.164 exigido pela upvox (ex.: +5511999999999). */
 export function toE164(phone: string): string {
@@ -27,12 +34,26 @@ export function toE164(phone: string): string {
 	return `+${d.startsWith('55') ? d : `55${d}`}`;
 }
 
+export interface CoursesAuthResult {
+	accessToken: string;
+	refreshToken?: string;
+	user?: CoursesUser;
+}
+
+function toResult(data: CoursesAuthResponse): CoursesAuthResult {
+	return {
+		accessToken: data.access_token,
+		refreshToken: data.refresh_token,
+		user: data.user,
+	};
+}
+
 export async function signupCourses(payload: {
 	name: string;
 	email: string;
 	password: string;
 	phone: string;
-}): Promise<string> {
+}): Promise<CoursesAuthResult> {
 	const { data } = await apiCourses.post<CoursesAuthResponse>(
 		'/v1/auth/signup',
 		{
@@ -42,18 +63,34 @@ export async function signupCourses(payload: {
 			phone: toE164(payload.phone),
 		},
 	);
-	return data.access_token;
+	return toResult(data);
 }
 
 export async function loginCourses(payload: {
 	email: string;
 	password: string;
-}): Promise<string> {
+}): Promise<CoursesAuthResult> {
 	const { data } = await apiCourses.post<CoursesAuthResponse>(
 		'/v1/auth/login',
 		payload,
 	);
-	return data.access_token;
+	return toResult(data);
+}
+
+/** Dispara o envio do e-mail de recuperação de senha. */
+export async function forgotPasswordCourses(email: string): Promise<void> {
+	await apiCourses.post('/v1/auth/forgot-password', { email });
+}
+
+/** Redefine a senha usando o access_token recebido por e-mail. */
+export async function resetPasswordCourses(
+	accessToken: string,
+	newPassword: string,
+): Promise<void> {
+	await apiCourses.post('/v1/auth/reset-password', {
+		access_token: accessToken,
+		new_password: newPassword,
+	});
 }
 
 /** Valida o token atual na upvox (200 = logado lá; 401 = não). */

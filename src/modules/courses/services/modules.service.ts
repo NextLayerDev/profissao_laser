@@ -29,3 +29,15 @@ export async function updateCourseModule(
 export async function deleteCourseModule(id: string): Promise<void> {
 	await api.delete(`/v1/module/${id}`);
 }
+
+/** Reordena os módulos de um curso na ordem do array de ids. */
+export async function reorderCourseModules(
+	courseId: string,
+	moduleIds: string[],
+): Promise<CourseModule[]> {
+	const { data } = await api.patch('/v1/modules/reorder', {
+		course_id: courseId,
+		module_ids: moduleIds,
+	});
+	return courseModuleSchema.array().parse(data);
+}

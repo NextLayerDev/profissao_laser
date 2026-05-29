@@ -1,6 +1,8 @@
 import { apiCourses as api } from '@/shared/lib/api-courses';
 import {
 	type CreateToolPayload,
+	type InvokeToolResult,
+	invokeToolResultSchema,
 	type Tool,
 	toolSchema,
 	type UpdateToolPayload,
@@ -26,4 +28,15 @@ export async function updateTool(
 
 export async function deleteTool(id: string): Promise<void> {
 	await api.delete(`/v1/tool/${id}`);
+}
+
+/** Executa a tool no contexto de um curso, consumindo cota/voxes. */
+export async function invokeTool(
+	toolKey: string,
+	courseSlug: string,
+): Promise<InvokeToolResult> {
+	const { data } = await api.post(`/v1/tool/${toolKey}/invoke`, {
+		course_slug: courseSlug,
+	});
+	return invokeToolResultSchema.parse(data);
 }

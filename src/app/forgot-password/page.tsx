@@ -4,7 +4,7 @@ import { Loader2, Store } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { forgotPassword } from '@/services/auth';
+import { forgotPasswordCourses } from '@/services/courses-auth';
 
 export default function ForgotPassword() {
 	const [email, setEmail] = useState('');
@@ -15,7 +15,7 @@ export default function ForgotPassword() {
 		e.preventDefault();
 		setLoading(true);
 		try {
-			await forgotPassword(email);
+			await forgotPasswordCourses(email);
 			setSent(true);
 		} catch {
 			toast.error('Erro ao enviar email de recuperacao');

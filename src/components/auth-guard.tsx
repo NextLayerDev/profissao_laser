@@ -15,14 +15,6 @@ const PUBLIC_PATHS = [
 	'/global-promo-link',
 ];
 
-const CUSTOMER_PATHS = [
-	'/store',
-	'/course',
-	'/comunity',
-	'/agendamentos',
-	'/biblioteca-vetores',
-];
-
 const ADMIN_PATHS = [
 	'/dashboard',
 	'/products',
@@ -33,13 +25,6 @@ const ADMIN_PATHS = [
 	'/acessos',
 	'/forum',
 ];
-
-function getLoginRedirect(pathname: string): string {
-	if (CUSTOMER_PATHS.some((p) => pathname.startsWith(p))) {
-		return '/login';
-	}
-	return '/login/admin';
-}
 
 function isAdminPath(pathname: string): boolean {
 	return ADMIN_PATHS.some((p) =>
@@ -60,7 +45,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 		);
 
 		if (!isPublic && !getCurrentUser()) {
-			router.replace(getLoginRedirect(pathname));
+			router.replace('/login');
 			return;
 		}
 

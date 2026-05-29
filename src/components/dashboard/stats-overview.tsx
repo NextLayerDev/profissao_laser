@@ -2,8 +2,8 @@
 
 import { Layers, ShoppingCart, TrendingUp, Users2 } from 'lucide-react';
 import { usePermissions } from '@/hooks/use-permissions';
-import { useProducts } from '@/hooks/use-products';
 import { useSales } from '@/hooks/use-sales';
+import { useAdminCourses } from '@/modules/courses';
 import { formatCurrency } from '@/utils/format-currency';
 
 function Sparkline() {
@@ -66,7 +66,7 @@ function BarChart() {
 
 export function StatsOverview() {
 	const { sales, isLoading } = useSales();
-	const { products } = useProducts();
+	const { data: courses } = useAdminCourses();
 	const { canPrice } = usePermissions();
 
 	const today = new Date().toISOString().split('T')[0];
@@ -134,11 +134,11 @@ export function StatsOverview() {
 			decoration: <BarChart />,
 		},
 		{
-			title: 'Produtos Ativos',
-			value: products
-				? String(products.filter((p) => p.status === 'ativo').length)
+			title: 'Cursos Publicados',
+			value: courses
+				? String(courses.filter((c) => c.published).length)
 				: '...',
-			subtitle: products ? `${products.length} no total` : '',
+			subtitle: courses ? `${courses.length} no total` : '',
 			subtitleColor: 'text-gray-400',
 			icon: Layers,
 			iconBg: 'bg-rose-600',
