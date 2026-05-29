@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { clearAllTokens, getActiveToken } from '@/lib/auth';
 
-const API_URL = process.env.NEXT_PUBLIC_COURSES_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_GATEWAY_URL;
 
 export const apiCourses = axios.create({
 	baseURL: API_URL,

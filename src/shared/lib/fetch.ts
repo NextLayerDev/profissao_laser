@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { clearToken, getToken } from './auth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_GATEWAY_URL;
 
 export const api = axios.create({
 	baseURL: API_URL,
