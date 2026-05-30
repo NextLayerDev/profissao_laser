@@ -11,6 +11,12 @@ export async function listAdminCourses(): Promise<Course[]> {
 	return courseSchema.array().parse(data);
 }
 
+/** Busca um curso publicado pelo slug (público). */
+export async function getCourseBySlug(slug: string): Promise<Course> {
+	const { data } = await api.get(`/v1/course/${slug}`);
+	return courseSchema.parse(data);
+}
+
 export async function createCourse(
 	payload: CreateCoursePayload,
 ): Promise<Course> {

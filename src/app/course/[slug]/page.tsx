@@ -20,7 +20,6 @@ import {
 	Play,
 	RefreshCw,
 	Search,
-	Star,
 	Trophy,
 	X,
 	Zap,
@@ -40,7 +39,6 @@ import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { useLessonProgress } from '@/hooks/use-lesson-progress';
 import { useMaterials } from '@/hooks/use-materials';
 import { useQuiz } from '@/hooks/use-quiz';
-import { useLessonRating, useSubmitRating } from '@/hooks/use-rating';
 import {
 	useRemoveSavedLesson,
 	useSavedLessons,
@@ -370,15 +368,11 @@ export default function CourseSlugPage() {
 		isLoading: progressLoading,
 	} = useLessonProgress(course?.id);
 
-	// Hooks devem ser chamados sempre na mesma ordem (antes de qualquer early return)
-	const { data: ratingData } = useLessonRating(activeLesson?.id ?? '');
-	const submitRating = useSubmitRating(activeLesson?.id ?? '');
 	const isLoggedIn = !!getToken('customer') || !!getToken('user');
 	const { data: savedLessons = [] } = useSavedLessons();
 	const saveLessonMutation = useSaveLesson();
 	const removeSavedLessonMutation = useRemoveSavedLesson();
 	const [search, setSearch] = useState('');
-	const [hoverRating, setHoverRating] = useState(0);
 	const [bottomTab, setBottomTab] = useState<'duvidas' | 'materiais' | 'quiz'>(
 		'duvidas',
 	);
@@ -516,13 +510,8 @@ export default function CourseSlugPage() {
 			: mod.lessons,
 	}));
 
-	const myRating = ratingData?.myRating ?? 0;
-	const averageRating = ratingData?.averageRating ?? 0;
-	const totalRatings = ratingData?.totalRatings ?? 0;
-
 	const handleSelectLesson = (lesson: CourseLesson) => {
 		setActiveLesson(lesson);
-		setHoverRating(0);
 		setShowEndScreen(false);
 	};
 
@@ -692,7 +681,7 @@ export default function CourseSlugPage() {
 							}
 						/>
 
-						{/* Rating + tabs row */}
+						{/* Tabs row */}
 						<div className="px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/[0.02]">
 							<div className="flex gap-1 border-b border-slate-200 dark:border-white/10 -mb-[1px]">
 								<button
@@ -740,40 +729,6 @@ export default function CourseSlugPage() {
 							</div>
 
 							<div className="flex items-center gap-4 flex-wrap">
-								{activeLesson && features?.chat && (
-									<div className="flex items-center gap-3">
-										<div className="flex items-center gap-2">
-											<span className="text-slate-500 dark:text-gray-400 text-xs">
-												Avalie:
-											</span>
-											<div className="flex gap-0.5">
-												{[1, 2, 3, 4, 5].map((star) => (
-													<button
-														key={star}
-														type="button"
-														onClick={() => submitRating.mutate(star)}
-														onMouseEnter={() => setHoverRating(star)}
-														onMouseLeave={() => setHoverRating(0)}
-														disabled={submitRating.isPending}
-													>
-														<Star
-															className={`w-5 h-5 transition-colors ${
-																(hoverRating || myRating) >= star
-																	? 'text-violet-400 fill-violet-400 dark:text-violet-400 dark:fill-violet-400'
-																	: 'text-slate-300 dark:text-slate-600'
-															}`}
-														/>
-													</button>
-												))}
-											</div>
-										</div>
-										{totalRatings > 0 && (
-											<p className="text-slate-500 dark:text-gray-400 text-xs">
-												{averageRating.toFixed(1)} ({totalRatings})
-											</p>
-										)}
-									</div>
-								)}
 								{activeLesson && !watchedLessonIds.has(activeLesson.id) && (
 									<button
 										type="button"
