@@ -6,12 +6,12 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
 import type { CanvasRegion } from '@/hooks/canva-editor/use-canvas-region';
-import { useCreditAction } from '@/hooks/use-credit-action';
-import { useVoxBalance, useVoxCosts } from '@/hooks/use-credits';
 import {
 	useEditorAiGenerate,
 	useRemoveBackground,
 } from '@/hooks/use-editor-ai';
+import { useEntitlements } from '@/hooks/use-entitlements';
+import { useRunTool } from '@/modules/tools/hooks/use-run-tool';
 import type { EditorTool } from './editor-toolbar';
 
 interface EditorSidebarProps {
@@ -78,57 +78,75 @@ function AiPanel({
 	const [prompt, setPrompt] = useState('');
 	const aiGenerate = useEditorAiGenerate();
 	const removeBg = useRemoveBackground();
-	const { data: voxBalance } = useVoxBalance();
-	const { data: voxCosts } = useVoxCosts();
-	const cost = voxCosts?.find((c) => c.feature === 'editor-ai')?.cost ?? 1;
+	// Acesso/billing agora vêm do upvox: o curso ativo define onde a ferramenta
+	// bilha; cota grátis / custo / saldo saem dos entitlements daquele curso.
+	const { courses } = useEntitlements();
+	const courseSlug = courses[0]?.slug;
+	const entitlements = useEntitlements(courseSlug);
+	const aiCanvasCost = entitlements.toolFor('ai_canvas')?.vox_cost ?? 0;
+	const aiCanvasRemainingFree = entitlements.remainingFree('ai_canvas');
+	const voxBalance = entitlements.voxBalance;
+	const runTool = useRunTool('ai_canvas', courseSlug);
+	const [confirmRun, setConfirmRun] = useState<(() => void) | null>(null);
 
 	const exportCanvasAsBase64 = (): string | null => {
 		if (!canvas) return null;
 		return canvas.toDataURL({ format: 'png', multiplier: 1 });
 	};
 
-	const aiAction = useCreditAction({
-		feature: 'editor-ai',
-		cost,
-		balance: voxBalance?.balance ?? 0,
-		run: async ({ useCredits }) => {
-			const trimmed = prompt.trim();
-			if (!trimmed) throw new Error('no-prompt');
-			const image = exportCanvasAsBase64();
-			if (!image) throw new Error('no-image');
-			const result = await aiGenerate.mutateAsync({
-				mode: 'edit',
-				prompt: trimmed,
-				image,
-				regionInfo: isRegionMode && region ? region : undefined,
-				useCredits,
-			});
-			onApplyEditedImage(result.imageBase64);
-			setPrompt('');
-			if (isRegionMode) onClearRegion();
-			return result;
-		},
-	});
-
-	const removeBgAction = useCreditAction({
-		feature: 'editor-ai',
-		cost,
-		balance: voxBalance?.balance ?? 0,
-		run: async ({ useCredits }) => {
-			const image = exportCanvasAsBase64();
-			if (!image) throw new Error('no-image');
-			const result = await removeBg.mutateAsync({ image, useCredits });
-			onApplyEditedImage(result.imageBase64);
-			return result;
-		},
-	});
-
-	const trigger = () => {
-		if (!prompt.trim()) {
+	const handleAi = () => {
+		const trimmed = prompt.trim();
+		if (!trimmed) {
 			toast.error('Escreva um prompt antes.');
 			return;
 		}
-		aiAction.trigger();
+		const image = exportCanvasAsBase64();
+		if (!image) {
+			toast.error('Não foi possível exportar o canvas.');
+			return;
+		}
+		const action = () =>
+			runTool.run((invocationId) =>
+				aiGenerate
+					.mutateAsync({
+						mode: 'edit',
+						prompt: trimmed,
+						image,
+						regionInfo: isRegionMode && region ? region : undefined,
+						invocation_id: invocationId,
+					})
+					.then((result) => {
+						onApplyEditedImage(result.imageBase64);
+						setPrompt('');
+						if (isRegionMode) onClearRegion();
+						return result;
+					}),
+			);
+		// Sem cota grátis e a ação custa voxxys → confirma antes de gastar.
+		if (aiCanvasRemainingFree === 0 && aiCanvasCost > 0)
+			setConfirmRun(() => action);
+		else action();
+	};
+
+	const handleRemoveBg = () => {
+		const image = exportCanvasAsBase64();
+		if (!image) {
+			toast.error('Não foi possível exportar o canvas.');
+			return;
+		}
+		const action = () =>
+			runTool.run((invocationId) =>
+				removeBg
+					.mutateAsync({ image, invocation_id: invocationId })
+					.then((result) => {
+						onApplyEditedImage(result.imageBase64);
+						return result;
+					}),
+			);
+		// Sem cota grátis e a ação custa voxxys → confirma antes de gastar.
+		if (aiCanvasRemainingFree === 0 && aiCanvasCost > 0)
+			setConfirmRun(() => action);
+		else action();
 	};
 
 	return (
@@ -181,31 +199,28 @@ function AiPanel({
 
 			<button
 				type="button"
-				onClick={trigger}
+				onClick={handleAi}
 				disabled={
-					!prompt.trim() ||
-					aiAction.pending ||
-					aiGenerate.isPending ||
-					(isRegionMode && !region)
+					!prompt.trim() || runTool.pending || (isRegionMode && !region)
 				}
 				className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-linear-to-br from-violet-600 to-fuchsia-600 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg"
 			>
-				{aiGenerate.isPending || aiAction.pending ? (
+				{runTool.pending ? (
 					<Loader2 className="w-4 h-4 animate-spin" />
 				) : (
 					<Sparkles className="w-4 h-4" />
 				)}
-				Aplicar IA ({cost} {cost === 1 ? 'voxxy' : 'voxxys'})
+				Aplicar IA ({aiCanvasCost} {aiCanvasCost === 1 ? 'voxxy' : 'voxxys'})
 			</button>
 
 			<div className="pt-3 border-t border-slate-200 dark:border-white/10">
 				<button
 					type="button"
-					onClick={() => removeBgAction.trigger()}
-					disabled={removeBg.isPending || removeBgAction.pending}
+					onClick={handleRemoveBg}
+					disabled={runTool.pending}
 					className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 disabled:opacity-50 text-slate-700 dark:text-gray-300 text-sm font-medium rounded-lg"
 				>
-					{removeBg.isPending || removeBgAction.pending ? (
+					{runTool.pending ? (
 						<Loader2 className="w-4 h-4 animate-spin" />
 					) : (
 						<Eraser className="w-4 h-4" />
@@ -214,28 +229,27 @@ function AiPanel({
 				</button>
 			</div>
 
-			{aiAction.modal && (
+			{confirmRun && (
 				<CreditConfirmModal
-					variant={aiAction.modal.variant}
-					cost={aiAction.modal.cost}
-					balance={aiAction.modal.balance}
-					canUseCredits={aiAction.modal.canUseCredits}
-					freeTier={aiAction.modal.freeTier}
-					pending={aiAction.pending}
-					onConfirm={aiAction.confirm}
-					onClose={aiAction.close}
+					variant="confirm"
+					cost={aiCanvasCost}
+					balance={voxBalance}
+					pending={runTool.pending}
+					onConfirm={() => {
+						const a = confirmRun;
+						setConfirmRun(null);
+						a?.();
+					}}
+					onClose={() => setConfirmRun(null)}
 				/>
 			)}
-			{removeBgAction.modal && (
+			{runTool.block?.kind === 'insufficient_voxes' && (
 				<CreditConfirmModal
-					variant={removeBgAction.modal.variant}
-					cost={removeBgAction.modal.cost}
-					balance={removeBgAction.modal.balance}
-					canUseCredits={removeBgAction.modal.canUseCredits}
-					freeTier={removeBgAction.modal.freeTier}
-					pending={removeBgAction.pending}
-					onConfirm={removeBgAction.confirm}
-					onClose={removeBgAction.close}
+					variant="insufficient"
+					cost={aiCanvasCost}
+					balance={voxBalance}
+					onConfirm={runTool.clearBlock}
+					onClose={runTool.clearBlock}
 				/>
 			)}
 		</div>

@@ -17,9 +17,6 @@ import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
-import { FreeTierQuotaBanner } from '@/components/credits/free-tier-quota-banner';
-import { useCreditAction } from '@/hooks/use-credit-action';
-import { useVoxBalance, useVoxCosts } from '@/hooks/use-credits';
 import {
 	useDesign,
 	useUpdateDesign,
@@ -30,6 +27,8 @@ import {
 	useEditorAiGenerate,
 	useRemoveBackground,
 } from '@/hooks/use-editor-ai';
+import { useEntitlements } from '@/hooks/use-entitlements';
+import { useRunTool } from '@/modules/tools/hooks/use-run-tool';
 import type { EditorAiMode } from '@/types/editor-ai';
 
 const MAX_HISTORY = 10;
@@ -86,48 +85,21 @@ export function DesignEditorView({ designId }: { designId: string }) {
 	const aiGenerate = useEditorAiGenerate();
 	const removeBg = useRemoveBackground();
 	const applyColorMutation = useApplyColor();
-	const { data: voxBalance } = useVoxBalance();
-	const { data: voxCosts } = useVoxCosts();
-	const editorCost =
-		voxCosts?.find((c) => c.feature === 'editor-ai')?.cost ?? 1;
-
-	const generateAction = useCreditAction({
-		feature: 'editor-ai',
-		cost: editorCost,
-		balance: voxBalance?.balance ?? 0,
-		run: async ({ useCredits }) => {
-			const result = await aiGenerate.mutateAsync({
-				mode: aiMode,
-				prompt: aiPrompt.trim(),
-				image: aiMode === 'edit' && currentImage ? currentImage : undefined,
-				useCredits,
-			});
-			updateImage(result.imageBase64);
-			setAiPrompt('');
-			return result;
-		},
-	});
-
-	const removeBgAction = useCreditAction({
-		feature: 'editor-ai',
-		cost: editorCost,
-		balance: voxBalance?.balance ?? 0,
-		run: async ({ useCredits }) => {
-			if (!currentImage) throw new Error('no-image');
-			const result = await removeBg.mutateAsync({
-				image: currentImage,
-				useCredits,
-			});
-			updateImage(result.imageBase64);
-			return result;
-		},
-	});
+	// Acesso/billing agora vêm do upvox: o curso ativo define onde a ferramenta
+	// bilha; cota grátis / custo / saldo saem dos entitlements daquele curso.
+	const { courses } = useEntitlements();
+	const courseSlug = courses[0]?.slug;
+	const entitlements = useEntitlements(courseSlug);
+	const aiCanvasCost = entitlements.toolFor('ai_canvas')?.vox_cost ?? 0;
+	const aiCanvasRemainingFree = entitlements.remainingFree('ai_canvas');
+	const voxBalance = entitlements.voxBalance;
+	const runTool = useRunTool('ai_canvas', courseSlug);
+	const [confirmRun, setConfirmRun] = useState<(() => void) | null>(null);
 
 	const updateDesign = useUpdateDesign();
 	const uploadThumbnail = useUploadDesignThumbnail();
 
-	const isAnyPending =
-		aiGenerate.isPending || removeBg.isPending || applyColorMutation.isPending;
+	const isAnyPending = runTool.pending || applyColorMutation.isPending;
 	const isSaving = updateDesign.isPending || uploadThumbnail.isPending;
 
 	const initialLoadDone = useRef(false);
@@ -191,19 +163,52 @@ export function DesignEditorView({ designId }: { designId: string }) {
 	);
 
 	// AI Generate
-	const handleGenerate = useCallback(() => {
+	const handleGenerate = () => {
 		if (!aiPrompt.trim()) {
 			toast.error('Escreva um prompt para gerar.');
 			return;
 		}
-		generateAction.trigger();
-	}, [aiPrompt, generateAction]);
+		const action = () =>
+			runTool.run((invocationId) =>
+				aiGenerate
+					.mutateAsync({
+						mode: aiMode,
+						prompt: aiPrompt.trim(),
+						image: aiMode === 'edit' && currentImage ? currentImage : undefined,
+						invocation_id: invocationId,
+					})
+					.then((result) => {
+						updateImage(result.imageBase64);
+						setAiPrompt('');
+						return result;
+					}),
+			);
+		// Sem cota grátis e a ação custa voxxys → confirma antes de gastar.
+		if (aiCanvasRemainingFree === 0 && aiCanvasCost > 0)
+			setConfirmRun(() => action);
+		else action();
+	};
 
 	// Remove Background
-	const handleRemoveBg = useCallback(() => {
+	const handleRemoveBg = () => {
 		if (!currentImage) return;
-		removeBgAction.trigger();
-	}, [currentImage, removeBgAction]);
+		const action = () =>
+			runTool.run((invocationId) =>
+				removeBg
+					.mutateAsync({
+						image: currentImage,
+						invocation_id: invocationId,
+					})
+					.then((result) => {
+						updateImage(result.imageBase64);
+						return result;
+					}),
+			);
+		// Sem cota grátis e a ação custa voxxys → confirma antes de gastar.
+		if (aiCanvasRemainingFree === 0 && aiCanvasCost > 0)
+			setConfirmRun(() => action);
+		else action();
+	};
 
 	// Apply Color
 	const handleApplyColor = useCallback(async () => {
@@ -317,35 +322,6 @@ export function DesignEditorView({ designId }: { designId: string }) {
 
 	return (
 		<div className="relative p-4 md:p-6">
-			{generateAction.modal && (
-				<CreditConfirmModal
-					variant={generateAction.modal.variant}
-					cost={generateAction.modal.cost}
-					balance={generateAction.modal.balance}
-					canUseCredits={generateAction.modal.canUseCredits}
-					freeTier={generateAction.modal.freeTier}
-					pending={generateAction.pending}
-					onConfirm={generateAction.confirm}
-					onClose={generateAction.close}
-				/>
-			)}
-			{removeBgAction.modal && (
-				<CreditConfirmModal
-					variant={removeBgAction.modal.variant}
-					cost={removeBgAction.modal.cost}
-					balance={removeBgAction.modal.balance}
-					canUseCredits={removeBgAction.modal.canUseCredits}
-					freeTier={removeBgAction.modal.freeTier}
-					pending={removeBgAction.pending}
-					onConfirm={removeBgAction.confirm}
-					onClose={removeBgAction.close}
-				/>
-			)}
-			<FreeTierQuotaBanner
-				feature="editor-ai"
-				unitLabel="edições IA"
-				className="mb-4"
-			/>
 			{/* Header */}
 			<div className="flex items-center justify-between gap-4 mb-6">
 				<div className="flex items-center gap-3 min-w-0">
@@ -556,7 +532,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 										}
 										className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
 									>
-										{aiGenerate.isPending ? (
+										{runTool.pending ? (
 											<Loader2 className="w-4 h-4 animate-spin" />
 										) : (
 											<Wand2 className="w-4 h-4" />
@@ -587,7 +563,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 										disabled={isAnyPending || !canEditImage}
 										className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
 									>
-										{removeBg.isPending ? (
+										{runTool.pending ? (
 											<Loader2 className="w-4 h-4 animate-spin" />
 										) : (
 											<Eraser className="w-4 h-4" />
@@ -708,6 +684,31 @@ export function DesignEditorView({ designId }: { designId: string }) {
 					</div>
 				</div>
 			</div>
+
+			{confirmRun && (
+				<CreditConfirmModal
+					variant="confirm"
+					cost={aiCanvasCost}
+					balance={voxBalance}
+					pending={runTool.pending}
+					onConfirm={() => {
+						const a = confirmRun;
+						setConfirmRun(null);
+						a?.();
+					}}
+					onClose={() => setConfirmRun(null)}
+				/>
+			)}
+
+			{runTool.block?.kind === 'insufficient_voxes' && (
+				<CreditConfirmModal
+					variant="insufficient"
+					cost={aiCanvasCost}
+					balance={voxBalance}
+					onConfirm={runTool.clearBlock}
+					onClose={runTool.clearBlock}
+				/>
+			)}
 		</div>
 	);
 }

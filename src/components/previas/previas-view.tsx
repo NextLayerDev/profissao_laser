@@ -1,7 +1,6 @@
 'use client';
 
 import {
-	AlertTriangle,
 	ArrowLeft,
 	ArrowRight,
 	Camera,
@@ -29,12 +28,8 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
-import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
-import { FreeTierQuotaBanner } from '@/components/credits/free-tier-quota-banner';
 import { MyMachineSection } from '@/components/previas/my-machine-section';
 import { PageHeader } from '@/components/ui/page-header';
-import { useCreditAction } from '@/hooks/use-credit-action';
-import { useVoxBalance, useVoxCosts, useVoxQuotas } from '@/hooks/use-credits';
 import { useLaserProduct, useLaserProducts } from '@/hooks/use-laser-products';
 import {
 	useDeletePrevia,
@@ -898,13 +893,6 @@ export function PreviasView() {
 	const histLimit = 12;
 
 	const generateMutation = useGeneratePrevia();
-	const { data: quotaData } = useVoxQuotas();
-	const previaQuota = quotaData?.quotas.find((q) => q.feature === 'previa');
-	// Só free-tier (balance == 0) tem limite. Paid users nunca ficam "at limit".
-	const isAtLimit =
-		quotaData?.balance === 0 && previaQuota
-			? previaQuota.remaining <= 0
-			: false;
 	const { data: historyData, isLoading: histLoading } = usePreviasHistory(
 		histPage,
 		histLimit,
@@ -923,64 +911,45 @@ export function PreviasView() {
 	const hasWatermark = !!watermark;
 	const useWatermarkFlag = hasWatermark && watermarkMode !== 'none';
 
-	const { data: voxBalance } = useVoxBalance();
-	const { data: voxCosts } = useVoxCosts();
-	const previaCost = voxCosts?.find((c) => c.feature === 'previa')?.cost ?? 1;
-
-	const buildPayload = useCallback(
-		(useCredits: boolean): GeneratePreviaPayload | null => {
-			if (!selectedVariantId) return null;
-			return {
-				productVariantId: selectedVariantId,
-				imagelogo_url: imageLogo || undefined,
-				personalizationType,
-				customName: customName.trim() || undefined,
-				instrucoesPersonalizadas: instrucoesPersonalizadas.trim() || undefined,
-				modoLentes,
-				textoLenteDireita: textoLenteDireita.trim() || undefined,
-				textoLenteEsquerda: textoLenteEsquerda.trim() || undefined,
-				laserSettings,
-				useWatermark: useWatermarkFlag || undefined,
-				watermarkMode: useWatermarkFlag ? watermarkMode : undefined,
-				useCredits: useCredits || undefined,
-			};
-		},
-		[
-			selectedVariantId,
-			imageLogo,
+	const buildPayload = useCallback((): GeneratePreviaPayload | null => {
+		if (!selectedVariantId) return null;
+		return {
+			productVariantId: selectedVariantId,
+			imagelogo_url: imageLogo || undefined,
 			personalizationType,
-			customName,
-			instrucoesPersonalizadas,
+			customName: customName.trim() || undefined,
+			instrucoesPersonalizadas: instrucoesPersonalizadas.trim() || undefined,
 			modoLentes,
-			textoLenteDireita,
-			textoLenteEsquerda,
+			textoLenteDireita: textoLenteDireita.trim() || undefined,
+			textoLenteEsquerda: textoLenteEsquerda.trim() || undefined,
 			laserSettings,
-			useWatermarkFlag,
-			watermarkMode,
-		],
-	);
+			useWatermark: useWatermarkFlag || undefined,
+			watermarkMode: useWatermarkFlag ? watermarkMode : undefined,
+		};
+	}, [
+		selectedVariantId,
+		imageLogo,
+		personalizationType,
+		customName,
+		instrucoesPersonalizadas,
+		modoLentes,
+		textoLenteDireita,
+		textoLenteEsquerda,
+		laserSettings,
+		useWatermarkFlag,
+		watermarkMode,
+	]);
 
-	const creditAction = useCreditAction({
-		feature: 'previa',
-		cost: previaCost,
-		balance: voxBalance?.balance ?? 0,
-		run: async ({ useCredits }) => {
-			const payload = buildPayload(useCredits);
-			if (!payload) throw new Error('no-variant');
-			const result = await generateMutation.mutateAsync(payload);
-			setGeneratedPrevia({ previewUrl: result.previewUrl });
-			return result;
-		},
-	});
-
+	// Prévia é livre no modelo novo (não consome voxxys). Gera direto.
 	const handleGenerate = useCallback(async () => {
-		if (!selectedVariantId) {
+		const payload = buildPayload();
+		if (!payload) {
 			toast.error('Selecione um produto e uma variante.');
 			return;
 		}
-		// Tenta a cota grátis primeiro; 429 vira modal de uso de voxes.
-		await creditAction.trigger({ useFreeQuotaFirst: true });
-	}, [selectedVariantId, creditAction]);
+		const result = await generateMutation.mutateAsync(payload);
+		setGeneratedPrevia({ previewUrl: result.previewUrl });
+	}, [buildPayload, generateMutation]);
 
 	const handleReset = useCallback(() => {
 		setStep(1);
@@ -1084,25 +1053,6 @@ export function PreviasView() {
 				subtitle="Gere previas realistas de personalizacao a laser com IA."
 				icon={Eye}
 			/>
-
-			{/* Banner de quota grátis — só visível pra balance 0 */}
-			<FreeTierQuotaBanner
-				feature="previa"
-				unitLabel="prévias"
-				className="mb-8"
-			/>
-			{creditAction.modal && (
-				<CreditConfirmModal
-					variant={creditAction.modal.variant}
-					cost={creditAction.modal.cost}
-					balance={creditAction.modal.balance}
-					canUseCredits={creditAction.modal.canUseCredits}
-					freeTier={creditAction.modal.freeTier}
-					pending={creditAction.pending}
-					onConfirm={creditAction.confirm}
-					onClose={creditAction.close}
-				/>
-			)}
 
 			{/* Wizard card */}
 			<div
@@ -1854,25 +1804,17 @@ export function PreviasView() {
 								disabled={generateMutation.isPending}
 								onClick={handleGenerate}
 								className={`flex items-center gap-2 px-8 py-3.5 font-bold rounded-xl transition-all text-white disabled:opacity-50 ${
-									isAtLimit
-										? 'bg-amber-500 hover:bg-amber-400'
-										: generatedPrevia
-											? 'bg-violet-700 hover:bg-violet-600'
-											: 'bg-gradient-to-r from-violet-600 via-purple-600 to-violet-600 bg-[length:200%_auto] animate-[shimmer_3s_ease-in-out_infinite] hover:shadow-xl hover:shadow-violet-500/25 hover:scale-[1.02]'
+									generatedPrevia
+										? 'bg-violet-700 hover:bg-violet-600'
+										: 'bg-gradient-to-r from-violet-600 via-purple-600 to-violet-600 bg-[length:200%_auto] animate-[shimmer_3s_ease-in-out_infinite] hover:shadow-xl hover:shadow-violet-500/25 hover:scale-[1.02]'
 								}`}
 							>
 								{generateMutation.isPending ? (
 									<Loader2 className="w-5 h-5 animate-spin" />
-								) : isAtLimit ? (
-									<AlertTriangle className="w-5 h-5" />
 								) : (
 									<Sparkles className="w-5 h-5" />
 								)}
-								{isAtLimit
-									? 'Gerar com voxxys'
-									: generatedPrevia
-										? 'Gerar Novamente'
-										: 'Gerar Previa com IA'}
+								{generatedPrevia ? 'Gerar Novamente' : 'Gerar Previa com IA'}
 							</button>
 							{generatedPrevia && (
 								<button
