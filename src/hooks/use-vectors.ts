@@ -31,19 +31,17 @@ export function useVectorizeImage() {
 	return useMutation({
 		mutationFn: ({
 			file,
-			useCredits,
+			invocationId,
 			params,
 		}: {
 			file: File;
-			useCredits: boolean;
+			invocationId: string;
 			params?: VectorizeParams;
-		}) => vectorizeImage(file, { useCredits, params }),
+		}) => vectorizeImage(file, { invocationId, params }),
 		onSuccess: () => {
 			toast.success('Imagem vetorizada com sucesso!');
 		},
-		onError: () => {
-			toast.error('Erro ao vetorizar imagem');
-		},
+		// Erros (incl. refund) são tratados pelo orquestrador useRunTool.
 	});
 }
 

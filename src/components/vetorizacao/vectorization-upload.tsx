@@ -12,7 +12,9 @@ import {
 import { useCallback, useState } from 'react';
 import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
 import { FreeTierQuotaBanner } from '@/components/credits/free-tier-quota-banner';
+import { useEntitlements } from '@/hooks/use-entitlements';
 import { useSaveVector, useVectorizeImage } from '@/hooks/use-vectors';
+import { invokeTool } from '@/modules/tools/services/tools.service';
 import type { VectorizeResult } from '@/services/vectorize';
 
 interface AxiosLikeError {
@@ -63,6 +65,9 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 	);
 	const vectorizeMutation = useVectorizeImage();
 	const saveMutation = useSaveVector();
+	// Standalone bilha contra o curso ativo do customer (mono-curso).
+	const { courses } = useEntitlements();
+	const courseSlug = courses[0]?.slug;
 
 	const validateFile = useCallback((file: File): string | null => {
 		if (!ACCEPTED_TYPES.includes(file.type)) {
@@ -101,9 +106,15 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 				]);
 
 				try {
+					if (!courseSlug) {
+						throw new Error('Nenhum curso ativo encontrado.');
+					}
+					// Billing pelo upvox: autoriza/debita por arquivo e devolve o id
+					// que o motor valida e liquida.
+					const inv = await invokeTool('vectorize', courseSlug);
 					const result = await vectorizeMutation.mutateAsync({
 						file,
-						useCredits: true,
+						invocationId: inv.invocation_id,
 					});
 					setFiles((prev) =>
 						prev.map((f) =>
@@ -134,14 +145,16 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 							),
 						);
 					} else {
+						const msg =
+							status === 402
+								? 'Saldo de voxxys insuficiente'
+								: status === 403
+									? 'Seu plano não dá acesso a esta ferramenta'
+									: 'Erro ao vetorizar';
 						setFiles((prev) =>
 							prev.map((f) =>
 								f.id === id
-									? {
-											...f,
-											status: 'error' as const,
-											error: 'Erro ao vetorizar',
-										}
+									? { ...f, status: 'error' as const, error: msg }
 									: f,
 							),
 						);
@@ -149,7 +162,7 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 				}
 			}
 		},
-		[vectorizeMutation, validateFile],
+		[vectorizeMutation, validateFile, courseSlug],
 	);
 
 	const handleSave = useCallback(
