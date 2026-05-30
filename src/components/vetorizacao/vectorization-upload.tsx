@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
-import { FreeTierQuotaBanner } from '@/components/credits/free-tier-quota-banner';
 import { useEntitlements } from '@/hooks/use-entitlements';
 import { useSaveVector, useVectorizeImage } from '@/hooks/use-vectors';
 import { invokeTool } from '@/modules/tools/services/tools.service';
@@ -221,7 +220,6 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 
 	return (
 		<div className="space-y-6">
-			<FreeTierQuotaBanner feature="vectorize" unitLabel="vetorizações" />
 			{freeTierModal && (
 				<CreditConfirmModal
 					variant="free-tier-exhausted"
