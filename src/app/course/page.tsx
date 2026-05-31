@@ -2,7 +2,7 @@
 
 import { BookOpen } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CommunityOpportunities } from '@/components/course/home/community-opportunities';
 import { CommunityRanking } from '@/components/course/home/community-ranking';
 import { CourseFooter } from '@/components/course/home/course-footer';
@@ -15,13 +15,10 @@ import { OnlineMembers } from '@/components/course/home/online-members';
 import { QuickAccessGrid } from '@/components/course/home/quick-access-grid';
 import { WeeklyChallenge } from '@/components/course/home/weekly-challenge';
 import { SavedLessonsModal } from '@/components/course/saved-lessons-modal';
+import { SubscriptionGate } from '@/components/course/subscription-gate';
 import { DashboardSkeleton } from '@/components/ui/skeletons/dashboard-skeleton';
-import { useCustomerFeatures } from '@/hooks/use-customer-features';
-import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { getCurrentUser, getToken } from '@/lib/auth';
-import { FULL_FEATURES } from '@/utils/constants/class-features';
 
-const TIER_ORDER: Record<string, number> = { prata: 0, ouro: 1, platina: 2 };
 const SIDEBAR_KEY = 'course-sidebar-collapsed';
 
 export default function CoursePage() {
@@ -48,52 +45,9 @@ export default function CoursePage() {
 		});
 	};
 
-	const { data: plans, isLoading } = useCustomerPlans(
-		isAdmin ? null : (email ?? null),
-	);
-
-	const _uniquePlans = useMemo(() => {
-		if (!plans) return [];
-		const byKey = new Map<string, (typeof plans)[0]>();
-		for (const plan of plans) {
-			const key = plan.slug ?? plan.product_name;
-			const existing = byKey.get(key);
-			if (!existing) {
-				byKey.set(key, plan);
-			} else {
-				const existingTier = existing.tier
-					? (TIER_ORDER[existing.tier] ?? -1)
-					: -1;
-				const currentTier = plan.tier ? (TIER_ORDER[plan.tier] ?? -1) : -1;
-				const existingActive =
-					existing.status === 'active' || existing.status === 'ativo';
-				const currentActive =
-					plan.status === 'active' || plan.status === 'ativo';
-				const shouldReplace =
-					currentTier > existingTier ||
-					(currentTier === existingTier && currentActive && !existingActive);
-				if (shouldReplace) byKey.set(key, plan);
-			}
-		}
-		return Array.from(byKey.values());
-	}, [plans]);
-
-	const activePlans =
-		plans?.filter((p) => p.status === 'active' || p.status === 'ativo') ?? [];
-
-	const customerFeatures = useCustomerFeatures(
-		activePlans.length > 0 ? activePlans : undefined,
-	);
-	const features = isAdmin
-		? FULL_FEATURES
-		: (customerFeatures?.features ?? null);
-	const upgradeTiers = isAdmin
-		? null
-		: (customerFeatures?.upgradeTiers ?? null);
-
 	const displayName = name ? name.split(' ')[0] : 'bem-vindo';
 
-	if (email === undefined || isLoading) {
+	if (email === undefined) {
 		return <DashboardSkeleton />;
 	}
 
@@ -142,34 +96,34 @@ export default function CoursePage() {
 				/>
 
 				<main className="flex-1 mt-16 p-4 md:p-8 overflow-x-hidden">
-					{/* Greeting enxuto (substitui o banner antigo) */}
-					<HomeGreeting name={name} email={email} isAdmin={isAdmin} />
+					<SubscriptionGate>
+						{/* Greeting enxuto (substitui o banner antigo) */}
+						<HomeGreeting name={name} email={email} isAdmin={isAdmin} />
 
-					{/* Layout social meio-a-meio: feed à esquerda, painel à direita.
-					    Cada coluna scrolla independente no desktop. */}
-					<div className="grid grid-cols-1 lg:grid-cols-[1.85fr_1fr] gap-6 items-start">
-						{/* Feed da comunidade (esquerda) — ~65% */}
-						<div className="min-w-0 lg:h-[calc(100vh-10rem)] lg:overflow-y-auto lg:pr-2">
-							<HomeProjectsFeed />
+						{/* Layout social meio-a-meio: feed à esquerda, painel à direita.
+						    Cada coluna scrolla independente no desktop. */}
+						<div className="grid grid-cols-1 lg:grid-cols-[1.85fr_1fr] gap-6 items-start">
+							{/* Feed da comunidade (esquerda) — ~65% */}
+							<div className="min-w-0 lg:h-[calc(100vh-10rem)] lg:overflow-y-auto lg:pr-2">
+								<HomeProjectsFeed />
+							</div>
+
+							{/* Painel direito — ~35% */}
+							<aside className="space-y-5 lg:h-[calc(100vh-10rem)] lg:overflow-y-auto lg:pr-1">
+								<MiniLevelCard />
+								<QuickAccessGrid
+									onSavedLessonsOpen={() => setSavedLessonsModalOpen(true)}
+									compact
+								/>
+								<CommunityOpportunities />
+								<OnlineMembers />
+								<WeeklyChallenge />
+								<CommunityRanking />
+							</aside>
 						</div>
 
-						{/* Painel direito — ~35% */}
-						<aside className="space-y-5 lg:h-[calc(100vh-10rem)] lg:overflow-y-auto lg:pr-1">
-							<MiniLevelCard />
-							<QuickAccessGrid
-								features={features}
-								upgradeTiers={upgradeTiers}
-								onSavedLessonsOpen={() => setSavedLessonsModalOpen(true)}
-								compact
-							/>
-							<CommunityOpportunities />
-							<OnlineMembers />
-							<WeeklyChallenge />
-							<CommunityRanking />
-						</aside>
-					</div>
-
-					<CourseFooter />
+						<CourseFooter />
+					</SubscriptionGate>
 				</main>
 			</div>
 

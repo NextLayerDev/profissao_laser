@@ -3,43 +3,24 @@
 import { MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { SubscriptionGate } from '@/components/course/subscription-gate';
 import { SuporteOnlineView } from '@/components/suporte/suporte-online-view';
-import { AccessGate } from '@/components/ui/access-gate';
 import { SupportSkeleton } from '@/components/ui/skeletons/support-skeleton';
-import { useCustomerFeatures } from '@/hooks/use-customer-features';
-import { useCustomerPlans } from '@/hooks/use-customer-plans';
-import { getCurrentUser, getToken } from '@/lib/auth';
-import { FULL_FEATURES } from '@/utils/constants/class-features';
+import { getCurrentUser } from '@/lib/auth';
 
 export default function DuvidasCoursePage() {
 	const [email, setEmail] = useState<string | null | undefined>(undefined);
 	const [name, setName] = useState<string>('');
-	const [isAdmin, setIsAdmin] = useState(false);
 
 	useEffect(() => {
 		const user = getCurrentUser();
 		setEmail(user?.email ?? null);
 		setName(user?.name ?? '');
-		setIsAdmin(!!getToken('user') && user?.role != null);
 	}, []);
-
-	const { data: plans } = useCustomerPlans(email ?? null);
-	const activePlans =
-		plans?.filter((p) => p.status === 'active' || p.status === 'ativo') ?? [];
-	const customerFeatures = useCustomerFeatures(
-		activePlans.length > 0 ? activePlans : undefined,
-	);
-	const features = isAdmin
-		? FULL_FEATURES
-		: (customerFeatures?.features ?? null);
-	const upgradeTiers = isAdmin
-		? null
-		: (customerFeatures?.upgradeTiers ?? null);
-	const hasAccess = !!features?.chat;
 
 	const customerId = getCurrentUser()?.sub ?? 'customer-1';
 
-	if (email === undefined || !plans) {
+	if (email === undefined) {
 		return <SupportSkeleton />;
 	}
 
@@ -62,21 +43,13 @@ export default function DuvidasCoursePage() {
 		);
 	}
 
-	if (!hasAccess) {
-		return (
-			<AccessGate
-				feature="Duvidas"
-				featureLabel="Suporte online"
-				upgradeTier={upgradeTiers?.chat}
-			/>
-		);
-	}
-
 	return (
-		<SuporteOnlineView
-			customerId={customerId}
-			customerName={name || 'Utilizador'}
-			hasAccess={hasAccess}
-		/>
+		<SubscriptionGate>
+			<SuporteOnlineView
+				customerId={customerId}
+				customerName={name || 'Utilizador'}
+				hasAccess={true}
+			/>
+		</SubscriptionGate>
 	);
 }

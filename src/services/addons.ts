@@ -23,8 +23,14 @@ export async function attachAddon(
 }
 
 export async function listMyAddons(): Promise<SubscriptionAddonItem[]> {
-	const { data } = await api.get('/subscription/addons');
-	return subscriptionAddonItemSchema.array().parse(data);
+	// Endpoint legado da assinatura antiga — vazio/erro p/ clientes migrados.
+	// Tolera a falha pra não poluir o console (addons serão remodelados no upvox).
+	try {
+		const { data } = await api.get('/subscription/addons');
+		return subscriptionAddonItemSchema.array().parse(data);
+	} catch {
+		return [];
+	}
 }
 
 export async function removeAddon(

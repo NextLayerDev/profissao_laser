@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { VoxxysIcon } from '@/components/ui/voxxys-icon';
-import { useVoxBalance } from '@/hooks/use-credits';
+import { useEntitlements } from '@/hooks/use-entitlements';
 import { useIsTestUnlimited } from '@/hooks/use-is-test-unlimited';
 
 interface CourseTopHeaderProps {
@@ -29,7 +29,7 @@ export function CourseTopHeader({
 	userName,
 	onMobileMenuToggle,
 }: CourseTopHeaderProps) {
-	const { data: voxBalance } = useVoxBalance();
+	const { voxBalance, isLoading: balanceLoading } = useEntitlements();
 	const unlimited = useIsTestUnlimited();
 	return (
 		<header
@@ -104,7 +104,7 @@ export function CourseTopHeader({
 				>
 					<VoxxysIcon className="w-[18px] h-[18px]" />
 					<span className="text-sm font-semibold tabular-nums">
-						{unlimited ? '∞' : (voxBalance?.balance ?? '—')}
+						{unlimited ? '∞' : balanceLoading ? '—' : voxBalance}
 					</span>
 				</Link>
 				<Link

@@ -5,9 +5,7 @@ import {
 	ArrowDown,
 	ArrowUp,
 	BookOpen,
-	Check,
 	CreditCard,
-	X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -24,12 +22,9 @@ import {
 	useUpgradeMySubscription,
 } from '@/hooks/use-my-subscription';
 import { useProducts } from '@/hooks/use-products';
-import { useSystemClasses } from '@/hooks/use-system-classes';
 import { getCurrentUser } from '@/lib/auth';
 import type { MySubscription } from '@/types/my-subscription';
 import type { Product } from '@/types/products';
-import type { SystemClassWithRelations } from '@/types/system-classes';
-import { SC_OPTIONS } from '@/utils/constants/system-class-options';
 
 function formatDate(iso: string) {
 	return new Date(iso).toLocaleDateString('pt-BR', {
@@ -157,12 +152,10 @@ function SubscriptionCard({
 function PlanOption({
 	product,
 	type,
-	systemClass,
 	onSelect,
 }: {
 	product: Product;
 	type: 'upgrade' | 'downgrade';
-	systemClass: SystemClassWithRelations | null;
 	onSelect: (product: Product, type: 'upgrade' | 'downgrade') => void;
 }) {
 	const isUpgrade = type === 'upgrade';
@@ -174,12 +167,6 @@ function PlanOption({
 			/>
 
 			<div className="bg-white dark:bg-[#1a1a1d] p-5 flex flex-col flex-1">
-				{systemClass && (
-					<span className="self-start text-xs font-semibold px-2.5 py-0.5 rounded-full mb-3 bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">
-						{systemClass.name}
-					</span>
-				)}
-
 				<h3 className="font-display font-bold text-slate-900 dark:text-slate-100 text-base leading-snug mb-1">
 					{product.name}
 				</h3>
@@ -192,35 +179,7 @@ function PlanOption({
 					</span>
 				</p>
 
-				<div className="space-y-2 mb-5 flex-1">
-					<p className="text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wide mb-3">
-						Recursos inclusos
-					</p>
-					{SC_OPTIONS.map((o) => {
-						const enabled = systemClass !== null && systemClass[o.key] === true;
-						return (
-							<div key={o.key} className="flex items-center gap-2.5">
-								{enabled ? (
-									<Check size={14} className="text-violet-600 shrink-0" />
-								) : (
-									<X
-										size={14}
-										className="text-slate-300 dark:text-slate-600 shrink-0"
-									/>
-								)}
-								<span
-									className={
-										enabled
-											? 'text-sm text-slate-700 dark:text-slate-200'
-											: 'text-sm text-slate-400 dark:text-slate-600 line-through'
-									}
-								>
-									{o.label}
-								</span>
-							</div>
-						);
-					})}
-				</div>
+				<div className="flex-1" />
 
 				<button
 					type="button"
@@ -251,21 +210,6 @@ export default function CourseAssinaturaPage() {
 
 	const { data, isLoading, isError } = useMySubscription();
 	const { products } = useProducts();
-	const { systemClasses } = useSystemClasses();
-
-	const activeSystemClasses = systemClasses.filter(
-		(sc) => sc.status === 'ativo',
-	);
-
-	function systemClassForProduct(
-		productId: string,
-	): SystemClassWithRelations | null {
-		return (
-			activeSystemClasses.find((sc) =>
-				sc.products.some((p) => p.id === productId),
-			) ?? null
-		);
-	}
 	const { mutate: cancelSubscription, isPending: isCanceling } =
 		useCancelMySubscription();
 	const { mutate: upgradePlan, isPending: isUpgrading } =
@@ -489,7 +433,6 @@ export default function CourseAssinaturaPage() {
 												key={product.id}
 												product={product}
 												type="upgrade"
-												systemClass={systemClassForProduct(product.id)}
 												onSelect={handleSelectPlan}
 											/>
 										))}
@@ -499,7 +442,6 @@ export default function CourseAssinaturaPage() {
 												key={product.id}
 												product={product}
 												type="downgrade"
-												systemClass={systemClassForProduct(product.id)}
 												onSelect={handleSelectPlan}
 											/>
 										))}
