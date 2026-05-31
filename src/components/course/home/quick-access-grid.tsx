@@ -1,17 +1,14 @@
 'use client';
 
-import { Lock, Settings } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import type { CustomerFeatures, FeatureUpgradeTiers } from '@/types/classes';
 import {
 	type QuickAccessItem,
 	quickAccessItems,
 } from '@/utils/constants/quick-access';
 
 interface QuickAccessGridProps {
-	features: CustomerFeatures | null;
-	upgradeTiers: FeatureUpgradeTiers | null;
 	onSavedLessonsOpen: () => void;
 	/** Modo compacto (sidebar): cards coloridos agrupados por section. */
 	compact?: boolean;
@@ -29,21 +26,21 @@ const SECTION_ORDER: QuickAccessItem['section'][] = [
 	'COMUNIDADE',
 ];
 
-export function QuickAccessGrid({
-	features,
-	compact = false,
-}: QuickAccessGridProps) {
+// Acesso 100% pelo plano: o grid vive dentro do SubscriptionGate (cliente já
+// tem assinatura ativa), então todos os atalhos ficam liberados — o billing/uso
+// de cada ferramenta é gatilhado na própria página dela.
+export function QuickAccessGrid({ compact = false }: QuickAccessGridProps) {
 	if (compact) {
-		return <CompactQuickAccess features={features} />;
+		return <CompactQuickAccess />;
 	}
-	return <FullQuickAccess features={features} />;
+	return <FullQuickAccess />;
 }
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Full mode (grid de cards) — comportamento padrão                      */
 /* ─────────────────────────────────────────────────────────────────────── */
 
-function FullQuickAccess({ features }: { features: CustomerFeatures | null }) {
+function FullQuickAccess() {
 	return (
 		<section>
 			<div className="flex justify-between items-end mb-5">
@@ -65,7 +62,7 @@ function FullQuickAccess({ features }: { features: CustomerFeatures | null }) {
 			</div>
 			<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
 				{quickAccessItems.map((item) => (
-					<QuickAccessCard key={item.label} item={item} features={features} />
+					<QuickAccessCard key={item.label} item={item} />
 				))}
 			</div>
 		</section>
@@ -77,11 +74,7 @@ function FullQuickAccess({ features }: { features: CustomerFeatures | null }) {
 /*  por section e renderizados em 2 colunas pra caber na metade da tela.  */
 /* ─────────────────────────────────────────────────────────────────────── */
 
-function CompactQuickAccess({
-	features,
-}: {
-	features: CustomerFeatures | null;
-}) {
+function CompactQuickAccess() {
 	return (
 		<section className="space-y-5">
 			<div className="flex items-end justify-between">
@@ -105,11 +98,7 @@ function CompactQuickAccess({
 						</div>
 						<div className="grid grid-cols-2 gap-3">
 							{items.map((item) => (
-								<QuickAccessCard
-									key={item.label}
-									item={item}
-									features={features}
-								/>
+								<QuickAccessCard key={item.label} item={item} />
 							))}
 						</div>
 					</div>
@@ -123,79 +112,49 @@ function CompactQuickAccess({
 /*  Card colorido com gradiente — usado em ambos os modos                  */
 /* ─────────────────────────────────────────────────────────────────────── */
 
-function QuickAccessCard({
-	item,
-	features,
-}: {
-	item: QuickAccessItem;
-	features: CustomerFeatures | null;
-}) {
-	const { label, description, Icon, featureKey, href, gradient, iconBare } =
-		item;
-	const hasAccess = featureKey ? (features?.[featureKey] ?? false) : true;
-	const isComingSoon = !href && !featureKey;
-	const isLocked = featureKey && !hasAccess;
+function QuickAccessCard({ item }: { item: QuickAccessItem }) {
+	const { label, description, Icon, href, gradient, iconBare } = item;
+	const isComingSoon = !href;
 
-	const baseClass = `group relative overflow-hidden rounded-xl p-3.5 flex flex-col gap-2.5 transition-all duration-200 bg-gradient-to-br ${gradient} border border-white/10 ${
-		isLocked
-			? 'opacity-50 cursor-not-allowed saturate-0'
-			: 'hover:brightness-110 hover:-translate-y-0.5 cursor-pointer shadow-lg shadow-black/10'
-	} ${isComingSoon ? 'opacity-75' : ''}`;
+	const baseClass = `group relative overflow-hidden rounded-xl p-3.5 flex flex-col gap-2.5 transition-all duration-200 bg-gradient-to-br ${gradient} border border-white/10 hover:brightness-110 hover:-translate-y-0.5 cursor-pointer shadow-lg shadow-black/10 ${
+		isComingSoon ? 'opacity-75' : ''
+	}`;
 
 	const content = (
 		<>
 			{/* Glow textura de fundo (vibe atmosférica) */}
-			{!isLocked && (
-				<div
-					className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 rounded-full bg-white/15 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-					aria-hidden
-				/>
-			)}
+			<div
+				className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 rounded-full bg-white/15 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+				aria-hidden
+			/>
 
 			<div
 				className={`relative flex items-center justify-center shrink-0 ${
-					isLocked
-						? 'w-10 h-10 rounded-lg bg-slate-200 dark:bg-white/[0.06]'
-						: iconBare
-							? 'w-10 h-10'
-							: 'w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm'
+					iconBare
+						? 'w-10 h-10'
+						: 'w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm'
 				}`}
 			>
-				{isLocked ? (
-					<Lock className="w-4 h-4 text-slate-400 dark:text-gray-500" />
-				) : iconBare ? (
+				{iconBare ? (
 					<Icon className="w-16 h-16 -ml-1 drop-shadow-md" />
 				) : (
 					<Icon className="w-5 h-5 text-white" />
 				)}
 			</div>
 			<div className="relative min-w-0">
-				<p
-					className={`text-sm font-bold leading-tight ${
-						isLocked ? 'text-slate-400 dark:text-gray-500' : 'text-white'
-					}`}
-				>
-					{label}
-				</p>
-				<p
-					className={`text-[11px] mt-0.5 leading-snug line-clamp-2 ${
-						isLocked ? 'text-slate-400/60 dark:text-gray-500' : 'text-white/80'
-					}`}
-				>
+				<p className="text-sm font-bold leading-tight text-white">{label}</p>
+				<p className="text-[11px] mt-0.5 leading-snug line-clamp-2 text-white/80">
 					{description}
 				</p>
 			</div>
 		</>
 	);
 
-	const hoverLine = !isLocked ? (
+	const hoverLine = (
 		<div className="absolute top-0 left-0 right-0 h-[2px] rounded-t-xl bg-gradient-to-r from-transparent via-white/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-	) : null;
+	);
 
-	if (isLocked) {
-		return <div className={baseClass}>{content}</div>;
-	}
-	if (href && hasAccess) {
+	if (href) {
 		return (
 			<Link href={href} className={baseClass}>
 				{hoverLine}
@@ -206,21 +165,17 @@ function QuickAccessCard({
 	return (
 		<button
 			type="button"
-			onClick={() => {
-				if (isComingSoon || !href) {
-					toast('Em breve', {
-						description: `${label} estará disponível em breve!`,
-					});
-				}
-			}}
+			onClick={() =>
+				toast('Em breve', {
+					description: `${label} estará disponível em breve!`,
+				})
+			}
 			className={`${baseClass} text-left`}
 		>
 			{hoverLine}
-			{isComingSoon ? (
-				<span className="absolute top-2 right-2 px-2 py-0.5 bg-black/30 backdrop-blur-sm text-white/80 text-[10px] font-bold uppercase rounded-full tracking-wider z-10">
-					Em breve
-				</span>
-			) : null}
+			<span className="absolute top-2 right-2 px-2 py-0.5 bg-black/30 backdrop-blur-sm text-white/80 text-[10px] font-bold uppercase rounded-full tracking-wider z-10">
+				Em breve
+			</span>
 			{content}
 		</button>
 	);
