@@ -31,7 +31,7 @@ export function ToolFormModal({ editing, pending, onClose, onSubmit }: Props) {
 		<ModalOverlay onClose={onClose} tone="tools">
 			<div className="p-6 space-y-4">
 				<h3 className="text-lg font-bold text-slate-900 dark:text-white">
-					{editing ? 'Editar tool' : 'Nova tool'}
+					{editing ? 'Editar funcionalidade' : 'Nova funcionalidade'}
 				</h3>
 
 				<Field label="Key (snake_case)">
@@ -40,7 +40,7 @@ export function ToolFormModal({ editing, pending, onClose, onSubmit }: Props) {
 						onChange={(e) => setKey(e.target.value)}
 						placeholder="ai_canvas, vectorize..."
 						disabled={editing !== null}
-						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm disabled:opacity-60 font-mono"
+						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 disabled:opacity-60 font-mono"
 					/>
 				</Field>
 
@@ -49,7 +49,7 @@ export function ToolFormModal({ editing, pending, onClose, onSubmit }: Props) {
 						value={name}
 						onChange={(e) => setName(e.target.value)}
 						placeholder="AI Canvas"
-						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm"
+						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
 					/>
 				</Field>
 
@@ -58,8 +58,8 @@ export function ToolFormModal({ editing, pending, onClose, onSubmit }: Props) {
 						value={description ?? ''}
 						onChange={(e) => setDescription(e.target.value)}
 						rows={3}
-						placeholder="O que essa tool faz?"
-						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm"
+						placeholder="O que essa funcionalidade faz?"
+						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
 					/>
 				</Field>
 
@@ -69,14 +69,14 @@ export function ToolFormModal({ editing, pending, onClose, onSubmit }: Props) {
 						min={0}
 						value={voxCost}
 						onChange={(e) => setVoxCost(e.target.value)}
-						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm"
+						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
 					/>
 					<p className="text-xs text-slate-500 mt-1">
 						Cobrado quando o usuário esgota a free_quota do plano.
 					</p>
 				</Field>
 
-				<label className="flex items-center gap-2 text-sm">
+				<label className="flex items-center gap-2 text-sm text-slate-900 dark:text-white">
 					<input
 						type="checkbox"
 						checked={enabled}
@@ -89,7 +89,7 @@ export function ToolFormModal({ editing, pending, onClose, onSubmit }: Props) {
 					<button
 						type="button"
 						onClick={onClose}
-						className="flex-1 px-4 py-2.5 rounded-xl text-sm border border-slate-200 dark:border-white/10"
+						className="flex-1 px-4 py-2.5 rounded-xl text-sm border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white"
 					>
 						Cancelar
 					</button>

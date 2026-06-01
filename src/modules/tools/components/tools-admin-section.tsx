@@ -38,7 +38,7 @@ export function ToolsAdminSection() {
 					className="flex items-center gap-2 bg-violet-600 rounded-xl px-5 py-3 text-sm font-medium text-white hover:bg-violet-700 transition-colors"
 				>
 					<Plus className="w-4 h-4" />
-					Nova tool
+					Nova funcionalidade
 				</button>
 			</div>
 

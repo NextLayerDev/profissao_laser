@@ -64,7 +64,7 @@ export function AddToolModal({ excludeKeys, pending, onClose, onAdd }: Props) {
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
 							placeholder="Buscar por nome ou key..."
-							className="w-full pl-10 pr-3 py-2 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm"
+							className="w-full pl-10 pr-3 py-2 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
 						/>
 					</div>
 				</div>
@@ -171,7 +171,7 @@ export function AddToolModal({ excludeKeys, pending, onClose, onAdd }: Props) {
 								value={quotaValue}
 								onChange={(e) => setQuotaValue(e.target.value)}
 								placeholder="ex: 10"
-								className="mt-2 w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] px-3 py-2 text-sm"
+								className="mt-2 w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
 							/>
 						)}
 					</div>
@@ -180,7 +180,7 @@ export function AddToolModal({ excludeKeys, pending, onClose, onAdd }: Props) {
 						<button
 							type="button"
 							onClick={onClose}
-							className="flex-1 px-4 py-2.5 rounded-xl text-sm border border-slate-200 dark:border-white/10"
+							className="flex-1 px-4 py-2.5 rounded-xl text-sm border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white"
 						>
 							Cancelar
 						</button>

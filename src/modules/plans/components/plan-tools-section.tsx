@@ -1,11 +1,15 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
-import { Infinity as InfinityIcon, Plus, Trash2, Wrench } from 'lucide-react';
+import {
+	Infinity as InfinityIcon,
+	Pencil,
+	Plus,
+	Trash2,
+	Wrench,
+} from 'lucide-react';
 import { useState } from 'react';
 import { VoxxysIcon } from '@/components/ui/voxxys-icon';
-import { useTools, useUpdateTool } from '@/modules/tools';
-import { planDetailsQueryKey } from '../hooks/use-plan-details';
+import { useTools } from '@/modules/tools';
 import { useRemovePlanTool, useSetPlanTool } from '../hooks/use-plan-tools';
 import type { PlanEntitlement } from '../types/plan-details';
 import { AddToolModal } from './add-tool-modal';
@@ -16,13 +20,9 @@ interface Props {
 }
 
 export function PlanToolsSection({ planId, entitlements }: Props) {
-	const qc = useQueryClient();
 	const tools = useTools();
 	const setMut = useSetPlanTool(planId);
 	const removeMut = useRemovePlanTool(planId);
-	const updateToolMut = useUpdateTool(() =>
-		qc.invalidateQueries({ queryKey: planDetailsQueryKey(planId) }),
-	);
 
 	const [addingOpen, setAddingOpen] = useState(false);
 
@@ -30,11 +30,6 @@ export function PlanToolsSection({ planId, entitlements }: Props) {
 
 	function updateQuota(toolKey: string, value: number | null) {
 		setMut.mutate({ toolKey, payload: { free_quota: value } });
-	}
-
-	function updateVoxCost(toolId: string, current: number, value: number) {
-		if (value === current) return;
-		updateToolMut.mutate({ id: toolId, payload: { vox_cost: value } });
 	}
 
 	return (
@@ -46,8 +41,9 @@ export function PlanToolsSection({ planId, entitlements }: Props) {
 						Funcionalidades
 					</h3>
 					<p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
-						Tools que este plano libera, com custo em voxxys e cota grátis por
-						mês.
+						Funcionalidades que este plano libera. Aqui você pode editar a cota
+						grátis por mês de cada uma e marcar como ilimitada. O custo em
+						voxxys é global e deve ser editado na aba de funcionalidades.
 					</p>
 				</div>
 				<button
@@ -77,16 +73,12 @@ export function PlanToolsSection({ planId, entitlements }: Props) {
 						<EntitlementCard
 							key={e.tool_key}
 							entitlement={e}
-							onUpdateVoxCost={(v) =>
-								updateVoxCost(e.tool.id, e.tool.vox_cost, v)
-							}
 							onUpdateQuota={(v) => updateQuota(e.tool_key, v)}
 							onRemove={() => {
 								if (confirm(`Remover "${e.tool.name}" deste plano?`)) {
 									removeMut.mutate(e.tool_key);
 								}
 							}}
-							voxCostPending={updateToolMut.isPending}
 							quotaPending={setMut.isPending}
 							removePending={removeMut.isPending}
 						/>
@@ -113,18 +105,14 @@ export function PlanToolsSection({ planId, entitlements }: Props) {
 
 function EntitlementCard({
 	entitlement,
-	onUpdateVoxCost,
 	onUpdateQuota,
 	onRemove,
-	voxCostPending,
 	quotaPending,
 	removePending,
 }: {
 	entitlement: PlanEntitlement;
-	onUpdateVoxCost: (value: number) => void;
 	onUpdateQuota: (value: number | null) => void;
 	onRemove: () => void;
-	voxCostPending: boolean;
 	quotaPending: boolean;
 	removePending: boolean;
 }) {
@@ -162,15 +150,7 @@ function EntitlementCard({
 
 				{/* Controls — empurrados pro fundo pra alinhar com outros cards */}
 				<div className="mt-auto pt-4 grid grid-cols-2 gap-3">
-					<NumberControl
-						label="Custo"
-						hint="voxxys/uso"
-						icon={<VoxxysIcon className="w-3.5 h-3.5" />}
-						initial={tool.vox_cost}
-						min={0}
-						disabled={voxCostPending}
-						onCommit={(v) => onUpdateVoxCost(Math.max(0, Math.floor(v)))}
-					/>
+					<CostDisplay value={tool.vox_cost} />
 					<QuotaControl
 						initial={free_quota}
 						disabled={quotaPending}
@@ -181,7 +161,7 @@ function EntitlementCard({
 				{/* Footer */}
 				<div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
 					<p className="text-xs text-slate-500">
-						Custo é global e afeta todos os planos.
+						Custo deve ser editado na aba de funcionalidades.
 					</p>
 					<button
 						type="button"
@@ -198,46 +178,18 @@ function EntitlementCard({
 	);
 }
 
-function NumberControl({
-	label,
-	hint,
-	icon,
-	initial,
-	min,
-	disabled,
-	onCommit,
-}: {
-	label: string;
-	hint: string;
-	icon: React.ReactNode;
-	initial: number;
-	min: number;
-	disabled: boolean;
-	onCommit: (value: number) => void;
-}) {
-	const [draft, setDraft] = useState(String(initial));
-
+function CostDisplay({ value }: { value: number }) {
 	return (
 		<div className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#0d0d0f] p-3">
 			<div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 mb-1.5">
-				{icon}
-				{label}
+				<VoxxysIcon className="w-3.5 h-3.5" />
+				Custo
 			</div>
 			<div className="flex items-baseline gap-1.5">
-				<input
-					type="number"
-					min={min}
-					disabled={disabled}
-					value={draft}
-					onChange={(e) => setDraft(e.target.value)}
-					onBlur={() => {
-						const n = Number(draft);
-						if (!Number.isFinite(n)) return;
-						onCommit(n);
-					}}
-					className="w-16 bg-transparent text-lg font-semibold text-slate-900 dark:text-white tabular-nums focus:outline-none disabled:opacity-50"
-				/>
-				<span className="text-xs text-slate-500">{hint}</span>
+				<span className="text-lg font-semibold text-slate-900 dark:text-white tabular-nums">
+					{value}
+				</span>
+				<span className="text-xs text-slate-500">voxxys/uso</span>
 			</div>
 		</div>
 	);
@@ -288,17 +240,22 @@ function QuotaControl({
 					ilimitado
 				</label>
 			</div>
-			<div className="flex items-baseline gap-1.5">
-				<input
-					type="number"
-					min={0}
-					disabled={disabled || unlimited}
-					value={unlimited ? '' : draft}
-					placeholder={unlimited ? '∞' : '0'}
-					onChange={(e) => setDraft(e.target.value)}
-					onBlur={() => commit(unlimited, draft)}
-					className="w-16 bg-transparent text-lg font-semibold text-slate-900 dark:text-white tabular-nums focus:outline-none disabled:opacity-50 disabled:placeholder:text-violet-400"
-				/>
+			<div className="flex items-center gap-1.5">
+				<div className="flex items-center gap-1.5 rounded-md border border-slate-300 dark:border-white/15 bg-white dark:bg-white/10 px-2 py-1 focus-within:border-violet-500">
+					<input
+						type="number"
+						min={0}
+						disabled={disabled || unlimited}
+						value={unlimited ? '' : draft}
+						placeholder={unlimited ? '∞' : '0'}
+						onChange={(e) => setDraft(e.target.value)}
+						onBlur={() => commit(unlimited, draft)}
+						className="w-12 bg-transparent text-lg font-semibold text-slate-900 dark:text-white tabular-nums focus:outline-none disabled:opacity-50 disabled:placeholder:text-violet-400"
+					/>
+					{!unlimited && (
+						<Pencil className="w-3.5 h-3.5 text-violet-500 shrink-0" />
+					)}
+				</div>
 				<span className="text-xs text-slate-500">usos/mês</span>
 			</div>
 		</div>

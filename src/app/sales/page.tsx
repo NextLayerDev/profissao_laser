@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Header } from '@/components/dashboard/header';
+import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 import { SaleDetailModal } from '@/components/vendas/sale-detail-modal';
 import { SalesFilters } from '@/components/vendas/sales-filters';
 import { SalesKpiCards } from '@/components/vendas/sales-kpi-cards';
@@ -64,6 +65,13 @@ export default function Vendas() {
 						>
 							<RotateCcw className="w-4 h-4" />
 							Reembolsos
+						</Link>
+						<Link
+							href="/sales/voxes"
+							className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-gray-300 text-sm font-medium hover:bg-slate-300 dark:hover:bg-white/15 transition-colors"
+						>
+							<VoxxysIcon className="w-4 h-4" />
+							Voxxys
 						</Link>
 						{!isLoading && !error && (
 							<button

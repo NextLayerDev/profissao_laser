@@ -214,7 +214,7 @@ function PackageModal({
 					<input
 						value={name}
 						onChange={(e) => setName(e.target.value)}
-						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm"
+						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
 					/>
 				</Field>
 				<div className="grid grid-cols-2 gap-3">
@@ -224,7 +224,7 @@ function PackageModal({
 							min={1}
 							value={voxAmount}
 							onChange={(e) => setVoxAmount(e.target.value)}
-							className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm"
+							className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
 						/>
 					</Field>
 					<Field label="Preço (R$)">
@@ -234,11 +234,11 @@ function PackageModal({
 							step="0.01"
 							value={priceReais}
 							onChange={(e) => setPriceReais(e.target.value)}
-							className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm"
+							className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
 						/>
 					</Field>
 				</div>
-				<label className="flex items-center gap-2 text-sm">
+				<label className="flex items-center gap-2 text-sm text-slate-900 dark:text-white">
 					<input
 						type="checkbox"
 						checked={published}
@@ -250,7 +250,7 @@ function PackageModal({
 					<button
 						type="button"
 						onClick={onClose}
-						className="flex-1 px-4 py-2.5 rounded-xl text-sm border border-slate-200 dark:border-white/10"
+						className="flex-1 px-4 py-2.5 rounded-xl text-sm border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white"
 					>
 						Cancelar
 					</button>

@@ -73,6 +73,29 @@ export const adjustVoxesResponseSchema = z.object({
 });
 export type AdjustVoxesResponse = z.infer<typeof adjustVoxesResponseSchema>;
 
+// ─── Vendas de voxes ────────────────────────────────────
+
+export const voxSaleSchema = z.object({
+	id: z.string(),
+	customer_id: z.string(),
+	customer_email: z.string().nullable(),
+	customer_name: z.string().nullable(),
+	vox_amount: z.number().int(),
+	price_cents: z.number().int(),
+	vox_package_id: z.string().nullable(),
+	package_name: z.string().nullable(),
+	stripe_session_id: z.string().nullable(),
+	created_at: z.string(),
+});
+export type VoxSale = z.infer<typeof voxSaleSchema>;
+
+export interface ListVoxSalesParams {
+	from?: string;
+	to?: string;
+	limit?: number;
+	offset?: number;
+}
+
 export const VOX_LEDGER_REASON_LABELS: Record<VoxLedgerReason, string> = {
 	purchase: 'Compra',
 	spend: 'Uso de ferramenta',

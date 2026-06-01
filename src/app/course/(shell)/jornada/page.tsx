@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import {
 	BookOpen,
 	Check,
@@ -15,11 +16,14 @@ import { PageHeader } from '@/components/ui/page-header';
 import { CardListSkeleton } from '@/components/ui/skeletons/card-list-skeleton';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
 import { useJornadaProgress } from '@/hooks/use-jornada-progress';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, getToken } from '@/lib/auth';
+import { catalogQueryKeys, listPublicCourses } from '@/modules/catalog';
+import type { CustomerPlan } from '@/types/plans';
 
 export default function JornadaCoursePage() {
 	const [email, setEmail] = useState<string | null | undefined>(undefined);
 	const [name, setName] = useState<string>('');
+	const [isAdmin, setIsAdmin] = useState(false);
 	const [expandedPlanIds, setExpandedPlanIds] = useState<Set<string>>(
 		new Set(),
 	);
@@ -28,16 +32,39 @@ export default function JornadaCoursePage() {
 		const user = getCurrentUser();
 		setEmail(user?.email ?? null);
 		setName(user?.name ?? '');
+		setIsAdmin(!!getToken('user'));
 	}, []);
 
 	const { data: plans, isLoading: plansLoading } = useCustomerPlans(
-		email ?? null,
+		isAdmin ? null : (email ?? null),
 	);
-	const activePlans =
-		plans?.filter((p) => p.status === 'active' || p.status === 'ativo') ?? [];
+
+	// Admin: vê todos os cursos publicados (não depende de plano de cliente).
+	// Usa a vitrine pública (/v1/courses) — não exige permissão de admin, então
+	// evita o 401 que derrubava a sessão e redirecionava pro login.
+	const { data: adminCourses, isLoading: adminCoursesLoading } = useQuery({
+		queryKey: catalogQueryKeys.courses,
+		queryFn: listPublicCourses,
+		enabled: isAdmin,
+	});
+	const adminPlans: CustomerPlan[] = (adminCourses ?? [])
+		.filter((c) => c.published)
+		.map((c) => ({
+			id: c.id,
+			status: 'active',
+			product_name: c.title,
+			slug: c.slug,
+			tier: undefined,
+		}));
+
+	const activePlans = isAdmin
+		? adminPlans
+		: (plans?.filter((p) => p.status === 'active' || p.status === 'ativo') ??
+			[]);
 	const { items, isLoading: progressLoading } = useJornadaProgress(activePlans);
 
-	const isLoading = plansLoading || progressLoading;
+	const isLoading =
+		(isAdmin ? adminCoursesLoading : plansLoading) || progressLoading;
 
 	const toggleExpanded = (planId: string) => {
 		setExpandedPlanIds((prev) => {
@@ -82,15 +109,25 @@ export default function JornadaCoursePage() {
 				<div className="flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-lg">
 					<PackageX className="w-14 h-14 text-slate-400 dark:text-slate-600 mx-auto mb-4" />
 					<p className="text-slate-600 dark:text-gray-400 font-medium mb-2">
-						Nenhum curso ainda
+						{isAdmin ? 'Nenhum curso publicado ainda' : 'Nenhum curso ainda'}
 					</p>
-					<Link
-						href="/store"
-						className="mt-2 inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-400 text-white text-sm font-medium rounded-lg transition-colors"
-					>
-						<Store className="w-4 h-4" />
-						Ver loja
-					</Link>
+					{isAdmin ? (
+						<Link
+							href="/products"
+							className="mt-2 inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-400 text-white text-sm font-medium rounded-lg transition-colors"
+						>
+							<BookOpen className="w-4 h-4" />
+							Gerenciar cursos
+						</Link>
+					) : (
+						<Link
+							href="/store"
+							className="mt-2 inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-400 text-white text-sm font-medium rounded-lg transition-colors"
+						>
+							<Store className="w-4 h-4" />
+							Ver loja
+						</Link>
+					)}
 				</div>
 			) : (
 				<div className="space-y-2">

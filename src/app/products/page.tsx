@@ -47,7 +47,7 @@ const TABS: TabDef[] = [
 	},
 	{
 		key: 'tools',
-		label: 'Tools',
+		label: 'Funcionalidades',
 		icon: Wrench,
 		activeClasses:
 			'bg-gradient-to-br from-emerald-500 to-cyan-600 text-white shadow-lg shadow-emerald-500/30',
