@@ -10,6 +10,7 @@ import {
 	Focus,
 	Gauge,
 	Grid3x3,
+	Layers,
 	type LucideIcon,
 	Minus,
 	MonitorSmartphone,
@@ -39,6 +40,7 @@ interface ParameterCardProps {
 	onLike?: () => void;
 	onSave?: () => void;
 	onRate?: (n: number) => void;
+	onViewDetails?: () => void;
 }
 
 const MATERIAL_ICONS: Record<string, LucideIcon> = {
@@ -86,6 +88,7 @@ export function ParameterCard({
 	onLike,
 	onSave,
 	onRate,
+	onViewDetails,
 }: ParameterCardProps) {
 	const Icon = materialIcon(p.material);
 	const [zoomed, setZoomed] = useState(false);
@@ -109,6 +112,18 @@ export function ParameterCard({
 		<div
 			className={`rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0e0e10] p-5 ${className}`}
 		>
+			{/* Imagem do parâmetro (redesign) */}
+			{p.imageUrl ? (
+				<div className="-mx-5 -mt-5 mb-4 overflow-hidden rounded-t-2xl bg-slate-100 dark:bg-white/[0.03]">
+					<img
+						src={p.imageUrl}
+						alt={p.material}
+						className="w-full max-h-52 object-cover"
+						loading="lazy"
+					/>
+				</div>
+			) : null}
+
 			{/* Header — icon + nome + badge tipo de trabalho */}
 			<div className="flex items-start justify-between gap-3 mb-4">
 				<div className="flex items-center gap-3 min-w-0">
@@ -126,10 +141,18 @@ export function ParameterCard({
 						)}
 					</div>
 				</div>
-				<span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 text-xs font-semibold whitespace-nowrap">
-					<Zap className="w-3 h-3" />
-					{p.mode}
-				</span>
+				<div className="flex shrink-0 flex-col items-end gap-1.5">
+					<span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 text-xs font-semibold whitespace-nowrap">
+						<Zap className="w-3 h-3" />
+						{p.mode}
+					</span>
+					{p.isParent ? (
+						<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 text-[11px] font-semibold whitespace-nowrap">
+							<Layers className="w-3 h-3" />
+							{p.passCount ? `${p.passCount} passadas` : 'Multi-passada'}
+						</span>
+					) : null}
+				</div>
 			</div>
 
 			{/* Linha 1 — Máquina | Software | Lente */}
@@ -336,6 +359,17 @@ export function ParameterCard({
 					</div>
 				</div>
 			)}
+
+			{/* Ver detalhes / passadas (redesign) */}
+			{variant === 'community' && onViewDetails ? (
+				<button
+					type="button"
+					onClick={onViewDetails}
+					className="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-700 px-4 py-2 text-sm font-semibold text-white transition-colors"
+				>
+					{p.isParent ? 'Ver passadas' : 'Ver detalhes'}
+				</button>
+			) : null}
 
 			{/* Lightbox do Tipo de Linha — clicar amplia. Via portal no body pra
 			    centralizar no viewport (o course shell transforma o <main>). */}

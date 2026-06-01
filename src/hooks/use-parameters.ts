@@ -14,6 +14,8 @@ import {
 	getCommunityParameters,
 	getParameterMachines,
 	getParameterMaterials,
+	getParameterPasses,
+	getParameterSidebar,
 	getParameterStats,
 	getParameters,
 	likeParameter,
@@ -48,6 +50,26 @@ export function useParameterStats(enabled = true) {
 	return useQuery({
 		queryKey: [...QUERY_KEY, 'stats'] as const,
 		queryFn: getParameterStats,
+		enabled,
+	});
+}
+
+export function useParameterPasses(id: string | null, enabled = true) {
+	return useQuery({
+		queryKey: [...QUERY_KEY, 'passes', id] as const,
+		queryFn: () => {
+			if (!id) throw new Error('ID required');
+			return getParameterPasses(id);
+		},
+		enabled: !!id && enabled,
+	});
+}
+
+export function useParameterSidebar(enabled = true) {
+	return useQuery({
+		queryKey: [...QUERY_KEY, 'sidebar'] as const,
+		queryFn: getParameterSidebar,
+		staleTime: 60 * 1000,
 		enabled,
 	});
 }
