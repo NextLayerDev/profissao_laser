@@ -26,3 +26,33 @@ export type CreateCoursePayload = z.infer<typeof createCourseSchema>;
 
 export const updateCourseSchema = createCourseSchema.partial();
 export type UpdateCoursePayload = z.infer<typeof updateCourseSchema>;
+
+// ─── CourseDetail (GET /v1/courses) ──────────────────────
+
+export const courseDetailToolSchema = z.object({
+	free_quota: z.number().int().nullable(),
+	tool: z.object({
+		key: z.string(),
+		name: z.string(),
+		vox_cost: z.number().int(),
+	}),
+});
+export type CourseDetailTool = z.infer<typeof courseDetailToolSchema>;
+
+export const courseDetailPlanSchema = z.object({
+	plan: z.object({
+		id: z.string(),
+		key: z.string(),
+		name: z.string(),
+		price_monthly_cents: z.number().int().nullable(),
+		price_yearly_cents: z.number().int().nullable(),
+	}),
+	published: z.boolean(),
+	tools: z.array(courseDetailToolSchema),
+});
+export type CourseDetailPlan = z.infer<typeof courseDetailPlanSchema>;
+
+export const courseDetailSchema = courseSchema.extend({
+	plans: z.array(courseDetailPlanSchema),
+});
+export type CourseDetail = z.infer<typeof courseDetailSchema>;

@@ -1,10 +1,18 @@
 import { apiCourses as api } from '@/shared/lib/api-courses';
 import {
 	type Course,
+	type CourseDetail,
 	type CreateCoursePayload,
+	courseDetailSchema,
 	courseSchema,
 	type UpdateCoursePayload,
 } from '../types/courses';
+
+/** Catálogo público — retorna cursos com planos e ferramentas embutidos. */
+export async function listCourses(): Promise<CourseDetail[]> {
+	const { data } = await api.get('/v1/courses');
+	return courseDetailSchema.array().parse(data);
+}
 
 export async function listAdminCourses(): Promise<Course[]> {
 	const { data } = await api.get('/v1/admin/courses');

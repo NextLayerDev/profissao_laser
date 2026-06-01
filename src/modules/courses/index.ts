@@ -3,7 +3,9 @@ export { CoursesAdminSection } from './components/courses-admin-section';
 
 export {
 	adminCoursesQueryKey,
+	coursesQueryKey,
 	useAdminCourses,
+	useCourses,
 	useCreateCourse,
 	useDeleteCourse,
 	useUpdateCourse,
@@ -47,6 +49,7 @@ export {
 	createCourse,
 	deleteCourse,
 	listAdminCourses,
+	listCourses,
 	updateCourse,
 	uploadCourseImage,
 } from './services/courses.service';
@@ -80,10 +83,14 @@ export {
 
 export type {
 	Course,
+	CourseDetail,
+	CourseDetailPlan,
+	CourseDetailTool,
 	CreateCoursePayload,
 	UpdateCoursePayload,
 } from './types/courses';
 export {
+	courseDetailSchema,
 	courseSchema,
 	createCourseSchema,
 	updateCourseSchema,

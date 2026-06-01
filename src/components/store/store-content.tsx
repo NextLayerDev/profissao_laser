@@ -1,142 +1,21 @@
 'use client';
 
-import { ChevronDown, Cpu, Monitor, Search, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { StoreProductCard } from '@/components/store/store-product-card';
-import { useClasses } from '@/hooks/use-classes';
-import { useCustomerPlans } from '@/hooks/use-customer-plans';
-import { useProducts } from '@/hooks/use-products';
-import { useSystemClasses } from '@/hooks/use-system-classes';
-import { getCurrentUser } from '@/lib/auth';
+import { Search } from 'lucide-react';
+import { useState } from 'react';
+import { StoreCourseCard } from '@/components/store/store-course-card';
+import { useEntitlements } from '@/hooks/use-entitlements';
+import { useCourses } from '@/modules/courses';
 
 export function StoreContent() {
 	const [search, setSearch] = useState('');
-	const [activeCategory, setActiveCategory] = useState('Todos');
-	const [selectedMachine, setSelectedMachine] = useState('');
-	const [selectedSoftware, setSelectedSoftware] = useState('');
-	const { products, isLoading, error } = useProducts();
-	const { classes } = useClasses();
-	const { systemClasses } = useSystemClasses();
+	const { data: courses, isLoading, error } = useCourses();
+	const { entitlements } = useEntitlements();
 
-	const currentUser = getCurrentUser();
-	const { data: ownedPlans } = useCustomerPlans(currentUser?.email ?? null);
+	const currentPlanKey = entitlements?.subscription?.plan?.key ?? null;
 
-	const activeProducts = (products ?? []).filter((p) => p.status === 'ativo');
-	const activeClasses = classes.filter((c) => c.status === 'ativo');
-	const activeSystemClasses = systemClasses.filter(
-		(sc) => sc.status === 'ativo',
-	);
-
-	const productClassMap = useMemo(() => {
-		const map = new Map<string, (typeof activeClasses)[0]>();
-		for (const cls of activeClasses) {
-			for (const product of cls.products) {
-				map.set(product.id, cls);
-			}
-		}
-		return map;
-	}, [activeClasses]);
-
-	const productSystemClassesMap = useMemo(() => {
-		const map = new Map<string, typeof activeSystemClasses>();
-		for (const sc of activeSystemClasses) {
-			for (const product of sc.products) {
-				if (!map.has(product.id)) map.set(product.id, []);
-				map.get(product.id)?.push(sc);
-			}
-		}
-		return map;
-	}, [activeSystemClasses]);
-
-	const { machines, softwares } = useMemo(() => {
-		const machineSet = new Set<string>();
-		const softwareSet = new Set<string>();
-		for (const p of activeProducts) {
-			if (p.machine) machineSet.add(p.machine);
-			if (p.software) softwareSet.add(p.software);
-		}
-		return {
-			machines: Array.from(machineSet).sort(),
-			softwares: Array.from(softwareSet).sort(),
-		};
-	}, [activeProducts]);
-
-	useEffect(() => {
-		if (isLoading || machines.length === 0 || selectedMachine !== '') return;
-		setSelectedMachine(
-			machines.includes('Fiber Laser') ? 'Fiber Laser' : machines[0],
-		);
-	}, [isLoading, machines, selectedMachine]);
-
-	useEffect(() => {
-		if (isLoading || softwares.length === 0 || selectedSoftware !== '') return;
-		setSelectedSoftware(softwares.includes('EZCAD') ? 'EZCAD' : softwares[0]);
-	}, [isLoading, softwares, selectedSoftware]);
-
-	const categories = [
-		'Todos',
-		...Array.from(
-			new Set(activeProducts.map((p) => p.category).filter(Boolean)),
-		),
-	] as string[];
-
-	const hasFilters = selectedMachine !== '' || selectedSoftware !== '';
-
-	const filteredGroups = useMemo(() => {
-		const textFiltered = activeProducts.filter((p) => {
-			if (!p.name.toLowerCase().includes(search.toLowerCase())) return false;
-			if (activeCategory !== 'Todos' && p.category !== activeCategory)
-				return false;
-			return true;
-		});
-
-		const map = new Map<
-			string,
-			Array<{
-				product: (typeof activeProducts)[0];
-				classInfo?: (typeof activeClasses)[0];
-				systemClasses?: typeof activeSystemClasses;
-			}>
-		>();
-
-		for (const product of textFiltered) {
-			const classInfo = productClassMap.get(product.id);
-			const allSc = productSystemClassesMap.get(product.id);
-			if (!map.has(product.name)) map.set(product.name, []);
-			map.get(product.name)?.push({ product, classInfo, systemClasses: allSc });
-		}
-
-		const groups = Array.from(map.values()).map((variants) =>
-			[...variants].sort((a, b) => {
-				const aHasSc = (a.systemClasses ?? []).length > 0;
-				const bHasSc = (b.systemClasses ?? []).length > 0;
-				if (!aHasSc && bHasSc) return -1;
-				if (aHasSc && !bHasSc) return 1;
-				const aName = a.systemClasses?.[0]?.name ?? '';
-				const bName = b.systemClasses?.[0]?.name ?? '';
-				return aName.localeCompare(bName);
-			}),
-		);
-
-		return groups.filter((variants) => {
-			if (!selectedMachine && !selectedSoftware) return true;
-			return variants.some((v) => {
-				const machineOk =
-					!selectedMachine || v.product.machine === selectedMachine;
-				const softwareOk =
-					!selectedSoftware || v.product.software === selectedSoftware;
-				return machineOk && softwareOk;
-			});
-		});
-	}, [
-		activeProducts,
-		search,
-		activeCategory,
-		selectedMachine,
-		selectedSoftware,
-		productClassMap,
-		productSystemClassesMap,
-	]);
+	const filtered = (courses ?? [])
+		.filter((c) => c.published)
+		.filter((c) => c.title.toLowerCase().includes(search.toLowerCase()));
 
 	return (
 		<>
@@ -162,119 +41,27 @@ export function StoreContent() {
 				/>
 			</div>
 
-			{/* Category filter */}
-			<div className="flex items-center gap-2 mb-4 flex-wrap">
-				{categories.map((cat) => (
-					<button
-						key={cat}
-						type="button"
-						onClick={() => setActiveCategory(cat)}
-						className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 cursor-pointer ${
-							activeCategory === cat
-								? 'bg-violet-600 text-white'
-								: 'bg-white dark:bg-[#1a1a1d] text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-white/10 hover:border-violet-500/40 hover:text-slate-900 dark:hover:text-white shadow-sm dark:shadow-none'
-						}`}
-					>
-						{cat}
-					</button>
-				))}
-				{!isLoading && (
-					<span className="ml-auto text-sm text-slate-500 dark:text-gray-500">
-						{filteredGroups.length}{' '}
-						{filteredGroups.length === 1 ? 'resultado' : 'resultados'}
-					</span>
-				)}
-			</div>
-
-			{/* Machine + Software filter */}
-			{(machines.length > 0 || softwares.length > 0) && (
-				<div className="flex flex-wrap items-center gap-3 mb-8">
-					{machines.length > 0 && (
-						<div className="relative">
-							<Monitor className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-violet-600 pointer-events-none" />
-							<select
-								value={selectedMachine}
-								onChange={(e) => setSelectedMachine(e.target.value)}
-								className="appearance-none bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 hover:border-violet-500/40 rounded-xl pl-9 pr-8 py-2 text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:border-violet-500/50 transition-colors cursor-pointer shadow-sm dark:shadow-none"
-							>
-								<option value="">Qual sua máquina?</option>
-								{machines.map((m) => (
-									<option key={m} value={m}>
-										{m}
-									</option>
-								))}
-							</select>
-							<ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-						</div>
-					)}
-
-					{softwares.length > 0 && (
-						<div className="relative">
-							<Cpu className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-violet-600 pointer-events-none" />
-							<select
-								value={selectedSoftware}
-								onChange={(e) => setSelectedSoftware(e.target.value)}
-								className="appearance-none bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 hover:border-violet-500/40 rounded-xl pl-9 pr-8 py-2 text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:border-violet-500/50 transition-colors cursor-pointer shadow-sm dark:shadow-none"
-							>
-								<option value="">Qual seu software?</option>
-								{softwares.map((s) => (
-									<option key={s} value={s}>
-										{s}
-									</option>
-								))}
-							</select>
-							<ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-						</div>
-					)}
-
-					{hasFilters && (
-						<button
-							type="button"
-							onClick={() => {
-								setSelectedMachine('');
-								setSelectedSoftware('');
-							}}
-							className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer"
-						>
-							<X className="w-3.5 h-3.5" />
-							Limpar filtros
-						</button>
-					)}
+			{!isLoading && (
+				<div className="mb-6 text-sm text-slate-500 dark:text-gray-500 text-right">
+					{filtered.length} {filtered.length === 1 ? 'resultado' : 'resultados'}
 				</div>
 			)}
 
 			{isLoading ? (
 				<div className="animate-pulse space-y-6">
-					{/* Skeleton search bar */}
-					<div className="max-w-md mx-auto">
-						<div className="h-10 w-full rounded-xl bg-slate-200 dark:bg-white/5" />
-					</div>
-					{/* Skeleton filter pills */}
-					<div className="flex gap-2">
-						{Array.from({ length: 4 }).map((_, i) => (
-							<div
-								key={i}
-								className="h-8 w-20 rounded-full bg-slate-200 dark:bg-white/5"
-							/>
-						))}
-					</div>
-					{/* Skeleton product cards */}
 					<div className="flex flex-col gap-8">
 						{Array.from({ length: 3 }).map((_, i) => (
 							<div
 								key={i}
-								className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-6"
+								className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden"
 							>
-								<div className="flex items-start gap-5">
-									<div className="w-24 h-24 rounded-xl bg-slate-200 dark:bg-white/5 shrink-0" />
-									<div className="flex-1 space-y-3">
-										<div className="h-5 w-48 rounded bg-slate-200 dark:bg-white/5" />
-										<div className="h-4 w-full rounded bg-slate-200 dark:bg-white/5" />
-										<div className="h-4 w-3/4 rounded bg-slate-200 dark:bg-white/5" />
-										<div className="flex gap-2 mt-3">
-											<div className="h-8 w-24 rounded-lg bg-slate-200 dark:bg-white/5" />
-											<div className="h-8 w-24 rounded-lg bg-slate-200 dark:bg-white/5" />
-										</div>
+								<div className="h-52 bg-slate-200 dark:bg-white/5" />
+								<div className="p-6 space-y-3">
+									<div className="h-5 w-48 rounded bg-slate-200 dark:bg-white/5" />
+									<div className="h-4 w-full rounded bg-slate-200 dark:bg-white/5" />
+									<div className="flex gap-3 mt-4">
+										<div className="flex-1 h-40 rounded-lg bg-slate-200 dark:bg-white/5" />
+										<div className="flex-1 h-40 rounded-lg bg-slate-200 dark:bg-white/5" />
 									</div>
 								</div>
 							</div>
@@ -288,13 +75,13 @@ export function StoreContent() {
 						Tente novamente mais tarde
 					</p>
 				</div>
-			) : filteredGroups.length > 0 ? (
+			) : filtered.length > 0 ? (
 				<div className="flex flex-col gap-8">
-					{filteredGroups.map((variants) => (
-						<StoreProductCard
-							key={variants[0].product.name}
-							variants={variants}
-							ownedPlans={ownedPlans}
+					{filtered.map((course) => (
+						<StoreCourseCard
+							key={course.id}
+							course={course}
+							currentPlanKey={currentPlanKey}
 						/>
 					))}
 				</div>

@@ -1,5 +1,12 @@
 import { apiCourses as api } from '@/shared/lib/api-courses';
 import {
+	type InvoicesAnalytics,
+	type InvoicesAnalyticsParams,
+	type InvoicesSummary,
+	invoicesAnalyticsSchema,
+	invoicesSummarySchema,
+	type RefundRow,
+	refundRowSchema,
 	type SalesAnalytics,
 	type SalesAnalyticsParams,
 	type SalesSummary,
@@ -42,4 +49,30 @@ export async function getVoxesSummary(
 		params,
 	});
 	return voxesSummarySchema.parse(data);
+}
+
+export async function getInvoicesAnalytics(
+	params: InvoicesAnalyticsParams = {},
+): Promise<InvoicesAnalytics> {
+	const { data } = await api.get('/v1/admin/analytics/invoices', { params });
+	return invoicesAnalyticsSchema.parse(data);
+}
+
+export async function getInvoicesSummary(
+	params: Omit<InvoicesAnalyticsParams, 'page' | 'per_page'> = {},
+): Promise<InvoicesSummary> {
+	const { data } = await api.get('/v1/admin/analytics/invoices/summary', {
+		params,
+	});
+	return invoicesSummarySchema.parse(data);
+}
+
+export async function getPlanRefunds(): Promise<RefundRow[]> {
+	const { data } = await api.get('/v1/refunds/plans');
+	return refundRowSchema.array().parse(data);
+}
+
+export async function getVoxRefunds(): Promise<RefundRow[]> {
+	const { data } = await api.get('/v1/refunds/vox');
+	return refundRowSchema.array().parse(data);
 }

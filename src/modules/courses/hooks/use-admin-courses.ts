@@ -7,9 +7,20 @@ import {
 	createCourse,
 	deleteCourse,
 	listAdminCourses,
+	listCourses,
 	updateCourse,
 	uploadCourseImage,
 } from '../services/courses.service';
+
+export const coursesQueryKey = ['courses', 'catalog'] as const;
+
+export function useCourses() {
+	return useQuery({
+		queryKey: coursesQueryKey,
+		queryFn: listCourses,
+	});
+}
+
 import type {
 	CreateCoursePayload,
 	UpdateCoursePayload,
