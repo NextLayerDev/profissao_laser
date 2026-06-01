@@ -7,24 +7,34 @@ import { formatMessageTime } from '@/utils/formatDate';
 
 interface ForumRecentDiscussionsProps {
 	limit?: number;
+	/** Quando preenchido, filtra os posts por texto (título/conteúdo). */
+	search?: string;
+	/** Título da seção (default "Discussões Recentes"). */
+	title?: string;
 }
 
 /**
  * Section "Discussões Recentes" no estilo LPF "What's New" — mostra os posts
  * mais recentes do fórum INDEPENDENTE de categoria. Garante que mesmo sem
- * categorias cadastradas o customer veja as conversas existentes.
+ * categorias cadastradas o customer veja as conversas existentes. Com `search`
+ * preenchido, vira a lista de resultados da busca.
  */
 export function ForumRecentDiscussions({
 	limit = 20,
+	search,
+	title = 'Discussões Recentes',
 }: ForumRecentDiscussionsProps) {
-	const { data: postsResponse, isLoading } = useForumPosts({ limit });
+	const { data: postsResponse, isLoading } = useForumPosts({
+		limit,
+		search: search?.trim() || undefined,
+	});
 	const posts = postsResponse?.posts ?? [];
 
 	if (isLoading) {
 		return (
 			<section className="space-y-3">
 				<h2 className="font-display text-base font-bold text-slate-900 dark:text-white">
-					Discussões Recentes
+					{title}
 				</h2>
 				<div className="flex items-center justify-center py-10 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl">
 					<Loader2 className="w-5 h-5 animate-spin text-violet-500" />
@@ -37,10 +47,12 @@ export function ForumRecentDiscussions({
 		return (
 			<section className="space-y-3">
 				<h2 className="font-display text-base font-bold text-slate-900 dark:text-white">
-					Discussões Recentes
+					{title}
 				</h2>
 				<div className="py-10 text-center text-sm text-slate-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl">
-					Ainda não tem discussões. Seja o primeiro!
+					{search
+						? 'Nenhuma discussão encontrada para essa busca.'
+						: 'Ainda não tem discussões. Seja o primeiro!'}
 				</div>
 			</section>
 		);
