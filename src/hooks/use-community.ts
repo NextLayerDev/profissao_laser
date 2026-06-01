@@ -72,6 +72,11 @@ const COMMUNITY_KEYS = {
 	stats: () => ['community', 'stats'] as const,
 };
 
+// Cache: a comunidade muda devagar. Sem staleTime o React Query recarregava
+// TUDO a cada navegação (a "demora ao abrir" de chat/eventos/membros).
+const STALE_SECONDS = 30 * 1000;
+const STALE_MINUTES = 5 * 60 * 1000;
+
 export function useCommunityPosts(page = 1, limit = 20) {
 	return useQuery({
 		queryKey: COMMUNITY_KEYS.posts(page, limit),
@@ -97,6 +102,7 @@ export function useCommunityChannels() {
 	return useQuery({
 		queryKey: COMMUNITY_KEYS.channels(),
 		queryFn: getChannels,
+		staleTime: STALE_MINUTES,
 	});
 }
 
@@ -176,6 +182,7 @@ export function useChannelMessages(
 				limit: options?.limit ?? 50,
 			});
 		},
+		staleTime: STALE_SECONDS,
 		enabled: !!channelId,
 	});
 }
@@ -226,6 +233,7 @@ export function useCommunityMembers(
 	return useQuery({
 		queryKey: COMMUNITY_KEYS.members(search, category, featured, online),
 		queryFn: () => getMembers({ search, category, featured, online }),
+		staleTime: STALE_MINUTES,
 	});
 }
 
@@ -233,6 +241,7 @@ export function useOnlineMembers() {
 	return useQuery({
 		queryKey: COMMUNITY_KEYS.members(undefined, undefined, undefined, 'true'),
 		queryFn: () => getMembers({ online: 'true' }),
+		staleTime: STALE_SECONDS,
 	});
 }
 
@@ -240,6 +249,7 @@ export function useFeaturedMembers() {
 	return useQuery({
 		queryKey: COMMUNITY_KEYS.members(undefined, undefined, 'true'),
 		queryFn: () => getMembers({ featured: 'true' }),
+		staleTime: STALE_MINUTES,
 	});
 }
 
@@ -436,6 +446,7 @@ export function useCommunityEvents(from?: string, to?: string) {
 	return useQuery({
 		queryKey: COMMUNITY_KEYS.events(from, to),
 		queryFn: () => getEvents({ from, to }),
+		staleTime: STALE_MINUTES,
 	});
 }
 
