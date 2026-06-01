@@ -5,7 +5,6 @@ import {
 	LayoutGrid,
 	MessageCircle,
 	MessageSquare,
-	Palette,
 	PenLine,
 	Play,
 	Radio,
@@ -145,14 +144,6 @@ export const quickAccessItems: QuickAccessItem[] = [
 		section: 'COMUNIDADE',
 		href: '/course/vitrine',
 		...TOOL_COLORS.vitrine,
-	},
-	{
-		label: 'Canva',
-		description: 'Templates e designs',
-		Icon: Palette,
-		section: 'FERRAMENTAS',
-		href: '/course/canva',
-		...TOOL_COLORS.canva,
 	},
 	{
 		label: 'Fornecedores Vendas',
