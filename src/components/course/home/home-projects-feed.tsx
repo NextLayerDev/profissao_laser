@@ -98,13 +98,16 @@ function FeedCard({ p }: { p: Project }) {
 				</div>
 			</div>
 
-			{/* Imagem 16:9 */}
+			{/* Imagem adaptativa: mostra a imagem inteira (sem corte), tipo Insta */}
 			{p.img ? (
-				<Link href={`/course/vitrine?project=${p.id}`} className="block mt-2">
+				<Link
+					href={`/course/vitrine?project=${p.id}`}
+					className="block mt-2 bg-slate-100 dark:bg-white/[0.03]"
+				>
 					<img
 						src={p.img}
 						alt={p.title}
-						className="w-full aspect-[16/9] object-cover bg-slate-100 dark:bg-white/[0.03]"
+						className="w-full max-h-[480px] object-contain"
 						loading="lazy"
 					/>
 				</Link>
