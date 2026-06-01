@@ -3,8 +3,10 @@ import type {
 	LaserParameter,
 	ParameterMachine,
 	ParameterMaterial,
+	ParameterSidebar,
 	ParameterStats,
 	ParametersResponse,
+	ParameterWithPasses,
 } from '@/types/parameters';
 
 // ─── Query params ────────────────────────────────────────────────────────────
@@ -19,6 +21,7 @@ export interface ParametersQueryParams {
 	search?: string;
 	mode?: string;
 	software?: string;
+	category?: string;
 }
 
 export interface CommunityParametersQueryParams extends ParametersQueryParams {
@@ -69,6 +72,8 @@ export interface CreateParameterPayload {
 	forcarSeparacao?: boolean | null;
 	axisRotative?: boolean | null;
 	lineTypeId?: string | null;
+	imageUrl?: string | null;
+	category?: string | null;
 }
 
 export async function createParameter(
@@ -99,6 +104,22 @@ export async function getCommunityParameters(
 		params,
 	});
 	return data ?? { data: [], total: 0 };
+}
+
+/** Parâmetro + suas passadas em ordem (pai = passada 1, depois os filhos). */
+export async function getParameterPasses(
+	id: string,
+): Promise<ParameterWithPasses> {
+	const { data } = await api.get<ParameterWithPasses>(
+		`/parameters/${id}/passes`,
+	);
+	return data;
+}
+
+/** Sidebar: top contribuidores, atividade recente, mais usados. */
+export async function getParameterSidebar(): Promise<ParameterSidebar> {
+	const { data } = await api.get<ParameterSidebar>('/parameters/sidebar');
+	return data;
 }
 
 // ─── Stats / Machines / Materials ────────────────────────────────────────────

@@ -37,6 +37,40 @@ export interface LaserParameter {
 	userRating?: number | null;
 	createdAt: string;
 	updatedAt: string;
+	// Imagem + categoria (redesign)
+	imageUrl?: string | null;
+	category?: string | null;
+	// Multi-passada: parâmetro "pai" com N passadas (cada passada = um parâmetro)
+	parentId?: string | null;
+	passOrder?: number | null;
+	isParent?: boolean;
+	passCount?: number;
+}
+
+/** Parâmetro + suas passadas em ordem (pai = passada 1). */
+export interface ParameterWithPasses extends Omit<LaserParameter, 'passes'> {
+	passes: LaserParameter[];
+}
+
+/** Sidebar do redesign de Parâmetros. */
+export interface ParameterSidebar {
+	topContributors: {
+		createdBy: string;
+		name: string | null;
+		count: number;
+	}[];
+	recentActivity: {
+		id: string;
+		material: string;
+		createdByName: string | null;
+		createdAt: string;
+	}[];
+	mostUsed: {
+		id: string;
+		material: string;
+		imageUrl: string | null;
+		likesCount: number;
+	}[];
 }
 
 export interface ParametersResponse {
