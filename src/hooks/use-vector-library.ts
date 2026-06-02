@@ -46,6 +46,7 @@ export function useVectorLibraryContents(
 	return useQuery({
 		queryKey: key,
 		queryFn: () => getFolderContents(parentIdOrParams ?? null),
+		staleTime: 5 * 60_000,
 	});
 }
 
@@ -53,6 +54,7 @@ export function useVectorLibraryStats(enabled = true) {
 	return useQuery({
 		queryKey: [...VECTOR_LIBRARY_KEYS.all, 'stats'] as const,
 		queryFn: getVectorLibraryStats,
+		staleTime: 5 * 60_000,
 		enabled,
 	});
 }
@@ -61,6 +63,7 @@ export function useVectorLibraryCategories(enabled = true) {
 	return useQuery({
 		queryKey: [...VECTOR_LIBRARY_KEYS.all, 'categories'] as const,
 		queryFn: getVectorLibraryCategories,
+		staleTime: 5 * 60_000,
 		enabled,
 	});
 }
@@ -69,6 +72,7 @@ export function useVectorLibraryFormats(enabled = true) {
 	return useQuery({
 		queryKey: [...VECTOR_LIBRARY_KEYS.all, 'formats'] as const,
 		queryFn: getVectorLibraryFormats,
+		staleTime: 5 * 60_000,
 		enabled,
 	});
 }
@@ -85,6 +89,7 @@ export function useVectorLibraryFeatured(enabled = true) {
 	return useQuery({
 		queryKey: [...VECTOR_LIBRARY_KEYS.all, 'featured'] as const,
 		queryFn: getVectorLibraryFeatured,
+		staleTime: 5 * 60_000,
 		enabled,
 	});
 }

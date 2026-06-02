@@ -1,6 +1,11 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+	keepPreviousData,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from '@tanstack/react-query';
 import type { GetForumPostsParams } from '@/services/forum';
 import {
 	acceptForumReply,
@@ -28,6 +33,7 @@ export function useForumCategories(enabled = true) {
 	return useQuery({
 		queryKey: [...QUERY_KEY, 'categories'] as const,
 		queryFn: getForumCategories,
+		staleTime: 5 * 60_000,
 		enabled,
 	});
 }
@@ -79,6 +85,8 @@ export function useForumPosts(
 	return useQuery({
 		queryKey: [...QUERY_KEY, 'posts', params] as const,
 		queryFn: () => getForumPosts(params),
+		placeholderData: keepPreviousData,
+		staleTime: 90_000,
 		enabled,
 	});
 }
@@ -90,6 +98,7 @@ export function useForumPost(id: string | null, enabled = true) {
 			if (!id) throw new Error('ID required');
 			return getForumPost(id);
 		},
+		staleTime: 90_000,
 		enabled: !!id && enabled,
 	});
 }

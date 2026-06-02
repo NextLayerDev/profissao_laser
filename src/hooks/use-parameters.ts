@@ -1,6 +1,11 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+	keepPreviousData,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type {
 	CommunityParametersQueryParams,
@@ -32,6 +37,7 @@ export function useParameters(params?: ParametersQueryParams, enabled = true) {
 	return useQuery({
 		queryKey: [...QUERY_KEY, 'list', params] as const,
 		queryFn: () => getParameters(params),
+		placeholderData: keepPreviousData,
 		enabled,
 	});
 }
@@ -43,6 +49,8 @@ export function useCommunityParameters(
 	return useQuery({
 		queryKey: [...QUERY_KEY, 'community', params] as const,
 		queryFn: () => getCommunityParameters(params),
+		placeholderData: keepPreviousData,
+		staleTime: 5 * 60_000,
 		enabled,
 	});
 }
@@ -51,6 +59,7 @@ export function useParameterStats(enabled = true) {
 	return useQuery({
 		queryKey: [...QUERY_KEY, 'stats'] as const,
 		queryFn: getParameterStats,
+		staleTime: 5 * 60_000,
 		enabled,
 	});
 }
@@ -70,7 +79,7 @@ export function useParameterSidebar(enabled = true) {
 	return useQuery({
 		queryKey: [...QUERY_KEY, 'sidebar'] as const,
 		queryFn: getParameterSidebar,
-		staleTime: 60 * 1000,
+		staleTime: 5 * 60_000,
 		enabled,
 	});
 }
@@ -79,6 +88,7 @@ export function useParameterMachines(enabled = true) {
 	return useQuery({
 		queryKey: [...QUERY_KEY, 'machines'] as const,
 		queryFn: getParameterMachines,
+		staleTime: 5 * 60_000,
 		enabled,
 	});
 }
@@ -87,6 +97,7 @@ export function useParameterMaterials(enabled = true) {
 	return useQuery({
 		queryKey: [...QUERY_KEY, 'materials'] as const,
 		queryFn: getParameterMaterials,
+		staleTime: 5 * 60_000,
 		enabled,
 	});
 }
