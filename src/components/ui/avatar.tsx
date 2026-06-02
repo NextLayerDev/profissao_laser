@@ -1,6 +1,9 @@
 'use client';
 
-import { defaultAvatarFor } from '@/utils/constants/avatar-presets';
+import {
+	defaultAvatarFor,
+	seasonalUrl,
+} from '@/utils/constants/avatar-presets';
 
 interface AvatarProps {
 	/** URL da foto. Quando ausente, mostra as iniciais. */
@@ -49,7 +52,8 @@ export function Avatar({
 	const base = `${rounded} shrink-0 overflow-hidden ${className}`;
 	// Sem foto enviada: cai pro ícone default (por gênero do nome, estável por
 	// usuário). Foto enviada (Bunny) ou ícone-preset (/avatars) — ambos via <img>.
-	const imageSrc = src || defaultAvatarFor(name, email);
+	// seasonalUrl tematiza os ícones-preset durante a Festa Junina (e só eles).
+	const imageSrc = seasonalUrl(src || defaultAvatarFor(name, email));
 	return (
 		<img
 			src={imageSrc}

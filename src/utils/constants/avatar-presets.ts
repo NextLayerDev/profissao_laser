@@ -1,7 +1,10 @@
 /**
- * Ícones de perfil (estilo Netflix). 6 cores em /public/avatars.
+ * Ícones de perfil (estilo Netflix). 7 cores em /public/avatars.
  * Default por gênero do nome: feminino rosa/roxo, masculino azul/verde.
- * Laranja e lima são extras (disponíveis no picker pra todo mundo).
+ * Laranja, lima e vermelho são extras (disponíveis no picker pra todo mundo).
+ *
+ * Durante a Festa Junina (até 15/07), `seasonalUrl` troca cada ícone pela sua
+ * versão temática em /avatars/festa — só no render, sem gravar nada no banco.
  */
 export const AVATAR_PRESETS = [
 	'rosa',
@@ -10,6 +13,7 @@ export const AVATAR_PRESETS = [
 	'verde',
 	'laranja',
 	'lima',
+	'vermelho',
 ] as const;
 export type AvatarPreset = (typeof AVATAR_PRESETS)[number];
 
@@ -21,6 +25,30 @@ export function avatarPresetUrl(p: AvatarPreset): string {
 /** True se a URL é um dos nossos ícones-preset (vs. foto enviada). */
 export function isAvatarPresetUrl(url?: string | null): boolean {
 	return !!url && AVATAR_PRESETS.some((p) => url.endsWith(`/avatars/${p}.png`));
+}
+
+// ─── Tema sazonal: Festa Junina ───────────────────────────────────────────────
+// Na temporada trocamos os ícones-preset pelas versões temáticas em
+// /public/avatars/festa (mesmas cores + xadrez/cacto/balão). Em 16/07 volta
+// sozinho ao normal — nada temático é gravado, a troca acontece só no render.
+const FESTA_UNTIL = new Date('2026-07-16T00:00:00-03:00');
+
+/** Estamos no período de Festa Junina? (até 15/07, inclusive). */
+export function isFestaSeason(now: Date = new Date()): boolean {
+	return now < FESTA_UNTIL;
+}
+
+/**
+ * Na temporada, troca a URL de um ícone-preset normal pela versão festa.
+ * Fotos enviadas (Bunny) e URLs não-preset passam intactas; fora da temporada
+ * devolve a URL original (revert automático pela data).
+ */
+export function seasonalUrl(url: string): string {
+	if (!isFestaSeason()) return url;
+	for (const p of AVATAR_PRESETS) {
+		if (url.endsWith(`/avatars/${p}.png`)) return `/avatars/festa/${p}.png`;
+	}
+	return url;
 }
 
 const FEMALE_ICONS: AvatarPreset[] = ['rosa', 'roxo'];
