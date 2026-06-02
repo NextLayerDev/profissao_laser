@@ -98,17 +98,18 @@ function FeedCard({ p }: { p: Project }) {
 				</div>
 			</div>
 
-			{/* Imagem inteira, SEM corte: largura cheia + altura automática — a
-			    altura acompanha o formato da imagem (mostra a imagem toda). */}
+			{/* Imagem inteira, SEM corte, mas com TETO de altura (~420px) p/ o feed
+			    rolar rápido: object-contain encolhe pra caber — larga preenche a
+			    largura; alta fica contida e centralizada (faixas sutis nas laterais). */}
 			{p.img ? (
 				<Link
 					href={`/course/vitrine?project=${p.id}`}
-					className="mt-2 block bg-slate-100 dark:bg-white/[0.03]"
+					className="mt-2 flex max-h-[420px] items-center justify-center overflow-hidden bg-slate-100 dark:bg-white/[0.03]"
 				>
 					<img
 						src={p.img}
 						alt={p.title}
-						className="h-auto w-full"
+						className="max-h-[420px] w-auto max-w-full object-contain"
 						loading="lazy"
 					/>
 				</Link>
