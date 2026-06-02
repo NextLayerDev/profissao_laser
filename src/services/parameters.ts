@@ -44,6 +44,27 @@ export async function getParameter(id: string): Promise<LaserParameter> {
 	return data;
 }
 
+/** Receita de uma passada extra (2..N). Sem máquina/material — herdam do pai. */
+export interface PassRecipe {
+	speed: number;
+	power: number;
+	frequency: number;
+	line: number;
+	crossHatch?: boolean;
+	angle: number;
+	passes: number;
+	passesFill: number;
+	defocus?: number | null;
+	gas?: boolean;
+	notes?: string | null;
+	tamanhoLinha?: number | null;
+	tamanhoDivisao?: number | null;
+	sobreposicao?: number | null;
+	forcarSeparacao?: boolean | null;
+	axisRotative?: boolean | null;
+	lineTypeId?: string | null;
+}
+
 export interface CreateParameterPayload {
 	machine: string;
 	powerWatts: number;
@@ -74,6 +95,8 @@ export interface CreateParameterPayload {
 	lineTypeId?: string | null;
 	imageUrl?: string | null;
 	category?: string | null;
+	/** Multi-passada: passadas extras (2..N). A passada 1 = recipe acima. */
+	extraPasses?: PassRecipe[];
 }
 
 export async function createParameter(

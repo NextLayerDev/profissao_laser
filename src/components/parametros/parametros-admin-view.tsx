@@ -1,6 +1,8 @@
 'use client';
 
 import {
+	ArrowDown,
+	ArrowUp,
 	Check,
 	Cpu,
 	Download,
@@ -12,10 +14,11 @@ import {
 	Search,
 	SlidersHorizontal,
 	Table,
+	Trash2,
 	Users,
 	X,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { LaserLineTypesAdminSection } from '@/components/parametros/laser-line-types-admin-section';
 import { ParameterGridCard } from '@/components/parametros/parameter-grid-card';
 import { SoftwareSpecificFields as SharedSoftwareSpecificFields } from '@/components/parametros/software-specific-fields';
@@ -25,12 +28,13 @@ import {
 	useDeleteParameter,
 	useExportParameters,
 	useParameterMaterials,
+	useParameterPasses,
 	useParameterStats,
 	useParameters,
 	useUpdateParameter,
 	useUploadParameterImage,
 } from '@/hooks/use-parameters';
-import type { CreateParameterPayload } from '@/services/parameters';
+import type { CreateParameterPayload, PassRecipe } from '@/services/parameters';
 import type { LaserParameter } from '@/types/parameters';
 import {
 	LENS_OPTIONS,
@@ -627,6 +631,7 @@ export function ParametrosAdminView() {
 			{editTarget && (
 				<ParameterFormModal
 					title="Editar parametro"
+					editId={editTarget.id}
 					initial={{
 						machine: editTarget.machine ?? '',
 						powerWatts: editTarget.powerWatts ?? 0,
@@ -692,17 +697,89 @@ function ParameterFormModal({
 	title,
 	initial,
 	isPending,
+	editId,
 	onClose,
 	onSubmit,
 }: {
 	title: string;
 	initial: CreateParameterPayload;
 	isPending: boolean;
+	editId?: string;
 	onClose: () => void;
 	onSubmit: (payload: CreateParameterPayload) => void;
 }) {
 	const [form, setForm] = useState<CreateParameterPayload>(initial);
 	const uploadImage = useUploadParameterImage();
+	const { data: passesData } = useParameterPasses(editId ?? null, !!editId);
+	const passesLoaded = useRef(false);
+	// Ao editar um parametro multi-passada, carrega as passadas extras (2..N).
+	useEffect(() => {
+		if (!passesData || passesLoaded.current) return;
+		passesLoaded.current = true;
+		const extras = (passesData.passes ?? [])
+			.filter((p) => (p.passOrder ?? 1) >= 2)
+			.sort((a, b) => (a.passOrder ?? 0) - (b.passOrder ?? 0))
+			.map(
+				(p): PassRecipe => ({
+					speed: p.speed,
+					power: p.power,
+					frequency: p.frequency,
+					line: p.line ?? 0,
+					crossHatch: p.crossHatch ?? false,
+					angle: p.angle ?? 0,
+					passes: p.passes,
+					passesFill: p.passesFill ?? 1,
+					defocus: p.defocus ?? null,
+					gas: typeof p.gas === 'boolean' ? p.gas : false,
+					notes: p.notes ?? '',
+				}),
+			);
+		if (extras.length) setForm((prev) => ({ ...prev, extraPasses: extras }));
+	}, [passesData]);
+
+	const extraPasses = form.extraPasses;
+	const addPass = () => {
+		const base: PassRecipe = {
+			speed: form.speed,
+			power: form.power,
+			frequency: form.frequency,
+			line: form.line,
+			crossHatch: form.crossHatch,
+			angle: form.angle,
+			passes: 1,
+			passesFill: 1,
+			defocus: form.defocus ?? null,
+			gas: form.gas ?? false,
+			notes: '',
+		};
+		setForm((p) => ({ ...p, extraPasses: [...(p.extraPasses ?? []), base] }));
+	};
+	const removePass = (i: number) =>
+		setForm((p) => ({
+			...p,
+			extraPasses: (p.extraPasses ?? []).filter((_, idx) => idx !== i),
+		}));
+	const updatePass = <K extends keyof PassRecipe>(
+		i: number,
+		field: K,
+		value: PassRecipe[K],
+	) =>
+		setForm((p) => ({
+			...p,
+			extraPasses: (p.extraPasses ?? []).map((pass, idx) =>
+				idx === i ? { ...pass, [field]: value } : pass,
+			),
+		}));
+	const movePass = (i: number, dir: -1 | 1) =>
+		setForm((p) => {
+			const arr = [...(p.extraPasses ?? [])];
+			const j = i + dir;
+			if (j < 0 || j >= arr.length) return p;
+			const tmp = arr[i];
+			arr[i] = arr[j];
+			arr[j] = tmp;
+			return { ...p, extraPasses: arr };
+		});
 
 	const set = <K extends keyof CreateParameterPayload>(
 		field: K,
@@ -1114,6 +1191,147 @@ function ParameterFormModal({
 						</span>
 					</label>
 
+					{/* Passadas extras (multi-passada): a passada 1 é a receita acima */}
+					<div className="rounded-xl border border-slate-200 p-4 dark:border-white/10">
+						<div className="flex flex-wrap items-center justify-between gap-2">
+							<div>
+								<p className="text-sm font-semibold text-slate-900 dark:text-white">
+									Passadas extras (multi-passada)
+								</p>
+								<p className="text-xs text-slate-500 dark:text-slate-400">
+									A passada 1 é a receita acima. Adicione 2, 3… — o cliente
+									navega em ordem.
+								</p>
+							</div>
+							<button
+								type="button"
+								onClick={addPass}
+								className="inline-flex items-center gap-1.5 rounded-lg border border-violet-300 px-3 py-1.5 text-sm font-semibold text-violet-600 hover:bg-violet-50 dark:border-violet-500/40 dark:text-violet-400 dark:hover:bg-violet-500/10"
+							>
+								<Plus className="h-4 w-4" />
+								Adicionar passada
+							</button>
+						</div>
+						{(extraPasses ?? []).map((pass, i) => (
+							<div
+								key={`pass-${i}`}
+								className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5"
+							>
+								<div className="mb-2 flex items-center justify-between">
+									<span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+										Passada {i + 2}
+									</span>
+									<div className="flex items-center gap-1">
+										<button
+											type="button"
+											onClick={() => movePass(i, -1)}
+											disabled={i === 0}
+											title="Subir"
+											className="rounded p-1 text-slate-400 hover:text-violet-600 disabled:opacity-30 dark:hover:text-violet-400"
+										>
+											<ArrowUp className="h-4 w-4" />
+										</button>
+										<button
+											type="button"
+											onClick={() => movePass(i, 1)}
+											disabled={i === (extraPasses?.length ?? 0) - 1}
+											title="Descer"
+											className="rounded p-1 text-slate-400 hover:text-violet-600 disabled:opacity-30 dark:hover:text-violet-400"
+										>
+											<ArrowDown className="h-4 w-4" />
+										</button>
+										<button
+											type="button"
+											onClick={() => removePass(i)}
+											title="Remover passada"
+											className="rounded p-1 text-slate-400 hover:text-red-600 dark:hover:text-red-400"
+										>
+											<Trash2 className="h-4 w-4" />
+										</button>
+									</div>
+								</div>
+								<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+									<PassNumberField
+										label="Velocidade (mm/s)"
+										value={pass.speed}
+										onChange={(v) => updatePass(i, 'speed', v)}
+									/>
+									<PassNumberField
+										label="Potência (%)"
+										value={pass.power}
+										min={0}
+										max={100}
+										onChange={(v) => updatePass(i, 'power', v)}
+									/>
+									<PassNumberField
+										label="Frequência (kHz)"
+										value={pass.frequency}
+										onChange={(v) => updatePass(i, 'frequency', v)}
+									/>
+									<PassNumberField
+										label="Linha (mm)"
+										value={pass.line}
+										step="0.01"
+										onChange={(v) => updatePass(i, 'line', v)}
+									/>
+									<PassNumberField
+										label="Ângulo (°)"
+										value={pass.angle}
+										min={0}
+										max={360}
+										onChange={(v) => updatePass(i, 'angle', v)}
+									/>
+									<PassNumberField
+										label="Passadas (contorno)"
+										value={pass.passes}
+										min={1}
+										onChange={(v) => updatePass(i, 'passes', v)}
+									/>
+									<PassNumberField
+										label="Passadas (preench.)"
+										value={pass.passesFill}
+										min={1}
+										onChange={(v) => updatePass(i, 'passesFill', v)}
+									/>
+									<PassNumberField
+										label="Desfoque (mm)"
+										value={pass.defocus ?? 0}
+										min={-20}
+										max={20}
+										onChange={(v) => updatePass(i, 'defocus', v)}
+									/>
+								</div>
+								<div className="mt-2 flex flex-wrap gap-4">
+									<label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+										<input
+											type="checkbox"
+											checked={pass.crossHatch ?? false}
+											onChange={(e) =>
+												updatePass(i, 'crossHatch', e.target.checked)
+											}
+											className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+										/>
+										Cross-hatch
+									</label>
+									<label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+										<input
+											type="checkbox"
+											checked={pass.gas ?? false}
+											onChange={(e) => updatePass(i, 'gas', e.target.checked)}
+											className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+										/>
+										Gás
+									</label>
+								</div>
+							</div>
+						))}
+						{(extraPasses?.length ?? 0) === 0 ? (
+							<p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
+								Nenhuma passada extra — este é um parâmetro de passada única.
+							</p>
+						) : null}
+					</div>
+
 					<div className="flex justify-end gap-3 pt-2">
 						<button
 							type="button"
@@ -1202,6 +1420,41 @@ function DeleteParameterModal({
 /* ------------------------------------------------------------------ */
 /*  Software-specific fields (Ezcad / Lightburn)                       */
 /* ------------------------------------------------------------------ */
+
+function PassNumberField({
+	label,
+	value,
+	onChange,
+	min,
+	max,
+	step,
+}: {
+	label: string;
+	value: number;
+	onChange: (v: number) => void;
+	min?: number;
+	max?: number;
+	step?: string;
+}) {
+	return (
+		<div>
+			<span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">
+				{label}
+			</span>
+			<input
+				type="number"
+				min={min}
+				max={max}
+				step={step}
+				value={Number.isFinite(value) ? value : ''}
+				onChange={(e) =>
+					onChange(e.target.value === '' ? 0 : Number(e.target.value))
+				}
+				className={inputCls}
+			/>
+		</div>
+	);
+}
 
 function SoftwareSpecificFields({
 	form,
