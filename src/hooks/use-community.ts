@@ -1,6 +1,11 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+	keepPreviousData,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
 	createChannel,
@@ -81,6 +86,7 @@ export function useCommunityPosts(page = 1, limit = 20) {
 	return useQuery({
 		queryKey: COMMUNITY_KEYS.posts(page, limit),
 		queryFn: () => getPosts({ page, limit }),
+		staleTime: STALE_MINUTES,
 	});
 }
 
@@ -281,6 +287,8 @@ export function useCommunityProjects(
 				search: params?.search || undefined,
 				sort: params?.sort,
 			}),
+		placeholderData: keepPreviousData,
+		staleTime: STALE_MINUTES,
 	});
 }
 
@@ -512,6 +520,7 @@ export function useCommunityRanking(period?: 'week' | 'month') {
 	return useQuery({
 		queryKey: COMMUNITY_KEYS.ranking(period),
 		queryFn: () => getRanking({ period }),
+		staleTime: STALE_MINUTES,
 	});
 }
 
@@ -519,6 +528,7 @@ export function useCommunityActivity(page = 1, limit = 5) {
 	return useQuery({
 		queryKey: COMMUNITY_KEYS.activity(page, limit),
 		queryFn: () => getActivity({ page, limit }),
+		staleTime: STALE_MINUTES,
 	});
 }
 

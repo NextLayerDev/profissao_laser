@@ -4,6 +4,7 @@ import { Eye, MessageSquare, Search, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Avatar } from '@/components/ui/avatar';
 import { ModalOverlay } from '@/components/ui/modal-overlay';
+import { MemberCardsSkeleton } from '@/components/ui/skeletons/community-grid-skeleton';
 import { useCommunityMembers } from '@/hooks/use-community';
 
 interface MembersViewProps {
@@ -21,7 +22,7 @@ export function MembersView({ isAdmin: _isAdmin = false }: MembersViewProps) {
 		image?: string;
 	} | null>(null);
 
-	const { data: members = [] } = useCommunityMembers(
+	const { data: members = [], isLoading } = useCommunityMembers(
 		memberSearch || undefined,
 		memberFilter === 'all' ? undefined : memberFilter,
 	);
@@ -143,7 +144,9 @@ export function MembersView({ isAdmin: _isAdmin = false }: MembersViewProps) {
 				</div>
 
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-					{members.length > 0 ? (
+					{isLoading && members.length === 0 ? (
+						<MemberCardsSkeleton />
+					) : members.length > 0 ? (
 						members.map((member, index) => (
 							<div
 								key={`${member.name}-${member.specialty}-${index}`}

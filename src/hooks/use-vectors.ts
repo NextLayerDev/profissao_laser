@@ -1,6 +1,11 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+	keepPreviousData,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { type VectorizeParams, vectorizeImage } from '@/services/vectorize';
 import {
@@ -24,6 +29,8 @@ export function useCustomerVectors(params?: {
 	return useQuery({
 		queryKey: VECTORS_KEYS.list(params?.page, params?.limit, params?.search),
 		queryFn: () => getCustomerVectors(params),
+		placeholderData: keepPreviousData,
+		staleTime: 90_000,
 	});
 }
 

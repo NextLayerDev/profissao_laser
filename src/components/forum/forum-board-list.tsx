@@ -1,8 +1,8 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
 import { useMemo } from 'react';
 import { ForumBoardRow } from '@/components/forum/forum-board-row';
+import { ForumBoardSkeleton } from '@/components/ui/skeletons/forum-skeleton';
 import { useForumCategories, useForumPosts } from '@/hooks/use-forum';
 
 export function ForumBoardList() {
@@ -28,11 +28,7 @@ export function ForumBoardList() {
 	}, [recentPosts]);
 
 	if (catsLoading || postsLoading) {
-		return (
-			<div className="flex items-center justify-center py-16">
-				<Loader2 className="w-6 h-6 animate-spin text-violet-500" />
-			</div>
-		);
+		return <ForumBoardSkeleton />;
 	}
 
 	if (categories.length === 0) {

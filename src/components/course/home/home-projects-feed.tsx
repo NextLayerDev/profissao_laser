@@ -4,6 +4,7 @@ import { Eye, Heart, Loader2, MessageSquare, Send } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { Avatar } from '@/components/ui/avatar';
+import { FeedCardsSkeleton } from '@/components/ui/skeletons/feed-skeleton';
 import {
 	useCommunityProjects,
 	useCreateProjectComment,
@@ -36,9 +37,7 @@ export function HomeProjectsFeed() {
 			<PublishComposer />
 
 			{isLoading ? (
-				<div className="flex items-center justify-center py-10">
-					<Loader2 className="w-5 h-5 animate-spin text-violet-500" />
-				</div>
+				<FeedCardsSkeleton />
 			) : projects.length === 0 ? (
 				<div className="py-10 text-center bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl">
 					<p className="text-sm text-slate-500 dark:text-gray-400">

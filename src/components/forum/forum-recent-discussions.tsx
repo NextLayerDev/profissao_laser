@@ -1,7 +1,8 @@
 'use client';
 
-import { Loader2, MessageSquare } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import Link from 'next/link';
+import { ForumListSkeleton } from '@/components/ui/skeletons/forum-skeleton';
 import { useForumPosts } from '@/hooks/use-forum';
 import { formatMessageTime } from '@/utils/formatDate';
 
@@ -36,9 +37,7 @@ export function ForumRecentDiscussions({
 				<h2 className="font-display text-base font-bold text-slate-900 dark:text-white">
 					{title}
 				</h2>
-				<div className="flex items-center justify-center py-10 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl">
-					<Loader2 className="w-5 h-5 animate-spin text-violet-500" />
-				</div>
+				<ForumListSkeleton count={4} />
 			</section>
 		);
 	}

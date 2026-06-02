@@ -1,9 +1,10 @@
 'use client';
 
-import { ChevronLeft, Loader2 } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { ForumPostClassic } from '@/components/forum/forum-post-classic';
 import { ForumReplyForm } from '@/components/forum/forum-reply-form';
+import { ForumThreadDetailSkeleton } from '@/components/ui/skeletons/forum-skeleton';
 import { useForumPost, useUpvoteForumPost } from '@/hooks/use-forum';
 
 interface ForumThreadDetailProps {
@@ -19,11 +20,7 @@ export function ForumThreadDetail({
 	const upvoteMut = useUpvoteForumPost();
 
 	if (isLoading) {
-		return (
-			<div className="flex items-center justify-center py-16">
-				<Loader2 className="w-6 h-6 animate-spin text-violet-500" />
-			</div>
-		);
+		return <ForumThreadDetailSkeleton />;
 	}
 
 	if (!post) {

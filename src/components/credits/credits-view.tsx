@@ -4,6 +4,10 @@ import { History, Loader2, Package } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
+import {
+	VoxesHistorySkeleton,
+	VoxesPackagesSkeleton,
+} from '@/components/ui/skeletons/voxes-skeleton';
 import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 import { useIsTestUnlimited } from '@/hooks/use-is-test-unlimited';
 import {
@@ -136,9 +140,7 @@ export function CreditsView() {
 					<Package className="w-4 h-4" /> Comprar voxxys
 				</h3>
 				{pkgLoading ? (
-					<div className="flex justify-center py-12">
-						<Loader2 className="w-6 h-6 animate-spin text-violet-500" />
-					</div>
+					<VoxesPackagesSkeleton />
 				) : (packages ?? []).length === 0 ? (
 					<p className="text-center text-sm text-slate-500 dark:text-gray-400 py-12">
 						Nenhum pacote disponível no momento.
@@ -191,9 +193,7 @@ export function CreditsView() {
 				</h3>
 				<div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] overflow-hidden">
 					{voxesLoading ? (
-						<div className="flex justify-center py-12">
-							<Loader2 className="w-6 h-6 animate-spin text-violet-500" />
-						</div>
+						<VoxesHistorySkeleton />
 					) : ledger.length === 0 ? (
 						<p className="text-center text-sm text-slate-500 dark:text-gray-400 py-12">
 							Nenhuma movimentação ainda.

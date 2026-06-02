@@ -5,7 +5,6 @@ import {
 	Clock,
 	Cpu,
 	Flame,
-	Loader2,
 	type LucideIcon,
 	Search,
 	Star,
@@ -18,6 +17,7 @@ import { useMemo, useState } from 'react';
 import { ParameterDetailModal } from '@/components/parametros/parameter-detail-modal';
 import { ParameterGridCard } from '@/components/parametros/parameter-grid-card';
 import { PageHeader } from '@/components/ui/page-header';
+import { ParameterGridSkeleton } from '@/components/ui/skeletons/parameter-grid-skeleton';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import {
 	useCommunityParameters,
@@ -193,9 +193,7 @@ export function ParametrosView() {
 				{/* Cards */}
 				<div>
 					{isLoading ? (
-						<div className="flex justify-center py-20">
-							<Loader2 className="h-6 w-6 animate-spin text-violet-500" />
-						</div>
+						<ParameterGridSkeleton />
 					) : parameters.length === 0 ? (
 						<div className="flex flex-col items-center justify-center py-20 text-slate-500 dark:text-gray-500">
 							<Table className="mb-3 h-12 w-12 opacity-40" />
