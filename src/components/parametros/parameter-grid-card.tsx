@@ -22,6 +22,7 @@ interface ParameterGridCardProps {
 	parameter: LaserParameter;
 	onLike?: () => void;
 	onSave?: () => void;
+	onRate?: (n: number) => void;
 	onViewDetails?: () => void;
 }
 
@@ -65,6 +66,7 @@ export function ParameterGridCard({
 	parameter: p,
 	onLike,
 	onSave,
+	onRate,
 	onViewDetails,
 }: ParameterGridCardProps) {
 	return (
@@ -77,8 +79,25 @@ export function ParameterGridCard({
 			{/* Rating + selos */}
 			<div className="mb-2 mt-1 flex flex-wrap items-center gap-2">
 				<span className="inline-flex items-center gap-0.5">
-					<Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-					<span className="text-sm font-bold text-slate-900 dark:text-white">
+					{[1, 2, 3, 4, 5].map((star) => (
+						<button
+							key={star}
+							type="button"
+							onClick={() => onRate?.(star)}
+							disabled={!onRate}
+							title={onRate ? 'Avaliar' : undefined}
+							className="text-amber-400 disabled:cursor-default"
+						>
+							<Star
+								className={`h-3.5 w-3.5 ${
+									star <= Math.round(p.userRating ?? p.rating ?? 0)
+										? 'fill-amber-400'
+										: ''
+								}`}
+							/>
+						</button>
+					))}
+					<span className="ml-1 text-sm font-bold text-slate-900 dark:text-white">
 						{(p.rating ?? 0).toFixed(1)}
 					</span>
 					<span className="text-xs text-slate-400">({p.likesCount ?? 0})</span>

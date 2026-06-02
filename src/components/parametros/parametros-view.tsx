@@ -24,6 +24,7 @@ import {
 	useLikeParameter,
 	useParameterSidebar,
 	useParameterStats,
+	useRateParameter,
 	useSaveParameter,
 } from '@/hooks/use-parameters';
 
@@ -88,6 +89,7 @@ export function ParametrosView() {
 
 	const likeMut = useLikeParameter();
 	const saveMut = useSaveParameter();
+	const rateMut = useRateParameter();
 
 	const pickSort = (v: SortValue) => {
 		setSort(v);
@@ -212,6 +214,7 @@ export function ParametrosView() {
 									onSave={() =>
 										saveMut.mutate({ id: p.id, saved: !!p.isSaved })
 									}
+									onRate={(n) => rateMut.mutate({ id: p.id, rating: n })}
 									onViewDetails={() => setDetailId(p.id)}
 								/>
 							))}
