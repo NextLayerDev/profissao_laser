@@ -98,16 +98,18 @@ function FeedCard({ p }: { p: Project }) {
 				</div>
 			</div>
 
-			{/* Imagem adaptativa: mostra a imagem inteira (sem corte), tipo Insta */}
+			{/* Imagem adaptativa (tipo Insta): a altura acompanha o formato da
+			    imagem (paisagem fica baixa, retrato fica alto); só corta —
+			    centralizado — quando muito alta. Sem letterbox. */}
 			{p.img ? (
 				<Link
 					href={`/course/vitrine?project=${p.id}`}
-					className="block mt-2 bg-slate-100 dark:bg-white/[0.03]"
+					className="mt-2 block overflow-hidden bg-slate-100 dark:bg-white/[0.03]"
 				>
 					<img
 						src={p.img}
 						alt={p.title}
-						className="w-full max-h-[480px] object-contain"
+						className="w-full max-h-[560px] object-cover"
 						loading="lazy"
 					/>
 				</Link>
