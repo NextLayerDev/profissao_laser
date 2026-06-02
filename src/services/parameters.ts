@@ -81,7 +81,8 @@ export interface CreateParameterPayload {
 	frequency: number;
 	line: number;
 	crossHatch: boolean;
-	angle: number;
+	/** Ângulo de hachura: null quando não-aplicável (Corte) — espelha o backend. */
+	angle: number | null;
 	passes: number;
 	passesFill: number;
 	notes?: string;

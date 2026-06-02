@@ -17,10 +17,12 @@ import {
 	Star,
 	ThumbsUp,
 	Trash2,
+	Waves,
 	Zap,
 } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import type { LaserParameter } from '@/types/parameters';
+import { applicableFields } from '@/utils/constants/parameter-field-rules';
 
 interface ParameterGridCardProps {
 	parameter: LaserParameter;
@@ -37,6 +39,8 @@ interface ParameterGridCardProps {
 }
 
 const N_A = 'N/A';
+/** Traço p/ campo não-aplicável à máquina/modo (A4). */
+const EM_DASH = '—';
 
 function Cell({
 	icon: Icon,
@@ -85,6 +89,8 @@ export function ParameterGridCard({
 	onDelete,
 }: ParameterGridCardProps) {
 	const admin = !!(onEdit || onDelete);
+	// Aplicabilidade por máquina/modo (A4): campos não-aplicáveis viram "—".
+	const ap = applicableFields(p.machine, p.mode);
 	return (
 		<div
 			className={`flex h-full flex-col overflow-hidden rounded-2xl border bg-white transition-shadow dark:bg-[#0e0e10] ${
@@ -208,7 +214,7 @@ export function ParameterGridCard({
 						<Cell
 							icon={Activity}
 							label="Frequência"
-							value={`${p.frequency}kHz`}
+							value={ap.frequency ? `${p.frequency}kHz` : EM_DASH}
 						/>
 						<Cell
 							icon={Minus}
@@ -230,6 +236,9 @@ export function ParameterGridCard({
 						/>
 						<Cell icon={Zap} label="Power Max" value={`${p.power}%`} />
 						<Cell icon={Ruler} label="Power Min" value={N_A} />
+						{ap.qPulse && p.qPulse != null ? (
+							<Cell icon={Waves} label="Q-pulse" value={`${p.qPulse}`} />
+						) : null}
 					</div>
 				</div>
 			</div>

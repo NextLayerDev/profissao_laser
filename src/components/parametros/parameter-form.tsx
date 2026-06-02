@@ -9,6 +9,7 @@ import {
 	useUploadParameterImage,
 } from '@/hooks/use-parameters';
 import type { CreateParameterPayload, PassRecipe } from '@/services/parameters';
+import { applicableFields } from '@/utils/constants/parameter-field-rules';
 import {
 	LENS_OPTIONS,
 	MACHINE_OPTIONS,
@@ -118,13 +119,17 @@ export function ParameterForm({
 		setForm((prev) => ({ ...prev, [field]: value }));
 	};
 
+	// Aplicabilidade dos campos condicionais p/ a máquina/modo atuais (A4/A5).
+	// Recalcula a cada render → some/aparece conforme o usuário troca máquina/modo.
+	const ap = applicableFields(form.machine, form.mode);
+
 	const baseRecipe = (): PassRecipe => ({
 		speed: form.speed,
 		power: form.power,
 		frequency: form.frequency,
 		line: form.line,
 		crossHatch: form.crossHatch,
-		angle: form.angle,
+		angle: form.angle ?? 0,
 		passes: 1,
 		passesFill: 1,
 		defocus: form.defocus ?? null,
@@ -134,7 +139,18 @@ export function ParameterForm({
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		onSubmit(form);
+		// Normaliza os campos condicionais: o que não se aplica à máquina/modo vai
+		// zerado/nulo (espelha o backend, que só exige frequency/qPulse/angle quando
+		// aplicáveis e guarda 0/null caso contrário).
+		onSubmit({
+			...form,
+			frequency: ap.frequency ? form.frequency : 0,
+			qPulse: ap.qPulse ? form.qPulse : null,
+			angle: ap.angle ? form.angle : null,
+			gas: ap.gas ? form.gas : false,
+			crossHatch: ap.crossHatch ? form.crossHatch : false,
+			passesFill: ap.passesFill ? form.passesFill : 1,
+		});
 	};
 
 	const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -235,6 +251,9 @@ export function ParameterForm({
 							<option key={o} value={o} />
 						))}
 					</datalist>
+					<p className="mt-1 text-xs text-slate-400 dark:text-gray-500">
+						Os campos se ajustam à máquina selecionada.
+					</p>
 				</div>
 				<div>
 					<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -352,19 +371,21 @@ export function ParameterForm({
 						onChange={(e) => set('speed', Number(e.target.value))}
 					/>
 				</div>
-				<div>
-					<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-						Frequencia (kHz) *
-					</span>
-					<input
-						required
-						type="number"
-						min={0}
-						className={inputCls}
-						value={form.frequency || ''}
-						onChange={(e) => set('frequency', Number(e.target.value))}
-					/>
-				</div>
+				{ap.frequency ? (
+					<div>
+						<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+							Frequencia (kHz) *
+						</span>
+						<input
+							required
+							type="number"
+							min={0}
+							className={inputCls}
+							value={form.frequency || ''}
+							onChange={(e) => set('frequency', Number(e.target.value))}
+						/>
+					</div>
+				) : null}
 			</div>
 
 			{/* Row 4: Line, Angle, Defocus */}
@@ -383,20 +404,22 @@ export function ParameterForm({
 						onChange={(e) => set('line', Number(e.target.value))}
 					/>
 				</div>
-				<div>
-					<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-						Angulo *
-					</span>
-					<input
-						required
-						type="number"
-						min={0}
-						max={360}
-						className={inputCls}
-						value={form.angle ?? ''}
-						onChange={(e) => set('angle', Number(e.target.value))}
-					/>
-				</div>
+				{ap.angle ? (
+					<div>
+						<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+							Angulo *
+						</span>
+						<input
+							required
+							type="number"
+							min={0}
+							max={360}
+							className={inputCls}
+							value={form.angle ?? ''}
+							onChange={(e) => set('angle', Number(e.target.value))}
+						/>
+					</div>
+				) : null}
 				<div>
 					<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 						Defocus (-20 a 20 mm)
@@ -419,8 +442,8 @@ export function ParameterForm({
 				</div>
 			</div>
 
-			{/* Row 5: Passadas, CrossHatch */}
-			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+			{/* Row 5: Passadas, Passadas preenchimento (N/A no Corte), CrossHatch */}
+			<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 				<div>
 					<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 						Passadas *
@@ -434,22 +457,38 @@ export function ParameterForm({
 						onChange={(e) => set('passes', Number(e.target.value))}
 					/>
 				</div>
-				<div>
-					<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-						Preenchimento Cruzado
-					</span>
-					<label className="flex items-center gap-2 cursor-pointer py-2">
-						<input
-							type="checkbox"
-							checked={!!form.crossHatch}
-							onChange={(e) => set('crossHatch', e.target.checked)}
-							className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
-						/>
-						<span className="text-sm text-slate-600 dark:text-slate-400">
-							Cross-hatch ativo
+				{ap.passesFill ? (
+					<div>
+						<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+							Passadas preenchimento
 						</span>
-					</label>
-				</div>
+						<input
+							type="number"
+							min={1}
+							className={inputCls}
+							value={form.passesFill || ''}
+							onChange={(e) => set('passesFill', Number(e.target.value))}
+						/>
+					</div>
+				) : null}
+				{ap.crossHatch ? (
+					<div>
+						<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+							Preenchimento Cruzado
+						</span>
+						<label className="flex items-center gap-2 cursor-pointer py-2">
+							<input
+								type="checkbox"
+								checked={!!form.crossHatch}
+								onChange={(e) => set('crossHatch', e.target.checked)}
+								className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+							/>
+							<span className="text-sm text-slate-600 dark:text-slate-400">
+								Cross-hatch ativo
+							</span>
+						</label>
+					</div>
+				) : null}
 			</div>
 
 			{/* Row 5b: Cor (vocabulário) + Q-pulse (UV) */}
@@ -471,25 +510,27 @@ export function ParameterForm({
 						))}
 					</select>
 				</div>
-				<div>
-					<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-						Q-pulse (UV)
-					</span>
-					<input
-						type="number"
-						min={0}
-						step="any"
-						placeholder="Opcional"
-						className={inputCls}
-						value={form.qPulse ?? ''}
-						onChange={(e) =>
-							set(
-								'qPulse',
-								e.target.value === '' ? null : Number(e.target.value),
-							)
-						}
-					/>
-				</div>
+				{ap.qPulse ? (
+					<div>
+						<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+							Q-pulse (UV) *
+						</span>
+						<input
+							required
+							type="number"
+							min={0}
+							step="any"
+							className={inputCls}
+							value={form.qPulse ?? ''}
+							onChange={(e) =>
+								set(
+									'qPulse',
+									e.target.value === '' ? null : Number(e.target.value),
+								)
+							}
+						/>
+					</div>
+				) : null}
 			</div>
 
 			{/* Software-specific fields (Ezcad/Lightburn) */}
@@ -537,21 +578,23 @@ export function ParameterForm({
 				</div>
 			</div>
 
-			{/* Row 7: Gas, Notes */}
+			{/* Row 7: Gas (CO2/Corte), Notes */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-				<div className="flex items-end pb-2">
-					<label className="flex items-center gap-2 cursor-pointer">
-						<input
-							type="checkbox"
-							checked={form.gas ?? false}
-							onChange={(e) => set('gas', e.target.checked)}
-							className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
-						/>
-						<span className="text-sm text-slate-700 dark:text-slate-300">
-							Gas
-						</span>
-					</label>
-				</div>
+				{ap.gas ? (
+					<div className="flex items-end pb-2">
+						<label className="flex items-center gap-2 cursor-pointer">
+							<input
+								type="checkbox"
+								checked={form.gas ?? false}
+								onChange={(e) => set('gas', e.target.checked)}
+								className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+							/>
+							<span className="text-sm text-slate-700 dark:text-slate-300">
+								Gas
+							</span>
+						</label>
+					</div>
+				) : null}
 				<div>
 					<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 						Notas
@@ -580,11 +623,14 @@ export function ParameterForm({
 				</label>
 			) : null}
 
-			{/* Passadas extras (multi-passada): a passada 1 é a receita acima */}
+			{/* Passadas extras (multi-passada): a passada 1 é a receita acima.
+			    `ap` propaga a máquina/modo do pai → cada passada esconde os mesmos
+			    campos não-aplicáveis. */}
 			<PassesEditor
 				value={form.extraPasses}
 				onChange={(next) => set('extraPasses', next)}
 				baseRecipe={baseRecipe}
+				applicable={ap}
 			/>
 
 			<div className="flex justify-end gap-3 pt-2">

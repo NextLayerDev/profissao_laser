@@ -2,6 +2,23 @@
 
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import type { PassRecipe } from '@/services/parameters';
+import type {
+	applicableFields,
+	GateableField,
+} from '@/utils/constants/parameter-field-rules';
+
+/** Mapa de aplicabilidade (saída de `applicableFields`) p/ esconder campos. */
+type Applicable = ReturnType<typeof applicableFields>;
+
+/** Tudo aplicável (default quando o pai não passa `applicable`). */
+const ALL_APPLICABLE: Record<GateableField, boolean> = {
+	frequency: true,
+	qPulse: true,
+	gas: true,
+	crossHatch: true,
+	angle: true,
+	passesFill: true,
+};
 
 const inputCls =
 	'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:border-white/10 dark:bg-slate-800 dark:text-white';
@@ -50,12 +67,16 @@ export function PassesEditor({
 	value,
 	onChange,
 	baseRecipe,
+	applicable,
 }: {
 	value: PassRecipe[] | undefined;
 	onChange: (next: PassRecipe[]) => void;
 	/** Receita-base p/ "Adicionar passada" (copia a receita principal atual). */
 	baseRecipe: () => PassRecipe;
+	/** Aplicabilidade herdada do pai (máquina/modo). Esconde os mesmos campos. */
+	applicable?: Applicable;
 }) {
+	const ap = applicable ?? ALL_APPLICABLE;
 	const passes = value ?? [];
 	const update = <K extends keyof PassRecipe>(
 		i: number,
@@ -145,36 +166,42 @@ export function PassesEditor({
 							max={100}
 							onChange={(v) => update(i, 'power', v)}
 						/>
-						<PassNumberField
-							label="Frequência (kHz)"
-							value={pass.frequency}
-							onChange={(v) => update(i, 'frequency', v)}
-						/>
+						{ap.frequency ? (
+							<PassNumberField
+								label="Frequência (kHz)"
+								value={pass.frequency}
+								onChange={(v) => update(i, 'frequency', v)}
+							/>
+						) : null}
 						<PassNumberField
 							label="Linha (mm)"
 							value={pass.line}
 							step="0.01"
 							onChange={(v) => update(i, 'line', v)}
 						/>
-						<PassNumberField
-							label="Ângulo (°)"
-							value={pass.angle}
-							min={0}
-							max={360}
-							onChange={(v) => update(i, 'angle', v)}
-						/>
+						{ap.angle ? (
+							<PassNumberField
+								label="Ângulo (°)"
+								value={pass.angle}
+								min={0}
+								max={360}
+								onChange={(v) => update(i, 'angle', v)}
+							/>
+						) : null}
 						<PassNumberField
 							label="Passadas (contorno)"
 							value={pass.passes}
 							min={1}
 							onChange={(v) => update(i, 'passes', v)}
 						/>
-						<PassNumberField
-							label="Passadas (preench.)"
-							value={pass.passesFill}
-							min={1}
-							onChange={(v) => update(i, 'passesFill', v)}
-						/>
+						{ap.passesFill ? (
+							<PassNumberField
+								label="Passadas (preench.)"
+								value={pass.passesFill}
+								min={1}
+								onChange={(v) => update(i, 'passesFill', v)}
+							/>
+						) : null}
 						<PassNumberField
 							label="Desfoque (mm)"
 							value={pass.defocus ?? 0}
@@ -183,26 +210,32 @@ export function PassesEditor({
 							onChange={(v) => update(i, 'defocus', v)}
 						/>
 					</div>
-					<div className="mt-2 flex flex-wrap gap-4">
-						<label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-							<input
-								type="checkbox"
-								checked={pass.crossHatch ?? false}
-								onChange={(e) => update(i, 'crossHatch', e.target.checked)}
-								className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
-							/>
-							Cross-hatch
-						</label>
-						<label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-							<input
-								type="checkbox"
-								checked={pass.gas ?? false}
-								onChange={(e) => update(i, 'gas', e.target.checked)}
-								className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
-							/>
-							Gás
-						</label>
-					</div>
+					{ap.crossHatch || ap.gas ? (
+						<div className="mt-2 flex flex-wrap gap-4">
+							{ap.crossHatch ? (
+								<label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+									<input
+										type="checkbox"
+										checked={pass.crossHatch ?? false}
+										onChange={(e) => update(i, 'crossHatch', e.target.checked)}
+										className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+									/>
+									Cross-hatch
+								</label>
+							) : null}
+							{ap.gas ? (
+								<label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+									<input
+										type="checkbox"
+										checked={pass.gas ?? false}
+										onChange={(e) => update(i, 'gas', e.target.checked)}
+										className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+									/>
+									Gás
+								</label>
+							) : null}
+						</div>
+					) : null}
 				</div>
 			))}
 
