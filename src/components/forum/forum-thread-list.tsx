@@ -1,8 +1,9 @@
 'use client';
 
-import { Loader2, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { ForumThreadRow } from '@/components/forum/forum-thread-row';
+import { ForumListSkeleton } from '@/components/ui/skeletons/forum-skeleton';
 import { useForumPosts } from '@/hooks/use-forum';
 
 interface ForumThreadListProps {
@@ -45,9 +46,7 @@ export function ForumThreadList({
 			</div>
 
 			{isLoading ? (
-				<div className="flex items-center justify-center py-16">
-					<Loader2 className="w-6 h-6 animate-spin text-violet-500" />
-				</div>
+				<ForumListSkeleton />
 			) : posts.length === 0 ? (
 				<div className="py-16 text-center bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl">
 					<p className="text-sm text-slate-500 dark:text-gray-400">

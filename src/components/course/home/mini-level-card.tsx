@@ -1,6 +1,7 @@
 'use client';
 
 import { Flame, Star } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useStreak } from '@/hooks/use-gamification';
 
 interface MiniLevelCardProps {
@@ -26,7 +27,7 @@ export function MiniLevelCard({
 	currentXp = 2450,
 	nextXp = 3000,
 }: MiniLevelCardProps) {
-	const { data: streakData } = useStreak();
+	const { data: streakData, isLoading } = useStreak();
 	const currentStreak = streakData?.currentStreak ?? 0;
 	const pct = Math.min(100, Math.round((currentXp / nextXp) * 100));
 
@@ -57,9 +58,13 @@ export function MiniLevelCard({
 					</div>
 					<div className="min-w-0">
 						<div className="flex items-baseline gap-1">
-							<p className="font-display text-xl font-bold leading-none bg-gradient-to-br from-orange-500 to-red-600 dark:from-orange-400 dark:to-red-500 bg-clip-text text-transparent">
-								{currentStreak}
-							</p>
+							{isLoading ? (
+								<Skeleton className="h-6 w-7" />
+							) : (
+								<p className="font-display text-xl font-bold leading-none bg-gradient-to-br from-orange-500 to-red-600 dark:from-orange-400 dark:to-red-500 bg-clip-text text-transparent">
+									{currentStreak}
+								</p>
+							)}
 							<p className="text-[11px] font-semibold text-slate-700 dark:text-gray-200">
 								dias
 							</p>

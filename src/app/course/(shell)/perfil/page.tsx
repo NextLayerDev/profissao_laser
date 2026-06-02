@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Avatar } from '@/components/ui/avatar';
 import { PageHeader } from '@/components/ui/page-header';
+import { ProfileSkeleton } from '@/components/ui/skeletons/profile-skeleton';
 import {
 	useChangeMyPassword,
 	useMyProfile,
@@ -149,9 +150,7 @@ export default function PerfilPage() {
 			/>
 
 			{isLoading ? (
-				<div className="flex justify-center py-20">
-					<Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
-				</div>
+				<ProfileSkeleton />
 			) : (
 				<div className="space-y-6">
 					{/* Hero / banner com avatar */}
