@@ -14,7 +14,9 @@ import type {
 } from '@/services/parameters';
 import {
 	createParameter,
+	createParameterOption,
 	deleteParameter,
+	deleteParameterOption,
 	exportParameters,
 	getCommunityParameters,
 	getMySubmissions,
@@ -33,6 +35,7 @@ import {
 	submitParameter,
 	unsaveParameter,
 	updateParameter,
+	updateParameterOption,
 	uploadParameterImage,
 } from '@/services/parameters';
 
@@ -116,6 +119,56 @@ export function useParameterOptions(
 		queryFn: () => getParameterOptions(dimension),
 		staleTime: 5 * 60_000,
 		enabled,
+	});
+}
+
+// ─── Vocabulário (admin): CRUD das opções por dimensão (Fase 6) ───────────────
+
+const OPTIONS_KEY = [...QUERY_KEY, 'options'] as const;
+
+/** Admin cria uma opção. Invalida o vocabulário (dropdowns + lista do admin). */
+export function useCreateParameterOption() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (body: { dimension: string; value: string; order?: number }) =>
+			createParameterOption(body),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: OPTIONS_KEY });
+			toast.success('Opção salva!');
+		},
+		onError: () => toast.error('Erro ao salvar opção'),
+	});
+}
+
+/** Admin edita value/order/status de uma opção. Invalida o vocabulário. */
+export function useUpdateParameterOption() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			id,
+			body,
+		}: {
+			id: string;
+			body: { value?: string; order?: number; status?: 'ativo' | 'inativo' };
+		}) => updateParameterOption(id, body),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: OPTIONS_KEY });
+			toast.success('Opção salva!');
+		},
+		onError: () => toast.error('Erro ao salvar opção'),
+	});
+}
+
+/** Admin remove uma opção. Invalida o vocabulário. */
+export function useDeleteParameterOption() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (id: string) => deleteParameterOption(id),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: OPTIONS_KEY });
+			toast.success('Opção removida!');
+		},
+		onError: () => toast.error('Erro ao remover opção'),
 	});
 }
 

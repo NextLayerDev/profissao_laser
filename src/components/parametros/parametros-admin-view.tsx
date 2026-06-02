@@ -13,6 +13,7 @@ import {
 	Search,
 	SlidersHorizontal,
 	Table,
+	Tags,
 	Users,
 	X,
 } from 'lucide-react';
@@ -20,6 +21,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { LaserLineTypesAdminSection } from '@/components/parametros/laser-line-types-admin-section';
 import { ParameterForm } from '@/components/parametros/parameter-form';
 import { ParameterGridCard } from '@/components/parametros/parameter-grid-card';
+import { VocabAdminSection } from '@/components/parametros/vocab-admin-section';
 import { useMachines } from '@/hooks/use-machines';
 import {
 	useCreateParameter,
@@ -124,7 +126,7 @@ const selectCls =
 /*  Main component                                                     */
 /* ------------------------------------------------------------------ */
 
-type AdminTab = 'parameters' | 'review' | 'line-types';
+type AdminTab = 'parameters' | 'review' | 'line-types' | 'vocab';
 
 export function ParametrosAdminView() {
 	const [activeTab, setActiveTab] = useState<AdminTab>('parameters');
@@ -334,9 +336,23 @@ export function ParametrosAdminView() {
 					<ImgIcon className="w-4 h-4" />
 					Tipos de Linha
 				</button>
+				<button
+					type="button"
+					onClick={() => setActiveTab('vocab')}
+					className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+						activeTab === 'vocab'
+							? 'text-violet-600 dark:text-violet-400 border-violet-500'
+							: 'text-slate-600 dark:text-gray-400 border-transparent hover:text-slate-900 dark:hover:text-white'
+					}`}
+				>
+					<Tags className="w-4 h-4" />
+					Vocabulários
+				</button>
 			</div>
 
 			{activeTab === 'line-types' && <LaserLineTypesAdminSection />}
+
+			{activeTab === 'vocab' && <VocabAdminSection />}
 
 			{activeTab === 'review' && (
 				<div>
