@@ -1,5 +1,7 @@
 'use client';
 
+import { defaultAvatarFor } from '@/utils/constants/avatar-presets';
+
 interface AvatarProps {
 	/** URL da foto. Quando ausente, mostra as iniciais. */
 	src?: string | null;
@@ -42,26 +44,17 @@ export function Avatar({
 	email,
 	className = 'w-10 h-10 text-sm',
 	rounded = 'rounded-full',
-	fallbackClassName = 'bg-violet-600',
-	fallbackStyle,
 	alt,
 }: AvatarProps) {
 	const base = `${rounded} shrink-0 overflow-hidden ${className}`;
-	if (src) {
-		return (
-			<img
-				src={src}
-				alt={alt ?? name ?? ''}
-				className={`${base} object-cover`}
-			/>
-		);
-	}
+	// Sem foto enviada: cai pro ícone default (por gênero do nome, estável por
+	// usuário). Foto enviada (Bunny) ou ícone-preset (/avatars) — ambos via <img>.
+	const imageSrc = src || defaultAvatarFor(name, email);
 	return (
-		<span
-			style={fallbackStyle}
-			className={`${base} ${fallbackClassName} grid place-items-center font-bold text-white leading-none`}
-		>
-			{getInitials(name, email)}
-		</span>
+		<img
+			src={imageSrc}
+			alt={alt ?? name ?? ''}
+			className={`${base} object-cover`}
+		/>
 	);
 }
