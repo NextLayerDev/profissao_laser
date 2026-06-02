@@ -10,6 +10,7 @@ import {
 	Layers,
 	type LucideIcon,
 	Minus,
+	Palette,
 	Pencil,
 	RotateCcw,
 	Ruler,
@@ -178,6 +179,12 @@ export function ParameterGridCard({
 						{p.category ? (
 							<span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">
 								{p.category}
+							</span>
+						) : null}
+						{p.color ? (
+							<span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-white/5 dark:text-gray-300">
+								<Palette className="h-3 w-3 text-violet-500" />
+								{p.color}
 							</span>
 						) : null}
 					</div>

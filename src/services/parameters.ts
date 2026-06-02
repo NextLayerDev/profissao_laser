@@ -3,6 +3,7 @@ import type {
 	LaserParameter,
 	ParameterMachine,
 	ParameterMaterial,
+	ParameterOption,
 	ParameterSidebar,
 	ParameterStats,
 	ParametersResponse,
@@ -22,6 +23,8 @@ export interface ParametersQueryParams {
 	mode?: string;
 	software?: string;
 	category?: string;
+	lens?: string;
+	color?: string;
 }
 
 export interface CommunityParametersQueryParams extends ParametersQueryParams {
@@ -171,6 +174,16 @@ export async function getParameterMachines(): Promise<ParameterMachine[]> {
 
 export async function getParameterMaterials(): Promise<ParameterMaterial[]> {
 	const { data } = await api.get<ParameterMaterial[]>('/parameters/materials');
+	return Array.isArray(data) ? data : [];
+}
+
+/** Vocabulário (Lente/Tipo/Categoria/Cor) já ordenado, p/ os dropdowns de filtro. */
+export async function getParameterOptions(
+	dimension: 'lens' | 'category' | 'color' | 'mode',
+): Promise<ParameterOption[]> {
+	const { data } = await api.get<ParameterOption[]>('/parameters/options', {
+		params: { dimension },
+	});
 	return Array.isArray(data) ? data : [];
 }
 

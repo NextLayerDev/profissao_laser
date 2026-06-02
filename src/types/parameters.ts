@@ -40,6 +40,7 @@ export interface LaserParameter {
 	// Imagem + categoria (redesign)
 	imageUrl?: string | null;
 	category?: string | null;
+	color?: string | null;
 	// Multi-passada: parâmetro "pai" com N passadas (cada passada = um parâmetro)
 	parentId?: string | null;
 	passOrder?: number | null;
@@ -89,6 +90,15 @@ export interface ParameterMachine {
 	id: string;
 	brand: string;
 	model: string;
+}
+
+/** Opção de vocabulário (Lente/Tipo/Categoria/Cor) para os dropdowns de filtro. */
+export interface ParameterOption {
+	id: string;
+	dimension: string;
+	value: string;
+	order: number;
+	status: string;
 }
 
 export interface ParameterMaterial {
