@@ -10,10 +10,11 @@ import {
 	Video,
 	X,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { PassesEditor } from '@/components/parametros/passes-editor';
 import { SoftwareSpecificFields } from '@/components/parametros/software-specific-fields';
 import { useMachines } from '@/hooks/use-machines';
-import { useParameters } from '@/hooks/use-parameters';
+import { useParameterPasses, useParameters } from '@/hooks/use-parameters';
 import {
 	useCreateProductParameter,
 	useDeleteProductParameter,
@@ -21,6 +22,7 @@ import {
 	useUpdateProductParameter,
 } from '@/hooks/use-product-parameters';
 import { getCourse } from '@/services/course';
+import type { PassRecipe } from '@/services/parameters';
 import { getProducts } from '@/services/products';
 import type { Machine, MachineOptionCategory } from '@/types/machines';
 import type {
@@ -181,6 +183,39 @@ function AssociationModal({
 		editing?.parameter?.frequency ?? 0,
 	);
 	const [passes, setPasses] = useState(editing?.parameter?.passes ?? 1);
+	const [extraPasses, setExtraPasses] = useState<PassRecipe[] | undefined>(
+		undefined,
+	);
+	const editParamId = editing?.parameter?.id ?? null;
+	const { data: editPassesData } = useParameterPasses(
+		editParamId,
+		!!editParamId,
+	);
+	const passesLoadedRef = useRef(false);
+	// Ao editar, carrega as passadas extras existentes p/ preserva-las/edita-las.
+	useEffect(() => {
+		if (!editPassesData || passesLoadedRef.current) return;
+		passesLoadedRef.current = true;
+		const extras = (editPassesData.passes ?? [])
+			.filter((p) => (p.passOrder ?? 1) >= 2)
+			.sort((a, b) => (a.passOrder ?? 0) - (b.passOrder ?? 0))
+			.map(
+				(p): PassRecipe => ({
+					speed: p.speed,
+					power: p.power,
+					frequency: p.frequency,
+					line: p.line ?? 0,
+					crossHatch: p.crossHatch ?? false,
+					angle: p.angle ?? 0,
+					passes: p.passes,
+					passesFill: p.passesFill ?? 1,
+					defocus: p.defocus ?? null,
+					gas: typeof p.gas === 'boolean' ? p.gas : false,
+					notes: p.notes ?? '',
+				}),
+			);
+		if (extras.length) setExtraPasses(extras);
+	}, [editPassesData]);
 	const [mode, setMode] = useState(editing?.parameter?.mode ?? '');
 	const [notes, setNotes] = useState(editing?.parameter?.notes ?? '');
 	const [line, setLine] = useState(editing?.parameter?.line ?? 0);
@@ -620,6 +655,28 @@ function AssociationModal({
 						</div>
 					)}
 
+					{createInline || editing ? (
+						<div className="mt-4">
+							<PassesEditor
+								value={extraPasses}
+								onChange={setExtraPasses}
+								baseRecipe={() => ({
+									speed,
+									power,
+									frequency,
+									line,
+									crossHatch,
+									angle,
+									passes: 1,
+									passesFill: 1,
+									defocus: defocus ?? null,
+									gas: false,
+									notes: '',
+								})}
+							/>
+						</div>
+					) : null}
+
 					{/* Lesson picker */}
 					<LessonPicker value={lessonId} onChange={setLessonId} />
 				</div>
@@ -684,6 +741,7 @@ function AssociationModal({
 									sobreposicao,
 									tamanhoLinha,
 									forcarSeparacao,
+									extraPasses,
 								};
 							} else {
 								// Toggle OFF: associar a um parâmetro existente.
