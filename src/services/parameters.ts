@@ -95,6 +95,18 @@ export async function deleteParameter(id: string): Promise<void> {
 	await api.delete(`/parameters/${id}`);
 }
 
+/** Sobe a imagem de um parâmetro e devolve a URL (pra setar em imageUrl). */
+export async function uploadParameterImage(
+	file: File,
+): Promise<{ url: string }> {
+	const fd = new FormData();
+	fd.append('file', file);
+	const { data } = await api.post<{ url: string }>('/parameters/image', fd, {
+		headers: { 'Content-Type': 'multipart/form-data' },
+	});
+	return data;
+}
+
 // ─── Community ───────────────────────────────────────────────────────────────
 
 export async function getCommunityParameters(

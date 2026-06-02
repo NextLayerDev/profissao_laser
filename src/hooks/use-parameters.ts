@@ -23,6 +23,7 @@ import {
 	saveParameter,
 	unsaveParameter,
 	updateParameter,
+	uploadParameterImage,
 } from '@/services/parameters';
 
 const QUERY_KEY = ['parameters'] as const;
@@ -162,6 +163,13 @@ export function useSaveParameter() {
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: QUERY_KEY });
 		},
+	});
+}
+
+export function useUploadParameterImage() {
+	return useMutation({
+		mutationFn: (file: File) => uploadParameterImage(file),
+		onError: () => toast.error('Erro ao subir imagem'),
 	});
 }
 

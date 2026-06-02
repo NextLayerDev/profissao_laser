@@ -15,8 +15,8 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
-import { ParameterCard } from '@/components/parametros/parameter-card';
 import { ParameterDetailModal } from '@/components/parametros/parameter-detail-modal';
+import { ParameterGridCard } from '@/components/parametros/parameter-grid-card';
 import { PageHeader } from '@/components/ui/page-header';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import {
@@ -24,7 +24,6 @@ import {
 	useLikeParameter,
 	useParameterSidebar,
 	useParameterStats,
-	useRateParameter,
 	useSaveParameter,
 } from '@/hooks/use-parameters';
 
@@ -89,7 +88,6 @@ export function ParametrosView() {
 
 	const likeMut = useLikeParameter();
 	const saveMut = useSaveParameter();
-	const rateMut = useRateParameter();
 
 	const pickSort = (v: SortValue) => {
 		setSort(v);
@@ -207,15 +205,13 @@ export function ParametrosView() {
 					) : (
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							{parameters.map((p) => (
-								<ParameterCard
+								<ParameterGridCard
 									key={p.id}
 									parameter={p}
-									variant="community"
 									onLike={() => likeMut.mutate(p.id)}
 									onSave={() =>
 										saveMut.mutate({ id: p.id, saved: !!p.isSaved })
 									}
-									onRate={(n) => rateMut.mutate({ id: p.id, rating: n })}
 									onViewDetails={() => setDetailId(p.id)}
 								/>
 							))}

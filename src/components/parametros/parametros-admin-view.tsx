@@ -28,6 +28,7 @@ import {
 	useParameterStats,
 	useParameters,
 	useUpdateParameter,
+	useUploadParameterImage,
 } from '@/hooks/use-parameters';
 import type { CreateParameterPayload } from '@/services/parameters';
 import type { LaserParameter } from '@/types/parameters';
@@ -632,6 +633,8 @@ export function ParametrosAdminView() {
 						forcarSeparacao: editTarget.forcarSeparacao ?? null,
 						axisRotative: editTarget.axisRotative ?? null,
 						lineTypeId: editTarget.lineTypeId ?? null,
+						imageUrl: editTarget.imageUrl ?? null,
+						category: editTarget.category ?? null,
 					}}
 					isPending={updateMutation.isPending}
 					onClose={() => setEditTarget(null)}
@@ -678,6 +681,7 @@ function ParameterFormModal({
 	onSubmit: (payload: CreateParameterPayload) => void;
 }) {
 	const [form, setForm] = useState<CreateParameterPayload>(initial);
+	const uploadImage = useUploadParameterImage();
 
 	const set = <K extends keyof CreateParameterPayload>(
 		field: K,
@@ -689,6 +693,13 @@ function ParameterFormModal({
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		onSubmit(form);
+	};
+
+	const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		uploadImage.mutate(file, { onSuccess: ({ url }) => set('imageUrl', url) });
+		e.target.value = '';
 	};
 
 	return (
@@ -708,6 +719,77 @@ function ParameterFormModal({
 				</div>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
+					{/* Imagem + categoria (alimenta o card do cliente) */}
+					<div className="grid grid-cols-1 gap-4 sm:grid-cols-[auto_1fr] sm:items-start">
+						<div>
+							<span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+								Imagem do parametro
+							</span>
+							<div className="flex items-center gap-3">
+								<div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-white/5">
+									{form.imageUrl ? (
+										<img
+											src={form.imageUrl}
+											alt=""
+											className="h-full w-full object-cover"
+										/>
+									) : (
+										<ImgIcon className="h-7 w-7 text-slate-300 dark:text-gray-600" />
+									)}
+								</div>
+								<div className="flex flex-col gap-1.5">
+									<label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5">
+										{uploadImage.isPending ? (
+											<Loader2 className="h-4 w-4 animate-spin" />
+										) : (
+											<ImgIcon className="h-4 w-4" />
+										)}
+										{form.imageUrl ? 'Trocar imagem' : 'Subir imagem'}
+										<input
+											type="file"
+											accept="image/*"
+											className="hidden"
+											onChange={handleImage}
+										/>
+									</label>
+									{form.imageUrl ? (
+										<button
+											type="button"
+											onClick={() => set('imageUrl', null)}
+											className="text-left text-xs text-red-500 hover:underline"
+										>
+											Remover imagem
+										</button>
+									) : null}
+								</div>
+							</div>
+						</div>
+						<div>
+							<span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+								Categoria
+							</span>
+							<select
+								value={form.category ?? ''}
+								onChange={(e) => set('category', e.target.value || null)}
+								className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+							>
+								<option value="">Sem categoria</option>
+								{[
+									'Copos',
+									'Metais',
+									'Madeira',
+									'Acrílico',
+									'Brindes',
+									'Outros',
+								].map((c) => (
+									<option key={c} value={c}>
+										{c}
+									</option>
+								))}
+							</select>
+						</div>
+					</div>
+
 					{/* Row 1: Machine, Lens, Software */}
 					<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 						<div>
