@@ -191,6 +191,33 @@ export async function getParameterOptions(
 	return Array.isArray(data) ? data : [];
 }
 
+/** Admin: cria uma opção de vocabulário numa dimensão. */
+export async function createParameterOption(body: {
+	dimension: string;
+	value: string;
+	order?: number;
+}): Promise<ParameterOption> {
+	const { data } = await api.post<ParameterOption>('/parameters/options', body);
+	return data;
+}
+
+/** Admin: edita value/order/status de uma opção de vocabulário. */
+export async function updateParameterOption(
+	id: string,
+	body: { value?: string; order?: number; status?: 'ativo' | 'inativo' },
+): Promise<ParameterOption> {
+	const { data } = await api.put<ParameterOption>(
+		`/parameters/options/${id}`,
+		body,
+	);
+	return data;
+}
+
+/** Admin: remove uma opção de vocabulário. */
+export async function deleteParameterOption(id: string): Promise<void> {
+	await api.delete(`/parameters/options/${id}`);
+}
+
 // ─── Social: like / rate / save ──────────────────────────────────────────────
 
 export async function likeParameter(id: string): Promise<{ liked: boolean }> {
