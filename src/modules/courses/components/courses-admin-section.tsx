@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, Plus, Trash2, Wrench, Zap } from 'lucide-react';
+import { BookOpen, EyeOff, Plus, Trash2, Wrench, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { formatCurrency } from '@/utils/format-currency';
@@ -30,18 +30,28 @@ export function CoursesAdminSection() {
 
 	const [editing, setEditing] = useState<Course | null>(null);
 	const [open, setOpen] = useState(false);
+	const [tab, setTab] = useState<'active' | 'inactive'>('active');
 
-	// Merge: base de admin (com id para editar/deletar) + planos do catálogo
-	const courses: CourseDetail[] =
-		catalog && catalog.length > 0
-			? catalog
-			: (adminCourses ?? []).map((c) => ({ ...c, plans: [] }));
+	// Usa adminCourses como fonte de todos os cursos (incluindo despublicados),
+	// enriquece com planos do catálogo quando disponível.
+	const catalogBySlug = new Map((catalog ?? []).map((c) => [c.slug, c]));
+	const courses: CourseDetail[] = (adminCourses ?? []).map((c) => ({
+		...(catalogBySlug.get(c.slug) ?? { ...c, plans: [] }),
+		// garante que id/slug vêm do admin (fonte canônica)
+		id: c.id,
+		slug: c.slug,
+		published: c.published,
+	}));
+
+	const activeCourses = courses.filter((c) => c.published);
+	const inactiveCourses = courses.filter((c) => !c.published);
+	const visibleCourses = tab === 'active' ? activeCourses : inactiveCourses;
 
 	const isLoading = adminLoading || catalogLoading;
 
 	return (
 		<div>
-			<div className="flex items-center justify-between mb-6">
+			<div className="flex items-center justify-between mb-4">
 				<p className="text-sm text-slate-600 dark:text-gray-400">
 					Cada curso agrupa planos de acesso e ferramentas disponíveis.
 				</p>
@@ -58,20 +68,64 @@ export function CoursesAdminSection() {
 				</button>
 			</div>
 
+			{/* Tabs */}
+			<div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 rounded-xl p-1 w-fit mb-6">
+				<button
+					type="button"
+					onClick={() => setTab('active')}
+					className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+						tab === 'active'
+							? 'bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm'
+							: 'text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200'
+					}`}
+				>
+					<BookOpen className="w-4 h-4" />
+					Ativos
+					{!isLoading && (
+						<span className="text-xs bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-gray-400 px-1.5 py-0.5 rounded-full">
+							{activeCourses.length}
+						</span>
+					)}
+				</button>
+				<button
+					type="button"
+					onClick={() => setTab('inactive')}
+					className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+						tab === 'inactive'
+							? 'bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm'
+							: 'text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200'
+					}`}
+				>
+					<EyeOff className="w-4 h-4" />
+					Desativados
+					{!isLoading && (
+						<span className="text-xs bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-gray-400 px-1.5 py-0.5 rounded-full">
+							{inactiveCourses.length}
+						</span>
+					)}
+				</button>
+			</div>
+
 			{isLoading ? (
 				<div className="flex justify-center py-16">
 					<div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
 				</div>
-			) : courses.length === 0 ? (
+			) : visibleCourses.length === 0 ? (
 				<div className="text-center py-16">
-					<BookOpen className="w-10 h-10 text-slate-400 dark:text-gray-700 mx-auto mb-4" />
+					{tab === 'active' ? (
+						<BookOpen className="w-10 h-10 text-slate-400 dark:text-gray-700 mx-auto mb-4" />
+					) : (
+						<EyeOff className="w-10 h-10 text-slate-400 dark:text-gray-700 mx-auto mb-4" />
+					)}
 					<p className="text-slate-600 dark:text-gray-400 font-medium">
-						Nenhum curso criado
+						{tab === 'active'
+							? 'Nenhum curso publicado'
+							: 'Nenhum curso desativado'}
 					</p>
 				</div>
 			) : (
 				<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-					{courses.map((c) => {
+					{visibleCourses.map((c) => {
 						const adminCourse = (adminCourses ?? []).find(
 							(a) => a.slug === c.slug,
 						);
