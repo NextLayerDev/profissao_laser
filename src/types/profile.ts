@@ -11,6 +11,8 @@ export interface UpdateProfilePayload {
 	name?: string;
 	nickname?: string | null;
 	bio?: string | null;
+	/** URL do ícone-preset escolhido (/avatars/*) ou foto. */
+	image?: string | null;
 }
 
 export interface ChangePasswordPayload {

@@ -20,6 +20,11 @@ import {
 	useUpdateMyProfile,
 	useUploadMyAvatar,
 } from '@/hooks/use-profile';
+import {
+	AVATAR_PRESETS,
+	avatarPresetUrl,
+	defaultAvatarFor,
+} from '@/utils/constants/avatar-presets';
 
 export default function PerfilPage() {
 	const { data: profile, isLoading } = useMyProfile();
@@ -61,6 +66,16 @@ export default function PerfilPage() {
 			onSuccess: () => toast.success('Foto removida.'),
 			onError: () => toast.error('Erro ao remover a foto. Tente novamente.'),
 		});
+	}
+
+	function pickIcon(url: string) {
+		updateProfile.mutate(
+			{ image: url },
+			{
+				onSuccess: () => toast.success('Ícone atualizado!'),
+				onError: () => toast.error('Erro ao trocar o ícone.'),
+			},
+		);
 	}
 
 	function handleSave(e: React.FormEvent) {
@@ -207,6 +222,50 @@ export default function PerfilPage() {
 									</p>
 								</div>
 							</div>
+						</div>
+					</div>
+
+					{/* Ícone de perfil (picker estilo Netflix) */}
+					<div className={cardClass}>
+						<h3 className="font-display text-base font-bold text-slate-900 dark:text-white mb-1">
+							Ícone de perfil
+						</h3>
+						<p className="text-sm text-slate-500 dark:text-gray-400 mb-4">
+							Escolha um ícone ou use a câmera no avatar para enviar sua foto.
+						</p>
+						<div className="flex flex-wrap gap-3">
+							{AVATAR_PRESETS.map((preset) => {
+								const url = avatarPresetUrl(preset);
+								const current =
+									profile?.avatar ||
+									defaultAvatarFor(profile?.name, profile?.email);
+								const selected = current === url;
+								return (
+									<button
+										key={preset}
+										type="button"
+										onClick={() => pickIcon(url)}
+										disabled={updateProfile.isPending}
+										title={preset}
+										className={`relative overflow-hidden rounded-2xl transition-all disabled:opacity-60 ${
+											selected
+												? 'ring-2 ring-violet-500 ring-offset-2 ring-offset-white dark:ring-offset-[#1a1a1d]'
+												: 'opacity-80 hover:scale-105 hover:opacity-100'
+										}`}
+									>
+										<img
+											src={url}
+											alt={preset}
+											className="h-16 w-16 sm:h-20 sm:w-20"
+										/>
+										{selected ? (
+											<span className="absolute bottom-1 right-1 grid h-5 w-5 place-items-center rounded-full bg-violet-600 text-white">
+												<Check className="h-3 w-3" />
+											</span>
+										) : null}
+									</button>
+								);
+							})}
 						</div>
 					</div>
 
