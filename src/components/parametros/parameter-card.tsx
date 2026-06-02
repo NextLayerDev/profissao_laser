@@ -21,6 +21,7 @@ import {
 	Star,
 	ThumbsUp,
 	Triangle,
+	Waves,
 	X,
 	Zap,
 	ZoomIn,
@@ -29,6 +30,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLaserLineTypes } from '@/hooks/use-laser-line-types';
 import type { LaserParameter } from '@/types/parameters';
+import { applicableFields } from '@/utils/constants/parameter-field-rules';
 
 export type ParameterCardVariant = 'community' | 'simple' | 'lookup';
 
@@ -91,6 +93,8 @@ export function ParameterCard({
 	onViewDetails,
 }: ParameterCardProps) {
 	const Icon = materialIcon(p.material);
+	// Aplicabilidade por máquina/modo (A4): campos não-aplicáveis viram "—".
+	const ap = applicableFields(p.machine, p.mode);
 	const [zoomed, setZoomed] = useState(false);
 	const [mounted, setMounted] = useState(false);
 	useEffect(() => {
@@ -182,7 +186,7 @@ export function ParameterCard({
 				<MiniCard
 					icon={Triangle}
 					label="Ângulo"
-					value={p.angle != null ? `${p.angle}°` : '—'}
+					value={ap.angle && p.angle != null ? `${p.angle}°` : '—'}
 				/>
 			</div>
 
@@ -191,7 +195,7 @@ export function ParameterCard({
 				<MiniCard
 					icon={Activity}
 					label="Frequência"
-					value={`${p.frequency}kHz`}
+					value={ap.frequency ? `${p.frequency}kHz` : '—'}
 				/>
 				<MiniCard
 					icon={RotateCcw}
@@ -200,12 +204,19 @@ export function ParameterCard({
 				/>
 			</div>
 
+			{/* Q-pulse — só máquina UV (quando informado) */}
+			{ap.qPulse && p.qPulse != null ? (
+				<div className="grid grid-cols-2 gap-2 mb-3">
+					<MiniCard icon={Waves} label="Q-pulse" value={`${p.qPulse}`} />
+				</div>
+			) : null}
+
 			{/* Linha 5 — Cross Hatch | Eixo rotativo */}
 			<div className="grid grid-cols-2 gap-2 mb-3">
 				<MiniCard
 					icon={Grid3x3}
 					label="Cross Hatch"
-					value={p.crossHatch ? 'Sim' : 'Não'}
+					value={ap.crossHatch ? (p.crossHatch ? 'Sim' : 'Não') : '—'}
 				/>
 				<MiniCard
 					icon={Repeat}
