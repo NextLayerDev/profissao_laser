@@ -86,14 +86,17 @@ export function ParameterGridCard({
 	const admin = !!(onEdit || onDelete);
 	return (
 		<div
-			className={`flex flex-col overflow-hidden rounded-2xl border bg-white transition-shadow dark:bg-[#0e0e10] ${
+			className={`flex h-full flex-col overflow-hidden rounded-2xl border bg-white transition-shadow dark:bg-[#0e0e10] ${
 				selected
 					? 'border-violet-500 ring-2 ring-violet-500/40'
 					: 'border-slate-200 dark:border-white/10'
 			}`}
 		>
-			{/* Corpo: imagem ALTA à esquerda + conteúdo à direita */}
-			<div className="flex gap-4 p-4">
+			{/* Corpo: imagem ALTA à esquerda + conteúdo à direita.
+			    flex-1 faz o corpo preencher a altura do card → a imagem (self-stretch
+			    + object-cover) segue a altura EXATA do card, recortando p/ retângulo
+			    mesmo quando a foto enviada é quadrada. */}
+			<div className="flex flex-1 gap-4 p-4">
 				<div className="relative w-32 shrink-0 self-stretch overflow-hidden rounded-xl bg-slate-100 sm:w-44 min-h-[260px] dark:bg-white/[0.03]">
 					{p.imageUrl ? (
 						<img
