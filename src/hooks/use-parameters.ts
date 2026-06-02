@@ -19,6 +19,7 @@ import {
 	getCommunityParameters,
 	getParameterMachines,
 	getParameterMaterials,
+	getParameterOptions,
 	getParameterPasses,
 	getParameterSidebar,
 	getParameterStats,
@@ -97,6 +98,18 @@ export function useParameterMaterials(enabled = true) {
 	return useQuery({
 		queryKey: [...QUERY_KEY, 'materials'] as const,
 		queryFn: getParameterMaterials,
+		staleTime: 5 * 60_000,
+		enabled,
+	});
+}
+
+export function useParameterOptions(
+	dimension: 'lens' | 'category' | 'color' | 'mode',
+	enabled = true,
+) {
+	return useQuery({
+		queryKey: [...QUERY_KEY, 'options', dimension] as const,
+		queryFn: () => getParameterOptions(dimension),
 		staleTime: 5 * 60_000,
 		enabled,
 	});
