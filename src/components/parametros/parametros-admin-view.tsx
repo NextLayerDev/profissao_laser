@@ -1,23 +1,23 @@
 'use client';
 
 import {
+	Check,
 	Cpu,
 	Download,
 	Filter,
 	Image as ImgIcon,
 	Layers,
 	Loader2,
-	Pencil,
 	Plus,
 	Search,
 	SlidersHorizontal,
 	Table,
-	Trash2,
 	Users,
 	X,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { LaserLineTypesAdminSection } from '@/components/parametros/laser-line-types-admin-section';
+import { ParameterGridCard } from '@/components/parametros/parameter-grid-card';
 import { SoftwareSpecificFields as SharedSoftwareSpecificFields } from '@/components/parametros/software-specific-fields';
 import { useMachines } from '@/hooks/use-machines';
 import {
@@ -73,6 +73,15 @@ const STATS_CONFIG = [
 		color: 'text-amber-600 dark:text-amber-400',
 		bg: 'bg-amber-100 dark:bg-amber-500/20',
 	},
+];
+
+const CATEGORY_OPTIONS = [
+	'Copos',
+	'Metais',
+	'Madeira',
+	'Acrílico',
+	'Brindes',
+	'Outros',
 ];
 
 /* ------------------------------------------------------------------ */
@@ -138,6 +147,9 @@ export function ParametrosAdminView() {
 	const [showCreate, setShowCreate] = useState(false);
 	const [editTarget, setEditTarget] = useState<LaserParameter | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<LaserParameter | null>(null);
+	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+	const [bulkCategory, setBulkCategory] = useState('');
+	const [bulkPending, setBulkPending] = useState(false);
 
 	/* hooks */
 	const { data: statsData } = useParameterStats();
@@ -174,6 +186,56 @@ export function ParametrosAdminView() {
 	const deleteMutation = useDeleteParameter();
 	const exportMutation = useExportParameters();
 
+	/* seleção em lote: categorizar vários parâmetros de uma vez */
+	function toggleSelect(id: string) {
+		setSelectedIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
+	}
+	function toggleSelectAllOnPage(ids: string[], allSelected: boolean) {
+		setSelectedIds((prev) => {
+			const next = new Set(prev);
+			for (const id of ids) {
+				if (allSelected) next.delete(id);
+				else next.add(id);
+			}
+			return next;
+		});
+	}
+	async function applyBulkCategory() {
+		if (!bulkCategory || selectedIds.size === 0) return;
+		setBulkPending(true);
+		try {
+			await Promise.all(
+				Array.from(selectedIds).map((id) =>
+					updateMutation.mutateAsync({
+						id,
+						payload: { category: bulkCategory },
+					}),
+				),
+			);
+			setSelectedIds(new Set());
+			setBulkCategory('');
+		} finally {
+			setBulkPending(false);
+		}
+	}
+	// Limpa a seleção ao trocar de página/filtro (não agir em itens fora da tela).
+	// biome-ignore lint/correctness/useExhaustiveDependencies: limpar nessas mudanças é intencional
+	useEffect(() => {
+		setSelectedIds(new Set());
+	}, [
+		currentPage,
+		searchQuery,
+		filterMachine,
+		filterMaterial,
+		filterThickness,
+		filterMode,
+	]);
+
 	const thicknesses = useMemo(() => {
 		const set = new Set<string>();
 		const source = filterMaterial
@@ -200,12 +262,8 @@ export function ParametrosAdminView() {
 
 	const showingFrom = total === 0 ? 0 : (currentPage - 1) * limit + 1;
 	const showingTo = Math.min(currentPage * limit, total);
-
-	function displayGas(gas: boolean | string | null | undefined): string {
-		if (gas == null) return '\u2014';
-		if (typeof gas === 'boolean') return gas ? 'Sim' : 'Nao';
-		return gas || '\u2014';
-	}
+	const pageAllSelected =
+		parameters.length > 0 && parameters.every((p) => selectedIds.has(p.id));
 
 	return (
 		<>
@@ -381,7 +439,48 @@ export function ParametrosAdminView() {
 						</div>
 					</div>
 
-					{/* Table */}
+					{/* Seleção em lote: aplica categoria a vários parâmetros de uma vez */}
+					{selectedIds.size > 0 ? (
+						<div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-violet-200 bg-violet-50 p-3 dark:border-violet-500/30 dark:bg-violet-500/10">
+							<span className="text-sm font-semibold text-violet-700 dark:text-violet-300">
+								{selectedIds.size} selecionado(s)
+							</span>
+							<select
+								value={bulkCategory}
+								onChange={(e) => setBulkCategory(e.target.value)}
+								className={selectCls}
+							>
+								<option value="">Escolher categoria…</option>
+								{CATEGORY_OPTIONS.map((cat) => (
+									<option key={cat} value={cat}>
+										{cat}
+									</option>
+								))}
+							</select>
+							<button
+								type="button"
+								onClick={applyBulkCategory}
+								disabled={!bulkCategory || bulkPending}
+								className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-violet-700 disabled:opacity-50"
+							>
+								{bulkPending ? (
+									<Loader2 className="h-4 w-4 animate-spin" />
+								) : (
+									<Check className="h-4 w-4" />
+								)}
+								Aplicar categoria
+							</button>
+							<button
+								type="button"
+								onClick={() => setSelectedIds(new Set())}
+								className="px-3 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+							>
+								Limpar seleção
+							</button>
+						</div>
+					) : null}
+
+					{/* Cards (mesmo visual do cliente, com seleção + editar/excluir) */}
 					{isLoading ? (
 						<div className="flex justify-center py-20">
 							<Loader2 className="w-8 h-8 animate-spin text-violet-500" />
@@ -394,114 +493,36 @@ export function ParametrosAdminView() {
 							</p>
 						</div>
 					) : (
-						<div className="rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden bg-white dark:bg-transparent shadow-sm dark:shadow-none mb-4">
-							<div className="overflow-x-auto">
-								<table className="w-full text-sm">
-									<thead>
-										<tr className="bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-left">
-											<th className="px-4 py-3 font-medium">Material</th>
-											<th className="px-4 py-3 font-medium">Maquina</th>
-											<th className="px-4 py-3 font-medium">Lente</th>
-											<th className="px-4 py-3 font-medium">Modo</th>
-											<th className="px-4 py-3 font-medium">Power%</th>
-											<th className="px-4 py-3 font-medium">PowerW</th>
-											<th className="px-4 py-3 font-medium">Velocidade</th>
-											<th className="px-4 py-3 font-medium">Freq</th>
-											<th className="px-4 py-3 font-medium">Line</th>
-											<th className="px-4 py-3 font-medium">Pass(C)</th>
-											<th className="px-4 py-3 font-medium">Pass(P)</th>
-											<th className="px-4 py-3 font-medium">Gas</th>
-											<th className="px-4 py-3 font-medium">Publico</th>
-											<th className="px-4 py-3 font-medium text-right">
-												Acoes
-											</th>
-										</tr>
-									</thead>
-									<tbody>
-										{parameters.map((p) => (
-											<tr
-												key={p.id}
-												className="border-t border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors"
-											>
-												<td className="px-4 py-3 font-medium text-slate-900 dark:text-white whitespace-nowrap">
-													{p.material}
-												</td>
-												<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-													{p.machine || '\u2014'}
-												</td>
-												<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-													{p.lens ?? '\u2014'}
-												</td>
-												<td className="px-4 py-3">
-													<span
-														className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-															p.mode === 'Corte'
-																? 'bg-blue-50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300'
-																: 'bg-amber-50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300'
-														}`}
-													>
-														{p.mode}
-													</span>
-												</td>
-												<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-													{p.power}
-												</td>
-												<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-													{p.powerWatts ?? '\u2014'}
-												</td>
-												<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-													{p.speed}
-												</td>
-												<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-													{p.frequency}
-												</td>
-												<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-													{p.line ?? '\u2014'}
-												</td>
-												<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-													{p.passes}
-												</td>
-												<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-													{p.passesFill ?? '\u2014'}
-												</td>
-												<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
-													{displayGas(p.gas)}
-												</td>
-												<td className="px-4 py-3">
-													<span
-														className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-															p.isPublic
-																? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300'
-																: 'bg-slate-100 text-slate-500 dark:bg-slate-500/20 dark:text-slate-400'
-														}`}
-													>
-														{p.isPublic ? 'Sim' : 'Nao'}
-													</span>
-												</td>
-												<td className="px-4 py-3 text-right">
-													<div className="flex items-center justify-end gap-1">
-														<button
-															type="button"
-															onClick={() => setEditTarget(p)}
-															className="p-2 text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 rounded-lg transition-colors"
-															title="Editar"
-														>
-															<Pencil className="w-4 h-4" />
-														</button>
-														<button
-															type="button"
-															onClick={() => setDeleteTarget(p)}
-															className="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-															title="Excluir"
-														>
-															<Trash2 className="w-4 h-4" />
-														</button>
-													</div>
-												</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
+						<div className="mb-4">
+							<div className="mb-3 flex items-center gap-3">
+								<button
+									type="button"
+									onClick={() =>
+										toggleSelectAllOnPage(
+											parameters.map((p) => p.id),
+											pageAllSelected,
+										)
+									}
+									className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-violet-600 dark:text-gray-300 dark:hover:text-violet-400"
+								>
+									<Check className="h-4 w-4" />
+									{pageAllSelected ? 'Desmarcar todos' : 'Selecionar todos'}
+								</button>
+								<span className="text-xs text-slate-400">
+									{parameters.length} nesta página
+								</span>
+							</div>
+							<div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+								{parameters.map((p) => (
+									<ParameterGridCard
+										key={p.id}
+										parameter={p}
+										selected={selectedIds.has(p.id)}
+										onToggleSelect={() => toggleSelect(p.id)}
+										onEdit={() => setEditTarget(p)}
+										onDelete={() => setDeleteTarget(p)}
+									/>
+								))}
 							</div>
 						</div>
 					)}
