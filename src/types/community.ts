@@ -36,6 +36,8 @@ export interface Channel {
 export interface Member {
 	id: string;
 	name: string;
+	/** Apelido (@) derivado do email; exibido no card do membro. */
+	nickname?: string | null;
 	specialty?: string | null;
 	badges: string[];
 	badge?: string | null;

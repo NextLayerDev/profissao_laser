@@ -161,7 +161,12 @@ export function MembersView({ isAdmin: _isAdmin = false }: MembersViewProps) {
 									<h3 className="font-bold text-lg text-slate-900 dark:text-white">
 										{member.name}
 									</h3>
-									<p className="text-sm text-slate-600 dark:text-gray-400 mb-3 text-center">
+									{member.nickname ? (
+										<span className="text-xs font-medium text-violet-500 dark:text-violet-400">
+											@{member.nickname}
+										</span>
+									) : null}
+									<p className="text-sm text-slate-600 dark:text-gray-400 mb-3 text-center mt-0.5">
 										{member.specialty ?? 'Membro da comunidade'}
 									</p>
 									<div className="flex justify-center gap-2 mb-4 flex-wrap">

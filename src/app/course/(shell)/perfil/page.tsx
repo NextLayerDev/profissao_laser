@@ -25,6 +25,8 @@ import {
 	AVATAR_PRESETS,
 	avatarPresetUrl,
 	defaultAvatarFor,
+	isFestaSeason,
+	seasonalUrl,
 } from '@/utils/constants/avatar-presets';
 
 export default function PerfilPage() {
@@ -226,15 +228,27 @@ export default function PerfilPage() {
 
 					{/* Ícone de perfil (picker estilo Netflix) */}
 					<div className={cardClass}>
-						<h3 className="font-display text-base font-bold text-slate-900 dark:text-white mb-1">
-							Ícone de perfil
-						</h3>
+						<div className="flex flex-wrap items-center gap-2 mb-1">
+							<h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+								Ícone de perfil
+							</h3>
+							{isFestaSeason() ? (
+								<span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 to-red-500 px-2.5 py-0.5 text-xs font-bold text-white shadow-sm">
+									🎉 Festa Junina
+								</span>
+							) : null}
+						</div>
 						<p className="text-sm text-slate-500 dark:text-gray-400 mb-4">
-							Escolha um ícone ou use a câmera no avatar para enviar sua foto.
+							{isFestaSeason()
+								? 'Ícones temáticos de Festa Junina até 15/07 — depois voltam ao normal. Escolha um ou use a câmera no avatar para enviar sua foto.'
+								: 'Escolha um ícone ou use a câmera no avatar para enviar sua foto.'}
 						</p>
 						<div className="flex flex-wrap gap-3">
 							{AVATAR_PRESETS.map((preset) => {
 								const url = avatarPresetUrl(preset);
+								// Mostra a miniatura temática na temporada, mas grava sempre a
+								// URL normal (`url`) — a troca festa é só visual.
+								const display = seasonalUrl(url);
 								const current =
 									profile?.avatar ||
 									defaultAvatarFor(profile?.name, profile?.email);
@@ -253,7 +267,7 @@ export default function PerfilPage() {
 										}`}
 									>
 										<img
-											src={url}
+											src={display}
 											alt={preset}
 											className="h-16 w-16 sm:h-20 sm:w-20"
 										/>
