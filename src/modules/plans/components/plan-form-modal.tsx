@@ -43,7 +43,7 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 						onChange={(e) => setKey(e.target.value)}
 						placeholder="basic, pro, max..."
 						disabled={editing !== null}
-						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm disabled:opacity-60 font-mono"
+						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white disabled:opacity-60 font-mono"
 					/>
 				</Field>
 
@@ -52,7 +52,7 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 						value={name}
 						onChange={(e) => setName(e.target.value)}
 						placeholder="Plano Pro"
-						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm"
+						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white"
 					/>
 				</Field>
 
@@ -61,7 +61,7 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 						value={description ?? ''}
 						onChange={(e) => setDescription(e.target.value)}
 						rows={3}
-						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm"
+						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white"
 					/>
 				</Field>
 
@@ -74,7 +74,7 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 							value={monthly}
 							onChange={(e) => setMonthly(e.target.value)}
 							placeholder="opcional"
-							className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm"
+							className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white"
 						/>
 					</Field>
 					<Field label="Preço anual (R$)">
@@ -85,7 +85,7 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 							value={yearly}
 							onChange={(e) => setYearly(e.target.value)}
 							placeholder="opcional"
-							className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm"
+							className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white"
 						/>
 					</Field>
 				</div>
@@ -100,14 +100,14 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 						checked={published}
 						onChange={(e) => setPublished(e.target.checked)}
 					/>
-					Publicado
+					<span className="text-slate-700 dark:text-white">Publicado</span>
 				</label>
 
 				<div className="flex gap-3 pt-2">
 					<button
 						type="button"
 						onClick={onClose}
-						className="flex-1 px-4 py-2.5 rounded-xl text-sm border border-slate-200 dark:border-white/10"
+						className="flex-1 px-4 py-2.5 rounded-xl text-sm border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white"
 					>
 						Cancelar
 					</button>
