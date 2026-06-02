@@ -1,3 +1,5 @@
+import type { PassRecipe } from '@/services/parameters';
+
 export interface ParameterLesson {
 	id: string;
 	title: string;
@@ -88,6 +90,8 @@ export interface InlineParameterPayload {
 	forcarSeparacao?: boolean | null;
 	axisRotative?: boolean | null;
 	lineTypeId?: string | null;
+	/** Multi-passada: passadas extras (2..N). A passada 1 = receita acima. */
+	extraPasses?: PassRecipe[];
 }
 
 export interface CreateProductParameterPayload {
