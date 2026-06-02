@@ -17,6 +17,7 @@ import {
 	deleteParameter,
 	exportParameters,
 	getCommunityParameters,
+	getMySubmissions,
 	getParameterMachines,
 	getParameterMaterials,
 	getParameterOptions,
@@ -24,9 +25,12 @@ import {
 	getParameterSidebar,
 	getParameterStats,
 	getParameters,
+	getPendingParameters,
 	likeParameter,
 	rateParameter,
+	reviewParameter,
 	saveParameter,
+	submitParameter,
 	unsaveParameter,
 	updateParameter,
 	uploadParameterImage,
@@ -212,5 +216,66 @@ export function useExportParameters() {
 			toast.success('Exportacao concluida!');
 		},
 		onError: () => toast.error('Erro ao exportar'),
+	});
+}
+
+// ─── Member submission + Admin review (Fase 4) ───────────────────────────────
+
+/** Membro envia um parâmetro p/ análise. Fica pendente até o admin revisar. */
+export function useSubmitParameter() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (payload: CreateParameterPayload) => submitParameter(payload),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: QUERY_KEY });
+			toast.success('Enviado para análise!');
+		},
+		onError: () => toast.error('Erro ao enviar parametro'),
+	});
+}
+
+/** Submissões do próprio membro (com status + reviewNote). */
+export function useMySubmissions(enabled = true) {
+	return useQuery({
+		queryKey: [...QUERY_KEY, 'mine'] as const,
+		queryFn: getMySubmissions,
+		enabled,
+	});
+}
+
+/** Fila de análise do admin (submissões pendentes). */
+export function usePendingParameters(
+	params?: ParametersQueryParams,
+	enabled = true,
+) {
+	return useQuery({
+		queryKey: [...QUERY_KEY, 'pending', params] as const,
+		queryFn: () => getPendingParameters(params),
+		placeholderData: keepPreviousData,
+		enabled,
+	});
+}
+
+/** Admin aprova/rejeita uma submissão. Invalida a fila e a comunidade. */
+export function useReviewParameter() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			id,
+			body,
+		}: {
+			id: string;
+			body: { action: 'approve' | 'reject'; reviewNote?: string };
+		}) => reviewParameter(id, body),
+		onSuccess: (_data, { body }) => {
+			qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'pending'] });
+			qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'community'] });
+			toast.success(
+				body.action === 'approve'
+					? 'Parametro aprovado!'
+					: 'Parametro rejeitado',
+			);
+		},
+		onError: () => toast.error('Erro ao revisar parametro'),
 	});
 }
