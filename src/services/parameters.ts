@@ -66,6 +66,7 @@ export interface PassRecipe {
 	forcarSeparacao?: boolean | null;
 	axisRotative?: boolean | null;
 	lineTypeId?: string | null;
+	qPulse?: number | null;
 }
 
 export interface CreateParameterPayload {
@@ -98,6 +99,8 @@ export interface CreateParameterPayload {
 	lineTypeId?: string | null;
 	imageUrl?: string | null;
 	category?: string | null;
+	color?: string | null;
+	qPulse?: number | null;
 	/** Multi-passada: passadas extras (2..N). A passada 1 = recipe acima. */
 	extraPasses?: PassRecipe[];
 }
@@ -216,4 +219,45 @@ export async function exportParameters(
 		responseType: 'blob',
 	});
 	return data as Blob;
+}
+
+// ─── Member submission + Admin review ────────────────────────────────────────
+
+/** Membro envia um parâmetro p/ análise (gated por assinatura). Fica pendente. */
+export async function submitParameter(
+	payload: CreateParameterPayload,
+): Promise<LaserParameter> {
+	const { data } = await api.post<LaserParameter>(
+		'/parameters/submit',
+		payload,
+	);
+	return data;
+}
+
+/** Submissões do próprio membro (com status + reviewNote). */
+export async function getMySubmissions(): Promise<ParametersResponse> {
+	const { data } = await api.get<ParametersResponse>('/parameters/mine');
+	return data ?? { data: [], total: 0 };
+}
+
+/** Fila de análise do admin (submissões pendentes). */
+export async function getPendingParameters(
+	params?: ParametersQueryParams,
+): Promise<ParametersResponse> {
+	const { data } = await api.get<ParametersResponse>('/parameters/pending', {
+		params,
+	});
+	return data ?? { data: [], total: 0 };
+}
+
+/** Admin aprova/rejeita uma submissão (rejeição leva um motivo opcional). */
+export async function reviewParameter(
+	id: string,
+	body: { action: 'approve' | 'reject'; reviewNote?: string },
+): Promise<LaserParameter> {
+	const { data } = await api.post<LaserParameter>(
+		`/parameters/${id}/review`,
+		body,
+	);
+	return data;
 }

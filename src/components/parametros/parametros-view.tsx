@@ -6,17 +6,21 @@ import {
 	Cpu,
 	Filter,
 	Flame,
+	ListChecks,
 	type LucideIcon,
 	Search,
 	Star,
 	Table,
 	ThumbsUp,
+	Upload,
 	Users,
 	X,
 } from 'lucide-react';
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 import { ParameterDetailModal } from '@/components/parametros/parameter-detail-modal';
+import { ParameterForm } from '@/components/parametros/parameter-form';
 import { ParameterGridCard } from '@/components/parametros/parameter-grid-card';
 import { PageHeader } from '@/components/ui/page-header';
 import { ParameterGridSkeleton } from '@/components/ui/skeletons/parameter-grid-skeleton';
@@ -29,7 +33,9 @@ import {
 	useParameterStats,
 	useRateParameter,
 	useSaveParameter,
+	useSubmitParameter,
 } from '@/hooks/use-parameters';
+import type { CreateParameterPayload } from '@/services/parameters';
 import {
 	MACHINE_OPTIONS,
 	MATERIAL_OPTIONS,
@@ -82,6 +88,7 @@ export function ParametrosView() {
 	const [sort, setSort] = useState<SortValue>('likes');
 	const [page, setPage] = useState(1);
 	const [detailId, setDetailId] = useState<string | null>(null);
+	const [showSubmit, setShowSubmit] = useState(false);
 	const limit = 12;
 
 	// Filtros do painel: "staged" enquanto o usuário mexe, "applied" só ao Buscar.
@@ -125,6 +132,11 @@ export function ParametrosView() {
 	const likeMut = useLikeParameter();
 	const saveMut = useSaveParameter();
 	const rateMut = useRateParameter();
+	const submitMut = useSubmitParameter();
+
+	const handleSubmitParameter = (payload: CreateParameterPayload) => {
+		submitMut.mutate(payload, { onSuccess: () => setShowSubmit(false) });
+	};
 
 	const pickSort = (v: SortValue) => {
 		setSort(v);
@@ -144,11 +156,30 @@ export function ParametrosView() {
 
 	return (
 		<div className="relative">
-			<PageHeader
-				title="Parâmetros"
-				subtitle="Receitas testadas e aprovadas pela comunidade para resultados perfeitos."
-				icon={Table}
-			/>
+			<div className="flex flex-wrap items-start justify-between gap-3">
+				<PageHeader
+					title="Parâmetros"
+					subtitle="Receitas testadas e aprovadas pela comunidade para resultados perfeitos."
+					icon={Table}
+				/>
+				<div className="mb-8 flex items-center gap-2">
+					<Link
+						href="/course/parametros/minhas"
+						className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:border-violet-400 hover:text-violet-600 dark:border-white/10 dark:text-gray-300 dark:hover:text-violet-400"
+					>
+						<ListChecks className="h-4 w-4" />
+						Minhas submissões
+					</Link>
+					<button
+						type="button"
+						onClick={() => setShowSubmit(true)}
+						className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-violet-700"
+					>
+						<Upload className="h-4 w-4" />
+						Enviar Parâmetro
+					</button>
+				</div>
+			</div>
 
 			{/* Stats */}
 			<div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -413,6 +444,36 @@ export function ParametrosView() {
 				parameterId={detailId}
 				onClose={() => setDetailId(null)}
 			/>
+
+			{showSubmit && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+					<div className="relative mx-4 max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-white/10 dark:bg-slate-900">
+						<div className="mb-2 flex items-center justify-between">
+							<h3 className="text-lg font-bold text-slate-900 dark:text-white">
+								Enviar parâmetro
+							</h3>
+							<button
+								type="button"
+								onClick={() => setShowSubmit(false)}
+								className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/10 dark:hover:text-white"
+							>
+								<X className="h-5 w-5" />
+							</button>
+						</div>
+						<p className="mb-6 text-sm text-slate-500 dark:text-gray-400">
+							Sua receita será enviada para análise da equipe. Após aprovada,
+							aparece na comunidade.
+						</p>
+						<ParameterForm
+							mode="member"
+							submitting={submitMut.isPending}
+							submitLabel="Enviar para análise"
+							onSubmit={handleSubmitParameter}
+							onCancel={() => setShowSubmit(false)}
+						/>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

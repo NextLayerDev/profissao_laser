@@ -41,6 +41,12 @@ export interface LaserParameter {
 	imageUrl?: string | null;
 	category?: string | null;
 	color?: string | null;
+	qPulse?: number | null;
+	// Submissão do membro + análise do admin (Fase 4)
+	status?: 'pending' | 'approved' | 'rejected';
+	reviewNote?: string | null;
+	reviewedAt?: string | null;
+	submittedBy?: string | null;
 	// Multi-passada: parâmetro "pai" com N passadas (cada passada = um parâmetro)
 	parentId?: string | null;
 	passOrder?: number | null;
