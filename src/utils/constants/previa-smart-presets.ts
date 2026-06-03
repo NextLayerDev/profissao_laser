@@ -84,26 +84,15 @@ export function smartPresetFor(
 
 /** fundos (fundoCena slug) sugeridos por material. */
 const BACKGROUNDS_BY_MATERIAL: Record<string, string[]> = {
-	'aco-inox': ['mesa-ambiente', 'cinza-gradiente', 'preto-fosco'],
-	inox: ['mesa-ambiente', 'cinza-gradiente', 'preto-fosco'],
-	aluminio: ['mesa-ambiente', 'cinza-gradiente', 'preto-fosco'],
-	metal: ['mesa-ambiente', 'cinza-gradiente', 'preto-fosco'],
-	madeira: ['madeira', 'mesa-ambiente', 'ambiente-decorado'],
-	mdf: ['madeira', 'mesa-ambiente', 'ambiente-decorado'],
-	bambu: ['madeira', 'mesa-ambiente', 'tecido-linho'],
-	vidro: ['marmore', 'mesa-ambiente', 'branco-puro'],
-	cristal: ['marmore', 'preto-fosco', 'branco-puro'],
-	acrilico: ['branco-puro', 'cinza-gradiente', 'transparente'],
-	ceramica: ['mesa-ambiente', 'tecido-linho', 'branco-puro'],
-	porcelana: ['marmore', 'branco-puro', 'mesa-ambiente'],
-	couro: ['madeira', 'mesa-ambiente', 'preto-fosco'],
-	ardosia: ['marmore', 'cinza-gradiente', 'mesa-ambiente'],
-	pedra: ['marmore', 'cinza-gradiente', 'mesa-ambiente'],
-	plastico: ['branco-puro', 'cinza-gradiente', 'preto-fosco'],
-	tecido: ['tecido-linho', 'mesa-ambiente', 'ambiente-decorado'],
+	// Produtos de madeira ganham o fundo de madeira como 2ª opção.
+	madeira: ['mesa-ambiente', 'madeira', 'ambiente-decorado'],
+	mdf: ['mesa-ambiente', 'madeira', 'ambiente-decorado'],
+	bambu: ['mesa-ambiente', 'madeira', 'tecido-linho'],
 };
 
-const DEFAULT_BACKGROUNDS = ['mesa-ambiente', 'cinza-gradiente', 'branco-puro'];
+// Padrão global pedido pelo cliente: Mesa + Ambiente (1º), Preto Fosco (2º),
+// Cinza Gradiente (3º). Mesa + Ambiente é também o fundo padrão pré-selecionado.
+const DEFAULT_BACKGROUNDS = ['mesa-ambiente', 'preto-fosco', 'cinza-gradiente'];
 
 /** Até 3 fundos sugeridos para o produto (valores de fundoCena). */
 export function suggestedBackgrounds(p: LaserProductLike): string[] {

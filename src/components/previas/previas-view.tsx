@@ -88,7 +88,7 @@ const DEFAULT_LASER_SETTINGS: LaserSettings = {
 	tipoVisualizacao: 'angulo-3d',
 	anguloCamera: 'frontal',
 	iluminacao: 'studio-softbox',
-	fundoCena: 'cinza-gradiente',
+	fundoCena: 'mesa-ambiente',
 	apenasTexto: false,
 	modoLentes: false,
 	textoLenteDireita: '',
@@ -1048,6 +1048,18 @@ export function PreviasView() {
 		},
 		[options],
 	);
+
+	// Garante um fundo válido: se o default (mesa-ambiente) ainda não existir nas
+	// opções (motor não deployado), cai pro 1º fundo disponível.
+	useEffect(() => {
+		const fundos = options?.fundoCena;
+		if (
+			fundos?.length &&
+			!fundos.some((o) => o.value === laserSettings.fundoCena)
+		) {
+			setLaserSettings((prev) => ({ ...prev, fundoCena: fundos[0].value }));
+		}
+	}, [options, laserSettings.fundoCena]);
 
 	const canProceedStep1 = !!selectedVariantId;
 

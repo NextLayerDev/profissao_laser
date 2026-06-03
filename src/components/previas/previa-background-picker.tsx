@@ -93,13 +93,18 @@ export function PreviaBackgroundPicker({
 	suggested: string[];
 	onChange: (value: string) => void;
 }) {
+	const [showAll, setShowAll] = useState(false);
 	const suggestedItems = suggested
 		.map((s) => options.find((o) => o.value === s))
 		.filter((o): o is PreviaOptionItem => Boolean(o))
 		.slice(0, 3);
 
+	// Sem sugestões (produto não escolhido) → mostra todos direto.
+	const expanded = showAll || suggestedItems.length === 0;
+	const restCount = Math.max(options.length - suggestedItems.length, 0);
+
 	return (
-		<div className="space-y-3">
+		<div className="space-y-2">
 			{suggestedItems.length > 0 && (
 				<div>
 					<p className="text-xs font-medium text-violet-600 dark:text-violet-300 mb-1.5 flex items-center gap-1">
@@ -117,21 +122,36 @@ export function PreviaBackgroundPicker({
 					</div>
 				</div>
 			)}
-			<div>
-				<p className="text-xs font-medium text-slate-500 dark:text-gray-400 mb-1.5">
-					Todos os fundos
-				</p>
-				<div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
-					{options.map((o) => (
-						<BgThumb
-							key={o.value}
-							item={o}
-							selected={value === o.value}
-							onSelect={() => onChange(o.value)}
-						/>
-					))}
+
+			{expanded && (
+				<div>
+					{suggestedItems.length > 0 && (
+						<p className="text-xs font-medium text-slate-500 dark:text-gray-400 mb-1.5">
+							Todos os fundos
+						</p>
+					)}
+					<div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
+						{options.map((o) => (
+							<BgThumb
+								key={o.value}
+								item={o}
+								selected={value === o.value}
+								onSelect={() => onChange(o.value)}
+							/>
+						))}
+					</div>
 				</div>
-			</div>
+			)}
+
+			{suggestedItems.length > 0 && restCount > 0 && (
+				<button
+					type="button"
+					onClick={() => setShowAll((v) => !v)}
+					className="text-xs font-medium text-violet-600 dark:text-violet-300 hover:underline"
+				>
+					{showAll ? 'Ver menos' : `Ver todos os fundos (${restCount})`}
+				</button>
+			)}
 		</div>
 	);
 }
