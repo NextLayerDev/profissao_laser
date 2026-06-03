@@ -104,6 +104,7 @@ export function useToolBilling(
 			{pendingAction && (
 				<CreditConfirmModal
 					variant="confirm"
+					featureName={tool?.name}
 					cost={cost}
 					balance={voxBalance}
 					pending={pending}
@@ -118,6 +119,7 @@ export function useToolBilling(
 			{runTool.block?.kind === 'insufficient_voxes' && (
 				<CreditConfirmModal
 					variant="insufficient"
+					featureName={tool?.name}
 					cost={cost}
 					balance={voxBalance}
 					onConfirm={runTool.clearBlock}

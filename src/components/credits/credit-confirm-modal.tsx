@@ -17,6 +17,8 @@ interface CreditConfirmModalProps {
 	variant: CreditModalVariant;
 	cost: number;
 	balance: number;
+	/** nome da funcionalidade (ex.: "Prévia IA") — citado no texto do modal */
+	featureName?: string;
 	/** somente para variant='daily-limit' */
 	canUseCredits?: boolean;
 	pending?: boolean;
@@ -54,6 +56,7 @@ export function CreditConfirmModal({
 	variant,
 	cost,
 	balance,
+	featureName,
 	canUseCredits = true,
 	pending = false,
 	freeTier,
@@ -150,6 +153,13 @@ export function CreditConfirmModal({
 		);
 	}
 
+	// Cita a funcionalidade quando informada ("Prévia IA custa…"); senão "Esta ação".
+	const subject = featureName ? (
+		<strong className="text-slate-900 dark:text-white">{featureName}</strong>
+	) : (
+		'Esta ação'
+	);
+
 	return (
 		<ModalOverlay onClose={onClose}>
 			<div className="p-6">
@@ -180,7 +190,7 @@ export function CreditConfirmModal({
 				<p className="text-sm text-slate-600 dark:text-gray-400 mb-6">
 					{isInsufficient ? (
 						<>
-							Esta ação custa{' '}
+							{subject} custa{' '}
 							<strong className="text-slate-900 dark:text-white">
 								{formatVox(cost)} {cost === 1 ? 'voxxy' : 'voxxys'}
 							</strong>{' '}
@@ -192,7 +202,7 @@ export function CreditConfirmModal({
 						</>
 					) : (
 						<>
-							Esta ação custa{' '}
+							{subject} custa{' '}
 							<strong className="text-slate-900 dark:text-white">
 								{formatVox(cost)} {cost === 1 ? 'voxxy' : 'voxxys'}
 							</strong>

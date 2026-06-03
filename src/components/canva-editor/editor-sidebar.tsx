@@ -4,7 +4,6 @@ import type { Canvas, FabricObject } from 'fabric';
 import { Eraser, Loader2, Lock, Sparkles, Trash2, Unlock } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
 import type { CanvasRegion } from '@/hooks/canva-editor/use-canvas-region';
 import {
 	useEditorAiGenerate,
@@ -12,7 +11,7 @@ import {
 } from '@/hooks/use-editor-ai';
 import { useEntitlements } from '@/hooks/use-entitlements';
 import { formatVox } from '@/lib/format';
-import { useRunTool } from '@/modules/tools/hooks/use-run-tool';
+import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
 import type { EditorTool } from './editor-toolbar';
 
 interface EditorSidebarProps {
@@ -79,18 +78,11 @@ function AiPanel({
 	const [prompt, setPrompt] = useState('');
 	const aiGenerate = useEditorAiGenerate();
 	const removeBg = useRemoveBackground();
-	// Acesso/billing agora vêm do upvox: o curso ativo define onde a ferramenta
-	// bilha; cota grátis / custo / saldo saem dos entitlements daquele curso.
+	// Billing padrão pelo hook: cobra se a funcionalidade existir (confirma/debita/
+	// modal saem dele, igual a Prévia/Parâmetros); roda livre se não houver.
 	const { courses } = useEntitlements();
 	const courseSlug = courses[0]?.slug;
-	const entitlements = useEntitlements(courseSlug);
-	const aiCanvasCost = entitlements.toolFor('ai_canvas')?.vox_cost ?? 0;
-	const aiCanvasRemainingFree = entitlements.remainingFree('ai_canvas');
-	const voxBalance = entitlements.voxBalance;
-	// Cobrada só se a ferramenta tiver funcionalidade liberada; senão roda livre.
-	const aiCanvasBilled = !!entitlements.toolFor('ai_canvas');
-	const runTool = useRunTool('ai_canvas', courseSlug);
-	const [confirmRun, setConfirmRun] = useState<(() => void) | null>(null);
+	const billing = useToolBilling('ai_canvas', courseSlug);
 
 	const exportCanvasAsBase64 = (): string | null => {
 		if (!canvas) return null;
@@ -123,14 +115,9 @@ function AiPanel({
 					if (isRegionMode) onClearRegion();
 					return result;
 				});
-		const action = () =>
-			aiCanvasBilled
-				? runTool.run((invocationId) => engineFn(invocationId))
-				: engineFn(undefined);
-		// Sem cota grátis e a ação custa voxxys → confirma antes de gastar.
-		if (aiCanvasRemainingFree === 0 && aiCanvasCost > 0)
-			setConfirmRun(() => action);
-		else action();
+		// O hook decide: cobrada → invoke→motor→settle; livre → motor sem invocation;
+		// e confirma sozinho quando não há cota grátis e há custo.
+		billing.runEngine(engineFn);
 	};
 
 	const handleRemoveBg = () => {
@@ -146,14 +133,9 @@ function AiPanel({
 					onApplyEditedImage(result.imageBase64);
 					return result;
 				});
-		const action = () =>
-			aiCanvasBilled
-				? runTool.run((invocationId) => engineFn(invocationId))
-				: engineFn(undefined);
-		// Sem cota grátis e a ação custa voxxys → confirma antes de gastar.
-		if (aiCanvasRemainingFree === 0 && aiCanvasCost > 0)
-			setConfirmRun(() => action);
-		else action();
+		// O hook decide: cobrada → invoke→motor→settle; livre → motor sem invocation;
+		// e confirma sozinho quando não há cota grátis e há custo.
+		billing.runEngine(engineFn);
 	};
 
 	return (
@@ -208,27 +190,27 @@ function AiPanel({
 				type="button"
 				onClick={handleAi}
 				disabled={
-					!prompt.trim() || runTool.pending || (isRegionMode && !region)
+					!prompt.trim() || billing.pending || (isRegionMode && !region)
 				}
 				className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-linear-to-br from-violet-600 to-fuchsia-600 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg"
 			>
-				{runTool.pending ? (
+				{billing.pending ? (
 					<Loader2 className="w-4 h-4 animate-spin" />
 				) : (
 					<Sparkles className="w-4 h-4" />
 				)}
-				Aplicar IA ({formatVox(aiCanvasCost)}{' '}
-				{aiCanvasCost === 1 ? 'voxxy' : 'voxxys'})
+				Aplicar IA ({formatVox(billing.cost)}{' '}
+				{billing.cost === 1 ? 'voxxy' : 'voxxys'})
 			</button>
 
 			<div className="pt-3 border-t border-slate-200 dark:border-white/10">
 				<button
 					type="button"
 					onClick={handleRemoveBg}
-					disabled={runTool.pending}
+					disabled={billing.pending}
 					className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 disabled:opacity-50 text-slate-700 dark:text-gray-300 text-sm font-medium rounded-lg"
 				>
-					{runTool.pending ? (
+					{billing.pending ? (
 						<Loader2 className="w-4 h-4 animate-spin" />
 					) : (
 						<Eraser className="w-4 h-4" />
@@ -237,29 +219,7 @@ function AiPanel({
 				</button>
 			</div>
 
-			{confirmRun && (
-				<CreditConfirmModal
-					variant="confirm"
-					cost={aiCanvasCost}
-					balance={voxBalance}
-					pending={runTool.pending}
-					onConfirm={() => {
-						const a = confirmRun;
-						setConfirmRun(null);
-						a?.();
-					}}
-					onClose={() => setConfirmRun(null)}
-				/>
-			)}
-			{runTool.block?.kind === 'insufficient_voxes' && (
-				<CreditConfirmModal
-					variant="insufficient"
-					cost={aiCanvasCost}
-					balance={voxBalance}
-					onConfirm={runTool.clearBlock}
-					onClose={runTool.clearBlock}
-				/>
-			)}
+			{billing.modal}
 		</div>
 	);
 }
