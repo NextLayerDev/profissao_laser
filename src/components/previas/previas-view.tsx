@@ -25,7 +25,14 @@ import {
 	Type,
 	Upload,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+	useCallback,
+	useEffect,
+	useId,
+	useMemo,
+	useRef,
+	useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { MyMachineSection } from '@/components/previas/my-machine-section';
@@ -170,9 +177,11 @@ function DynamicSelect({
 	onChange: (v: string) => void;
 	highlight?: boolean;
 }) {
+	const id = useId();
 	return (
 		<div>
-			<span
+			<label
+				htmlFor={id}
 				className={`block text-xs mb-1 ${
 					highlight
 						? 'text-violet-600 dark:text-violet-300 font-semibold'
@@ -180,8 +189,9 @@ function DynamicSelect({
 				}`}
 			>
 				{label}
-			</span>
+			</label>
 			<select
+				id={id}
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
 				className={`w-full px-3 py-2 text-sm rounded-lg border bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 ${
@@ -214,15 +224,16 @@ function ToggleButtonGroup({
 	onChange: (v: string) => void;
 }) {
 	return (
-		<div>
-			<span className="block text-xs text-slate-500 dark:text-gray-400 mb-1">
+		<fieldset className="min-w-0 border-0 p-0 m-0">
+			<legend className="block text-xs text-slate-500 dark:text-gray-400 mb-1">
 				{label}
-			</span>
+			</legend>
 			<div className="flex gap-1">
 				{options.map((opt) => (
 					<button
 						key={opt.value}
 						type="button"
+						aria-pressed={value === opt.value}
 						onClick={() => onChange(opt.value)}
 						className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
 							value === opt.value
@@ -234,7 +245,7 @@ function ToggleButtonGroup({
 					</button>
 				))}
 			</div>
-		</div>
+		</fieldset>
 	);
 }
 
@@ -676,6 +687,7 @@ function CollapsibleSection({
 	children: React.ReactNode;
 }) {
 	const [open, setOpen] = useState(defaultOpen ?? false);
+	const contentId = useId();
 
 	return (
 		<div
@@ -684,19 +696,27 @@ function CollapsibleSection({
 			<button
 				type="button"
 				onClick={() => setOpen(!open)}
+				aria-expanded={open}
+				aria-controls={contentId}
 				className="w-full flex items-center justify-between p-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
 			>
 				<span className="flex items-center gap-2">
-					{Icon && <Icon className="w-4 h-4 text-violet-500" />}
+					{Icon && (
+						<Icon className="w-4 h-4 text-violet-500" aria-hidden="true" />
+					)}
 					{title}
 				</span>
 				{open ? (
-					<ChevronUp className="w-4 h-4" />
+					<ChevronUp className="w-4 h-4" aria-hidden="true" />
 				) : (
-					<ChevronDown className="w-4 h-4" />
+					<ChevronDown className="w-4 h-4" aria-hidden="true" />
 				)}
 			</button>
-			{open && <div className="p-3 pt-0 space-y-3">{children}</div>}
+			{open && (
+				<div id={contentId} className="p-3 pt-0 space-y-3">
+					{children}
+				</div>
+			)}
 		</div>
 	);
 }
@@ -1449,6 +1469,10 @@ export function PreviasView() {
 				{/* Step 3: Laser Settings */}
 				{step === 3 && !optionsLoading && (
 					<div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
+						<p className="lg:col-span-2 text-xs text-slate-500 dark:text-gray-400">
+							Ajuste tudo da gravação e da cena — os campos sugeridos pelo
+							produto já vêm preenchidos, é só refinar o que quiser.
+						</p>
 						<CollapsibleSection
 							title="Tamanho e Posicao"
 							icon={Ruler}
@@ -1473,6 +1497,7 @@ export function PreviasView() {
 									</span>
 									<input
 										type="number"
+										aria-label="Rotação"
 										value={laserSettings.rotacao}
 										onChange={(e) =>
 											updateLS('rotacao', Number(e.target.value))
@@ -1538,7 +1563,7 @@ export function PreviasView() {
 							</div>
 						</CollapsibleSection>
 
-						<CollapsibleSection title="Nome e Fonte" icon={Type}>
+						<CollapsibleSection title="Nome e Fonte" icon={Type} defaultOpen>
 							<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
 								<ToggleButtonGroup
 									label="Com Nome"
@@ -1586,7 +1611,7 @@ export function PreviasView() {
 							</div>
 						</CollapsibleSection>
 
-						<CollapsibleSection title="Efeitos" icon={Sparkles}>
+						<CollapsibleSection title="Efeitos" icon={Sparkles} defaultOpen>
 							<div className="grid grid-cols-2 gap-4">
 								<div>
 									<span className="block text-xs text-slate-500 dark:text-gray-400 mb-1">
@@ -1596,6 +1621,7 @@ export function PreviasView() {
 										type="range"
 										min={getRange('contraste', 0, 100).min}
 										max={getRange('contraste', 0, 100).max}
+										aria-label="Contraste"
 										value={laserSettings.contraste}
 										onChange={(e) =>
 											updateLS('contraste', Number(e.target.value))
@@ -1611,6 +1637,7 @@ export function PreviasView() {
 										type="range"
 										min={getRange('efeitoSombra', 0, 100).min}
 										max={getRange('efeitoSombra', 0, 100).max}
+										aria-label="Sombra"
 										value={laserSettings.efeitoSombra}
 										onChange={(e) =>
 											updateLS('efeitoSombra', Number(e.target.value))
