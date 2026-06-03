@@ -12,7 +12,7 @@ interface AvatarProps {
 	email?: string | null;
 	/** Classes de tamanho/tipografia (ex.: "w-9 h-9 text-xs"). */
 	className?: string;
-	/** Arredondamento (padrão círculo). Use "rounded-xl" para avatar quadrado. */
+	/** Arredondamento (padrão quadrado arredondado; use 'rounded-full' p/ círculo). */
 	rounded?: string;
 	/** Fundo do círculo de iniciais (cor sólida ou gradiente via style). */
 	fallbackClassName?: string;
@@ -46,7 +46,7 @@ export function Avatar({
 	name,
 	email,
 	className = 'w-10 h-10 text-sm',
-	rounded = 'rounded-full',
+	rounded = 'rounded-2xl',
 	alt,
 }: AvatarProps) {
 	const base = `${rounded} shrink-0 overflow-hidden ${className}`;

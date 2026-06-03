@@ -12,7 +12,7 @@ export function ProfileSkeleton() {
 				<Skeleton className="h-28 sm:h-36 w-full rounded-none" />
 				<div className="px-6 pb-6">
 					<div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-14 sm:-mt-16">
-						<Skeleton className="w-28 h-28 rounded-full border-4 border-white dark:border-[#1a1a1d]" />
+						<Skeleton className="w-28 h-28 rounded-2xl border-4 border-white dark:border-[#1a1a1d]" />
 						<div className="flex-1 space-y-2 sm:pb-2">
 							<Skeleton className="h-6 w-48" />
 							<Skeleton className="h-4 w-64" />

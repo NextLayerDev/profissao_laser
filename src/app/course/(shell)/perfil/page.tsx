@@ -168,7 +168,7 @@ export default function PerfilPage() {
 										className="w-28 h-28 text-4xl border-4 border-white dark:border-[#1a1a1d] shadow-lg"
 									/>
 									{avatarBusy && (
-										<div className="absolute inset-0 rounded-full bg-black/40 grid place-items-center border-4 border-white dark:border-[#1a1a1d]">
+										<div className="absolute inset-0 rounded-2xl bg-black/40 grid place-items-center border-4 border-white dark:border-[#1a1a1d]">
 											<Loader2 className="w-6 h-6 text-white animate-spin" />
 										</div>
 									)}
