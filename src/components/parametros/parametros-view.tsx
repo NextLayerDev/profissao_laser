@@ -38,10 +38,6 @@ import {
 } from '@/hooks/use-parameters';
 import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
 import type { CreateParameterPayload } from '@/services/parameters';
-import {
-	MACHINE_OPTIONS,
-	MATERIAL_OPTIONS,
-} from '@/utils/constants/parameter-options';
 
 /* ------------------------------------------------------------------ */
 /*  Config                                                             */
@@ -68,7 +64,7 @@ interface StagedFilters {
 	mode: string;
 	category: string;
 	color: string;
-	material: string;
+	materialType: string;
 }
 
 const EMPTY_FILTERS: StagedFilters = {
@@ -77,7 +73,7 @@ const EMPTY_FILTERS: StagedFilters = {
 	mode: '',
 	category: '',
 	color: '',
-	material: '',
+	materialType: '',
 };
 
 /* ------------------------------------------------------------------ */
@@ -109,6 +105,8 @@ export function ParametrosView() {
 	const { data: modeOptions = [] } = useParameterOptions('mode');
 	const { data: categoryOptions = [] } = useParameterOptions('category');
 	const { data: colorOptions = [] } = useParameterOptions('color');
+	const { data: machineOptions = [] } = useParameterOptions('machine');
+	const { data: materialOptions = [] } = useParameterOptions('material');
 
 	const stagedActiveCount = useMemo(
 		() => Object.values(staged).filter(Boolean).length,
@@ -126,7 +124,7 @@ export function ParametrosView() {
 			mode: applied.mode || undefined,
 			category: applied.category || undefined,
 			color: applied.color || undefined,
-			material: applied.material || undefined,
+			materialType: applied.materialType || undefined,
 		}),
 		[page, sort, debouncedSearch, applied],
 	);
@@ -239,7 +237,7 @@ export function ParametrosView() {
 						label="Máquina"
 						value={staged.machine}
 						onChange={(v) => setStagedField('machine', v)}
-						options={MACHINE_OPTIONS}
+						options={machineOptions.map((o) => o.value)}
 					/>
 					<FilterSelect
 						n={2}
@@ -272,9 +270,9 @@ export function ParametrosView() {
 					<FilterSelect
 						n={6}
 						label="Material"
-						value={staged.material}
-						onChange={(v) => setStagedField('material', v)}
-						options={MATERIAL_OPTIONS}
+						value={staged.materialType}
+						onChange={(v) => setStagedField('materialType', v)}
+						options={materialOptions.map((o) => o.value)}
 					/>
 				</div>
 

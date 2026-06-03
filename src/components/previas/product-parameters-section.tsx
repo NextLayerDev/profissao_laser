@@ -29,10 +29,8 @@ import type {
 	CreateProductParameterPayload,
 	ProductParameter,
 } from '@/types/product-parameters';
-import {
-	MATERIAL_OPTIONS,
-	MODE_OPTIONS,
-} from '@/utils/constants/parameter-options';
+import { machineTypeOf } from '@/utils/constants/parameter-field-rules';
+import { MODE_OPTIONS } from '@/utils/constants/parameter-options';
 
 const inputCls =
 	'w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/40';
@@ -263,6 +261,8 @@ function AssociationModal({
 	const [lessonId, setLessonId] = useState(editing?.lessonId ?? '');
 
 	const selectedMachine = machines.find((m) => m.id === machineId);
+	// Máquina UV não usa potência (%).
+	const isUV = machineTypeOf(selectedMachine?.name) === 'UV';
 
 	const optionSetters: Record<MachineOptionCategory, (v: string) => void> = {
 		power: setPowerOptionId,
@@ -448,21 +448,15 @@ function AssociationModal({
 							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 								<div>
 									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
-										Material *
+										Nome do Produto *
 									</span>
 									<input
 										type="text"
-										list="inline-material-options"
 										value={material}
 										onChange={(e) => setMaterial(e.target.value)}
-										placeholder="Ex: Aco inox"
+										placeholder="Ex: Copo preto 500ml"
 										className={inputCls}
 									/>
-									<datalist id="inline-material-options">
-										{MATERIAL_OPTIONS.map((o) => (
-											<option key={o} value={o} />
-										))}
-									</datalist>
 								</div>
 								<div>
 									<span className="text-xs text-slate-500 dark:text-gray-400 mb-1 block">
@@ -492,11 +486,12 @@ function AssociationModal({
 									</span>
 									<input
 										type="number"
-										value={power}
+										disabled={isUV}
+										value={isUV ? 0 : power}
 										onChange={(e) => setPower(Number(e.target.value))}
 										min={0}
 										max={100}
-										className={inputCls}
+										className={`${inputCls} disabled:opacity-50`}
 									/>
 								</div>
 								<div>
@@ -725,7 +720,7 @@ function AssociationModal({
 									material: material.trim(),
 									mode: mode.trim(),
 									speed,
-									power,
+									power: isUV ? 0 : power,
 									frequency,
 									line,
 									crossHatch,

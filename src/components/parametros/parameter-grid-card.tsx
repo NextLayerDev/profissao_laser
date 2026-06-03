@@ -22,7 +22,10 @@ import {
 } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import type { LaserParameter } from '@/types/parameters';
-import { applicableFields } from '@/utils/constants/parameter-field-rules';
+import {
+	applicableFields,
+	formatMachineLabel,
+} from '@/utils/constants/parameter-field-rules';
 
 interface ParameterGridCardProps {
 	parameter: LaserParameter;
@@ -198,10 +201,7 @@ export function ParameterGridCard({
 					{/* Tags: máquina+W / software / lente */}
 					<div className="mb-3 flex flex-wrap gap-1.5">
 						{p.machine ? (
-							<Tag>
-								{p.machine}
-								{p.powerWatts ? ` ${p.powerWatts}W` : ''}
-							</Tag>
+							<Tag>{formatMachineLabel(p.machine, p.powerWatts)}</Tag>
 						) : null}
 						{p.software ? <Tag>{p.software}</Tag> : null}
 						{p.lens ? <Tag>{p.lens}</Tag> : null}

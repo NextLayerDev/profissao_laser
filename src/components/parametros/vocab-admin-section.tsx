@@ -22,24 +22,34 @@ import {
 } from '@/hooks/use-parameters';
 import type { ParameterOption } from '@/types/parameters';
 
-type Dimension = 'lens' | 'category' | 'color' | 'mode';
+type Dimension =
+	| 'machine'
+	| 'lens'
+	| 'category'
+	| 'material'
+	| 'color'
+	| 'mode';
 
 const DIMENSIONS: { value: Dimension; label: string }[] = [
+	{ value: 'machine', label: 'Máquina' },
 	{ value: 'lens', label: 'Lente' },
 	{ value: 'category', label: 'Categoria' },
+	{ value: 'material', label: 'Material' },
 	{ value: 'color', label: 'Cor' },
 	{ value: 'mode', label: 'Tipo' },
 ];
 
 const DIMENSION_LABEL: Record<Dimension, string> = {
+	machine: 'Máquina',
 	lens: 'Lente',
 	category: 'Categoria',
+	material: 'Material',
 	color: 'Cor',
 	mode: 'Tipo',
 };
 
 export function VocabAdminSection() {
-	const [dimension, setDimension] = useState<Dimension>('lens');
+	const [dimension, setDimension] = useState<Dimension>('machine');
 	const [deleteTarget, setDeleteTarget] = useState<ParameterOption | null>(
 		null,
 	);
@@ -62,8 +72,8 @@ export function VocabAdminSection() {
 					Vocabulários
 				</h2>
 				<p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
-					Opções por trás dos filtros Lente / Categoria / Cor / Tipo. Aparecem
-					nos dropdowns e no form de parâmetro.
+					Opções por trás dos filtros Máquina / Lente / Categoria / Material /
+					Cor / Tipo. Aparecem nos dropdowns e no form de parâmetro.
 				</p>
 			</div>
 
