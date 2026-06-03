@@ -8,7 +8,6 @@ import {
 	ChevronDown,
 	ChevronLeft,
 	ChevronRight,
-	ChevronUp,
 	Download,
 	Eye,
 	Image,
@@ -276,38 +275,136 @@ function FontSelector({
 		if (selectedFont) loadGoogleFont(selectedFont.family);
 	}, [selectedFont]);
 
+	const id = useId();
 	return (
-		<div className="col-span-2 sm:col-span-3">
-			<span className="block text-xs text-slate-500 dark:text-gray-400 mb-1">
-				Fonte
-			</span>
-			<select
-				value={value}
-				onChange={(e) => {
-					const font = fonts.find((f) => f.value === e.target.value);
-					if (font) loadGoogleFont(font.family);
-					onChange(e.target.value);
-				}}
-				className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+		<div className="col-span-full">
+			<label
+				htmlFor={id}
+				className="block text-xs text-slate-500 dark:text-gray-400 mb-1"
 			>
-				{Array.from(grouped.entries()).map(([category, catFonts]) => (
-					<optgroup key={category} label={category}>
-						{catFonts.map((f) => (
-							<option key={f.value} value={f.value}>
-								{f.label}
-							</option>
-						))}
-					</optgroup>
-				))}
-			</select>
-			{selectedFont && (
-				<div
-					className="mt-2 p-3 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-lg text-slate-900 dark:text-white"
-					style={{ fontFamily: `'${selectedFont.family}', sans-serif` }}
+				Fonte
+			</label>
+			<div className="flex flex-col sm:flex-row gap-2">
+				<select
+					id={id}
+					value={value}
+					onChange={(e) => {
+						const font = fonts.find((f) => f.value === e.target.value);
+						if (font) loadGoogleFont(font.family);
+						onChange(e.target.value);
+					}}
+					className="sm:w-56 shrink-0 px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 				>
-					Profissao Laser — Abc 123
-				</div>
-			)}
+					{Array.from(grouped.entries()).map(([category, catFonts]) => (
+						<optgroup key={category} label={category}>
+							{catFonts.map((f) => (
+								<option key={f.value} value={f.value}>
+									{f.label}
+								</option>
+							))}
+						</optgroup>
+					))}
+				</select>
+				{selectedFont && (
+					<div
+						className="flex-1 min-w-0 flex items-center px-3 py-2 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-base text-slate-900 dark:text-white truncate"
+						style={{ fontFamily: `'${selectedFont.family}', sans-serif` }}
+					>
+						Profissao Laser — Abc 123
+					</div>
+				)}
+			</div>
+		</div>
+	);
+}
+
+/* ────────── Cabeçalho de seção + campos uniformes (grade do passo Laser) ───── */
+
+function SectionHeader({
+	icon: Icon,
+	title,
+}: {
+	icon: React.ComponentType<{ className?: string }>;
+	title: string;
+}) {
+	return (
+		<h3 className="col-span-full mt-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-gray-400">
+			<Icon className="w-3.5 h-3.5 text-violet-500" aria-hidden="true" />
+			<span>{title}</span>
+			<span className="flex-1 h-px bg-slate-200 dark:bg-white/10" />
+		</h3>
+	);
+}
+
+function NumberField({
+	label,
+	value,
+	min,
+	max,
+	onChange,
+}: {
+	label: string;
+	value: number;
+	min?: number;
+	max?: number;
+	onChange: (n: number) => void;
+}) {
+	const id = useId();
+	return (
+		<div>
+			<label
+				htmlFor={id}
+				className="block text-xs text-slate-500 dark:text-gray-400 mb-1"
+			>
+				{label}
+			</label>
+			<input
+				id={id}
+				type="number"
+				value={value}
+				min={min}
+				max={max}
+				onChange={(e) => onChange(Number(e.target.value))}
+				className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+			/>
+		</div>
+	);
+}
+
+function RangeField({
+	label,
+	value,
+	min,
+	max,
+	onChange,
+	suffix = '',
+}: {
+	label: string;
+	value: number;
+	min?: number;
+	max?: number;
+	onChange: (n: number) => void;
+	suffix?: string;
+}) {
+	const id = useId();
+	return (
+		<div>
+			<label
+				htmlFor={id}
+				className="block text-xs text-slate-500 dark:text-gray-400 mb-1"
+			>
+				{label}: {value}
+				{suffix}
+			</label>
+			<input
+				id={id}
+				type="range"
+				min={min}
+				max={max}
+				value={value}
+				onChange={(e) => onChange(Number(e.target.value))}
+				className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-200 dark:bg-white/10 accent-violet-700"
+			/>
 		</div>
 	);
 }
@@ -667,56 +764,6 @@ function LogoUploadZone({
 					e.target.value = '';
 				}}
 			/>
-		</div>
-	);
-}
-
-/* ─────────────── Collapsible Section ─────────────── */
-
-function CollapsibleSection({
-	title,
-	icon: Icon,
-	defaultOpen,
-	className,
-	children,
-}: {
-	title: string;
-	icon?: React.ComponentType<{ className?: string }>;
-	defaultOpen?: boolean;
-	className?: string;
-	children: React.ReactNode;
-}) {
-	const [open, setOpen] = useState(defaultOpen ?? false);
-	const contentId = useId();
-
-	return (
-		<div
-			className={`rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden ${className ?? ''}`}
-		>
-			<button
-				type="button"
-				onClick={() => setOpen(!open)}
-				aria-expanded={open}
-				aria-controls={contentId}
-				className="w-full flex items-center justify-between p-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
-			>
-				<span className="flex items-center gap-2">
-					{Icon && (
-						<Icon className="w-4 h-4 text-violet-500" aria-hidden="true" />
-					)}
-					{title}
-				</span>
-				{open ? (
-					<ChevronUp className="w-4 h-4" aria-hidden="true" />
-				) : (
-					<ChevronDown className="w-4 h-4" aria-hidden="true" />
-				)}
-			</button>
-			{open && (
-				<div id={contentId} className="p-3 pt-0 space-y-3">
-					{children}
-				</div>
-			)}
 		</div>
 	);
 }
@@ -1468,232 +1515,175 @@ export function PreviasView() {
 
 				{/* Step 3: Laser Settings */}
 				{step === 3 && !optionsLoading && (
-					<div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
-						<p className="lg:col-span-2 text-xs text-slate-500 dark:text-gray-400">
+					<div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-3">
+						<p className="col-span-full text-xs text-slate-500 dark:text-gray-400">
 							Ajuste tudo da gravação e da cena — os campos sugeridos pelo
 							produto já vêm preenchidos, é só refinar o que quiser.
 						</p>
-						<CollapsibleSection
-							title="Tamanho e Posicao"
-							icon={Ruler}
-							defaultOpen
-						>
-							<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-								<DynamicSelect
-									label="Tamanho"
-									value={laserSettings.tamanho}
-									options={getOptions('tamanho')}
-									onChange={(v) => updateLS('tamanho', v)}
-								/>
-								<DynamicSelect
-									label="Posicao"
-									value={laserSettings.posicao}
-									options={getOptions('posicao')}
-									onChange={(v) => updateLS('posicao', v)}
-								/>
-								<div>
-									<span className="block text-xs text-slate-500 dark:text-gray-400 mb-1">
-										Rotacao
-									</span>
-									<input
-										type="number"
-										aria-label="Rotação"
-										value={laserSettings.rotacao}
-										onChange={(e) =>
-											updateLS('rotacao', Number(e.target.value))
-										}
-										min={getRange('rotacao', -360, 360).min}
-										max={getRange('rotacao', -360, 360).max}
-										className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
-									/>
-								</div>
-								<DynamicSelect
-									label="Moldura"
-									value={laserSettings.moldura}
-									options={getOptions('moldura')}
-									onChange={(v) => updateLS('moldura', v)}
-								/>
-							</div>
-						</CollapsibleSection>
 
-						<CollapsibleSection
-							title="Estilo e Material"
-							icon={Palette}
-							defaultOpen
-						>
-							{selectedVariantId && (
-								<p className="mb-3 text-xs text-violet-600 dark:text-violet-300 flex items-center gap-1.5">
-									<Sparkles className="w-3.5 h-3.5" />
-									Material e acabamento sugeridos pelo produto — ajuste se
-									quiser.
-								</p>
-							)}
-							<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-								<DynamicSelect
-									label="Material"
-									value={laserSettings.material}
-									options={getOptions('material')}
-									onChange={updateMaterial}
-									highlight
-								/>
-								<DynamicSelect
-									label="Estilo"
-									value={laserSettings.estiloGravacao}
-									options={getOptions('estiloGravacao')}
-									onChange={(v) => updateLS('estiloGravacao', v)}
-								/>
-								<DynamicSelect
-									label="Acabamento"
-									value={laserSettings.acabamentoSuperficie}
-									options={getOptions('acabamentoSuperficie')}
-									onChange={(v) => updateLS('acabamentoSuperficie', v)}
-								/>
-								<DynamicSelect
-									label="Intensidade"
-									value={laserSettings.intensidade}
-									options={getOptions('intensidade')}
-									onChange={(v) => updateLS('intensidade', v)}
-								/>
-								<DynamicSelect
-									label="Profundidade"
-									value={laserSettings.profundidade}
-									options={getOptions('profundidade')}
-									onChange={(v) => updateLS('profundidade', v)}
-								/>
-							</div>
-						</CollapsibleSection>
+						<SectionHeader icon={Ruler} title="Tamanho e Posição" />
+						<DynamicSelect
+							label="Tamanho"
+							value={laserSettings.tamanho}
+							options={getOptions('tamanho')}
+							onChange={(v) => updateLS('tamanho', v)}
+						/>
+						<DynamicSelect
+							label="Posição"
+							value={laserSettings.posicao}
+							options={getOptions('posicao')}
+							onChange={(v) => updateLS('posicao', v)}
+						/>
+						<NumberField
+							label="Rotação"
+							value={laserSettings.rotacao}
+							min={getRange('rotacao', -360, 360).min}
+							max={getRange('rotacao', -360, 360).max}
+							onChange={(n) => updateLS('rotacao', n)}
+						/>
+						<DynamicSelect
+							label="Moldura"
+							value={laserSettings.moldura}
+							options={getOptions('moldura')}
+							onChange={(v) => updateLS('moldura', v)}
+						/>
 
-						<CollapsibleSection title="Nome e Fonte" icon={Type} defaultOpen>
-							<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-								<ToggleButtonGroup
-									label="Com Nome"
-									value={laserSettings.comNome}
-									options={getOptions('comNome')}
-									onChange={(v) => updateLS('comNome', v)}
-								/>
-								<DynamicSelect
-									label="Tamanho Nome"
-									value={laserSettings.tamanhoNome}
-									options={getOptions('tamanhoNome')}
-									onChange={(v) => updateLS('tamanhoNome', v)}
-								/>
-								<ToggleButtonGroup
-									label="Orient. Logo"
-									value={laserSettings.orientacaoLogo}
-									options={getOptions('orientacaoLogo')}
-									onChange={(v) => updateLS('orientacaoLogo', v)}
-								/>
-								<ToggleButtonGroup
-									label="Orient. Nome"
-									value={laserSettings.orientacaoNome}
-									options={getOptions('orientacaoNome')}
-									onChange={(v) => updateLS('orientacaoNome', v)}
-								/>
-								<DynamicSelect
-									label="Pos. Texto/Logo"
-									value={laserSettings.posicaoTextoRelLogo}
-									options={getOptions('posicaoTextoRelLogo')}
-									onChange={(v) => updateLS('posicaoTextoRelLogo', v)}
-								/>
-								<DynamicSelect
-									label="Espacamento"
-									value={laserSettings.espacamentoLogoTexto}
-									options={getOptions('espacamentoLogoTexto')}
-									onChange={(v) => updateLS('espacamentoLogoTexto', v)}
-								/>
-								{options?.fontes && options.fontes.length > 0 && (
-									<FontSelector
-										value={laserSettings.fonteFamilia}
-										fonts={options.fontes}
-										onChange={(v) => updateLS('fonteFamilia', v)}
-									/>
-								)}
-							</div>
-						</CollapsibleSection>
+						<SectionHeader icon={Palette} title="Estilo e Material" />
+						{selectedVariantId && (
+							<p className="col-span-full -mt-1 flex items-center gap-1.5 text-xs text-violet-600 dark:text-violet-300">
+								<Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
+								Material e acabamento sugeridos pelo produto — ajuste se quiser.
+							</p>
+						)}
+						<DynamicSelect
+							label="Material"
+							value={laserSettings.material}
+							options={getOptions('material')}
+							onChange={updateMaterial}
+							highlight
+						/>
+						<DynamicSelect
+							label="Estilo"
+							value={laserSettings.estiloGravacao}
+							options={getOptions('estiloGravacao')}
+							onChange={(v) => updateLS('estiloGravacao', v)}
+						/>
+						<DynamicSelect
+							label="Acabamento"
+							value={laserSettings.acabamentoSuperficie}
+							options={getOptions('acabamentoSuperficie')}
+							onChange={(v) => updateLS('acabamentoSuperficie', v)}
+						/>
+						<DynamicSelect
+							label="Intensidade"
+							value={laserSettings.intensidade}
+							options={getOptions('intensidade')}
+							onChange={(v) => updateLS('intensidade', v)}
+						/>
+						<DynamicSelect
+							label="Profundidade"
+							value={laserSettings.profundidade}
+							options={getOptions('profundidade')}
+							onChange={(v) => updateLS('profundidade', v)}
+						/>
 
-						<CollapsibleSection title="Efeitos" icon={Sparkles} defaultOpen>
-							<div className="grid grid-cols-2 gap-4">
-								<div>
-									<span className="block text-xs text-slate-500 dark:text-gray-400 mb-1">
-										Contraste: {laserSettings.contraste}%
-									</span>
-									<input
-										type="range"
-										min={getRange('contraste', 0, 100).min}
-										max={getRange('contraste', 0, 100).max}
-										aria-label="Contraste"
-										value={laserSettings.contraste}
-										onChange={(e) =>
-											updateLS('contraste', Number(e.target.value))
-										}
-										className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-200 dark:bg-white/10 accent-violet-700"
-									/>
-								</div>
-								<div>
-									<span className="block text-xs text-slate-500 dark:text-gray-400 mb-1">
-										Sombra: {laserSettings.efeitoSombra}%
-									</span>
-									<input
-										type="range"
-										min={getRange('efeitoSombra', 0, 100).min}
-										max={getRange('efeitoSombra', 0, 100).max}
-										aria-label="Sombra"
-										value={laserSettings.efeitoSombra}
-										onChange={(e) =>
-											updateLS('efeitoSombra', Number(e.target.value))
-										}
-										className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-200 dark:bg-white/10 accent-violet-700"
-									/>
-								</div>
-							</div>
-						</CollapsibleSection>
+						<SectionHeader icon={Type} title="Nome e Fonte" />
+						<ToggleButtonGroup
+							label="Com Nome"
+							value={laserSettings.comNome}
+							options={getOptions('comNome')}
+							onChange={(v) => updateLS('comNome', v)}
+						/>
+						<DynamicSelect
+							label="Tamanho Nome"
+							value={laserSettings.tamanhoNome}
+							options={getOptions('tamanhoNome')}
+							onChange={(v) => updateLS('tamanhoNome', v)}
+						/>
+						<ToggleButtonGroup
+							label="Orient. Logo"
+							value={laserSettings.orientacaoLogo}
+							options={getOptions('orientacaoLogo')}
+							onChange={(v) => updateLS('orientacaoLogo', v)}
+						/>
+						<ToggleButtonGroup
+							label="Orient. Nome"
+							value={laserSettings.orientacaoNome}
+							options={getOptions('orientacaoNome')}
+							onChange={(v) => updateLS('orientacaoNome', v)}
+						/>
+						<DynamicSelect
+							label="Pos. Texto/Logo"
+							value={laserSettings.posicaoTextoRelLogo}
+							options={getOptions('posicaoTextoRelLogo')}
+							onChange={(v) => updateLS('posicaoTextoRelLogo', v)}
+						/>
+						<DynamicSelect
+							label="Espaçamento"
+							value={laserSettings.espacamentoLogoTexto}
+							options={getOptions('espacamentoLogoTexto')}
+							onChange={(v) => updateLS('espacamentoLogoTexto', v)}
+						/>
+						{options?.fontes && options.fontes.length > 0 && (
+							<FontSelector
+								value={laserSettings.fonteFamilia}
+								fonts={options.fontes}
+								onChange={(v) => updateLS('fonteFamilia', v)}
+							/>
+						)}
 
-						<CollapsibleSection
-							title="Visualizacao e Camera"
-							icon={Camera}
-							defaultOpen
-							className="lg:col-span-2"
-						>
-							<div className="space-y-4">
-								<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-									<DynamicSelect
-										label="Visualizacao"
-										value={laserSettings.tipoVisualizacao}
-										options={getOptions('tipoVisualizacao')}
-										onChange={(v) => updateLS('tipoVisualizacao', v)}
-									/>
-									<DynamicSelect
-										label="Camera"
-										value={laserSettings.anguloCamera}
-										options={getOptions('anguloCamera')}
-										onChange={(v) => updateLS('anguloCamera', v)}
-									/>
-									<DynamicSelect
-										label="Iluminacao"
-										value={laserSettings.iluminacao}
-										options={getOptions('iluminacao')}
-										onChange={(v) => updateLS('iluminacao', v)}
-									/>
-								</div>
-								<div>
-									<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-										Fundo da cena
-									</span>
-									<PreviaBackgroundPicker
-										value={laserSettings.fundoCena}
-										options={getOptions('fundoCena')}
-										suggested={
-											selectedProduct
-												? suggestedBackgrounds(selectedProduct)
-												: []
-										}
-										onChange={(v) => updateLS('fundoCena', v)}
-									/>
-								</div>
-							</div>
-						</CollapsibleSection>
+						<SectionHeader icon={Sparkles} title="Efeitos" />
+						<RangeField
+							label="Contraste"
+							suffix="%"
+							value={laserSettings.contraste}
+							min={getRange('contraste', 0, 100).min}
+							max={getRange('contraste', 0, 100).max}
+							onChange={(n) => updateLS('contraste', n)}
+						/>
+						<RangeField
+							label="Sombra"
+							suffix="%"
+							value={laserSettings.efeitoSombra}
+							min={getRange('efeitoSombra', 0, 100).min}
+							max={getRange('efeitoSombra', 0, 100).max}
+							onChange={(n) => updateLS('efeitoSombra', n)}
+						/>
 
-						<div className="flex justify-between pt-2 lg:col-span-2">
+						<SectionHeader icon={Camera} title="Visualização e Câmera" />
+						<DynamicSelect
+							label="Visualização"
+							value={laserSettings.tipoVisualizacao}
+							options={getOptions('tipoVisualizacao')}
+							onChange={(v) => updateLS('tipoVisualizacao', v)}
+						/>
+						<DynamicSelect
+							label="Câmera"
+							value={laserSettings.anguloCamera}
+							options={getOptions('anguloCamera')}
+							onChange={(v) => updateLS('anguloCamera', v)}
+						/>
+						<DynamicSelect
+							label="Iluminação"
+							value={laserSettings.iluminacao}
+							options={getOptions('iluminacao')}
+							onChange={(v) => updateLS('iluminacao', v)}
+						/>
+						<div className="col-span-full">
+							<span className="block text-xs text-slate-500 dark:text-gray-400 mb-1.5">
+								Fundo da cena
+							</span>
+							<PreviaBackgroundPicker
+								value={laserSettings.fundoCena}
+								options={getOptions('fundoCena')}
+								suggested={
+									selectedProduct ? suggestedBackgrounds(selectedProduct) : []
+								}
+								onChange={(v) => updateLS('fundoCena', v)}
+							/>
+						</div>
+
+						<div className="col-span-full flex justify-between pt-1">
 							<button
 								type="button"
 								onClick={() => setStep(2)}
