@@ -6,8 +6,8 @@ export interface EditorAiPayload {
 	image?: string;
 	regionInfo?: { x: number; y: number; width: number; height: number };
 	mask?: string;
-	/** invocation paga do upvox (tool ai_canvas) — autoriza o motor */
-	invocation_id: string;
+	/** invocation paga do upvox (tool ai_canvas), quando cobrada. Ausente = livre. */
+	invocation_id?: string;
 }
 
 export interface EditorAiResponse {
@@ -16,8 +16,8 @@ export interface EditorAiResponse {
 
 export interface RemoveBackgroundPayload {
 	image: string;
-	/** invocation paga do upvox (tool ai_canvas) — autoriza o motor */
-	invocation_id: string;
+	/** invocation paga do upvox (tool ai_canvas), quando cobrada. Ausente = livre. */
+	invocation_id?: string;
 }
 
 export interface RemoveBackgroundResponse {

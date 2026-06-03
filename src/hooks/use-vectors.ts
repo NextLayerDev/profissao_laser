@@ -42,7 +42,7 @@ export function useVectorizeImage() {
 			params,
 		}: {
 			file: File;
-			invocationId: string;
+			invocationId?: string;
 			params?: VectorizeParams;
 		}) => vectorizeImage(file, { invocationId, params }),
 		onSuccess: () => {

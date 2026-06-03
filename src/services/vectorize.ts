@@ -78,13 +78,13 @@ export interface VectorizeResult {
 
 export async function vectorizeImage(
 	file: File,
-	opts: { invocationId: string; params?: VectorizeParams },
+	opts: { invocationId?: string; params?: VectorizeParams },
 ): Promise<VectorizeResult> {
 	const formData = new FormData();
 	formData.append('image', file);
-	// Billing is authorized by upvox first; the engine validates this id, runs,
-	// and settles/refunds it.
-	formData.append('invocation_id', opts.invocationId);
+	// Billing é opcional: quando cobrada, o upvox autoriza antes e o motor valida
+	// este id e liquida/estorna. Sem id → rodada livre (ferramenta sem cobrança).
+	if (opts.invocationId) formData.append('invocation_id', opts.invocationId);
 	if (opts.params) {
 		for (const [key, value] of Object.entries(opts.params)) {
 			if (value !== undefined && value !== null) {

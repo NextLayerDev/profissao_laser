@@ -40,19 +40,7 @@ export const SYSTEM_TOOLS: SystemTool[] = [
 	{
 		key: 'parametros',
 		label: 'Parâmetros',
-		description: 'Consultar um parâmetro de gravação.',
-		kind: 'consume',
-	},
-	{
-		key: 'fornecedores',
-		label: 'Fornecedores',
-		description: 'Ver os dados de um fornecedor.',
-		kind: 'consume',
-	},
-	{
-		key: 'fornecedores_vendas',
-		label: 'Fornecedores Vendas',
-		description: 'Abrir um item de fornecedores vendas.',
+		description: 'Abrir os detalhes de um parâmetro de gravação.',
 		kind: 'consume',
 	},
 ];
