@@ -116,6 +116,8 @@ export interface GeneratePreviaPayload {
 	laserSettings: LaserSettings;
 	useWatermark?: boolean;
 	watermarkMode?: WatermarkMode;
+	/** Billing opcional (tool `previa`): id da invocation paga do upvox. */
+	invocation_id?: string;
 }
 
 export interface Watermark {
