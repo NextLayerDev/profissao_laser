@@ -32,6 +32,11 @@ const FINISH_BY_MATERIAL: Record<string, string> = {
 	pedra: 'fosco',
 };
 
+/** Acabamento padrão para um material (slug) — undefined se não mapeado. */
+export function finishForMaterial(material: string): string | undefined {
+	return FINISH_BY_MATERIAL[material];
+}
+
 /** Deduz um material (slug) a partir de texto livre (categoria/nome/tags). */
 function inferMaterialFromText(text: string): string | undefined {
 	const t = text.toLowerCase();

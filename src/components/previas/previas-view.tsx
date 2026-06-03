@@ -54,6 +54,7 @@ import type {
 	PreviaOptions,
 } from '@/types/previas';
 import {
+	finishForMaterial,
 	pickValidPreset,
 	smartPresetFor,
 	suggestedBackgrounds,
@@ -161,21 +162,33 @@ function DynamicSelect({
 	value,
 	options,
 	onChange,
+	highlight = false,
 }: {
 	label: string;
 	value: string;
 	options: PreviaOptionItem[];
 	onChange: (v: string) => void;
+	highlight?: boolean;
 }) {
 	return (
 		<div>
-			<span className="block text-xs text-slate-500 dark:text-gray-400 mb-1">
+			<span
+				className={`block text-xs mb-1 ${
+					highlight
+						? 'text-violet-600 dark:text-violet-300 font-semibold'
+						: 'text-slate-500 dark:text-gray-400'
+				}`}
+			>
 				{label}
 			</span>
 			<select
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
-				className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+				className={`w-full px-3 py-2 text-sm rounded-lg border bg-white dark:bg-[#1a1a1d] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 ${
+					highlight
+						? 'border-violet-400 dark:border-violet-500/50 ring-2 ring-violet-500/20 bg-violet-50/50 dark:bg-violet-500/10'
+						: 'border-slate-200 dark:border-white/10'
+				}`}
 			>
 				{options.map((opt) => (
 					<option key={opt.value} value={opt.value}>
@@ -1019,6 +1032,23 @@ export function PreviasView() {
 		[],
 	);
 
+	// Trocar o Material também ajusta o Acabamento sugerido (clampado às opções).
+	const updateMaterial = useCallback(
+		(material: string) => {
+			const finish = finishForMaterial(material);
+			const finishValues =
+				options?.acabamentoSuperficie?.map((o) => o.value) ?? [];
+			setLaserSettings((prev) => ({
+				...prev,
+				material,
+				...(finish && finishValues.includes(finish)
+					? { acabamentoSuperficie: finish }
+					: {}),
+			}));
+		},
+		[options],
+	);
+
 	const canProceedStep1 = !!selectedVariantId;
 
 	// Auto-set material from product
@@ -1462,7 +1492,8 @@ export function PreviasView() {
 									label="Material"
 									value={laserSettings.material}
 									options={getOptions('material')}
-									onChange={(v) => updateLS('material', v)}
+									onChange={updateMaterial}
+									highlight
 								/>
 								<DynamicSelect
 									label="Estilo"
