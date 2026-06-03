@@ -10,7 +10,7 @@ export function MemberCardsSkeleton({ count = 9 }: { count?: number }) {
 					className="bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-6"
 				>
 					<div className="flex flex-col items-center gap-3">
-						<Skeleton className="w-20 h-20 rounded-full" />
+						<Skeleton className="w-20 h-20 rounded-2xl" />
 						<Skeleton className="h-4 w-28" />
 						<Skeleton className="h-3 w-20" />
 						<div className="flex gap-1.5 pt-1">
