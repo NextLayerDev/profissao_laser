@@ -7,6 +7,7 @@ import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { VOX_BALANCE_KEY } from '@/hooks/use-credits';
 import { getApiErrorMessage } from '@/shared/lib/api-error';
+import { applyVoxCharge } from '../lib/vox-fx';
 import { invokeTool } from '../services/tools.service';
 
 /** A run blocked in a way the UI must react to (e.g. open a buy-voxxys modal). */
@@ -57,6 +58,8 @@ export function useRunTool(toolKey: string, courseSlug: string | undefined) {
 			try {
 				const res = await invokeTool(toolKey, courseSlug);
 				invocationId = res.invocation_id;
+				// Debita no header + anima "−custo" na hora (o invoke já cobrou).
+				applyVoxCharge(qc, res);
 			} catch (err) {
 				const status =
 					err instanceof AxiosError ? err.response?.status : undefined;
@@ -67,6 +70,7 @@ export function useRunTool(toolKey: string, courseSlug: string | undefined) {
 
 				if (status === 402) {
 					setBlock({ kind: 'insufficient_voxes' });
+					toast.error('Saldo de voxxys insuficiente.');
 				} else if (status === 403 && reason === 'tool_not_entitled') {
 					toast.error(
 						'Seu plano não inclui esta ferramenta. Faça upgrade para usá-la.',

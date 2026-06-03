@@ -16,7 +16,6 @@ import {
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
 import {
 	useDesign,
 	useUpdateDesign,
@@ -28,7 +27,7 @@ import {
 	useRemoveBackground,
 } from '@/hooks/use-editor-ai';
 import { useEntitlements } from '@/hooks/use-entitlements';
-import { useRunTool } from '@/modules/tools/hooks/use-run-tool';
+import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
 import type { EditorAiMode } from '@/types/editor-ai';
 
 const MAX_HISTORY = 10;
@@ -85,21 +84,16 @@ export function DesignEditorView({ designId }: { designId: string }) {
 	const aiGenerate = useEditorAiGenerate();
 	const removeBg = useRemoveBackground();
 	const applyColorMutation = useApplyColor();
-	// Acesso/billing agora vêm do upvox: o curso ativo define onde a ferramenta
-	// bilha; cota grátis / custo / saldo saem dos entitlements daquele curso.
+	// Billing padrão pelo hook: cobra se a funcionalidade existir (confirma/debita/
+	// modal saem dele, igual a Prévia/Parâmetros); roda livre se não houver.
 	const { courses } = useEntitlements();
 	const courseSlug = courses[0]?.slug;
-	const entitlements = useEntitlements(courseSlug);
-	const aiCanvasCost = entitlements.toolFor('ai_canvas')?.vox_cost ?? 0;
-	const aiCanvasRemainingFree = entitlements.remainingFree('ai_canvas');
-	const voxBalance = entitlements.voxBalance;
-	const runTool = useRunTool('ai_canvas', courseSlug);
-	const [confirmRun, setConfirmRun] = useState<(() => void) | null>(null);
+	const billing = useToolBilling('ai_canvas', courseSlug);
 
 	const updateDesign = useUpdateDesign();
 	const uploadThumbnail = useUploadDesignThumbnail();
 
-	const isAnyPending = runTool.pending || applyColorMutation.isPending;
+	const isAnyPending = billing.pending || applyColorMutation.isPending;
 	const isSaving = updateDesign.isPending || uploadThumbnail.isPending;
 
 	const initialLoadDone = useRef(false);
@@ -168,46 +162,38 @@ export function DesignEditorView({ designId }: { designId: string }) {
 			toast.error('Escreva um prompt para gerar.');
 			return;
 		}
-		const action = () =>
-			runTool.run((invocationId) =>
-				aiGenerate
-					.mutateAsync({
-						mode: aiMode,
-						prompt: aiPrompt.trim(),
-						image: aiMode === 'edit' && currentImage ? currentImage : undefined,
-						invocation_id: invocationId,
-					})
-					.then((result) => {
-						updateImage(result.imageBase64);
-						setAiPrompt('');
-						return result;
-					}),
-			);
-		// Sem cota grátis e a ação custa voxxys → confirma antes de gastar.
-		if (aiCanvasRemainingFree === 0 && aiCanvasCost > 0)
-			setConfirmRun(() => action);
-		else action();
+		// O hook decide cobrança/cota/confirmação (igual a Prévia/Parâmetros).
+		billing.runEngine((invocationId) =>
+			aiGenerate
+				.mutateAsync({
+					mode: aiMode,
+					prompt: aiPrompt.trim(),
+					image: aiMode === 'edit' && currentImage ? currentImage : undefined,
+					invocation_id: invocationId,
+				})
+				.then((result) => {
+					updateImage(result.imageBase64);
+					setAiPrompt('');
+					return result;
+				}),
+		);
 	};
 
 	// Remove Background
 	const handleRemoveBg = () => {
 		if (!currentImage) return;
-		const action = () =>
-			runTool.run((invocationId) =>
-				removeBg
-					.mutateAsync({
-						image: currentImage,
-						invocation_id: invocationId,
-					})
-					.then((result) => {
-						updateImage(result.imageBase64);
-						return result;
-					}),
-			);
-		// Sem cota grátis e a ação custa voxxys → confirma antes de gastar.
-		if (aiCanvasRemainingFree === 0 && aiCanvasCost > 0)
-			setConfirmRun(() => action);
-		else action();
+		// O hook decide cobrança/cota/confirmação (igual a Prévia/Parâmetros).
+		billing.runEngine((invocationId) =>
+			removeBg
+				.mutateAsync({
+					image: currentImage,
+					invocation_id: invocationId,
+				})
+				.then((result) => {
+					updateImage(result.imageBase64);
+					return result;
+				}),
+		);
 	};
 
 	// Apply Color
@@ -532,13 +518,14 @@ export function DesignEditorView({ designId }: { designId: string }) {
 										}
 										className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
 									>
-										{runTool.pending ? (
+										{billing.pending ? (
 											<Loader2 className="w-4 h-4 animate-spin" />
 										) : (
 											<Wand2 className="w-4 h-4" />
 										)}
 										{aiMode === 'generate' ? 'Gerar Imagem' : 'Editar Imagem'}
 									</button>
+									{billing.notice}
 								</div>
 							)}
 
@@ -563,7 +550,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 										disabled={isAnyPending || !canEditImage}
 										className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
 									>
-										{runTool.pending ? (
+										{billing.pending ? (
 											<Loader2 className="w-4 h-4 animate-spin" />
 										) : (
 											<Eraser className="w-4 h-4" />
@@ -684,31 +671,6 @@ export function DesignEditorView({ designId }: { designId: string }) {
 					</div>
 				</div>
 			</div>
-
-			{confirmRun && (
-				<CreditConfirmModal
-					variant="confirm"
-					cost={aiCanvasCost}
-					balance={voxBalance}
-					pending={runTool.pending}
-					onConfirm={() => {
-						const a = confirmRun;
-						setConfirmRun(null);
-						a?.();
-					}}
-					onClose={() => setConfirmRun(null)}
-				/>
-			)}
-
-			{runTool.block?.kind === 'insufficient_voxes' && (
-				<CreditConfirmModal
-					variant="insufficient"
-					cost={aiCanvasCost}
-					balance={voxBalance}
-					onConfirm={runTool.clearBlock}
-					onClose={runTool.clearBlock}
-				/>
-			)}
 		</div>
 	);
 }

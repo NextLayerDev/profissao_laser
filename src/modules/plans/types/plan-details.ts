@@ -13,7 +13,7 @@ export const planDetailsToolMetaSchema = z
 		id: z.string(),
 		name: z.string(),
 		description: z.string().nullable().optional(),
-		vox_cost: z.number().int(),
+		vox_cost: z.number(), // decimal (ex.: 0.30) — NÃO usar .int()
 		enabled: z.boolean(),
 	})
 	.passthrough();

@@ -300,6 +300,24 @@
 	margin-left: 2px;
 }
 
+/* "−custo" subindo e sumindo perto do saldo de voxxys quando uma tool debita. */
+@keyframes vox-float {
+	0% {
+		opacity: 0;
+		transform: translate(-50%, 6px) scale(0.9);
+	}
+	20% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+		transform: translate(-50%, -20px) scale(1.05);
+	}
+}
+.animate-vox-float {
+	animation: vox-float 1.1s ease-out forwards;
+}
+
 @keyframes orbit-spin {
 	to {
 		transform: rotate(360deg);

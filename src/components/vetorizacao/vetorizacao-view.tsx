@@ -29,7 +29,6 @@ import NextImage from 'next/image';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
-import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
 import { PageHeader } from '@/components/ui/page-header';
 import { useEntitlements } from '@/hooks/use-entitlements';
 import {
@@ -37,7 +36,7 @@ import {
 	useSaveVector,
 	useVectorizeImage,
 } from '@/hooks/use-vectors';
-import { useRunTool } from '@/modules/tools/hooks/use-run-tool';
+import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
 import type {
 	VectorizeParams,
 	VectorizePreset,
@@ -1296,18 +1295,11 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 	});
 
 	const vectorizeMutation = useVectorizeImage();
-	// Acesso/billing agora vêm do upvox: o curso ativo define onde a ferramenta
-	// bilha; cota grátis / custo / saldo saem dos entitlements daquele curso.
+	// Billing padrão pelo hook: cobra se a funcionalidade existir (confirma/debita/
+	// modal saem dele, igual a Prévia/Parâmetros); roda livre se não houver.
 	const { courses } = useEntitlements();
 	const courseSlug = courses[0]?.slug;
-	const entitlements = useEntitlements(courseSlug);
-	const vectorizeCost = entitlements.toolFor('vectorize')?.vox_cost ?? 0;
-	const vectorizeRemainingFree = entitlements.remainingFree('vectorize');
-	const voxBalance = entitlements.voxBalance;
-	// Cobrada só se a ferramenta tiver funcionalidade liberada; senão roda livre.
-	const vectorizeBilled = !!entitlements.toolFor('vectorize');
-	const runTool = useRunTool('vectorize', courseSlug);
-	const [confirmOpen, setConfirmOpen] = useState(false);
+	const billing = useToolBilling('vectorize', courseSlug);
 
 	const set = useCallback(
 		<K extends keyof VectorizeParams>(key: K, value: VectorizeParams[K]) => {
@@ -1323,7 +1315,8 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 
 	const runVectorize = useCallback(async () => {
 		if (!file) return;
-		const engineFn = (invocationId?: string) =>
+		// O hook decide: cobrada → invoke→motor→settle; livre → motor sem invocation.
+		await billing.runEngine((invocationId) =>
 			vectorizeMutation
 				.mutateAsync({ file, invocationId, params: { ...params, preset } })
 				.then((res) => {
@@ -1331,22 +1324,9 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 					setStep(3);
 					refetchVectors();
 					return res;
-				});
-		// Cobrada → invoke→motor→settle; livre → roda o motor sem invocation.
-		if (vectorizeBilled) {
-			await runTool.run((invocationId) => engineFn(invocationId));
-		} else {
-			await engineFn(undefined);
-		}
-	}, [
-		file,
-		vectorizeBilled,
-		runTool,
-		vectorizeMutation,
-		params,
-		preset,
-		refetchVectors,
-	]);
+				}),
+		);
+	}, [file, billing, vectorizeMutation, params, preset, refetchVectors]);
 	const saveMutation = useSaveVector();
 
 	const handleFileSelected = useCallback((selectedFile: File) => {
@@ -1365,13 +1345,9 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 
 	const handleVectorize = useCallback(() => {
 		if (!file) return;
-		// Sem cota grátis e a ação custa voxxys → confirma antes de gastar.
-		if (vectorizeRemainingFree === 0 && vectorizeCost > 0) {
-			setConfirmOpen(true);
-			return;
-		}
+		// A confirmação (sem cota grátis e com custo) é decidida dentro do hook.
 		runVectorize();
-	}, [file, vectorizeRemainingFree, vectorizeCost, runVectorize]);
+	}, [file, runVectorize]);
 
 	const handleReset = useCallback(() => {
 		setStep(1);
@@ -1481,9 +1457,11 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 						set={set}
 						onVectorize={handleVectorize}
 						onBack={() => setStep(1)}
-						isVectorizing={runTool.pending}
+						isVectorizing={billing.pending}
 					/>
 				)}
+
+				{step === 2 && billing.notice}
 
 				{step === 3 && result && (
 					<div ref={resultRef}>
@@ -1547,10 +1525,10 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 					<button
 						type="button"
 						onClick={handleVectorize}
-						disabled={runTool.pending}
+						disabled={billing.pending}
 						className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-6 py-3.5 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-full shadow-xl shadow-violet-900/30 transition-colors disabled:opacity-60"
 					>
-						{runTool.pending ? (
+						{billing.pending ? (
 							<>
 								<Loader2 className="w-5 h-5 animate-spin" />
 								Vetorizando...
@@ -1564,30 +1542,6 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 					</button>,
 					document.body,
 				)}
-
-			{confirmOpen && (
-				<CreditConfirmModal
-					variant="confirm"
-					cost={vectorizeCost}
-					balance={voxBalance}
-					pending={runTool.pending}
-					onConfirm={() => {
-						setConfirmOpen(false);
-						runVectorize();
-					}}
-					onClose={() => setConfirmOpen(false)}
-				/>
-			)}
-
-			{runTool.block?.kind === 'insufficient_voxes' && (
-				<CreditConfirmModal
-					variant="insufficient"
-					cost={vectorizeCost}
-					balance={voxBalance}
-					onConfirm={runTool.clearBlock}
-					onClose={runTool.clearBlock}
-				/>
-			)}
 
 			<VectorSupportPanel
 				open={supportOpen}
