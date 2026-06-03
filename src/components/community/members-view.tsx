@@ -96,7 +96,7 @@ export function MembersView({ isAdmin: _isAdmin = false }: MembersViewProps) {
 										src={selectedProfile.image}
 										name={selectedProfile.name}
 										rounded="rounded-2xl"
-										className="w-28 h-28 text-3xl"
+										className="w-28 h-28 text-3xl shadow-[0_0_30px_-2px_rgba(167,139,250,0.6)]"
 									/>
 									{selectedProfile.isOnline && (
 										<span className="absolute bottom-1.5 right-1.5 w-5 h-5 bg-emerald-500 rounded-full ring-2 ring-white dark:ring-[#1a1a1d]" />
@@ -256,7 +256,7 @@ export function MembersView({ isAdmin: _isAdmin = false }: MembersViewProps) {
 												src={member.image}
 												name={member.name}
 												rounded="rounded-2xl"
-												className="w-20 h-20 text-2xl"
+												className="w-20 h-20 text-2xl shadow-[0_0_26px_-2px_rgba(167,139,250,0.6)]"
 											/>
 											{member.isOnline && (
 												<span className="absolute bottom-0.5 right-0.5 w-4 h-4 bg-emerald-500 rounded-full ring-2 ring-slate-100 dark:ring-[#1a1a1d]" />

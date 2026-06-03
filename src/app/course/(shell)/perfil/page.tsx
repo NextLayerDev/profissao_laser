@@ -165,7 +165,7 @@ export default function PerfilPage() {
 										src={profile?.avatar}
 										name={profile?.name}
 										email={profile?.email}
-										className="w-28 h-28 text-4xl"
+										className="w-28 h-28 text-4xl shadow-[0_0_30px_-2px_rgba(167,139,250,0.6)]"
 									/>
 									{avatarBusy && (
 										<div className="absolute inset-0 rounded-2xl bg-black/40 grid place-items-center">

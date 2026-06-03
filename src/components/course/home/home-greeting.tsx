@@ -25,7 +25,7 @@ export function HomeGreeting({
 				src={profile?.avatar}
 				name={profile?.nickname || name}
 				email={email}
-				className="w-12 h-12 sm:w-14 sm:h-14 text-base shrink-0"
+				className="w-12 h-12 sm:w-14 sm:h-14 text-base shrink-0 shadow-[0_0_22px_-2px_rgba(167,139,250,0.6)]"
 			/>
 			<div className="min-w-0">
 				<h1 className="font-display text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
