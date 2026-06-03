@@ -104,7 +104,7 @@ export function PreviaBackgroundPicker({
 	const restCount = Math.max(options.length - suggestedItems.length, 0);
 
 	return (
-		<div className="space-y-2">
+		<div className="space-y-2 max-w-md">
 			{suggestedItems.length > 0 && (
 				<div>
 					<p className="text-xs font-medium text-violet-600 dark:text-violet-300 mb-1.5 flex items-center gap-1">
