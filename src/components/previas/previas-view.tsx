@@ -1605,7 +1605,11 @@ export function PreviasView() {
 							</div>
 						</CollapsibleSection>
 
-						<CollapsibleSection title="Visualizacao e Camera" icon={Camera}>
+						<CollapsibleSection
+							title="Visualizacao e Camera"
+							icon={Camera}
+							defaultOpen
+						>
 							<div className="space-y-4">
 								<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
 									<DynamicSelect

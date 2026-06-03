@@ -15,6 +15,10 @@ const SWATCH: Record<string, CSSProperties> = {
 	'ambiente-decorado': {
 		background: 'linear-gradient(135deg,#fed7aa,#fbcfe8,#ddd6fe)',
 	},
+	'mesa-ambiente': {
+		background:
+			'linear-gradient(180deg,#e6ecd6 0%,#dfe6cf 58%,#8a5a2b 58%,#7c4f24 100%)',
+	},
 	transparente: {
 		backgroundColor: '#ffffff',
 		backgroundImage:
@@ -40,7 +44,7 @@ function BgThumb({
 			onClick={onSelect}
 			title={item.label}
 			aria-pressed={selected}
-			className={`group relative rounded-xl overflow-hidden border text-left transition-all ${
+			className={`group relative rounded-lg overflow-hidden border text-left transition-all ${
 				selected
 					? 'border-violet-500 ring-2 ring-violet-500/40 shadow-md'
 					: 'border-slate-200 dark:border-white/10 hover:border-violet-500/50'
@@ -61,12 +65,12 @@ function BgThumb({
 					/>
 				)}
 				{selected && (
-					<div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-violet-600 flex items-center justify-center shadow">
-						<Check className="w-3 h-3 text-white" />
+					<div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-violet-600 flex items-center justify-center shadow">
+						<Check className="w-2.5 h-2.5 text-white" />
 					</div>
 				)}
 			</div>
-			<span className="block px-2 py-1.5 text-[11px] font-medium text-slate-700 dark:text-slate-200 truncate">
+			<span className="block px-1.5 py-1 text-[10px] font-medium text-slate-700 dark:text-slate-200 truncate">
 				{item.label}
 			</span>
 		</button>
@@ -101,7 +105,7 @@ export function PreviaBackgroundPicker({
 					<p className="text-xs font-medium text-violet-600 dark:text-violet-300 mb-1.5 flex items-center gap-1">
 						<Sparkles className="w-3.5 h-3.5" /> Sugeridos para este produto
 					</p>
-					<div className="grid grid-cols-3 gap-2">
+					<div className="grid grid-cols-3 gap-1.5">
 						{suggestedItems.map((o) => (
 							<BgThumb
 								key={`sug-${o.value}`}
@@ -117,7 +121,7 @@ export function PreviaBackgroundPicker({
 				<p className="text-xs font-medium text-slate-500 dark:text-gray-400 mb-1.5">
 					Todos os fundos
 				</p>
-				<div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+				<div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
 					{options.map((o) => (
 						<BgThumb
 							key={o.value}

@@ -22,14 +22,16 @@ const FINISH_BY_MATERIAL: Record<string, string> = {
 	inox: 'escovado',
 	metal: 'escovado',
 	aluminio: 'escovado',
-	vidro: 'brilho',
-	cristal: 'brilho',
-	acrilico: 'brilho',
-	ceramica: 'fosco',
-	porcelana: 'brilho',
+	vidro: 'polido',
+	cristal: 'polido',
+	acrilico: 'brilhante',
+	ceramica: 'acetinado',
+	porcelana: 'brilhante',
 	couro: 'fosco',
 	ardosia: 'fosco',
 	pedra: 'fosco',
+	plastico: 'fosco',
+	tecido: 'fosco',
 };
 
 /** Acabamento padrão para um material (slug) — undefined se não mapeado. */
@@ -40,14 +42,22 @@ export function finishForMaterial(material: string): string | undefined {
 /** Deduz um material (slug) a partir de texto livre (categoria/nome/tags). */
 function inferMaterialFromText(text: string): string | undefined {
 	const t = text.toLowerCase();
-	if (/(inox|a[çc]o|steel|metal|alum[íi]nio)/.test(t)) return 'aco-inox';
-	if (/(vidro|ta[çc]a|cristal|glass)/.test(t)) return 'vidro';
-	if (/(madeira|wood|bambu|mdf)/.test(t)) return 'madeira';
+	if (/(inox|a[çc]o|steel)/.test(t)) return 'aco-inox';
+	if (/(alum[íi]nio|aluminum)/.test(t)) return 'aluminio';
+	if (/(cristal|crystal)/.test(t)) return 'cristal';
+	if (/(vidro|ta[çc]a|copo|glass)/.test(t)) return 'vidro';
+	if (/(bambu|bamboo)/.test(t)) return 'bambu';
+	if (/\bmdf\b/.test(t)) return 'mdf';
+	if (/(madeira|wood)/.test(t)) return 'madeira';
 	if (/(acr[íi]lico|acrylic)/.test(t)) return 'acrilico';
-	if (/(cer[âa]mica|porcelana|ceramic|caneca|m[uü]g)/.test(t))
+	if (/(porcelana|porcelain)/.test(t)) return 'porcelana';
+	if (/(cer[âa]mica|ceramic|caneca|m[uü]g|x[íi]cara)/.test(t))
 		return 'ceramica';
 	if (/(couro|leather)/.test(t)) return 'couro';
-	if (/(ard[óo]sia|slate|pedra|stone)/.test(t)) return 'ardosia';
+	if (/(ard[óo]sia|slate)/.test(t)) return 'ardosia';
+	if (/(pedra|stone|granito|granite)/.test(t)) return 'pedra';
+	if (/(pl[áa]stico|plastic|abs)/.test(t)) return 'plastico';
+	if (/(tecido|fabric|t[êe]xtil|textile|linho)/.test(t)) return 'tecido';
 	return undefined;
 }
 
@@ -74,20 +84,26 @@ export function smartPresetFor(
 
 /** fundos (fundoCena slug) sugeridos por material. */
 const BACKGROUNDS_BY_MATERIAL: Record<string, string[]> = {
-	madeira: ['madeira', 'ambiente-decorado', 'marmore'],
-	mdf: ['madeira', 'ambiente-decorado', 'marmore'],
-	'aco-inox': ['cinza-gradiente', 'preto-fosco', 'marmore'],
-	inox: ['cinza-gradiente', 'preto-fosco', 'marmore'],
-	metal: ['cinza-gradiente', 'preto-fosco', 'marmore'],
-	vidro: ['marmore', 'ambiente-decorado', 'branco-puro'],
-	cristal: ['marmore', 'ambiente-decorado', 'branco-puro'],
+	'aco-inox': ['mesa-ambiente', 'cinza-gradiente', 'preto-fosco'],
+	inox: ['mesa-ambiente', 'cinza-gradiente', 'preto-fosco'],
+	aluminio: ['mesa-ambiente', 'cinza-gradiente', 'preto-fosco'],
+	metal: ['mesa-ambiente', 'cinza-gradiente', 'preto-fosco'],
+	madeira: ['madeira', 'mesa-ambiente', 'ambiente-decorado'],
+	mdf: ['madeira', 'mesa-ambiente', 'ambiente-decorado'],
+	bambu: ['madeira', 'mesa-ambiente', 'tecido-linho'],
+	vidro: ['marmore', 'mesa-ambiente', 'branco-puro'],
+	cristal: ['marmore', 'preto-fosco', 'branco-puro'],
 	acrilico: ['branco-puro', 'cinza-gradiente', 'transparente'],
-	ceramica: ['tecido-linho', 'madeira', 'branco-puro'],
-	couro: ['madeira', 'ambiente-decorado', 'preto-fosco'],
-	ardosia: ['marmore', 'cinza-gradiente', 'madeira'],
+	ceramica: ['mesa-ambiente', 'tecido-linho', 'branco-puro'],
+	porcelana: ['marmore', 'branco-puro', 'mesa-ambiente'],
+	couro: ['madeira', 'mesa-ambiente', 'preto-fosco'],
+	ardosia: ['marmore', 'cinza-gradiente', 'mesa-ambiente'],
+	pedra: ['marmore', 'cinza-gradiente', 'mesa-ambiente'],
+	plastico: ['branco-puro', 'cinza-gradiente', 'preto-fosco'],
+	tecido: ['tecido-linho', 'mesa-ambiente', 'ambiente-decorado'],
 };
 
-const DEFAULT_BACKGROUNDS = ['cinza-gradiente', 'branco-puro', 'preto-fosco'];
+const DEFAULT_BACKGROUNDS = ['mesa-ambiente', 'cinza-gradiente', 'branco-puro'];
 
 /** Até 3 fundos sugeridos para o produto (valores de fundoCena). */
 export function suggestedBackgrounds(p: LaserProductLike): string[] {
