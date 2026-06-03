@@ -1461,6 +1461,8 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 					/>
 				)}
 
+				{step === 2 && billing.notice}
+
 				{step === 3 && result && (
 					<div ref={resultRef}>
 						<StepResult
@@ -1540,8 +1542,6 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 					</button>,
 					document.body,
 				)}
-
-			{billing.modal}
 
 			<VectorSupportPanel
 				open={supportOpen}

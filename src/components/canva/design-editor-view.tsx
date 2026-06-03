@@ -525,6 +525,7 @@ export function DesignEditorView({ designId }: { designId: string }) {
 										)}
 										{aiMode === 'generate' ? 'Gerar Imagem' : 'Editar Imagem'}
 									</button>
+									{billing.notice}
 								</div>
 							)}
 
@@ -670,8 +671,6 @@ export function DesignEditorView({ designId }: { designId: string }) {
 					</div>
 				</div>
 			</div>
-
-			{billing.modal}
 		</div>
 	);
 }

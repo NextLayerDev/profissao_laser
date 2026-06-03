@@ -187,6 +187,8 @@ export function ParametrosView() {
 				</div>
 			</div>
 
+			{paramBilling.notice}
+
 			{/* Stats */}
 			<div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
 				{STATS_CONFIG.map((s) => (
@@ -448,7 +450,6 @@ export function ParametrosView() {
 				</aside>
 			</div>
 
-			{paramBilling.modal}
 			<ParameterDetailModal
 				parameterId={detailId}
 				onClose={() => setDetailId(null)}

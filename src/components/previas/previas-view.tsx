@@ -1061,7 +1061,6 @@ export function PreviasView() {
 
 	return (
 		<div className="p-4 md:p-8">
-			{previaBilling.modal}
 			<PageHeader
 				title="Previas IA"
 				subtitle="Gere previas realistas de personalizacao a laser com IA."
@@ -1830,6 +1829,7 @@ export function PreviasView() {
 								)}
 								{generatedPrevia ? 'Gerar Novamente' : 'Gerar Previa com IA'}
 							</button>
+							<div className="basis-full">{previaBilling.notice}</div>
 							{generatedPrevia && (
 								<button
 									type="button"

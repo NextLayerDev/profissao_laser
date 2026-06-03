@@ -2,27 +2,28 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import { type ReactNode, useCallback, useState } from 'react';
+import { type ReactNode, useCallback } from 'react';
 import { toast } from 'sonner';
-import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
-import { VOX_BALANCE_KEY } from '@/hooks/use-credits';
 import { useEntitlements } from '@/hooks/use-entitlements';
+import { ToolCostNotice } from '../components/tool-cost-notice';
+import { applyVoxCharge } from '../lib/vox-fx';
 import { consumeTool } from '../services/tools.service';
 import { useRunTool } from './use-run-tool';
 
 /**
- * Billing genérico por ferramenta. A regra é única: `billed` = a ferramenta tem
- * funcionalidade liberada pro cliente (`toolFor(key)` nos entitlements). Cobrada
- * → debita (confirma quando a cota grátis acaba e há custo). Não cobrada → roda
- * livre, sem voxxys.
+ * Billing genérico por ferramenta — a função padrão de TODAS as tools. A regra é
+ * única: `billed` = a ferramenta tem funcionalidade liberada (`toolFor(key)`).
+ *
+ * Cobrada → debita **na hora** ao usar, sem modal de confirmação. O custo aparece
+ * num aviso inline (`notice`) abaixo da ação; quando falta saldo, o aviso vira
+ * "comprar voxxys" e a ação fica bloqueada. O débito reflete no saldo do header
+ * em tempo real, com animação "−custo" (via `applyVoxCharge`).
  *
  * Dois fluxos:
- * - `runEngine(engineFn)`: ferramentas com motor (vectorize/ai_canvas/previa).
- *   engineFn recebe o invocation_id (string) quando cobrada, ou undefined (livre).
- * - `consume(onProceed)`: ferramentas sem motor (páginas de dados, "abrir item").
- *   Cobra atômico via /use e então chama `onProceed()`. Livre → só `onProceed()`.
+ * - `runEngine(engineFn)`: tools com motor (vectorize/ai_canvas/previa).
+ * - `consume(onProceed)`: tools sem motor (páginas de dados, "abrir item").
  *
- * Renderize `{modal}` no JSX da view (confirmação + saldo insuficiente).
+ * Renderize `{notice}` logo abaixo do botão da ação.
  */
 export function useToolBilling(
 	featureKey: string,
@@ -39,104 +40,68 @@ export function useToolBilling(
 
 	const consumeMut = useMutation({
 		mutationFn: () => consumeTool(featureKey, courseSlug ?? ''),
-		onSuccess: () => {
+		onSuccess: (res) => {
+			applyVoxCharge(qc, res); // saldo cai no header + anima "−custo" na hora
 			qc.invalidateQueries({ queryKey: ['entitlements'] });
-			qc.invalidateQueries({ queryKey: VOX_BALANCE_KEY });
 		},
 		onError: (err) => {
 			const status =
 				err instanceof AxiosError ? err.response?.status : undefined;
-			toast.error(
-				status === 402
-					? 'Saldo de voxxys insuficiente.'
-					: 'Não foi possível usar a ferramenta.',
-			);
+			// 402 → o aviso inline já mostra "comprar voxxys"; outros → toast.
+			if (status !== 402) toast.error('Não foi possível usar a ferramenta.');
 		},
 	});
 
-	// Ação pendente de confirmação (sem cota grátis e com custo > 0).
-	const [pendingAction, setPendingAction] = useState<
-		(() => Promise<unknown>) | null
-	>(null);
-
-	const needsConfirm = billed && remainingFree === 0 && cost > 0;
+	// Precisa pagar (sem cota grátis e com custo) e não tem saldo → bloqueia + avisa.
+	const mustPay = billed && remainingFree === 0 && cost > 0;
+	const insufficient = mustPay && !ent.isLoading && voxBalance < cost;
 
 	const runEngine = useCallback(
 		async <T,>(engineFn: (invocationId?: string) => Promise<T>) => {
-			const exec = () =>
-				billed
-					? runTool.run((invocationId) => engineFn(invocationId))
-					: Promise.resolve(engineFn(undefined));
-			if (needsConfirm) {
-				setPendingAction(() => exec);
-				return;
-			}
-			return exec();
+			if (insufficient) return; // o aviso inline mostra "comprar voxxys"
+			return billed
+				? runTool.run((invocationId) => engineFn(invocationId))
+				: Promise.resolve(engineFn(undefined));
 		},
-		[billed, needsConfirm, runTool],
+		[billed, insufficient, runTool],
 	);
 
 	const consume = useCallback(
 		async (onProceed: () => void) => {
-			const exec = async () => {
-				if (billed && courseSlug) {
-					try {
-						await consumeMut.mutateAsync();
-					} catch {
-						return; // erro já mostrado em toast
-					}
+			if (insufficient) return;
+			if (billed && courseSlug) {
+				try {
+					await consumeMut.mutateAsync();
+				} catch {
+					return; // erro já tratado (toast / aviso inline)
 				}
-				onProceed();
-			};
-			if (needsConfirm) {
-				setPendingAction(() => exec);
-				return;
 			}
-			return exec();
+			onProceed();
 		},
-		[billed, courseSlug, needsConfirm, consumeMut],
+		[billed, courseSlug, insufficient, consumeMut],
 	);
 
 	const pending = runTool.pending || consumeMut.isPending;
 
-	const modal: ReactNode = (
-		<>
-			{pendingAction && (
-				<CreditConfirmModal
-					variant="confirm"
-					featureName={tool?.name}
-					cost={cost}
-					balance={voxBalance}
-					pending={pending}
-					onConfirm={() => {
-						const fn = pendingAction;
-						setPendingAction(null);
-						fn?.();
-					}}
-					onClose={() => setPendingAction(null)}
-				/>
-			)}
-			{runTool.block?.kind === 'insufficient_voxes' && (
-				<CreditConfirmModal
-					variant="insufficient"
-					featureName={tool?.name}
-					cost={cost}
-					balance={voxBalance}
-					onConfirm={runTool.clearBlock}
-					onClose={runTool.clearBlock}
-				/>
-			)}
-		</>
-	);
+	const notice: ReactNode =
+		billed && cost > 0 ? (
+			<ToolCostNotice
+				cost={cost}
+				remainingFree={remainingFree}
+				balance={voxBalance}
+				insufficient={insufficient}
+			/>
+		) : null;
 
 	return {
 		billed,
 		cost,
 		remainingFree,
 		voxBalance,
+		insufficient,
 		pending,
 		runEngine,
 		consume,
-		modal,
+		notice,
 	};
 }

@@ -199,8 +199,7 @@ function AiPanel({
 				) : (
 					<Sparkles className="w-4 h-4" />
 				)}
-				Aplicar IA ({formatVox(billing.cost)}{' '}
-				{billing.cost === 1 ? 'voxxy' : 'voxxys'})
+				Aplicar IA
 			</button>
 
 			<div className="pt-3 border-t border-slate-200 dark:border-white/10">
@@ -219,7 +218,7 @@ function AiPanel({
 				</button>
 			</div>
 
-			{billing.modal}
+			{billing.notice}
 		</div>
 	);
 }
