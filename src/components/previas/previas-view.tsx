@@ -666,21 +666,25 @@ function CollapsibleSection({
 	title,
 	icon: Icon,
 	defaultOpen,
+	className,
 	children,
 }: {
 	title: string;
 	icon?: React.ComponentType<{ className?: string }>;
 	defaultOpen?: boolean;
+	className?: string;
 	children: React.ReactNode;
 }) {
 	const [open, setOpen] = useState(defaultOpen ?? false);
 
 	return (
-		<div className="rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden">
+		<div
+			className={`rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden ${className ?? ''}`}
+		>
 			<button
 				type="button"
 				onClick={() => setOpen(!open)}
-				className="w-full flex items-center justify-between p-4 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+				className="w-full flex items-center justify-between p-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
 			>
 				<span className="flex items-center gap-2">
 					{Icon && <Icon className="w-4 h-4 text-violet-500" />}
@@ -692,7 +696,7 @@ function CollapsibleSection({
 					<ChevronDown className="w-4 h-4" />
 				)}
 			</button>
-			{open && <div className="p-4 pt-0 space-y-4">{children}</div>}
+			{open && <div className="p-3 pt-0 space-y-3">{children}</div>}
 		</div>
 	);
 }
@@ -1444,7 +1448,7 @@ export function PreviasView() {
 
 				{/* Step 3: Laser Settings */}
 				{step === 3 && !optionsLoading && (
-					<div className="space-y-4">
+					<div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
 						<CollapsibleSection
 							title="Tamanho e Posicao"
 							icon={Ruler}
@@ -1621,6 +1625,7 @@ export function PreviasView() {
 							title="Visualizacao e Camera"
 							icon={Camera}
 							defaultOpen
+							className="lg:col-span-2"
 						>
 							<div className="space-y-4">
 								<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -1661,7 +1666,7 @@ export function PreviasView() {
 							</div>
 						</CollapsibleSection>
 
-						<div className="flex justify-between pt-2">
+						<div className="flex justify-between pt-2 lg:col-span-2">
 							<button
 								type="button"
 								onClick={() => setStep(2)}
