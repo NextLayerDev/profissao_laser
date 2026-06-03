@@ -30,6 +30,7 @@ import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { MyMachineSection } from '@/components/previas/my-machine-section';
 import { PageHeader } from '@/components/ui/page-header';
+import { useEntitlements } from '@/hooks/use-entitlements';
 import { useLaserProduct, useLaserProducts } from '@/hooks/use-laser-products';
 import {
 	useDeletePrevia,
@@ -41,6 +42,7 @@ import {
 	useUploadWatermark,
 	useWatermark,
 } from '@/hooks/use-previas';
+import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
 import type {
 	GeneratePreviaPayload,
 	LaserSettings,
@@ -893,6 +895,10 @@ export function PreviasView() {
 	const histLimit = 12;
 
 	const generateMutation = useGeneratePrevia();
+	// Billing opcional: se houver funcionalidade `previa` liberada → cobra; senão livre.
+	const { courses } = useEntitlements();
+	const courseSlug = courses[0]?.slug;
+	const previaBilling = useToolBilling('previa', courseSlug);
 	const { data: historyData, isLoading: histLoading } = usePreviasHistory(
 		histPage,
 		histLimit,
@@ -940,16 +946,23 @@ export function PreviasView() {
 		watermarkMode,
 	]);
 
-	// Prévia é livre no modelo novo (não consome voxxys). Gera direto.
+	// Billing opcional: cobra se a ferramenta `previa` tiver funcionalidade; senão
+	// roda livre. O invocation_id (quando cobrada) vai no payload pro motor liquidar.
 	const handleGenerate = useCallback(async () => {
 		const payload = buildPayload();
 		if (!payload) {
 			toast.error('Selecione um produto e uma variante.');
 			return;
 		}
-		const result = await generateMutation.mutateAsync(payload);
-		setGeneratedPrevia({ previewUrl: result.previewUrl });
-	}, [buildPayload, generateMutation]);
+		await previaBilling.runEngine((invocationId) =>
+			generateMutation
+				.mutateAsync({ ...payload, invocation_id: invocationId })
+				.then((result) => {
+					setGeneratedPrevia({ previewUrl: result.previewUrl });
+					return result;
+				}),
+		);
+	}, [buildPayload, generateMutation, previaBilling]);
 
 	const handleReset = useCallback(() => {
 		setStep(1);
@@ -1048,6 +1061,7 @@ export function PreviasView() {
 
 	return (
 		<div className="p-4 md:p-8">
+			{previaBilling.modal}
 			<PageHeader
 				title="Previas IA"
 				subtitle="Gere previas realistas de personalizacao a laser com IA."

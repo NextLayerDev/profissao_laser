@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { ModalOverlay } from '@/components/ui/modal-overlay';
 import { parseVox } from '@/lib/format';
+import { useTools } from '../hooks/use-tools';
+import { SYSTEM_TOOLS, systemToolFor } from '../system-tools';
 import type {
 	CreateToolPayload,
 	Tool,
@@ -27,6 +29,12 @@ export function ToolFormModal({ editing, pending, onClose, onSubmit }: Props) {
 	);
 	const [enabled, setEnabled] = useState(editing?.enabled ?? true);
 
+	// Só dá pra associar ferramentas do catálogo ainda não registradas.
+	const { data: registeredTools } = useTools();
+	const available = SYSTEM_TOOLS.filter(
+		(st) => !(registeredTools ?? []).some((t) => t.key === st.key),
+	);
+
 	const canSubmit =
 		!pending && !!name.trim() && (editing !== null || !!key.trim());
 
@@ -37,14 +45,39 @@ export function ToolFormModal({ editing, pending, onClose, onSubmit }: Props) {
 					{editing ? 'Editar funcionalidade' : 'Nova funcionalidade'}
 				</h3>
 
-				<Field label="Key (snake_case)">
-					<input
-						value={key}
-						onChange={(e) => setKey(e.target.value)}
-						placeholder="ai_canvas, vectorize..."
-						disabled={editing !== null}
-						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 disabled:opacity-60 font-mono"
-					/>
+				<Field label="Ferramenta do sistema">
+					{editing ? (
+						<input
+							value={systemToolFor(key)?.label ?? key}
+							disabled
+							className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white disabled:opacity-60"
+						/>
+					) : (
+						<select
+							value={key}
+							onChange={(e) => {
+								const k = e.target.value;
+								setKey(k);
+								const st = systemToolFor(k);
+								if (st) {
+									if (!name.trim()) setName(st.label);
+									if (!description?.trim()) setDescription(st.description);
+								}
+							}}
+							className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] px-3 py-2 text-sm text-slate-900 dark:text-white"
+						>
+							<option value="">Selecione a ferramenta…</option>
+							{available.map((st) => (
+								<option key={st.key} value={st.key}>
+									{st.label}
+								</option>
+							))}
+						</select>
+					)}
+					<p className="text-xs text-slate-500 mt-1">
+						Qual ferramenta do sistema essa funcionalidade cobra. Ferramenta sem
+						funcionalidade roda livre (sem voxxys).
+					</p>
 				</Field>
 
 				<Field label="Nome">
