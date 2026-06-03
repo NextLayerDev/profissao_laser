@@ -111,7 +111,7 @@ export function useParameterMaterials(enabled = true) {
 }
 
 export function useParameterOptions(
-	dimension: 'lens' | 'category' | 'color' | 'mode',
+	dimension: 'lens' | 'category' | 'color' | 'mode' | 'machine' | 'material',
 	enabled = true,
 ) {
 	return useQuery({

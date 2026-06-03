@@ -30,7 +30,10 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLaserLineTypes } from '@/hooks/use-laser-line-types';
 import type { LaserParameter } from '@/types/parameters';
-import { applicableFields } from '@/utils/constants/parameter-field-rules';
+import {
+	applicableFields,
+	formatMachineLabel,
+} from '@/utils/constants/parameter-field-rules';
 
 export type ParameterCardVariant = 'community' | 'simple' | 'lookup';
 
@@ -161,7 +164,11 @@ export function ParameterCard({
 
 			{/* Linha 1 — Máquina | Software | Lente */}
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
-				<MiniCard icon={Cpu} label="Máquina" value={p.machine ?? '—'} />
+				<MiniCard
+					icon={Cpu}
+					label="Máquina"
+					value={formatMachineLabel(p.machine, p.powerWatts) || '—'}
+				/>
 				<MiniCard
 					icon={MonitorSmartphone}
 					label="Software"

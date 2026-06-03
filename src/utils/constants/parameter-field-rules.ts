@@ -34,6 +34,23 @@ export function machineTypeOf(machine?: string | null): MachineType {
 	return 'Outro';
 }
 
+/**
+ * Rótulo da máquina SEM duplicar a potência. Se o nome já traz os watts (ex.:
+ * "Fiber 20W", "CO2 80W"), retorna o nome; senão acrescenta `powerWatts` (ex.:
+ * "Fiber" + 20 → "Fiber 20W"). Cobre os dois modelos (texto livre / catálogo).
+ */
+export function formatMachineLabel(
+	machine?: string | null,
+	powerWatts?: number | null,
+): string {
+	const name = (machine ?? '').trim();
+	if (!name) return '';
+	if (powerWatts == null || powerWatts === 0 || /\d+\s*w/i.test(name)) {
+		return name;
+	}
+	return `${name} ${powerWatts}W`;
+}
+
 /** Mapa {campo condicional → aplicável?} para uma máquina/modo. */
 export function applicableFields(
 	machine?: string | null,

@@ -9,11 +9,12 @@ import {
 	useUploadParameterImage,
 } from '@/hooks/use-parameters';
 import type { CreateParameterPayload, PassRecipe } from '@/services/parameters';
-import { applicableFields } from '@/utils/constants/parameter-field-rules';
+import {
+	applicableFields,
+	machineTypeOf,
+} from '@/utils/constants/parameter-field-rules';
 import {
 	LENS_OPTIONS,
-	MACHINE_OPTIONS,
-	MATERIAL_OPTIONS,
 	MODE_OPTIONS,
 	SOFTWARE_OPTIONS,
 } from '@/utils/constants/parameter-options';
@@ -111,6 +112,8 @@ export function ParameterForm({
 	const uploadImage = useUploadParameterImage();
 	const { data: colorOptions = [] } = useParameterOptions('color');
 	const { data: categoryOptions = [] } = useParameterOptions('category');
+	const { data: machineOptions = [] } = useParameterOptions('machine');
+	const { data: materialOptions = [] } = useParameterOptions('material');
 
 	const set = <K extends keyof CreateParameterPayload>(
 		field: K,
@@ -122,6 +125,8 @@ export function ParameterForm({
 	// Aplicabilidade dos campos condicionais p/ a máquina/modo atuais (A4/A5).
 	// Recalcula a cada render → some/aparece conforme o usuário troca máquina/modo.
 	const ap = applicableFields(form.machine, form.mode);
+	// Máquina UV não usa potência (%): desabilita e zera.
+	const isUV = machineTypeOf(form.machine) === 'UV';
 
 	const baseRecipe = (): PassRecipe => ({
 		speed: form.speed,
@@ -144,6 +149,7 @@ export function ParameterForm({
 		// aplicáveis e guarda 0/null caso contrário).
 		onSubmit({
 			...form,
+			power: isUV ? 0 : form.power,
 			frequency: ap.frequency ? form.frequency : 0,
 			qPulse: ap.qPulse ? form.qPulse : null,
 			angle: ap.angle ? form.angle : null,
@@ -247,8 +253,8 @@ export function ParameterForm({
 						onChange={(e) => set('machine', e.target.value)}
 					/>
 					<datalist id="pf-machine-options">
-						{MACHINE_OPTIONS.map((o) => (
-							<option key={o} value={o} />
+						{machineOptions.map((o) => (
+							<option key={o.id} value={o.value} />
 						))}
 					</datalist>
 					<p className="mt-1 text-xs text-slate-400 dark:text-gray-500">
@@ -295,20 +301,15 @@ export function ParameterForm({
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 				<div>
 					<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-						Material *
+						Nome do Produto *
 					</span>
 					<input
 						required
-						list="pf-material-options"
 						className={inputCls}
+						placeholder="ex.: Copo preto 500ml"
 						value={form.material}
 						onChange={(e) => set('material', e.target.value)}
 					/>
-					<datalist id="pf-material-options">
-						{MATERIAL_OPTIONS.map((o) => (
-							<option key={o} value={o} />
-						))}
-					</datalist>
 				</div>
 				<div>
 					<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -329,16 +330,20 @@ export function ParameterForm({
 				</div>
 				<div>
 					<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-						Potencia (W) *
+						Material
 					</span>
-					<input
-						required
-						type="number"
-						min={0}
-						className={inputCls}
-						value={form.powerWatts || ''}
-						onChange={(e) => set('powerWatts', Number(e.target.value))}
-					/>
+					<select
+						value={form.materialType ?? ''}
+						onChange={(e) => set('materialType', e.target.value)}
+						className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+					>
+						<option value="">Sem material</option>
+						{materialOptions.map((o) => (
+							<option key={o.id} value={o.value}>
+								{o.value}
+							</option>
+						))}
+					</select>
 				</div>
 			</div>
 
@@ -346,17 +351,23 @@ export function ParameterForm({
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 				<div>
 					<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-						Potencia (%) *
+						Potencia (%){isUV ? '' : ' *'}
 					</span>
 					<input
-						required
+						required={!isUV}
+						disabled={isUV}
 						type="number"
 						min={0}
 						max={100}
-						className={inputCls}
-						value={form.power || ''}
+						className={`${inputCls} disabled:opacity-50 disabled:cursor-not-allowed`}
+						value={isUV ? 0 : form.power || ''}
 						onChange={(e) => set('power', Number(e.target.value))}
 					/>
+					{isUV ? (
+						<p className="mt-1 text-xs text-slate-400 dark:text-gray-500">
+							Máquina UV não usa potência (%).
+						</p>
+					) : null}
 				</div>
 				<div>
 					<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -554,18 +565,8 @@ export function ParameterForm({
 				}}
 			/>
 
-			{/* Row 6: MaterialType, Thickness (optional/legacy) */}
+			{/* Row 6: Espessura (opcional/legado) */}
 			<div className="grid grid-cols-2 gap-4">
-				<div>
-					<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-						Tipo de material
-					</span>
-					<input
-						className={inputCls}
-						value={form.materialType ?? ''}
-						onChange={(e) => set('materialType', e.target.value)}
-					/>
-				</div>
 				<div>
 					<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
 						Espessura

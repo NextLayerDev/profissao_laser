@@ -18,6 +18,7 @@ export interface ParametersQueryParams {
 	machine?: string;
 	model?: string;
 	material?: string;
+	materialType?: string;
 	thickness?: string;
 	search?: string;
 	mode?: string;
@@ -183,7 +184,7 @@ export async function getParameterMaterials(): Promise<ParameterMaterial[]> {
 
 /** Vocabulário (Lente/Tipo/Categoria/Cor) já ordenado, p/ os dropdowns de filtro. */
 export async function getParameterOptions(
-	dimension: 'lens' | 'category' | 'color' | 'mode',
+	dimension: 'lens' | 'category' | 'color' | 'mode' | 'machine' | 'material',
 ): Promise<ParameterOption[]> {
 	const { data } = await api.get<ParameterOption[]>('/parameters/options', {
 		params: { dimension },
