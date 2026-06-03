@@ -10,7 +10,6 @@ import {
 	useRemoveBackground,
 } from '@/hooks/use-editor-ai';
 import { useEntitlements } from '@/hooks/use-entitlements';
-import { formatVox } from '@/lib/format';
 import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
 import type { EditorTool } from './editor-toolbar';
 

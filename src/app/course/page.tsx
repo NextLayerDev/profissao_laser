@@ -17,6 +17,7 @@ import { WeeklyChallenge } from '@/components/course/home/weekly-challenge';
 import { SavedLessonsModal } from '@/components/course/saved-lessons-modal';
 import { SubscriptionGate } from '@/components/course/subscription-gate';
 import { DashboardSkeleton } from '@/components/ui/skeletons/dashboard-skeleton';
+import { usePrefetchCommunityTabs } from '@/hooks/use-community';
 import { getCurrentUser, getToken } from '@/lib/auth';
 
 const SIDEBAR_KEY = 'course-sidebar-collapsed';
@@ -27,6 +28,7 @@ export default function CoursePage() {
 	const [isAdmin, setIsAdmin] = useState(false);
 	const [savedLessonsModalOpen, setSavedLessonsModalOpen] = useState(false);
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+	const prefetchCommunityTabs = usePrefetchCommunityTabs();
 
 	useEffect(() => {
 		const user = getCurrentUser();
@@ -35,7 +37,9 @@ export default function CoursePage() {
 		setIsAdmin(!!getToken('user'));
 		const stored = localStorage.getItem(SIDEBAR_KEY);
 		if (stored !== null) setSidebarCollapsed(stored === 'true');
-	}, []);
+		// Pré-carrega Chat e Vitrine em background p/ abrirem instantâneas.
+		if (user?.email) prefetchCommunityTabs();
+	}, [prefetchCommunityTabs]);
 
 	const handleSidebarToggle = () => {
 		setSidebarCollapsed((c) => {

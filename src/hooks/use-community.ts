@@ -6,6 +6,7 @@ import {
 	useQuery,
 	useQueryClient,
 } from '@tanstack/react-query';
+import { useCallback } from 'react';
 import { toast } from 'sonner';
 import {
 	createChannel,
@@ -110,6 +111,61 @@ export function useCommunityChannels() {
 		queryFn: getChannels,
 		staleTime: STALE_MINUTES,
 	});
+}
+
+/**
+ * Pré-carrega em background os dados das abas Chat (canais + mensagens do
+ * primeiro canal) e Vitrine (primeira página de projetos), usando as MESMAS
+ * query keys que useCommunityChannels/useChannelMessages/useCommunityProjects
+ * — assim, ao abrir essas abas os dados já estão no cache e a página
+ * renderiza sem skeleton.
+ *
+ * Retorna uma função idempotente; chame-a quando a home /course montar.
+ */
+export function usePrefetchCommunityTabs() {
+	const queryClient = useQueryClient();
+	return useCallback(() => {
+		// Chat: lista de canais (mesma key de useCommunityChannels). Como
+		// precisamos do 1º canal para já trazer suas mensagens, usamos
+		// fetchQuery e encadeamos o prefetch das mensagens.
+		queryClient
+			.fetchQuery({
+				queryKey: COMMUNITY_KEYS.channels(),
+				queryFn: getChannels,
+				staleTime: STALE_MINUTES,
+			})
+			.then((channels) => {
+				// Mesma seleção do ChannelsView: 1º canal ordenado por `order`.
+				const first = [...channels].sort(
+					(a, b) => (a.order ?? 0) - (b.order ?? 0),
+				)[0];
+				if (!first) return;
+				// Mensagens do canal ativo inicial (key igual a
+				// useChannelMessages(channelId): before/limit undefined).
+				queryClient.prefetchQuery({
+					queryKey: COMMUNITY_KEYS.messages(first.id, undefined, undefined),
+					queryFn: () => getChannelMessages(first.id, { limit: 50 }),
+					staleTime: STALE_SECONDS,
+				});
+			})
+			.catch(() => {
+				// Prefetch é best-effort; falhas serão tratadas ao abrir a aba.
+			});
+		// Vitrine: primeira página (mesma key do estado inicial da ShowcaseView:
+		// page 1, limit 12, sem filtros, sort 'recent').
+		queryClient.prefetchQuery({
+			queryKey: COMMUNITY_KEYS.projects(
+				1,
+				12,
+				undefined,
+				undefined,
+				undefined,
+				'recent',
+			),
+			queryFn: () => getProjects({ page: 1, limit: 12, sort: 'recent' }),
+			staleTime: STALE_MINUTES,
+		});
+	}, [queryClient]);
 }
 
 export function useCreateChannel() {

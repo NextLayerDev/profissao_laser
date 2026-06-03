@@ -34,7 +34,7 @@ export const courseDetailToolSchema = z.object({
 	tool: z.object({
 		key: z.string(),
 		name: z.string(),
-		vox_cost: z.number().int(),
+		vox_cost: z.number(),
 	}),
 });
 export type CourseDetailTool = z.infer<typeof courseDetailToolSchema>;

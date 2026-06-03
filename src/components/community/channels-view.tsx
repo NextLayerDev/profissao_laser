@@ -9,6 +9,7 @@ import {
 	HelpCircle,
 	ImageIcon,
 	Link2,
+	Loader2,
 	Lock,
 	Megaphone,
 	MessageSquare,
@@ -110,8 +111,11 @@ export function ChannelsView({
 
 	const { data: channels = [], isLoading: channelsLoading } =
 		useCommunityChannels();
-	const { data: channelMessages = [], refetch: refetchMessages } =
-		useChannelMessages(activeChannel);
+	const {
+		data: channelMessages = [],
+		refetch: refetchMessages,
+		isLoading: messagesLoading,
+	} = useChannelMessages(activeChannel);
 	const { users } = useUsers(true);
 	const userMap = useMemo(() => buildUserDisplayMap(users), [users]);
 
@@ -476,7 +480,16 @@ export function ChannelsView({
 						ref={channelMessagesScrollRef}
 						className="flex-1 overflow-y-auto p-6 space-y-6"
 					>
-						{activeChannel && channelMessages.length > 0 ? (
+						{activeChannel &&
+						messagesLoading &&
+						channelMessages.length === 0 ? (
+							<div className="flex flex-col items-center justify-center h-64 text-center">
+								<Loader2 className="h-8 w-8 text-cyan-400 animate-spin mb-4" />
+								<p className="text-slate-600 dark:text-gray-400">
+									Carregando mensagens...
+								</p>
+							</div>
+						) : activeChannel && channelMessages.length > 0 ? (
 							filteredChannelMessages.length === 0 ? (
 								<div className="flex flex-col items-center justify-center h-64 text-center">
 									<Search className="h-12 w-12 text-cyan-400 mb-4 opacity-50" />
