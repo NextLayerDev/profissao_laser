@@ -4,6 +4,7 @@ import { Sparkles, Wallet, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ModalOverlay } from '@/components/ui/modal-overlay';
 import { VoxxysIcon } from '@/components/ui/voxxys-icon';
+import { formatVox } from '@/lib/format';
 
 export type CreditModalVariant =
 	| 'confirm'
@@ -181,11 +182,11 @@ export function CreditConfirmModal({
 						<>
 							Esta ação custa{' '}
 							<strong className="text-slate-900 dark:text-white">
-								{cost} {cost === 1 ? 'voxxy' : 'voxxys'}
+								{formatVox(cost)} {cost === 1 ? 'voxxy' : 'voxxys'}
 							</strong>{' '}
 							e você tem apenas{' '}
 							<strong className="text-slate-900 dark:text-white">
-								{balance}
+								{formatVox(balance)}
 							</strong>
 							. Compre voxxys para continuar.
 						</>
@@ -193,11 +194,11 @@ export function CreditConfirmModal({
 						<>
 							Esta ação custa{' '}
 							<strong className="text-slate-900 dark:text-white">
-								{cost} {cost === 1 ? 'voxxy' : 'voxxys'}
+								{formatVox(cost)} {cost === 1 ? 'voxxy' : 'voxxys'}
 							</strong>
 							. Seu saldo:{' '}
 							<strong className="text-slate-900 dark:text-white">
-								{balance} {balance === 1 ? 'voxxy' : 'voxxys'}
+								{formatVox(balance)} {balance === 1 ? 'voxxy' : 'voxxys'}
 							</strong>
 							. Deseja continuar?
 						</>
@@ -229,7 +230,7 @@ export function CreditConfirmModal({
 						>
 							{pending
 								? 'Processando...'
-								: `Usar ${cost} ${cost === 1 ? 'voxxy' : 'voxxys'}`}
+								: `Usar ${formatVox(cost)} ${cost === 1 ? 'voxxy' : 'voxxys'}`}
 						</button>
 					)}
 				</div>

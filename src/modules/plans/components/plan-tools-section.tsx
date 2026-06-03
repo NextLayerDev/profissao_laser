@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { VoxxysIcon } from '@/components/ui/voxxys-icon';
+import { formatVox } from '@/lib/format';
 import { useTools } from '@/modules/tools';
 import { useRemovePlanTool, useSetPlanTool } from '../hooks/use-plan-tools';
 import type { PlanEntitlement } from '../types/plan-details';
@@ -187,7 +188,7 @@ function CostDisplay({ value }: { value: number }) {
 			</div>
 			<div className="flex items-baseline gap-1.5">
 				<span className="text-lg font-semibold text-slate-900 dark:text-white tabular-nums">
-					{value}
+					{formatVox(value)}
 				</span>
 				<span className="text-xs text-slate-500">voxxys/uso</span>
 			</div>

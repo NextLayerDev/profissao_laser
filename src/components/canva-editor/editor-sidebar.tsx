@@ -11,6 +11,7 @@ import {
 	useRemoveBackground,
 } from '@/hooks/use-editor-ai';
 import { useEntitlements } from '@/hooks/use-entitlements';
+import { formatVox } from '@/lib/format';
 import { useRunTool } from '@/modules/tools/hooks/use-run-tool';
 import type { EditorTool } from './editor-toolbar';
 
@@ -210,7 +211,8 @@ function AiPanel({
 				) : (
 					<Sparkles className="w-4 h-4" />
 				)}
-				Aplicar IA ({aiCanvasCost} {aiCanvasCost === 1 ? 'voxxy' : 'voxxys'})
+				Aplicar IA ({formatVox(aiCanvasCost)}{' '}
+				{aiCanvasCost === 1 ? 'voxxy' : 'voxxys'})
 			</button>
 
 			<div className="pt-3 border-t border-slate-200 dark:border-white/10">

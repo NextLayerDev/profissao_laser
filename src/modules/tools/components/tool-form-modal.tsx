@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ModalOverlay } from '@/components/ui/modal-overlay';
+import { parseVox } from '@/lib/format';
 import type {
 	CreateToolPayload,
 	Tool,
@@ -20,7 +21,9 @@ export function ToolFormModal({ editing, pending, onClose, onSubmit }: Props) {
 	const [name, setName] = useState(editing?.name ?? '');
 	const [description, setDescription] = useState(editing?.description ?? '');
 	const [voxCost, setVoxCost] = useState(
-		editing?.vox_cost != null ? String(editing.vox_cost) : '0',
+		editing?.vox_cost != null
+			? String(editing.vox_cost).replace('.', ',')
+			: '0',
 	);
 	const [enabled, setEnabled] = useState(editing?.enabled ?? true);
 
@@ -65,14 +68,16 @@ export function ToolFormModal({ editing, pending, onClose, onSubmit }: Props) {
 
 				<Field label="Custo em voxxys por uso">
 					<input
-						type="number"
-						min={0}
+						type="text"
+						inputMode="decimal"
 						value={voxCost}
 						onChange={(e) => setVoxCost(e.target.value)}
+						placeholder="0,3"
 						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
 					/>
 					<p className="text-xs text-slate-500 mt-1">
-						Cobrado quando o usuário esgota a free_quota do plano.
+						Aceita decimal (ex.: 0,3). Cobrado quando o usuário esgota a
+						free_quota do plano.
 					</p>
 				</Field>
 
@@ -100,7 +105,7 @@ export function ToolFormModal({ editing, pending, onClose, onSubmit }: Props) {
 							const base = {
 								name: name.trim(),
 								description: description?.trim() || undefined,
-								vox_cost: Math.max(0, Math.floor(Number(voxCost) || 0)),
+								vox_cost: parseVox(voxCost),
 								enabled,
 							};
 							onSubmit(editing ? base : { ...base, key: key.trim() });
