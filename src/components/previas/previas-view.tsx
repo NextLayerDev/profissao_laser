@@ -29,6 +29,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { MyMachineSection } from '@/components/previas/my-machine-section';
+import { PreviaBackgroundPicker } from '@/components/previas/previa-background-picker';
 import { PageHeader } from '@/components/ui/page-header';
 import { useEntitlements } from '@/hooks/use-entitlements';
 import { useLaserProduct, useLaserProducts } from '@/hooks/use-laser-products';
@@ -52,6 +53,11 @@ import type {
 	PreviaOptionItem,
 	PreviaOptions,
 } from '@/types/previas';
+import {
+	pickValidPreset,
+	smartPresetFor,
+	suggestedBackgrounds,
+} from '@/utils/constants/previa-smart-presets';
 
 type WizardStep = 1 | 2 | 3 | 4;
 
@@ -451,7 +457,7 @@ function ProductSelector({
 									Nenhuma variante encontrada para "{variantSearch}".
 								</p>
 							) : (
-								<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+								<div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2.5">
 									{filteredVariants.map((variant) => (
 										<button
 											key={variant.id}
@@ -473,7 +479,7 @@ function ProductSelector({
 													/>
 												) : (
 													<div className="w-full h-full flex items-center justify-center">
-														<Package className="w-10 h-10 text-slate-400" />
+														<Package className="w-7 h-7 text-slate-400" />
 													</div>
 												)}
 												{selectedVariantId === variant.id && (
@@ -482,8 +488,8 @@ function ProductSelector({
 													</div>
 												)}
 											</div>
-											<div className="p-3 min-w-0">
-												<p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+											<div className="p-2 min-w-0">
+												<p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
 													{variant.name}
 												</p>
 												<div className="flex items-center gap-1.5 mt-1">
@@ -540,7 +546,7 @@ function ProductSelector({
 					<p className="text-sm text-slate-500">Nenhum produto encontrado</p>
 				</div>
 			) : (
-				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+				<div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2.5">
 					{products.map((product) => {
 						const firstVariant = product.variants?.[0];
 						// Prefere a imagem do PRODUTO (parent); cai pra 1ª variant se
@@ -572,8 +578,8 @@ function ProductSelector({
 										</div>
 									)}
 								</div>
-								<div className="p-2.5">
-									<p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+								<div className="p-2">
+									<p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
 										{product.name}
 									</p>
 									<p className="text-xs text-slate-500 dark:text-gray-400 capitalize mt-0.5">
@@ -1021,20 +1027,22 @@ export function PreviasView() {
 		setSelectedVariantId(null);
 	}, []);
 
-	// When variant is selected, update material hint (only if it matches a valid API enum value)
-	const validMaterials = options?.material?.map((m) => m.value) ?? [];
+	// Ao escolher a variante, aplica um preset inteligente (material + acabamento)
+	// derivado do produto — clampado contra as opções reais de /previas/options.
 	const handleSelectVariant = useCallback(
 		(id: string) => {
 			setSelectedVariantId(id || null);
-			const dm = selectedProduct?.defaultMaterial;
-			if (dm && validMaterials.includes(dm)) {
-				setLaserSettings((prev) => ({
-					...prev,
-					material: dm,
-				}));
+			if (!selectedProduct) return;
+			const valid = pickValidPreset(smartPresetFor(selectedProduct), {
+				material: options?.material?.map((m) => m.value) ?? [],
+				acabamentoSuperficie:
+					options?.acabamentoSuperficie?.map((m) => m.value) ?? [],
+			});
+			if (Object.keys(valid).length > 0) {
+				setLaserSettings((prev) => ({ ...prev, ...valid }));
 			}
 		},
-		[selectedProduct, validMaterials],
+		[selectedProduct, options],
 	);
 
 	// Helper to get range from options or fallback
@@ -1066,6 +1074,21 @@ export function PreviasView() {
 				subtitle="Gere previas realistas de personalizacao a laser com IA."
 				icon={Eye}
 			/>
+
+			<div className="flex justify-end -mt-2 mb-5">
+				<button
+					type="button"
+					onClick={() =>
+						document
+							.getElementById('previas-historico')
+							?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+					}
+					className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+				>
+					<Image className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+					Historico de previas
+				</button>
+			</div>
 
 			{/* Wizard card */}
 			<div
@@ -1427,6 +1450,13 @@ export function PreviasView() {
 							icon={Palette}
 							defaultOpen
 						>
+							{selectedVariantId && (
+								<p className="mb-3 text-xs text-violet-600 dark:text-violet-300 flex items-center gap-1.5">
+									<Sparkles className="w-3.5 h-3.5" />
+									Material e acabamento sugeridos pelo produto — ajuste se
+									quiser.
+								</p>
+							)}
 							<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
 								<DynamicSelect
 									label="Material"
@@ -1545,31 +1575,42 @@ export function PreviasView() {
 						</CollapsibleSection>
 
 						<CollapsibleSection title="Visualizacao e Camera" icon={Camera}>
-							<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-								<DynamicSelect
-									label="Visualizacao"
-									value={laserSettings.tipoVisualizacao}
-									options={getOptions('tipoVisualizacao')}
-									onChange={(v) => updateLS('tipoVisualizacao', v)}
-								/>
-								<DynamicSelect
-									label="Camera"
-									value={laserSettings.anguloCamera}
-									options={getOptions('anguloCamera')}
-									onChange={(v) => updateLS('anguloCamera', v)}
-								/>
-								<DynamicSelect
-									label="Iluminacao"
-									value={laserSettings.iluminacao}
-									options={getOptions('iluminacao')}
-									onChange={(v) => updateLS('iluminacao', v)}
-								/>
-								<DynamicSelect
-									label="Fundo"
-									value={laserSettings.fundoCena}
-									options={getOptions('fundoCena')}
-									onChange={(v) => updateLS('fundoCena', v)}
-								/>
+							<div className="space-y-4">
+								<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+									<DynamicSelect
+										label="Visualizacao"
+										value={laserSettings.tipoVisualizacao}
+										options={getOptions('tipoVisualizacao')}
+										onChange={(v) => updateLS('tipoVisualizacao', v)}
+									/>
+									<DynamicSelect
+										label="Camera"
+										value={laserSettings.anguloCamera}
+										options={getOptions('anguloCamera')}
+										onChange={(v) => updateLS('anguloCamera', v)}
+									/>
+									<DynamicSelect
+										label="Iluminacao"
+										value={laserSettings.iluminacao}
+										options={getOptions('iluminacao')}
+										onChange={(v) => updateLS('iluminacao', v)}
+									/>
+								</div>
+								<div>
+									<span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+										Fundo da cena
+									</span>
+									<PreviaBackgroundPicker
+										value={laserSettings.fundoCena}
+										options={getOptions('fundoCena')}
+										suggested={
+											selectedProduct
+												? suggestedBackgrounds(selectedProduct)
+												: []
+										}
+										onChange={(v) => updateLS('fundoCena', v)}
+									/>
+								</div>
 							</div>
 						</CollapsibleSection>
 
@@ -1693,11 +1734,11 @@ export function PreviasView() {
 										</p>
 									</div>
 								</div>
-								<div className="aspect-[4/3] bg-slate-100 dark:bg-black/30 rounded-xl flex items-center justify-center overflow-hidden shadow-inner">
+								<div className="mx-auto w-full max-w-lg bg-slate-100 dark:bg-black/30 rounded-xl flex items-center justify-center overflow-hidden shadow-inner">
 									<img
 										src={generatedPrevia.previewUrl}
 										alt="Previa gerada"
-										className="max-w-full max-h-full object-contain"
+										className="w-full max-h-[60vh] object-contain"
 									/>
 								</div>
 								<button
