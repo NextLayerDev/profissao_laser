@@ -40,3 +40,14 @@ export async function invokeTool(
 	});
 	return invokeToolResultSchema.parse(data);
 }
+
+/** Cobrança atômica (debita + liquida) p/ ferramentas sem motor (ex.: "abrir item"). */
+export async function consumeTool(
+	toolKey: string,
+	courseSlug: string,
+): Promise<InvokeToolResult> {
+	const { data } = await api.post(`/v1/tool/${toolKey}/use`, {
+		course_slug: courseSlug,
+	});
+	return invokeToolResultSchema.parse(data);
+}

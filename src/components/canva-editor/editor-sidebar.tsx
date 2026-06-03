@@ -87,6 +87,8 @@ function AiPanel({
 	const aiCanvasCost = entitlements.toolFor('ai_canvas')?.vox_cost ?? 0;
 	const aiCanvasRemainingFree = entitlements.remainingFree('ai_canvas');
 	const voxBalance = entitlements.voxBalance;
+	// Cobrada só se a ferramenta tiver funcionalidade liberada; senão roda livre.
+	const aiCanvasBilled = !!entitlements.toolFor('ai_canvas');
 	const runTool = useRunTool('ai_canvas', courseSlug);
 	const [confirmRun, setConfirmRun] = useState<(() => void) | null>(null);
 
@@ -106,23 +108,25 @@ function AiPanel({
 			toast.error('Não foi possível exportar o canvas.');
 			return;
 		}
+		const engineFn = (invocationId?: string) =>
+			aiGenerate
+				.mutateAsync({
+					mode: 'edit',
+					prompt: trimmed,
+					image,
+					regionInfo: isRegionMode && region ? region : undefined,
+					invocation_id: invocationId,
+				})
+				.then((result) => {
+					onApplyEditedImage(result.imageBase64);
+					setPrompt('');
+					if (isRegionMode) onClearRegion();
+					return result;
+				});
 		const action = () =>
-			runTool.run((invocationId) =>
-				aiGenerate
-					.mutateAsync({
-						mode: 'edit',
-						prompt: trimmed,
-						image,
-						regionInfo: isRegionMode && region ? region : undefined,
-						invocation_id: invocationId,
-					})
-					.then((result) => {
-						onApplyEditedImage(result.imageBase64);
-						setPrompt('');
-						if (isRegionMode) onClearRegion();
-						return result;
-					}),
-			);
+			aiCanvasBilled
+				? runTool.run((invocationId) => engineFn(invocationId))
+				: engineFn(undefined);
 		// Sem cota grátis e a ação custa voxxys → confirma antes de gastar.
 		if (aiCanvasRemainingFree === 0 && aiCanvasCost > 0)
 			setConfirmRun(() => action);
@@ -135,15 +139,17 @@ function AiPanel({
 			toast.error('Não foi possível exportar o canvas.');
 			return;
 		}
+		const engineFn = (invocationId?: string) =>
+			removeBg
+				.mutateAsync({ image, invocation_id: invocationId })
+				.then((result) => {
+					onApplyEditedImage(result.imageBase64);
+					return result;
+				});
 		const action = () =>
-			runTool.run((invocationId) =>
-				removeBg
-					.mutateAsync({ image, invocation_id: invocationId })
-					.then((result) => {
-						onApplyEditedImage(result.imageBase64);
-						return result;
-					}),
-			);
+			aiCanvasBilled
+				? runTool.run((invocationId) => engineFn(invocationId))
+				: engineFn(undefined);
 		// Sem cota grátis e a ação custa voxxys → confirma antes de gastar.
 		if (aiCanvasRemainingFree === 0 && aiCanvasCost > 0)
 			setConfirmRun(() => action);

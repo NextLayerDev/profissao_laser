@@ -1304,6 +1304,8 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 	const vectorizeCost = entitlements.toolFor('vectorize')?.vox_cost ?? 0;
 	const vectorizeRemainingFree = entitlements.remainingFree('vectorize');
 	const voxBalance = entitlements.voxBalance;
+	// Cobrada só se a ferramenta tiver funcionalidade liberada; senão roda livre.
+	const vectorizeBilled = !!entitlements.toolFor('vectorize');
 	const runTool = useRunTool('vectorize', courseSlug);
 	const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -1321,7 +1323,7 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 
 	const runVectorize = useCallback(async () => {
 		if (!file) return;
-		await runTool.run((invocationId) =>
+		const engineFn = (invocationId?: string) =>
 			vectorizeMutation
 				.mutateAsync({ file, invocationId, params: { ...params, preset } })
 				.then((res) => {
@@ -1329,9 +1331,22 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 					setStep(3);
 					refetchVectors();
 					return res;
-				}),
-		);
-	}, [file, runTool, vectorizeMutation, params, preset, refetchVectors]);
+				});
+		// Cobrada → invoke→motor→settle; livre → roda o motor sem invocation.
+		if (vectorizeBilled) {
+			await runTool.run((invocationId) => engineFn(invocationId));
+		} else {
+			await engineFn(undefined);
+		}
+	}, [
+		file,
+		vectorizeBilled,
+		runTool,
+		vectorizeMutation,
+		params,
+		preset,
+		refetchVectors,
+	]);
 	const saveMutation = useSaveVector();
 
 	const handleFileSelected = useCallback((selectedFile: File) => {

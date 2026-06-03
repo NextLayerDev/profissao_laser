@@ -25,6 +25,7 @@ import { ParameterGridCard } from '@/components/parametros/parameter-grid-card';
 import { PageHeader } from '@/components/ui/page-header';
 import { ParameterGridSkeleton } from '@/components/ui/skeletons/parameter-grid-skeleton';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
+import { useEntitlements } from '@/hooks/use-entitlements';
 import {
 	useCommunityParameters,
 	useLikeParameter,
@@ -35,6 +36,7 @@ import {
 	useSaveParameter,
 	useSubmitParameter,
 } from '@/hooks/use-parameters';
+import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
 import type { CreateParameterPayload } from '@/services/parameters';
 import {
 	MACHINE_OPTIONS,
@@ -88,6 +90,10 @@ export function ParametrosView() {
 	const [sort, setSort] = useState<SortValue>('likes');
 	const [page, setPage] = useState(1);
 	const [detailId, setDetailId] = useState<string | null>(null);
+	// "Abrir item" cobra voxxys se a ferramenta `parametros` tiver funcionalidade
+	// liberada; senão abre livre.
+	const { courses } = useEntitlements();
+	const paramBilling = useToolBilling('parametros', courses[0]?.slug);
 	const [showSubmit, setShowSubmit] = useState(false);
 	const limit = 12;
 
@@ -342,7 +348,9 @@ export function ParametrosView() {
 										saveMut.mutate({ id: p.id, saved: !!p.isSaved })
 									}
 									onRate={(n) => rateMut.mutate({ id: p.id, rating: n })}
-									onViewDetails={() => setDetailId(p.id)}
+									onViewDetails={() =>
+										paramBilling.consume(() => setDetailId(p.id))
+									}
 								/>
 							))}
 						</div>
@@ -421,7 +429,7 @@ export function ParametrosView() {
 								<button
 									key={m.id}
 									type="button"
-									onClick={() => setDetailId(m.id)}
+									onClick={() => paramBilling.consume(() => setDetailId(m.id))}
 									className="flex w-full items-center justify-between gap-2 py-1.5 text-left hover:text-violet-500"
 								>
 									<span className="truncate text-sm text-slate-700 dark:text-gray-300">
@@ -440,6 +448,7 @@ export function ParametrosView() {
 				</aside>
 			</div>
 
+			{paramBilling.modal}
 			<ParameterDetailModal
 				parameterId={detailId}
 				onClose={() => setDetailId(null)}
