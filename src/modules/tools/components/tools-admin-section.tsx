@@ -3,6 +3,7 @@
 import { Plus, Trash2, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import { VoxxysIcon } from '@/components/ui/voxxys-icon';
+import { formatVox } from '@/lib/format';
 import { useCreateTool, useDeleteTool } from '../hooks/use-tool-mutations';
 import { useTools } from '../hooks/use-tools';
 import { useUpdateTool } from '../hooks/use-update-tool';
@@ -145,7 +146,9 @@ function ToolCard({
 
 				<div className="mt-3 flex items-center gap-1.5 text-sm text-slate-600 dark:text-gray-300">
 					<VoxxysIcon className="w-4 h-4" />
-					<span className="tabular-nums font-medium">{tool.vox_cost}</span>
+					<span className="tabular-nums font-medium">
+						{formatVox(tool.vox_cost)}
+					</span>
 					<span className="text-xs text-slate-500">voxxys/uso</span>
 				</div>
 

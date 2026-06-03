@@ -5,7 +5,7 @@ export const toolSchema = z.object({
 	key: z.string(),
 	name: z.string(),
 	description: z.string().nullable().optional(),
-	vox_cost: z.number().int(),
+	vox_cost: z.coerce.number(),
 	enabled: z.boolean(),
 	created_at: z.string(),
 	updated_at: z.string(),
@@ -20,7 +20,7 @@ export const createToolSchema = z.object({
 		.regex(/^[a-z0-9_]+$/, 'snake_case (a-z, 0-9, _)'),
 	name: z.string().min(1).max(120),
 	description: z.string().max(1000).optional(),
-	vox_cost: z.number().int().min(0).optional(),
+	vox_cost: z.number().min(0).optional(),
 	enabled: z.boolean().optional(),
 });
 export type CreateToolPayload = z.infer<typeof createToolSchema>;
@@ -31,7 +31,7 @@ export type UpdateToolPayload = z.infer<typeof updateToolSchema>;
 export const invokeToolResultSchema = z.object({
 	invocation_id: z.string(),
 	quota_consumed: z.number().int(),
-	voxes_spent: z.number().int(),
-	balance: z.number().int(),
+	voxes_spent: z.coerce.number(),
+	balance: z.coerce.number(),
 });
 export type InvokeToolResult = z.infer<typeof invokeToolResultSchema>;

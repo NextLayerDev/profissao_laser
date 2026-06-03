@@ -15,6 +15,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 import { useEntitlements } from '@/hooks/use-entitlements';
 import { useIsTestUnlimited } from '@/hooks/use-is-test-unlimited';
+import { formatVox } from '@/lib/format';
 
 interface CourseTopHeaderProps {
 	isAdmin: boolean;
@@ -104,7 +105,7 @@ export function CourseTopHeader({
 				>
 					<VoxxysIcon className="w-[18px] h-[18px]" />
 					<span className="text-sm font-semibold tabular-nums">
-						{unlimited ? '∞' : balanceLoading ? '—' : voxBalance}
+						{unlimited ? '∞' : balanceLoading ? '—' : formatVox(voxBalance)}
 					</span>
 				</Link>
 				<Link
