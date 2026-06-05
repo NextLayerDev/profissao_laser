@@ -50,7 +50,7 @@ function BgThumb({
 					: 'border-slate-200 dark:border-white/10 hover:border-violet-500/50'
 			}`}
 		>
-			<div className="relative aspect-[4/3] w-full">
+			<div className="relative aspect-[16/10] w-full">
 				{imgOk ? (
 					<img
 						src={`/previa/fundos/${item.value}.webp`}
@@ -104,10 +104,10 @@ export function PreviaBackgroundPicker({
 	const restCount = Math.max(options.length - suggestedItems.length, 0);
 
 	return (
-		<div className="space-y-2 max-w-md">
+		<div className="space-y-1.5 max-w-md">
 			{suggestedItems.length > 0 && (
 				<div>
-					<p className="text-xs font-medium text-violet-600 dark:text-violet-300 mb-1.5 flex items-center gap-1">
+					<p className="text-xs font-medium text-violet-600 dark:text-violet-300 mb-1 flex items-center gap-1">
 						<Sparkles className="w-3.5 h-3.5" /> Sugeridos para este produto
 					</p>
 					<div className="grid grid-cols-3 gap-1.5">

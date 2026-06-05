@@ -328,7 +328,7 @@ function SectionHeader({
 	title: string;
 }) {
 	return (
-		<h3 className="col-span-full mt-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-gray-400">
+		<h3 className="col-span-full mt-0.5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-gray-400">
 			<Icon className="w-3.5 h-3.5 text-violet-500" aria-hidden="true" />
 			<span>{title}</span>
 			<span className="flex-1 h-px bg-slate-200 dark:bg-white/10" />
@@ -420,7 +420,7 @@ function StepIndicator({ current }: { current: WizardStep }) {
 	];
 
 	return (
-		<div className="flex items-center justify-center gap-0 mb-8">
+		<div className="flex items-center justify-center gap-0 mb-6">
 			{steps.map((step, idx) => {
 				const done = current > step.num;
 				const active = current === step.num;
@@ -1515,10 +1515,10 @@ export function PreviasView() {
 
 				{/* Step 3: Laser Settings */}
 				{step === 3 && !optionsLoading && (
-					<div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-3">
-						<p className="col-span-full text-xs text-slate-500 dark:text-gray-400">
-							Ajuste tudo da gravação e da cena — os campos sugeridos pelo
-							produto já vêm preenchidos, é só refinar o que quiser.
+					<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-x-3 gap-y-2">
+						<p className="col-span-full text-[11px] text-slate-500 dark:text-gray-400">
+							Campos sugeridos pelo produto já vêm preenchidos — refine só o que
+							quiser.
 						</p>
 
 						<SectionHeader icon={Ruler} title="Tamanho e Posição" />
@@ -1670,7 +1670,7 @@ export function PreviasView() {
 							onChange={(v) => updateLS('iluminacao', v)}
 						/>
 						<div className="col-span-full">
-							<span className="block text-xs text-slate-500 dark:text-gray-400 mb-1.5">
+							<span className="block text-xs text-slate-500 dark:text-gray-400 mb-1">
 								Fundo da cena
 							</span>
 							<PreviaBackgroundPicker
