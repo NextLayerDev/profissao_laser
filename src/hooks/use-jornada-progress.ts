@@ -1,6 +1,8 @@
 'use client';
 
-import { useQueries } from '@tanstack/react-query';
+import { useQueries, useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
+import { listCourses } from '@/modules/courses';
 import { getCourse } from '@/services/course';
 import { getCourseProgress } from '@/services/progress';
 import type { Course } from '@/types/course';
@@ -61,8 +63,21 @@ export function useJornadaProgress(plans: CustomerPlan[] | undefined) {
 		return true;
 	});
 
+	// Catálogo real de cursos na upvox (fonte de verdade). Só consulta a jornada
+	// de planos cujo slug tem curso publicado — evita 404 em GET /v1/course/:slug.
+	const { data: catalog, isLoading: catalogLoading } = useQuery({
+		queryKey: ['jornada-course-catalog'],
+		queryFn: listCourses,
+		staleTime: 5 * 60_000,
+	});
+	const catalogSlugs = useMemo(
+		() => new Set((catalog ?? []).map((c) => c.slug)),
+		[catalog],
+	);
+	const existingPlans = uniquePlans.filter((p) => catalogSlugs.has(p.slug));
+
 	const queries = useQueries({
-		queries: uniquePlans.map((plan) => ({
+		queries: existingPlans.map((plan) => ({
 			queryKey: ['jornada-progress', plan.id, plan.slug],
 			queryFn: async (): Promise<JornadaCourseItem> => {
 				const course = await getCourse(plan.slug);
@@ -72,7 +87,7 @@ export function useJornadaProgress(plans: CustomerPlan[] | undefined) {
 		})),
 	});
 
-	const isLoading = queries.some((q) => q.isLoading);
+	const isLoading = catalogLoading || queries.some((q) => q.isLoading);
 	const items: JornadaCourseItem[] = queries
 		.filter((q): q is typeof q & { data: JornadaCourseItem } => !!q.data)
 		.map((q) => q.data);
