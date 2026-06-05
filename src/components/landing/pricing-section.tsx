@@ -153,7 +153,7 @@ function FeaturedSparkles() {
 
 function SkeletonCard() {
 	return (
-		<div className="card-dark rounded-2xl border p-6 animate-pulse">
+		<div className="card-dark w-full rounded-2xl border p-6 animate-pulse">
 			<div className="h-5 w-24 mx-auto rounded bg-white/10" />
 			<div className="h-3 w-32 mx-auto mt-3 rounded bg-white/5" />
 			<div className="h-12 w-36 mx-auto my-6 rounded bg-white/10" />
@@ -190,7 +190,7 @@ function PlanCard({
 			animate={{ y: p.featured ? -8 : 0 }}
 			whileHover={{ y: p.featured ? -14 : -6 }}
 			transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-			className={`tile-hairline relative rounded-2xl border p-6 flex flex-col ${
+			className={`tile-hairline relative w-full h-full rounded-2xl border p-6 flex flex-col ${
 				p.featured ? 'border-violet-500/50 aura' : 'card-dark shine'
 			}`}
 			style={
@@ -364,13 +364,24 @@ export function PricingSection() {
 					</div>
 				</ScrollReveal>
 
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-start">
+				{/* Grid adaptativo: distribui 1..7+ planos numa linha (telas largas) e
+				   quebra centralizado nas menores, com altura igual por linha. */}
+				<div className="flex flex-wrap justify-center gap-5">
 					{isLoading && !data
 						? Array.from({ length: 4 }).map((_, i) => (
-								<SkeletonCard key={`skeleton-${i}`} />
+								<div
+									key={`skeleton-${i}`}
+									className="flex grow basis-[250px] min-w-[200px] max-w-[340px]"
+								>
+									<SkeletonCard />
+								</div>
 							))
 						: plans.map((p, i) => (
-								<StaggerReveal key={p.id} delay={i * 0.08}>
+								<StaggerReveal
+									key={p.id}
+									delay={i * 0.08}
+									className="flex grow basis-[250px] min-w-[200px] max-w-[340px]"
+								>
 									<PlanCard p={p} billing={billing} onBuy={onBuy} />
 								</StaggerReveal>
 							))}
