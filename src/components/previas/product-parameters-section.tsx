@@ -21,6 +21,7 @@ import {
 	useProductParameters,
 	useUpdateProductParameter,
 } from '@/hooks/use-product-parameters';
+import { listAdminCourses } from '@/modules/courses';
 import { getCourse } from '@/services/course';
 import type { PassRecipe } from '@/services/parameters';
 import { getProducts } from '@/services/products';
@@ -75,8 +76,15 @@ function LessonPicker({
 	const { data: lessons, isLoading } = useQuery({
 		queryKey: ['all-lessons-for-picker'],
 		queryFn: async () => {
-			const products = await getProducts();
-			const cursoProducts = products.filter((p) => p.type === 'curso');
+			const [products, courses] = await Promise.all([
+				getProducts(),
+				listAdminCourses(),
+			]);
+			// Só itera produtos com curso real na upvox (evita 404 em /v1/course/:slug).
+			const courseSlugs = new Set(courses.map((c) => c.slug));
+			const cursoProducts = products.filter(
+				(p) => p.type === 'curso' && courseSlugs.has(p.slug),
+			);
 			const allLessons: LessonOption[] = [];
 			for (const product of cursoProducts) {
 				try {

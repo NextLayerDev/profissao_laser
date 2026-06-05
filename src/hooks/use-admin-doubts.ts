@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { listAdminCourses } from '@/modules/courses';
 import { getCourse } from '@/services/course';
 import { getLessonDoubts, replyToDoubt } from '@/services/doubts';
 import { getProducts } from '@/services/products';
@@ -23,8 +24,16 @@ export interface ProductWithDoubts {
 }
 
 async function fetchDoubtsByModules(): Promise<ProductWithDoubts[]> {
-	const products = await getProducts();
-	const cursoProducts = products.filter((p) => p.type === 'curso');
+	const [products, courses] = await Promise.all([
+		getProducts(),
+		listAdminCourses(),
+	]);
+	// Só processa produtos cujo slug tem curso real na upvox (fonte de verdade),
+	// evitando 404 em GET /v1/course/:slug para produtos sem curso correspondente.
+	const courseSlugs = new Set(courses.map((c) => c.slug));
+	const cursoProducts = products.filter(
+		(p) => p.type === 'curso' && courseSlugs.has(p.slug),
+	);
 
 	const result: ProductWithDoubts[] = [];
 
