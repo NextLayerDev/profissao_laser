@@ -1,342 +1,235 @@
 'use client';
 
-import { ArrowRight, ArrowUpDown, Layers, Loader2, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { isAxiosError } from 'axios';
+import {
+	ArrowUpDown,
+	BadgeCheck,
+	CreditCard,
+	Layers,
+	Loader2,
+} from 'lucide-react';
+import { useState } from 'react';
 import { toast } from 'sonner';
-import { useCustomerPlans } from '@/hooks/use-customer-plans';
-import { useProducts } from '@/hooks/use-products';
-import { useAdminChangePlan } from '@/hooks/use-subscription';
-import { useSystemClasses } from '@/hooks/use-system-classes';
-import type { Customer } from '@/types/customer';
-import type { SystemClassWithRelations } from '@/types/system-classes';
+import { ModalOverlay } from '@/components/ui/modal-overlay';
+import { useChangeStudentPlan, usePlanOptions } from '@/hooks/use-students';
+import type { ChangePlanMode, Student } from '@/services/students';
 
-interface AdminChangePlanModalProps {
-	customer: Customer | null;
-	isOpen: boolean;
+interface Props {
+	student: Student | null;
 	onClose: () => void;
 }
 
-type TierKey = 'prata' | 'ouro' | 'platina';
-
-const TIER_CONFIG: Record<
-	TierKey,
-	{
-		color: string;
-		bg: string;
-		border: string;
-		ring: string;
-		dot: string;
-	}
-> = {
-	prata: {
-		color: 'text-slate-500 dark:text-slate-300',
-		bg: 'bg-slate-100 dark:bg-slate-700/50',
-		border: 'border-slate-300 dark:border-slate-500',
-		ring: 'ring-slate-400',
-		dot: 'bg-slate-400',
-	},
-	ouro: {
-		color: 'text-yellow-600 dark:text-yellow-400',
-		bg: 'bg-yellow-50 dark:bg-yellow-500/10',
-		border: 'border-yellow-300 dark:border-yellow-500/50',
-		ring: 'ring-yellow-400',
-		dot: 'bg-yellow-400',
-	},
-	platina: {
-		color: 'text-violet-600 dark:text-violet-400',
-		bg: 'bg-violet-50 dark:bg-violet-500/10',
-		border: 'border-violet-300 dark:border-violet-500/50',
-		ring: 'ring-violet-500',
-		dot: 'bg-violet-500',
-	},
-};
-
-const DEFAULT_TIER = {
-	color: 'text-cyan-600 dark:text-cyan-400',
-	bg: 'bg-cyan-50 dark:bg-cyan-500/10',
-	border: 'border-cyan-300 dark:border-cyan-500/50',
-	ring: 'ring-cyan-500',
-	dot: 'bg-cyan-500',
-};
-
-const TIER_ORDER: TierKey[] = ['prata', 'ouro', 'platina'];
-
-function inferTier(text: string | null | undefined): TierKey | undefined {
-	if (!text) return undefined;
-	const t = text.toLowerCase();
-	if (t.includes('platina')) return 'platina';
-	if (t.includes('ouro')) return 'ouro';
-	if (t.includes('prata')) return 'prata';
-	return undefined;
-}
-
-function getTierStyle(tier: TierKey | undefined) {
-	return tier ? TIER_CONFIG[tier] : DEFAULT_TIER;
-}
-
-interface LevelBadgeProps {
-	label: string;
-	tier: TierKey | undefined;
-	muted?: boolean;
-}
-
-function LevelBadge({ label, tier, muted = false }: LevelBadgeProps) {
-	const s = getTierStyle(tier);
-	return (
-		<span
-			className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold border ${s.bg} ${s.color} ${s.border} ${
-				muted ? 'opacity-60' : ''
-			}`}
-		>
-			<span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-			{label}
-		</span>
-	);
-}
-
-export function AdminChangePlanModal({
-	customer,
-	isOpen,
-	onClose,
-}: AdminChangePlanModalProps) {
-	const [productId, setProductId] = useState('');
-
-	const { data: customerPlans, isLoading: loadingPlans } = useCustomerPlans(
-		isOpen && customer ? customer.email : null,
-	);
-	const { products, isLoading: loadingProducts } = useProducts();
-	const { systemClasses, isLoading: loadingSystemClasses } = useSystemClasses();
-	const changePlan = useAdminChangePlan();
-
-	// productId -> SystemClass
-	const productSystemClass = useMemo(() => {
-		const map = new Map<string, SystemClassWithRelations>();
-		for (const sc of systemClasses) {
-			if (sc.status !== 'ativo') continue;
-			for (const p of sc.products) {
-				map.set(p.id, sc);
-			}
+function messageForError(err: unknown): string {
+	if (isAxiosError(err)) {
+		const status = err.response?.status;
+		const apiMessage = (err.response?.data as { message?: string } | undefined)
+			?.message;
+		if (status === 409) {
+			return (
+				apiMessage ??
+				'Este aluno não tem uma assinatura paga ativa no Stripe. Use o modo Override para conceder o plano manualmente.'
+			);
 		}
-		return map;
-	}, [systemClasses]);
+		if (apiMessage) return apiMessage;
+	}
+	return 'Erro ao alterar o plano do aluno.';
+}
 
-	const activePlan =
-		customerPlans?.find((p) => p.status === 'active') ?? customerPlans?.[0];
+export function ChangePlanModal({ student, onClose }: Props) {
+	const { groups, isLoading: loadingPlans } = usePlanOptions();
+	const changePlan = useChangeStudentPlan();
 
-	// Look up current plan's systemClass via its product id
-	const currentSystemClass = activePlan
-		? (productSystemClass.get(activePlan.id) ?? null)
-		: null;
-	const currentTierKey =
-		inferTier(currentSystemClass?.name) ?? activePlan?.tier;
-	const currentLevelLabel = currentSystemClass?.name
-		? currentSystemClass.name
-		: activePlan?.tier
-			? activePlan.tier[0].toUpperCase() + activePlan.tier.slice(1)
-			: null;
+	const [planId, setPlanId] = useState('');
+	const [mode, setMode] = useState<ChangePlanMode>('override');
 
-	const availablePlans = useMemo(() => {
-		return (products ?? [])
-			.filter((p) => p.stripeProductId && p.status === 'ativo')
-			.map((p) => {
-				const sc = productSystemClass.get(p.id) ?? null;
-				const tier = inferTier(sc?.name ?? p.name ?? p.slug);
-				return { product: p, systemClass: sc, tier };
-			})
-			.sort((a, b) => {
-				const ia = a.tier ? TIER_ORDER.indexOf(a.tier) : 99;
-				const ib = b.tier ? TIER_ORDER.indexOf(b.tier) : 99;
-				if (ia !== ib) return ia - ib;
-				return a.product.name.localeCompare(b.product.name);
-			});
-	}, [products, productSystemClass]);
-
-	if (!isOpen || !customer) return null;
+	if (!student) return null;
 
 	async function handleConfirm() {
-		if (!customer || !productId) return;
+		if (!student || !planId) return;
 		try {
-			const result = await changePlan.mutateAsync({
-				customerId: customer.id,
-				payload: { productId },
-			});
-			toast.success(
-				`Plano alterado: ${result.previousPlan} → ${result.newPlan}`,
-			);
-			setProductId('');
+			await changePlan.mutateAsync({ id: student.id, planId, mode });
+			setPlanId('');
 			onClose();
-		} catch {
-			toast.error('Erro ao alterar o plano do aluno.');
+		} catch (err) {
+			toast.error(messageForError(err));
 		}
 	}
 
-	const loading = loadingPlans || loadingProducts || loadingSystemClasses;
-
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm">
-			<div className="bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-2xl w-full max-w-md mx-4 p-6 shadow-xl max-h-[90vh] overflow-y-auto">
-				{/* Header */}
-				<div className="flex items-center justify-between mb-5">
-					<div className="flex items-center gap-2">
-						<ArrowUpDown size={18} className="text-violet-500" />
-						<h2 className="text-base font-semibold text-slate-900 dark:text-white">
-							Alterar plano do aluno
-						</h2>
-					</div>
-					<button
-						type="button"
-						onClick={onClose}
-						disabled={changePlan.isPending}
-						className="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors disabled:opacity-50"
+		<ModalOverlay onClose={onClose} tone="plans">
+			<div className="p-6 space-y-5">
+				<div className="flex items-center gap-2">
+					<ArrowUpDown className="w-5 h-5 text-violet-500" />
+					<h3 className="text-lg font-bold text-slate-900 dark:text-white">
+						Alterar plano do aluno
+					</h3>
+				</div>
+
+				<div>
+					<p className="text-sm font-semibold text-slate-900 dark:text-white">
+						{student.name ?? 'Sem nome'}
+					</p>
+					<p className="text-xs text-slate-500 dark:text-gray-500">
+						{student.email}
+					</p>
+				</div>
+
+				{/* Current plan */}
+				<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white/60 dark:bg-white/[0.03] px-4 py-3">
+					<span className="text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1.5 mb-1">
+						<Layers className="w-3 h-3" />
+						Plano atual
+					</span>
+					<p className="text-sm font-semibold text-slate-900 dark:text-white">
+						{student.plan?.name ?? 'Sem plano'}
+					</p>
+				</div>
+
+				{/* Mode segmented control */}
+				<div>
+					<span className="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1.5">
+						Como aplicar
+					</span>
+					<div
+						className="grid grid-cols-2 gap-2"
+						aria-label="Modo de alteração de plano"
 					>
-						<X size={18} />
-					</button>
+						<ModeOption
+							icon={BadgeCheck}
+							label="Override"
+							hint="Sem Stripe (cortesia/manual)"
+							active={mode === 'override'}
+							onClick={() => setMode('override')}
+						/>
+						<ModeOption
+							icon={CreditCard}
+							label="Via Stripe"
+							hint="Cobrança real (requer assinatura)"
+							active={mode === 'stripe'}
+							onClick={() => setMode('stripe')}
+						/>
+					</div>
 				</div>
 
-				{/* Customer info */}
-				<p className="text-slate-900 dark:text-white font-semibold text-sm">
-					{customer.name}
-				</p>
-				<p className="text-slate-500 dark:text-gray-500 text-xs mb-4">
-					{customer.email}
-				</p>
-
-				{/* Current course + system level */}
-				<div className="p-4 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-white/5 dark:to-white/2 border border-slate-200 dark:border-white/10 mb-5">
-					<div className="flex items-center justify-between mb-3">
-						<span className="text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
-							<Layers size={12} />
-							Nível do sistema
-						</span>
-						{loadingPlans || loadingSystemClasses ? (
-							<Loader2 size={12} className="animate-spin text-slate-400" />
-						) : currentLevelLabel ? (
-							<LevelBadge
-								label={currentLevelLabel}
-								tier={currentTierKey as TierKey | undefined}
-							/>
-						) : (
-							<span className="text-xs text-slate-400 dark:text-gray-500">
-								Sem plano
-							</span>
-						)}
-					</div>
-
-					<p className="text-xs text-slate-500 dark:text-gray-500 mb-1">
-						Curso atual
-					</p>
-					<p className="text-sm font-semibold text-slate-900 dark:text-white mb-3">
-						{activePlan?.product_name ?? 'Nenhum curso ativo'}
-					</p>
-
-					{/* Tier scale: prata -> ouro -> platina */}
-					<div className="flex items-center justify-center gap-1 pt-3 border-t border-slate-200 dark:border-white/5">
-						{TIER_ORDER.map((tier, i) => {
-							const cfg = TIER_CONFIG[tier];
-							const isActive = currentTierKey === tier;
-							const label = tier[0].toUpperCase() + tier.slice(1);
-							return (
-								<div key={tier} className="flex items-center gap-1">
-									<div
-										className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${
-											isActive
-												? `${cfg.bg} ${cfg.border} ${cfg.color} ring-2 ${cfg.ring} ring-offset-1 ring-offset-slate-50 dark:ring-offset-[#1a1a1d]`
-												: `${cfg.bg} ${cfg.border} ${cfg.color} opacity-40`
-										}`}
-									>
-										<span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-										{label}
+				{/* Plan picker */}
+				<div>
+					<span className="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1.5">
+						Selecionar novo plano
+					</span>
+					{loadingPlans ? (
+						<div className="flex items-center gap-2 text-sm text-slate-500 dark:text-gray-500 py-3">
+							<Loader2 className="w-4 h-4 animate-spin" />
+							Carregando planos...
+						</div>
+					) : groups.length === 0 ? (
+						<div className="text-sm text-slate-500 dark:text-gray-500 py-3 text-center border border-dashed border-slate-200 dark:border-white/10 rounded-lg">
+							Nenhum plano disponível.
+						</div>
+					) : (
+						<div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+							{groups.map((group) => (
+								<div key={group.courseId}>
+									<p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-gray-500 mb-1.5">
+										{group.courseTitle}
+									</p>
+									<div className="space-y-2">
+										{group.plans.map((plan) => {
+											const selected = planId === plan.id;
+											const isCurrent = student?.plan?.id === plan.id;
+											return (
+												<button
+													key={plan.id}
+													type="button"
+													onClick={() => setPlanId(plan.id)}
+													aria-pressed={selected}
+													className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border text-left transition-all ${
+														selected
+															? 'border-violet-500 bg-violet-50 dark:bg-violet-500/10'
+															: 'border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'
+													}`}
+												>
+													<div className="flex flex-col min-w-0">
+														<span className="text-sm font-medium text-slate-900 dark:text-white truncate">
+															{plan.name}
+														</span>
+														<span className="text-xs font-mono text-slate-400 dark:text-gray-500 truncate">
+															{plan.key}
+														</span>
+													</div>
+													{isCurrent && (
+														<span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-gray-400">
+															Atual
+														</span>
+													)}
+												</button>
+											);
+										})}
 									</div>
-									{i < TIER_ORDER.length - 1 && (
-										<ArrowRight
-											size={11}
-											className="text-slate-300 dark:text-gray-600 shrink-0"
-										/>
-									)}
 								</div>
-							);
-						})}
-					</div>
+							))}
+						</div>
+					)}
 				</div>
 
-				{/* Available plans */}
-				<p className="text-xs font-medium text-slate-600 dark:text-gray-400 mb-2">
-					Selecionar novo plano
-				</p>
-
-				{loading ? (
-					<div className="flex items-center gap-2 text-sm text-slate-500 dark:text-gray-500 py-3">
-						<Loader2 size={14} className="animate-spin" />
-						Carregando planos...
-					</div>
-				) : availablePlans.length === 0 ? (
-					<div className="text-sm text-slate-500 dark:text-gray-500 py-3 text-center border border-dashed border-slate-200 dark:border-white/10 rounded-lg">
-						Nenhum plano disponível.
-					</div>
-				) : (
-					<div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-						{availablePlans.map(({ product: p, systemClass, tier }) => {
-							const selected = productId === p.id;
-							const isCurrent = activePlan?.id === p.id;
-							const levelLabel = systemClass?.name ?? '—';
-							return (
-								<button
-									key={p.id}
-									type="button"
-									onClick={() => !isCurrent && setProductId(p.id)}
-									disabled={!!isCurrent}
-									className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border text-left transition-all ${
-										isCurrent
-											? 'border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/2 opacity-60 cursor-not-allowed'
-											: selected
-												? 'border-violet-500 bg-violet-50 dark:bg-violet-500/10'
-												: 'border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'
-									}`}
-								>
-									<div className="flex flex-col min-w-0">
-										<span className="text-sm font-medium text-slate-900 dark:text-white truncate">
-											{p.name}
-										</span>
-										{isCurrent ? (
-											<span className="text-xs text-slate-400 dark:text-gray-500 mt-0.5">
-												Plano atual
-											</span>
-										) : !systemClass ? (
-											<span className="text-xs text-slate-400 dark:text-gray-500 mt-0.5">
-												Sem nível definido
-											</span>
-										) : null}
-									</div>
-									<LevelBadge label={levelLabel} tier={tier} />
-								</button>
-							);
-						})}
-					</div>
-				)}
-
-				{/* Actions */}
-				<div className="flex justify-end gap-3 mt-6">
+				<div className="flex gap-3 pt-1">
 					<button
 						type="button"
 						onClick={onClose}
 						disabled={changePlan.isPending}
-						className="px-4 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors disabled:opacity-50 text-slate-700 dark:text-white"
+						className="flex-1 px-4 py-2.5 rounded-xl text-sm border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white disabled:opacity-50"
 					>
 						Cancelar
 					</button>
 					<button
 						type="button"
 						onClick={handleConfirm}
-						disabled={changePlan.isPending || !productId}
-						className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg bg-violet-600 hover:bg-violet-500 text-white transition-colors disabled:opacity-50"
+						disabled={changePlan.isPending || !planId}
+						className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-violet-600 hover:bg-violet-700 text-white transition-colors disabled:opacity-60"
 					>
 						{changePlan.isPending && (
-							<Loader2 size={14} className="animate-spin" />
+							<Loader2 className="w-4 h-4 animate-spin" />
 						)}
 						{changePlan.isPending ? 'Alterando...' : 'Confirmar alteração'}
 					</button>
 				</div>
 			</div>
-		</div>
+		</ModalOverlay>
+	);
+}
+
+function ModeOption({
+	icon: Icon,
+	label,
+	hint,
+	active,
+	onClick,
+}: {
+	icon: typeof BadgeCheck;
+	label: string;
+	hint: string;
+	active: boolean;
+	onClick: () => void;
+}) {
+	return (
+		<button
+			type="button"
+			aria-pressed={active}
+			onClick={onClick}
+			className={`flex flex-col items-start gap-0.5 px-3 py-2.5 rounded-lg border text-left transition-all ${
+				active
+					? 'border-violet-500 bg-violet-50 dark:bg-violet-500/10'
+					: 'border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'
+			}`}
+		>
+			<span className="flex items-center gap-1.5 text-sm font-medium text-slate-900 dark:text-white">
+				<Icon
+					className={`w-4 h-4 ${active ? 'text-violet-500' : 'text-slate-400'}`}
+				/>
+				{label}
+			</span>
+			<span className="text-[11px] text-slate-500 dark:text-gray-400">
+				{hint}
+			</span>
+		</button>
 	);
 }
