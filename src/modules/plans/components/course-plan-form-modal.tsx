@@ -55,7 +55,7 @@ export function CoursePlanFormModal({
 						<select
 							value={slug}
 							onChange={(e) => setSlug(e.target.value)}
-							className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] px-3 py-2 text-sm"
+							className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] px-3 py-2 text-sm text-slate-900 dark:text-white"
 						>
 							<option value="">Selecione...</option>
 							{availableCourses.map((c) => (

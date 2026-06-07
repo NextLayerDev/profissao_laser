@@ -32,8 +32,12 @@
 
 @layer base {
 	html {
+		color-scheme: light;
 		scroll-behavior: smooth;
 		scroll-padding-top: 5rem;
+	}
+	html.dark {
+		color-scheme: dark;
 	}
 	body {
 		font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
