@@ -2,9 +2,10 @@
 
 import { isAxiosError } from 'axios';
 import {
+	AlertTriangle,
 	ArrowUpDown,
-	BadgeCheck,
 	CreditCard,
+	Gift,
 	Layers,
 	Loader2,
 } from 'lucide-react';
@@ -25,10 +26,7 @@ function messageForError(err: unknown): string {
 		const apiMessage = (err.response?.data as { message?: string } | undefined)
 			?.message;
 		if (status === 409) {
-			return (
-				apiMessage ??
-				'Este aluno não tem uma assinatura paga ativa no Stripe. Use o modo Override para conceder o plano manualmente.'
-			);
+			return 'Este aluno não tem assinatura paga ativa, então não dá para usar "Cobrança normal". Escolha "Cortesia" para liberar o plano sem cobrança.';
 		}
 		if (apiMessage) return apiMessage;
 	}
@@ -40,7 +38,7 @@ export function ChangePlanModal({ student, onClose }: Props) {
 	const changePlan = useChangeStudentPlan();
 
 	const [planId, setPlanId] = useState('');
-	const [mode, setMode] = useState<ChangePlanMode>('override');
+	const [mode, setMode] = useState<ChangePlanMode>('stripe');
 
 	if (!student) return null;
 
@@ -92,24 +90,40 @@ export function ChangePlanModal({ student, onClose }: Props) {
 					</span>
 					<div
 						className="grid grid-cols-2 gap-2"
-						aria-label="Modo de alteração de plano"
+						aria-label="Como aplicar a mudança de plano"
 					>
 						<ModeOption
-							icon={BadgeCheck}
-							label="Override"
-							hint="Sem Stripe (cortesia/manual)"
-							active={mode === 'override'}
-							onClick={() => setMode('override')}
-						/>
-						<ModeOption
 							icon={CreditCard}
-							label="Via Stripe"
-							hint="Cobrança real (requer assinatura)"
+							label="Cobrança normal"
+							hint="Cobra o aluno e altera a assinatura (Stripe)"
 							active={mode === 'stripe'}
 							onClick={() => setMode('stripe')}
 						/>
+						<ModeOption
+							icon={Gift}
+							label="Cortesia"
+							hint="Libera o plano sem cobrar (suporte/migração)"
+							active={mode === 'override'}
+							onClick={() => setMode('override')}
+						/>
 					</div>
 				</div>
+
+				{/* Cortesia warning */}
+				{mode === 'override' && (
+					<div className="flex items-start gap-2.5 rounded-lg border border-amber-300/60 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-3 py-2.5">
+						<AlertTriangle
+							className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5"
+							aria-hidden="true"
+						/>
+						<p className="text-xs leading-relaxed text-amber-700 dark:text-amber-200">
+							<span className="font-semibold">Cortesia (sem cobrança):</span> o
+							aluno recebe este plano de graça, na hora, e nada é cobrado no
+							cartão. Use para suporte, migração ou liberação manual. Para
+							cobrar de verdade, escolha “Cobrança normal”.
+						</p>
+					</div>
+				)}
 
 				{/* Plan picker */}
 				<div>
@@ -204,7 +218,7 @@ function ModeOption({
 	active,
 	onClick,
 }: {
-	icon: typeof BadgeCheck;
+	icon: typeof Gift;
 	label: string;
 	hint: string;
 	active: boolean;
