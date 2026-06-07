@@ -14,7 +14,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { CardListSkeleton } from '@/components/ui/skeletons/card-list-skeleton';
-import { useCustomerPlans } from '@/hooks/use-customer-plans';
+import { useEntitlements } from '@/hooks/use-entitlements';
 import { useJornadaProgress } from '@/hooks/use-jornada-progress';
 import { getCurrentUser, getToken } from '@/lib/auth';
 import { catalogQueryKeys, listPublicCourses } from '@/modules/catalog';
@@ -35,10 +35,6 @@ export default function JornadaCoursePage() {
 		setIsAdmin(!!getToken('user'));
 	}, []);
 
-	const { data: plans, isLoading: plansLoading } = useCustomerPlans(
-		isAdmin ? null : (email ?? null),
-	);
-
 	// Admin: vê todos os cursos publicados (não depende de plano de cliente).
 	// Usa a vitrine pública (/v1/courses) — não exige permissão de admin, então
 	// evita o 401 que derrubava a sessão e redirecionava pro login.
@@ -57,14 +53,23 @@ export default function JornadaCoursePage() {
 			tier: undefined,
 		}));
 
-	const activePlans = isAdmin
-		? adminPlans
-		: (plans?.filter((p) => p.status === 'active' || p.status === 'ativo') ??
-			[]);
+	// Customer: usa entitlements (fonte de verdade) — o endpoint /customer/plans
+	// retorna slug: null para assinaturas; entitlements já tem o curso com slug real.
+	const { courses: entitlementCourses, isLoading: entitlementsLoading } =
+		useEntitlements();
+	const customerPlans: CustomerPlan[] = entitlementCourses.map((c) => ({
+		id: c.id,
+		status: 'active',
+		product_name: c.title,
+		slug: c.slug,
+		tier: undefined,
+	}));
+
+	const activePlans = isAdmin ? adminPlans : customerPlans;
 	const { items, isLoading: progressLoading } = useJornadaProgress(activePlans);
 
 	const isLoading =
-		(isAdmin ? adminCoursesLoading : plansLoading) || progressLoading;
+		(isAdmin ? adminCoursesLoading : entitlementsLoading) || progressLoading;
 
 	const toggleExpanded = (planId: string) => {
 		setExpandedPlanIds((prev) => {

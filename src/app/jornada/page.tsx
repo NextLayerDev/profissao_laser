@@ -15,9 +15,10 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { useCustomerPlans } from '@/hooks/use-customer-plans';
+import { useEntitlements } from '@/hooks/use-entitlements';
 import { useJornadaProgress } from '@/hooks/use-jornada-progress';
 import { getCurrentUser } from '@/lib/auth';
+import type { CustomerPlan } from '@/types/plans';
 
 const Background = () => (
 	<>
@@ -40,14 +41,20 @@ export default function JornadaPage() {
 		setName(user?.name ?? '');
 	}, []);
 
-	const { data: plans, isLoading: plansLoading } = useCustomerPlans(
-		email ?? null,
-	);
-	const activePlans =
-		plans?.filter((p) => p.status === 'active' || p.status === 'ativo') ?? [];
+	// Usa entitlements (fonte de verdade) — o endpoint /customer/plans retorna
+	// slug: null para assinaturas, enquanto entitlements já tem o curso com slug real.
+	const { courses: entitlementCourses, isLoading: entitlementsLoading } =
+		useEntitlements();
+	const activePlans: CustomerPlan[] = entitlementCourses.map((c) => ({
+		id: c.id,
+		status: 'active',
+		product_name: c.title,
+		slug: c.slug,
+		tier: undefined,
+	}));
 	const { items, isLoading: progressLoading } = useJornadaProgress(activePlans);
 
-	const isLoading = plansLoading || progressLoading;
+	const isLoading = entitlementsLoading || progressLoading;
 
 	const toggleExpanded = (planId: string) => {
 		setExpandedPlanIds((prev) => {

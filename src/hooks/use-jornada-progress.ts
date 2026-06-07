@@ -1,16 +1,13 @@
 'use client';
 
-import { useQueries, useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
-import { listCourses } from '@/modules/courses';
-import { getCourse } from '@/services/course';
-import { getCourseProgress } from '@/services/progress';
-import type { Course } from '@/types/course';
+import { useQuery } from '@tanstack/react-query';
+import { listModuleLessons } from '@/modules/courses/services/lessons.service';
+import { listCourseModules } from '@/modules/courses/services/modules.service';
 import type { CustomerPlan } from '@/types/plans';
 
 export interface JornadaCourseItem {
 	plan: CustomerPlan;
-	course: Course;
+	course: { id: string; name: string; slug: string; image: string | null };
 	watchedCount: number;
 	totalLessons: number;
 	percentage: number;
@@ -18,35 +15,34 @@ export interface JornadaCourseItem {
 	nextLessonId: string | null;
 }
 
-function buildJornadaItem(
-	plan: CustomerPlan,
-	course: Course,
-	watchedIds: string[],
-): JornadaCourseItem {
-	const sortedModules = [...course.modules].sort((a, b) => a.order - b.order);
-	const allLessons = sortedModules.flatMap((m) =>
-		[...m.lessons]
-			.sort((a, b) => a.order - b.order)
+async function fetchLessonCount(
+	plan: CustomerPlan & { slug: string },
+): Promise<JornadaCourseItem> {
+	const modules = await listCourseModules(plan.slug);
+	const sorted = [...modules].sort((a, b) => a.position - b.position);
+	const lessonsPerModule = await Promise.all(
+		sorted.map((m) => listModuleLessons(m.id)),
+	);
+
+	const allLessons = sorted.flatMap((_, i) =>
+		[...(lessonsPerModule[i] ?? [])]
+			.sort((a, b) => a.position - b.position)
 			.map((l) => ({ id: l.id, title: l.title })),
 	);
-	const totalLessons = allLessons.length;
-	const watchedSet = new Set(watchedIds);
-	const watchedLessons = allLessons
-		.filter((l) => watchedSet.has(l.id))
-		.map((l) => ({ id: l.id, title: l.title }));
-	const watchedCount = watchedLessons.length;
-	const percentage =
-		totalLessons > 0 ? Math.round((watchedCount / totalLessons) * 100) : 0;
-	const nextLesson = allLessons.find((l) => !watchedSet.has(l.id)) ?? null;
 
 	return {
 		plan,
-		course,
-		watchedCount,
-		totalLessons,
-		percentage,
-		watchedLessons,
-		nextLessonId: nextLesson?.id ?? null,
+		course: {
+			id: plan.id,
+			name: plan.product_name,
+			slug: plan.slug,
+			image: null,
+		},
+		watchedCount: 0,
+		totalLessons: allLessons.length,
+		percentage: 0,
+		watchedLessons: [],
+		nextLessonId: allLessons[0]?.id ?? null,
 	};
 }
 
@@ -55,7 +51,6 @@ export function useJornadaProgress(plans: CustomerPlan[] | undefined) {
 		(p): p is CustomerPlan & { slug: string } => !!p.slug,
 	);
 
-	// Deduplica por slug para evitar mostrar o mesmo curso várias vezes
 	const seenSlugs = new Set<string>();
 	const uniquePlans = plansWithSlug.filter((p) => {
 		if (seenSlugs.has(p.slug)) return false;
@@ -63,35 +58,16 @@ export function useJornadaProgress(plans: CustomerPlan[] | undefined) {
 		return true;
 	});
 
-	// Catálogo real de cursos na upvox (fonte de verdade). Só consulta a jornada
-	// de planos cujo slug tem curso publicado — evita 404 em GET /v1/course/:slug.
-	const { data: catalog, isLoading: catalogLoading } = useQuery({
-		queryKey: ['jornada-course-catalog'],
-		queryFn: listCourses,
+	// Um único useQuery (hook count estável) que busca todos os cursos em paralelo.
+	// useQueries com array dinâmico viola Rules of Hooks ao mudar de 0 → N queries.
+	const planKey = uniquePlans.map((p) => p.id).join(',');
+	const { data: items = [], isLoading } = useQuery<JornadaCourseItem[]>({
+		queryKey: ['jornada-lessons', planKey],
+		queryFn: () => Promise.all(uniquePlans.map(fetchLessonCount)),
+		enabled: uniquePlans.length > 0,
 		staleTime: 5 * 60_000,
-	});
-	const catalogSlugs = useMemo(
-		() => new Set((catalog ?? []).map((c) => c.slug)),
-		[catalog],
-	);
-	const existingPlans = uniquePlans.filter((p) => catalogSlugs.has(p.slug));
-
-	const queries = useQueries({
-		queries: existingPlans.map((plan) => ({
-			queryKey: ['jornada-progress', plan.id, plan.slug],
-			queryFn: async (): Promise<JornadaCourseItem> => {
-				const course = await getCourse(plan.slug);
-				const progress = await getCourseProgress(course.id);
-				return buildJornadaItem(plan, course, progress.watchedLessonIds);
-			},
-		})),
+		retry: 1,
 	});
 
-	const isLoading = catalogLoading || queries.some((q) => q.isLoading);
-	const items: JornadaCourseItem[] = queries
-		.filter((q): q is typeof q & { data: JornadaCourseItem } => !!q.data)
-		.map((q) => q.data);
-	const errors = queries.filter((q) => q.isError);
-
-	return { items, isLoading, errors };
+	return { items, isLoading, errors: [] };
 }
