@@ -322,6 +322,13 @@ function CourseCard({
 
 				{/* Actions */}
 				<div className="mt-auto flex gap-2">
+					<Link
+						href={`/courses/${course.slug}`}
+						className="flex-1 flex items-center justify-center gap-1.5 text-sm px-3 py-2 rounded-lg border border-violet-500/30 bg-violet-600/10 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 font-medium hover:bg-violet-600/20 dark:hover:bg-violet-500/25 transition-colors"
+					>
+						<BookOpen className="w-4 h-4" />
+						Conteúdo
+					</Link>
 					<button
 						type="button"
 						onClick={onEdit}
