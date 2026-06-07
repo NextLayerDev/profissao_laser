@@ -13,6 +13,7 @@ import {
 	cancelStudentSubscription,
 	changeStudentPlan,
 	deleteStudent,
+	getStudent,
 	type ListStudentsParams,
 	listStudents,
 	setStudentBlocked,
@@ -29,6 +30,20 @@ export function useStudents(params: ListStudentsParams) {
 		queryKey: [...studentsQueryKey, params],
 		queryFn: () => listStudents(params),
 		placeholderData: keepPreviousData,
+	});
+}
+
+/**
+ * Detalhe de um aluno (`StudentDetail`, com a assinatura embutida).
+ *
+ * A chave fica sob `['students', 'detail', id]`, então as mutations acima
+ * (que invalidam `['students']`) já atualizam esta query automaticamente.
+ */
+export function useStudent(id: string) {
+	return useQuery({
+		queryKey: [...studentsQueryKey, 'detail', id],
+		queryFn: () => getStudent(id),
+		enabled: !!id,
 	});
 }
 

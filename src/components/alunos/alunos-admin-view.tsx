@@ -15,6 +15,7 @@ import {
 	Users,
 	XCircle,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { StatCard } from '@/components/ui/stat-card';
@@ -29,35 +30,11 @@ import { CancelSubscriptionModal } from './cancel-subscription-modal';
 import { ChangePasswordModal } from './change-password-modal';
 import { ChangePlanModal } from './change-plan-modal';
 import { DeleteCustomerModal } from './delete-customer-modal';
+import { STATUS_LABELS, statusColor, statusLabel } from './status-maps';
 
 /* ------------------------------------------------------------------ */
-/*  Status maps (reused from the previous page)                        */
+/*  Status filter options                                              */
 /* ------------------------------------------------------------------ */
-
-const STATUS_LABELS: Record<string, string> = {
-	active: 'Ativo',
-	trialing: 'Em teste',
-	canceled: 'Cancelado',
-	past_due: 'Vencido',
-	incomplete: 'Incompleto',
-	incomplete_expired: 'Expirado',
-	paused: 'Pausado',
-	unpaid: 'Não pago',
-};
-
-const STATUS_COLORS: Record<string, string> = {
-	active:
-		'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400',
-	trialing: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',
-	canceled: 'bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-gray-500',
-	past_due: 'bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-400',
-	incomplete:
-		'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400',
-	incomplete_expired:
-		'bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-gray-500',
-	paused: 'bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-gray-500',
-	unpaid: 'bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-400',
-};
 
 /** Status options offered in the filter (subset that admins care about). */
 const STATUS_FILTER_OPTIONS = [
@@ -316,9 +293,13 @@ export function AlunosAdminView() {
 									className="border-t border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors"
 								>
 									<td className="px-4 py-3">
-										<p className="font-medium text-slate-900 dark:text-white">
+										<Link
+											href={`/alunos/${s.id}`}
+											aria-label={`Ver detalhes de ${s.name ?? s.email}`}
+											className="font-medium text-slate-900 dark:text-white rounded-sm hover:text-violet-600 dark:hover:text-violet-400 hover:underline underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 transition-colors"
+										>
 											{s.name ?? 'Sem nome'}
-										</p>
+										</Link>
 										<p className="text-xs text-slate-500 dark:text-gray-500">
 											{s.email}
 										</p>
@@ -365,9 +346,13 @@ export function AlunosAdminView() {
 							<div key={s.id} className="p-4 space-y-3">
 								<div className="flex items-start justify-between gap-2">
 									<div className="min-w-0">
-										<p className="font-medium text-slate-900 dark:text-white truncate">
+										<Link
+											href={`/alunos/${s.id}`}
+											aria-label={`Ver detalhes de ${s.name ?? s.email}`}
+											className="block font-medium text-slate-900 dark:text-white truncate rounded-sm hover:text-violet-600 dark:hover:text-violet-400 hover:underline underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 transition-colors"
+										>
 											{s.name ?? 'Sem nome'}
-										</p>
+										</Link>
 										<p className="text-xs text-slate-500 dark:text-gray-500 truncate">
 											{s.email}
 										</p>
@@ -517,13 +502,7 @@ function BlockedBadge({ blocked }: { blocked: boolean }) {
 
 function PlanCell({ student }: { student: Student }) {
 	const status = student.subscription_status;
-	const colorClass = status
-		? (STATUS_COLORS[status] ??
-			'bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-gray-500')
-		: 'bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-gray-500';
-	const statusLabel = status
-		? (STATUS_LABELS[status] ?? status)
-		: 'Sem assinatura';
+	const colorClass = statusColor(status);
 	const renewal = formatPeriodDate(student.current_period_end);
 
 	return (
@@ -535,7 +514,7 @@ function PlanCell({ student }: { student: Student }) {
 				<span
 					className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium w-fit ${colorClass}`}
 				>
-					{statusLabel}
+					{statusLabel(status)}
 				</span>
 				{renewal && (
 					<span className="text-xs text-slate-500 dark:text-gray-500">
