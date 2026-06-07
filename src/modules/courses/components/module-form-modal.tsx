@@ -25,9 +25,6 @@ export function ModuleFormModal({
 }: Props) {
 	const [title, setTitle] = useState(editing?.title ?? '');
 	const [description, setDescription] = useState(editing?.description ?? '');
-	const [position, setPosition] = useState(
-		editing?.position != null ? String(editing.position) : '',
-	);
 
 	const canSubmit = !pending && !!title.trim();
 
@@ -55,16 +52,6 @@ export function ModuleFormModal({
 					/>
 				</Field>
 
-				<Field label="Posição (opcional — padrão: fim da lista)">
-					<input
-						type="number"
-						min={1}
-						value={position}
-						onChange={(e) => setPosition(e.target.value)}
-						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-gradient-to-br from-sky-50/60 via-white to-indigo-50/40 dark:from-sky-950/25 dark:via-white/[0.03] dark:to-indigo-950/20 text-slate-900 dark:text-white placeholder:text-slate-500 px-3 py-2 text-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 focus:outline-none transition-colors"
-					/>
-				</Field>
-
 				<div className="flex gap-3 pt-2">
 					<button
 						type="button"
@@ -80,7 +67,6 @@ export function ModuleFormModal({
 							onSubmit({
 								title: title.trim(),
 								description: description?.trim() || undefined,
-								position: position ? Number(position) : undefined,
 							})
 						}
 						className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-violet-600 text-white disabled:opacity-60"
