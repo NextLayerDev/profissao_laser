@@ -1,49 +1,35 @@
-import { FaqSection } from '@/components/landing/faq-section';
-import { FeatureCards } from '@/components/landing/feature-cards';
-import { Hero } from '@/components/landing/hero';
-import { JourneySection } from '@/components/landing/journey-section';
-import { LandingFooter } from '@/components/landing/landing-footer';
-import { NetworkSection } from '@/components/landing/network-section';
-import { PlatformSection } from '@/components/landing/platform-section';
-import { ProductsSection } from '@/components/landing/products-section';
-import { ProfessionalsSection } from '@/components/landing/professionals-section';
-import { TargetAudience } from '@/components/landing/target-audience';
-import { TopBar } from '@/components/landing/top-bar';
-import { VideoSection } from '@/components/landing/video-section';
-import { WhatsAppButton } from '@/components/landing/whatsapp-button';
+import type { Metadata } from 'next';
+import { PricingSection } from '@/components/landing/pricing-section';
+import { AboutFernando } from '@/components/lp/AboutFernando';
+import { CtaFooter } from '@/components/lp/CtaFooter';
+import { EcosystemVideo } from '@/components/lp/EcosystemVideo';
+import { Faq } from '@/components/lp/Faq';
+import { Header } from '@/components/lp/Header';
+import { Hero } from '@/components/lp/Hero';
+import { Testimonials } from '@/components/lp/Testimonials';
+import { Tools } from '@/components/lp/Tools';
 
-function Divider() {
-	return (
-		<div className="max-w-5xl mx-auto px-6">
-			<div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-		</div>
-	);
-}
+export const metadata: Metadata = {
+	title: 'Comunidade Profissão Laser — Cresça no mercado do laser',
+	description:
+		'Aulas, parâmetros, vetorização, fornecedores e networking — tudo que um profissional do laser precisa em um só lugar.',
+};
 
 export default function LandingPage() {
 	return (
-		<div className="min-h-screen bg-[#0d0d0f]">
-			<TopBar />
-			<Hero />
-			<FeatureCards />
-			<Divider />
-			<VideoSection />
-			<Divider />
-			<NetworkSection />
-			<Divider />
-			<PlatformSection />
-			<Divider />
-			<JourneySection />
-			<Divider />
-			<TargetAudience />
-			<Divider />
-			<ProductsSection />
-			<Divider />
-			<ProfessionalsSection />
-			<Divider />
-			<FaqSection />
-			<LandingFooter />
-			<WhatsAppButton />
+		<div className="lp-root min-h-screen bg-background text-foreground antialiased">
+			<Header />
+			<main>
+				<Hero />
+				<EcosystemVideo />
+				<Tools />
+				{/* Seção de planos: lógica + exibição + compra atuais (inalterada). */}
+				<PricingSection />
+				<Testimonials />
+				<Faq />
+				<AboutFernando />
+				<CtaFooter />
+			</main>
 		</div>
 	);
 }

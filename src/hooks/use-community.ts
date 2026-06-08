@@ -1,6 +1,12 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+	keepPreviousData,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from '@tanstack/react-query';
+import { useCallback } from 'react';
 import { toast } from 'sonner';
 import {
 	createChannel,
@@ -12,6 +18,7 @@ import {
 	deleteChannelMessage,
 	deleteEvent,
 	deleteProject,
+	getActivity,
 	getChannelMessages,
 	getChannels,
 	getEvents,
@@ -21,11 +28,14 @@ import {
 	getProjectComments,
 	getProjects,
 	getRanking,
+	getStats,
 	sendChannelMessage,
+	toggleProjectLike,
 	updateChannel,
 	updateEvent,
 	updateProject,
 } from '@/services/community';
+import type { Project } from '@/types/community';
 
 const COMMUNITY_KEYS = {
 	posts: (page?: number, limit?: number) =>
@@ -33,8 +43,12 @@ const COMMUNITY_KEYS = {
 	channels: () => ['community', 'channels'] as const,
 	messages: (channelId: string | null, before?: string, limit?: number) =>
 		['community', 'messages', channelId, before, limit] as const,
-	members: (search?: string, category?: string) =>
-		['community', 'members', search, category] as const,
+	members: (
+		search?: string,
+		category?: string,
+		featured?: string,
+		online?: string,
+	) => ['community', 'members', search, category, featured, online] as const,
 	projects: (
 		page?: number,
 		limit?: number,
@@ -59,12 +73,21 @@ const COMMUNITY_KEYS = {
 	events: (from?: string, to?: string) =>
 		['community', 'events', from, to] as const,
 	ranking: (period?: string) => ['community', 'ranking', period] as const,
+	activity: (page?: number, limit?: number) =>
+		['community', 'activity', page, limit] as const,
+	stats: () => ['community', 'stats'] as const,
 };
+
+// Cache: a comunidade muda devagar. Sem staleTime o React Query recarregava
+// TUDO a cada navegação (a "demora ao abrir" de chat/eventos/membros).
+const STALE_SECONDS = 30 * 1000;
+const STALE_MINUTES = 5 * 60 * 1000;
 
 export function useCommunityPosts(page = 1, limit = 20) {
 	return useQuery({
 		queryKey: COMMUNITY_KEYS.posts(page, limit),
 		queryFn: () => getPosts({ page, limit }),
+		staleTime: STALE_MINUTES,
 	});
 }
 
@@ -86,14 +109,74 @@ export function useCommunityChannels() {
 	return useQuery({
 		queryKey: COMMUNITY_KEYS.channels(),
 		queryFn: getChannels,
+		staleTime: STALE_MINUTES,
 	});
+}
+
+/**
+ * Pré-carrega em background os dados das abas Chat (canais + mensagens do
+ * primeiro canal) e Vitrine (primeira página de projetos), usando as MESMAS
+ * query keys que useCommunityChannels/useChannelMessages/useCommunityProjects
+ * — assim, ao abrir essas abas os dados já estão no cache e a página
+ * renderiza sem skeleton.
+ *
+ * Retorna uma função idempotente; chame-a quando a home /course montar.
+ */
+export function usePrefetchCommunityTabs() {
+	const queryClient = useQueryClient();
+	return useCallback(() => {
+		// Chat: lista de canais (mesma key de useCommunityChannels). Como
+		// precisamos do 1º canal para já trazer suas mensagens, usamos
+		// fetchQuery e encadeamos o prefetch das mensagens.
+		queryClient
+			.fetchQuery({
+				queryKey: COMMUNITY_KEYS.channels(),
+				queryFn: getChannels,
+				staleTime: STALE_MINUTES,
+			})
+			.then((channels) => {
+				// Mesma seleção do ChannelsView: 1º canal ordenado por `order`.
+				const first = [...channels].sort(
+					(a, b) => (a.order ?? 0) - (b.order ?? 0),
+				)[0];
+				if (!first) return;
+				// Mensagens do canal ativo inicial (key igual a
+				// useChannelMessages(channelId): before/limit undefined).
+				queryClient.prefetchQuery({
+					queryKey: COMMUNITY_KEYS.messages(first.id, undefined, undefined),
+					queryFn: () => getChannelMessages(first.id, { limit: 50 }),
+					staleTime: STALE_SECONDS,
+				});
+			})
+			.catch(() => {
+				// Prefetch é best-effort; falhas serão tratadas ao abrir a aba.
+			});
+		// Vitrine: primeira página (mesma key do estado inicial da ShowcaseView:
+		// page 1, limit 12, sem filtros, sort 'recent').
+		queryClient.prefetchQuery({
+			queryKey: COMMUNITY_KEYS.projects(
+				1,
+				12,
+				undefined,
+				undefined,
+				undefined,
+				'recent',
+			),
+			queryFn: () => getProjects({ page: 1, limit: 12, sort: 'recent' }),
+			staleTime: STALE_MINUTES,
+		});
+	}, [queryClient]);
 }
 
 export function useCreateChannel() {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: (body: { name: string; adminOnly?: boolean; order?: number }) =>
-			createChannel(body),
+		mutationFn: (body: {
+			name: string;
+			adminOnly?: boolean;
+			adminView?: boolean;
+			order?: number;
+		}) => createChannel(body),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: COMMUNITY_KEYS.channels() });
 			toast.success('Canal criado!');
@@ -116,6 +199,7 @@ export function useUpdateChannel() {
 				name: string;
 				description: string;
 				adminOnly?: boolean;
+				adminView?: boolean;
 				order?: number;
 			};
 		}) => updateChannel(channelId, data),
@@ -160,6 +244,7 @@ export function useChannelMessages(
 				limit: options?.limit ?? 50,
 			});
 		},
+		staleTime: STALE_SECONDS,
 		enabled: !!channelId,
 	});
 }
@@ -201,10 +286,32 @@ export function useDeleteChannelMessage(channelId: string | null) {
 	});
 }
 
-export function useCommunityMembers(search?: string, category?: string) {
+export function useCommunityMembers(
+	search?: string,
+	category?: string,
+	featured?: string,
+	online?: string,
+) {
 	return useQuery({
-		queryKey: COMMUNITY_KEYS.members(search, category),
-		queryFn: () => getMembers({ search, category }),
+		queryKey: COMMUNITY_KEYS.members(search, category, featured, online),
+		queryFn: () => getMembers({ search, category, featured, online }),
+		staleTime: STALE_MINUTES,
+	});
+}
+
+export function useOnlineMembers() {
+	return useQuery({
+		queryKey: COMMUNITY_KEYS.members(undefined, undefined, undefined, 'true'),
+		queryFn: () => getMembers({ online: 'true' }),
+		staleTime: STALE_SECONDS,
+	});
+}
+
+export function useFeaturedMembers() {
+	return useQuery({
+		queryKey: COMMUNITY_KEYS.members(undefined, undefined, 'true'),
+		queryFn: () => getMembers({ featured: 'true' }),
+		staleTime: STALE_MINUTES,
 	});
 }
 
@@ -236,6 +343,8 @@ export function useCommunityProjects(
 				search: params?.search || undefined,
 				sort: params?.sort,
 			}),
+		placeholderData: keepPreviousData,
+		staleTime: STALE_MINUTES,
 	});
 }
 
@@ -313,6 +422,52 @@ export function useDeleteProject() {
 	});
 }
 
+export function useToggleProjectLike() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: (projectId: string) => toggleProjectLike(projectId),
+		onMutate: async (projectId: string) => {
+			await queryClient.cancelQueries({ queryKey: ['community', 'projects'] });
+			const prev = queryClient.getQueriesData<Project[]>({
+				queryKey: ['community', 'projects'],
+			});
+			// Otimista: alterna liked + ajusta a contagem nas listas em cache.
+			queryClient.setQueriesData<Project[]>(
+				{ queryKey: ['community', 'projects'] },
+				(old) =>
+					old?.map((p) =>
+						p.id === projectId
+							? {
+									...p,
+									liked: !p.liked,
+									likes: Math.max(0, (p.likes ?? 0) + (p.liked ? -1 : 1)),
+								}
+							: p,
+					),
+			);
+			return { prev };
+		},
+		onError: (_err, _projectId, ctx) => {
+			for (const [key, data] of ctx?.prev ?? []) {
+				queryClient.setQueryData(key, data);
+			}
+			toast.error('Erro ao curtir');
+		},
+		onSuccess: (result, projectId) => {
+			// Reconcilia com o servidor (liked + likes autoritativos).
+			queryClient.setQueriesData<Project[]>(
+				{ queryKey: ['community', 'projects'] },
+				(old) =>
+					old?.map((p) =>
+						p.id === projectId
+							? { ...p, liked: result.liked, likes: result.likes }
+							: p,
+					),
+			);
+		},
+	});
+}
+
 export function useProjectComments(
 	projectId: string | null,
 	options?: { page?: number; limit?: number },
@@ -355,19 +510,25 @@ export function useCommunityEvents(from?: string, to?: string) {
 	return useQuery({
 		queryKey: COMMUNITY_KEYS.events(from, to),
 		queryFn: () => getEvents({ from, to }),
+		staleTime: STALE_MINUTES,
 	});
+}
+
+export interface EventFormPayload {
+	title: string;
+	description?: string;
+	date: string;
+	time?: string;
+	type: 'workshop' | 'live' | 'qa';
+	streamUrl?: string;
+	streamProvider?: 'youtube' | 'vimeo';
+	waitingRoomOpensMinutesBefore?: number;
 }
 
 export function useCreateEvent() {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: (body: {
-			title: string;
-			description?: string;
-			date: string;
-			time?: string;
-			type: 'workshop' | 'live' | 'qa';
-		}) => createEvent(body),
+		mutationFn: (body: EventFormPayload) => createEvent(body),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['community', 'events'] });
 			toast.success('Evento criado!');
@@ -381,19 +542,8 @@ export function useCreateEvent() {
 export function useUpdateEvent() {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: ({
-			id,
-			data,
-		}: {
-			id: string;
-			data: {
-				title: string;
-				description?: string;
-				date: string;
-				time?: string;
-				type: 'workshop' | 'live' | 'qa';
-			};
-		}) => updateEvent(id, data),
+		mutationFn: ({ id, data }: { id: string; data: EventFormPayload }) =>
+			updateEvent(id, data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['community', 'events'] });
 			toast.success('Evento atualizado!');
@@ -426,5 +576,21 @@ export function useCommunityRanking(period?: 'week' | 'month') {
 	return useQuery({
 		queryKey: COMMUNITY_KEYS.ranking(period),
 		queryFn: () => getRanking({ period }),
+		staleTime: STALE_MINUTES,
+	});
+}
+
+export function useCommunityActivity(page = 1, limit = 5) {
+	return useQuery({
+		queryKey: COMMUNITY_KEYS.activity(page, limit),
+		queryFn: () => getActivity({ page, limit }),
+		staleTime: STALE_MINUTES,
+	});
+}
+
+export function useCommunityStats() {
+	return useQuery({
+		queryKey: COMMUNITY_KEYS.stats(),
+		queryFn: getStats,
 	});
 }

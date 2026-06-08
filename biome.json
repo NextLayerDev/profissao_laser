@@ -26,7 +26,11 @@
 				"noImgElement": "off"
 			},
 			"suspicious": {
-				"noArrayIndexKey": "warn"
+				"noArrayIndexKey": "off"
+			},
+			"a11y": {
+				"noStaticElementInteractions": "off",
+				"useAriaPropsSupportedByRole": "off"
 			},
 			"correctness": {
 				"noUnusedFunctionParameters": "warn"

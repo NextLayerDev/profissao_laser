@@ -4,17 +4,17 @@ import { Loader2, Store } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { useLoginCustomer } from '@/hooks/use-auth';
+import { useLogin } from '@/hooks/use-auth';
 
 export default function Login() {
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
 
-	const loginCustomer = useLoginCustomer();
+	const login = useLogin();
 
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
-		loginCustomer.mutate(
+		login.mutate(
 			{ email, password },
 			{
 				onError: () => toast.error('Email ou senha inválidos'),
@@ -77,10 +77,10 @@ export default function Login() {
 
 						<button
 							type="submit"
-							disabled={loginCustomer.isPending}
+							disabled={login.isPending}
 							className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors duration-200 cursor-pointer mt-2"
 						>
-							{loginCustomer.isPending ? (
+							{login.isPending ? (
 								<>
 									<Loader2 className="w-4 h-4 animate-spin" />
 									Entrando...
@@ -91,23 +91,22 @@ export default function Login() {
 						</button>
 					</form>
 
-					<p className="text-center text-sm text-gray-500 mt-5">
+					<p className="text-center text-sm text-gray-500 mt-4">
+						<Link
+							href="/forgot-password"
+							className="text-violet-400 hover:text-violet-300 font-medium"
+						>
+							Esqueceu sua senha?
+						</Link>
+					</p>
+
+					<p className="text-center text-sm text-gray-500 mt-3">
 						Não tem conta?{' '}
 						<Link
 							href="/register"
 							className="text-violet-400 hover:text-violet-300 font-medium"
 						>
 							Cadastre-se
-						</Link>
-					</p>
-
-					<p className="text-center text-sm text-gray-500 mt-3">
-						É administrador?{' '}
-						<Link
-							href="/login/admin"
-							className="text-violet-400 hover:text-violet-300 font-medium"
-						>
-							Entre aqui
 						</Link>
 					</p>
 				</div>

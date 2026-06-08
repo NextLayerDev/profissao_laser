@@ -15,6 +15,7 @@ export function useMySubscription() {
 	return useQuery({
 		queryKey: ['my-subscription'],
 		queryFn: getMySubscription,
+		staleTime: 90_000,
 	});
 }
 

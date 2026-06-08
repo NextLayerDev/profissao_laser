@@ -77,7 +77,7 @@ function PricingColumn({
 		<div
 			className={`flex flex-col flex-1 sm:min-w-[165px] rounded-2xl border p-4 transition-all duration-200 ${
 				featured
-					? 'border-[#f2295b]/50 bg-gradient-to-b from-[#f2295b]/[0.08] to-transparent shadow-lg shadow-[#f2295b]/10'
+					? 'border-violet-500/50 bg-gradient-to-b from-violet-500/[0.08] to-transparent shadow-lg shadow-violet-500/10'
 					: hasSc
 						? 'border-purple-500/30 bg-purple-500/[0.06]'
 						: 'border-white/[0.07] bg-white/[0.03]'
@@ -87,8 +87,8 @@ function PricingColumn({
 			<div className="mb-3">
 				{featured && (
 					<div className="flex items-center gap-1 mb-2">
-						<Sparkles className="w-3 h-3 text-[#f2295b]" />
-						<span className="text-[10px] font-bold uppercase tracking-wider text-[#f2295b]">
+						<Sparkles className="w-3 h-3 text-violet-400" />
+						<span className="text-[10px] font-bold uppercase tracking-wider text-violet-400">
 							Mais popular
 						</span>
 					</div>
@@ -97,7 +97,7 @@ function PricingColumn({
 					<span
 						className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border ${
 							featured
-								? 'bg-[#f2295b]/20 text-[#f2295b] border-[#f2295b]/30'
+								? 'bg-violet-500/20 text-violet-400 border-violet-500/30'
 								: 'bg-purple-500/15 text-purple-300 border-purple-500/30'
 						}`}
 					>
@@ -145,11 +145,11 @@ function PricingColumn({
 							{enabled ? (
 								<div
 									className={`w-4 h-4 rounded-md flex items-center justify-center mt-0.5 shrink-0 ${
-										featured ? 'bg-[#f2295b]/15' : 'bg-purple-500/15'
+										featured ? 'bg-violet-500/15' : 'bg-purple-500/15'
 									}`}
 								>
 									<Icon
-										className={`w-2.5 h-2.5 ${featured ? 'text-[#f2295b]' : 'text-purple-400'}`}
+										className={`w-2.5 h-2.5 ${featured ? 'text-violet-400' : 'text-purple-400'}`}
 									/>
 								</div>
 							) : (
@@ -162,7 +162,7 @@ function PricingColumn({
 									className={`text-xs font-medium leading-tight ${
 										enabled
 											? featured
-												? 'text-[#f2295b]'
+												? 'text-violet-400'
 												: 'text-purple-300'
 											: 'text-gray-600 line-through'
 									}`}
@@ -183,7 +183,7 @@ function PricingColumn({
 			{/* Price + CTA */}
 			<div
 				className={`border-t pt-4 mt-auto ${
-					featured ? 'border-[#f2295b]/20' : 'border-white/[0.06]'
+					featured ? 'border-violet-500/20' : 'border-white/[0.06]'
 				}`}
 			>
 				{product.refundDays && (
@@ -209,12 +209,12 @@ function PricingColumn({
 							? 'bg-emerald-500/[0.08] text-emerald-400 border border-emerald-500/20 cursor-default'
 							: ownership === 'upgrade'
 								? featured
-									? 'bg-[#f2295b] hover:bg-[#e0214f] text-white shadow-lg shadow-[#f2295b]/20 cursor-pointer'
+									? 'bg-violet-500 hover:bg-violet-600 text-white shadow-lg shadow-violet-500/20 cursor-pointer'
 									: 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-500/20 cursor-pointer'
 								: ownership === 'downgrade'
 									? 'bg-white/[0.07] hover:bg-white/[0.12] text-gray-300 cursor-pointer'
 									: featured
-										? 'bg-[#f2295b] hover:bg-[#e0214f] text-white shadow-lg shadow-[#f2295b]/20 cursor-pointer'
+										? 'bg-violet-500 hover:bg-violet-600 text-white shadow-lg shadow-violet-500/20 cursor-pointer'
 										: hasSc
 											? 'bg-purple-600/80 hover:bg-purple-600 text-white cursor-pointer'
 											: 'bg-white/[0.07] hover:bg-white/[0.12] text-white cursor-pointer'
@@ -372,12 +372,12 @@ function FilterSelect({
 	return (
 		<div className="relative flex-1 min-w-0 sm:min-w-[200px]">
 			<div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none z-10">
-				<Icon className="w-5 h-5 text-[#f2295b]" />
+				<Icon className="w-5 h-5 text-violet-400" />
 			</div>
 			<select
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
-				className="w-full appearance-none bg-white/[0.05] border border-white/[0.1] hover:border-[#f2295b]/40 focus:border-[#f2295b]/60 focus:ring-1 focus:ring-[#f2295b]/30 text-white rounded-2xl pl-12 pr-10 py-4 text-sm font-medium outline-none transition-all duration-300 cursor-pointer [&>option]:bg-[#16161a] [&>option]:text-white"
+				className="w-full appearance-none bg-white/[0.05] border border-white/[0.1] hover:border-violet-500/40 focus:border-violet-500/60 focus:ring-1 focus:ring-violet-500/30 text-white rounded-2xl pl-12 pr-10 py-4 text-sm font-medium outline-none transition-all duration-300 cursor-pointer [&>option]:bg-[#16161a] [&>option]:text-white"
 			>
 				<option value="">{label}</option>
 				{options.map((opt) => (
@@ -525,9 +525,9 @@ export function ProductsSection() {
 
 	if (isLoading) {
 		return (
-			<section className="bg-[#0d0d0f] py-20 md:py-32 px-6">
+			<section className="bg-ink-900 py-20 md:py-32 px-6">
 				<div className="max-w-6xl mx-auto flex flex-col items-center justify-center py-20 gap-3">
-					<Loader2 className="w-8 h-8 text-[#f2295b] animate-spin" />
+					<Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
 					<p className="text-sm text-gray-500">Carregando cursos...</p>
 				</div>
 			</section>
@@ -539,20 +539,20 @@ export function ProductsSection() {
 	return (
 		<section
 			id="cursos"
-			className="relative bg-[#0d0d0f] py-20 md:py-32 px-6 overflow-hidden scroll-mt-20"
+			className="relative bg-ink-900 py-20 md:py-32 px-6 overflow-hidden scroll-mt-20"
 		>
-			<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-[#f2295b]/[0.03] rounded-full blur-3xl pointer-events-none" />
+			<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-violet-500/[0.03] rounded-full blur-3xl pointer-events-none" />
 
 			<div className="relative max-w-6xl mx-auto">
 				{/* Section header */}
 				<div className="text-center mb-16">
-					<p className="text-[#f2295b] uppercase tracking-widest text-sm font-bold text-center mb-3">
+					<p className="text-violet-400 uppercase tracking-widest text-sm font-bold text-center mb-3">
 						Nossos cursos
 					</p>
 					<h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
 						Domine a gravação a laser
 						<br />
-						<span className="text-[#f2295b]">com quem entende do assunto</span>
+						<span className="text-violet-400">com quem entende do assunto</span>
 					</h2>
 					<p className="text-gray-400 text-center text-lg mb-12 max-w-3xl mx-auto">
 						Escolha o curso ideal para o seu equipamento e nível de experiência.
@@ -565,11 +565,11 @@ export function ProductsSection() {
 				{(machines.length > 0 || softwares.length > 0) && (
 					<div className="mb-16">
 						<div className="relative bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/[0.08] rounded-3xl p-6 md:p-8 backdrop-blur-sm">
-							<div className="absolute -top-px left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-[#f2295b]/60 to-transparent" />
+							<div className="absolute -top-px left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-violet-500/60 to-transparent" />
 
 							<div className="flex items-center gap-3 mb-5">
-								<div className="w-10 h-10 rounded-xl bg-[#f2295b]/10 flex items-center justify-center">
-									<Search className="w-5 h-5 text-[#f2295b]" />
+								<div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
+									<Search className="w-5 h-5 text-violet-400" />
 								</div>
 								<div>
 									<h3 className="text-white font-bold text-lg">
@@ -616,8 +616,8 @@ export function ProductsSection() {
 							</div>
 
 							{hasFilters && (
-								<div className="mt-5 flex items-center gap-3 bg-[#f2295b]/[0.08] border border-[#f2295b]/20 rounded-2xl px-5 py-3.5">
-									<Sparkles className="w-5 h-5 text-[#f2295b] shrink-0" />
+								<div className="mt-5 flex items-center gap-3 bg-violet-500/[0.08] border border-violet-500/20 rounded-2xl px-5 py-3.5">
+									<Sparkles className="w-5 h-5 text-violet-400 shrink-0" />
 									{productGroups.length > 0 ? (
 										<p className="text-sm text-gray-300">
 											<span className="text-white font-bold">
@@ -628,7 +628,7 @@ export function ProductsSection() {
 											</span>{' '}
 											para{' '}
 											{selectedMachine && (
-												<span className="text-[#f2295b] font-semibold">
+												<span className="text-violet-400 font-semibold">
 													{selectedMachine}
 												</span>
 											)}
@@ -661,7 +661,7 @@ export function ProductsSection() {
 						{categories.length > 1 && (
 							<div className="flex items-center gap-4 mb-8">
 								<div className="flex items-center gap-3">
-									<div className="w-1 h-8 rounded-full bg-[#f2295b]" />
+									<div className="w-1 h-8 rounded-full bg-violet-500" />
 									<h3 className="text-2xl font-bold text-white">
 										{categoryName}
 									</h3>

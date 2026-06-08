@@ -1,8 +1,13 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+	keepPreviousData,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { vectorizeAndSave, vectorizeImage } from '@/services/vectorize';
+import { type VectorizeParams, vectorizeImage } from '@/services/vectorize';
 import {
 	deleteCustomerVector,
 	getCustomerVectors,
@@ -23,18 +28,26 @@ export function useCustomerVectors(params?: {
 	return useQuery({
 		queryKey: VECTORS_KEYS.list(params?.page, params?.limit, params?.search),
 		queryFn: () => getCustomerVectors(params),
+		placeholderData: keepPreviousData,
+		staleTime: 90_000,
 	});
 }
 
 export function useVectorizeImage() {
 	return useMutation({
-		mutationFn: (file: File) => vectorizeImage(file),
+		mutationFn: ({
+			file,
+			invocationId,
+			params,
+		}: {
+			file: File;
+			invocationId?: string;
+			params?: VectorizeParams;
+		}) => vectorizeImage(file, { invocationId, params }),
 		onSuccess: () => {
 			toast.success('Imagem vetorizada com sucesso!');
 		},
-		onError: () => {
-			toast.error('Erro ao vetorizar imagem');
-		},
+		// Erros (incl. refund) são tratados pelo orquestrador useRunTool.
 	});
 }
 

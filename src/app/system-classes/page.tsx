@@ -44,7 +44,7 @@ export default function SystemClasses() {
 		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] text-slate-900 dark:text-white font-sans">
 			<Header />
 
-			<main className="px-8 py-6">
+			<main className="px-4 md:px-8 py-6">
 				<div className="mb-6">
 					<h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
 						Classes do Sistema

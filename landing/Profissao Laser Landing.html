@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Comunidade Profissão Laser — O ecossistema completo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=JetBrains+Mono:wght@100..800&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com?plugins=line-clamp"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          /* Single-family harmony: Plus Jakarta Sans for both display & body */
+          sans:    ['Plus Jakarta Sans', 'ui-sans-serif', 'system-ui'],
+          body:    ['Plus Jakarta Sans', 'ui-sans-serif', 'system-ui'],
+          display: ['Plus Jakarta Sans', 'ui-sans-serif', 'system-ui'],
+          mono:    ['JetBrains Mono', 'ui-monospace', 'monospace']
+        },
+        colors: {
+          /* Workshop palette (dev branch) — light theme base */
+          workshop: {
+            bg:     '#f8fafc',
+            card:   '#ffffff',
+            sec:    '#f1f5f9',
+            accent: '#7c3aed',
+            accent2:'#8b5cf6',
+            text:   '#0f172a',
+            muted:  '#64748b',
+            border: '#e2e8f0'
+          },
+          /* Dark-mode surfaces used in course/home/* */
+          ink: { 950: '#0a0a0d', 900: '#0d0d0f', 800: '#12121a', 700: '#1a1a1d' },
+          brand: {
+            50:  '#f5f3ff',
+            100: '#ede9fe',
+            200: '#ddd6fe',
+            300: '#c4b5fd',
+            400: '#a78bfa',
+            500: '#8b5cf6',
+            600: '#7c3aed', /* workshop-accent */
+            700: '#6d28d9',
+            800: '#5b21b6',
+            900: '#4c1d95'
+          }
+        },
+        boxShadow: {
+          'brand':       '0 10px 30px -8px rgba(124,58,237,0.35)',
+          'brand-lg':    '0 20px 50px -10px rgba(124,58,237,0.45)',
+          'violet-soft': '0 10px 30px -10px rgba(76,29,149,0.5)',
+          'tile':        '0 8px 24px -8px rgba(139,92,246,0.20)'
+        }
+      }
+    }
+  }
+</script>
+<style>
+  html, body {
+    background: #0d0d0f;
+    color: #fff;
+  }
+  body {
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'ss01', 'ss02', 'cv11';
+    letter-spacing: -0.005em;
+  }
+  .font-display {
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.022em;
+  }
+  .font-body    { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; }
+  .font-mono    { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  ::selection { background: rgba(124,58,237,0.40); color: #fff; }
+
+  /* Italic violet gradient — used for the brand "Profissao Laser" wordmark inline */
+  .grad-brand {
+    background: linear-gradient(90deg, #7c3aed 0%, #7c3aed 60%, #a78bfa 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-style: italic;
+  }
+  /* Headline gradient — flatter, brand-aligned */
+  .grad-text {
+    background: linear-gradient(90deg, #c4b5fd 0%, #a78bfa 50%, #7c3aed 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  /* Solid violet button — workshop accent */
+  .btn-accent {
+    background: #7c3aed;
+    transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
+  }
+  .btn-accent:hover { background: #8b5cf6; transform: translateY(-1px); }
+
+  /* Violet gradient tile — same as quick-access-grid in dev */
+  .tile-grad {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+    border: 1px solid rgba(255,255,255,0.10);
+    box-shadow: 0 8px 24px -8px rgba(139,92,246,0.30);
+  }
+  .tile-grad:hover { filter: brightness(1.1); }
+  /* Hairline accent on top of tile on hover */
+  .tile-hairline { position: relative; }
+  .tile-hairline::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+    opacity: 0; transition: opacity .3s ease;
+    border-top-left-radius: inherit; border-top-right-radius: inherit;
+  }
+  .tile-hairline:hover::before { opacity: 1; }
+
+  /* Section hairline — h-px gradient violet (used at top of cards) */
+  .hairline-violet {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(124,58,237,0.5), transparent);
+  }
+
+  /* Card baseline matching course-hero dark surface */
+  .card-dark {
+    background: #12121a;
+    border: 1px solid rgba(124,58,237,0.10);
+  }
+
+  /* Grain texture (from dev globals) */
+  .grain::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat; background-size: 128px 128px;
+  }
+
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(139,92,246,0.20) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139,92,246,0.20) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .hero-img {
+    background:
+      radial-gradient(60% 90% at 30% 60%, rgba(217,70,239,0.40), transparent 60%),
+      radial-gradient(40% 60% at 65% 40%, rgba(124,58,237,0.55), transparent 65%),
+      radial-gradient(90% 120% at 80% 80%, rgba(15,15,27,1), rgba(13,13,15,1));
+  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+  /* Animations from dev globals.css */
+  @keyframes fade-in-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse-laser { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.5; transform: translate(-50%,-50%) scale(1); }
+    50%      { opacity: 1;   transform: translate(-50%,-50%) scale(1.15); }
+  }
+  .animate-fade-in-up { animation: fade-in-up .5s ease-out both; }
+  .animate-pulse-laser { animation: pulse-laser 2s ease-in-out infinite; }
+
+  @keyframes laser-pulse {
+    0%, 100% { opacity: 0.55; transform: translate(-50%,-50%) scale(1); }
+    50% { opacity: 1; transform: translate(-50%,-50%) scale(1.15); }
+  }
+  .laser-dot { animation: laser-pulse 1.6s ease-in-out infinite; }
+  @keyframes ray-flicker { 0%, 100% { opacity: 0.9; } 50% { opacity: 0.5; } }
+  .laser-ray { animation: ray-flicker 1.4s ease-in-out infinite; }
+  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  .float { animation: float 5s ease-in-out infinite; }
+
+  /* Reveal helpers */
+  .reveal { opacity: 0; transform: translateY(14px); transition: opacity .8s ease, transform .8s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+
+  /* Shine sweep used on tilt cards */
+  .shine { position: relative; overflow: hidden; }
+  .shine::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(280px circle at var(--shineX, 50%) var(--shineY, 50%),
+                rgba(255,255,255,0.12), transparent 50%);
+    opacity: 0; transition: opacity .25s ease;
+  }
+  .shine:hover::after { opacity: 1; }
+
+  /* Engraving cursor — vertical bar that "burns" the headline as text appears */
+  @keyframes blink { 50% { opacity: 0; } }
+  .engrave-caret {
+    display: inline-block; width: 4px; height: 0.9em; vertical-align: -0.08em;
+    background: linear-gradient(180deg, #f0abfc, #7c3aed);
+    box-shadow: 0 0 12px #c084fc, 0 0 28px rgba(192,132,252,0.7);
+    animation: blink 0.8s steps(2,end) infinite;
+    margin-left: 2px;
+  }
+
+  /* Orbiting sparkle ring */
+  @keyframes orbit-spin { to { transform: rotate(360deg); } }
+  .orbit { position: absolute; inset: -10px; pointer-events: none; animation: orbit-spin 8s linear infinite; }
+
+  /* Marquee */
+  @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .marquee-track { display: flex; gap: 1.25rem; width: max-content; animation: marquee 38s linear infinite; }
+  .marquee-pause:hover .marquee-track { animation-play-state: paused; }
+
+  /* Tile mini-animations — each one triggers on group-hover */
+  .mini-chat .b1, .mini-chat .b2, .mini-chat .b3 { opacity: 0; transform: translateY(4px); transition: opacity .25s ease, transform .25s ease; }
+  .group:hover .mini-chat .b1 { opacity: 1; transform: none; transition-delay: .05s; }
+  .group:hover .mini-chat .b2 { opacity: 1; transform: none; transition-delay: .2s; }
+  .group:hover .mini-chat .b3 { opacity: 1; transform: none; transition-delay: .35s; }
+
+  .mini-slider .knob { transition: left .5s cubic-bezier(.6,.0,.3,1.5); }
+  .group:hover .mini-slider .k1 { left: 78%; }
+  .group:hover .mini-slider .k2 { left: 42%; }
+  .group:hover .mini-slider .k3 { left: 90%; }
+
+  .mini-trace .path { stroke-dasharray: 240; stroke-dashoffset: 240; transition: stroke-dashoffset 1.4s ease; }
+  .group:hover .mini-trace .path { stroke-dashoffset: 0; }
+
+  .mini-bars .bar { transform-origin: bottom; transform: scaleY(0.3); transition: transform .55s ease; }
+  .group:hover .mini-bars .b1 { transform: scaleY(0.85); transition-delay: .05s; }
+  .group:hover .mini-bars .b2 { transform: scaleY(0.5);  transition-delay: .12s; }
+  .group:hover .mini-bars .b3 { transform: scaleY(0.95); transition-delay: .19s; }
+  .group:hover .mini-bars .b4 { transform: scaleY(0.65); transition-delay: .26s; }
+  .group:hover .mini-bars .b5 { transform: scaleY(1);    transition-delay: .33s; }
+
+  .mini-pulse .ring { transform: scale(0.6); opacity: 0; transition: transform 1.2s ease, opacity 1.2s ease; }
+  .group:hover .mini-pulse .r1 { transform: scale(1.6); opacity: 0; transition-delay: .0s; }
+  .group:hover .mini-pulse .r2 { transform: scale(1.2); opacity: 0.4; transition-delay: .2s; }
+  .group:hover .mini-pulse .r3 { transform: scale(0.8); opacity: 0.8; transition-delay: .4s; }
+
+  .mini-spark .star { transform: scale(0.5) rotate(0); opacity: 0; transition: transform .5s ease, opacity .5s ease; }
+  .group:hover .mini-spark .s1 { transform: scale(1)   rotate(15deg);  opacity: 1; transition-delay: .05s; }
+  .group:hover .mini-spark .s2 { transform: scale(0.8) rotate(-12deg); opacity: 0.8; transition-delay: .18s; }
+  .group:hover .mini-spark .s3 { transform: scale(0.9) rotate(8deg);   opacity: 0.9; transition-delay: .3s; }
+
+  .mini-cart .item { transform: translateY(8px); opacity: 0; transition: transform .4s ease, opacity .4s ease; }
+  .group:hover .mini-cart .i1 { transform: none; opacity: 1; transition-delay: .05s; }
+  .group:hover .mini-cart .i2 { transform: none; opacity: 1; transition-delay: .15s; }
+  .group:hover .mini-cart .i3 { transform: none; opacity: 1; transition-delay: .25s; }
+
+  .mini-book .page { transform: translateY(6px) rotate(-2deg); transition: transform .45s ease; }
+  .group:hover .mini-book .p1 { transform: translateY(0) rotate(-4deg); }
+  .group:hover .mini-book .p2 { transform: translateY(-4px) rotate(2deg); }
+  .group:hover .mini-book .p3 { transform: translateY(-8px) rotate(-1deg); }
+
+  .mini-network .node { transition: transform .5s ease, opacity .5s ease; opacity: .5; }
+  .group:hover .mini-network .node { opacity: 1; }
+  .group:hover .mini-network .n1 { transform: translate(-6px, -4px); }
+  .group:hover .mini-network .n2 { transform: translate(8px, -6px); }
+  .group:hover .mini-network .n3 { transform: translate(-2px, 6px); }
+  .mini-network .edge { stroke-dasharray: 60; stroke-dashoffset: 60; transition: stroke-dashoffset .8s ease; }
+  .group:hover .mini-network .edge { stroke-dashoffset: 0; }
+
+  .mini-grid .cell { transition: background-color .35s ease; }
+  .group:hover .mini-grid .c1 { background-color: rgba(255,255,255,0.7); }
+  .group:hover .mini-grid .c2 { background-color: rgba(255,255,255,0.4); transition-delay: .05s; }
+  .group:hover .mini-grid .c3 { background-color: rgba(255,255,255,0.9); transition-delay: .1s; }
+  .group:hover .mini-grid .c4 { background-color: rgba(255,255,255,0.55); transition-delay: .15s; }
+
+  .mini-img .frame { transition: transform .45s ease; }
+  .group:hover .mini-img .frame { transform: scale(1.08); }
+  .mini-img .scan { transform: translateY(-100%); transition: transform 1.3s ease; opacity: .85; }
+  .group:hover .mini-img .scan { transform: translateY(100%); }
+
+  .mini-radio .wave { transform-origin: left center; transition: transform .5s ease, opacity .5s ease; opacity: .4; }
+  .group:hover .mini-radio .w1 { transform: scaleX(1);   opacity: 1;   transition-delay: .05s; }
+  .group:hover .mini-radio .w2 { transform: scaleX(0.6); opacity: 0.6; transition-delay: .15s; }
+  .group:hover .mini-radio .w3 { transform: scaleX(0.85);opacity: 0.85;transition-delay: .25s; }
+
+  .mini-wa .check { opacity: 0; transition: opacity .25s ease; }
+  .group:hover .mini-wa .check { opacity: 1; transition-delay: .25s; }
+
+  /* Sparkle particles for featured pricing */
+  @keyframes sparkle-fall {
+    0%   { transform: translateY(-6px) scale(0.6); opacity: 0; }
+    20%  { opacity: 1; }
+    100% { transform: translateY(20px) scale(0.2); opacity: 0; }
+  }
+  .sparkle-bit { animation: sparkle-fall 2.2s ease-out infinite; }
+
+  /* Pulsing aura for featured plan */
+  @keyframes aura {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(124,58,237,0.30), 0 20px 50px -10px rgba(124,58,237,0.45); }
+    50%      { box-shadow: 0 0 0 18px rgba(124,58,237,0.00), 0 24px 60px -10px rgba(124,58,237,0.55); }
+  }
+  .aura { animation: aura 2.6s ease-in-out infinite; }
+</style>
+</head>
+<body class="bg-ink-950">
+  <template id="__bundler_thumbnail">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+      <rect width="400" height="400" fill="#0d0d0f"/>
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#a78bfa"/>
+          <stop offset="1" stop-color="#7c3aed"/>
+        </linearGradient>
+      </defs>
+      <circle cx="200" cy="180" r="80" fill="url(#g)" opacity="0.9"/>
+      <text x="200" y="195" font-family="sans-serif" font-size="72" font-weight="900" fill="#fff" text-anchor="middle">PL</text>
+      <text x="200" y="290" font-family="sans-serif" font-size="22" font-weight="700" fill="#c4b5fd" text-anchor="middle">PROFISSÃO LASER</text>
+      <text x="200" y="320" font-family="sans-serif" font-size="14" font-weight="500" fill="#64748b" text-anchor="middle">comunidade · landing</text>
+    </svg>
+  </template>
+  <div id="app"></div>
+
+  <!-- React + Babel -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- Icons (lucide) inline subset -->
+  <script type="text/babel" src="icons.jsx"></script>
+  <!-- Shared hooks: useInView / useCountUp / useTilt / useMagnetic -->
+  <script type="text/babel" src="hooks.jsx"></script>
+  <!-- Sections (mirror src/components/landing/* in repo) -->
+  <script type="text/babel" src="components/top-bar.jsx"></script>
+  <script type="text/babel" src="components/hero.jsx"></script>
+  <script type="text/babel" src="components/stats-bar.jsx"></script>
+  <script type="text/babel" src="components/feature-grid.jsx"></script>
+  <script type="text/babel" src="components/video-section.jsx"></script>
+  <script type="text/babel" src="components/testimonials.jsx"></script>
+  <script type="text/babel" src="components/pricing-section.jsx"></script>
+  <script type="text/babel" src="components/faq-section.jsx"></script>
+  <script type="text/babel" src="components/final-cta.jsx"></script>
+  <script type="text/babel" src="components/landing-footer.jsx"></script>
+  <script type="text/babel" src="app.jsx"></script>
+</body>
+</html>

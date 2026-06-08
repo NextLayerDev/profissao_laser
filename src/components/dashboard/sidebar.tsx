@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { usePermissions } from '@/hooks/use-permissions';
 import { navItems } from '@/utils/constants/navigation';
+import { canSeeNavItem } from '@/utils/constants/permissions';
 
 interface Props {
 	collapsed: boolean;
@@ -14,18 +15,11 @@ interface Props {
 
 export function Sidebar({ collapsed, onToggle }: Props) {
 	const pathname = usePathname();
-	const { canAdmin, canPrice } = usePermissions();
+	const { can } = usePermissions();
 
-	const visibleNavItems = navItems.filter((item) => {
-		if (item.name === 'Acessos' || item.name === 'Alunos') return canAdmin;
-		if (
-			item.name === 'Vendas' ||
-			item.name === 'Relatórios' ||
-			item.name === 'Links'
-		)
-			return canPrice;
-		return true;
-	});
+	const visibleNavItems = navItems.filter((item) =>
+		canSeeNavItem(item.name, can),
+	);
 
 	return (
 		<aside

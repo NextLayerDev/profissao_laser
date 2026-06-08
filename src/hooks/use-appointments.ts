@@ -5,6 +5,7 @@ import {
 	useQueryClient,
 } from '@tanstack/react-query';
 import {
+	cancelMyAppointment,
 	createAppointment,
 	deleteAppointment,
 	getAppointments,
@@ -45,16 +46,18 @@ export function useAvailableSlots(
 	date: string | null,
 	technicianId?: string | null,
 ) {
-	const {
-		data: slots,
-		isLoading,
-		error,
-	} = useQuery({
+	const { data, isLoading, error } = useQuery({
 		queryKey: ['appointments', 'available-slots', date, technicianId ?? null],
 		queryFn: () => getAvailableSlots(date ?? '', technicianId ?? undefined),
 		enabled: !!date,
 	});
-	return { slots: slots ?? [], isLoading, error };
+	return {
+		slots: data?.slots ?? [],
+		blocked: data?.blocked ?? false,
+		reason: data?.reason ?? null,
+		isLoading,
+		error,
+	};
 }
 
 export function useAvailableSlotsForAnyTechnician(
@@ -74,7 +77,7 @@ export function useAvailableSlotsForAnyTechnician(
 
 	for (let i = 0; i < results.length; i++) {
 		const techId = technicianIds[i];
-		const techSlots = results[i].data ?? [];
+		const techSlots = results[i].data?.slots ?? [];
 		for (const slot of techSlots) {
 			slotsSet.add(slot);
 			const existing = slotToTechnicianIds.get(slot) ?? [];
@@ -129,6 +132,16 @@ export function useDeleteAppointment() {
 	const queryClient = useQueryClient();
 	return useMutation({
 		mutationFn: (id: string) => deleteAppointment(id),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['appointments'] });
+		},
+	});
+}
+
+export function useCancelMyAppointment() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: (id: string) => cancelMyAppointment(id),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['appointments'] });
 		},

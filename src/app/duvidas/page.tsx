@@ -99,7 +99,7 @@ export default function DuvidasPage() {
 			<Background />
 
 			{/* Header */}
-			<header className="relative z-10 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur-sm px-8 py-4">
+			<header className="relative z-10 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur-sm px-4 md:px-8 py-4">
 				<div className="max-w-350 mx-auto flex items-center justify-between">
 					<div className="flex items-center gap-3">
 						<Link

@@ -31,3 +31,11 @@ export async function updateCustomerPassword(
 ): Promise<void> {
 	await api.patch(`/customer/${id}/password`, { password });
 }
+
+/** Marca/desmarca um customer como conta de teste ilimitada (admin). */
+export async function setCustomerTestUnlimited(
+	id: string,
+	unlimited: boolean,
+): Promise<void> {
+	await api.patch(`/customer/${id}/test-unlimited`, { unlimited });
+}

@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, MessageSquarePlus, Search } from 'lucide-react';
+import { MessageSquarePlus, Search } from 'lucide-react';
 import { useState } from 'react';
 import { ForumNewPostModal } from '@/components/duvidas/forum-new-post-modal';
 import { ForumPostCard } from '@/components/duvidas/forum-post-card';
@@ -54,7 +54,7 @@ export function ForumTab({ currentUserId }: ForumTabProps) {
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
 						placeholder="Buscar perguntas..."
-						className="w-full pl-9 pr-4 py-2 text-sm bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+						className="w-full pl-9 pr-4 py-2 text-sm bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
 					/>
 				</div>
 
@@ -63,7 +63,7 @@ export function ForumTab({ currentUserId }: ForumTabProps) {
 					<select
 						value={categoryId}
 						onChange={(e) => setCategoryId(e.target.value)}
-						className="px-3 py-2 text-sm bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+						className="px-3 py-2 text-sm bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
 					>
 						<option value="">Todas as categorias</option>
 						{categories.map((cat) => (
@@ -78,7 +78,7 @@ export function ForumTab({ currentUserId }: ForumTabProps) {
 				<button
 					type="button"
 					onClick={() => setShowNewModal(true)}
-					className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-violet-600 hover:bg-violet-500 text-white rounded-xl transition-colors whitespace-nowrap"
+					className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-violet-600 hover:bg-violet-400 text-white rounded-xl transition-colors whitespace-nowrap"
 				>
 					<MessageSquarePlus className="w-4 h-4" />
 					Nova pergunta
@@ -94,7 +94,7 @@ export function ForumTab({ currentUserId }: ForumTabProps) {
 						className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${
 							categoryId === ''
 								? 'bg-violet-600 text-white'
-								: 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
+								: 'bg-slate-100 dark:bg-[#1a1a1d] text-slate-600 dark:text-gray-400 hover:bg-slate-200 dark:hover:bg-white/10'
 						}`}
 					>
 						Todas
@@ -107,7 +107,7 @@ export function ForumTab({ currentUserId }: ForumTabProps) {
 							className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${
 								categoryId === cat.id
 									? 'text-white'
-									: 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
+									: 'bg-slate-100 dark:bg-[#1a1a1d] text-slate-600 dark:text-gray-400 hover:bg-slate-200 dark:hover:bg-white/10'
 							}`}
 							style={
 								categoryId === cat.id
@@ -123,11 +123,28 @@ export function ForumTab({ currentUserId }: ForumTabProps) {
 
 			{/* Posts list */}
 			{isLoading ? (
-				<div className="flex items-center justify-center py-16">
-					<Loader2 className="w-6 h-6 text-violet-500 animate-spin" />
+				<div className="animate-pulse space-y-3">
+					{Array.from({ length: 5 }).map((_, i) => (
+						<div
+							key={i}
+							className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-lg p-4"
+						>
+							<div className="flex items-center gap-3">
+								<div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-white/5" />
+								<div className="flex-1 space-y-2">
+									<div className="h-4 w-48 rounded bg-slate-200 dark:bg-white/5" />
+									<div className="h-3 w-full rounded bg-slate-200 dark:bg-white/5" />
+								</div>
+								<div className="flex items-center gap-2">
+									<div className="h-5 w-12 rounded-full bg-slate-200 dark:bg-white/5" />
+									<div className="h-3 w-8 rounded bg-slate-200 dark:bg-white/5" />
+								</div>
+							</div>
+						</div>
+					))}
 				</div>
 			) : posts.length === 0 ? (
-				<div className="flex flex-col items-center justify-center py-16 text-slate-500 dark:text-slate-600 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl">
+				<div className="flex flex-col items-center justify-center py-16 text-slate-500 dark:text-slate-600 bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-lg">
 					<MessageSquarePlus className="w-12 h-12 mb-3 opacity-40" />
 					<p className="text-sm font-medium">Nenhuma pergunta encontrada</p>
 					<p className="text-xs mt-1 mb-4">
@@ -138,7 +155,7 @@ export function ForumTab({ currentUserId }: ForumTabProps) {
 					<button
 						type="button"
 						onClick={() => setShowNewModal(true)}
-						className="px-4 py-2 text-sm font-semibold bg-violet-600 hover:bg-violet-500 text-white rounded-xl transition-colors"
+						className="px-4 py-2 text-sm font-semibold bg-violet-600 hover:bg-violet-400 text-white rounded-xl transition-colors"
 					>
 						Nova pergunta
 					</button>

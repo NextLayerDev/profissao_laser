@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useScrollReveal } from '@/hooks/use-scroll-reveal';
+import { ScrollReveal, StaggerReveal } from './scroll-reveal';
 
 const professionals = [
 	{
@@ -17,41 +17,38 @@ const professionals = [
 ];
 
 export function ProfessionalsSection() {
-	const { ref, isVisible } = useScrollReveal();
-
 	return (
-		<section className="bg-[#0d0d0f] py-20 md:py-28 px-6">
-			<div
-				ref={ref}
-				className={`max-w-5xl mx-auto transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-			>
-				<p className="text-[#f2295b] uppercase tracking-widest text-sm font-bold text-center mb-3">
-					Quem está por trás
-				</p>
-				<h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-12">
-					Profissionais
-				</h2>
+		<section className="bg-ink-900 py-20 md:py-28 px-6">
+			<div className="max-w-5xl mx-auto">
+				<ScrollReveal>
+					<p className="text-violet-400 uppercase tracking-widest text-sm font-bold text-center mb-3">
+						Quem está por trás
+					</p>
+					<h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-12">
+						Profissionais
+					</h2>
+				</ScrollReveal>
 
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 					{professionals.map((pro, i) => (
-						<div
-							key={pro.name}
-							className={`bg-white/[0.04] backdrop-blur-sm border border-white/[0.08] rounded-3xl p-8 hover:border-[#f2295b]/20 transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
-							style={{ transitionDelay: `${300 + i * 200}ms` }}
-						>
-							<div className="relative w-24 h-24 rounded-full mx-auto mb-6 overflow-hidden border-2 border-[#f2295b]/30 shadow-lg shadow-[#f2295b]/10">
-								<Image
-									src={pro.image}
-									alt={pro.name}
-									fill
-									className="object-cover"
-								/>
+						<StaggerReveal key={pro.name} delay={i * 0.15}>
+							<div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.08] rounded-3xl p-8 hover:border-violet-500/20 transition-all duration-500">
+								<div className="relative w-24 h-24 rounded-full mx-auto mb-6 overflow-hidden border-2 border-violet-500/30 shadow-lg shadow-violet-500/10">
+									<Image
+										src={pro.image}
+										alt={pro.name}
+										fill
+										className="object-cover"
+									/>
+								</div>
+								<h3 className="text-white text-xl font-bold text-center mb-4">
+									{pro.name}
+								</h3>
+								<p className="text-gray-400 text-sm leading-relaxed">
+									{pro.bio}
+								</p>
 							</div>
-							<h3 className="text-white text-xl font-bold text-center mb-4">
-								{pro.name}
-							</h3>
-							<p className="text-gray-400 text-sm leading-relaxed">{pro.bio}</p>
-						</div>
+						</StaggerReveal>
 					))}
 				</div>
 			</div>

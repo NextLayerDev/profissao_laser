@@ -2,7 +2,7 @@ import { getActiveToken } from '@/lib/auth';
 import { api } from '@/lib/fetch';
 import { type Product, productSchema } from '@/types/products';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_GATEWAY_URL;
 
 export interface CreateProductPayload {
 	name: string;

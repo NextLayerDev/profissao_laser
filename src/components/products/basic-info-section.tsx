@@ -35,6 +35,9 @@ import { formatDate } from '@/utils/formatDate';
 
 interface BasicInfoSectionProps {
 	product: Product;
+	vendasAtivas: boolean;
+	togglingStatus: boolean;
+	onToggleStatus: () => void;
 }
 
 type FieldKey =
@@ -275,7 +278,12 @@ function ProductClassesField({
 	);
 }
 
-export function BasicInfoSection({ product }: BasicInfoSectionProps) {
+export function BasicInfoSection({
+	product,
+	vendasAtivas,
+	togglingStatus,
+	onToggleStatus,
+}: BasicInfoSectionProps) {
 	const { canPrice } = usePermissions();
 	const price = formatCurrency(product.price, 'BRL');
 	const createdAt = formatDate(product.createdAt);
@@ -347,10 +355,33 @@ export function BasicInfoSection({ product }: BasicInfoSectionProps) {
 			</div>
 
 			{/* Image */}
-			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-xl p-6 shadow-sm dark:shadow-none">
-				<div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 mb-4">
-					<ImageIcon className="w-4 h-4" />
-					<span className="text-sm font-medium">Imagem</span>
+			<div className="bg-white/60 dark:bg-white/[0.04] backdrop-blur-sm border border-slate-200/80 dark:border-white/8 rounded-xl p-6 shadow-sm dark:shadow-none">
+				<div className="flex items-center justify-between mb-4">
+					<div className="flex items-center gap-2 text-slate-500 dark:text-gray-400">
+						<ImageIcon className="w-4 h-4" />
+						<span className="text-sm font-medium">Imagem</span>
+					</div>
+					<div className="flex items-center gap-2.5">
+						<span className="text-xs text-slate-500 dark:text-gray-500">
+							{vendasAtivas ? 'Vendas ativas' : 'Vendas inativas'}
+						</span>
+						<button
+							type="button"
+							onClick={onToggleStatus}
+							disabled={togglingStatus}
+							className={`relative w-10 h-5 rounded-full transition-colors disabled:opacity-50 ${
+								vendasAtivas
+									? 'bg-emerald-500'
+									: 'bg-slate-300 dark:bg-white/15'
+							}`}
+						>
+							<div
+								className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${
+									vendasAtivas ? 'left-5' : 'left-0.5'
+								}`}
+							/>
+						</button>
+					</div>
 				</div>
 				<input
 					id="product-cover-image"
@@ -411,7 +442,7 @@ export function BasicInfoSection({ product }: BasicInfoSectionProps) {
 			</div>
 
 			{/* Detalhes — horizontal grid */}
-			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-xl p-6 shadow-sm dark:shadow-none">
+			<div className="bg-white/60 dark:bg-white/[0.04] backdrop-blur-sm border border-slate-200/80 dark:border-white/8 rounded-xl p-6 shadow-sm dark:shadow-none">
 				<div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 mb-4">
 					<Info className="w-4 h-4" />
 					<span className="text-sm font-medium">Detalhes</span>
@@ -516,7 +547,7 @@ export function BasicInfoSection({ product }: BasicInfoSectionProps) {
 
 			{/* Preço e localização — oculto para colaboradores */}
 			{canPrice && (
-				<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-xl p-6 shadow-sm dark:shadow-none">
+				<div className="bg-white/60 dark:bg-white/[0.04] backdrop-blur-sm border border-slate-200/80 dark:border-white/8 rounded-xl p-6 shadow-sm dark:shadow-none">
 					<div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 mb-4">
 						<DollarSign className="w-4 h-4" />
 						<span className="text-sm font-medium">Preço e localização</span>
@@ -568,7 +599,7 @@ export function BasicInfoSection({ product }: BasicInfoSectionProps) {
 			)}
 
 			{/* Classe */}
-			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-xl p-6 shadow-sm dark:shadow-none">
+			<div className="bg-white/60 dark:bg-white/[0.04] backdrop-blur-sm border border-slate-200/80 dark:border-white/8 rounded-xl p-6 shadow-sm dark:shadow-none">
 				<div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 mb-4">
 					<Layers className="w-4 h-4" />
 					<span className="text-sm font-medium">Classe</span>
@@ -588,7 +619,7 @@ export function BasicInfoSection({ product }: BasicInfoSectionProps) {
 			</div>
 
 			{/* Datas */}
-			<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-xl p-6 shadow-sm dark:shadow-none">
+			<div className="bg-white/60 dark:bg-white/[0.04] backdrop-blur-sm border border-slate-200/80 dark:border-white/8 rounded-xl p-6 shadow-sm dark:shadow-none">
 				<div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 mb-4">
 					<Calendar className="w-4 h-4" />
 					<span className="text-sm font-medium">Datas</span>

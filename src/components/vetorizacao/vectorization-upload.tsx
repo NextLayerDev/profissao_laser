@@ -10,8 +10,22 @@ import {
 	XCircle,
 } from 'lucide-react';
 import { useCallback, useState } from 'react';
+import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
+import { useEntitlements } from '@/hooks/use-entitlements';
 import { useSaveVector, useVectorizeImage } from '@/hooks/use-vectors';
+import { invokeTool } from '@/modules/tools/services/tools.service';
 import type { VectorizeResult } from '@/services/vectorize';
+
+interface AxiosLikeError {
+	response?: { status?: number; data?: Record<string, unknown> };
+}
+
+interface FreeTierModalState {
+	limit: number;
+	used: number;
+	period: 'daily' | 'weekly';
+	resetsAt: string;
+}
 
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -45,8 +59,14 @@ function svgToDataUrl(svgContent: string): string {
 export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 	const [isDragging, setIsDragging] = useState(false);
 	const [files, setFiles] = useState<FileWithStatus[]>([]);
+	const [freeTierModal, setFreeTierModal] = useState<FreeTierModalState | null>(
+		null,
+	);
 	const vectorizeMutation = useVectorizeImage();
 	const saveMutation = useSaveVector();
+	// Standalone bilha contra o curso ativo do customer (mono-curso).
+	const { courses } = useEntitlements();
+	const courseSlug = courses[0]?.slug;
 
 	const validateFile = useCallback((file: File): string | null => {
 		if (!ACCEPTED_TYPES.includes(file.type)) {
@@ -85,28 +105,63 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 				]);
 
 				try {
-					const result = await vectorizeMutation.mutateAsync(file);
+					if (!courseSlug) {
+						throw new Error('Nenhum curso ativo encontrado.');
+					}
+					// Billing pelo upvox: autoriza/debita por arquivo e devolve o id
+					// que o motor valida e liquida.
+					const inv = await invokeTool('vectorize', courseSlug);
+					const result = await vectorizeMutation.mutateAsync({
+						file,
+						invocationId: inv.invocation_id,
+					});
 					setFiles((prev) =>
 						prev.map((f) =>
 							f.id === id ? { ...f, status: 'success' as const, result } : f,
 						),
 					);
-				} catch {
-					setFiles((prev) =>
-						prev.map((f) =>
-							f.id === id
-								? {
-										...f,
-										status: 'error' as const,
-										error: 'Erro ao vetorizar',
-									}
-								: f,
-						),
-					);
+				} catch (err) {
+					const ax = err as AxiosLikeError;
+					const status = ax?.response?.status;
+					const data = ax?.response?.data ?? {};
+					if (status === 429 && data.code === 'FREE_TIER_LIMIT_REACHED') {
+						setFreeTierModal({
+							limit: (data.limit as number) ?? 5,
+							used: (data.used as number) ?? 0,
+							period:
+								(data.period as 'daily' | 'weekly' | undefined) ?? 'daily',
+							resetsAt: (data.resetsAt as string) ?? '',
+						});
+						setFiles((prev) =>
+							prev.map((f) =>
+								f.id === id
+									? {
+											...f,
+											status: 'error' as const,
+											error: 'Limite gratuito atingido',
+										}
+									: f,
+							),
+						);
+					} else {
+						const msg =
+							status === 402
+								? 'Saldo de voxxys insuficiente'
+								: status === 403
+									? 'Seu plano não dá acesso a esta ferramenta'
+									: 'Erro ao vetorizar';
+						setFiles((prev) =>
+							prev.map((f) =>
+								f.id === id
+									? { ...f, status: 'error' as const, error: msg }
+									: f,
+							),
+						);
+					}
 				}
 			}
 		},
-		[vectorizeMutation, validateFile],
+		[vectorizeMutation, validateFile, courseSlug],
 	);
 
 	// Guarda re-enviando o ficheiro original com save=true (vectorize + CDN + DB numa chamada)
@@ -163,6 +218,16 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 
 	return (
 		<div className="space-y-6">
+			{freeTierModal && (
+				<CreditConfirmModal
+					variant="free-tier-exhausted"
+					cost={1}
+					balance={0}
+					freeTier={freeTierModal}
+					onConfirm={() => setFreeTierModal(null)}
+					onClose={() => setFreeTierModal(null)}
+				/>
+			)}
 			<section
 				aria-label="Arraste imagens ou clique para selecionar"
 				onDrop={handleDrop}
@@ -170,7 +235,7 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 				onDragLeave={handleDragLeave}
 				className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-8 py-12 transition-colors ${
 					isDragging
-						? 'border-violet-500 bg-violet-500/10 dark:bg-violet-500/20'
+						? 'border-violet-600 bg-violet-500/10 dark:bg-violet-500/20'
 						: 'border-slate-200 dark:border-white/10 hover:border-violet-500/50 dark:hover:border-white/20'
 				}`}
 			>
@@ -184,10 +249,10 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 				<div className="rounded-xl bg-linear-to-br from-violet-600 to-fuchsia-600 p-4 text-white mb-4">
 					<PenLine className="w-10 h-10" />
 				</div>
-				<p className="text-slate-600 dark:text-slate-400 text-center font-medium mb-1">
+				<p className="text-slate-600 dark:text-gray-400 text-center font-medium mb-1">
 					Arraste imagens ou clique para selecionar
 				</p>
-				<p className="text-slate-500 dark:text-slate-500 text-sm">
+				<p className="text-slate-500 dark:text-gray-500 text-sm">
 					PNG, JPG, WEBP (máx. 10MB)
 				</p>
 			</section>
@@ -201,11 +266,11 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 						{files.map((item) => (
 							<div
 								key={item.id}
-								className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-4"
+								className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-4"
 							>
 								<div className="flex gap-4">
 									{item.status === 'success' && item.result && (
-										<div className="w-20 h-20 shrink-0 rounded-lg bg-slate-100 dark:bg-white/5 overflow-hidden flex items-center justify-center">
+										<div className="w-20 h-20 shrink-0 rounded-lg bg-slate-100 dark:bg-[#1a1a1d] overflow-hidden flex items-center justify-center">
 											<img
 												src={svgToDataUrl(item.result.svgContent)}
 												alt={item.result.originalName}
@@ -217,6 +282,17 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 										<p className="font-medium text-slate-900 dark:text-white truncate">
 											{item.file.name}
 										</p>
+										{item.status === 'success' && item.result && (
+											<span
+												className={`inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full ${
+													item.result.isColor
+														? 'bg-violet-500/20 text-violet-600 dark:text-violet-400'
+														: 'bg-slate-500/20 text-slate-600 dark:text-gray-400'
+												}`}
+											>
+												{item.result.isColor ? 'Colorida' : 'P&B'}
+											</span>
+										)}
 										{item.status === 'error' && (
 											<p className="text-sm text-red-500 mt-0.5">
 												{item.error}
@@ -225,7 +301,7 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 									</div>
 									<div className="flex items-center gap-2 shrink-0">
 										{item.status === 'uploading' && (
-											<Loader2 className="w-5 h-5 text-violet-500 animate-spin" />
+											<Loader2 className="w-5 h-5 text-violet-600 animate-spin" />
 										)}
 										{item.status === 'success' && item.result && (
 											<>
@@ -239,7 +315,7 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 															);
 														}
 													}}
-													className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors"
+													className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-600 text-white text-sm font-medium transition-colors"
 												>
 													<Download className="w-4 h-4" />
 													Descarregar

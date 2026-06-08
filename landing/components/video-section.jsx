@@ -1,0 +1,135 @@
+/* VideoSection — split: video placeholder left, copy + checklist right */
+
+function VideoPlayerPlaceholder() {
+	return (
+		<div className="relative aspect-video rounded-2xl overflow-hidden card-dark">
+			{/* Light effect line on top */}
+			<div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/60 to-transparent z-10" />
+			{/* dark backdrop with logo-ish */}
+			<div
+				className="absolute inset-0"
+				style={{
+					background:
+						'linear-gradient(135deg, #1a0a2e 0%, #0d0d0f 50%, #12121a 100%)',
+				}}
+			/>
+			<div className="absolute inset-0 bg-grid opacity-[0.07]" />
+			<div className="absolute top-5 left-5 flex items-center gap-2 text-white/90 z-10">
+				<ISparkles size={14} className="text-violet-400" />
+				<span className="font-display text-[11px] font-bold uppercase tracking-widest">
+					Comunidade · Profissão Laser
+				</span>
+			</div>
+
+			{/* speaker silhouette area */}
+			<div className="absolute bottom-0 right-0 w-[55%] h-[78%]">
+				<svg
+					aria-hidden="true"
+					viewBox="0 0 320 320"
+					className="w-full h-full opacity-90"
+				>
+					<defs>
+						<radialGradient id="speakerBg" cx="0.5" cy="0.4" r="0.6">
+							<stop offset="0" stopColor="#7c3aed" stopOpacity="0.4" />
+							<stop offset="1" stopColor="#000" stopOpacity="0" />
+						</radialGradient>
+					</defs>
+					<rect x="0" y="0" width="320" height="320" fill="url(#speakerBg)" />
+					{/* head */}
+					<ellipse cx="170" cy="120" rx="38" ry="44" fill="#1a1535" />
+					{/* shoulders */}
+					<path
+						d="M70 320 C 80 230, 130 200, 170 200 C 210 200, 260 230, 270 320 Z"
+						fill="#0f0a28"
+					/>
+					{/* t-shirt purple highlight */}
+					<path
+						d="M155 205 L185 205 L175 240 L165 240 Z"
+						fill="#7c3aed"
+						opacity="0.8"
+					/>
+				</svg>
+			</div>
+
+			{/* big headline overlay */}
+			<div className="absolute left-6 bottom-6 max-w-[60%]">
+				<div className="font-display text-white text-2xl md:text-3xl font-black leading-tight tracking-tight">
+					Mais que uma
+					<br />
+					comunidade.
+					<br />
+					<span className="grad-brand">Um ecossistema</span>
+					<br />
+					para você crescer.
+				</div>
+			</div>
+
+			{/* play button */}
+			<button
+				type="button"
+				className="absolute inset-0 grid place-items-center group"
+			>
+				<div className="btn-accent w-20 h-20 rounded-full grid place-items-center shadow-brand-lg group-hover:scale-105 transition-transform">
+					<IPlay size={28} className="text-white translate-x-0.5" />
+				</div>
+			</button>
+
+			{/* progress bar */}
+			<div className="absolute bottom-0 left-0 right-0 px-3 pb-2 flex items-center gap-3 text-white/80 text-[11px]">
+				<IPlay size={12} />
+				<IVolume2 size={13} />
+				<span className="font-mono">1:32 / 2:45</span>
+				<div className="flex-1 h-1 rounded-full bg-white/20 overflow-hidden">
+					<div className="h-full w-1/3 bg-violet-400" />
+				</div>
+				<IDownload size={13} />
+				<IMaximize size={13} />
+			</div>
+		</div>
+	);
+}
+
+function VideoSection() {
+	const bullets = [
+		'Conteúdo prático e direto ao ponto',
+		'Acompanhamento de especialistas',
+		'Ferramentas que facilitam sua rotina',
+		'Network com quem vive o laser',
+		'Novas oportunidades de negócio',
+	];
+	return (
+		<section id="video" className="relative px-5 md:px-8 py-14 md:py-20">
+			<div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1.05fr_1fr] gap-10 items-center">
+				<VideoPlayerPlaceholder />
+
+				<div>
+					<h2 className="font-display text-3xl md:text-[2.25rem] font-black text-white leading-tight tracking-tight">
+						Por que milhares de profissionais escolheram a{' '}
+						<span className="grad-brand">Profissão Laser?</span>
+					</h2>
+
+					<ul className="mt-6 space-y-3">
+						{bullets.map((b) => (
+							<li key={b} className="flex items-center gap-3 text-slate-200">
+								<div className="w-6 h-6 rounded-full bg-violet-500/15 border border-violet-500/30 grid place-items-center shrink-0">
+									<ICheck size={14} className="text-violet-400" />
+								</div>
+								<span className="text-[15px]">{b}</span>
+							</li>
+						))}
+					</ul>
+
+					<a
+						href="#planos"
+						className="btn-accent mt-8 inline-flex items-center gap-2 text-white font-bold px-6 py-3.5 rounded-xl shadow-brand-lg"
+					>
+						QUERO EVOLUIR AGORA
+						<IArrowRight size={16} />
+					</a>
+				</div>
+			</div>
+		</section>
+	);
+}
+
+Object.assign(window, { VideoSection });

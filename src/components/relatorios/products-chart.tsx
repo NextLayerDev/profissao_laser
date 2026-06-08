@@ -103,7 +103,6 @@ export function ProductsChart({ sales, isLoading }: Props) {
 						/>
 						<Bar dataKey="revenue" radius={[0, 6, 6, 0]}>
 							{data.map((_, i) => (
-								// biome-ignore lint/suspicious/noArrayIndexKey: stable order
 								<Cell key={i} fill={COLORS[i % COLORS.length]} />
 							))}
 						</Bar>

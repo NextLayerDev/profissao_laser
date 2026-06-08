@@ -15,6 +15,9 @@ export function useUsers(enabled = true) {
 	} = useQuery({
 		queryKey: ['users'],
 		queryFn: getUsers,
+		// Usuários mudam devagar — cacheia p/ não rebuscar todos a cada troca de
+		// canal no chat (que monta o mapa de exibição a partir desta lista).
+		staleTime: 5 * 60 * 1000,
 		enabled,
 	});
 

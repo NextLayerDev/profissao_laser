@@ -39,24 +39,23 @@ export function DoubtsClientView({
 	);
 	const sendMessageMutation = useSendDoubtMessage(selectedChatId);
 
-	function handleChatCreated(chat: DoubtChat) {
-		setSelectedChatId(chat.id);
-		setActiveTab('pending');
-	}
-
 	async function handleSendMessage(content: string, file?: File) {
 		if (!selectedChatId) return;
 		try {
 			await sendMessageMutation.mutateAsync({ content, file });
-			toast.success('Mensagem enviada!');
 		} catch {
 			toast.error('Erro ao enviar mensagem. Tente novamente.');
 		}
 	}
 
+	function handleChatCreated(chat: DoubtChat) {
+		setSelectedChatId(chat.id);
+		setActiveTab('pending');
+	}
+
 	if (!hasAccess) {
 		return (
-			<div className="flex flex-col items-center justify-center py-20 text-slate-500 dark:text-slate-600">
+			<div className="flex flex-col items-center justify-center py-20 text-slate-500 dark:text-gray-500">
 				<MessageSquare className="w-16 h-16 mb-4 opacity-50" />
 				<p className="text-sm font-medium">
 					Dúvidas disponível no plano Ouro ou Platina
@@ -76,14 +75,14 @@ export function DoubtsClientView({
 					<h2 className="text-xl font-bold text-slate-900 dark:text-white">
 						Suas dúvidas
 					</h2>
-					<p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+					<p className="text-sm text-slate-500 dark:text-gray-400 mt-0.5">
 						Chat direto com os nossos técnicos
 					</p>
 				</div>
 				<button
 					type="button"
 					onClick={() => setNewDoubtOpen(true)}
-					className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-colors"
+					className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors"
 				>
 					<Plus className="w-4 h-4" />
 					Nova dúvida
@@ -95,7 +94,7 @@ export function DoubtsClientView({
 				<div className="lg:col-span-1">
 					{chatsLoading ? (
 						<div className="flex justify-center py-16">
-							<Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
+							<Loader2 className="w-8 h-8 text-violet-600 animate-spin" />
 						</div>
 					) : (
 						<DoubtsList
@@ -108,21 +107,25 @@ export function DoubtsClientView({
 				</div>
 				<div className="lg:col-span-2">
 					{selectedChatId ? (
-						<div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6">
+						<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-6">
 							{chatLoading ? (
 								<div className="flex justify-center py-16">
-									<Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
+									<Loader2 className="w-8 h-8 text-violet-600 animate-spin" />
 								</div>
 							) : selectedChat ? (
 								<DoubtChatView
 									chat={selectedChat}
 									customerName={customerName}
-									onSendMessage={handleSendMessage}
+									onSendMessage={
+										selectedChat.status === 'pending'
+											? handleSendMessage
+											: undefined
+									}
 								/>
 							) : null}
 						</div>
 					) : (
-						<div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-12 flex flex-col items-center justify-center min-h-[300px] text-slate-500 dark:text-slate-600">
+						<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-12 flex flex-col items-center justify-center min-h-[300px] text-slate-500 dark:text-gray-500">
 							<MessageSquare className="w-12 h-12 mb-3 opacity-50" />
 							<p className="text-sm font-medium">Selecione uma dúvida</p>
 							<p className="text-xs mt-1">

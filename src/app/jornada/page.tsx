@@ -15,15 +15,16 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { useCustomerPlans } from '@/hooks/use-customer-plans';
+import { useEntitlements } from '@/hooks/use-entitlements';
 import { useJornadaProgress } from '@/hooks/use-jornada-progress';
 import { getCurrentUser } from '@/lib/auth';
+import type { CustomerPlan } from '@/types/plans';
 
 const Background = () => (
 	<>
 		<div className="fixed inset-0 bg-linear-to-br from-slate-100 via-white to-slate-50 dark:from-[#12103a] dark:via-[#0d0b1e] dark:to-[#0a0818] pointer-events-none" />
-		<div className="fixed top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-violet-500/5 via-transparent to-transparent pointer-events-none" />
-		<div className="fixed bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-cyan-500/5 via-transparent to-transparent pointer-events-none" />
+		<div className="fixed top-0 right-0 w-125 h-125 bg-linear-to-bl from-violet-500/5 via-transparent to-transparent pointer-events-none" />
+		<div className="fixed bottom-0 left-0 w-100 h-100 bg-linear-to-tr from-cyan-500/5 via-transparent to-transparent pointer-events-none" />
 	</>
 );
 
@@ -40,14 +41,20 @@ export default function JornadaPage() {
 		setName(user?.name ?? '');
 	}, []);
 
-	const { data: plans, isLoading: plansLoading } = useCustomerPlans(
-		email ?? null,
-	);
-	const activePlans =
-		plans?.filter((p) => p.status === 'active' || p.status === 'ativo') ?? [];
+	// Usa entitlements (fonte de verdade) — o endpoint /customer/plans retorna
+	// slug: null para assinaturas, enquanto entitlements já tem o curso com slug real.
+	const { courses: entitlementCourses, isLoading: entitlementsLoading } =
+		useEntitlements();
+	const activePlans: CustomerPlan[] = entitlementCourses.map((c) => ({
+		id: c.id,
+		status: 'active',
+		product_name: c.title,
+		slug: c.slug,
+		tier: undefined,
+	}));
 	const { items, isLoading: progressLoading } = useJornadaProgress(activePlans);
 
-	const isLoading = plansLoading || progressLoading;
+	const isLoading = entitlementsLoading || progressLoading;
 
 	const toggleExpanded = (planId: string) => {
 		setExpandedPlanIds((prev) => {
@@ -91,7 +98,7 @@ export default function JornadaPage() {
 			<Background />
 
 			{/* Header */}
-			<header className="relative z-10 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur-sm px-8 py-4">
+			<header className="relative z-10 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur-sm px-4 md:px-8 py-4">
 				<div className="max-w-350 mx-auto flex items-center justify-between">
 					<div className="flex items-center gap-3">
 						<Link

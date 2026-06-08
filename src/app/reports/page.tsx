@@ -19,7 +19,8 @@ import { filterByDateRange } from '@/utils/sales-analytics';
 export default function Relatorios() {
 	const router = useRouter();
 	const { sales, isLoading } = useSales();
-	const { canPrice, isLoading: permissionsLoading } = usePermissions();
+	const { can, isLoading: permissionsLoading } = usePermissions();
+	const allowed = can('relatorios.view');
 	const [period, setPeriod] = useState<Period>('30d');
 	const contentRef = useRef<HTMLDivElement>(null);
 
@@ -31,12 +32,12 @@ export default function Relatorios() {
 	);
 
 	useEffect(() => {
-		if (!permissionsLoading && !canPrice) {
+		if (!permissionsLoading && !allowed) {
 			router.replace('/dashboard');
 		}
-	}, [canPrice, permissionsLoading, router]);
+	}, [allowed, permissionsLoading, router]);
 
-	if (!canPrice && !permissionsLoading) {
+	if (!allowed && !permissionsLoading) {
 		return null;
 	}
 
@@ -81,7 +82,7 @@ export default function Relatorios() {
 		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
 
-			<main className="px-8 py-6">
+			<main className="px-4 md:px-8 py-6">
 				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
 					<div>
 						<h2 className="text-2xl font-bold tracking-tight flex items-center gap-2 text-slate-900 dark:text-white">

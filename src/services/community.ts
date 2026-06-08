@@ -1,13 +1,16 @@
 import { api } from '@/lib/fetch';
 import type {
+	Activity,
 	Channel,
 	ChannelMessage,
+	CommunityStats,
 	Event,
 	Member,
 	Post,
 	Project,
 	ProjectComment,
 	RankingUser,
+	WaitingRoomState,
 } from '@/types/community';
 
 export async function getPosts(params?: {
@@ -36,6 +39,7 @@ export async function getChannels(): Promise<Channel[]> {
 export async function createChannel(body: {
 	name: string;
 	adminOnly?: boolean;
+	adminView?: boolean;
 	order?: number;
 }): Promise<{ id: string }> {
 	const { data } = await api.post<{ id: string }>('/community/channels', {
@@ -51,6 +55,7 @@ export async function updateChannel(
 		name: string;
 		description: string;
 		adminOnly?: boolean;
+		adminView?: boolean;
 		order?: number;
 	},
 ): Promise<Channel> {
@@ -108,6 +113,8 @@ export async function deleteChannelMessage(
 export async function getMembers(params?: {
 	search?: string;
 	category?: string;
+	featured?: string;
+	online?: string;
 }): Promise<Member[]> {
 	const { data } = await api.get<Member[]>('/community/members', {
 		params: params ?? undefined,
@@ -169,6 +176,15 @@ export async function deleteProject(projectId: string): Promise<void> {
 	await api.delete(`/community/projects/${encodeURIComponent(projectId)}`);
 }
 
+export async function toggleProjectLike(
+	projectId: string,
+): Promise<{ liked: boolean; likes: number }> {
+	const { data } = await api.post<{ liked: boolean; likes: number }>(
+		`/community/projects/${encodeURIComponent(projectId)}/like`,
+	);
+	return data;
+}
+
 export async function getProjectComments(
 	projectId: string,
 	params?: { page?: number; limit?: number },
@@ -207,6 +223,9 @@ export async function createEvent(body: {
 	date: string;
 	time?: string;
 	type: Event['type'];
+	streamUrl?: string;
+	streamProvider?: 'youtube' | 'vimeo';
+	waitingRoomOpensMinutesBefore?: number;
 }): Promise<Event> {
 	const { data } = await api.post<Event>('/community/events', body);
 	return data as Event;
@@ -220,6 +239,9 @@ export async function updateEvent(
 		date?: string;
 		time?: string;
 		type?: Event['type'];
+		streamUrl?: string | null;
+		streamProvider?: 'youtube' | 'vimeo' | null;
+		waitingRoomOpensMinutesBefore?: number;
 	},
 ): Promise<Event> {
 	const { data: result } = await api.patch<Event>(
@@ -233,6 +255,29 @@ export async function deleteEvent(eventId: string): Promise<void> {
 	await api.delete(`/community/events/${encodeURIComponent(eventId)}`);
 }
 
+// ─── Sala de espera ──────────────────────────────────────────────────────
+
+export async function getEventWaitingRoom(
+	eventId: string,
+): Promise<WaitingRoomState> {
+	const { data } = await api.get<WaitingRoomState>(
+		`/community/events/${encodeURIComponent(eventId)}/waiting-room`,
+	);
+	return data;
+}
+
+export async function joinEventWaitingRoom(eventId: string): Promise<void> {
+	await api.post(
+		`/community/events/${encodeURIComponent(eventId)}/waiting-room/join`,
+	);
+}
+
+export async function leaveEventWaitingRoom(eventId: string): Promise<void> {
+	await api.post(
+		`/community/events/${encodeURIComponent(eventId)}/waiting-room/leave`,
+	);
+}
+
 export async function getRanking(params?: {
 	period?: 'week' | 'month';
 }): Promise<{ top: RankingUser[]; rest: RankingUser[] }> {
@@ -241,4 +286,19 @@ export async function getRanking(params?: {
 		{ params: params ?? undefined },
 	);
 	return data ?? { top: [], rest: [] };
+}
+
+export async function getActivity(params?: {
+	page?: number;
+	limit?: number;
+}): Promise<Activity[]> {
+	const { data } = await api.get<Activity[]>('/community/activity', {
+		params: params ?? undefined,
+	});
+	return data ?? [];
+}
+
+export async function getStats(): Promise<CommunityStats> {
+	const { data } = await api.get<CommunityStats>('/community/stats');
+	return data;
 }

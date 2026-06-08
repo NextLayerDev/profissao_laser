@@ -12,7 +12,7 @@ function Separator() {
 
 export function Header() {
 	return (
-		<header className="h-[64px] px-8 flex items-center justify-between border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-[#040405]/90 backdrop-blur-sm sticky top-0 z-30">
+		<header className="h-[64px] px-4 md:px-8 flex items-center justify-between border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-[#040405]/90 backdrop-blur-sm sticky top-0 z-30">
 			<div>
 				<h1 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white leading-none">
 					Gerenciamento

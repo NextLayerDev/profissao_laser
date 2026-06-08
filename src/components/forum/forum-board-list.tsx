@@ -1,0 +1,63 @@
+'use client';
+
+import { useMemo } from 'react';
+import { ForumBoardRow } from '@/components/forum/forum-board-row';
+import { ForumBoardSkeleton } from '@/components/ui/skeletons/forum-skeleton';
+import { useForumCategories, useForumPosts } from '@/hooks/use-forum';
+
+export function ForumBoardList() {
+	const { data: categories = [], isLoading: catsLoading } =
+		useForumCategories();
+	// Pega os 50 posts mais recentes pra derivar "última atividade" por categoria
+	// sem fazer N+1 queries.
+	const { data: postsResponse, isLoading: postsLoading } = useForumPosts({
+		limit: 50,
+	});
+	const recentPosts = postsResponse?.posts ?? [];
+
+	const lastPostByCategory = useMemo(() => {
+		const map = new Map<string, (typeof recentPosts)[number]>();
+		for (const p of recentPosts) {
+			if (!p.categoryId) continue;
+			const existing = map.get(p.categoryId);
+			if (!existing || p.updatedAt > existing.updatedAt) {
+				map.set(p.categoryId, p);
+			}
+		}
+		return map;
+	}, [recentPosts]);
+
+	if (catsLoading || postsLoading) {
+		return <ForumBoardSkeleton />;
+	}
+
+	if (categories.length === 0) {
+		return (
+			<div className="py-10 text-center text-sm text-slate-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl">
+				Sem categorias definidas — veja as discussões recentes abaixo.
+			</div>
+		);
+	}
+
+	return (
+		<div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden">
+			{/* Header de colunas */}
+			<div className="grid grid-cols-[1fr_80px_240px] gap-4 px-4 py-2.5 bg-slate-100 dark:bg-white/[0.03] border-b border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400">
+				<span>Categoria</span>
+				<span className="text-center">Posts</span>
+				<span>Última atividade</span>
+			</div>
+
+			{/* Rows */}
+			<div>
+				{categories.map((cat) => (
+					<ForumBoardRow
+						key={cat.id}
+						category={cat}
+						lastPost={lastPostByCategory.get(cat.id) ?? null}
+					/>
+				))}
+			</div>
+		</div>
+	);
+}
