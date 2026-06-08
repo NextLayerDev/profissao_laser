@@ -53,7 +53,10 @@ export type StudentStreak = z.infer<typeof studentStreakSchema>;
 
 export const studentDetailSchema = studentSchema.extend({
 	subscription: customerSubscriptionSchema.nullable(),
-	streak: studentStreakSchema.nullable(),
+	// `.optional()` (não só `.nullable()`): o upvox antigo (pré-#32) não devolve
+	// a chave `streak`; sem optional o parse quebraria a página inteira até o
+	// deploy. Ausente → undefined → a seção "Ofensiva" mostra "sem atividade".
+	streak: studentStreakSchema.nullable().optional(),
 });
 export type StudentDetail = z.infer<typeof studentDetailSchema>;
 
