@@ -12,7 +12,7 @@ const customerRefSchema = z.object({
 export const salesRowSchema = z.object({
 	subscription_id: z.string(),
 	status: z.enum(['trialing', 'active', 'past_due', 'canceled', 'paused']),
-	interval: z.enum(['month', 'year']),
+	interval: z.enum(['monthly', 'yearly']),
 	cancel_at_period_end: z.boolean(),
 	created_at: z.string(),
 	current_period_start: z.string(),
