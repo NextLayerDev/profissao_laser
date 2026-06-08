@@ -19,7 +19,7 @@ export const salesRowSchema = z.object({
 	current_period_end: z.string(),
 	customer: customerRefSchema,
 	plan: z.object({ id: z.string(), key: z.string(), name: z.string() }),
-	price_cents: z.number().int(),
+	sale_value_cents: z.number().int(),
 	mrr_cents: z.number().int(),
 });
 export type SalesRow = z.infer<typeof salesRowSchema>;
