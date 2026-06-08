@@ -14,8 +14,11 @@ import {
 	changeStudentPlan,
 	deleteStudent,
 	getStudent,
+	getStudentActivity,
+	grantStudentVoxes,
 	type ListStudentsParams,
 	listStudents,
+	type StudentActivityParams,
 	setStudentBlocked,
 	setStudentPassword,
 	setStudentTestUnlimited,
@@ -47,8 +50,47 @@ export function useStudent(id: string) {
 	});
 }
 
+/**
+ * Atividade do aluno (uso de ferramentas + histórico de voxxys), paginados de
+ * forma independente. A chave inclui os `params` para que cada combinação de
+ * página seja cacheada; `keepPreviousData` evita flicker ao paginar.
+ */
+export function useStudentActivity(id: string, params: StudentActivityParams) {
+	return useQuery({
+		queryKey: [...studentsQueryKey, 'activity', id, params],
+		queryFn: () => getStudentActivity(id, params),
+		enabled: !!id,
+		placeholderData: keepPreviousData,
+	});
+}
+
 function invalidate(qc: ReturnType<typeof useQueryClient>) {
 	qc.invalidateQueries({ queryKey: studentsQueryKey });
+}
+
+export function useGrantStudentVoxes() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			id,
+			delta,
+			note,
+		}: {
+			id: string;
+			delta: number;
+			note?: string;
+		}) => grantStudentVoxes(id, delta, note),
+		onSuccess: (_data, { delta }) => {
+			invalidate(qc);
+			toast.success(
+				delta > 0
+					? `Adicionados ${delta.toLocaleString('pt-BR')} voxxys.`
+					: `Removidos ${Math.abs(delta).toLocaleString('pt-BR')} voxxys.`,
+			);
+		},
+		onError: (err) =>
+			toast.error(getApiErrorMessage(err, 'Erro ao ajustar voxxys')),
+	});
 }
 
 export function useChangeStudentPlan() {
