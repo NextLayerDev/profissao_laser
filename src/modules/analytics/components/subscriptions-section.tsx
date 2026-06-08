@@ -436,7 +436,7 @@ export function SubscriptionsSection() {
 										</td>
 										<td className="px-4 py-3 text-center">
 											<span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-gray-400">
-												{row.interval === 'year' ? (
+												{row.interval === 'yearly' ? (
 													<>
 														<ArrowUp className="w-3 h-3 text-violet-400" />
 														Anual
