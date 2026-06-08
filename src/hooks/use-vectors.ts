@@ -11,6 +11,7 @@ import { type VectorizeParams, vectorizeImage } from '@/services/vectorize';
 import {
 	deleteCustomerVector,
 	getCustomerVectors,
+	saveVector,
 	updateVector,
 } from '@/services/vectors';
 
@@ -52,13 +53,19 @@ export function useVectorizeImage() {
 }
 
 /**
- * Vectoriza e guarda na biblioteca num único POST /vectorize?save=true.
- * Recebe o File original (não o SVG já convertido).
+ * Guarda na biblioteca o SVG já vetorizado (sem re-vetorizar/recobrar).
+ * Recebe o resultado da vetorização (svgContent + originalName).
  */
 export function useSaveVector() {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: (file: File) => vectorizeAndSave(file),
+		mutationFn: ({
+			svgContent,
+			originalName,
+		}: {
+			svgContent: string;
+			originalName: string;
+		}) => saveVector(svgContent, originalName),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['customer', 'vectors'] });
 			toast.success('Vetor guardado!');

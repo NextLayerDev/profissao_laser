@@ -164,13 +164,16 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 		[vectorizeMutation, validateFile, courseSlug],
 	);
 
-	// Guarda re-enviando o ficheiro original com save=true (vectorize + CDN + DB numa chamada)
+	// Guarda o SVG já vetorizado (não re-vetoriza — evita cobrança dupla).
 	const handleSave = useCallback(
 		async (id: string) => {
 			const item = files.find((f) => f.id === id);
-			if (!item) return;
+			if (!item?.result) return;
 			try {
-				await saveMutation.mutateAsync(item.file);
+				await saveMutation.mutateAsync({
+					svgContent: item.result.svgContent,
+					originalName: item.result.originalName,
+				});
 				setFiles((prev) => prev.filter((f) => f.id !== id));
 				onSuccess?.();
 			} catch {
