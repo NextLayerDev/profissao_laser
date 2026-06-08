@@ -43,10 +43,83 @@ const customerSubscriptionSchema = z.object({
 	updated_at: z.string(),
 });
 
+/** Ofensiva (streak) do aluno — embutida no detalhe (`GET /students/:id`). */
+export const studentStreakSchema = z.object({
+	current_streak: z.number(),
+	longest_streak: z.number(),
+	last_seen_date: z.string().nullable(),
+});
+export type StudentStreak = z.infer<typeof studentStreakSchema>;
+
 export const studentDetailSchema = studentSchema.extend({
 	subscription: customerSubscriptionSchema.nullable(),
+	// `.optional()` (não só `.nullable()`): o upvox antigo (pré-#32) não devolve
+	// a chave `streak`; sem optional o parse quebraria a página inteira até o
+	// deploy. Ausente → undefined → a seção "Ofensiva" mostra "sem atividade".
+	streak: studentStreakSchema.nullable().optional(),
 });
 export type StudentDetail = z.infer<typeof studentDetailSchema>;
+
+/* ------------------------------------------------------------------ */
+/*  Activity (uso de ferramentas + histórico de voxxys)                */
+/*  `GET /v1/admin/students/:id/activity`                              */
+/* ------------------------------------------------------------------ */
+
+export const toolUsageItemSchema = z.object({
+	id: z.string(),
+	tool_key: z.string(),
+	course_id: z.string().nullable(),
+	status: z.string(),
+	// `quota_consumed` é numérico (int) no upvox, não booleano.
+	quota_consumed: z.number(),
+	voxes_spent: z.number(),
+	created_at: z.string(),
+});
+export type ToolUsageItem = z.infer<typeof toolUsageItemSchema>;
+
+export const voxxysLedgerReasonSchema = z.enum([
+	'purchase',
+	'spend',
+	'refund',
+	'adjustment',
+	'plan_grant',
+]);
+export type VoxxysLedgerReason = z.infer<typeof voxxysLedgerReasonSchema>;
+
+export const voxxysLedgerItemSchema = z.object({
+	id: z.string(),
+	delta: z.number(),
+	// O upvox tipa `reason` como string livre (restringido pelo enum do banco).
+	// Mantemos string aqui para não quebrar o parse caso surja um motivo novo;
+	// os rótulos pt-BR conhecidos ficam em LEDGER_REASON_LABELS (com fallback).
+	reason: z.string(),
+	ref_type: z.string().nullable(),
+	ref_id: z.string().nullable(),
+	created_at: z.string(),
+});
+export type VoxxysLedgerItem = z.infer<typeof voxxysLedgerItemSchema>;
+
+function paginatedSchema<T extends z.ZodTypeAny>(item: T) {
+	return z.object({
+		items: z.array(item),
+		total: z.number(),
+		page: z.number(),
+		limit: z.number(),
+	});
+}
+
+export const studentActivitySchema = z.object({
+	tool_usage: paginatedSchema(toolUsageItemSchema),
+	voxxys_ledger: paginatedSchema(voxxysLedgerItemSchema),
+});
+export type StudentActivity = z.infer<typeof studentActivitySchema>;
+
+export interface StudentActivityParams {
+	tools_page?: number;
+	tools_limit?: number;
+	voxxys_page?: number;
+	voxxys_limit?: number;
+}
 
 export const listStudentsResponseSchema = z.object({
 	items: z.array(studentSchema),
@@ -85,6 +158,33 @@ export async function listStudents(
 export async function getStudent(id: string): Promise<StudentDetail> {
 	const { data } = await apiCourses.get(`/v1/admin/students/${id}`);
 	return studentDetailSchema.parse(data);
+}
+
+/** Uso de ferramentas + histórico de voxxys (paginados de forma independente). */
+export async function getStudentActivity(
+	id: string,
+	params: StudentActivityParams,
+): Promise<StudentActivity> {
+	const { data } = await apiCourses.get(`/v1/admin/students/${id}/activity`, {
+		params,
+	});
+	return studentActivitySchema.parse(data);
+}
+
+/**
+ * Dá/ajusta voxxys do aluno (`delta` ≠ 0; negativo debita). Retorna o aluno com
+ * o saldo já atualizado.
+ */
+export async function grantStudentVoxes(
+	id: string,
+	delta: number,
+	note?: string,
+): Promise<Student> {
+	const { data } = await apiCourses.patch(`/v1/admin/students/${id}/voxes`, {
+		delta,
+		...(note?.trim() ? { note: note.trim() } : {}),
+	});
+	return studentResponseSchema.parse(data).student;
 }
 
 export async function changeStudentPlan(

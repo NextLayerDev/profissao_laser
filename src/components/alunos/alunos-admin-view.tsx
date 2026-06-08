@@ -9,7 +9,6 @@ import {
 	Search,
 	ShieldCheck,
 	ShieldOff,
-	Sparkles,
 	Trash2,
 	UserCheck,
 	Users,
@@ -19,6 +18,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { StatCard } from '@/components/ui/stat-card';
+import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 import {
 	usePlanOptions,
 	useSetStudentTestUnlimited,
@@ -312,7 +312,7 @@ export function AlunosAdminView() {
 									</td>
 									<td className="px-4 py-3">
 										<span className="inline-flex items-center gap-1 font-mono text-sm font-semibold text-amber-600 dark:text-amber-400 tabular-nums">
-											<Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
+											<VoxxysIcon className="w-3.5 h-3.5" />
 											{s.voxes_balance.toLocaleString('pt-BR')}
 										</span>
 									</td>
@@ -362,7 +362,7 @@ export function AlunosAdminView() {
 								<div className="flex items-center justify-between gap-2">
 									<PlanCell student={s} />
 									<span className="inline-flex items-center gap-1 font-mono text-sm font-semibold text-amber-600 dark:text-amber-400 tabular-nums shrink-0">
-										<Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
+										<VoxxysIcon className="w-3.5 h-3.5" />
 										{s.voxes_balance.toLocaleString('pt-BR')}
 									</span>
 								</div>
