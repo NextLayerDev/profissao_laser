@@ -9,13 +9,15 @@ import {
 	RefreshCw,
 	Search,
 	TrendingUp,
+	Undo2,
 	Users,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { formatCurrency } from '@/utils/format-currency';
 import { formatDate } from '@/utils/formatDate';
 import { useSalesAnalytics, useSalesSummary } from '../hooks/use-analytics';
-import type { SalesAnalyticsParams } from '../types/analytics';
+import type { SalesAnalyticsParams, SalesRow } from '../types/analytics';
+import { RefundSubscriptionModal } from './refund-subscription-modal';
 
 type DatePreset = '7d' | '30d' | '90d' | 'custom';
 type StatusFilter =
@@ -102,6 +104,7 @@ export function SubscriptionsSection() {
 	const [search, setSearch] = useState('');
 	const [sort, setSort] = useState<SortOption>('created_at:desc');
 	const [page, setPage] = useState(1);
+	const [refundTarget, setRefundTarget] = useState<SalesRow | null>(null);
 
 	const range = getRange(preset, customFrom, customTo);
 
@@ -372,12 +375,15 @@ export function SubscriptionsSection() {
 								<th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 dark:text-gray-500 uppercase tracking-wide whitespace-nowrap">
 									Intervalo
 								</th>
+								<th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 dark:text-gray-500 uppercase tracking-wide">
+									Ações
+								</th>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-slate-100 dark:divide-white/5">
 							{(listLoading || isFetching) && !analytics?.data.length && (
 								<tr>
-									<td colSpan={7} className="text-center py-16">
+									<td colSpan={8} className="text-center py-16">
 										<div className="flex justify-center">
 											<div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
 										</div>
@@ -387,7 +393,7 @@ export function SubscriptionsSection() {
 							{!listLoading && analytics?.data.length === 0 && (
 								<tr>
 									<td
-										colSpan={7}
+										colSpan={8}
 										className="text-center py-16 text-slate-500 dark:text-gray-500"
 									>
 										Nenhuma assinatura encontrada
@@ -455,6 +461,22 @@ export function SubscriptionsSection() {
 												)}
 											</span>
 										</td>
+										<td className="px-4 py-3 text-center">
+											{row.status === 'canceled' ? (
+												<span className="text-xs text-slate-400 dark:text-gray-600">
+													—
+												</span>
+											) : (
+												<button
+													type="button"
+													onClick={() => setRefundTarget(row)}
+													title="Reembolsar e cancelar"
+													className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-500 dark:text-gray-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+												>
+													<Undo2 className="w-4 h-4" />
+												</button>
+											)}
+										</td>
 									</tr>
 								);
 							})}
@@ -515,6 +537,18 @@ export function SubscriptionsSection() {
 					</div>
 				)}
 			</div>
+
+			{refundTarget && (
+				<RefundSubscriptionModal
+					subscriptionId={refundTarget.subscription_id}
+					productName={refundTarget.plan.name}
+					customerName={refundTarget.customer.name ?? '—'}
+					customerEmail={refundTarget.customer.email}
+					amountLabel={formatCents(refundTarget.sale_value_cents)}
+					isOpen={!!refundTarget}
+					onClose={() => setRefundTarget(null)}
+				/>
+			)}
 		</div>
 	);
 }

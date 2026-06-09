@@ -1,5 +1,8 @@
 import { apiCourses as api } from '@/shared/lib/api-courses';
 import {
+	type FailedPaymentsAnalytics,
+	type FailedPaymentsAnalyticsParams,
+	failedPaymentsAnalyticsSchema,
 	type InvoicesAnalytics,
 	type InvoicesAnalyticsParams,
 	type InvoicesSummary,
@@ -65,6 +68,15 @@ export async function getInvoicesSummary(
 		params,
 	});
 	return invoicesSummarySchema.parse(data);
+}
+
+export async function getFailedPaymentsAnalytics(
+	params: FailedPaymentsAnalyticsParams = {},
+): Promise<FailedPaymentsAnalytics> {
+	const { data } = await api.get('/v1/admin/analytics/invoices/failed', {
+		params,
+	});
+	return failedPaymentsAnalyticsSchema.parse(data);
 }
 
 export async function getPlanRefunds(): Promise<RefundRow[]> {
