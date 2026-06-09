@@ -57,6 +57,7 @@ import {
 	TEMPLATES,
 	type Template,
 } from './builder-model';
+import { ToolCanvas } from './canvas/tool-canvas';
 import { ToolBillingPanel } from './tool-billing-panel';
 
 /* ───────── estilos + accents ───────── */
@@ -659,6 +660,9 @@ export function ToolBuilderView() {
 	const [advancedOpen, setAdvancedOpen] = useState(false);
 	const [keyTouched, setKeyTouched] = useState(false);
 	const [search, setSearch] = useState('');
+	const [pipelineMode, setPipelineMode] = useState<'canvas' | 'steps'>(
+		'canvas',
+	);
 
 	const patch = (p: Partial<BuilderState>) =>
 		setState((s) => (s ? { ...s, ...p } : s));
@@ -1096,51 +1100,79 @@ export function ToolBuilderView() {
 								<Section
 									step="03"
 									title="O que a ferramenta faz"
-									subtitle="As etapas, em ordem. Ligue a saída de uma na entrada da outra."
+									subtitle="Ligue a saída de uma etapa na entrada da outra."
 									icon={<Workflow className="h-4 w-4" />}
 									accent="cyan"
 									delay={120}
 								>
-									<div className="space-y-2">
-										{state.nodes.map((n, i) => (
-											<StepCard
-												key={n.id}
-												node={n}
-												index={i}
-												total={state.nodes.length}
-												state={state}
-												onParam={(param, v) =>
-													patch({
-														nodes: state.nodes.map((x) =>
-															x.id === n.id
-																? { ...x, params: { ...x.params, [param]: v } }
-																: x,
-														),
-													})
-												}
-												onMove={(dir) => moveNode(i, dir)}
-												onRemove={() =>
-													patch({
-														nodes: state.nodes.filter((x) => x.id !== n.id),
-													})
-												}
-											/>
-										))}
-									</div>
-									<div className="mt-3 flex flex-wrap items-center gap-1.5">
-										<span className="text-[11px] text-slate-500">+ etapa:</span>
-										{BLOCK_CATALOG.map((b) => (
+									<div className="mb-3 inline-flex rounded-lg border border-white/10 bg-black/20 p-0.5">
+										{(['canvas', 'steps'] as const).map((m) => (
 											<button
-												key={b.id}
+												key={m}
 												type="button"
-												onClick={() => addNode(b.id)}
-												className={`flex items-center gap-1 rounded-md border border-white/10 bg-black/20 px-2 py-1 text-[11px] text-slate-300 ${ac(b.accent).nodeHover} hover:text-white`}
+												onClick={() => setPipelineMode(m)}
+												className={`rounded-md px-3 py-1 text-xs font-semibold transition-colors ${
+													pipelineMode === m
+														? 'bg-cyan-500/15 text-cyan-300'
+														: 'text-slate-400 hover:text-slate-200'
+												}`}
 											>
-												<Glyph name={b.icon} className="h-3.5 w-3.5" />{' '}
-												{b.label}
+												{m === 'canvas' ? 'Canvas' : 'Etapas'}
 											</button>
 										))}
 									</div>
+
+									{pipelineMode === 'canvas' ? (
+										<ToolCanvas state={state} onChange={(s) => setState(s)} />
+									) : (
+										<>
+											<div className="space-y-2">
+												{state.nodes.map((n, i) => (
+													<StepCard
+														key={n.id}
+														node={n}
+														index={i}
+														total={state.nodes.length}
+														state={state}
+														onParam={(param, v) =>
+															patch({
+																nodes: state.nodes.map((x) =>
+																	x.id === n.id
+																		? {
+																				...x,
+																				params: { ...x.params, [param]: v },
+																			}
+																		: x,
+																),
+															})
+														}
+														onMove={(dir) => moveNode(i, dir)}
+														onRemove={() =>
+															patch({
+																nodes: state.nodes.filter((x) => x.id !== n.id),
+															})
+														}
+													/>
+												))}
+											</div>
+											<div className="mt-3 flex flex-wrap items-center gap-1.5">
+												<span className="text-[11px] text-slate-500">
+													+ etapa:
+												</span>
+												{BLOCK_CATALOG.map((b) => (
+													<button
+														key={b.id}
+														type="button"
+														onClick={() => addNode(b.id)}
+														className={`flex items-center gap-1 rounded-md border border-white/10 bg-black/20 px-2 py-1 text-[11px] text-slate-300 ${ac(b.accent).nodeHover} hover:text-white`}
+													>
+														<Glyph name={b.icon} className="h-3.5 w-3.5" />{' '}
+														{b.label}
+													</button>
+												))}
+											</div>
+										</>
+									)}
 								</Section>
 
 								{/* saída */}

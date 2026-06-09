@@ -3,7 +3,7 @@ import type {
 	ToolDefinitionDoc,
 	ToolInputSpec,
 } from '@/modules/tools/services/tool-definitions.service';
-import { blockSpec, type PortType } from './block-catalog';
+import { type BlockParam, blockSpec, type PortType } from './block-catalog';
 
 /**
  * Modelo GERAL do builder: o admin monta uma tool do zero empilhando blocos e
@@ -268,11 +268,10 @@ export interface SourceOption {
 	type: PortType | 'bool' | 'enum';
 }
 
+export type PortLike = PortType | 'bool' | 'enum';
+
 /** Aceita-se uma fonte se o tipo dela "cabe" no que o parâmetro espera. */
-function typeFits(
-	src: PortType | 'bool' | 'enum',
-	want: PortType | 'bool' | 'enum',
-): boolean {
+export function typeFits(src: PortLike, want: PortLike): boolean {
 	if (src === want) return true;
 	// enum e string são intercambiáveis o suficiente p/ ligação simples.
 	if (
@@ -281,6 +280,31 @@ function typeFits(
 	)
 		return true;
 	return false;
+}
+
+/** O tipo de porta que um parâmetro de bloco espera (ref ou literal-ligável). */
+export function wantType(param: BlockParam): PortLike {
+	if (param.kind === 'ref') return param.refType ?? 'buffer';
+	if (param.valueType === 'int') return 'number';
+	return param.valueType ?? 'string';
+}
+
+/** Resolve o tipo de porta de uma fonte (`input.x` ou `node.field`). */
+export function outputSourceType(
+	state: BuilderState,
+	source: string,
+): PortLike | undefined {
+	const dot = source.indexOf('.');
+	if (dot <= 0) return undefined;
+	const head = source.slice(0, dot);
+	const field = source.slice(dot + 1);
+	if (head === 'input') {
+		const f = state.fields.find((x) => x.name === field);
+		return f ? fieldProduces(f.type) : undefined;
+	}
+	const node = state.nodes.find((n) => n.id === head);
+	const spec = node ? blockSpec(node.block) : undefined;
+	return spec?.outputs.find((o) => o.name === field)?.type;
 }
 
 export function availableSources(
