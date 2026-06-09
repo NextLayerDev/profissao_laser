@@ -41,7 +41,9 @@ function ResultPanel({
 }) {
 	const output = result.output;
 	const preview = (output.preview ?? output.primary) as string | undefined;
-	const primary = output[downloadKey] as string | undefined;
+	// Se downloadFrom apontar uma chave ausente no output, cai em `primary`
+	// (em vez de simplesmente sumir com o botão de baixar).
+	const primary = (output[downloadKey] ?? output.primary) as string | undefined;
 	const meta = output.meta as Record<string, unknown> | undefined;
 
 	return (
