@@ -28,6 +28,10 @@ export const TOOL_COLORS = {
 		gradient: 'from-green-500 to-green-700',
 		iconBg: 'bg-green-500/15 text-green-600 dark:text-green-400',
 	},
+	gravacao: {
+		gradient: 'from-red-500 to-red-700',
+		iconBg: 'bg-red-500/15 text-red-600 dark:text-red-400',
+	},
 	previas: {
 		gradient: 'from-pink-500 to-pink-700',
 		iconBg: 'bg-pink-500/15 text-pink-600 dark:text-pink-400',
