@@ -7,17 +7,22 @@ import {
 	ChevronDown,
 	Code2,
 	Eye,
-	Infinity as InfinityIcon,
+	Link2,
 	Loader2,
 	Plus,
 	Rocket,
 	Save,
+	Search,
 	Sparkles,
+	Trash2,
+	Unlink,
 	Workflow,
 } from 'lucide-react';
 import { type ReactNode, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { usePlans } from '@/modules/plans/hooks/use-plans';
 import { DynamicToolView } from '@/modules/tools/components/dynamic-tool-view';
+import { useTools } from '@/modules/tools/hooks/use-tools';
 import { resolveToolIcon, TOOL_ICONS } from '@/modules/tools/lib/tool-icons';
 import {
 	type AiToolDefinition,
@@ -28,50 +33,51 @@ import {
 	toolDefinitionDocSchema,
 	updateToolDefinition,
 } from '@/modules/tools/services/tool-definitions.service';
+import type { Tool } from '@/modules/tools/types/tools';
 import { getApiErrorMessage } from '@/shared/lib/api-error';
 import {
-	BLOCK_META,
-	BUILDER_PLANS,
+	BLOCK_CATALOG,
+	type BlockParam,
+	blockSpec,
+	type PortType,
+} from './block-catalog';
+import {
+	allNodeOutputs,
+	availableSources,
 	type BuilderField,
+	type BuilderNode,
 	type BuilderState,
-	buildDocFromState,
-	detectRecipeId,
+	buildDoc,
 	docToState,
-	getRecipe,
-	RECIPES,
-	type Recipe,
+	type FieldType,
+	newField,
+	newNode,
+	type ParamValue,
 	slugifyKey,
-} from './recipes';
+	TEMPLATES,
+	type Template,
+} from './builder-model';
+import { ToolBillingPanel } from './tool-billing-panel';
 
-/* ───────────────────────── estilos do "forge" ───────────────────────── */
+/* ───────── estilos + accents ───────── */
 
 function ForgeStyles() {
 	return (
 		<style>{`
-			.forge-grid{
-				background-image:
-					linear-gradient(to right, rgba(16,185,129,.06) 1px, transparent 1px),
-					linear-gradient(to bottom, rgba(16,185,129,.06) 1px, transparent 1px);
-				background-size: 28px 28px;
-			}
+			.forge-grid{background-image:linear-gradient(to right,rgba(16,185,129,.06) 1px,transparent 1px),linear-gradient(to bottom,rgba(16,185,129,.06) 1px,transparent 1px);background-size:28px 28px}
 			@keyframes forgeRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 			.forge-rise{animation:forgeRise .45s cubic-bezier(.22,1,.36,1) both}
 			@keyframes forgeFlow{to{background-position:18px 0}}
-			.forge-wire{
-				background-image:repeating-linear-gradient(90deg,rgba(45,212,191,.9) 0 7px,transparent 7px 14px);
-				background-size:18px 2px;background-repeat:no-repeat;background-position:0 50%;
-				animation:forgeFlow .7s linear infinite;
-			}
+			.forge-wire{background-image:repeating-linear-gradient(90deg,rgba(45,212,191,.9) 0 7px,transparent 7px 14px);background-size:18px 2px;background-repeat:no-repeat;background-position:0 50%;animation:forgeFlow .7s linear infinite}
 			@keyframes forgePulse{0%,100%{opacity:.35}50%{opacity:1}}
 			.forge-pulse{animation:forgePulse 2.4s ease-in-out infinite}
-			.forge-node{transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease}
+			.forge-node{transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
 			.forge-node:hover{transform:translateY(-2px)}
 		`}</style>
 	);
 }
 
-/* Classes LITERAIS por accent (Tailwind não enxerga classe interpolada). */
-interface AccentClasses {
+interface AC {
 	bar: string;
 	chip: string;
 	cardHover: string;
@@ -80,7 +86,7 @@ interface AccentClasses {
 	ico: string;
 	text: string;
 }
-const ACCENTS: Record<string, AccentClasses> = {
+const ACCENTS: Record<string, AC> = {
 	emerald: {
 		bar: 'bg-emerald-400/70',
 		chip: 'bg-emerald-500/15 text-emerald-300 ring-emerald-400/20',
@@ -145,25 +151,27 @@ const ACCENTS: Record<string, AccentClasses> = {
 		text: 'text-slate-300',
 	},
 };
-const accentOf = (a?: string): AccentClasses =>
-	ACCENTS[a ?? ''] ?? ACCENTS.emerald;
+const ac = (a?: string): AC => ACCENTS[a ?? ''] ?? ACCENTS.emerald;
 
-/** Renderiza um ícone da Fábrica pelo nome (evita chamar componente como função). */
 function Glyph({ name, className }: { name?: string; className?: string }) {
 	const Icon = resolveToolIcon(name);
 	return <Icon className={className} />;
 }
 
-/* ───────────────────────── primitivos de UI ───────────────────────── */
+const fieldCls =
+	'w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40';
+const smallSelect =
+	'rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500/40';
 
-function SectionCard({
+/* ───────── section ───────── */
+
+function Section({
 	step,
 	title,
 	subtitle,
 	icon,
 	accent = 'emerald',
 	delay = 0,
-	right,
 	children,
 }: {
 	step: string;
@@ -172,19 +180,18 @@ function SectionCard({
 	icon: ReactNode;
 	accent?: string;
 	delay?: number;
-	right?: ReactNode;
 	children: ReactNode;
 }) {
-	const ac = accentOf(accent);
+	const a = ac(accent);
 	return (
 		<section
-			className="forge-rise relative rounded-2xl border border-white/10 bg-[#0c0f12]/80 backdrop-blur-sm overflow-hidden"
+			className="forge-rise relative overflow-hidden rounded-2xl border border-white/10 bg-[#0c0f12]/80 backdrop-blur-sm"
 			style={{ animationDelay: `${delay}ms` }}
 		>
-			<div className={`absolute left-0 top-0 bottom-0 w-1 ${ac.bar}`} />
-			<header className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-white/5">
+			<div className={`absolute bottom-0 left-0 top-0 w-1 ${a.bar}`} />
+			<header className="flex items-center gap-3 border-b border-white/5 px-5 pb-3 pt-4">
 				<div
-					className={`flex h-9 w-9 items-center justify-center rounded-lg ring-1 ${ac.chip}`}
+					className={`flex h-9 w-9 items-center justify-center rounded-lg ring-1 ${a.chip}`}
 				>
 					{icon}
 				</div>
@@ -193,87 +200,285 @@ function SectionCard({
 						<span className="font-mono text-[10px] tracking-widest text-emerald-400/70">
 							{step}
 						</span>
-						<h2 className="text-sm font-semibold text-white truncate">
+						<h2 className="truncate text-sm font-semibold text-white">
 							{title}
 						</h2>
 					</div>
 					{subtitle && (
-						<p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>
+						<p className="mt-0.5 text-xs text-slate-400">{subtitle}</p>
 					)}
 				</div>
-				{right}
 			</header>
 			<div className="p-5">{children}</div>
 		</section>
 	);
 }
 
-const inputBase =
-	'w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40';
+/* ───────── literal control ───────── */
 
-/* ───────────────────────── galeria de capacidades ───────────────────────── */
-
-function CapabilityGallery({ onPick }: { onPick: (r: Recipe) => void }) {
+function LiteralControl({
+	param,
+	value,
+	onChange,
+}: {
+	param: BlockParam;
+	value: unknown;
+	onChange: (v: unknown) => void;
+}) {
+	if (param.valueType === 'bool') {
+		return (
+			<button
+				type="button"
+				onClick={() => onChange(!value)}
+				className={`rounded-md px-2.5 py-1.5 text-xs font-semibold ${value ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/5 text-slate-400'}`}
+			>
+				{value ? 'sim' : 'não'}
+			</button>
+		);
+	}
+	if (param.options) {
+		return (
+			<select
+				value={String(value ?? '')}
+				onChange={(e) => {
+					const numeric = param.options?.every((o) => typeof o === 'number');
+					onChange(numeric ? Number(e.target.value) : e.target.value);
+				}}
+				className={smallSelect}
+			>
+				{param.options.map((o) => (
+					<option key={String(o)} value={String(o)}>
+						{String(o)}
+					</option>
+				))}
+			</select>
+		);
+	}
+	if (param.valueType === 'number' || param.valueType === 'int') {
+		return (
+			<input
+				type="number"
+				value={value === undefined || value === null ? '' : Number(value)}
+				min={param.min}
+				max={param.max}
+				step={param.step}
+				onChange={(e) =>
+					onChange(e.target.value === '' ? undefined : Number(e.target.value))
+				}
+				className={`w-24 ${smallSelect}`}
+			/>
+		);
+	}
 	return (
-		<div className="space-y-4">
-			<div className="flex items-center gap-2 text-emerald-300">
-				<Sparkles className="h-4 w-4" />
-				<span className="font-mono text-[11px] tracking-widest uppercase">
-					Escolha o que a ferramenta faz
-				</span>
-			</div>
-			<div className="grid sm:grid-cols-2 gap-4">
-				{RECIPES.map((r, i) => {
-					const Icon = resolveToolIcon(r.icon);
-					const ac = accentOf(r.accent);
-					return (
+		<input
+			value={String(value ?? '')}
+			onChange={(e) => onChange(e.target.value)}
+			className={`w-40 ${smallSelect}`}
+		/>
+	);
+}
+
+function wantType(param: BlockParam): PortType | 'bool' | 'enum' {
+	if (param.kind === 'ref') return param.refType ?? 'buffer';
+	if (param.valueType === 'int') return 'number';
+	return param.valueType ?? 'string';
+}
+
+/* ───────── param row (literal | ref) ───────── */
+
+function ParamRow({
+	param,
+	value,
+	state,
+	nodeIndex,
+	onChange,
+}: {
+	param: BlockParam;
+	value: ParamValue;
+	state: BuilderState;
+	nodeIndex: number;
+	onChange: (v: ParamValue) => void;
+}) {
+	const sources = availableSources(state, nodeIndex, wantType(param));
+	const isRef = value.mode === 'ref';
+	const canLiteral = param.kind === 'literal';
+
+	return (
+		<div className="flex flex-wrap items-center gap-2 py-1">
+			<span className="w-28 shrink-0 text-xs font-medium text-slate-300">
+				{param.label}
+			</span>
+			{isRef ? (
+				<>
+					<select
+						value={value.mode === 'ref' ? value.source : ''}
+						onChange={(e) =>
+							onChange({
+								mode: 'ref',
+								source: e.target.value,
+								negate: value.mode === 'ref' ? value.negate : undefined,
+							})
+						}
+						className={`min-w-[10rem] flex-1 ${smallSelect} ${value.source ? 'text-cyan-200' : 'text-slate-500'}`}
+					>
+						<option value="">— escolha a fonte —</option>
+						{sources.map((s) => (
+							<option key={s.value} value={s.value}>
+								{s.label}
+							</option>
+						))}
+					</select>
+					{param.valueType === 'bool' && (
+						<label className="flex items-center gap-1 text-[11px] text-slate-400">
+							<input
+								type="checkbox"
+								checked={value.mode === 'ref' ? !!value.negate : false}
+								onChange={(e) =>
+									onChange({
+										mode: 'ref',
+										source: value.mode === 'ref' ? value.source : '',
+										negate: e.target.checked,
+									})
+								}
+								className="accent-emerald-500"
+							/>
+							negar
+						</label>
+					)}
+					{canLiteral && (
 						<button
-							key={r.id}
 							type="button"
-							onClick={() => onPick(r)}
-							style={{ animationDelay: `${i * 60}ms` }}
-							className={`forge-rise forge-node group text-left rounded-2xl border border-white/10 bg-[#0c0f12]/80 p-5 hover:shadow-[0_0_40px_-12px] ${ac.cardHover}`}
+							onClick={() =>
+								onChange({ mode: 'literal', value: param.default })
+							}
+							title="Usar valor fixo"
+							className="text-slate-500 hover:text-slate-300"
 						>
-							<div
-								className={`mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl ring-1 ${ac.chip}`}
-							>
-								<Icon className="h-6 w-6" />
-							</div>
-							<h3 className="text-base font-semibold text-white">{r.name}</h3>
-							<p className="mt-1 text-sm text-slate-400">{r.tagline}</p>
-							<span
-								className={`mt-3 inline-flex items-center gap-1 text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity ${ac.text}`}
-							>
-								Começar <ArrowRight className="h-3.5 w-3.5" />
-							</span>
+							<Unlink className="h-3.5 w-3.5" />
 						</button>
-					);
-				})}
+					)}
+				</>
+			) : (
+				<>
+					<LiteralControl
+						param={param}
+						value={value.mode === 'literal' ? value.value : undefined}
+						onChange={(v) => onChange({ mode: 'literal', value: v })}
+					/>
+					<button
+						type="button"
+						onClick={() => onChange({ mode: 'ref', source: '' })}
+						title="Ligar a um campo / etapa"
+						className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-cyan-300"
+					>
+						<Link2 className="h-3.5 w-3.5" /> ligar
+					</button>
+				</>
+			)}
+		</div>
+	);
+}
+
+/* ───────── step card ───────── */
+
+function StepCard({
+	node,
+	index,
+	total,
+	state,
+	onParam,
+	onMove,
+	onRemove,
+}: {
+	node: BuilderNode;
+	index: number;
+	total: number;
+	state: BuilderState;
+	onParam: (param: string, v: ParamValue) => void;
+	onMove: (dir: -1 | 1) => void;
+	onRemove: () => void;
+}) {
+	const spec = blockSpec(node.block);
+	const a = ac(spec?.accent);
+	return (
+		<div
+			className={`rounded-xl border border-white/10 bg-black/20 p-3 ${a.nodeHover}`}
+		>
+			<div className="mb-2 flex items-center gap-2">
+				<span
+					className={`flex h-6 w-6 items-center justify-center rounded-md font-mono text-[10px] ring-1 ${a.badge}`}
+				>
+					{index + 1}
+				</span>
+				<div
+					className={`flex h-7 w-7 items-center justify-center rounded-md ${a.ico}`}
+				>
+					<Glyph name={spec?.icon} className="h-4 w-4" />
+				</div>
+				<div className="min-w-0 flex-1">
+					<p className="truncate text-sm font-semibold text-white">
+						{spec?.label ?? node.block}
+					</p>
+					<p className="font-mono text-[10px] text-slate-500">{node.id}</p>
+				</div>
+				<button
+					type="button"
+					disabled={index === 0}
+					onClick={() => onMove(-1)}
+					className="rounded p-1 text-slate-500 hover:text-slate-200 disabled:opacity-20"
+				>
+					↑
+				</button>
+				<button
+					type="button"
+					disabled={index === total - 1}
+					onClick={() => onMove(1)}
+					className="rounded p-1 text-slate-500 hover:text-slate-200 disabled:opacity-20"
+				>
+					↓
+				</button>
+				<button
+					type="button"
+					onClick={onRemove}
+					className="rounded p-1 text-slate-500 hover:text-rose-400"
+				>
+					<Trash2 className="h-3.5 w-3.5" />
+				</button>
+			</div>
+			<div className="space-y-0.5 border-t border-white/5 pt-2">
+				{(spec?.params ?? []).map((p) => (
+					<ParamRow
+						key={p.name}
+						param={p}
+						value={node.params[p.name] ?? { mode: 'literal', value: p.default }}
+						state={state}
+						nodeIndex={index}
+						onChange={(v) => onParam(p.name, v)}
+					/>
+				))}
 			</div>
 		</div>
 	);
 }
 
-/* ───────────────────────── editor de um campo ───────────────────────── */
+/* ───────── field editor ───────── */
 
-function FieldEditor({
+function FieldRow({
 	field,
 	onChange,
+	onRemove,
 }: {
 	field: BuilderField;
 	onChange: (f: BuilderField) => void;
+	onRemove: () => void;
 }) {
-	const Icon = resolveToolIcon(
-		field.type === 'image'
-			? 'image'
-			: field.widget === 'toggle'
-				? 'zap'
-				: 'box',
-	);
 	return (
 		<div className="rounded-xl border border-white/10 bg-black/20 p-3">
 			<div className="flex items-center gap-2">
-				<Icon className="h-4 w-4 text-slate-400 shrink-0" />
+				<Glyph
+					name={field.type === 'image' ? 'image' : 'box'}
+					className="h-4 w-4 shrink-0 text-slate-400"
+				/>
 				<input
 					value={field.label}
 					onChange={(e) => onChange({ ...field, label: e.target.value })}
@@ -286,21 +491,19 @@ function FieldEditor({
 					<button
 						type="button"
 						onClick={() => onChange({ ...field, visible: !field.visible })}
-						title={
-							field.visible ? 'Visível no formulário' : 'Oculto (usa o padrão)'
-						}
-						className={`text-[10px] font-semibold px-2 py-1 rounded-md transition-colors ${
-							field.visible
-								? 'bg-emerald-500/15 text-emerald-300'
-								: 'bg-white/5 text-slate-500'
-						}`}
+						className={`rounded-md px-2 py-1 text-[10px] font-semibold ${field.visible ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/5 text-slate-500'}`}
 					>
 						{field.visible ? 'visível' : 'oculto'}
 					</button>
 				)}
+				<button
+					type="button"
+					onClick={onRemove}
+					className="rounded p-1 text-slate-500 hover:text-rose-400"
+				>
+					<Trash2 className="h-3.5 w-3.5" />
+				</button>
 			</div>
-
-			{/* config por tipo */}
 			<div className="mt-2 flex flex-wrap items-center gap-2 pl-6">
 				{(field.type === 'number' || field.type === 'int') && (
 					<>
@@ -334,21 +537,29 @@ function FieldEditor({
 						ligado por padrão
 					</label>
 				)}
-				{field.type === 'enum' && field.options && (
-					<select
+				{field.type === 'enum' && (
+					<input
+						value={(field.options ?? []).join(', ')}
+						onChange={(e) =>
+							onChange({
+								...field,
+								options: e.target.value
+									.split(',')
+									.map((s) => s.trim())
+									.filter(Boolean),
+							})
+						}
+						placeholder="opções, separadas por vírgula"
+						className={`flex-1 ${smallSelect}`}
+					/>
+				)}
+				{field.type === 'string' && (
+					<input
 						value={String(field.default ?? '')}
 						onChange={(e) => onChange({ ...field, default: e.target.value })}
-						className="rounded-md border border-white/10 bg-black/30 px-2 py-1 text-xs text-slate-200"
-					>
-						{field.options.map((o) => (
-							<option key={String(o)} value={String(o)}>
-								{String(o)}
-							</option>
-						))}
-					</select>
-				)}
-				{field.hint && (
-					<span className="text-[11px] text-slate-500">{field.hint}</span>
+						placeholder="valor padrão"
+						className={`flex-1 ${smallSelect}`}
+					/>
 				)}
 			</div>
 		</div>
@@ -361,7 +572,7 @@ function MiniNum({
 	onChange,
 }: {
 	label: string;
-	value: number | undefined;
+	value?: number;
 	onChange: (v: number) => void;
 }) {
 	return (
@@ -377,174 +588,172 @@ function MiniNum({
 	);
 }
 
-/* ───────────────────────── diagrama do fluxo ───────────────────────── */
+/* ───────── template gallery ───────── */
 
-function FlowDiagram({ doc }: { doc: ToolDefinitionDoc | null }) {
-	const nodes = (doc?.pipeline ?? []) as { id: string; block: string }[];
-	if (!nodes.length) {
-		return <p className="text-sm text-slate-500">O fluxo aparece aqui.</p>;
-	}
+function Gallery({ onPick }: { onPick: (t: Template) => void }) {
 	return (
-		<div className="flex items-stretch gap-0 overflow-x-auto pb-2">
-			{nodes.map((n, i) => {
-				const meta = BLOCK_META[n.block] ?? {
-					label: n.block,
-					sub: '',
-					icon: 'box',
-					accent: 'slate',
-				};
-				const Icon = resolveToolIcon(meta.icon);
-				const ac = accentOf(meta.accent);
-				return (
-					<div key={n.id} className="flex items-center shrink-0">
-						<div
-							className={`forge-node relative w-44 rounded-xl border border-white/10 bg-[#0a0d10] p-3 ${ac.nodeHover}`}
-						>
-							<div
-								className={`absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-mono ring-1 ${ac.badge}`}
-							>
-								{i + 1}
-							</div>
-							<div
-								className={`mb-2 inline-flex h-8 w-8 items-center justify-center rounded-lg ${ac.ico}`}
-							>
-								<Icon className="h-4 w-4" />
-							</div>
-							<p className="text-xs font-semibold text-white leading-tight">
-								{meta.label}
-							</p>
-							<p className="text-[11px] text-slate-500 leading-tight">
-								{meta.sub}
-							</p>
-						</div>
-						{i < nodes.length - 1 && (
-							<div className="relative h-0.5 w-7 forge-wire mx-0.5" />
-						)}
-					</div>
-				);
-			})}
-		</div>
-	);
-}
-
-/* ───────────────────────── cobrança por plano ───────────────────────── */
-
-function PlanQuota({
-	planKey,
-	label,
-	value,
-	onChange,
-}: {
-	planKey: string;
-	label: string;
-	value: number | null;
-	onChange: (v: number | null) => void;
-}) {
-	const unlimited = value === null;
-	return (
-		<div className="rounded-xl border border-white/10 bg-black/20 p-3">
-			<div className="flex items-center justify-between">
-				<span className="text-sm font-medium text-slate-200">{label}</span>
-				<button
-					type="button"
-					onClick={() => onChange(unlimited ? 0 : null)}
-					className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-md transition-colors ${
-						unlimited
-							? 'bg-cyan-500/15 text-cyan-300'
-							: 'bg-white/5 text-slate-500'
-					}`}
-				>
-					<InfinityIcon className="h-3 w-3" /> ilimitado
-				</button>
-			</div>
-			<div className="mt-2 flex items-center gap-2">
-				<input
-					type="number"
-					min={0}
-					disabled={unlimited}
-					value={unlimited ? '' : (value ?? 0)}
-					onChange={(e) => onChange(Math.max(0, Number(e.target.value)))}
-					placeholder={unlimited ? '∞' : '0'}
-					className="w-20 rounded-md border border-white/10 bg-black/30 px-2 py-1 text-sm text-slate-100 disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
-				/>
-				<span className="text-xs text-slate-500" data-plan={planKey}>
-					grátis / mês
+		<div className="space-y-4">
+			<div className="flex items-center gap-2 text-emerald-300">
+				<Sparkles className="h-4 w-4" />
+				<span className="font-mono text-[11px] uppercase tracking-widest">
+					Comece do zero ou de um modelo
 				</span>
 			</div>
+			<div className="grid gap-4 sm:grid-cols-3">
+				{TEMPLATES.map((t, i) => {
+					const a = ac(t.accent);
+					return (
+						<button
+							key={t.id}
+							type="button"
+							onClick={() => onPick(t)}
+							style={{ animationDelay: `${i * 60}ms` }}
+							className={`forge-rise forge-node group rounded-2xl border border-white/10 bg-[#0c0f12]/80 p-5 text-left hover:shadow-[0_0_40px_-12px] ${a.cardHover}`}
+						>
+							<div
+								className={`mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl ring-1 ${a.chip}`}
+							>
+								<Glyph name={t.icon} className="h-6 w-6" />
+							</div>
+							<h3 className="text-base font-semibold text-white">{t.name}</h3>
+							<p className="mt-1 text-sm text-slate-400">{t.tagline}</p>
+							<span
+								className={`mt-3 inline-flex items-center gap-1 text-xs font-medium opacity-0 transition-opacity group-hover:opacity-100 ${a.text}`}
+							>
+								Abrir <ArrowRight className="h-3.5 w-3.5" />
+							</span>
+						</button>
+					);
+				})}
+			</div>
 		</div>
 	);
 }
 
-/* ───────────────────────── view principal ───────────────────────── */
+/* ───────── main view ───────── */
 
-type Mode = 'visual' | 'json';
+const FIELD_TYPES: { type: FieldType; label: string }[] = [
+	{ type: 'number', label: 'Número' },
+	{ type: 'bool', label: 'Sim / Não' },
+	{ type: 'enum', label: 'Opções' },
+	{ type: 'string', label: 'Texto' },
+	{ type: 'image', label: 'Imagem' },
+];
 
 export function ToolBuilderView() {
 	const qc = useQueryClient();
-	const list = useQuery({
+	const tools = useTools();
+	const defs = useQuery({
 		queryKey: ['tool-definitions'],
 		queryFn: listToolDefinitions,
 	});
+	const plans = usePlans();
 
-	const [view, setView] = useState<'gallery' | 'editor'>('gallery');
-	const [selectedId, setSelectedId] = useState<string | null>(null);
+	const [view, setView] = useState<'gallery' | 'editor' | 'billing'>('gallery');
 	const [state, setState] = useState<BuilderState | null>(null);
-	const [mode, setMode] = useState<Mode>('visual');
+	const [billingTool, setBillingTool] = useState<Tool | null>(null);
+	const [selectedKey, setSelectedKey] = useState<string | null>(null);
+	const [selectedDefId, setSelectedDefId] = useState<string | null>(null);
+	const [mode, setMode] = useState<'visual' | 'json'>('visual');
 	const [json, setJson] = useState('');
-	const [jsonError, setJsonError] = useState<string | null>(null);
 	const [advancedOpen, setAdvancedOpen] = useState(false);
 	const [keyTouched, setKeyTouched] = useState(false);
+	const [search, setSearch] = useState('');
 
 	const patch = (p: Partial<BuilderState>) =>
 		setState((s) => (s ? { ...s, ...p } : s));
 
-	const startNew = (recipe: Recipe) => {
-		setState(recipe.seed());
-		setSelectedId(null);
+	/* lista unificada */
+	const items = useMemo(() => {
+		const defByKey = new Map((defs.data ?? []).map((d) => [d.tool_key, d]));
+		const seen = new Set<string>();
+		const list: {
+			key: string;
+			name: string;
+			icon?: string;
+			kind: 'fabrica' | 'codigo';
+			enabled?: boolean;
+			status?: string;
+			def?: AiToolDefinition;
+			tool?: Tool;
+		}[] = [];
+		for (const t of tools.data ?? []) {
+			const def = defByKey.get(t.key);
+			seen.add(t.key);
+			list.push({
+				key: t.key,
+				name: def?.title ?? t.name,
+				icon: (def?.definition.ui as { icon?: string } | undefined)?.icon,
+				kind: def ? 'fabrica' : 'codigo',
+				enabled: t.enabled,
+				status: def?.status,
+				def,
+				tool: t,
+			});
+		}
+		for (const d of defs.data ?? []) {
+			if (seen.has(d.tool_key)) continue;
+			list.push({
+				key: d.tool_key,
+				name: d.title,
+				icon: (d.definition.ui as { icon?: string } | undefined)?.icon,
+				kind: 'fabrica',
+				status: d.status,
+				def: d,
+			});
+		}
+		const q = search.trim().toLowerCase();
+		return list
+			.filter(
+				(i) => !q || i.name.toLowerCase().includes(q) || i.key.includes(q),
+			)
+			.sort((a2, b) => a2.name.localeCompare(b.name));
+	}, [tools.data, defs.data, search]);
+
+	const startNew = (t: Template) => {
+		setState(t.seed());
+		setSelectedKey(null);
+		setSelectedDefId(null);
 		setMode('visual');
 		setJson('');
-		setJsonError(null);
 		setKeyTouched(false);
 		setAdvancedOpen(false);
+		setBillingTool(null);
 		setView('editor');
 	};
 
-	const loadDef = (def: AiToolDefinition) => {
-		const recipeId = detectRecipeId(def.definition);
-		setSelectedId(def.id);
+	const loadFabrica = (def: AiToolDefinition) => {
+		const st = docToState(def);
+		const unknown = st.nodes.some((n) => !blockSpec(n.block));
+		setState(st);
+		setSelectedKey(def.tool_key);
+		setSelectedDefId(def.id);
+		setBillingTool(null);
 		setKeyTouched(true);
-		setAdvancedOpen(false);
-		if (recipeId) {
-			setState(docToState(def, recipeId));
-			setMode('visual');
-			setJson('');
-		} else {
-			// Ferramenta avançada: edita direto no JSON (identidade fica em campos).
-			const seed = RECIPES[0].seed();
-			setState({
-				...seed,
-				recipeId: 'advanced',
-				toolKey: def.tool_key,
-				title: def.title,
-				description: def.description ?? '',
-				icon:
-					(def.definition.ui as { icon?: string } | undefined)?.icon ??
-					'wrench',
-			});
+		setAdvancedOpen(unknown);
+		if (unknown) {
 			setMode('json');
 			setJson(JSON.stringify(def.definition, null, 2));
+		} else {
+			setMode('visual');
+			setJson('');
 		}
-		setJsonError(null);
 		setView('editor');
 	};
 
-	// Documento derivado (preview + save). Visual → buildDoc; JSON → parse.
+	const loadBilling = (tool: Tool) => {
+		setBillingTool(tool);
+		setState(null);
+		setSelectedKey(tool.key);
+		setSelectedDefId(null);
+		setView('billing');
+	};
+
 	const derivedDoc = useMemo<ToolDefinitionDoc | null>(() => {
 		try {
-			if (mode === 'json') {
+			if (mode === 'json')
 				return toolDefinitionDocSchema.parse(JSON.parse(json));
-			}
-			if (state) return buildDocFromState(state);
+			if (state) return buildDoc(state);
 		} catch {
 			return null;
 		}
@@ -554,7 +763,7 @@ export function ToolBuilderView() {
 	const previewDef: AiToolDefinition | null =
 		derivedDoc && state
 			? {
-					id: selectedId ?? 'draft',
+					id: selectedDefId ?? 'draft',
 					tool_key: state.toolKey || 'preview',
 					version: 0,
 					status: 'draft',
@@ -567,13 +776,13 @@ export function ToolBuilderView() {
 
 	const saveMut = useMutation({
 		mutationFn: async () => {
-			if (!state) throw new Error('Sem estado');
+			if (!state) throw new Error('sem estado');
 			const definition =
 				mode === 'json'
 					? toolDefinitionDocSchema.parse(JSON.parse(json))
-					: buildDocFromState(state);
-			if (selectedId) {
-				return updateToolDefinition(selectedId, {
+					: buildDoc(state);
+			if (selectedDefId) {
+				return updateToolDefinition(selectedDefId, {
 					title: state.title,
 					description: state.description || null,
 					definition,
@@ -589,50 +798,58 @@ export function ToolBuilderView() {
 		onSuccess: (def) => {
 			toast.success('Ferramenta salva.');
 			qc.invalidateQueries({ queryKey: ['tool-definitions'] });
-			loadDef(def);
+			loadFabrica(def);
 		},
-		onError: (err) => {
-			if (mode === 'json') setJsonError('JSON inválido ou incompleto.');
-			toast.error(getApiErrorMessage(err, 'Falha ao salvar.'));
-		},
+		onError: (err) => toast.error(getApiErrorMessage(err, 'Falha ao salvar.')),
 	});
 
 	const publishMut = useMutation({
 		mutationFn: () => {
-			if (!selectedId) throw new Error('Salve antes de publicar.');
-			return publishToolDefinition(selectedId);
+			if (!selectedDefId) throw new Error('salve antes');
+			return publishToolDefinition(selectedDefId);
 		},
 		onSuccess: (res) => {
 			toast.success(`Publicada: ${res.tool_key} v${res.version} 🚀`);
 			qc.invalidateQueries({ queryKey: ['tool-definitions'] });
+			qc.invalidateQueries({ queryKey: ['tools'] });
 			qc.invalidateQueries({ queryKey: ['entitlements'] });
 		},
 		onError: (err) =>
 			toast.error(getApiErrorMessage(err, 'Falha ao publicar.')),
 	});
 
-	const goAdvancedJson = () => {
-		if (state) setJson(JSON.stringify(buildDocFromState(state), null, 2));
-		setMode('json');
-		setAdvancedOpen(true);
+	const addField = (type: FieldType) => {
+		if (!state) return;
+		const idx = state.fields.length;
+		patch({ fields: [...state.fields, newField(type, idx)] });
+	};
+	const addNode = (blockId: string) => {
+		if (!state) return;
+		patch({ nodes: [...state.nodes, newNode(blockId, state.nodes)] });
+	};
+	const moveNode = (i: number, dir: -1 | 1) => {
+		if (!state) return;
+		const j = i + dir;
+		if (j < 0 || j >= state.nodes.length) return;
+		const ns = [...state.nodes];
+		[ns[i], ns[j]] = [ns[j], ns[i]];
+		patch({ nodes: ns });
 	};
 
 	const canSave = !!state?.toolKey && !!state?.title && !!derivedDoc;
-	const isVisual = mode === 'visual' && state?.recipeId !== 'advanced';
-	const recipe = state ? getRecipe(state.recipeId) : undefined;
+	const outputs = state ? allNodeOutputs(state) : [];
+	const numberOutputs = outputs.filter((o) => o.type === 'number');
 
 	return (
 		<div className="relative min-h-[calc(100vh-3.5rem)] text-slate-100">
 			<ForgeStyles />
-			{/* fundo blueprint + glows */}
 			<div className="pointer-events-none absolute inset-0 forge-grid opacity-60" />
 			<div className="pointer-events-none absolute -top-24 left-1/3 h-96 w-96 rounded-full bg-emerald-600/10 blur-3xl forge-pulse" />
 			<div className="pointer-events-none absolute bottom-0 right-10 h-80 w-80 rounded-full bg-cyan-600/10 blur-3xl forge-pulse" />
 
-			<div className="relative px-4 md:px-8 py-6">
-				{/* header */}
+			<div className="relative px-4 py-6 md:px-8">
 				<div className="forge-rise mb-6 flex items-center gap-3">
-					<div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/30 to-cyan-500/20 ring-1 ring-emerald-400/30 text-emerald-300">
+					<div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/30 to-cyan-500/20 text-emerald-300 ring-1 ring-emerald-400/30">
 						<Workflow className="h-6 w-6" />
 					</div>
 					<div>
@@ -640,95 +857,104 @@ export function ToolBuilderView() {
 							Fábrica de Ferramentas
 						</h1>
 						<p className="font-mono text-[11px] tracking-wide text-emerald-400/70">
-							motor blocks_v1 · {Object.keys(BLOCK_META).length} blocos · sem
-							deploy
+							motor blocks_v1 · {BLOCK_CATALOG.length} blocos · sem deploy
 						</p>
 					</div>
 				</div>
 
-				<div className="grid lg:grid-cols-[240px_minmax(0,1fr)_360px] gap-5">
-					{/* rail: lista de ferramentas */}
+				<div className="grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)_360px]">
+					{/* rail */}
 					<aside className="space-y-2">
 						<button
 							type="button"
 							onClick={() => {
 								setView('gallery');
 								setState(null);
-								setSelectedId(null);
+								setBillingTool(null);
+								setSelectedKey(null);
 							}}
-							className="forge-node w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-3 py-2.5 text-sm font-semibold text-[#06120f] shadow-lg shadow-emerald-500/20"
+							className="forge-node flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-3 py-2.5 text-sm font-semibold text-[#06120f] shadow-lg shadow-emerald-500/20"
 						>
 							<Plus className="h-4 w-4" /> Nova ferramenta
 						</button>
-						<div className="rounded-xl border border-white/10 bg-[#0c0f12]/80 overflow-hidden">
-							<div className="px-3 py-2 font-mono text-[10px] tracking-widest text-slate-500 uppercase border-b border-white/5">
-								Suas ferramentas
+						<div className="relative">
+							<Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+							<input
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+								placeholder="buscar…"
+								className="w-full rounded-lg border border-white/10 bg-black/30 py-2 pl-8 pr-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+							/>
+						</div>
+						<div className="overflow-hidden rounded-xl border border-white/10 bg-[#0c0f12]/80">
+							<div className="border-b border-white/5 px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-slate-500">
+								Ferramentas ({items.length})
 							</div>
-							{list.isLoading && (
-								<div className="p-4 flex justify-center">
+							{(tools.isLoading || defs.isLoading) && (
+								<div className="flex justify-center p-4">
 									<Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
 								</div>
 							)}
-							{list.data?.map((def) => {
-								const Icon = resolveToolIcon(
-									(def.definition.ui as { icon?: string } | undefined)?.icon,
-								);
-								const active = selectedId === def.id;
-								return (
+							<div className="max-h-[60vh] overflow-y-auto">
+								{items.map((it) => (
 									<button
-										key={def.id}
+										key={it.key}
 										type="button"
-										onClick={() => loadDef(def)}
-										className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left border-b border-white/5 transition-colors ${
-											active ? 'bg-emerald-500/10' : 'hover:bg-white/[0.03]'
-										}`}
+										onClick={() =>
+											it.kind === 'fabrica' && it.def
+												? loadFabrica(it.def)
+												: it.tool && loadBilling(it.tool)
+										}
+										className={`flex w-full items-center gap-2.5 border-b border-white/5 px-3 py-2.5 text-left transition-colors ${selectedKey === it.key ? 'bg-emerald-500/10' : 'hover:bg-white/[0.03]'}`}
 									>
-										<Icon className="h-4 w-4 text-slate-400 shrink-0" />
-										<span className="flex-1 min-w-0">
-											<span className="block text-sm text-slate-200 truncate">
-												{def.title}
+										<Glyph
+											name={it.icon}
+											className="h-4 w-4 shrink-0 text-slate-400"
+										/>
+										<span className="min-w-0 flex-1">
+											<span className="block truncate text-sm text-slate-200">
+												{it.name}
 											</span>
-											<span className="block font-mono text-[10px] text-slate-500 truncate">
-												{def.tool_key}
+											<span className="block truncate font-mono text-[10px] text-slate-500">
+												{it.key}
 											</span>
 										</span>
 										<span
-											className={`h-1.5 w-1.5 rounded-full ${
-												def.status === 'published'
-													? 'bg-emerald-400'
-													: 'bg-amber-400'
-											}`}
-										/>
+											className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${it.kind === 'fabrica' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-slate-500/15 text-slate-400'}`}
+										>
+											{it.kind === 'fabrica' ? 'fábrica' : 'código'}
+										</span>
 									</button>
-								);
-							})}
-							{list.data?.length === 0 && (
-								<p className="p-4 text-xs text-slate-500">
-									Nenhuma ainda. Crie a primeira →
-								</p>
-							)}
+								))}
+								{items.length === 0 && !tools.isLoading && (
+									<p className="p-4 text-xs text-slate-500">
+										Nenhuma ferramenta.
+									</p>
+								)}
+							</div>
 						</div>
 					</aside>
 
-					{/* centro: galeria ou editor */}
+					{/* centro */}
 					<main className="space-y-5">
-						{view === 'gallery' || !state ? (
-							<CapabilityGallery onPick={startNew} />
+						{view === 'billing' && billingTool ? (
+							<ToolBillingPanel tool={billingTool} />
+						) : view === 'gallery' || !state ? (
+							<Gallery onPick={startNew} />
 						) : (
 							<>
-								{/* 01 — identidade */}
-								<SectionCard
+								{/* identidade */}
+								<Section
 									step="01"
 									title="Identidade"
-									subtitle="O nome e o ícone que o cliente vê."
+									subtitle="Nome e ícone que o cliente vê."
 									icon={<Glyph name={state.icon} className="h-4 w-4" />}
-									delay={0}
 								>
-									<div className="grid sm:grid-cols-2 gap-3">
+									<div className="grid gap-3 sm:grid-cols-2">
 										<div className="sm:col-span-2">
 											<label
 												htmlFor="tb-title"
-												className="block text-[11px] font-medium text-slate-400 mb-1"
+												className="mb-1 block text-[11px] font-medium text-slate-400"
 											>
 												Nome
 											</label>
@@ -740,39 +966,39 @@ export function ToolBuilderView() {
 													patch({
 														title,
 														toolKey:
-															keyTouched || selectedId
+															keyTouched || selectedDefId
 																? state.toolKey
 																: slugifyKey(title),
 													});
 												}}
-												placeholder="Ex.: Gravação a laser"
-												className={inputBase}
+												placeholder="Ex.: Vetorizar logo"
+												className={fieldCls}
 											/>
 										</div>
 										<div>
 											<label
 												htmlFor="tb-key"
-												className="block text-[11px] font-medium text-slate-400 mb-1"
+												className="mb-1 block text-[11px] font-medium text-slate-400"
 											>
 												Identificador{' '}
-												<span className="text-slate-600">(técnico, único)</span>
+												<span className="text-slate-600">(único)</span>
 											</label>
 											<input
 												id="tb-key"
 												value={state.toolKey}
-												disabled={!!selectedId}
+												disabled={!!selectedDefId}
 												onChange={(e) => {
 													setKeyTouched(true);
 													patch({ toolKey: slugifyKey(e.target.value) });
 												}}
-												placeholder="gravacao_laser"
-												className={`${inputBase} font-mono disabled:opacity-50`}
+												placeholder="vetorizar_logo"
+												className={`${fieldCls} font-mono disabled:opacity-50`}
 											/>
 										</div>
 										<div>
 											<label
 												htmlFor="tb-action"
-												className="block text-[11px] font-medium text-slate-400 mb-1"
+												className="mb-1 block text-[11px] font-medium text-slate-400"
 											>
 												Texto do botão
 											</label>
@@ -780,14 +1006,13 @@ export function ToolBuilderView() {
 												id="tb-action"
 												value={state.actionLabel}
 												onChange={(e) => patch({ actionLabel: e.target.value })}
-												placeholder="Gerar"
-												className={inputBase}
+												className={fieldCls}
 											/>
 										</div>
 										<div className="sm:col-span-2">
 											<label
 												htmlFor="tb-desc"
-												className="block text-[11px] font-medium text-slate-400 mb-1"
+												className="mb-1 block text-[11px] font-medium text-slate-400"
 											>
 												Descrição
 											</label>
@@ -796,11 +1021,11 @@ export function ToolBuilderView() {
 												value={state.description}
 												onChange={(e) => patch({ description: e.target.value })}
 												placeholder="O que ela faz, em uma linha."
-												className={inputBase}
+												className={fieldCls}
 											/>
 										</div>
 										<div className="sm:col-span-2">
-											<span className="block text-[11px] font-medium text-slate-400 mb-1.5">
+											<span className="mb-1.5 block text-[11px] font-medium text-slate-400">
 												Ícone
 											</span>
 											<div className="flex flex-wrap gap-1.5">
@@ -809,11 +1034,7 @@ export function ToolBuilderView() {
 														key={name}
 														type="button"
 														onClick={() => patch({ icon: name })}
-														className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-colors ${
-															state.icon === name
-																? 'border-emerald-400/60 bg-emerald-500/15 text-emerald-300'
-																: 'border-white/10 bg-black/20 text-slate-400 hover:text-slate-200'
-														}`}
+														className={`flex h-9 w-9 items-center justify-center rounded-lg border ${state.icon === name ? 'border-emerald-400/60 bg-emerald-500/15 text-emerald-300' : 'border-white/10 bg-black/20 text-slate-400 hover:text-slate-200'}`}
 													>
 														<Icon className="h-4 w-4" />
 													</button>
@@ -821,111 +1042,293 @@ export function ToolBuilderView() {
 											</div>
 										</div>
 									</div>
-								</SectionCard>
+								</Section>
 
-								{/* 02 — entradas */}
-								{isVisual && (
-									<SectionCard
-										step="02"
-										title="O que o cliente envia"
-										subtitle="Os campos do formulário. Esconda o que não precisa aparecer."
-										icon={<Sparkles className="h-4 w-4" />}
-										accent="sky"
-										delay={60}
-									>
-										<div className="space-y-2">
-											{state.fields.map((f) => (
-												<FieldEditor
-													key={f.name}
-													field={f}
-													onChange={(nf) =>
-														patch({
-															fields: state.fields.map((x) =>
-																x.name === nf.name ? nf : x,
-															),
-														})
-													}
-												/>
-											))}
-										</div>
-									</SectionCard>
-								)}
+								{/* entradas */}
+								<Section
+									step="02"
+									title="O que o cliente envia"
+									subtitle="Os campos do formulário."
+									icon={<Sparkles className="h-4 w-4" />}
+									accent="sky"
+									delay={60}
+								>
+									<div className="space-y-2">
+										{state.fields.map((f) => (
+											<FieldRow
+												key={f.name}
+												field={f}
+												onChange={(nf) =>
+													patch({
+														fields: state.fields.map((x) =>
+															x.name === nf.name ? nf : x,
+														),
+													})
+												}
+												onRemove={() =>
+													patch({
+														fields: state.fields.filter(
+															(x) => x.name !== f.name,
+														),
+													})
+												}
+											/>
+										))}
+									</div>
+									<div className="mt-3 flex flex-wrap items-center gap-1.5">
+										<span className="text-[11px] text-slate-500">
+											+ adicionar:
+										</span>
+										{FIELD_TYPES.map((ft) => (
+											<button
+												key={ft.type}
+												type="button"
+												onClick={() => addField(ft.type)}
+												className="rounded-md border border-white/10 bg-black/20 px-2 py-1 text-[11px] text-slate-300 hover:border-sky-400/40 hover:text-white"
+											>
+												{ft.label}
+											</button>
+										))}
+									</div>
+								</Section>
 
-								{/* 03 — fluxo */}
-								<SectionCard
+								{/* pipeline */}
+								<Section
 									step="03"
 									title="O que a ferramenta faz"
-									subtitle="As etapas, em ordem. Geradas automaticamente."
+									subtitle="As etapas, em ordem. Ligue a saída de uma na entrada da outra."
 									icon={<Workflow className="h-4 w-4" />}
 									accent="cyan"
 									delay={120}
 								>
-									<FlowDiagram doc={derivedDoc} />
-								</SectionCard>
-
-								{/* 04 — cobrança */}
-								{isVisual && (
-									<SectionCard
-										step="04"
-										title="Preço e planos"
-										subtitle="Custo por uso e cota grátis por plano."
-										icon={<Rocket className="h-4 w-4" />}
-										accent="amber"
-										delay={180}
-									>
-										<div className="mb-4 flex items-center gap-3">
-											<span className="text-sm text-slate-300">
-												Custo por uso
-											</span>
-											<input
-												type="number"
-												step={0.05}
-												min={0}
-												value={state.voxCost}
-												onChange={(e) =>
+									<div className="space-y-2">
+										{state.nodes.map((n, i) => (
+											<StepCard
+												key={n.id}
+												node={n}
+												index={i}
+												total={state.nodes.length}
+												state={state}
+												onParam={(param, v) =>
 													patch({
-														voxCost: Math.max(0, Number(e.target.value)),
+														nodes: state.nodes.map((x) =>
+															x.id === n.id
+																? { ...x, params: { ...x.params, [param]: v } }
+																: x,
+														),
 													})
 												}
-												className="w-24 rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-sm text-amber-200 font-mono focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+												onMove={(dir) => moveNode(i, dir)}
+												onRemove={() =>
+													patch({
+														nodes: state.nodes.filter((x) => x.id !== n.id),
+													})
+												}
 											/>
-											<span className="font-mono text-xs text-amber-400/80">
-												vox / uso
-											</span>
-										</div>
-										<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-											{BUILDER_PLANS.map((p) => (
-												<PlanQuota
-													key={p.key}
-													planKey={p.key}
-													label={p.label}
-													value={state.freeQuota[p.key] ?? 0}
-													onChange={(v) =>
-														patch({
-															freeQuota: { ...state.freeQuota, [p.key]: v },
-														})
-													}
-												/>
-											))}
-										</div>
-									</SectionCard>
-								)}
+										))}
+									</div>
+									<div className="mt-3 flex flex-wrap items-center gap-1.5">
+										<span className="text-[11px] text-slate-500">+ etapa:</span>
+										{BLOCK_CATALOG.map((b) => (
+											<button
+												key={b.id}
+												type="button"
+												onClick={() => addNode(b.id)}
+												className={`flex items-center gap-1 rounded-md border border-white/10 bg-black/20 px-2 py-1 text-[11px] text-slate-300 ${ac(b.accent).nodeHover} hover:text-white`}
+											>
+												<Glyph name={b.icon} className="h-3.5 w-3.5" />{' '}
+												{b.label}
+											</button>
+										))}
+									</div>
+								</Section>
 
-								{/* avançado: JSON */}
-								<div className="forge-rise rounded-2xl border border-white/10 bg-[#0c0f12]/80 overflow-hidden">
+								{/* saída */}
+								<Section
+									step="04"
+									title="Resultado"
+									subtitle="O que o cliente recebe no final."
+									icon={<Eye className="h-4 w-4" />}
+									accent="violet"
+									delay={180}
+								>
+									<div className="space-y-3">
+										<div className="flex flex-wrap items-center gap-2">
+											<span className="w-28 text-xs font-medium text-slate-300">
+												Arquivo final
+											</span>
+											<select
+												value={state.output.primary}
+												onChange={(e) =>
+													patch({
+														output: {
+															...state.output,
+															primary: e.target.value,
+														},
+													})
+												}
+												className={`min-w-[12rem] flex-1 ${smallSelect} ${state.output.primary ? 'text-violet-200' : 'text-slate-500'}`}
+											>
+												<option value="">— escolha a saída —</option>
+												{outputs.map((o) => (
+													<option key={o.value} value={o.value}>
+														{o.label}
+													</option>
+												))}
+											</select>
+										</div>
+										<div className="flex flex-wrap items-center gap-2">
+											<span className="w-28 text-xs font-medium text-slate-300">
+												Prévia (opcional)
+											</span>
+											<select
+												value={state.output.preview}
+												onChange={(e) =>
+													patch({
+														output: {
+															...state.output,
+															preview: e.target.value,
+														},
+													})
+												}
+												className={`min-w-[12rem] flex-1 ${smallSelect}`}
+											>
+												<option value="">— nenhuma —</option>
+												{outputs.map((o) => (
+													<option key={o.value} value={o.value}>
+														{o.label}
+													</option>
+												))}
+											</select>
+										</div>
+										{numberOutputs.length > 0 && (
+											<div className="flex flex-wrap items-start gap-2">
+												<span className="w-28 shrink-0 text-xs font-medium text-slate-300">
+													Detalhes (chips)
+												</span>
+												<div className="flex flex-1 flex-wrap gap-1.5">
+													{numberOutputs.map((o) => {
+														const on = state.output.meta.includes(o.value);
+														return (
+															<button
+																key={o.value}
+																type="button"
+																onClick={() =>
+																	patch({
+																		output: {
+																			...state.output,
+																			meta: on
+																				? state.output.meta.filter(
+																						(m) => m !== o.value,
+																					)
+																				: [...state.output.meta, o.value],
+																		},
+																	})
+																}
+																className={`rounded-md px-2 py-1 text-[11px] ${on ? 'bg-violet-500/15 text-violet-300' : 'bg-white/5 text-slate-500'}`}
+															>
+																{o.label}
+															</button>
+														);
+													})}
+												</div>
+											</div>
+										)}
+									</div>
+								</Section>
+
+								{/* cobrança */}
+								<Section
+									step="05"
+									title="Preço e planos"
+									subtitle="Custo por uso e cota grátis por plano."
+									icon={<Rocket className="h-4 w-4" />}
+									accent="amber"
+									delay={240}
+								>
+									<div className="mb-4 flex items-center gap-3">
+										<span className="text-sm text-slate-300">
+											Custo por uso
+										</span>
+										<input
+											type="number"
+											step={0.05}
+											min={0}
+											value={state.voxCost}
+											onChange={(e) =>
+												patch({ voxCost: Math.max(0, Number(e.target.value)) })
+											}
+											className="w-24 rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-sm font-mono text-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+										/>
+										<span className="font-mono text-xs text-amber-400/80">
+											vox / uso
+										</span>
+									</div>
+									<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+										{(plans.data ?? []).map((p) => {
+											const q = state.freeQuota[p.key] ?? 0;
+											const unlimited = q === null;
+											return (
+												<div
+													key={p.id}
+													className="rounded-xl border border-white/10 bg-black/20 p-3"
+												>
+													<div className="flex items-center justify-between">
+														<span className="text-sm font-medium text-slate-200">
+															{p.name}
+														</span>
+														<button
+															type="button"
+															onClick={() =>
+																patch({
+																	freeQuota: {
+																		...state.freeQuota,
+																		[p.key]: unlimited ? 0 : null,
+																	},
+																})
+															}
+															className={`rounded-md px-2 py-1 text-[10px] font-semibold ${unlimited ? 'bg-cyan-500/15 text-cyan-300' : 'bg-white/5 text-slate-500'}`}
+														>
+															∞
+														</button>
+													</div>
+													<input
+														type="number"
+														min={0}
+														disabled={unlimited}
+														value={unlimited ? '' : (q ?? 0)}
+														onChange={(e) =>
+															patch({
+																freeQuota: {
+																	...state.freeQuota,
+																	[p.key]: Math.max(0, Number(e.target.value)),
+																},
+															})
+														}
+														placeholder={unlimited ? '∞' : '0'}
+														className="mt-2 w-full rounded-md border border-white/10 bg-black/30 px-2 py-1 text-sm text-slate-100 disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
+													/>
+												</div>
+											);
+										})}
+									</div>
+								</Section>
+
+								{/* avançado */}
+								<div className="forge-rise overflow-hidden rounded-2xl border border-white/10 bg-[#0c0f12]/80">
 									<button
 										type="button"
 										onClick={() => setAdvancedOpen((o) => !o)}
-										className="w-full flex items-center gap-2 px-5 py-3 text-left"
+										className="flex w-full items-center gap-2 px-5 py-3 text-left"
 									>
 										<Code2 className="h-4 w-4 text-slate-400" />
 										<span className="text-sm font-medium text-slate-300">
-											Avançado · definição em JSON
+											Avançado · JSON
 										</span>
 										<span className="ml-auto flex items-center gap-2">
 											{mode === 'json' && (
 												<span className="font-mono text-[10px] text-cyan-300">
-													modo manual
+													manual
 												</span>
 											)}
 											<ChevronDown
@@ -934,21 +1337,23 @@ export function ToolBuilderView() {
 										</span>
 									</button>
 									{advancedOpen && (
-										<div className="px-5 pb-5 space-y-2">
-											{isVisual ? (
+										<div className="space-y-2 px-5 pb-5">
+											{mode === 'visual' ? (
 												<>
-													<p className="text-xs text-slate-500">
-														Gerado a partir das suas escolhas. Pra editar à mão
-														(refs, blocos…), assuma o controle:
-													</p>
 													<pre className="max-h-72 overflow-auto rounded-lg border border-white/10 bg-black/40 p-3 font-mono text-[11px] text-slate-300">
 														{derivedDoc
 															? JSON.stringify(derivedDoc, null, 2)
-															: '// preencha os campos acima'}
+															: '// incompleto'}
 													</pre>
 													<button
 														type="button"
-														onClick={goAdvancedJson}
+														onClick={() => {
+															if (state)
+																setJson(
+																	JSON.stringify(buildDoc(state), null, 2),
+																);
+															setMode('json');
+														}}
 														className="rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-300"
 													>
 														Editar JSON manualmente
@@ -958,28 +1363,18 @@ export function ToolBuilderView() {
 												<>
 													<textarea
 														value={json}
-														onChange={(e) => {
-															setJson(e.target.value);
-															setJsonError(null);
-														}}
+														onChange={(e) => setJson(e.target.value)}
 														spellCheck={false}
 														rows={18}
 														className="w-full rounded-lg border border-white/10 bg-black/40 p-3 font-mono text-[11px] text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
 													/>
-													{jsonError && (
-														<p className="text-xs text-rose-400">{jsonError}</p>
-													)}
-													{recipe && (
-														<button
-															type="button"
-															onClick={() => {
-																setMode('visual');
-															}}
-															className="text-xs text-slate-400 hover:text-slate-200"
-														>
-															← voltar ao modo visual
-														</button>
-													)}
+													<button
+														type="button"
+														onClick={() => setMode('visual')}
+														className="text-xs text-slate-400 hover:text-slate-200"
+													>
+														← voltar ao modo visual
+													</button>
 												</>
 											)}
 										</div>
@@ -989,18 +1384,18 @@ export function ToolBuilderView() {
 						)}
 					</main>
 
-					{/* direita: preview ao vivo + ações */}
+					{/* direita: preview + ações (só no editor) */}
 					{view === 'editor' && state && (
-						<aside className="space-y-3 lg:sticky lg:top-4 self-start">
+						<aside className="space-y-3 self-start lg:sticky lg:top-4">
 							<div className="flex items-center gap-2 text-emerald-300">
 								<Eye className="h-4 w-4" />
-								<span className="font-mono text-[11px] tracking-widest uppercase">
+								<span className="font-mono text-[11px] uppercase tracking-widest">
 									Como o cliente vê
 								</span>
 							</div>
-							<div className="rounded-2xl border border-white/10 bg-[#0c0f12]/80 overflow-hidden">
+							<div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0c0f12]/80">
 								{previewDef ? (
-									<div className="scale-[0.98] origin-top">
+									<div className="origin-top scale-[0.98]">
 										<DynamicToolView
 											toolKey={previewDef.tool_key}
 											definitionOverride={previewDef}
@@ -1008,31 +1403,30 @@ export function ToolBuilderView() {
 									</div>
 								) : (
 									<p className="p-6 text-sm text-rose-400">
-										Definição incompleta — confira os campos / o JSON.
+										Definição incompleta — confira as etapas / o resultado.
 									</p>
 								)}
 							</div>
-
 							<div className="flex gap-2">
 								<button
 									type="button"
 									onClick={() => saveMut.mutate()}
 									disabled={saveMut.isPending || !canSave}
-									className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-200 disabled:opacity-40 hover:bg-white/10"
+									className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-200 hover:bg-white/10 disabled:opacity-40"
 								>
 									{saveMut.isPending ? (
 										<Loader2 className="h-4 w-4 animate-spin" />
 									) : (
 										<Save className="h-4 w-4" />
 									)}
-									{selectedId ? 'Salvar' : 'Criar'}
+									{selectedDefId ? 'Salvar' : 'Criar'}
 								</button>
 								<button
 									type="button"
 									onClick={() => publishMut.mutate()}
-									disabled={publishMut.isPending || !selectedId}
-									title={!selectedId ? 'Salve antes de publicar' : undefined}
-									className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-4 py-2.5 text-sm font-bold text-[#06120f] shadow-lg shadow-emerald-500/25 disabled:opacity-40"
+									disabled={publishMut.isPending || !selectedDefId}
+									title={!selectedDefId ? 'Salve antes de publicar' : undefined}
+									className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-4 py-2.5 text-sm font-bold text-[#06120f] shadow-lg shadow-emerald-500/25 disabled:opacity-40"
 								>
 									{publishMut.isPending ? (
 										<Loader2 className="h-4 w-4 animate-spin" />
@@ -1042,7 +1436,7 @@ export function ToolBuilderView() {
 									Publicar
 								</button>
 							</div>
-							{!selectedId && (
+							{!selectedDefId && (
 								<p className="flex items-center gap-1.5 text-[11px] text-slate-500">
 									<Check className="h-3 w-3" /> salve pra liberar a publicação
 								</p>
