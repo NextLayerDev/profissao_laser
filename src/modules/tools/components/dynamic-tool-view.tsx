@@ -1,12 +1,13 @@
 'use client';
 
-import { AlertCircle, Download, Loader2, Wand2, Wrench } from 'lucide-react';
+import { AlertCircle, Download, Loader2, Wand2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/page-header';
 import { useEntitlements } from '@/hooks/use-entitlements';
 import { useToolBilling } from '../hooks/use-tool-billing';
 import { useToolDefinition } from '../hooks/use-tool-definition';
+import { resolveToolIcon } from '../lib/tool-icons';
 import {
 	type AiToolDefinition,
 	runToolEngine,
@@ -215,7 +216,9 @@ export function DynamicToolView({
 			<PageHeader
 				title={def.title}
 				subtitle={def.description ?? undefined}
-				icon={Wrench}
+				icon={resolveToolIcon(
+					(def.definition.ui as { icon?: string } | undefined)?.icon,
+				)}
 			/>
 
 			<div className="grid lg:grid-cols-2 gap-6">

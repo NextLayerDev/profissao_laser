@@ -23,6 +23,7 @@ const ADMIN_PATHS = [
 	'/parametros',
 	'/previas-admin',
 	'/vetorizacao-admin',
+	'/ferramentas',
 ];
 
 export function AdminLayoutWrapper({
