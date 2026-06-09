@@ -431,11 +431,11 @@ function StepParams({
 							onChange={(e) => setCleanBackground(e.target.checked)}
 							className="accent-violet-600"
 						/>
-						Limpar fundo claro
+						Limpar fundo
 					</label>
 					<p className="mt-1 ml-6 text-xs text-slate-400 dark:text-gray-500">
-						Deixa o fundo claro sólido (sem granulado), preservando o objeto.
-						Ideal pra foto de produto sobre fundo branco/claro.
+						Remove o fundo até os cantos (segue o gradiente a partir das
+						bordas), deixando só o objeto central. Ideal pra foto de produto.
 					</p>
 
 					{cleanBackground && (
@@ -457,8 +457,8 @@ function StepParams({
 								className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-200 dark:bg-white/10 accent-violet-600"
 							/>
 							<p className="text-xs text-slate-400 dark:text-gray-500">
-								Mais alto remove mais fundo (cinzas mais escuros). Se comer o
-								objeto, reduza.
+								Mais alto limpa fundos mais escuros (vinheta). Se começar a
+								comer o objeto, reduza.
 							</p>
 						</div>
 					)}
@@ -807,7 +807,7 @@ export function GravacaoOneClickView() {
 	const [dpi, setDpi] = useState(DEFAULT_DPI);
 	const [noDither, setNoDither] = useState(false);
 	const [cleanBackground, setCleanBackground] = useState(false);
-	// Tolerância 0–100 (slider) → corte de luminância do fundo (bgThreshold).
+	// Tolerância 0–100 (slider) → margem do limiar de fundo (bgMargin).
 	const [bgTolerance, setBgTolerance] = useState(50);
 	// Proporção (altura/largura) da foto original — pra prever a altura de saída.
 	const [srcAspect, setSrcAspect] = useState<number | null>(null);
@@ -828,8 +828,10 @@ export function GravacaoOneClickView() {
 	const runPrepare = useCallback(async () => {
 		if (!file) return;
 		// O hook decide: cobrada → invoke→motor→settle; livre → motor sem invocation.
-		// Tolerância 0–100 → corte de luminância 252 (só branco puro) … 160 (agressivo).
-		const bgThreshold = Math.round(252 - (bgTolerance / 100) * 92);
+		// Tolerância 0–100 → margem abaixo da mediana da borda (4 … 48). Mais alto
+		// limpa fundos mais escuros (vinheta), mas pode "comer" partes claras do
+		// objeto que estejam tão claras quanto o fundo.
+		const bgMargin = Math.round(4 + (bgTolerance / 100) * 44);
 		await billing.runEngine((invocationId) =>
 			prepMutation
 				.mutateAsync({
@@ -841,7 +843,7 @@ export function GravacaoOneClickView() {
 						dpi,
 						noDither,
 						cleanBackground,
-						bgThreshold: cleanBackground ? bgThreshold : undefined,
+						bgMargin: cleanBackground ? bgMargin : undefined,
 					},
 				})
 				.then((res) => {
