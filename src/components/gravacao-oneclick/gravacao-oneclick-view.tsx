@@ -29,7 +29,7 @@ import {
 } from '@/services/gravacao-oneclick';
 
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB (mesmo limite do ImagR)
 const DEFAULT_DPI = 254;
 const DEFAULT_WIDTH_MM = 150;
 
@@ -220,7 +220,7 @@ function StepUpload({
 					Arraste sua foto ou clique para selecionar
 				</p>
 				<p className="text-slate-500 dark:text-gray-500 text-sm">
-					PNG, JPG, WEBP (max. 10MB)
+					PNG, JPG, WEBP (máx. 50MB)
 				</p>
 			</div>
 
@@ -319,6 +319,7 @@ function StepParams({
 	setMaterial,
 	widthMm,
 	setWidthMm,
+	heightMm,
 	dpi,
 	setDpi,
 	noDither,
@@ -332,6 +333,8 @@ function StepParams({
 	setMaterial: (m: LaserPrepMaterial) => void;
 	widthMm: number;
 	setWidthMm: (v: number) => void;
+	/** Altura calculada pelo aspecto da foto (read-only, só exibição). */
+	heightMm: number | null;
 	dpi: number;
 	setDpi: (v: number) => void;
 	noDither: boolean;
@@ -384,6 +387,21 @@ function StepParams({
 					step={1}
 					onChange={setDpi}
 				/>
+
+				{/* Altura: recalculada pela proporção da foto (igual ao ImagR). */}
+				<div className="space-y-1.5 sm:col-span-2">
+					<span className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+						Altura (automática)
+					</span>
+					<div className="flex items-center gap-2">
+						<div className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#0d0d0d] text-slate-500 dark:text-slate-400">
+							{heightMm != null ? `${heightMm} mm` : '—'}
+						</div>
+					</div>
+					<p className="text-xs text-slate-400 dark:text-gray-500">
+						Mantém a proporção da foto — calculada a partir da largura.
+					</p>
+				</div>
 			</div>
 
 			<label className="flex items-center gap-2 text-sm text-slate-600 dark:text-gray-400 cursor-pointer">
@@ -737,6 +755,8 @@ export function GravacaoOneClickView() {
 	const [widthMm, setWidthMm] = useState(DEFAULT_WIDTH_MM);
 	const [dpi, setDpi] = useState(DEFAULT_DPI);
 	const [noDither, setNoDither] = useState(false);
+	// Proporção (altura/largura) da foto original — pra prever a altura de saída.
+	const [srcAspect, setSrcAspect] = useState<number | null>(null);
 
 	// portal só após montar (evita mismatch de hidratação)
 	const [mounted, setMounted] = useState(false);
@@ -775,12 +795,23 @@ export function GravacaoOneClickView() {
 			return;
 		}
 		if (selectedFile.size > MAX_FILE_SIZE) {
-			toast.error('Ficheiro demasiado grande (max. 10MB).');
+			toast.error('Arquivo muito grande (máx. 50MB).');
 			return;
 		}
 		setFile(selectedFile);
 		setResult(null);
-		setOriginalPreviewUrl(URL.createObjectURL(selectedFile));
+		const url = URL.createObjectURL(selectedFile);
+		setOriginalPreviewUrl(url);
+		// Lê as dimensões naturais pra prever a altura de saída (mesmo cálculo do
+		// motor: heightMm = widthMm * srcH/srcW). `window.Image` porque `Image`
+		// aqui é o ícone do lucide-react.
+		setSrcAspect(null);
+		const img = new window.Image();
+		img.onload = () => {
+			if (img.naturalWidth > 0)
+				setSrcAspect(img.naturalHeight / img.naturalWidth);
+		};
+		img.src = url;
 	}, []);
 
 	const handlePrepare = useCallback(() => {
@@ -793,6 +824,7 @@ export function GravacaoOneClickView() {
 		setFile(null);
 		setResult(null);
 		setOriginalPreviewUrl(null);
+		setSrcAspect(null);
 		setMaterial('wood');
 		setWidthMm(DEFAULT_WIDTH_MM);
 		setDpi(DEFAULT_DPI);
@@ -800,6 +832,15 @@ export function GravacaoOneClickView() {
 	}, []);
 
 	const baseName = useMemo(() => baseNameOf(file), [file]);
+
+	// Altura de saída prevista (mm), arredondada a 1 casa pra exibição no passo 2.
+	const previewHeightMm = useMemo(
+		() =>
+			srcAspect != null && widthMm > 0
+				? Math.round(widthMm * srcAspect * 10) / 10
+				: null,
+		[srcAspect, widthMm],
+	);
 
 	// scroll acompanha a navegação do wizard
 	useEffect(() => {
@@ -866,6 +907,7 @@ export function GravacaoOneClickView() {
 						setMaterial={setMaterial}
 						widthMm={widthMm}
 						setWidthMm={setWidthMm}
+						heightMm={previewHeightMm}
 						dpi={dpi}
 						setDpi={setDpi}
 						noDither={noDither}
