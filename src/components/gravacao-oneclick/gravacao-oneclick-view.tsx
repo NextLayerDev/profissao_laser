@@ -324,6 +324,10 @@ function StepParams({
 	setDpi,
 	noDither,
 	setNoDither,
+	cleanBackground,
+	setCleanBackground,
+	bgTolerance,
+	setBgTolerance,
 	onPrepare,
 	onBack,
 	isPreparing,
@@ -339,6 +343,10 @@ function StepParams({
 	setDpi: (v: number) => void;
 	noDither: boolean;
 	setNoDither: (v: boolean) => void;
+	cleanBackground: boolean;
+	setCleanBackground: (v: boolean) => void;
+	bgTolerance: number;
+	setBgTolerance: (v: number) => void;
 	onPrepare: () => void;
 	onBack: () => void;
 	isPreparing: boolean;
@@ -404,15 +412,58 @@ function StepParams({
 				</div>
 			</div>
 
-			<label className="flex items-center gap-2 text-sm text-slate-600 dark:text-gray-400 cursor-pointer">
-				<input
-					type="checkbox"
-					checked={noDither}
-					onChange={(e) => setNoDither(e.target.checked)}
-					className="accent-violet-600"
-				/>
-				Desativar dithering
-			</label>
+			<div className="space-y-4">
+				<label className="flex items-center gap-2 text-sm text-slate-600 dark:text-gray-400 cursor-pointer">
+					<input
+						type="checkbox"
+						checked={noDither}
+						onChange={(e) => setNoDither(e.target.checked)}
+						className="accent-violet-600"
+					/>
+					Desativar dithering
+				</label>
+
+				<div>
+					<label className="flex items-center gap-2 text-sm text-slate-600 dark:text-gray-400 cursor-pointer">
+						<input
+							type="checkbox"
+							checked={cleanBackground}
+							onChange={(e) => setCleanBackground(e.target.checked)}
+							className="accent-violet-600"
+						/>
+						Limpar fundo claro
+					</label>
+					<p className="mt-1 ml-6 text-xs text-slate-400 dark:text-gray-500">
+						Deixa o fundo claro sólido (sem granulado), preservando o objeto.
+						Ideal pra foto de produto sobre fundo branco/claro.
+					</p>
+
+					{cleanBackground && (
+						<div className="mt-3 ml-6 max-w-sm space-y-1.5">
+							<div className="flex items-center justify-between">
+								<span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+									Tolerância do fundo
+								</span>
+								<span className="text-xs text-slate-400">{bgTolerance}%</span>
+							</div>
+							<input
+								type="range"
+								min={0}
+								max={100}
+								step={1}
+								value={bgTolerance}
+								aria-label="Tolerância do fundo"
+								onChange={(e) => setBgTolerance(Number(e.target.value))}
+								className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-200 dark:bg-white/10 accent-violet-600"
+							/>
+							<p className="text-xs text-slate-400 dark:text-gray-500">
+								Mais alto remove mais fundo (cinzas mais escuros). Se comer o
+								objeto, reduza.
+							</p>
+						</div>
+					)}
+				</div>
+			</div>
 
 			<div className="flex items-center justify-between">
 				<button
@@ -755,6 +806,9 @@ export function GravacaoOneClickView() {
 	const [widthMm, setWidthMm] = useState(DEFAULT_WIDTH_MM);
 	const [dpi, setDpi] = useState(DEFAULT_DPI);
 	const [noDither, setNoDither] = useState(false);
+	const [cleanBackground, setCleanBackground] = useState(false);
+	// Tolerância 0–100 (slider) → corte de luminância do fundo (bgThreshold).
+	const [bgTolerance, setBgTolerance] = useState(50);
 	// Proporção (altura/largura) da foto original — pra prever a altura de saída.
 	const [srcAspect, setSrcAspect] = useState<number | null>(null);
 
@@ -774,12 +828,21 @@ export function GravacaoOneClickView() {
 	const runPrepare = useCallback(async () => {
 		if (!file) return;
 		// O hook decide: cobrada → invoke→motor→settle; livre → motor sem invocation.
+		// Tolerância 0–100 → corte de luminância 252 (só branco puro) … 160 (agressivo).
+		const bgThreshold = Math.round(252 - (bgTolerance / 100) * 92);
 		await billing.runEngine((invocationId) =>
 			prepMutation
 				.mutateAsync({
 					file,
 					invocationId,
-					params: { material, width_mm: widthMm, dpi, noDither },
+					params: {
+						material,
+						width_mm: widthMm,
+						dpi,
+						noDither,
+						cleanBackground,
+						bgThreshold: cleanBackground ? bgThreshold : undefined,
+					},
 				})
 				.then((res) => {
 					setResult(res);
@@ -787,7 +850,17 @@ export function GravacaoOneClickView() {
 					return res;
 				}),
 		);
-	}, [file, billing, prepMutation, material, widthMm, dpi, noDither]);
+	}, [
+		file,
+		billing,
+		prepMutation,
+		material,
+		widthMm,
+		dpi,
+		noDither,
+		cleanBackground,
+		bgTolerance,
+	]);
 
 	const handleFileSelected = useCallback((selectedFile: File) => {
 		if (!ACCEPTED_TYPES.includes(selectedFile.type)) {
@@ -829,6 +902,8 @@ export function GravacaoOneClickView() {
 		setWidthMm(DEFAULT_WIDTH_MM);
 		setDpi(DEFAULT_DPI);
 		setNoDither(false);
+		setCleanBackground(false);
+		setBgTolerance(50);
 	}, []);
 
 	const baseName = useMemo(() => baseNameOf(file), [file]);
@@ -912,6 +987,10 @@ export function GravacaoOneClickView() {
 						setDpi={setDpi}
 						noDither={noDither}
 						setNoDither={setNoDither}
+						cleanBackground={cleanBackground}
+						setCleanBackground={setCleanBackground}
+						bgTolerance={bgTolerance}
+						setBgTolerance={setBgTolerance}
 						onPrepare={handlePrepare}
 						onBack={() => setStep(1)}
 						isPreparing={billing.pending}

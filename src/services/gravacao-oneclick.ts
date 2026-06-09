@@ -26,6 +26,10 @@ export interface LaserPrepParams {
 	/** 'true' desativa o dithering (envia o cinza contínuo). */
 	noDither?: boolean;
 	ditherAlgorithm?: string;
+	/** Limpa o fundo claro (flood-fill das bordas) — fundo sólido, sem granulado. */
+	cleanBackground?: boolean;
+	/** Corte de luminância do fundo (0–255, default 200 no backend). */
+	bgThreshold?: number;
 }
 
 export const laserPrepResultSchema = z.object({
@@ -51,13 +55,27 @@ export async function prepImage(
 	// este id e liquida/estorna. Sem id → rodada livre (ferramenta sem cobrança).
 	if (opts.invocationId) formData.append('invocation_id', opts.invocationId);
 
-	const { material, width_mm, dpi, noDither, ditherAlgorithm } = opts.params;
+	const {
+		material,
+		width_mm,
+		dpi,
+		noDither,
+		ditherAlgorithm,
+		cleanBackground,
+		bgThreshold,
+	} = opts.params;
 	formData.append('material', material);
 	formData.append('width_mm', String(width_mm));
 	if (dpi !== undefined) formData.append('dpi', String(dpi));
 	// O motor só observa noDither quando presente e === 'true'.
 	if (noDither) formData.append('noDither', 'true');
 	if (ditherAlgorithm) formData.append('ditherAlgorithm', ditherAlgorithm);
+	// Limpeza de fundo claro (opt-in); só envia quando ligada.
+	if (cleanBackground) {
+		formData.append('cleanBackground', 'true');
+		if (bgThreshold !== undefined)
+			formData.append('bgThreshold', String(bgThreshold));
+	}
 
 	const { data } = await api.post('/api/laser-prep', formData);
 	return laserPrepResultSchema.parse(data);
