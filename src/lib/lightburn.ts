@@ -65,8 +65,37 @@ export function buildLbrn2({
 		}
 	}
 
+	// Estrutura espelha 1:1 o .lbrn2 REAL do ImagR (não só o porte simplificado
+	// do Python): VariableText + UIPrefs completos, CutSetting_Img com todos os
+	// campos de tab/priority, e — crítico — o Shape Bitmap com os ajustes de
+	// imagem TODOS fixados em neutro (Gamma=1, Contrast/Brightness/Enhance=0).
+	// Sem esses atributos o LightBurn aplicaria os DEFAULTS dele por cima da
+	// imagem já dithered (passThrough=1), mudando o resultado da gravação.
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <LightBurnProject AppVersion="1.0.0" FormatVersion="1" MaterialHeight="0" MirrorX="True" MirrorY="True">
+    <VariableText>
+        <Start Value="0"/>
+        <End Value="999"/>
+        <Current Value="0"/>
+        <Increment Value="1"/>
+        <AutoAdvance Value="0"/>
+    </VariableText>
+    <UIPrefs>
+        <Optimize_ByLayer Value="0"/>
+        <Optimize_ByGroup Value="-1"/>
+        <Optimize_ByPriority Value="1"/>
+        <Optimize_WhichDirection Value="0"/>
+        <Optimize_InnerToOuter Value="1"/>
+        <Optimize_ByDirection Value="0"/>
+        <Optimize_ReduceTravel Value="1"/>
+        <Optimize_HideBacklash Value="0"/>
+        <Optimize_ReduceDirChanges Value="0"/>
+        <Optimize_ChooseCorners Value="0"/>
+        <Optimize_AllowReverse Value="1"/>
+        <Optimize_RemoveOverlaps Value="0"/>
+        <Optimize_OptimalEntryPoint Value="0"/>
+        <Optimize_OverlapDist Value="0.025"/>
+    </UIPrefs>
     <CutSetting_Img type="Image">
         <index Value="0"/>
         <name Value="C00"/>
@@ -74,12 +103,20 @@ export function buildLbrn2({
         <maxPower Value="${maxPower}"/>
         <maxPower2 Value="20"/>
         <speed Value="${speed}"/>
+        <dotTime Value="1"/>
         <interval Value="${interval}"/>
+        <priority Value="0"/>
+        <manualTabs Value="0"/>
+        <tabSize Value="0.2"/>
+        <tabCount Value="1"/>
+        <tabCountMax Value="1"/>
+        <tabSpacing Value="100"/>
+        <tabsUseSpacing Value="0"/>
+${extra}        <passThrough Value="1"/>
         <ditherMode Value="threshold"/>
         <dpi Value="${dpi}"/>
-        <passThrough Value="1"/>
-${extra}    </CutSetting_Img>
-    <Shape Type="Bitmap" CutIndex="0" W="${wMm}" H="${hMm}" Gamma="1" Data="${b64}">
+    </CutSetting_Img>
+    <Shape Type="Bitmap" CutIndex="0" W="${wMm}" H="${hMm}" Gamma="1" Contrast="0" Brightness="0" EnhanceAmount="0" EnhanceRadius="0" EnhanceDenoise="0" SourceHash="0" Data="${b64}">
         <XForm>1 0 0 1 ${cx} ${cy}</XForm>
     </Shape>
     <Notes ShowOnLoad="0" Notes=""/>
