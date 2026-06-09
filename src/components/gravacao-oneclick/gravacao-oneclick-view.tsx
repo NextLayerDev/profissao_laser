@@ -1,0 +1,935 @@
+'use client';
+
+import {
+	ArrowLeft,
+	ArrowRight,
+	Check,
+	Download,
+	FileImage,
+	Flame,
+	Image,
+	Loader2,
+	RotateCcw,
+	Sliders,
+	Upload,
+	Wand2,
+} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { toast } from 'sonner';
+import { PageHeader } from '@/components/ui/page-header';
+import { useEntitlements } from '@/hooks/use-entitlements';
+import { useLaserPrep } from '@/hooks/use-laser-prep';
+import { buildLbrn2, downloadLbrn2, type LaserType } from '@/lib/lightburn';
+import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
+import {
+	LASER_PREP_MATERIALS,
+	type LaserPrepMaterial,
+	type LaserPrepResult,
+} from '@/services/gravacao-oneclick';
+
+const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const DEFAULT_DPI = 254;
+const DEFAULT_WIDTH_MM = 150;
+
+type WizardStep = 1 | 2 | 3;
+type OutputMode = 'png' | 'lbrn2';
+
+/** Rótulos PT pra cada chave de material (mesma ordem do motor). */
+const MATERIAL_LABELS: Record<LaserPrepMaterial, string> = {
+	wood: 'Madeira',
+	'black slate': 'Ardósia Preta',
+	glass: 'Vidro',
+	acrylic: 'Acrílico',
+	leather: 'Couro',
+	cork: 'Cortiça',
+	'andonized aluminum': 'Alumínio Anodizado',
+	'stainless steel': 'Aço Inoxidável',
+	'white tile': 'Azulejo Branco',
+	'white tile painted black': 'Azulejo Branco pintado de preto',
+};
+
+const LASER_OPTIONS: { value: LaserType; label: string }[] = [
+	{ value: 'co2', label: 'CO2' },
+	{ value: 'diode', label: 'Diodo' },
+	{ value: 'fiber', label: 'Fiber' },
+	{ value: 'galvo', label: 'Galvo' },
+	{ value: 'uv', label: 'UV' },
+];
+
+/** Lasers que pedem campos extra de frequência / largura de pulso Q. */
+function laserHasPulse(laser: LaserType): boolean {
+	return laser === 'fiber' || laser === 'galvo' || laser === 'uv';
+}
+
+/* ─────────────── Download helpers ─────────────── */
+
+function triggerDownload(url: string, fileName: string, revoke: boolean) {
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = fileName;
+	a.click();
+	if (revoke) URL.revokeObjectURL(url);
+}
+
+async function downloadPng(url: string, baseName: string) {
+	const name = `${baseName || 'gravacao'}.png`;
+	try {
+		const res = await fetch(url);
+		const blob = await res.blob();
+		triggerDownload(URL.createObjectURL(blob), name, true);
+	} catch {
+		window.open(url, '_blank');
+	}
+}
+
+function baseNameOf(file: File | null): string {
+	return file ? file.name.replace(/\.[^.]+$/, '') : 'gravacao';
+}
+
+function formatFileSize(bytes: number): string {
+	if (bytes < 1024) return `${bytes} B`;
+	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/* ─────────────── Step Indicator ─────────────── */
+
+function StepIndicator({ current }: { current: WizardStep }) {
+	const steps = [
+		{ num: 1 as const, label: 'Envie sua foto' },
+		{ num: 2 as const, label: 'Material e tamanho' },
+		{ num: 3 as const, label: 'Resultado' },
+	];
+
+	return (
+		<div className="flex items-center justify-center gap-0 mb-8">
+			{steps.map((step, idx) => {
+				const done = current > step.num;
+				const active = current === step.num;
+				return (
+					<div key={step.num} className="flex items-center">
+						<div className="flex flex-col items-center">
+							<div
+								className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+									done
+										? 'bg-violet-600 text-white'
+										: active
+											? 'bg-violet-600 text-white ring-4 ring-violet-500/20'
+											: 'bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-gray-400'
+								}`}
+							>
+								{done ? <Check className="w-5 h-5" /> : step.num}
+							</div>
+							<span
+								className={`mt-2 text-xs font-medium hidden sm:block ${
+									active
+										? 'text-violet-600 dark:text-violet-400'
+										: done
+											? 'text-slate-600 dark:text-gray-400'
+											: 'text-slate-400 dark:text-gray-500'
+								}`}
+							>
+								{step.label}
+							</span>
+						</div>
+						{idx < steps.length - 1 && (
+							<div
+								className={`w-12 sm:w-20 h-0.5 mx-2 sm:mx-3 mb-5 sm:mb-0 ${
+									current > step.num
+										? 'bg-violet-600'
+										: 'bg-slate-200 dark:bg-white/10'
+								}`}
+							/>
+						)}
+					</div>
+				);
+			})}
+		</div>
+	);
+}
+
+/* ─────────────── Step 1: Upload ─────────────── */
+
+function StepUpload({
+	onFileSelected,
+	file,
+	originalPreviewUrl,
+}: {
+	onFileSelected: (file: File) => void;
+	file: File | null;
+	originalPreviewUrl: string | null;
+}) {
+	const [isDragging, setIsDragging] = useState(false);
+	const inputRef = useRef<HTMLInputElement>(null);
+
+	const handleDrop = useCallback(
+		(e: React.DragEvent) => {
+			e.preventDefault();
+			setIsDragging(false);
+			const dropped = e.dataTransfer.files[0];
+			if (dropped) onFileSelected(dropped);
+		},
+		[onFileSelected],
+	);
+
+	const handleFileSelect = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			const selected = e.target.files?.[0];
+			if (selected) onFileSelected(selected);
+			e.target.value = '';
+		},
+		[onFileSelected],
+	);
+
+	return (
+		<div className="space-y-6">
+			<div
+				onKeyDown={(e) => {
+					if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click();
+				}}
+				aria-label="Arraste a foto ou clique para selecionar"
+				onDrop={handleDrop}
+				onDragOver={(e) => {
+					e.preventDefault();
+					setIsDragging(true);
+				}}
+				onDragLeave={(e) => {
+					e.preventDefault();
+					setIsDragging(false);
+				}}
+				onClick={() => inputRef.current?.click()}
+				className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-8 py-14 transition-colors cursor-pointer ${
+					isDragging
+						? 'border-violet-600 bg-violet-500/10 dark:bg-violet-500/20'
+						: 'border-slate-200 dark:border-white/10 hover:border-violet-500/50 dark:hover:border-white/20'
+				}`}
+			>
+				<input
+					ref={inputRef}
+					type="file"
+					accept={ACCEPTED_TYPES.join(',')}
+					onChange={handleFileSelect}
+					className="hidden"
+				/>
+				<div className="rounded-xl bg-gradient-to-br from-violet-600 to-violet-700 p-4 text-white mb-4">
+					<Upload className="w-10 h-10" />
+				</div>
+				<p className="text-slate-600 dark:text-gray-400 text-center font-medium mb-1">
+					Arraste sua foto ou clique para selecionar
+				</p>
+				<p className="text-slate-500 dark:text-gray-500 text-sm">
+					PNG, JPG, WEBP (max. 10MB)
+				</p>
+			</div>
+
+			{file && (
+				<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-4">
+					<div className="flex items-center gap-3">
+						<div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-500/20">
+							<Image className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+						</div>
+						<div className="flex-1 min-w-0">
+							<p className="font-medium text-slate-900 dark:text-white truncate text-sm">
+								{file.name}
+							</p>
+							<p className="text-slate-500 dark:text-gray-400 text-xs">
+								{formatFileSize(file.size)} &middot;{' '}
+								{file.type.split('/')[1]?.toUpperCase()}
+							</p>
+						</div>
+						<Check className="w-5 h-5 text-emerald-500" />
+					</div>
+				</div>
+			)}
+
+			{file && originalPreviewUrl && (
+				<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-4">
+					<p className="text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+						Original
+					</p>
+					<div className="aspect-video bg-slate-100 dark:bg-[#1a1a1d] rounded-lg flex items-center justify-center overflow-hidden">
+						<img
+							src={originalPreviewUrl}
+							alt="Original"
+							className="max-w-full max-h-full object-contain"
+						/>
+					</div>
+				</div>
+			)}
+		</div>
+	);
+}
+
+/* ─────────────── Controles reutilizáveis ─────────────── */
+
+function NumberField({
+	id,
+	label,
+	value,
+	min,
+	max,
+	step,
+	suffix,
+	onChange,
+}: {
+	id: string;
+	label: string;
+	value: number;
+	min?: number;
+	max?: number;
+	step?: number;
+	suffix?: string;
+	onChange: (v: number) => void;
+}) {
+	return (
+		<div className="space-y-1.5">
+			<label
+				htmlFor={id}
+				className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+			>
+				{label}
+			</label>
+			<div className="flex items-center gap-2">
+				<input
+					id={id}
+					type="number"
+					value={value}
+					min={min}
+					max={max}
+					step={step}
+					onChange={(e) =>
+						onChange(e.target.value === '' ? 0 : Number(e.target.value))
+					}
+					className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111] text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+				/>
+				{suffix && (
+					<span className="text-xs text-slate-400 shrink-0">{suffix}</span>
+				)}
+			</div>
+		</div>
+	);
+}
+
+/* ─────────────── Step 2: Material + parâmetros ─────────────── */
+
+function StepParams({
+	material,
+	setMaterial,
+	widthMm,
+	setWidthMm,
+	dpi,
+	setDpi,
+	noDither,
+	setNoDither,
+	onPrepare,
+	onBack,
+	isPreparing,
+	notice,
+}: {
+	material: LaserPrepMaterial;
+	setMaterial: (m: LaserPrepMaterial) => void;
+	widthMm: number;
+	setWidthMm: (v: number) => void;
+	dpi: number;
+	setDpi: (v: number) => void;
+	noDither: boolean;
+	setNoDither: (v: boolean) => void;
+	onPrepare: () => void;
+	onBack: () => void;
+	isPreparing: boolean;
+	notice: React.ReactNode;
+}) {
+	return (
+		<div className="space-y-8">
+			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+				<div className="space-y-1.5 sm:col-span-2">
+					<label
+						htmlFor="gp-material"
+						className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+					>
+						Material
+					</label>
+					<select
+						id="gp-material"
+						value={material}
+						onChange={(e) => setMaterial(e.target.value as LaserPrepMaterial)}
+						className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111] text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+					>
+						{LASER_PREP_MATERIALS.map((key) => (
+							<option key={key} value={key}>
+								{MATERIAL_LABELS[key]}
+							</option>
+						))}
+					</select>
+				</div>
+
+				<NumberField
+					id="gp-width"
+					label="Largura (mm)"
+					value={widthMm}
+					min={1}
+					max={2000}
+					step={1}
+					suffix="mm"
+					onChange={setWidthMm}
+				/>
+				<NumberField
+					id="gp-dpi"
+					label="DPI"
+					value={dpi}
+					min={72}
+					max={1200}
+					step={1}
+					onChange={setDpi}
+				/>
+			</div>
+
+			<label className="flex items-center gap-2 text-sm text-slate-600 dark:text-gray-400 cursor-pointer">
+				<input
+					type="checkbox"
+					checked={noDither}
+					onChange={(e) => setNoDither(e.target.checked)}
+					className="accent-violet-600"
+				/>
+				Desativar dithering
+			</label>
+
+			<div className="flex items-center justify-between">
+				<button
+					type="button"
+					onClick={onBack}
+					className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-medium rounded-xl transition-colors hover:bg-slate-50 dark:hover:bg-white/5"
+				>
+					<ArrowLeft className="w-4 h-4" />
+					Voltar
+				</button>
+				<button
+					type="button"
+					onClick={onPrepare}
+					disabled={isPreparing}
+					className="flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-colors disabled:opacity-60"
+				>
+					{isPreparing ? (
+						<>
+							<Loader2 className="w-4 h-4 animate-spin" />
+							Preparando...
+						</>
+					) : (
+						<>
+							<Wand2 className="w-4 h-4" />
+							Preparar imagem
+						</>
+					)}
+				</button>
+			</div>
+
+			{notice}
+		</div>
+	);
+}
+
+/* ─────────────── Before / After ─────────────── */
+
+function BeforeAfter({
+	originalUrl,
+	resultUrl,
+}: {
+	originalUrl: string | null;
+	resultUrl: string;
+}) {
+	const [pos, setPos] = useState(50);
+
+	return (
+		<div className="space-y-3">
+			<div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-slate-100 dark:bg-[#1a1a1d] select-none">
+				{/* Depois (base) */}
+				<img
+					src={resultUrl}
+					alt="Resultado da preparação"
+					className="absolute inset-0 w-full h-full object-contain"
+				/>
+				{/* Antes (recortado pela posição do slider) */}
+				{originalUrl && (
+					<div
+						className="absolute inset-0 overflow-hidden"
+						style={{ width: `${pos}%` }}
+					>
+						<img
+							src={originalUrl}
+							alt="Foto original"
+							className="absolute inset-0 h-full object-contain"
+							style={{ width: `${(100 / pos) * 100}%`, maxWidth: 'none' }}
+						/>
+					</div>
+				)}
+				<div
+					className="absolute inset-y-0 w-0.5 bg-violet-500 pointer-events-none"
+					style={{ left: `${pos}%` }}
+				/>
+				<span className="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/60 text-white text-[10px] font-semibold uppercase tracking-wider">
+					Antes
+				</span>
+				<span className="absolute top-2 right-2 px-2 py-0.5 rounded bg-violet-600 text-white text-[10px] font-semibold uppercase tracking-wider">
+					Depois
+				</span>
+			</div>
+			<input
+				type="range"
+				min={0}
+				max={100}
+				step={1}
+				value={pos}
+				aria-label="Comparar antes e depois"
+				onChange={(e) => setPos(Number(e.target.value))}
+				className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-200 dark:bg-white/10 accent-violet-600"
+			/>
+		</div>
+	);
+}
+
+/* ─────────────── Step 3: Result ─────────────── */
+
+function StepResult({
+	result,
+	originalUrl,
+	baseName,
+	onGoToStep2,
+	onReset,
+}: {
+	result: LaserPrepResult;
+	originalUrl: string | null;
+	baseName: string;
+	onGoToStep2: () => void;
+	onReset: () => void;
+}) {
+	const [output, setOutput] = useState<OutputMode>('png');
+	const [laser, setLaser] = useState<LaserType>('co2');
+	const [speed, setSpeed] = useState(300);
+	const [minPower, setMinPower] = useState(10);
+	const [maxPower, setMaxPower] = useState(50);
+	const [freqKhz, setFreqKhz] = useState(30);
+	const [qPulseUs, setQPulseUs] = useState(100);
+
+	const hasPulse = laserHasPulse(laser);
+
+	const handleDownloadPng = useCallback(() => {
+		downloadPng(result.pngUrl, baseName);
+	}, [result.pngUrl, baseName]);
+
+	const handleDownloadLbrn2 = useCallback(() => {
+		const xml = buildLbrn2({
+			pngBase64: result.pngBase64,
+			widthMm: result.width_mm,
+			heightMm: result.height_mm,
+			dpi: result.dpi,
+			laser,
+			speed,
+			minPower,
+			maxPower,
+			freqKhz: hasPulse ? freqKhz : undefined,
+			qPulseUs: hasPulse ? qPulseUs : undefined,
+		});
+		downloadLbrn2(`${baseName || 'gravacao'}.lbrn2`, xml);
+	}, [
+		result,
+		baseName,
+		laser,
+		speed,
+		minPower,
+		maxPower,
+		hasPulse,
+		freqKhz,
+		qPulseUs,
+	]);
+
+	return (
+		<div className="space-y-6">
+			<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-4">
+				<BeforeAfter originalUrl={originalUrl} resultUrl={result.pngBase64} />
+				<p className="mt-3 text-xs text-slate-500 dark:text-gray-400 text-center">
+					{result.px_w}×{result.px_h}px &middot; {result.width_mm}×
+					{result.height_mm}mm @ {result.dpi} DPI
+				</p>
+			</div>
+
+			{/* Escolha de saída */}
+			<fieldset className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
+				<legend className="px-1 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400">
+					Saída
+				</legend>
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
+					<label
+						className={`flex items-center gap-3 rounded-xl border-2 p-3 cursor-pointer transition-colors ${
+							output === 'png'
+								? 'border-violet-600 bg-violet-50 dark:bg-violet-500/10'
+								: 'border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
+						}`}
+					>
+						<input
+							type="radio"
+							name="output-mode"
+							value="png"
+							checked={output === 'png'}
+							onChange={() => setOutput('png')}
+							className="accent-violet-600"
+						/>
+						<FileImage className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+						<span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+							Imagem (PNG)
+						</span>
+					</label>
+					<label
+						className={`flex items-center gap-3 rounded-xl border-2 p-3 cursor-pointer transition-colors ${
+							output === 'lbrn2'
+								? 'border-violet-600 bg-violet-50 dark:bg-violet-500/10'
+								: 'border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
+						}`}
+					>
+						<input
+							type="radio"
+							name="output-mode"
+							value="lbrn2"
+							checked={output === 'lbrn2'}
+							onChange={() => setOutput('lbrn2')}
+							className="accent-violet-600"
+						/>
+						<Flame className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+						<span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+							LightBurn (.lbrn2)
+						</span>
+					</label>
+				</div>
+
+				{output === 'lbrn2' && (
+					<div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+						<div className="space-y-1.5 sm:col-span-2">
+							<label
+								htmlFor="gp-laser"
+								className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+							>
+								Tipo de laser
+							</label>
+							<select
+								id="gp-laser"
+								value={laser}
+								onChange={(e) => setLaser(e.target.value as LaserType)}
+								className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111] text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+							>
+								{LASER_OPTIONS.map((o) => (
+									<option key={o.value} value={o.value}>
+										{o.label}
+									</option>
+								))}
+							</select>
+						</div>
+						<NumberField
+							id="gp-speed"
+							label="Velocidade"
+							value={speed}
+							min={1}
+							step={1}
+							suffix="mm/s"
+							onChange={setSpeed}
+						/>
+						<div />
+						<NumberField
+							id="gp-min-power"
+							label="Potência mín"
+							value={minPower}
+							min={0}
+							max={100}
+							step={1}
+							suffix="%"
+							onChange={setMinPower}
+						/>
+						<NumberField
+							id="gp-max-power"
+							label="Potência máx"
+							value={maxPower}
+							min={0}
+							max={100}
+							step={1}
+							suffix="%"
+							onChange={setMaxPower}
+						/>
+						{hasPulse && (
+							<>
+								<NumberField
+									id="gp-freq"
+									label="Frequência (kHz)"
+									value={freqKhz}
+									min={1}
+									step={1}
+									suffix="kHz"
+									onChange={setFreqKhz}
+								/>
+								<NumberField
+									id="gp-qpulse"
+									label="Largura de pulso Q (µs)"
+									value={qPulseUs}
+									min={1}
+									step={1}
+									suffix="µs"
+									onChange={setQPulseUs}
+								/>
+							</>
+						)}
+					</div>
+				)}
+			</fieldset>
+
+			{/* Download principal conforme a saída */}
+			{output === 'png' ? (
+				<button
+					type="button"
+					onClick={handleDownloadPng}
+					className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-colors"
+				>
+					<Download className="w-5 h-5" />
+					Baixar imagem (PNG)
+				</button>
+			) : (
+				<button
+					type="button"
+					onClick={handleDownloadLbrn2}
+					className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-colors"
+				>
+					<Download className="w-5 h-5" />
+					Baixar projeto LightBurn
+				</button>
+			)}
+
+			<div className="flex flex-wrap gap-3">
+				<button
+					type="button"
+					onClick={onGoToStep2}
+					className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-medium rounded-xl transition-colors hover:bg-slate-50 dark:hover:bg-white/5"
+				>
+					<Sliders className="w-4 h-4" />
+					Ajustar material
+				</button>
+				<button
+					type="button"
+					onClick={onReset}
+					className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-medium rounded-xl transition-colors hover:bg-slate-50 dark:hover:bg-white/5"
+				>
+					<RotateCcw className="w-4 h-4" />
+					Nova preparação
+				</button>
+			</div>
+		</div>
+	);
+}
+
+/* ─────────────── Main View ─────────────── */
+
+export function GravacaoOneClickView() {
+	const [step, setStep] = useState<WizardStep>(1);
+	const [file, setFile] = useState<File | null>(null);
+	const [originalPreviewUrl, setOriginalPreviewUrl] = useState<string | null>(
+		null,
+	);
+	const [result, setResult] = useState<LaserPrepResult | null>(null);
+
+	const [material, setMaterial] = useState<LaserPrepMaterial>('wood');
+	const [widthMm, setWidthMm] = useState(DEFAULT_WIDTH_MM);
+	const [dpi, setDpi] = useState(DEFAULT_DPI);
+	const [noDither, setNoDither] = useState(false);
+
+	// portal só após montar (evita mismatch de hidratação)
+	const [mounted, setMounted] = useState(false);
+	useEffect(() => setMounted(true), []);
+
+	const wizardRef = useRef<HTMLDivElement>(null);
+	const resultRef = useRef<HTMLDivElement>(null);
+
+	const prepMutation = useLaserPrep();
+	// Billing padrão pelo hook: cobra se a funcionalidade existir; roda livre se não.
+	const { courses } = useEntitlements();
+	const courseSlug = courses[0]?.slug;
+	const billing = useToolBilling('gravacao_oneclick', courseSlug);
+
+	const runPrepare = useCallback(async () => {
+		if (!file) return;
+		// O hook decide: cobrada → invoke→motor→settle; livre → motor sem invocation.
+		await billing.runEngine((invocationId) =>
+			prepMutation
+				.mutateAsync({
+					file,
+					invocationId,
+					params: { material, width_mm: widthMm, dpi, noDither },
+				})
+				.then((res) => {
+					setResult(res);
+					setStep(3);
+					return res;
+				}),
+		);
+	}, [file, billing, prepMutation, material, widthMm, dpi, noDither]);
+
+	const handleFileSelected = useCallback((selectedFile: File) => {
+		if (!ACCEPTED_TYPES.includes(selectedFile.type)) {
+			toast.error('Formato não suportado. Use PNG, JPG ou WEBP.');
+			return;
+		}
+		if (selectedFile.size > MAX_FILE_SIZE) {
+			toast.error('Ficheiro demasiado grande (max. 10MB).');
+			return;
+		}
+		setFile(selectedFile);
+		setResult(null);
+		setOriginalPreviewUrl(URL.createObjectURL(selectedFile));
+	}, []);
+
+	const handlePrepare = useCallback(() => {
+		if (!file) return;
+		runPrepare();
+	}, [file, runPrepare]);
+
+	const handleReset = useCallback(() => {
+		setStep(1);
+		setFile(null);
+		setResult(null);
+		setOriginalPreviewUrl(null);
+		setMaterial('wood');
+		setWidthMm(DEFAULT_WIDTH_MM);
+		setDpi(DEFAULT_DPI);
+		setNoDither(false);
+	}, []);
+
+	const baseName = useMemo(() => baseNameOf(file), [file]);
+
+	// scroll acompanha a navegação do wizard
+	useEffect(() => {
+		if (!step) return;
+		const el = wizardRef.current;
+		if (!el) return;
+		const id = window.setTimeout(() => {
+			const top = el.getBoundingClientRect().top + window.scrollY - 88;
+			window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+		}, 60);
+		return () => window.clearTimeout(id);
+	}, [step]);
+
+	// centraliza o resultado quando ele aparece
+	useEffect(() => {
+		if (!result) return;
+		const el = resultRef.current;
+		if (!el) return;
+		const id = window.setTimeout(() => {
+			el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		}, 80);
+		return () => window.clearTimeout(id);
+	}, [result]);
+
+	return (
+		<div className="p-4 md:p-8">
+			<PageHeader
+				title="Gravação 1-Clique"
+				subtitle="Prepara uma foto pra gravação a laser (imagem pronta + LightBurn)."
+				icon={Flame}
+			/>
+
+			<div
+				ref={wizardRef}
+				className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-6 mb-8"
+			>
+				<StepIndicator current={step} />
+
+				{step === 1 && (
+					<div>
+						<StepUpload
+							onFileSelected={handleFileSelected}
+							file={file}
+							originalPreviewUrl={originalPreviewUrl}
+						/>
+						{file && (
+							<div className="flex justify-end mt-6">
+								<button
+									type="button"
+									onClick={() => setStep(2)}
+									className="flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-colors"
+								>
+									Continuar
+									<ArrowRight className="w-4 h-4" />
+								</button>
+							</div>
+						)}
+					</div>
+				)}
+
+				{step === 2 && (
+					<StepParams
+						material={material}
+						setMaterial={setMaterial}
+						widthMm={widthMm}
+						setWidthMm={setWidthMm}
+						dpi={dpi}
+						setDpi={setDpi}
+						noDither={noDither}
+						setNoDither={setNoDither}
+						onPrepare={handlePrepare}
+						onBack={() => setStep(1)}
+						isPreparing={billing.pending}
+						notice={billing.notice}
+					/>
+				)}
+
+				{step === 3 && result && (
+					<div ref={resultRef}>
+						<StepResult
+							result={result}
+							originalUrl={originalPreviewUrl}
+							baseName={baseName}
+							onGoToStep2={() => setStep(2)}
+							onReset={handleReset}
+						/>
+					</div>
+				)}
+			</div>
+
+			{/* CTA flutuante (continuar/preparar sempre visível) */}
+			{mounted &&
+				step === 1 &&
+				file &&
+				createPortal(
+					<button
+						type="button"
+						onClick={() => setStep(2)}
+						className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-6 py-3.5 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-full shadow-xl shadow-violet-900/30 transition-colors"
+					>
+						Continuar
+						<ArrowRight className="w-5 h-5" />
+					</button>,
+					document.body,
+				)}
+
+			{mounted &&
+				step === 2 &&
+				file &&
+				createPortal(
+					<button
+						type="button"
+						onClick={handlePrepare}
+						disabled={billing.pending}
+						className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-6 py-3.5 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-full shadow-xl shadow-violet-900/30 transition-colors disabled:opacity-60"
+					>
+						{billing.pending ? (
+							<>
+								<Loader2 className="w-5 h-5 animate-spin" />
+								Preparando...
+							</>
+						) : (
+							<>
+								<Wand2 className="w-5 h-5" />
+								Preparar imagem
+							</>
+						)}
+					</button>,
+					document.body,
+				)}
+		</div>
+	);
+}
