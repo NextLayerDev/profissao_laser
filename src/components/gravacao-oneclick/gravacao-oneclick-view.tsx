@@ -4,10 +4,13 @@ import {
 	ArrowLeft,
 	ArrowRight,
 	Check,
+	Copy,
+	Cpu,
 	Download,
 	FileImage,
 	Flame,
 	Image,
+	ImageDown,
 	Loader2,
 	RotateCcw,
 	Sliders,
@@ -20,6 +23,7 @@ import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/page-header';
 import { useEntitlements } from '@/hooks/use-entitlements';
 import { useLaserPrep } from '@/hooks/use-laser-prep';
+import { downloadBmpFromPng } from '@/lib/bmp';
 import { buildLbrn2, downloadLbrn2, type LaserType } from '@/lib/lightburn';
 import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
 import {
@@ -34,7 +38,7 @@ const DEFAULT_DPI = 254;
 const DEFAULT_WIDTH_MM = 150;
 
 type WizardStep = 1 | 2 | 3;
-type OutputMode = 'png' | 'lbrn2';
+type OutputMode = 'png' | 'bmp' | 'lbrn2';
 
 /** Rótulos PT pra cada chave de material (mesma ordem do motor). */
 const MATERIAL_LABELS: Record<LaserPrepMaterial, string> = {
@@ -62,6 +66,33 @@ const LASER_OPTIONS: { value: LaserType; label: string }[] = [
 function laserHasPulse(laser: LaserType): boolean {
 	return laser === 'fiber' || laser === 'galvo' || laser === 'uv';
 }
+
+/** Saídas disponíveis no passo 3 (PNG, BMP pra EZCAD, projeto LightBurn). */
+const OUTPUT_OPTIONS: {
+	value: OutputMode;
+	icon: typeof FileImage;
+	title: string;
+	desc: string;
+}[] = [
+	{
+		value: 'png',
+		icon: FileImage,
+		title: 'Imagem PNG',
+		desc: 'Pronta pra qualquer software',
+	},
+	{
+		value: 'bmp',
+		icon: ImageDown,
+		title: 'Imagem BMP',
+		desc: 'Pra EZCAD (fiber/galvo/UV)',
+	},
+	{
+		value: 'lbrn2',
+		icon: Flame,
+		title: 'LightBurn',
+		desc: 'Projeto .lbrn2 com ajustes',
+	},
+];
 
 /* ─────────────── Download helpers ─────────────── */
 
@@ -96,7 +127,14 @@ function formatFileSize(bytes: number): string {
 
 /* ─────────────── Step Indicator ─────────────── */
 
-function StepIndicator({ current }: { current: WizardStep }) {
+function StepIndicator({
+	current,
+	onStepClick,
+}: {
+	current: WizardStep;
+	/** Navega de volta a um passo já concluído (num < current). */
+	onStepClick?: (num: WizardStep) => void;
+}) {
 	const steps = [
 		{ num: 1 as const, label: 'Envie sua foto' },
 		{ num: 2 as const, label: 'Material e tamanho' },
@@ -108,20 +146,35 @@ function StepIndicator({ current }: { current: WizardStep }) {
 			{steps.map((step, idx) => {
 				const done = current > step.num;
 				const active = current === step.num;
+				const clickable = done && !!onStepClick;
+				const circle = (
+					<div
+						className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+							done
+								? 'bg-violet-600 text-white'
+								: active
+									? 'bg-violet-600 text-white ring-4 ring-violet-500/20'
+									: 'bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-gray-400'
+						} ${clickable ? 'hover:ring-4 hover:ring-violet-500/20' : ''}`}
+					>
+						{done ? <Check className="w-5 h-5" /> : step.num}
+					</div>
+				);
 				return (
 					<div key={step.num} className="flex items-center">
 						<div className="flex flex-col items-center">
-							<div
-								className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
-									done
-										? 'bg-violet-600 text-white'
-										: active
-											? 'bg-violet-600 text-white ring-4 ring-violet-500/20'
-											: 'bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-gray-400'
-								}`}
-							>
-								{done ? <Check className="w-5 h-5" /> : step.num}
-							</div>
+							{clickable ? (
+								<button
+									type="button"
+									onClick={() => onStepClick?.(step.num)}
+									className="cursor-pointer"
+									aria-label={`Voltar para ${step.label}`}
+								>
+									{circle}
+								</button>
+							) : (
+								circle
+							)}
 							<span
 								className={`mt-2 text-xs font-medium hidden sm:block ${
 									active
@@ -564,12 +617,14 @@ function StepResult({
 	result,
 	originalUrl,
 	baseName,
+	materialLabel,
 	onGoToStep2,
 	onReset,
 }: {
 	result: LaserPrepResult;
 	originalUrl: string | null;
 	baseName: string;
+	materialLabel: string;
 	onGoToStep2: () => void;
 	onReset: () => void;
 }) {
@@ -580,12 +635,72 @@ function StepResult({
 	const [maxPower, setMaxPower] = useState(50);
 	const [freqKhz, setFreqKhz] = useState(30);
 	const [qPulseUs, setQPulseUs] = useState(100);
+	const [bmpBusy, setBmpBusy] = useState(false);
+	const [copied, setCopied] = useState(false);
 
 	const hasPulse = laserHasPulse(laser);
+	// Ajustes de laser aparecem tanto pro LightBurn (embutidos no arquivo) quanto
+	// pro BMP/EZCAD (mostrados como parâmetros pra copiar).
+	const showLaserSettings = output === 'lbrn2' || output === 'bmp';
 
 	const handleDownloadPng = useCallback(() => {
 		downloadPng(result.pngUrl, baseName);
 	}, [result.pngUrl, baseName]);
+
+	const handleDownloadBmp = useCallback(async () => {
+		setBmpBusy(true);
+		try {
+			await downloadBmpFromPng(
+				`${baseName || 'gravacao'}.bmp`,
+				result.pngBase64,
+				result.dpi,
+			);
+		} catch {
+			toast.error('Não foi possível gerar o BMP.');
+		} finally {
+			setBmpBusy(false);
+		}
+	}, [result.pngBase64, result.dpi, baseName]);
+
+	// Parâmetros pra colar no EZCAD (o .ezd é binário fechado — não dá pra gerar).
+	const laserLabel =
+		LASER_OPTIONS.find((o) => o.value === laser)?.label ?? laser;
+	const ezcadParams = useMemo(() => {
+		const lines = [
+			`Material: ${materialLabel}`,
+			`Tamanho: ${result.width_mm} x ${result.height_mm} mm @ ${result.dpi} DPI`,
+			`Laser: ${laserLabel}`,
+			`Velocidade: ${speed} mm/s`,
+			`Potencia: ${minPower}-${maxPower} %`,
+		];
+		if (hasPulse) {
+			lines.push(`Frequencia: ${freqKhz} kHz`);
+			lines.push(`Q-pulse: ${qPulseUs} us`);
+		}
+		return lines.join('\n');
+	}, [
+		materialLabel,
+		result.width_mm,
+		result.height_mm,
+		result.dpi,
+		laserLabel,
+		speed,
+		minPower,
+		maxPower,
+		hasPulse,
+		freqKhz,
+		qPulseUs,
+	]);
+
+	const handleCopyEzcad = useCallback(() => {
+		navigator.clipboard?.writeText(ezcadParams).then(
+			() => {
+				setCopied(true);
+				setTimeout(() => setCopied(false), 1500);
+			},
+			() => toast.error('Não foi possível copiar.'),
+		);
+	}, [ezcadParams]);
 
 	const handleDownloadLbrn2 = useCallback(() => {
 		const xml = buildLbrn2({
@@ -617,10 +732,21 @@ function StepResult({
 		<div className="space-y-6">
 			<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-4">
 				<BeforeAfter originalUrl={originalUrl} resultUrl={result.pngBase64} />
-				<p className="mt-3 text-xs text-slate-500 dark:text-gray-400 text-center">
-					{result.px_w}×{result.px_h}px &middot; {result.width_mm}×
-					{result.height_mm}mm @ {result.dpi} DPI
-				</p>
+				<div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
+					{[
+						materialLabel,
+						`${result.width_mm}×${result.height_mm} mm`,
+						`${result.px_w}×${result.px_h} px`,
+						`${result.dpi} DPI`,
+					].map((chip) => (
+						<span
+							key={chip}
+							className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-white/5 text-[11px] font-medium text-slate-600 dark:text-slate-300"
+						>
+							{chip}
+						</span>
+					))}
+				</div>
 			</div>
 
 			{/* Escolha de saída */}
@@ -628,50 +754,38 @@ function StepResult({
 				<legend className="px-1 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400">
 					Saída
 				</legend>
-				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
-					<label
-						className={`flex items-center gap-3 rounded-xl border-2 p-3 cursor-pointer transition-colors ${
-							output === 'png'
-								? 'border-violet-600 bg-violet-50 dark:bg-violet-500/10'
-								: 'border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
-						}`}
-					>
-						<input
-							type="radio"
-							name="output-mode"
-							value="png"
-							checked={output === 'png'}
-							onChange={() => setOutput('png')}
-							className="accent-violet-600"
-						/>
-						<FileImage className="w-5 h-5 text-violet-600 dark:text-violet-400" />
-						<span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-							Imagem (PNG)
-						</span>
-					</label>
-					<label
-						className={`flex items-center gap-3 rounded-xl border-2 p-3 cursor-pointer transition-colors ${
-							output === 'lbrn2'
-								? 'border-violet-600 bg-violet-50 dark:bg-violet-500/10'
-								: 'border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
-						}`}
-					>
-						<input
-							type="radio"
-							name="output-mode"
-							value="lbrn2"
-							checked={output === 'lbrn2'}
-							onChange={() => setOutput('lbrn2')}
-							className="accent-violet-600"
-						/>
-						<Flame className="w-5 h-5 text-violet-600 dark:text-violet-400" />
-						<span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-							LightBurn (.lbrn2)
-						</span>
-					</label>
+				<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1">
+					{OUTPUT_OPTIONS.map((opt) => (
+						<label
+							key={opt.value}
+							className={`flex items-start gap-3 rounded-xl border-2 p-3 cursor-pointer transition-colors ${
+								output === opt.value
+									? 'border-violet-600 bg-violet-50 dark:bg-violet-500/10'
+									: 'border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
+							}`}
+						>
+							<input
+								type="radio"
+								name="output-mode"
+								value={opt.value}
+								checked={output === opt.value}
+								onChange={() => setOutput(opt.value)}
+								className="accent-violet-600 mt-0.5"
+							/>
+							<opt.icon className="w-5 h-5 shrink-0 text-violet-600 dark:text-violet-400" />
+							<span className="min-w-0">
+								<span className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+									{opt.title}
+								</span>
+								<span className="block text-[11px] text-slate-400 dark:text-gray-500">
+									{opt.desc}
+								</span>
+							</span>
+						</label>
+					))}
 				</div>
 
-				{output === 'lbrn2' && (
+				{showLaserSettings && (
 					<div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
 						<div className="space-y-1.5 sm:col-span-2">
 							<label
@@ -747,10 +861,43 @@ function StepResult({
 						)}
 					</div>
 				)}
+
+				{/* EZCAD: o .ezd é binário fechado (não dá pra gerar). Em vez disso,
+				    entrega o BMP + estes parâmetros prontos pra colar no EZCAD. */}
+				{output === 'bmp' && (
+					<div className="mt-4 rounded-xl border border-violet-200 dark:border-violet-500/30 bg-violet-50/60 dark:bg-violet-500/5 p-3">
+						<div className="flex items-center justify-between gap-2 mb-2">
+							<span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-violet-700 dark:text-violet-300">
+								<Cpu className="w-3.5 h-3.5" />
+								Parâmetros pro EZCAD
+							</span>
+							<button
+								type="button"
+								onClick={handleCopyEzcad}
+								className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-500/10 transition-colors"
+							>
+								{copied ? (
+									<Check className="w-3.5 h-3.5" />
+								) : (
+									<Copy className="w-3.5 h-3.5" />
+								)}
+								{copied ? 'Copiado' : 'Copiar'}
+							</button>
+						</div>
+						<pre className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300 whitespace-pre-wrap font-mono">
+							{ezcadParams}
+						</pre>
+						<p className="mt-2 text-[11px] text-slate-400 dark:text-gray-500">
+							Importe o BMP no EZCAD (Arquivo → Importar) e use estes valores na
+							aba de marcação. O EZCAD não tem formato de projeto aberto, então
+							os ajustes vão como referência (não embutidos no arquivo).
+						</p>
+					</div>
+				)}
 			</fieldset>
 
 			{/* Download principal conforme a saída */}
-			{output === 'png' ? (
+			{output === 'png' && (
 				<button
 					type="button"
 					onClick={handleDownloadPng}
@@ -759,7 +906,23 @@ function StepResult({
 					<Download className="w-5 h-5" />
 					Baixar imagem (PNG)
 				</button>
-			) : (
+			)}
+			{output === 'bmp' && (
+				<button
+					type="button"
+					onClick={handleDownloadBmp}
+					disabled={bmpBusy}
+					className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-colors disabled:opacity-60"
+				>
+					{bmpBusy ? (
+						<Loader2 className="w-5 h-5 animate-spin" />
+					) : (
+						<Download className="w-5 h-5" />
+					)}
+					{bmpBusy ? 'Gerando BMP...' : 'Baixar imagem (BMP)'}
+				</button>
+			)}
+			{output === 'lbrn2' && (
 				<button
 					type="button"
 					onClick={handleDownloadLbrn2}
@@ -954,7 +1117,14 @@ export function GravacaoOneClickView() {
 				ref={wizardRef}
 				className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-6 mb-8"
 			>
-				<StepIndicator current={step} />
+				<StepIndicator
+					current={step}
+					onStepClick={(num) => {
+						// Só volta pra passos já concluídos (com dados disponíveis).
+						if (num === 1) setStep(1);
+						else if (num === 2 && file) setStep(2);
+					}}
+				/>
 
 				{step === 1 && (
 					<div>
@@ -1006,6 +1176,7 @@ export function GravacaoOneClickView() {
 							result={result}
 							originalUrl={originalPreviewUrl}
 							baseName={baseName}
+							materialLabel={MATERIAL_LABELS[material]}
 							onGoToStep2={() => setStep(2)}
 							onReset={handleReset}
 						/>
