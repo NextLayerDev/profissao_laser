@@ -2,11 +2,13 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+	ArrowLeft,
 	ArrowRight,
 	Check,
 	ChevronDown,
 	Code2,
 	Eye,
+	EyeOff,
 	Link2,
 	Loader2,
 	Plus,
@@ -663,6 +665,15 @@ export function ToolBuilderView() {
 	const [pipelineMode, setPipelineMode] = useState<'canvas' | 'steps'>(
 		'canvas',
 	);
+	const [showPreview, setShowPreview] = useState(true);
+
+	const goHub = () => {
+		setView('gallery');
+		setState(null);
+		setBillingTool(null);
+		setSelectedKey(null);
+		setSelectedDefId(null);
+	};
 
 	const patch = (p: Partial<BuilderState>) =>
 		setState((s) => (s ? { ...s, ...p } : s));
@@ -844,6 +855,57 @@ export function ToolBuilderView() {
 	const outputs = state ? allNodeOutputs(state) : [];
 	const numberOutputs = outputs.filter((o) => o.type === 'number');
 
+	// status (rascunho/publicada) da definition aberta, p/ o cabeçalho do editor
+	const openDef = useMemo(
+		() => (defs.data ?? []).find((d) => d.id === selectedDefId) ?? null,
+		[defs.data, selectedDefId],
+	);
+
+	// colunas do container por tela: galeria = lista + grade; editor = trabalho
+	// + prévia (ou só trabalho se prévia oculta); cobrança = centrado.
+	const gridCls =
+		view === 'editor'
+			? showPreview
+				? 'grid gap-5 lg:grid-cols-[minmax(0,1fr)_400px]'
+				: 'grid gap-5'
+			: view === 'billing'
+				? 'mx-auto grid max-w-4xl gap-5'
+				: 'grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)]';
+
+	const focused = view === 'editor' || view === 'billing';
+
+	const actionButtons = (
+		<>
+			<button
+				type="button"
+				onClick={() => saveMut.mutate()}
+				disabled={saveMut.isPending || !canSave}
+				className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-white/10 disabled:opacity-40"
+			>
+				{saveMut.isPending ? (
+					<Loader2 className="h-4 w-4 animate-spin" />
+				) : (
+					<Save className="h-4 w-4" />
+				)}
+				{selectedDefId ? 'Salvar' : 'Criar'}
+			</button>
+			<button
+				type="button"
+				onClick={() => publishMut.mutate()}
+				disabled={publishMut.isPending || !selectedDefId}
+				title={!selectedDefId ? 'Salve antes de publicar' : undefined}
+				className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-4 py-2 text-sm font-bold text-[#06120f] shadow-lg shadow-emerald-500/25 disabled:opacity-40"
+			>
+				{publishMut.isPending ? (
+					<Loader2 className="h-4 w-4 animate-spin" />
+				) : (
+					<Rocket className="h-4 w-4" />
+				)}
+				Publicar
+			</button>
+		</>
+	);
+
 	return (
 		<div className="relative min-h-[calc(100vh-3.5rem)] text-slate-100">
 			<ForgeStyles />
@@ -852,92 +914,160 @@ export function ToolBuilderView() {
 			<div className="pointer-events-none absolute bottom-0 right-10 h-80 w-80 rounded-full bg-cyan-600/10 blur-3xl forge-pulse" />
 
 			<div className="relative px-4 py-6 md:px-8">
-				<div className="forge-rise mb-6 flex items-center gap-3">
-					<div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/30 to-cyan-500/20 text-emerald-300 ring-1 ring-emerald-400/30">
-						<Workflow className="h-6 w-6" />
+				{!focused && (
+					<div className="forge-rise mb-6 flex items-center gap-3">
+						<div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/30 to-cyan-500/20 text-emerald-300 ring-1 ring-emerald-400/30">
+							<Workflow className="h-6 w-6" />
+						</div>
+						<div>
+							<h1 className="text-xl font-bold tracking-tight text-white">
+								Fábrica de Ferramentas
+							</h1>
+							<p className="font-mono text-[11px] tracking-wide text-emerald-400/70">
+								motor blocks_v1 · {BLOCK_CATALOG.length} blocos · sem deploy
+							</p>
+						</div>
 					</div>
-					<div>
-						<h1 className="text-xl font-bold tracking-tight text-white">
-							Fábrica de Ferramentas
-						</h1>
-						<p className="font-mono text-[11px] tracking-wide text-emerald-400/70">
-							motor blocks_v1 · {BLOCK_CATALOG.length} blocos · sem deploy
-						</p>
-					</div>
-				</div>
+				)}
 
-				<div className="grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)_360px]">
-					{/* rail */}
-					<aside className="space-y-2">
+				{focused && (
+					<div className="forge-rise sticky top-[72px] z-20 mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-[#0c0f12]/85 px-4 py-3 backdrop-blur">
 						<button
 							type="button"
-							onClick={() => {
-								setView('gallery');
-								setState(null);
-								setBillingTool(null);
-								setSelectedKey(null);
-							}}
-							className="forge-node flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-3 py-2.5 text-sm font-semibold text-[#06120f] shadow-lg shadow-emerald-500/20"
+							onClick={goHub}
+							className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-300 hover:text-white"
 						>
-							<Plus className="h-4 w-4" /> Nova ferramenta
+							<ArrowLeft className="h-4 w-4" /> Ferramentas
 						</button>
-						<div className="relative">
-							<Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
-							<input
-								value={search}
-								onChange={(e) => setSearch(e.target.value)}
-								placeholder="buscar…"
-								className="w-full rounded-lg border border-white/10 bg-black/30 py-2 pl-8 pr-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-							/>
-						</div>
-						<div className="overflow-hidden rounded-xl border border-white/10 bg-[#0c0f12]/80">
-							<div className="border-b border-white/5 px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-slate-500">
-								Ferramentas ({items.length})
-							</div>
-							{(tools.isLoading || defs.isLoading) && (
-								<div className="flex justify-center p-4">
-									<Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
-								</div>
-							)}
-							<div className="max-h-[60vh] overflow-y-auto">
-								{items.map((it) => (
-									<button
-										key={it.key}
-										type="button"
-										onClick={() =>
-											it.kind === 'fabrica' && it.def
-												? loadFabrica(it.def)
-												: it.tool && loadBilling(it.tool)
-										}
-										className={`flex w-full items-center gap-2.5 border-b border-white/5 px-3 py-2.5 text-left transition-colors ${selectedKey === it.key ? 'bg-emerald-500/10' : 'hover:bg-white/[0.03]'}`}
-									>
-										<Glyph
-											name={it.icon}
-											className="h-4 w-4 shrink-0 text-slate-400"
-										/>
-										<span className="min-w-0 flex-1">
-											<span className="block truncate text-sm text-slate-200">
-												{it.name}
-											</span>
-											<span className="block truncate font-mono text-[10px] text-slate-500">
-												{it.key}
-											</span>
+						{view === 'editor' && state && (
+							<>
+								<div className="flex min-w-0 items-center gap-2">
+									<span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/20">
+										<Glyph name={state.icon} className="h-4 w-4" />
+									</span>
+									<span className="min-w-0">
+										<span className="block truncate text-sm font-semibold text-white">
+											{state.title || 'Nova ferramenta'}
 										</span>
+										<span className="block truncate font-mono text-[10px] text-slate-500">
+											{state.toolKey || '—'}
+										</span>
+									</span>
+									{openDef && (
 										<span
-											className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${it.kind === 'fabrica' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-slate-500/15 text-slate-400'}`}
+											className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${openDef.status === 'published' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-amber-500/15 text-amber-300'}`}
 										>
-											{it.kind === 'fabrica' ? 'fábrica' : 'código'}
+											{openDef.status === 'published'
+												? 'publicada'
+												: 'rascunho'}
 										</span>
+									)}
+								</div>
+								<div className="ml-auto flex items-center gap-2">
+									<button
+										type="button"
+										onClick={() => setShowPreview((v) => !v)}
+										className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white"
+									>
+										{showPreview ? (
+											<>
+												<EyeOff className="h-4 w-4" /> Ocultar prévia
+											</>
+										) : (
+											<>
+												<Eye className="h-4 w-4" /> Mostrar prévia
+											</>
+										)}
 									</button>
-								))}
-								{items.length === 0 && !tools.isLoading && (
-									<p className="p-4 text-xs text-slate-500">
-										Nenhuma ferramenta.
-									</p>
-								)}
+									{actionButtons}
+								</div>
+							</>
+						)}
+						{view === 'billing' && billingTool && (
+							<span className="ml-1 truncate text-sm font-semibold text-white">
+								{billingTool.name}
+								<span className="ml-2 font-mono text-[10px] text-slate-500">
+									preço & planos
+								</span>
+							</span>
+						)}
+					</div>
+				)}
+
+				<div className={gridCls}>
+					{/* rail (só na galeria) */}
+					{view === 'gallery' && (
+						<aside className="space-y-2">
+							<button
+								type="button"
+								onClick={() => {
+									setView('gallery');
+									setState(null);
+									setBillingTool(null);
+									setSelectedKey(null);
+								}}
+								className="forge-node flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-3 py-2.5 text-sm font-semibold text-[#06120f] shadow-lg shadow-emerald-500/20"
+							>
+								<Plus className="h-4 w-4" /> Nova ferramenta
+							</button>
+							<div className="relative">
+								<Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+								<input
+									value={search}
+									onChange={(e) => setSearch(e.target.value)}
+									placeholder="buscar…"
+									className="w-full rounded-lg border border-white/10 bg-black/30 py-2 pl-8 pr-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+								/>
 							</div>
-						</div>
-					</aside>
+							<div className="overflow-hidden rounded-xl border border-white/10 bg-[#0c0f12]/80">
+								<div className="border-b border-white/5 px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-slate-500">
+									Ferramentas ({items.length})
+								</div>
+								{(tools.isLoading || defs.isLoading) && (
+									<div className="flex justify-center p-4">
+										<Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
+									</div>
+								)}
+								<div className="max-h-[60vh] overflow-y-auto">
+									{items.map((it) => (
+										<button
+											key={it.key}
+											type="button"
+											onClick={() =>
+												it.kind === 'fabrica' && it.def
+													? loadFabrica(it.def)
+													: it.tool && loadBilling(it.tool)
+											}
+											className={`flex w-full items-center gap-2.5 border-b border-white/5 px-3 py-2.5 text-left transition-colors ${selectedKey === it.key ? 'bg-emerald-500/10' : 'hover:bg-white/[0.03]'}`}
+										>
+											<Glyph
+												name={it.icon}
+												className="h-4 w-4 shrink-0 text-slate-400"
+											/>
+											<span className="min-w-0 flex-1">
+												<span className="block truncate text-sm text-slate-200">
+													{it.name}
+												</span>
+												<span className="block truncate font-mono text-[10px] text-slate-500">
+													{it.key}
+												</span>
+											</span>
+											<span
+												className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${it.kind === 'fabrica' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-slate-500/15 text-slate-400'}`}
+											>
+												{it.kind === 'fabrica' ? 'fábrica' : 'código'}
+											</span>
+										</button>
+									))}
+									{items.length === 0 && !tools.isLoading && (
+										<p className="p-4 text-xs text-slate-500">
+											Nenhuma ferramenta.
+										</p>
+									)}
+								</div>
+							</div>
+						</aside>
+					)}
 
 					{/* centro */}
 					<main className="space-y-5">
@@ -1416,9 +1546,9 @@ export function ToolBuilderView() {
 						)}
 					</main>
 
-					{/* direita: preview + ações (só no editor) */}
-					{view === 'editor' && state && (
-						<aside className="space-y-3 self-start lg:sticky lg:top-4">
+					{/* direita: preview ao vivo (só no editor, quando visível) */}
+					{view === 'editor' && state && showPreview && (
+						<aside className="space-y-3 self-start lg:sticky lg:top-[148px]">
 							<div className="flex items-center gap-2 text-emerald-300">
 								<Eye className="h-4 w-4" />
 								<span className="font-mono text-[11px] uppercase tracking-widest">
@@ -1438,35 +1568,6 @@ export function ToolBuilderView() {
 										Definição incompleta — confira as etapas / o resultado.
 									</p>
 								)}
-							</div>
-							<div className="flex gap-2">
-								<button
-									type="button"
-									onClick={() => saveMut.mutate()}
-									disabled={saveMut.isPending || !canSave}
-									className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-200 hover:bg-white/10 disabled:opacity-40"
-								>
-									{saveMut.isPending ? (
-										<Loader2 className="h-4 w-4 animate-spin" />
-									) : (
-										<Save className="h-4 w-4" />
-									)}
-									{selectedDefId ? 'Salvar' : 'Criar'}
-								</button>
-								<button
-									type="button"
-									onClick={() => publishMut.mutate()}
-									disabled={publishMut.isPending || !selectedDefId}
-									title={!selectedDefId ? 'Salve antes de publicar' : undefined}
-									className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-4 py-2.5 text-sm font-bold text-[#06120f] shadow-lg shadow-emerald-500/25 disabled:opacity-40"
-								>
-									{publishMut.isPending ? (
-										<Loader2 className="h-4 w-4 animate-spin" />
-									) : (
-										<Rocket className="h-4 w-4" />
-									)}
-									Publicar
-								</button>
 							</div>
 							{!selectedDefId && (
 								<p className="flex items-center gap-1.5 text-[11px] text-slate-500">

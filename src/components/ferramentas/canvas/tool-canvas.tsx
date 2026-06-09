@@ -8,10 +8,19 @@ import {
 	type NodeChange,
 	ReactFlow,
 	ReactFlowProvider,
+	useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { LayoutGrid, Sparkles, Trash2, X } from 'lucide-react';
+import {
+	LayoutGrid,
+	Maximize2,
+	Minimize2,
+	Sparkles,
+	Trash2,
+	X,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { BLOCK_CATALOG } from '../block-catalog';
 import { FieldRow, ParamRow } from '../builder-fields';
@@ -52,6 +61,29 @@ function CanvasInner({ state, onChange }: Props) {
 		Record<string, { x: number; y: number }>
 	>({});
 	const [selected, setSelected] = useState<string | null>(null);
+	const [maximized, setMaximized] = useState(false);
+	const rf = useReactFlow();
+
+	const toggleMax = useCallback(() => {
+		setMaximized((m) => !m);
+		// reenquadra depois do container redimensionar
+		setTimeout(() => rf.fitView({ duration: 200, padding: 0.18 }), 90);
+	}, [rf]);
+
+	// trava o scroll do body e fecha no Esc enquanto maximizado
+	useEffect(() => {
+		if (!maximized) return;
+		const prev = document.body.style.overflow;
+		document.body.style.overflow = 'hidden';
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') setMaximized(false);
+		};
+		window.addEventListener('keydown', onKey);
+		return () => {
+			document.body.style.overflow = prev;
+			window.removeEventListener('keydown', onKey);
+		};
+	}, [maximized]);
 
 	const flow = useMemo(() => stateToFlow(state, positions), [state, positions]);
 
@@ -159,8 +191,14 @@ function CanvasInner({ state, onChange }: Props) {
 		? BLOCK_CATALOG.find((b) => b.id === selNode.block)
 		: undefined;
 
-	return (
-		<div className="relative h-[68vh] min-h-[420px] overflow-hidden rounded-2xl border border-white/10 bg-[#06080b]">
+	const shell = (
+		<div
+			className={
+				maximized
+					? 'fixed inset-0 z-[70] overflow-hidden bg-[#06080b]'
+					: 'relative h-[72vh] min-h-[480px] overflow-hidden rounded-2xl border border-white/10 bg-[#06080b]'
+			}
+		>
 			{/* paleta */}
 			<div className="absolute left-3 top-3 z-10 flex max-w-[150px] flex-col gap-1.5 rounded-xl border border-white/10 bg-[#0c0f12]/90 p-2 backdrop-blur">
 				<span className="px-1 font-mono text-[9px] uppercase tracking-widest text-slate-500">
@@ -183,13 +221,29 @@ function CanvasInner({ state, onChange }: Props) {
 			</div>
 
 			{/* toolbar */}
-			<div className="absolute right-3 top-3 z-10">
+			<div className="absolute right-3 top-3 z-10 flex items-center gap-1.5">
 				<button
 					type="button"
 					onClick={organize}
 					className="flex items-center gap-1.5 rounded-md border border-white/10 bg-[#0c0f12]/90 px-2.5 py-1.5 text-[11px] text-slate-300 backdrop-blur hover:text-white"
 				>
 					<LayoutGrid className="h-3.5 w-3.5" /> Organizar
+				</button>
+				<button
+					type="button"
+					onClick={toggleMax}
+					title={maximized ? 'Restaurar (Esc)' : 'Maximizar'}
+					className="flex items-center gap-1.5 rounded-md border border-white/10 bg-[#0c0f12]/90 px-2.5 py-1.5 text-[11px] text-slate-300 backdrop-blur hover:text-white"
+				>
+					{maximized ? (
+						<>
+							<Minimize2 className="h-3.5 w-3.5" /> Restaurar
+						</>
+					) : (
+						<>
+							<Maximize2 className="h-3.5 w-3.5" /> Maximizar
+						</>
+					)}
 				</button>
 			</div>
 
@@ -301,6 +355,11 @@ function CanvasInner({ state, onChange }: Props) {
 			)}
 		</div>
 	);
+
+	// Maximizado: renderiza via portal no body pra escapar o containing block
+	// da <Section> (backdrop-blur cria containing block que prenderia o
+	// position:fixed dentro do retângulo da seção em vez da viewport).
+	return maximized ? createPortal(shell, document.body) : shell;
 }
 
 export function ToolCanvas(props: Props) {
