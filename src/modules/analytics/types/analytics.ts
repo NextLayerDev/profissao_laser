@@ -190,6 +190,49 @@ export interface InvoicesAnalyticsParams {
 	per_page?: number;
 }
 
+// ---- Failed payments ----
+
+export const failedPaymentRowSchema = z.object({
+	id: z.string(),
+	subscription_id: z.string().nullable().optional(),
+	stripe_invoice_id: z.string(),
+	billing_reason: billingReasonSchema,
+	amount_cents: z.number().int(),
+	interval: z.enum(['monthly', 'yearly']),
+	period_start: z.string().nullable().optional(),
+	period_end: z.string().nullable().optional(),
+	created_at: z.string(),
+	customer: customerRefSchema,
+	plan: z
+		.object({ id: z.string(), key: z.string(), name: z.string() })
+		.nullable()
+		.optional(),
+});
+export type FailedPaymentRow = z.infer<typeof failedPaymentRowSchema>;
+
+export const failedPaymentsAnalyticsSchema = z.object({
+	data: failedPaymentRowSchema.array(),
+	page: z.number().int(),
+	per_page: z.number().int(),
+	total: z.number().int(),
+	total_pages: z.number().int(),
+});
+export type FailedPaymentsAnalytics = z.infer<
+	typeof failedPaymentsAnalyticsSchema
+>;
+
+export interface FailedPaymentsAnalyticsParams {
+	billing_reason?: BillingReason;
+	from?: string;
+	to?: string;
+	plan_id?: string;
+	interval?: 'month' | 'year';
+	customer_id?: string;
+	q?: string;
+	page?: number;
+	per_page?: number;
+}
+
 // ---- Refunds ----
 
 export const refundTypeSchema = z.enum(['subscription', 'vox_purchase']);

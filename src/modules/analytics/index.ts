@@ -1,9 +1,11 @@
+export { FailedPaymentsSection } from './components/failed-payments-section';
 export { InvoicesSection } from './components/invoices-section';
 export { RefundsSection } from './components/refunds-section';
 export { SubscriptionsSection } from './components/subscriptions-section';
 export { VoxAnalyticsSection } from './components/vox-analytics-section';
 export {
 	analyticsQueryKeys,
+	useFailedPaymentsAnalytics,
 	useInvoicesAnalytics,
 	useInvoicesSummary,
 	usePlanRefunds,
@@ -14,6 +16,7 @@ export {
 	useVoxRefunds,
 } from './hooks/use-analytics';
 export {
+	getFailedPaymentsAnalytics,
 	getInvoicesAnalytics,
 	getInvoicesSummary,
 	getPlanRefunds,
@@ -25,6 +28,9 @@ export {
 } from './services/analytics.service';
 export type {
 	BillingReason,
+	FailedPaymentRow,
+	FailedPaymentsAnalytics,
+	FailedPaymentsAnalyticsParams,
 	InvoiceRow,
 	InvoicesAnalytics,
 	InvoicesAnalyticsParams,
@@ -42,6 +48,8 @@ export type {
 } from './types/analytics';
 export {
 	billingReasonSchema,
+	failedPaymentRowSchema,
+	failedPaymentsAnalyticsSchema,
 	invoiceRowSchema,
 	invoicesAnalyticsSchema,
 	invoicesSummarySchema,

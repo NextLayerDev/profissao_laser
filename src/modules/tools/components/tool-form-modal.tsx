@@ -27,6 +27,11 @@ export function ToolFormModal({ editing, pending, onClose, onSubmit }: Props) {
 			? String(editing.vox_cost).replace('.', ',')
 			: '0',
 	);
+	const [platformCost, setPlatformCost] = useState(
+		editing?.platform_cost_cents != null
+			? (editing.platform_cost_cents / 100).toFixed(2).replace('.', ',')
+			: '0',
+	);
 	const [enabled, setEnabled] = useState(editing?.enabled ?? true);
 
 	// Só dá pra associar ferramentas do catálogo ainda não registradas.
@@ -114,6 +119,21 @@ export function ToolFormModal({ editing, pending, onClose, onSubmit }: Props) {
 					</p>
 				</Field>
 
+				<Field label="Custo plataforma (R$) por uso">
+					<input
+						type="text"
+						inputMode="decimal"
+						value={platformCost}
+						onChange={(e) => setPlatformCost(e.target.value)}
+						placeholder="0,30"
+						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
+					/>
+					<p className="text-xs text-slate-500 mt-1">
+						Custo REAL da plataforma por uso (ex.: 0,30 = R$ 0,30). Vai pra
+						fatura aberta quando o uso consome voxxys doados via Link de Plano.
+					</p>
+				</Field>
+
 				<label className="flex items-center gap-2 text-sm text-slate-900 dark:text-white">
 					<input
 						type="checkbox"
@@ -139,6 +159,7 @@ export function ToolFormModal({ editing, pending, onClose, onSubmit }: Props) {
 								name: name.trim(),
 								description: description?.trim() || undefined,
 								vox_cost: parseVox(voxCost),
+								platform_cost_cents: Math.round(parseVox(platformCost) * 100),
 								enabled,
 							};
 							onSubmit(editing ? base : { ...base, key: key.trim() });

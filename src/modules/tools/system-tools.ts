@@ -26,6 +26,13 @@ export const SYSTEM_TOOLS: SystemTool[] = [
 		kind: 'engine',
 	},
 	{
+		key: 'gravacao_oneclick',
+		label: 'Gravação 1-Clique',
+		description:
+			'Prepara uma foto pra gravação a laser (imagem pronta + LightBurn).',
+		kind: 'engine',
+	},
+	{
 		key: 'ai_canvas',
 		label: 'AI Canvas',
 		description: 'Edição/geração de imagem por IA no editor.',

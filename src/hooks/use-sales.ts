@@ -10,6 +10,7 @@ import {
 	getSalesAttempts,
 	type RefundSalePayload,
 	refundSale,
+	refundSubscription,
 } from '@/services/sales';
 import type { RecurringSubscription, Refund, Sales } from '@/types/sales';
 
@@ -74,6 +75,18 @@ export function useRefundSale() {
 			qc.invalidateQueries({ queryKey: ['sales'] });
 			qc.invalidateQueries({ queryKey: ['sales-attempts'] });
 			qc.invalidateQueries({ queryKey: ['sales-refunds'] });
+		},
+	});
+}
+
+export function useRefundSubscription() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (id: string) => refundSubscription(id),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ['sales-recurring'] });
+			qc.invalidateQueries({ queryKey: ['sales-refunds'] });
+			qc.invalidateQueries({ queryKey: ['sales'] });
 		},
 	});
 }

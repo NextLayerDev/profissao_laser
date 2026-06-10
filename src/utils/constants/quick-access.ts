@@ -1,6 +1,7 @@
 import {
 	BookOpen,
 	Eye,
+	Flame,
 	Headphones,
 	LayoutGrid,
 	MessageCircle,
@@ -69,6 +70,14 @@ export const quickAccessItems: QuickAccessItem[] = [
 		featureKey: 'vetorizacao',
 		href: '/course/vetorizacao',
 		...TOOL_COLORS.vetorizacao,
+	},
+	{
+		label: 'Gravacao 1-Clique',
+		description: 'Prepare fotos pra gravar',
+		Icon: Flame,
+		section: 'FERRAMENTAS',
+		href: '/course/gravacao-oneclick',
+		...TOOL_COLORS.gravacao,
 	},
 	{
 		label: 'Previas',

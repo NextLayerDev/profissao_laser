@@ -1,19 +1,20 @@
 'use client';
 
-import { FileText, RefreshCw, RotateCcw } from 'lucide-react';
+import { FileText, RefreshCw, RotateCcw, XCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Header } from '@/components/dashboard/header';
 import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 import { usePermissions } from '@/hooks/use-permissions';
 import {
+	FailedPaymentsSection,
 	InvoicesSection,
 	RefundsSection,
 	SubscriptionsSection,
 	VoxAnalyticsSection,
 } from '@/modules/analytics';
 
-type Tab = 'subscriptions' | 'voxes' | 'invoices' | 'refunds';
+type Tab = 'subscriptions' | 'voxes' | 'invoices' | 'failed' | 'refunds';
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
 	{
@@ -30,6 +31,11 @@ const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
 		key: 'invoices',
 		label: 'Faturas',
 		icon: <FileText className="w-4 h-4" />,
+	},
+	{
+		key: 'failed',
+		label: 'Pagamentos falhos',
+		icon: <XCircle className="w-4 h-4" />,
 	},
 	{
 		key: 'refunds',
@@ -90,6 +96,7 @@ export default function VendasPage() {
 				{activeTab === 'subscriptions' && <SubscriptionsSection />}
 				{activeTab === 'voxes' && <VoxAnalyticsSection />}
 				{activeTab === 'invoices' && <InvoicesSection />}
+				{activeTab === 'failed' && <FailedPaymentsSection />}
 				{activeTab === 'refunds' && <RefundsSection />}
 			</main>
 		</div>
