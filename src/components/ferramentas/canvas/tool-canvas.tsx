@@ -1,6 +1,7 @@
 'use client';
 
 import {
+	applyNodeChanges,
 	Background,
 	BackgroundVariant,
 	Controls,
@@ -19,7 +20,7 @@ import {
 	Trash2,
 	X,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { BLOCK_CATALOG } from '../block-catalog';
@@ -36,10 +37,12 @@ import { layoutLR } from './canvas-layout';
 import {
 	applyConnect,
 	applyDisconnect,
+	buildEdges,
+	buildNodes,
+	type FlowNode,
 	INPUTS_ID,
 	OUTPUT_ID,
 	removeNode,
-	stateToFlow,
 } from './canvas-mapping';
 import { CANVAS_NODE_TYPES } from './canvas-nodes';
 
@@ -57,9 +60,13 @@ interface Props {
 }
 
 function CanvasInner({ state, onChange }: Props) {
-	const [positions, setPositions] = useState<
-		Record<string, { x: number; y: number }>
-	>({});
+	// Posições são EFÊMERAS e pertencem ao React Flow (não vão pra definition).
+	// O drag passa pelo applyNodeChanges (sem reconstruir nodes ⇒ sem flicker);
+	// `state` só reconstrói a ESTRUTURA, preservando as posições atuais.
+	const [rfNodes, setRfNodes] = useState<FlowNode[]>(() => {
+		const laid = layoutLR(buildNodes(state, {}), buildEdges(state));
+		return buildNodes(state, laid);
+	});
 	const [selected, setSelected] = useState<string | null>(null);
 	const [maximized, setMaximized] = useState(false);
 	const rf = useReactFlow();
@@ -85,35 +92,37 @@ function CanvasInner({ state, onChange }: Props) {
 		};
 	}, [maximized]);
 
-	const flow = useMemo(() => stateToFlow(state, positions), [state, positions]);
+	// Edges são puramente derivadas do estado (independem de posição) — não
+	// recomputam durante o drag, então acompanham o nó sem piscar.
+	const edges = useMemo(() => buildEdges(state), [state]);
 
-	// Posiciona nós sem posição (carga inicial / novo bloco) — só os que faltam.
-	const idSig = state.nodes.map((n) => n.id).join('|');
-	// biome-ignore lint/correctness/useExhaustiveDependencies: relayout ao mudar o conjunto de nós
-	useEffect(() => {
-		setPositions((prev) => {
-			const ids = [INPUTS_ID, ...state.nodes.map((n) => n.id), OUTPUT_ID];
-			const missing = ids.filter((id) => !prev[id]);
-			if (!missing.length) return prev;
-			const laid = layoutLR(flow.nodes, flow.edges);
-			const next = { ...prev };
-			for (const id of missing) if (laid[id]) next[id] = laid[id];
-			return next;
-		});
-	}, [idSig]);
-
+	// Drag/seleção: React Flow é dono das posições (applyNodeChanges, sem rebuild).
 	const onNodesChange = useCallback((changes: NodeChange[]) => {
-		setPositions((prev) => {
-			let next = prev;
-			for (const c of changes) {
-				if (c.type === 'position' && c.position) {
-					if (next === prev) next = { ...prev };
-					next[c.id] = c.position;
-				}
-			}
-			return next;
-		});
+		setRfNodes((nds) => applyNodeChanges(changes, nds));
 	}, []);
+
+	// Reconcilia a ESTRUTURA (mudou `state`) preservando as posições atuais (lidas
+	// de `prev`, que já reflete os drags); dagre só pros nós novos. Drag puro não
+	// muda `state` ⇒ este efeito não roda ⇒ sem flicker.
+	const firstSync = useRef(true);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: reage só a mudanças estruturais de `state`
+	useEffect(() => {
+		if (firstSync.current) {
+			firstSync.current = false;
+			return;
+		}
+		setRfNodes((prev) => {
+			const pos: Record<string, { x: number; y: number }> = {};
+			for (const n of prev) pos[n.id] = n.position;
+			const ids = [INPUTS_ID, ...state.nodes.map((n) => n.id), OUTPUT_ID];
+			const missing = ids.filter((id) => !pos[id]);
+			if (missing.length) {
+				const laid = layoutLR(buildNodes(state, pos), buildEdges(state));
+				for (const id of missing) if (laid[id]) pos[id] = laid[id];
+			}
+			return buildNodes(state, pos);
+		});
+	}, [state]);
 
 	const onConnect = useCallback(
 		(conn: {
@@ -138,12 +147,12 @@ function CanvasInner({ state, onChange }: Props) {
 			if (!removed.length) return;
 			let s = state;
 			for (const c of removed) {
-				const edge = flow.edges.find((e) => e.id === c.id);
+				const edge = edges.find((e) => e.id === c.id);
 				if (edge) s = applyDisconnect(s, edge);
 			}
 			onChange(s);
 		},
-		[state, onChange, flow.edges],
+		[state, onChange, edges],
 	);
 
 	const onNodesDelete = useCallback(
@@ -163,7 +172,13 @@ function CanvasInner({ state, onChange }: Props) {
 			...state,
 			nodes: [...state.nodes, newNode(blockId, state.nodes)],
 		});
-	const organize = () => setPositions(layoutLR(flow.nodes, flow.edges));
+	const organize = useCallback(() => {
+		setRfNodes((nds) => {
+			const laid = layoutLR(nds, edges);
+			return nds.map((n) => (laid[n.id] ? { ...n, position: laid[n.id] } : n));
+		});
+		setTimeout(() => rf.fitView({ duration: 200, padding: 0.18 }), 60);
+	}, [edges, rf]);
 
 	const setField = (nf: (typeof state.fields)[number]) =>
 		onChange({
@@ -248,8 +263,8 @@ function CanvasInner({ state, onChange }: Props) {
 			</div>
 
 			<ReactFlow
-				nodes={flow.nodes}
-				edges={flow.edges}
+				nodes={rfNodes}
+				edges={edges}
 				nodeTypes={CANVAS_NODE_TYPES}
 				onNodesChange={onNodesChange}
 				onEdgesChange={onEdgesChange}

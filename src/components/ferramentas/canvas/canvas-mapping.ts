@@ -89,14 +89,13 @@ function refEdge(
 	};
 }
 
-/** Deriva os nós + edges do React Flow a partir do estado. */
-export function stateToFlow(
+/** Deriva os NÓS do React Flow (posições efêmeras vêm de fora). */
+export function buildNodes(
 	state: BuilderState,
 	positions: Record<string, { x: number; y: number }>,
-): { nodes: FlowNode[]; edges: FlowEdge[] } {
+): FlowNode[] {
 	const pos = (id: string) => positions[id] ?? { x: 0, y: 0 };
-
-	const nodes: FlowNode[] = [
+	return [
 		{
 			id: INPUTS_ID,
 			type: 'inputsNode',
@@ -118,7 +117,10 @@ export function stateToFlow(
 			data: { output: state.output } as OutputNodeData,
 		},
 	];
+}
 
+/** Deriva as EDGES (puramente do estado — independem de posição). */
+export function buildEdges(state: BuilderState): FlowEdge[] {
 	const edges: FlowEdge[] = [];
 	for (const n of state.nodes) {
 		for (const [param, val] of Object.entries(n.params)) {
@@ -164,7 +166,15 @@ export function stateToFlow(
 			refEdge(`${OUTPUT_ID}:meta:${m}`, m, OUTPUT_ID, 'meta', false, '#a78bfa'),
 		);
 	}
-	return { nodes, edges };
+	return edges;
+}
+
+/** Atalho: nós + edges juntos (layout inicial / organizar). */
+export function stateToFlow(
+	state: BuilderState,
+	positions: Record<string, { x: number; y: number }>,
+): { nodes: FlowNode[]; edges: FlowEdge[] } {
+	return { nodes: buildNodes(state, positions), edges: buildEdges(state) };
 }
 
 export interface ConnectInput {
