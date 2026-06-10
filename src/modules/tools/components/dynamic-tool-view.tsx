@@ -52,7 +52,7 @@ function ResultPanel({
 			<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-4">
 				{preview ? (
 					<div className="aspect-[4/3] w-full overflow-hidden rounded-lg bg-slate-100 dark:bg-[#111] flex items-center justify-center">
-						{/* biome-ignore lint/performance/noImgElement: data URL / CDN dinâmico */}
+						{/* <img> intencional: preview de data URL / CDN dinâmico */}
 						<img
 							src={preview}
 							alt="Resultado"

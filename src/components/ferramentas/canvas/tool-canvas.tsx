@@ -112,7 +112,6 @@ function CanvasInner({ state, onChange }: Props) {
 	// de `prev`, que já reflete os drags); dagre só pros nós novos. Drag puro não
 	// muda `state` ⇒ este efeito não roda ⇒ sem flicker.
 	const firstSync = useRef(true);
-	// biome-ignore lint/correctness/useExhaustiveDependencies: reage só a mudanças estruturais de `state`
 	useEffect(() => {
 		if (firstSync.current) {
 			firstSync.current = false;
