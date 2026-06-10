@@ -26,6 +26,11 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 	const [yearly, setYearly] = useState(
 		centsToReais(editing?.price_yearly_cents ?? null),
 	);
+	const [voxGrant, setVoxGrant] = useState(
+		editing?.vox_monthly_grant ? String(editing.vox_monthly_grant) : '0',
+	);
+
+	const voxGrantNum = Math.max(0, Math.trunc(Number(voxGrant) || 0));
 
 	const canSubmit =
 		!pending && !!name.trim() && (editing !== null || !!key.trim());
@@ -94,6 +99,36 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 					são criados automaticamente pelo backend.
 				</p>
 
+				<Field label="Voxxys grátis por mês">
+					<input
+						type="number"
+						min={0}
+						step={1}
+						value={voxGrant}
+						onChange={(e) => setVoxGrant(e.target.value)}
+						placeholder="0 = nenhum"
+						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white"
+					/>
+					<p className="text-xs text-slate-500 mt-1">
+						Creditados ao assinante na compra e em cada renovação paga.
+					</p>
+				</Field>
+
+				{voxGrantNum > 0 && (
+					<div className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-3.5 py-2.5 text-xs text-amber-700 dark:text-amber-300 leading-snug">
+						<span className="font-semibold">
+							Cada voxxy doado entra na fatura aberta a R$ 1,20
+						</span>
+						, cobrado da empresa no ato de cada concessão (compra e renovações).
+						Este plano gera{' '}
+						<span className="font-semibold">
+							R$ {((voxGrantNum * 120) / 100).toFixed(2).replace('.', ',')}
+							/assinante/mês
+						</span>{' '}
+						na fatura.
+					</div>
+				)}
+
 				<label className="flex items-center gap-2 text-sm">
 					<input
 						type="checkbox"
@@ -121,6 +156,7 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 								published,
 								price_monthly_cents: reaisToCents(monthly),
 								price_yearly_cents: reaisToCents(yearly),
+								vox_monthly_grant: voxGrantNum,
 							};
 							onSubmit(editing ? base : { ...base, key: key.trim() });
 						}}

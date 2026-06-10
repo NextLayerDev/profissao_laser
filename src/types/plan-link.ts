@@ -52,14 +52,22 @@ export type PublicPlanLink = z.infer<typeof publicPlanLinkSchema>;
 
 export const companyInvoiceEntrySchema = z.object({
 	id: z.string(),
-	redemption_id: z.string(),
-	plan_link_id: z.string(),
+	/** link_tool_use = uso de tool por cliente de link; plan_grant = voxxys do plano (cobrados no ato). */
+	source: z
+		.enum(['link_tool_use', 'plan_grant'])
+		.optional()
+		.default('link_tool_use'),
+	redemption_id: z.string().nullable(),
+	plan_link_id: z.string().nullable(),
+	plan_id: z.string().nullable().optional().default(null),
+	plan_name: z.string().nullable().optional().default(null),
 	customer_id: z.string(),
 	customer_email: z.string().nullable(),
 	customer_name: z.string().nullable(),
-	tool_key: z.string(),
+	tool_key: z.string().nullable(),
 	tool_name: z.string().nullable(),
 	invocation_id: z.string().nullable(),
+	ref_id: z.string().nullable().optional().default(null),
 	kind: z.enum(['accrual', 'reversal']),
 	amount_cents: z.number().int(),
 	voxes_spent: z.coerce.number(),
@@ -73,6 +81,8 @@ export const companyInvoiceSchema = z.object({
 	totals: z.object({
 		open_cents: z.number().int(),
 		vox_granted: z.coerce.number(),
+		/** Voxxys doados via planos (cobrados a R$1,20 no ato). */
+		vox_granted_plans: z.coerce.number().optional().default(0),
 		vox_rate_cents: z.number().int(),
 	}),
 });
