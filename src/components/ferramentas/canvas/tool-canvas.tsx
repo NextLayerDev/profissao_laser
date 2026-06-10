@@ -16,6 +16,7 @@ import {
 	LayoutGrid,
 	Maximize2,
 	Minimize2,
+	Plus,
 	Sparkles,
 	Trash2,
 	X,
@@ -27,10 +28,13 @@ import { BLOCK_CATALOG } from '../block-catalog';
 import { FieldRow, ParamRow } from '../builder-fields';
 import {
 	type BuilderState,
+	CUSTOM_PREFIX,
+	type CustomNodeSpec,
 	type FieldType,
 	newField,
 	newNode,
 	type ParamValue,
+	resolveSpec,
 } from '../builder-model';
 import { ac, resolveToolIcon } from '../forge-theme';
 import { layoutLR } from './canvas-layout';
@@ -45,6 +49,7 @@ import {
 	removeNode,
 } from './canvas-mapping';
 import { CANVAS_NODE_TYPES } from './canvas-nodes';
+import { CustomNodeModal } from './custom-node-modal';
 
 const FIELD_TYPES: { type: FieldType; label: string }[] = [
 	{ type: 'number', label: 'Número' },
@@ -69,6 +74,7 @@ function CanvasInner({ state, onChange }: Props) {
 	});
 	const [selected, setSelected] = useState<string | null>(null);
 	const [maximized, setMaximized] = useState(false);
+	const [creatingNode, setCreatingNode] = useState(false);
 	const rf = useReactFlow();
 
 	const toggleMax = useCallback(() => {
@@ -170,8 +176,22 @@ function CanvasInner({ state, onChange }: Props) {
 	const addNode = (blockId: string) =>
 		onChange({
 			...state,
-			nodes: [...state.nodes, newNode(blockId, state.nodes)],
+			nodes: [...state.nodes, newNode(blockId, state.nodes, state.customNodes)],
 		});
+	const addCustom = (spec: CustomNodeSpec) => {
+		onChange({ ...state, customNodes: [...state.customNodes, spec] });
+		setCreatingNode(false);
+	};
+	const removeCustom = (id: string) => {
+		if (state.nodes.some((n) => n.block === `${CUSTOM_PREFIX}${id}`)) {
+			toast.error('Esse nó personalizado está em uso no canvas.');
+			return;
+		}
+		onChange({
+			...state,
+			customNodes: state.customNodes.filter((c) => c.id !== id),
+		});
+	};
 	const organize = useCallback(() => {
 		setRfNodes((nds) => {
 			const laid = layoutLR(nds, edges);
@@ -203,7 +223,7 @@ function CanvasInner({ state, onChange }: Props) {
 	const selNode = state.nodes.find((n) => n.id === selected);
 	const selIndex = state.nodes.findIndex((n) => n.id === selected);
 	const selSpec = selNode
-		? BLOCK_CATALOG.find((b) => b.id === selNode.block)
+		? resolveSpec(selNode.block, state.customNodes)
 		: undefined;
 
 	const shell = (
@@ -233,6 +253,44 @@ function CanvasInner({ state, onChange }: Props) {
 						</button>
 					);
 				})}
+
+				{state.customNodes.length > 0 && (
+					<span className="mt-1 px-1 font-mono text-[9px] uppercase tracking-widest text-slate-500">
+						meus nós
+					</span>
+				)}
+				{state.customNodes.map((c) => {
+					const a = ac(c.accent);
+					const Icon = resolveToolIcon(c.icon);
+					return (
+						<div key={c.id} className="group flex items-center gap-1">
+							<button
+								type="button"
+								onClick={() => addNode(`${CUSTOM_PREFIX}${c.id}`)}
+								className={`flex min-w-0 flex-1 items-center gap-1.5 rounded-md border border-white/10 bg-black/20 px-2 py-1 text-[11px] text-slate-300 ${a.nodeHover} hover:text-white`}
+							>
+								<Icon className="h-3.5 w-3.5 shrink-0" />
+								<span className="truncate">{c.label}</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => removeCustom(c.id)}
+								title="Excluir nó"
+								className="rounded p-1 text-slate-600 opacity-0 hover:text-rose-400 group-hover:opacity-100"
+							>
+								<Trash2 className="h-3 w-3" />
+							</button>
+						</div>
+					);
+				})}
+
+				<button
+					type="button"
+					onClick={() => setCreatingNode(true)}
+					className="mt-1 flex items-center justify-center gap-1 rounded-md border border-dashed border-white/15 px-2 py-1 text-[11px] text-slate-400 hover:border-emerald-400/40 hover:text-white"
+				>
+					<Plus className="h-3 w-3" /> criar nó
+				</button>
 			</div>
 
 			{/* toolbar */}
@@ -367,6 +425,14 @@ function CanvasInner({ state, onChange }: Props) {
 						</div>
 					) : null}
 				</div>
+			)}
+
+			{creatingNode && (
+				<CustomNodeModal
+					existing={state.customNodes}
+					onClose={() => setCreatingNode(false)}
+					onSave={addCustom}
+				/>
 			)}
 		</div>
 	);

@@ -3,7 +3,12 @@ import type {
 	ToolDefinitionDoc,
 	ToolInputSpec,
 } from '@/modules/tools/services/tool-definitions.service';
-import { type BlockParam, blockSpec, type PortType } from './block-catalog';
+import {
+	type BlockParam,
+	type BlockSpec,
+	blockSpec,
+	type PortType,
+} from './block-catalog';
 
 /**
  * Modelo GERAL do builder: o admin monta uma tool do zero empilhando blocos e
@@ -48,6 +53,59 @@ export interface BuilderNode {
 	params: Record<string, ParamValue>;
 }
 
+/**
+ * Nó CUSTOMIZADO ("monte do zero"): um preset nomeado sobre um bloco base do
+ * catálogo (rótulo/ícone próprios + valores pré-preenchidos). No `buildDoc` ele
+ * é EXPANDIDO pro bloco base — o motor só vê blocos que conhece (zero mudança no
+ * back). O id do nó referencia `custom:<id>`.
+ */
+export interface CustomNodeSpec {
+	id: string;
+	label: string;
+	icon: string;
+	accent: string;
+	baseBlock: string;
+	defaults: Record<string, unknown>;
+}
+
+export const CUSTOM_PREFIX = 'custom:';
+
+/** Sintetiza um BlockSpec a partir de um nó custom (mesmos params/saídas do base). */
+export function customToSpec(c: CustomNodeSpec): BlockSpec | undefined {
+	const base = blockSpec(c.baseBlock);
+	if (!base) return undefined;
+	return {
+		...base,
+		id: `${CUSTOM_PREFIX}${c.id}`,
+		label: c.label,
+		sub: `nó · ${base.label}`,
+		icon: c.icon,
+		accent: c.accent,
+		category: 'util',
+	};
+}
+
+/** Resolve um BlockSpec por id, incluindo nós custom (`custom:<id>`). */
+export function resolveSpec(
+	blockId: string,
+	customs?: CustomNodeSpec[],
+): BlockSpec | undefined {
+	if (blockId.startsWith(CUSTOM_PREFIX)) {
+		const c = customs?.find((x) => `${CUSTOM_PREFIX}${x.id}` === blockId);
+		return c ? customToSpec(c) : undefined;
+	}
+	return blockSpec(blockId);
+}
+
+/** Resolve um BlockParam por id+nome, incluindo nós custom. */
+export function resolveParam(
+	blockId: string,
+	name: string,
+	customs?: CustomNodeSpec[],
+): BlockParam | undefined {
+	return resolveSpec(blockId, customs)?.params.find((p) => p.name === name);
+}
+
 export interface BuilderState {
 	templateId: string;
 	toolKey: string;
@@ -57,6 +115,8 @@ export interface BuilderState {
 	actionLabel: string;
 	fields: BuilderField[];
 	nodes: BuilderNode[];
+	/** nós personalizados criados nesta tool (preset sobre um bloco base). */
+	customNodes: CustomNodeSpec[];
 	/** fontes (ex.: 'store.url', 'prep.pngBase64', ['prep.width_mm', …]). */
 	output: { primary: string; preview: string; meta: string[] };
 	voxCost: number;
@@ -139,11 +199,24 @@ export function buildDoc(state: BuilderState): ToolDefinitionDoc {
 	const input: Record<string, ToolInputSpec> = {};
 	for (const f of state.fields) input[f.name] = fieldToSpec(f);
 
+	// Nós custom são EXPANDIDOS pro bloco base (o motor só conhece blocos base);
+	// guardamos o mapa instância→def em `ui.custom_nodes` pro round-trip.
+	const customById = new Map((state.customNodes ?? []).map((c) => [c.id, c]));
+	const customInstances: Record<string, string> = {};
 	const pipeline = state.nodes.map((n) => {
+		let block = n.block;
+		if (block.startsWith(CUSTOM_PREFIX)) {
+			const defId = block.slice(CUSTOM_PREFIX.length);
+			const c = customById.get(defId);
+			if (c) {
+				customInstances[n.id] = defId;
+				block = c.baseBlock;
+			}
+		}
 		const params: Record<string, unknown> = {};
 		for (const [k, v] of Object.entries(n.params))
 			params[k] = serializeParam(v);
-		return { id: n.id, block: n.block, params };
+		return { id: n.id, block, params };
 	});
 
 	const output: Record<string, unknown> = {};
@@ -167,6 +240,14 @@ export function buildDoc(state: BuilderState): ToolDefinitionDoc {
 				downloadFrom: 'output.primary',
 				showMeta: state.output.meta.length > 0,
 			},
+			...(state.customNodes.length
+				? {
+						custom_nodes: {
+							defs: state.customNodes,
+							instances: customInstances,
+						},
+					}
+				: {}),
 		},
 		billing: { vox_cost: state.voxCost, free_quota: state.freeQuota },
 	} as unknown as ToolDefinitionDoc;
@@ -220,13 +301,30 @@ export function docToState(def: {
 		block: string;
 		params?: Record<string, unknown>;
 	}[];
+	// nós custom: restaura os defs e remapeia o bloco das instâncias.
+	const customMeta = (
+		doc.ui as
+			| {
+					custom_nodes?: {
+						defs?: CustomNodeSpec[];
+						instances?: Record<string, string>;
+					};
+			  }
+			| undefined
+	)?.custom_nodes;
+	const customNodes = Array.isArray(customMeta?.defs) ? customMeta.defs : [];
+	const instances = customMeta?.instances ?? {};
+
 	const heads = new Set<string>(['input', ...rawNodes.map((n) => n.id)]);
 	const nodes: BuilderNode[] = rawNodes.map((n) => {
 		const params: Record<string, ParamValue> = {};
 		for (const [k, v] of Object.entries(n.params ?? {})) {
 			params[k] = classifyParam(v, heads);
 		}
-		return { id: n.id, block: n.block, params };
+		const block = instances[n.id]
+			? `${CUSTOM_PREFIX}${instances[n.id]}`
+			: n.block;
+		return { id: n.id, block, params };
 	});
 
 	const out = (doc.output ?? {}) as {
@@ -250,6 +348,7 @@ export function docToState(def: {
 		actionLabel: action?.label ?? 'Gerar',
 		fields,
 		nodes,
+		customNodes,
 		output: {
 			primary: out.primary ?? '',
 			preview: out.preview ?? '',
@@ -303,7 +402,7 @@ export function outputSourceType(
 		return f ? fieldProduces(f.type) : undefined;
 	}
 	const node = state.nodes.find((n) => n.id === head);
-	const spec = node ? blockSpec(node.block) : undefined;
+	const spec = node ? resolveSpec(node.block, state.customNodes) : undefined;
 	return spec?.outputs.find((o) => o.name === field)?.type;
 }
 
@@ -321,7 +420,7 @@ export function availableSources(
 	}
 	state.nodes.forEach((n, i) => {
 		if (i >= nodeIndex) return; // só nós anteriores
-		const spec = blockSpec(n.block);
+		const spec = resolveSpec(n.block, state.customNodes);
 		for (const o of spec?.outputs ?? []) {
 			if (typeFits(o.type, want)) {
 				out.push({
@@ -339,7 +438,7 @@ export function availableSources(
 export function allNodeOutputs(state: BuilderState): SourceOption[] {
 	const out: SourceOption[] = [];
 	for (const n of state.nodes) {
-		const spec = blockSpec(n.block);
+		const spec = resolveSpec(n.block, state.customNodes);
 		for (const o of spec?.outputs ?? []) {
 			out.push({
 				value: `${n.id}.${o.name}`,
@@ -389,9 +488,19 @@ export function newField(type: FieldType, index: number): BuilderField {
 	}
 }
 
-export function newNode(blockId: string, existing: BuilderNode[]): BuilderNode {
-	const spec = blockSpec(blockId);
-	const baseId = blockId.split('.').pop() || 'node';
+export function newNode(
+	blockId: string,
+	existing: BuilderNode[],
+	customs?: CustomNodeSpec[],
+): BuilderNode {
+	const spec = resolveSpec(blockId, customs);
+	const custom = blockId.startsWith(CUSTOM_PREFIX)
+		? customs?.find((c) => `${CUSTOM_PREFIX}${c.id}` === blockId)
+		: undefined;
+	// id base: 'meu_no' pros custom, 'photoengrave' pros do catálogo.
+	const baseId = blockId.startsWith(CUSTOM_PREFIX)
+		? blockId.slice(CUSTOM_PREFIX.length).replace(/[^a-z0-9]+/gi, '_')
+		: blockId.split('.').pop() || 'node';
 	let id = baseId;
 	let n = 1;
 	const taken = new Set(existing.map((e) => e.id));
@@ -401,10 +510,11 @@ export function newNode(blockId: string, existing: BuilderNode[]): BuilderNode {
 	}
 	const params: Record<string, ParamValue> = {};
 	for (const p of spec?.params ?? []) {
+		const cd = custom?.defaults?.[p.name];
 		params[p.name] =
 			p.kind === 'ref'
 				? { mode: 'ref', source: '' }
-				: { mode: 'literal', value: p.default };
+				: { mode: 'literal', value: cd !== undefined ? cd : p.default };
 	}
 	return { id, block: blockId, params };
 }
@@ -446,6 +556,7 @@ const blank: Template = {
 		actionLabel: 'Gerar',
 		fields: [imageField()],
 		nodes: [mkNode('src', 'image.input', { from: ref('input.image') })],
+		customNodes: [],
 		output: { primary: '', preview: '', meta: [] },
 		voxCost: 0,
 		freeQuota: { basic: 0, avan: 0, pro: 0, max: 0 },
@@ -467,6 +578,7 @@ const laser: Template = {
 		actionLabel: 'Gerar gravação',
 		voxCost: 0.3,
 		freeQuota: { max: 20, avan: 2, pro: 0, basic: 0 },
+		customNodes: [],
 		fields: [
 			imageField(),
 			{
@@ -570,6 +682,7 @@ const vectorize: Template = {
 		actionLabel: 'Vetorizar',
 		voxCost: 0.1,
 		freeQuota: { max: null, avan: 5, pro: 2, basic: 0 },
+		customNodes: [],
 		fields: [
 			imageField(),
 			{

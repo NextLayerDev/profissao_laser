@@ -1,17 +1,13 @@
 import type { Edge, Node } from '@xyflow/react';
-import {
-	type BlockParam,
-	type BlockSpec,
-	blockParam,
-	blockSpec,
-	type PortType,
-} from '../block-catalog';
+import type { BlockParam, BlockSpec, PortType } from '../block-catalog';
 import {
 	type BuilderField,
 	type BuilderNode,
 	type BuilderState,
 	outputSourceType,
 	type PortLike,
+	resolveParam,
+	resolveSpec,
 	typeFits,
 	wantType,
 } from '../builder-model';
@@ -107,7 +103,11 @@ export function buildNodes(
 			id: n.id,
 			type: 'blockNode',
 			position: pos(n.id),
-			data: { node: n, spec: blockSpec(n.block), index } as BlockNodeData,
+			data: {
+				node: n,
+				spec: resolveSpec(n.block, state.customNodes),
+				index,
+			} as BlockNodeData,
 		})),
 		{
 			id: OUTPUT_ID,
@@ -227,9 +227,10 @@ export function applyConnect(state: BuilderState, c: ConnectInput): MutResult {
 	// → param de um bloco
 	const targetNode = state.nodes.find((n) => n.id === c.target);
 	if (!targetNode || !c.targetHandle) return {};
-	const param: BlockParam | undefined = blockParam(
+	const param: BlockParam | undefined = resolveParam(
 		targetNode.block,
 		c.targetHandle,
+		state.customNodes,
 	);
 	if (!param) return {};
 
@@ -276,7 +277,7 @@ export function removeNode(state: BuilderState, id: string): BuilderState {
 			const params: Record<string, (typeof n.params)[string]> = {};
 			for (const [k, v] of Object.entries(n.params)) {
 				if (v.mode === 'ref' && v.source && orphan(v.source)) {
-					const p = blockParam(n.block, k);
+					const p = resolveParam(n.block, k, state.customNodes);
 					params[k] =
 						p?.kind === 'ref'
 							? { mode: 'ref', source: '' }
@@ -323,7 +324,7 @@ export function applyDisconnect(
 	}
 	const node = state.nodes.find((n) => n.id === edge.target);
 	if (!node || !edge.targetHandle) return state;
-	const param = blockParam(node.block, edge.targetHandle);
+	const param = resolveParam(node.block, edge.targetHandle, state.customNodes);
 	const reset =
 		param?.kind === 'ref'
 			? { mode: 'ref' as const, source: '' }

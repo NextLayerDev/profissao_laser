@@ -37,12 +37,7 @@ import {
 } from '@/modules/tools/services/tool-definitions.service';
 import type { Tool } from '@/modules/tools/types/tools';
 import { getApiErrorMessage } from '@/shared/lib/api-error';
-import {
-	BLOCK_CATALOG,
-	type BlockParam,
-	blockSpec,
-	type PortType,
-} from './block-catalog';
+import { BLOCK_CATALOG, type BlockParam, type PortType } from './block-catalog';
 import { KeyValueEditor } from './builder-fields';
 import {
 	allNodeOutputs,
@@ -56,6 +51,7 @@ import {
 	newField,
 	newNode,
 	type ParamValue,
+	resolveSpec,
 	slugifyKey,
 	TEMPLATES,
 	type Template,
@@ -415,7 +411,7 @@ function StepCard({
 	onMove: (dir: -1 | 1) => void;
 	onRemove: () => void;
 }) {
-	const spec = blockSpec(node.block);
+	const spec = resolveSpec(node.block, state.customNodes);
 	const a = ac(spec?.accent);
 	return (
 		<div
@@ -753,7 +749,7 @@ export function ToolBuilderView() {
 
 	const loadFabrica = (def: AiToolDefinition) => {
 		const st = docToState(def);
-		const unknown = st.nodes.some((n) => !blockSpec(n.block));
+		const unknown = st.nodes.some((n) => !resolveSpec(n.block, st.customNodes));
 		setState(st);
 		setSelectedKey(def.tool_key);
 		setSelectedDefId(def.id);
