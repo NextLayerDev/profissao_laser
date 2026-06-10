@@ -3,6 +3,7 @@ import {
 	createPlanLink,
 	getCompanyInvoice,
 	getPlanLinkPublic,
+	listPlanLinkRedemptions,
 	listPlanLinks,
 	redeemPlanLink,
 	updatePlanLinkStatus,
@@ -13,6 +14,7 @@ const KEYS = {
 	links: ['plan-links'] as const,
 	public: (token: string) => ['plan-link-public', token] as const,
 	invoice: (offset: number) => ['company-invoice', offset] as const,
+	redemptions: (offset: number) => ['plan-link-redemptions', offset] as const,
 };
 
 export function usePlanLinks() {
@@ -52,7 +54,7 @@ export function usePlanLinkPublic(token: string | null) {
 
 export function useRedeemPlanLink(token: string) {
 	return useMutation({
-		mutationFn: (payload: { cpf: string; plan_key: string }) =>
+		mutationFn: (payload: { cpf: string; plan_key?: string }) =>
 			redeemPlanLink(token, payload),
 	});
 }
@@ -64,6 +66,16 @@ export function useCompanyInvoice(page: number) {
 	return useQuery({
 		queryKey: KEYS.invoice(offset),
 		queryFn: () => getCompanyInvoice({ limit: INVOICE_PAGE_SIZE, offset }),
+		placeholderData: (prev) => prev,
+	});
+}
+
+export function usePlanLinkRedemptions(page: number) {
+	const offset = page * INVOICE_PAGE_SIZE;
+	return useQuery({
+		queryKey: KEYS.redemptions(offset),
+		queryFn: () =>
+			listPlanLinkRedemptions({ limit: INVOICE_PAGE_SIZE, offset }),
 		placeholderData: (prev) => prev,
 	});
 }
