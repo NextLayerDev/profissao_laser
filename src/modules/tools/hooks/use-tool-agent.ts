@@ -48,6 +48,9 @@ export function useToolAgent(
 		[],
 	);
 	const abortRef = useRef<AbortController | null>(null);
+	// trava SÍNCRONA de re-entrância: impede 2 turnos simultâneos (duplo-clique /
+	// chip + Enter) que cobrariam voxes 2x — `streaming` (state) atualiza tarde.
+	const sendingRef = useRef(false);
 	const stateRef = useRef(state);
 	useEffect(() => {
 		stateRef.current = state;
@@ -64,7 +67,8 @@ export function useToolAgent(
 		async (raw: string) => {
 			const text = raw.trim();
 			const current = stateRef.current;
-			if (!text || streaming || !current) return;
+			if (!text || sendingRef.current || !current) return;
+			sendingRef.current = true;
 
 			const aId = uid('a');
 			setMessages((prev) => [
@@ -139,19 +143,24 @@ export function useToolAgent(
 					toast.error('Conexão com o agente caiu. Tente de novo.');
 				}
 			} finally {
-				historyRef.current = [
-					...historyRef.current,
-					{ role: 'user', content: text },
-					{
-						role: 'assistant',
-						content: narration || '(montou/ajustou a ferramenta)',
-					},
-				];
+				// turno abortado não vira histórico (não polui o contexto do próximo
+				// turno com uma resposta de assistente pela metade).
+				if (!ac.signal.aborted) {
+					historyRef.current = [
+						...historyRef.current,
+						{ role: 'user', content: text },
+						{
+							role: 'assistant',
+							content: narration || '(montou/ajustou a ferramenta)',
+						},
+					];
+				}
 				setStreaming(false);
+				sendingRef.current = false;
 				abortRef.current = null;
 			}
 		},
-		[streaming, setState, patchMsg, qc],
+		[setState, patchMsg, qc],
 	);
 
 	const stop = useCallback(() => {

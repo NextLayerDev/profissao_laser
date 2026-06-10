@@ -156,17 +156,22 @@ export async function* streamAgentTurn(
 	const reader = res.body.getReader();
 	const decoder = new TextDecoder();
 	let buf = '';
-	while (true) {
-		const { done, value } = await reader.read();
-		if (done) break;
-		buf += decoder.decode(value, { stream: true });
-		let sep = buf.indexOf('\n\n');
-		while (sep >= 0) {
-			const frame = buf.slice(0, sep);
-			buf = buf.slice(sep + 2);
-			const ev = parseFrame(frame);
-			if (ev) yield ev;
-			sep = buf.indexOf('\n\n');
+	try {
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) break;
+			buf += decoder.decode(value, { stream: true });
+			let sep = buf.indexOf('\n\n');
+			while (sep >= 0) {
+				const frame = buf.slice(0, sep);
+				buf = buf.slice(sep + 2);
+				const ev = parseFrame(frame);
+				if (ev) yield ev;
+				sep = buf.indexOf('\n\n');
+			}
 		}
+	} finally {
+		// libera o lock do reader (abort/stop ou retorno antecipado do consumidor).
+		reader.cancel().catch(() => {});
 	}
 }
