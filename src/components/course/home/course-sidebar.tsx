@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Home } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { toast } from 'sonner';
+import { useExtraToolNav } from '@/modules/tools/hooks/use-extra-tool-nav';
 import {
 	type QuickAccessItem,
 	quickAccessItems,
@@ -26,10 +27,13 @@ export function CourseSidebar({
 	mobile,
 }: CourseSidebarProps) {
 	const pathname = usePathname();
+	// Tools publicadas pela Fábrica (sem tela própria) entram dinamicamente.
+	const extraTools = useExtraToolNav();
+	const allItems = [...quickAccessItems, ...extraTools];
 
 	const grouped = SECTIONS.reduce(
 		(acc, section) => {
-			acc[section] = quickAccessItems.filter((i) => i.section === section);
+			acc[section] = allItems.filter((i) => i.section === section);
 			return acc;
 		},
 		{} as Record<string, QuickAccessItem[]>,
