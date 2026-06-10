@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { resolveToolIcon, TOOL_ICONS } from '@/modules/tools/lib/tool-icons';
 import { BLOCK_CATALOG, type BlockSpec } from '../block-catalog';
@@ -29,6 +29,15 @@ export function CustomNodeModal({
 	const [baseId, setBaseId] = useState(bases[0]?.id ?? '');
 	const base: BlockSpec | undefined = bases.find((b) => b.id === baseId);
 	const [defaults, setDefaults] = useState<Record<string, unknown>>({});
+
+	// Esc fecha o modal (antes de qualquer outro handler global, ex.: maximizar).
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') onClose();
+		};
+		window.addEventListener('keydown', onKey);
+		return () => window.removeEventListener('keydown', onKey);
+	}, [onClose]);
 
 	const litParams = (base?.params ?? []).filter((p) => p.kind === 'literal');
 

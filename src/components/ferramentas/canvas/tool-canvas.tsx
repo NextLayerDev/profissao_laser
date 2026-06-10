@@ -83,20 +83,21 @@ function CanvasInner({ state, onChange }: Props) {
 		setTimeout(() => rf.fitView({ duration: 200, padding: 0.18 }), 90);
 	}, [rf]);
 
-	// trava o scroll do body e fecha no Esc enquanto maximizado
+	// trava o scroll do body e fecha no Esc enquanto maximizado (mas não quando
+	// o modal "criar nó" está aberto — aí o Esc fecha o modal, não o maximizado).
 	useEffect(() => {
 		if (!maximized) return;
 		const prev = document.body.style.overflow;
 		document.body.style.overflow = 'hidden';
 		const onKey = (e: KeyboardEvent) => {
-			if (e.key === 'Escape') setMaximized(false);
+			if (e.key === 'Escape' && !creatingNode) setMaximized(false);
 		};
 		window.addEventListener('keydown', onKey);
 		return () => {
 			document.body.style.overflow = prev;
 			window.removeEventListener('keydown', onKey);
 		};
-	}, [maximized]);
+	}, [maximized, creatingNode]);
 
 	// Edges são puramente derivadas do estado (independem de posição) — não
 	// recomputam durante o drag, então acompanham o nó sem piscar.
@@ -346,9 +347,12 @@ function CanvasInner({ state, onChange }: Props) {
 				/>
 			</ReactFlow>
 
-			{/* drawer de config */}
+			{/* drawer de config (key por nó: reseta editores com estado local) */}
 			{selected && (selected === INPUTS_ID || selNode) && (
-				<div className="absolute right-3 top-14 z-10 max-h-[calc(100%-4.5rem)] w-80 overflow-y-auto rounded-2xl border border-white/10 bg-[#0c0f12]/95 p-4 shadow-2xl backdrop-blur">
+				<div
+					key={selected}
+					className="absolute right-3 top-14 z-10 max-h-[calc(100%-4.5rem)] w-80 overflow-y-auto rounded-2xl border border-white/10 bg-[#0c0f12]/95 p-4 shadow-2xl backdrop-blur"
+				>
 					<div className="mb-3 flex items-center justify-between">
 						<span className="flex items-center gap-2 text-sm font-semibold text-white">
 							{selected === INPUTS_ID ? (

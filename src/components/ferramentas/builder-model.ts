@@ -378,6 +378,9 @@ export function typeFits(src: PortLike, want: PortLike): boolean {
 		(src === 'string' || src === 'enum')
 	)
 		return true;
+	// tudo é trivialmente "texto": número/bool cabem num alvo string (o motor já
+	// stringifica). Permite compor textos/corpos com cálculos e respostas de API.
+	if (want === 'string' && (src === 'number' || src === 'bool')) return true;
 	return false;
 }
 
