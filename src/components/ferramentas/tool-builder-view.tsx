@@ -20,7 +20,7 @@ import {
 	Unlink,
 	Workflow,
 } from 'lucide-react';
-import { type ReactNode, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { usePlans } from '@/modules/plans/hooks/use-plans';
 import { DynamicToolView } from '@/modules/tools/components/dynamic-tool-view';
@@ -43,7 +43,6 @@ import { KeyValueEditor } from './builder-fields';
 import {
 	allNodeOutputs,
 	availableSources,
-	type BuilderField,
 	type BuilderNode,
 	type BuilderState,
 	buildDoc,
@@ -57,6 +56,17 @@ import {
 	TEMPLATES,
 	type Template,
 } from './builder-model';
+import {
+	Field,
+	FieldCard,
+	FormSection,
+	IconPicker,
+	inputCls,
+	SegmentedControl,
+	SelectInput,
+	StepperBar,
+	TypeChip,
+} from './builder-ui';
 import { ToolCanvas } from './canvas/tool-canvas';
 import { ToolBillingPanel } from './tool-billing-panel';
 
@@ -159,61 +169,8 @@ function Glyph({ name, className }: { name?: string; className?: string }) {
 	return <Icon className={className} />;
 }
 
-const fieldCls =
-	'w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40';
 const smallSelect =
-	'rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500/40';
-
-/* ───────── section ───────── */
-
-function Section({
-	step,
-	title,
-	subtitle,
-	icon,
-	accent = 'emerald',
-	delay = 0,
-	children,
-}: {
-	step: string;
-	title: string;
-	subtitle?: string;
-	icon: ReactNode;
-	accent?: string;
-	delay?: number;
-	children: ReactNode;
-}) {
-	const a = ac(accent);
-	return (
-		<section
-			className="forge-rise relative overflow-hidden rounded-2xl border border-white/10 bg-[#0c0f12]/80 backdrop-blur-sm"
-			style={{ animationDelay: `${delay}ms` }}
-		>
-			<div className={`absolute bottom-0 left-0 top-0 w-1 ${a.bar}`} />
-			<header className="flex items-center gap-3 border-b border-white/5 px-5 pb-3 pt-4">
-				<div
-					className={`flex h-9 w-9 items-center justify-center rounded-lg ring-1 ${a.chip}`}
-				>
-					{icon}
-				</div>
-				<div className="min-w-0 flex-1">
-					<div className="flex items-center gap-2">
-						<span className="font-mono text-[10px] tracking-widest text-emerald-400/70">
-							{step}
-						</span>
-						<h2 className="truncate text-sm font-semibold text-white">
-							{title}
-						</h2>
-					</div>
-					{subtitle && (
-						<p className="mt-0.5 text-xs text-slate-400">{subtitle}</p>
-					)}
-				</div>
-			</header>
-			<div className="p-5">{children}</div>
-		</section>
-	);
-}
+	'h-9 rounded-lg border border-white/10 bg-black/30 px-2.5 text-xs text-slate-200 focus-visible:outline-none focus-visible:border-emerald-400/50 focus-visible:ring-2 focus-visible:ring-emerald-400/30';
 
 /* ───────── literal control ───────── */
 
@@ -472,133 +429,6 @@ function StepCard({
 				))}
 			</div>
 		</div>
-	);
-}
-
-/* ───────── field editor ───────── */
-
-function FieldRow({
-	field,
-	onChange,
-	onRemove,
-}: {
-	field: BuilderField;
-	onChange: (f: BuilderField) => void;
-	onRemove: () => void;
-}) {
-	return (
-		<div className="rounded-xl border border-white/10 bg-black/20 p-3">
-			<div className="flex items-center gap-2">
-				<Glyph
-					name={field.type === 'image' ? 'image' : 'box'}
-					className="h-4 w-4 shrink-0 text-slate-400"
-				/>
-				<input
-					value={field.label}
-					onChange={(e) => onChange({ ...field, label: e.target.value })}
-					className="flex-1 bg-transparent text-sm font-medium text-white focus:outline-none"
-				/>
-				<span className="font-mono text-[10px] text-slate-500">
-					{field.name}
-				</span>
-				{field.type !== 'image' && (
-					<button
-						type="button"
-						onClick={() => onChange({ ...field, visible: !field.visible })}
-						className={`rounded-md px-2 py-1 text-[10px] font-semibold ${field.visible ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/5 text-slate-500'}`}
-					>
-						{field.visible ? 'visível' : 'oculto'}
-					</button>
-				)}
-				<button
-					type="button"
-					onClick={onRemove}
-					className="rounded p-1 text-slate-500 hover:text-rose-400"
-				>
-					<Trash2 className="h-3.5 w-3.5" />
-				</button>
-			</div>
-			<div className="mt-2 flex flex-wrap items-center gap-2 pl-6">
-				{(field.type === 'number' || field.type === 'int') && (
-					<>
-						<MiniNum
-							label="padrão"
-							value={field.default as number}
-							onChange={(v) => onChange({ ...field, default: v })}
-						/>
-						<MiniNum
-							label="mín"
-							value={field.min}
-							onChange={(v) => onChange({ ...field, min: v })}
-						/>
-						<MiniNum
-							label="máx"
-							value={field.max}
-							onChange={(v) => onChange({ ...field, max: v })}
-						/>
-					</>
-				)}
-				{field.type === 'bool' && (
-					<label className="flex items-center gap-2 text-xs text-slate-400">
-						<input
-							type="checkbox"
-							checked={Boolean(field.default)}
-							onChange={(e) =>
-								onChange({ ...field, default: e.target.checked })
-							}
-							className="accent-emerald-500"
-						/>
-						ligado por padrão
-					</label>
-				)}
-				{field.type === 'enum' && (
-					<input
-						value={(field.options ?? []).join(', ')}
-						onChange={(e) =>
-							onChange({
-								...field,
-								options: e.target.value
-									.split(',')
-									.map((s) => s.trim())
-									.filter(Boolean),
-							})
-						}
-						placeholder="opções, separadas por vírgula"
-						className={`flex-1 ${smallSelect}`}
-					/>
-				)}
-				{field.type === 'string' && (
-					<input
-						value={String(field.default ?? '')}
-						onChange={(e) => onChange({ ...field, default: e.target.value })}
-						placeholder="valor padrão"
-						className={`flex-1 ${smallSelect}`}
-					/>
-				)}
-			</div>
-		</div>
-	);
-}
-
-function MiniNum({
-	label,
-	value,
-	onChange,
-}: {
-	label: string;
-	value?: number;
-	onChange: (v: number) => void;
-}) {
-	return (
-		<label className="flex items-center gap-1 text-[11px] text-slate-500">
-			{label}
-			<input
-				type="number"
-				value={value ?? ''}
-				onChange={(e) => onChange(Number(e.target.value))}
-				className="w-16 rounded-md border border-white/10 bg-black/30 px-2 py-1 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
-			/>
-		</label>
 	);
 }
 
@@ -1105,21 +935,57 @@ export function ToolBuilderView() {
 							<Gallery onPick={startNew} />
 						) : (
 							<>
+								<div className="sticky top-[142px] z-10 mb-1">
+									<StepperBar
+										steps={[
+											{
+												id: 'builder-step-01',
+												label: 'Identidade',
+												accent: 'emerald',
+												done: !!state.title && !!state.toolKey,
+											},
+											{
+												id: 'builder-step-02',
+												label: 'Campos',
+												accent: 'sky',
+												done: state.fields.length > 0,
+											},
+											{
+												id: 'builder-step-03',
+												label: 'Fluxo',
+												accent: 'cyan',
+												done: state.nodes.length > 0,
+											},
+											{
+												id: 'builder-step-04',
+												label: 'Resultado',
+												accent: 'violet',
+												done: !!state.output.primary,
+											},
+											{
+												id: 'builder-step-05',
+												label: 'Preço',
+												accent: 'amber',
+												done:
+													state.voxCost > 0 ||
+													Object.values(state.freeQuota).some((v) => v !== 0),
+											},
+										]}
+									/>
+								</div>
 								{/* identidade */}
-								<Section
+								<FormSection
 									step="01"
 									title="Identidade"
 									subtitle="Nome e ícone que o cliente vê."
 									icon={<Glyph name={state.icon} className="h-4 w-4" />}
 								>
-									<div className="grid gap-3 sm:grid-cols-2">
-										<div className="sm:col-span-2">
-											<label
-												htmlFor="tb-title"
-												className="mb-1 block text-[11px] font-medium text-slate-400"
-											>
-												Nome
-											</label>
+									<div className="grid gap-5 sm:grid-cols-2">
+										<Field
+											label="Nome"
+											htmlFor="tb-title"
+											className="sm:col-span-2"
+										>
 											<input
 												id="tb-title"
 												value={state.title}
@@ -1134,17 +1000,14 @@ export function ToolBuilderView() {
 													});
 												}}
 												placeholder="Ex.: Vetorizar logo"
-												className={fieldCls}
+												className={inputCls}
 											/>
-										</div>
-										<div>
-											<label
-												htmlFor="tb-key"
-												className="mb-1 block text-[11px] font-medium text-slate-400"
-											>
-												Identificador{' '}
-												<span className="text-slate-600">(único)</span>
-											</label>
+										</Field>
+										<Field
+											label="Identificador"
+											hint="único · não muda depois"
+											htmlFor="tb-key"
+										>
 											<input
 												id="tb-key"
 												value={state.toolKey}
@@ -1154,60 +1017,44 @@ export function ToolBuilderView() {
 													patch({ toolKey: slugifyKey(e.target.value) });
 												}}
 												placeholder="vetorizar_logo"
-												className={`${fieldCls} font-mono disabled:opacity-50`}
+												className={`${inputCls} font-mono`}
 											/>
-										</div>
-										<div>
-											<label
-												htmlFor="tb-action"
-												className="mb-1 block text-[11px] font-medium text-slate-400"
-											>
-												Texto do botão
-											</label>
+										</Field>
+										<Field label="Texto do botão" htmlFor="tb-action">
 											<input
 												id="tb-action"
 												value={state.actionLabel}
 												onChange={(e) => patch({ actionLabel: e.target.value })}
-												className={fieldCls}
+												placeholder="Gerar"
+												className={inputCls}
 											/>
-										</div>
-										<div className="sm:col-span-2">
-											<label
-												htmlFor="tb-desc"
-												className="mb-1 block text-[11px] font-medium text-slate-400"
-											>
-												Descrição
-											</label>
+										</Field>
+										<Field
+											label="Descrição"
+											hint="uma linha"
+											htmlFor="tb-desc"
+											className="sm:col-span-2"
+										>
 											<input
 												id="tb-desc"
 												value={state.description}
 												onChange={(e) => patch({ description: e.target.value })}
-												placeholder="O que ela faz, em uma linha."
-												className={fieldCls}
+												placeholder="O que ela faz, em poucas palavras."
+												className={inputCls}
 											/>
-										</div>
-										<div className="sm:col-span-2">
-											<span className="mb-1.5 block text-[11px] font-medium text-slate-400">
-												Ícone
-											</span>
-											<div className="flex flex-wrap gap-1.5">
-												{TOOL_ICONS.map(({ name, Icon }) => (
-													<button
-														key={name}
-														type="button"
-														onClick={() => patch({ icon: name })}
-														className={`flex h-9 w-9 items-center justify-center rounded-lg border ${state.icon === name ? 'border-emerald-400/60 bg-emerald-500/15 text-emerald-300' : 'border-white/10 bg-black/20 text-slate-400 hover:text-slate-200'}`}
-													>
-														<Icon className="h-4 w-4" />
-													</button>
-												))}
-											</div>
-										</div>
+										</Field>
+										<Field label="Ícone" className="sm:col-span-2">
+											<IconPicker
+												value={state.icon}
+												onChange={(name) => patch({ icon: name })}
+												icons={TOOL_ICONS}
+											/>
+										</Field>
 									</div>
-								</Section>
+								</FormSection>
 
 								{/* entradas */}
-								<Section
+								<FormSection
 									step="02"
 									title="O que o cliente envia"
 									subtitle="Os campos do formulário."
@@ -1217,7 +1064,7 @@ export function ToolBuilderView() {
 								>
 									<div className="space-y-2">
 										{state.fields.map((f) => (
-											<FieldRow
+											<FieldCard
 												key={f.name}
 												field={f}
 												onChange={(nf) =>
@@ -1237,25 +1084,20 @@ export function ToolBuilderView() {
 											/>
 										))}
 									</div>
-									<div className="mt-3 flex flex-wrap items-center gap-1.5">
-										<span className="text-[11px] text-slate-500">
-											+ adicionar:
+									<div className="mt-4 flex flex-wrap items-center gap-2">
+										<span className="text-[13px] text-slate-500">
+											+ adicionar
 										</span>
 										{FIELD_TYPES.map((ft) => (
-											<button
-												key={ft.type}
-												type="button"
-												onClick={() => addField(ft.type)}
-												className="rounded-md border border-white/10 bg-black/20 px-2 py-1 text-[11px] text-slate-300 hover:border-sky-400/40 hover:text-white"
-											>
+											<TypeChip key={ft.type} onClick={() => addField(ft.type)}>
 												{ft.label}
-											</button>
+											</TypeChip>
 										))}
 									</div>
-								</Section>
+								</FormSection>
 
 								{/* pipeline */}
-								<Section
+								<FormSection
 									step="03"
 									title="O que a ferramenta faz"
 									subtitle="Ligue a saída de uma etapa na entrada da outra."
@@ -1263,21 +1105,16 @@ export function ToolBuilderView() {
 									accent="cyan"
 									delay={120}
 								>
-									<div className="mb-3 inline-flex rounded-lg border border-white/10 bg-black/20 p-0.5">
-										{(['canvas', 'steps'] as const).map((m) => (
-											<button
-												key={m}
-												type="button"
-												onClick={() => setPipelineMode(m)}
-												className={`rounded-md px-3 py-1 text-xs font-semibold transition-colors ${
-													pipelineMode === m
-														? 'bg-cyan-500/15 text-cyan-300'
-														: 'text-slate-400 hover:text-slate-200'
-												}`}
-											>
-												{m === 'canvas' ? 'Canvas' : 'Etapas'}
-											</button>
-										))}
+									<div className="mb-4">
+										<SegmentedControl
+											value={pipelineMode}
+											onChange={setPipelineMode}
+											ariaLabel="Modo de montagem"
+											options={[
+												{ value: 'canvas', label: 'Canvas' },
+												{ value: 'steps', label: 'Etapas' },
+											]}
+										/>
 									</div>
 
 									{pipelineMode === 'canvas' ? (
@@ -1313,28 +1150,27 @@ export function ToolBuilderView() {
 													/>
 												))}
 											</div>
-											<div className="mt-3 flex flex-wrap items-center gap-1.5">
-												<span className="text-[11px] text-slate-500">
-													+ etapa:
+											<div className="mt-4 flex flex-wrap items-center gap-2">
+												<span className="text-[13px] text-slate-500">
+													+ etapa
 												</span>
 												{BLOCK_CATALOG.map((b) => (
-													<button
+													<TypeChip
 														key={b.id}
-														type="button"
 														onClick={() => addNode(b.id)}
-														className={`flex items-center gap-1 rounded-md border border-white/10 bg-black/20 px-2 py-1 text-[11px] text-slate-300 ${ac(b.accent).nodeHover} hover:text-white`}
+														accent={b.accent}
+														icon={<Glyph name={b.icon} className="h-4 w-4" />}
 													>
-														<Glyph name={b.icon} className="h-3.5 w-3.5" />{' '}
 														{b.label}
-													</button>
+													</TypeChip>
 												))}
 											</div>
 										</>
 									)}
-								</Section>
+								</FormSection>
 
 								{/* saída */}
-								<Section
+								<FormSection
 									step="04"
 									title="Resultado"
 									subtitle="O que o cliente recebe no final."
@@ -1342,22 +1178,15 @@ export function ToolBuilderView() {
 									accent="violet"
 									delay={180}
 								>
-									<div className="space-y-3">
-										<div className="flex flex-wrap items-center gap-2">
-											<span className="w-28 text-xs font-medium text-slate-300">
-												Arquivo final
-											</span>
-											<select
+									<div className="space-y-5">
+										<Field label="Arquivo final" htmlFor="out-primary">
+											<SelectInput
+												id="out-primary"
 												value={state.output.primary}
-												onChange={(e) =>
-													patch({
-														output: {
-															...state.output,
-															primary: e.target.value,
-														},
-													})
+												onChange={(v) =>
+													patch({ output: { ...state.output, primary: v } })
 												}
-												className={`min-w-[12rem] flex-1 ${smallSelect} ${state.output.primary ? 'text-violet-200' : 'text-slate-500'}`}
+												muted={!state.output.primary}
 											>
 												<option value="">— escolha a saída —</option>
 												{outputs.map((o) => (
@@ -1365,23 +1194,16 @@ export function ToolBuilderView() {
 														{o.label}
 													</option>
 												))}
-											</select>
-										</div>
-										<div className="flex flex-wrap items-center gap-2">
-											<span className="w-28 text-xs font-medium text-slate-300">
-												Prévia (opcional)
-											</span>
-											<select
+											</SelectInput>
+										</Field>
+										<Field label="Prévia" hint="opcional" htmlFor="out-preview">
+											<SelectInput
+												id="out-preview"
 												value={state.output.preview}
-												onChange={(e) =>
-													patch({
-														output: {
-															...state.output,
-															preview: e.target.value,
-														},
-													})
+												onChange={(v) =>
+													patch({ output: { ...state.output, preview: v } })
 												}
-												className={`min-w-[12rem] flex-1 ${smallSelect}`}
+												muted={!state.output.preview}
 											>
 												<option value="">— nenhuma —</option>
 												{outputs.map((o) => (
@@ -1389,20 +1211,21 @@ export function ToolBuilderView() {
 														{o.label}
 													</option>
 												))}
-											</select>
-										</div>
+											</SelectInput>
+										</Field>
 										{numberOutputs.length > 0 && (
-											<div className="flex flex-wrap items-start gap-2">
-												<span className="w-28 shrink-0 text-xs font-medium text-slate-300">
-													Detalhes (chips)
-												</span>
-												<div className="flex flex-1 flex-wrap gap-1.5">
+											<Field
+												label="Detalhes"
+												hint="números mostrados como etiqueta no resultado"
+											>
+												<div className="flex flex-wrap gap-2">
 													{numberOutputs.map((o) => {
 														const on = state.output.meta.includes(o.value);
 														return (
 															<button
 																key={o.value}
 																type="button"
+																aria-pressed={on}
 																onClick={() =>
 																	patch({
 																		output: {
@@ -1415,20 +1238,20 @@ export function ToolBuilderView() {
 																		},
 																	})
 																}
-																className={`rounded-md px-2 py-1 text-[11px] ${on ? 'bg-violet-500/15 text-violet-300' : 'bg-white/5 text-slate-500'}`}
+																className={`rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 ${on ? 'bg-violet-500/15 text-violet-300 ring-1 ring-violet-400/30' : 'bg-white/[0.04] text-slate-400 hover:text-slate-200'}`}
 															>
 																{o.label}
 															</button>
 														);
 													})}
 												</div>
-											</div>
+											</Field>
 										)}
 									</div>
-								</Section>
+								</FormSection>
 
 								{/* cobrança */}
-								<Section
+								<FormSection
 									step="05"
 									title="Preço e planos"
 									subtitle="Custo por uso e cota grátis por plano."
@@ -1436,73 +1259,90 @@ export function ToolBuilderView() {
 									accent="amber"
 									delay={240}
 								>
-									<div className="mb-4 flex items-center gap-3">
-										<span className="text-sm text-slate-300">
-											Custo por uso
-										</span>
-										<input
-											type="number"
-											step={0.05}
-											min={0}
-											value={state.voxCost}
-											onChange={(e) =>
-												patch({ voxCost: Math.max(0, Number(e.target.value)) })
-											}
-											className="w-24 rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-sm font-mono text-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
-										/>
-										<span className="font-mono text-xs text-amber-400/80">
-											vox / uso
-										</span>
-									</div>
-									<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-										{(plans.data ?? []).map((p) => {
-											const q = state.freeQuota[p.key] ?? 0;
-											const unlimited = q === null;
-											return (
-												<div
-													key={p.id}
-													className="rounded-xl border border-white/10 bg-black/20 p-3"
-												>
-													<div className="flex items-center justify-between">
-														<span className="text-sm font-medium text-slate-200">
-															{p.name}
-														</span>
-														<button
-															type="button"
-															onClick={() =>
+									<Field
+										label="Custo por uso"
+										hint="cobrado em voxes"
+										htmlFor="vox-cost"
+										className="mb-5 max-w-[14rem]"
+									>
+										<div className="relative">
+											<input
+												id="vox-cost"
+												type="number"
+												step={0.05}
+												min={0}
+												value={state.voxCost}
+												onChange={(e) =>
+													patch({
+														voxCost: Math.max(0, Number(e.target.value)),
+													})
+												}
+												className={`${inputCls} pr-16 font-mono text-amber-200`}
+											/>
+											<span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 font-mono text-xs text-amber-400/80">
+												vox/uso
+											</span>
+										</div>
+									</Field>
+									<Field
+										label="Cota grátis por plano"
+										hint="quantos usos sem cobrar"
+									>
+										<div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+											{(plans.data ?? []).map((p) => {
+												const q = state.freeQuota[p.key] ?? 0;
+												const unlimited = q === null;
+												return (
+													<div
+														key={p.id}
+														className="rounded-xl border border-white/10 bg-black/20 p-3"
+													>
+														<div className="flex items-center justify-between gap-2">
+															<span className="truncate text-[13px] font-medium text-slate-200">
+																{p.name}
+															</span>
+															<button
+																type="button"
+																aria-pressed={unlimited}
+																title="Ilimitado"
+																onClick={() =>
+																	patch({
+																		freeQuota: {
+																			...state.freeQuota,
+																			[p.key]: unlimited ? 0 : null,
+																		},
+																	})
+																}
+																className={`rounded-md px-2 py-0.5 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 ${unlimited ? 'bg-cyan-500/15 text-cyan-300 ring-1 ring-cyan-400/30' : 'bg-white/[0.06] text-slate-500 hover:text-slate-300'}`}
+															>
+																∞
+															</button>
+														</div>
+														<input
+															type="number"
+															min={0}
+															disabled={unlimited}
+															value={unlimited ? '' : (q ?? 0)}
+															onChange={(e) =>
 																patch({
 																	freeQuota: {
 																		...state.freeQuota,
-																		[p.key]: unlimited ? 0 : null,
+																		[p.key]: Math.max(
+																			0,
+																			Number(e.target.value),
+																		),
 																	},
 																})
 															}
-															className={`rounded-md px-2 py-1 text-[10px] font-semibold ${unlimited ? 'bg-cyan-500/15 text-cyan-300' : 'bg-white/5 text-slate-500'}`}
-														>
-															∞
-														</button>
+															placeholder={unlimited ? '∞' : '0'}
+															className="mt-2 h-9 w-full rounded-lg border border-white/10 bg-black/30 px-2.5 text-sm text-slate-100 placeholder:text-slate-500 disabled:opacity-40 focus-visible:outline-none focus-visible:border-emerald-400/50 focus-visible:ring-2 focus-visible:ring-emerald-400/30"
+														/>
 													</div>
-													<input
-														type="number"
-														min={0}
-														disabled={unlimited}
-														value={unlimited ? '' : (q ?? 0)}
-														onChange={(e) =>
-															patch({
-																freeQuota: {
-																	...state.freeQuota,
-																	[p.key]: Math.max(0, Number(e.target.value)),
-																},
-															})
-														}
-														placeholder={unlimited ? '∞' : '0'}
-														className="mt-2 w-full rounded-md border border-white/10 bg-black/30 px-2 py-1 text-sm text-slate-100 disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
-													/>
-												</div>
-											);
-										})}
-									</div>
-								</Section>
+												);
+											})}
+										</div>
+									</Field>
+								</FormSection>
 
 								{/* avançado */}
 								<div className="forge-rise overflow-hidden rounded-2xl border border-white/10 bg-[#0c0f12]/80">
