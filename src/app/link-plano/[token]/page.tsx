@@ -66,9 +66,10 @@ function redeemErrorMessage(err: unknown): string {
 			: '';
 	if (
 		message.includes('cpf_already_redeemed') ||
-		message.includes('cpf_in_use')
+		message.includes('cpf_in_use') ||
+		message.includes('customer_already_redeemed')
 	)
-		return 'Este CPF já utilizou um link especial. O desconto vale uma única vez por pessoa.';
+		return 'Este CPF (ou sua conta) já utilizou um link especial. O desconto vale uma única vez por pessoa.';
 	if (message.includes('invalid_cpf'))
 		return 'CPF inválido. Confira os números.';
 	if (message.includes('no_discount_available'))
