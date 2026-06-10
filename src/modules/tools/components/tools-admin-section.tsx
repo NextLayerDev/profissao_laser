@@ -150,6 +150,16 @@ function ToolCard({
 						{formatVox(tool.vox_cost)}
 					</span>
 					<span className="text-xs text-slate-500">voxxys/uso</span>
+					{tool.platform_cost_cents > 0 && (
+						<span className="ml-auto text-xs text-slate-500 tabular-nums">
+							custo{' '}
+							{(tool.platform_cost_cents / 100).toLocaleString('pt-BR', {
+								style: 'currency',
+								currency: 'BRL',
+							})}
+							/uso
+						</span>
+					)}
 				</div>
 
 				<div className="mt-auto pt-4 flex gap-2">
