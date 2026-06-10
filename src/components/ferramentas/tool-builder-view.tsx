@@ -37,6 +37,7 @@ import {
 } from '@/modules/tools/services/tool-definitions.service';
 import type { Tool } from '@/modules/tools/types/tools';
 import { getApiErrorMessage } from '@/shared/lib/api-error';
+import { ToolAgentChat } from './agent/tool-agent-chat';
 import { BLOCK_CATALOG, type BlockParam, type PortType } from './block-catalog';
 import { KeyValueEditor } from './builder-fields';
 import {
@@ -676,6 +677,7 @@ export function ToolBuilderView() {
 		'canvas',
 	);
 	const [showPreview, setShowPreview] = useState(true);
+	const [showAgent, setShowAgent] = useState(true);
 
 	const goHub = () => {
 		setView('gallery');
@@ -875,9 +877,13 @@ export function ToolBuilderView() {
 	// + prévia (ou só trabalho se prévia oculta); cobrança = centrado.
 	const gridCls =
 		view === 'editor'
-			? showPreview
-				? 'grid gap-5 lg:grid-cols-[minmax(0,1fr)_400px]'
-				: 'grid gap-5'
+			? showPreview && showAgent
+				? 'grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px_380px]'
+				: showPreview
+					? 'grid gap-5 lg:grid-cols-[minmax(0,1fr)_400px]'
+					: showAgent
+						? 'grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]'
+						: 'grid gap-5'
 			: view === 'billing'
 				? 'mx-auto grid max-w-4xl gap-5'
 				: 'grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)]';
@@ -974,6 +980,18 @@ export function ToolBuilderView() {
 									)}
 								</div>
 								<div className="ml-auto flex items-center gap-2">
+									<button
+										type="button"
+										onClick={() => setShowAgent((v) => !v)}
+										className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+											showAgent
+												? 'border-violet-400/40 bg-violet-500/15 text-violet-200'
+												: 'border-white/10 bg-black/20 text-slate-300 hover:text-white'
+										}`}
+									>
+										<Sparkles className="h-4 w-4" />{' '}
+										{showAgent ? 'Ocultar agente' : 'Agente'}
+									</button>
 									<button
 										type="button"
 										onClick={() => setShowPreview((v) => !v)}
@@ -1585,6 +1603,11 @@ export function ToolBuilderView() {
 								</p>
 							)}
 						</aside>
+					)}
+
+					{/* extrema direita: agente que monta a ferramenta ao vivo */}
+					{view === 'editor' && state && showAgent && (
+						<ToolAgentChat state={state} setState={setState} />
 					)}
 				</div>
 			</div>
