@@ -29,6 +29,7 @@ const PUBLIC_PAGE_PREFIXES = [
 	'/payment-link',
 	'/promo-link',
 	'/global-promo-link',
+	'/link-plano',
 ];
 
 apiCourses.interceptors.response.use(
