@@ -67,16 +67,20 @@ export function CompanyInvoiceTab() {
 						Voxxys doados
 					</div>
 					<p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white tabular-nums">
-						{(totals?.vox_granted ?? 0).toLocaleString('pt-BR')}
+						{(
+							(totals?.vox_granted ?? 0) + (totals?.vox_granted_plans ?? 0)
+						).toLocaleString('pt-BR')}
 					</p>
 					<p className="text-xs text-slate-500 dark:text-gray-500 mt-1">
-						Concedidos em assinaturas via Links de Plano.
+						{(totals?.vox_granted ?? 0).toLocaleString('pt-BR')} via links (por
+						uso) · {(totals?.vox_granted_plans ?? 0).toLocaleString('pt-BR')}{' '}
+						via planos (no ato).
 					</p>
 				</div>
 				<div className="rounded-2xl border border-violet-300/40 dark:border-violet-500/20 bg-violet-50 dark:bg-violet-500/[0.06] p-5">
 					<div className="flex items-center gap-2 text-violet-600 dark:text-violet-300 text-xs font-medium uppercase tracking-wider">
 						<Receipt className="w-4 h-4" />
-						Referência
+						Voxxy doado
 					</div>
 					<p className="mt-2 text-2xl font-bold text-violet-700 dark:text-violet-300 tabular-nums">
 						{fmtBRL(totals?.vox_rate_cents ?? 120)}
@@ -86,8 +90,8 @@ export function CompanyInvoiceTab() {
 						</span>
 					</p>
 					<p className="text-xs text-violet-600/70 dark:text-violet-400/70 mt-1">
-						Valor de referência do voxxy doado. A fatura cobra o custo real de
-						cada ferramenta usada.
+						Voxxys de PLANO cobram esse valor no ato da doação. Voxxys de LINK
+						cobram o custo real de cada ferramenta usada.
 					</p>
 				</div>
 			</div>
@@ -109,13 +113,7 @@ export function CompanyInvoiceTab() {
 					<table className="w-full text-sm">
 						<thead>
 							<tr className="border-b border-slate-200 dark:border-gray-800 bg-slate-50 dark:bg-white/[0.02]">
-								{[
-									'Data',
-									'Cliente',
-									'Ferramenta',
-									'Voxxys usados',
-									'Custo',
-								].map((h) => (
+								{['Data', 'Cliente', 'Origem', 'Voxxys', 'Custo'].map((h) => (
 									<th
 										key={h}
 										className="text-left py-3 px-4 font-medium text-slate-400 dark:text-gray-600"
@@ -138,7 +136,15 @@ export function CompanyInvoiceTab() {
 										{entry.customer_name ?? entry.customer_email ?? '—'}
 									</td>
 									<td className="py-3 px-4 text-slate-600 dark:text-gray-300">
-										{entry.tool_name ?? entry.tool_key}
+										{entry.source === 'plan_grant' ? (
+											<span className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full border bg-violet-500/10 text-violet-600 dark:text-violet-300 border-violet-500/25">
+												<Gem className="w-3 h-3" />
+												Voxxys do plano
+												{entry.plan_name ? ` ${entry.plan_name}` : ''}
+											</span>
+										) : (
+											(entry.tool_name ?? entry.tool_key ?? '—')
+										)}
 									</td>
 									<td className="py-3 px-4 text-slate-600 dark:text-gray-400 tabular-nums">
 										{entry.voxes_spent.toLocaleString('pt-BR')}

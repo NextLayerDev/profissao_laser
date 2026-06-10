@@ -8,6 +8,8 @@ export const planSchema = z.object({
 	published: z.boolean(),
 	price_monthly_cents: z.number().int().nullable().optional(),
 	price_yearly_cents: z.number().int().nullable().optional(),
+	/** Voxxys grátis por período (compra + renovações) — cobrados da empresa a R$1,20/voxxy na fatura aberta. */
+	vox_monthly_grant: z.number().int().optional().default(0),
 	stripe_product_id: z.string().nullable().optional(),
 	stripe_price_monthly_id: z.string().nullable().optional(),
 	stripe_price_yearly_id: z.string().nullable().optional(),
@@ -27,6 +29,7 @@ export const createPlanSchema = z.object({
 	published: z.boolean().optional(),
 	price_monthly_cents: z.number().int().min(0).nullable().optional(),
 	price_yearly_cents: z.number().int().min(0).nullable().optional(),
+	vox_monthly_grant: z.number().int().min(0).optional(),
 });
 export type CreatePlanPayload = z.infer<typeof createPlanSchema>;
 
