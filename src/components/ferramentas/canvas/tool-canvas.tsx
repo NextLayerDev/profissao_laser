@@ -215,7 +215,7 @@ function CanvasInner({ state, onChange }: Props) {
 			}
 		>
 			{/* paleta */}
-			<div className="absolute left-3 top-3 z-10 flex max-w-[150px] flex-col gap-1.5 rounded-xl border border-white/10 bg-[#0c0f12]/90 p-2 backdrop-blur">
+			<div className="absolute left-3 top-3 z-10 flex max-h-[calc(100%-1.5rem)] max-w-[150px] flex-col gap-1.5 overflow-y-auto rounded-xl border border-white/10 bg-[#0c0f12]/90 p-2 backdrop-blur">
 				<span className="px-1 font-mono text-[9px] uppercase tracking-widest text-slate-500">
 					+ bloco
 				</span>

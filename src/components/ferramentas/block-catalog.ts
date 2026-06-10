@@ -24,6 +24,8 @@ export interface BlockParam {
 	max?: number;
 	step?: number;
 	required?: boolean;
+	/** editor especial pro literal: textarea (texto longo) ou keyvalue (mapa). */
+	widget?: 'textarea' | 'keyvalue';
 }
 
 export interface BlockOutput {
@@ -38,7 +40,7 @@ export interface BlockSpec {
 	sub: string;
 	icon: string;
 	accent: string;
-	category: 'image' | 'laser' | 'output';
+	category: 'image' | 'laser' | 'output' | 'util';
 	params: BlockParam[];
 	outputs: BlockOutput[];
 }
@@ -282,6 +284,168 @@ export const BLOCK_CATALOG: BlockSpec[] = [
 			},
 		],
 		outputs: [{ name: 'dataUrl', type: 'string', label: 'data URL' }],
+	},
+
+	/* ── blocos genéricos (compor qualquer coisa) ── */
+	{
+		id: 'util.text_template',
+		label: 'Texto / Template',
+		sub: 'monta um texto com {{a}}..{{d}}',
+		icon: 'pen',
+		accent: 'cyan',
+		category: 'util',
+		params: [
+			{
+				name: 'template',
+				kind: 'literal',
+				valueType: 'string',
+				widget: 'textarea',
+				label: 'Template',
+				hint: 'Use {{a}}, {{b}}, {{c}}, {{d}} pras entradas.',
+				default: '',
+			},
+			{
+				name: 'a',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'A',
+				default: '',
+			},
+			{
+				name: 'b',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'B',
+				default: '',
+			},
+			{
+				name: 'c',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'C',
+				default: '',
+			},
+			{
+				name: 'd',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'D',
+				default: '',
+			},
+		],
+		outputs: [{ name: 'text', type: 'string', label: 'texto' }],
+	},
+	{
+		id: 'util.math',
+		label: 'Cálculo',
+		sub: 'a (operação) b',
+		icon: 'cpu',
+		accent: 'amber',
+		category: 'util',
+		params: [
+			{
+				name: 'a',
+				kind: 'literal',
+				valueType: 'number',
+				label: 'A',
+				default: 0,
+			},
+			{
+				name: 'b',
+				kind: 'literal',
+				valueType: 'number',
+				label: 'B',
+				default: 0,
+			},
+			{
+				name: 'op',
+				kind: 'literal',
+				valueType: 'enum',
+				label: 'Operação',
+				options: ['+', '-', '*', '/', '%'],
+				default: '+',
+			},
+		],
+		outputs: [{ name: 'value', type: 'number', label: 'resultado' }],
+	},
+	{
+		id: 'util.condition',
+		label: 'Condição',
+		sub: 'escolhe por sim / não',
+		icon: 'layers',
+		accent: 'violet',
+		category: 'util',
+		params: [
+			{
+				name: 'test',
+				kind: 'literal',
+				valueType: 'bool',
+				label: 'Condição',
+				default: false,
+			},
+			{
+				name: 'ifTrue',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Se sim',
+				default: '',
+			},
+			{
+				name: 'ifFalse',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Se não',
+				default: '',
+			},
+		],
+		outputs: [{ name: 'result', type: 'string', label: 'resultado' }],
+	},
+	{
+		id: 'util.http_request',
+		label: 'Requisição HTTP',
+		sub: 'chama uma API externa',
+		icon: 'zap',
+		accent: 'sky',
+		category: 'util',
+		params: [
+			{
+				name: 'url',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'URL',
+				hint: 'https://… (precisa de liberação de segurança)',
+				default: '',
+			},
+			{
+				name: 'method',
+				kind: 'literal',
+				valueType: 'enum',
+				label: 'Método',
+				options: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+				default: 'GET',
+			},
+			{
+				name: 'headers',
+				kind: 'literal',
+				valueType: 'string',
+				widget: 'keyvalue',
+				label: 'Headers',
+				default: {},
+			},
+			{
+				name: 'body',
+				kind: 'literal',
+				valueType: 'string',
+				widget: 'textarea',
+				label: 'Corpo',
+				default: '',
+			},
+		],
+		outputs: [
+			{ name: 'status', type: 'number', label: 'status' },
+			{ name: 'body', type: 'string', label: 'corpo' },
+			{ name: 'json', type: 'string', label: 'json' },
+		],
 	},
 ];
 

@@ -43,6 +43,7 @@ import {
 	blockSpec,
 	type PortType,
 } from './block-catalog';
+import { KeyValueEditor } from './builder-fields';
 import {
 	allNodeOutputs,
 	availableSources,
@@ -228,6 +229,19 @@ function LiteralControl({
 	value: unknown;
 	onChange: (v: unknown) => void;
 }) {
+	if (param.widget === 'keyvalue') {
+		return <KeyValueEditor value={value} onChange={onChange} />;
+	}
+	if (param.widget === 'textarea') {
+		return (
+			<textarea
+				value={String(value ?? '')}
+				onChange={(e) => onChange(e.target.value)}
+				rows={3}
+				className="w-full min-w-[14rem] rounded-md border border-white/10 bg-black/30 px-2 py-1.5 font-mono text-[11px] text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
+			/>
+		);
+	}
 	if (param.valueType === 'bool') {
 		return (
 			<button

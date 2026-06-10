@@ -1,6 +1,7 @@
 'use client';
 
 import { Link2, Trash2, Unlink } from 'lucide-react';
+import { useState } from 'react';
 import type { BlockParam } from './block-catalog';
 import {
 	availableSources,
@@ -25,6 +26,46 @@ function Glyph({ name, className }: { name?: string; className?: string }) {
 	return <Icon className={className} />;
 }
 
+/** Editor de mapa chave→valor (ex.: headers HTTP): uma entrada "Chave: valor" por linha. */
+export function KeyValueEditor({
+	value,
+	onChange,
+}: {
+	value: unknown;
+	onChange: (v: unknown) => void;
+}) {
+	const toLines = (v: unknown): string =>
+		v && typeof v === 'object' && !Array.isArray(v)
+			? Object.entries(v as Record<string, unknown>)
+					.map(([k, val]) => `${k}: ${val}`)
+					.join('\n')
+			: '';
+	// Estado local pra não perder o que está sendo digitado (linhas incompletas).
+	const [text, setText] = useState(() => toLines(value));
+	const parse = (s: string): Record<string, string> => {
+		const out: Record<string, string> = {};
+		for (const line of s.split('\n')) {
+			const i = line.indexOf(':');
+			if (i <= 0) continue;
+			const k = line.slice(0, i).trim();
+			if (k) out[k] = line.slice(i + 1).trim();
+		}
+		return out;
+	};
+	return (
+		<textarea
+			value={text}
+			onChange={(e) => {
+				setText(e.target.value);
+				onChange(parse(e.target.value));
+			}}
+			rows={3}
+			placeholder="Authorization: Bearer …"
+			className="w-full min-w-[14rem] rounded-md border border-white/10 bg-black/30 px-2 py-1.5 font-mono text-[11px] text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
+		/>
+	);
+}
+
 export function LiteralControl({
 	param,
 	value,
@@ -34,6 +75,19 @@ export function LiteralControl({
 	value: unknown;
 	onChange: (v: unknown) => void;
 }) {
+	if (param.widget === 'keyvalue') {
+		return <KeyValueEditor value={value} onChange={onChange} />;
+	}
+	if (param.widget === 'textarea') {
+		return (
+			<textarea
+				value={String(value ?? '')}
+				onChange={(e) => onChange(e.target.value)}
+				rows={3}
+				className="w-full min-w-[14rem] rounded-md border border-white/10 bg-black/30 px-2 py-1.5 font-mono text-[11px] text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
+			/>
+		);
+	}
 	if (param.valueType === 'bool') {
 		return (
 			<button
