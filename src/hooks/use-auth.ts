@@ -3,8 +3,8 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { saveRefreshToken, saveToken } from '@/lib/auth';
-import { registerCustomer, registerUser } from '@/services/auth';
-import { loginCourses } from '@/services/courses-auth';
+import { registerUser } from '@/services/auth';
+import { loginCourses, signupCourses } from '@/services/courses-auth';
 import type {
 	LoginCustomerPayload,
 	RegisterCustomerPayload,
@@ -39,9 +39,16 @@ export function useLogin() {
 export function useRegisterCustomer() {
 	const router = useRouter();
 	return useMutation({
-		mutationFn: (payload: RegisterCustomerPayload) => registerCustomer(payload),
-		onSuccess: () => {
-			router.push('/login');
+		mutationFn: (payload: RegisterCustomerPayload) => signupCourses(payload),
+		onSuccess: ({ accessToken, refreshToken, user }) => {
+			if (refreshToken) saveRefreshToken(refreshToken);
+			if (PANEL_ROLES.includes(user?.role ?? '')) {
+				saveToken('user', accessToken);
+				router.push('/dashboard');
+			} else {
+				saveToken('customer', accessToken);
+				router.push('/course');
+			}
 		},
 	});
 }
