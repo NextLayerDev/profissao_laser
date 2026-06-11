@@ -360,9 +360,6 @@ export function SubscriptionsSection() {
 								<th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-gray-500 uppercase tracking-wide">
 									Plano
 								</th>
-								<th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 dark:text-gray-500 uppercase tracking-wide">
-									MRR
-								</th>
 								<th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 dark:text-gray-500 uppercase tracking-wide whitespace-nowrap">
 									Valor da Venda
 								</th>
@@ -383,7 +380,7 @@ export function SubscriptionsSection() {
 						<tbody className="divide-y divide-slate-100 dark:divide-white/5">
 							{(listLoading || isFetching) && !analytics?.data.length && (
 								<tr>
-									<td colSpan={8} className="text-center py-16">
+									<td colSpan={7} className="text-center py-16">
 										<div className="flex justify-center">
 											<div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
 										</div>
@@ -393,7 +390,7 @@ export function SubscriptionsSection() {
 							{!listLoading && analytics?.data.length === 0 && (
 								<tr>
 									<td
-										colSpan={8}
+										colSpan={7}
 										className="text-center py-16 text-slate-500 dark:text-gray-500"
 									>
 										Nenhuma assinatura encontrada
@@ -423,9 +420,6 @@ export function SubscriptionsSection() {
 											<p className="text-xs text-slate-500 dark:text-gray-500 font-mono">
 												{row.plan.key}
 											</p>
-										</td>
-										<td className="px-4 py-3 text-right font-semibold text-slate-900 dark:text-white whitespace-nowrap">
-											{formatCents(row.mrr_cents)}
 										</td>
 										<td className="px-4 py-3 text-right font-semibold text-slate-900 dark:text-white whitespace-nowrap">
 											{formatCents(row.sale_value_cents)}

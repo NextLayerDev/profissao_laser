@@ -1,12 +1,19 @@
 'use client';
 
-import { FileText, RefreshCw, RotateCcw, XCircle } from 'lucide-react';
+import {
+	ArrowDownToLine,
+	FileText,
+	RefreshCw,
+	RotateCcw,
+	XCircle,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Header } from '@/components/dashboard/header';
 import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 import { usePermissions } from '@/hooks/use-permissions';
 import {
+	EntriesSection,
 	FailedPaymentsSection,
 	InvoicesSection,
 	RefundsSection,
@@ -14,9 +21,20 @@ import {
 	VoxAnalyticsSection,
 } from '@/modules/analytics';
 
-type Tab = 'subscriptions' | 'voxes' | 'invoices' | 'failed' | 'refunds';
+type Tab =
+	| 'entries'
+	| 'subscriptions'
+	| 'voxes'
+	| 'invoices'
+	| 'failed'
+	| 'refunds';
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
+	{
+		key: 'entries',
+		label: 'Entradas',
+		icon: <ArrowDownToLine className="w-4 h-4" />,
+	},
 	{
 		key: 'subscriptions',
 		label: 'Assinaturas',
@@ -49,7 +67,7 @@ export default function VendasPage() {
 	const { can, isLoading: permissionsLoading } = usePermissions();
 	const allowed = can('vendas.view');
 
-	const [activeTab, setActiveTab] = useState<Tab>('subscriptions');
+	const [activeTab, setActiveTab] = useState<Tab>('entries');
 
 	useEffect(() => {
 		if (!permissionsLoading && !allowed) {
@@ -93,6 +111,7 @@ export default function VendasPage() {
 					))}
 				</div>
 
+				{activeTab === 'entries' && <EntriesSection />}
 				{activeTab === 'subscriptions' && <SubscriptionsSection />}
 				{activeTab === 'voxes' && <VoxAnalyticsSection />}
 				{activeTab === 'invoices' && <InvoicesSection />}
