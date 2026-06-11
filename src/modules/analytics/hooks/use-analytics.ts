@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import {
+	getEntriesAnalytics,
 	getFailedPaymentsAnalytics,
 	getInvoicesAnalytics,
 	getInvoicesSummary,
@@ -13,6 +14,7 @@ import {
 	getVoxRefunds,
 } from '../services/analytics.service';
 import type {
+	EntriesAnalyticsParams,
 	FailedPaymentsAnalyticsParams,
 	InvoicesAnalyticsParams,
 	SalesAnalyticsParams,
@@ -34,6 +36,8 @@ export const analyticsQueryKeys = {
 		['analytics', 'invoices', 'summary', params] as const,
 	failedPayments: (params: FailedPaymentsAnalyticsParams) =>
 		['analytics', 'invoices', 'failed', params] as const,
+	entries: (params: EntriesAnalyticsParams) =>
+		['analytics', 'entries', params] as const,
 	planRefunds: ['analytics', 'refunds', 'plans'] as const,
 	voxRefunds: ['analytics', 'refunds', 'vox'] as const,
 };
@@ -88,6 +92,13 @@ export function useFailedPaymentsAnalytics(
 	return useQuery({
 		queryKey: analyticsQueryKeys.failedPayments(params),
 		queryFn: () => getFailedPaymentsAnalytics(params),
+	});
+}
+
+export function useEntriesAnalytics(params: EntriesAnalyticsParams = {}) {
+	return useQuery({
+		queryKey: analyticsQueryKeys.entries(params),
+		queryFn: () => getEntriesAnalytics(params),
 	});
 }
 
