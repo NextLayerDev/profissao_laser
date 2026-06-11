@@ -89,7 +89,8 @@ export function LinkSubscribersTable() {
 						{completed.length}
 					</p>
 					<p className="text-xs text-slate-500 dark:text-gray-500 mt-1">
-						Resgates completados nesta página ({total} no total).
+						Completados nesta página · {total} resgates no total (inclui
+						pendentes).
 					</p>
 				</div>
 				<div className="rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.03] p-5">

@@ -55,6 +55,15 @@ export function CreateAnnualLinkModal({ onClose }: CreateAnnualLinkModalProps) {
 				max_redemptions: maxR,
 				expires_at: expiresAt ? new Date(expiresAt).toISOString() : undefined,
 			});
+			// API antiga ignora o kind e cria um link MENSAL silenciosamente —
+			// valida a resposta pra não entregar o link errado pro admin.
+			if (link.kind !== 'annual_fixed') {
+				toast.error(
+					'A API ainda não suporta links anuais — este link saiu como MENSAL. Desative-o na aba "Links de Plano" e tente de novo após o deploy da API.',
+					{ duration: 10000 },
+				);
+				return;
+			}
 			setResult(link);
 			toast.success('Link anual gerado!');
 		} catch {
