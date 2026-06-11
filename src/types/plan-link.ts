@@ -2,9 +2,17 @@ import { z } from 'zod';
 
 // ── Links de Plano (upvox /v1/plan-links) ─────────────────────────────────────
 
+/** monthly_choice = comprador escolhe o plano (mensal); annual_fixed = plano travado, cobrança anual. */
+export const planLinkKindSchema = z
+	.enum(['monthly_choice', 'annual_fixed'])
+	.default('monthly_choice');
+export type PlanLinkKind = z.infer<typeof planLinkKindSchema>;
+
 export const planLinkSchema = z.object({
 	id: z.string(),
 	token: z.string(),
+	kind: planLinkKindSchema,
+	plan_id: z.string().nullable().optional().default(null),
 	vox_grant: z.coerce.number(),
 	status: z.enum(['active', 'disabled']),
 	max_redemptions: z.number().int().nullable(),
@@ -19,10 +27,15 @@ export type PlanLink = z.infer<typeof planLinkSchema>;
 export const planLinkListItemSchema = planLinkSchema.extend({
 	completed_redemptions: z.number().int(),
 	created_by_name: z.string().nullable(),
+	plan_key: z.string().nullable().optional().default(null),
+	plan_name: z.string().nullable().optional().default(null),
 });
 export type PlanLinkListItem = z.infer<typeof planLinkListItemSchema>;
 
 export interface CreatePlanLinkPayload {
+	kind?: PlanLinkKind;
+	/** Obrigatório quando kind = annual_fixed (plano travado do link). */
+	plan_key?: string;
 	vox_grant: number;
 	max_redemptions?: number;
 	expires_at?: string;
@@ -34,19 +47,55 @@ export const publicPlanLinkPlanSchema = z.object({
 	key: z.string(),
 	name: z.string(),
 	description: z.string().nullable(),
-	price_monthly_cents: z.number().int(),
-	first_month_cents: z.number().int(),
+	/** Período da cobrança: mensal (links normais) ou anual (link de plano único). */
+	interval: z.enum(['monthly', 'yearly']).optional().default('monthly'),
+	price_cents: z.number().int().optional(),
+	first_period_cents: z.number().int().optional(),
+	// Legados (sempre presentes nos links mensais; ausentes nos anuais).
+	price_monthly_cents: z.number().int().optional(),
+	first_month_cents: z.number().int().optional(),
 	discount_cents: z.number().int(),
 	eligible: z.boolean(),
 });
 export type PublicPlanLinkPlan = z.infer<typeof publicPlanLinkPlanSchema>;
 
 export const publicPlanLinkSchema = z.object({
+	kind: planLinkKindSchema,
 	vox_grant: z.coerce.number(),
 	status: z.enum(['ok', 'disabled', 'expired', 'exhausted']),
 	plans: z.array(publicPlanLinkPlanSchema),
 });
 export type PublicPlanLink = z.infer<typeof publicPlanLinkSchema>;
+
+// ── Assinantes via links (resgates) ───────────────────────────────────────────
+
+export const planLinkRedemptionSchema = z.object({
+	id: z.string(),
+	plan_link_id: z.string(),
+	customer_id: z.string(),
+	cpf: z.string(),
+	plan_id: z.string().nullable(),
+	status: z.enum(['pending', 'completed']),
+	floor_cents: z.number().int(),
+	amount_off_cents: z.number().int(),
+	vox_grant: z.coerce.number(),
+	vox_grant_remaining: z.coerce.number(),
+	completed_at: z.string().nullable(),
+	created_at: z.string(),
+	customer_email: z.string().nullable(),
+	customer_name: z.string().nullable(),
+	plan_key: z.string().nullable(),
+	plan_name: z.string().nullable(),
+	link_token: z.string().nullable(),
+	link_kind: planLinkKindSchema.nullable(),
+});
+export type PlanLinkRedemption = z.infer<typeof planLinkRedemptionSchema>;
+
+export const planLinkRedemptionsSchema = z.object({
+	rows: z.array(planLinkRedemptionSchema),
+	total: z.number().int(),
+});
+export type PlanLinkRedemptions = z.infer<typeof planLinkRedemptionsSchema>;
 
 // ── Fatura aberta da empresa ──────────────────────────────────────────────────
 

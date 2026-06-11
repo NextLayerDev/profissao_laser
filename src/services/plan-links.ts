@@ -5,8 +5,10 @@ import {
 	companyInvoiceSchema,
 	type PlanLink,
 	type PlanLinkListItem,
+	type PlanLinkRedemptions,
 	type PublicPlanLink,
 	planLinkListItemSchema,
+	planLinkRedemptionsSchema,
 	planLinkSchema,
 	publicPlanLinkSchema,
 } from '@/types/plan-link';
@@ -44,10 +46,21 @@ export async function getPlanLinkPublic(
 	return publicPlanLinkSchema.parse(data);
 }
 
-/** Resgata o link (auth): CPF + plano → URL do checkout Stripe. */
+/** Assinantes via links: resgates com cliente/plano/link (staff/admin). */
+export async function listPlanLinkRedemptions(params: {
+	limit?: number;
+	offset?: number;
+}): Promise<PlanLinkRedemptions> {
+	const { data } = await apiCourses.get('/v1/plan-links/redemptions', {
+		params,
+	});
+	return planLinkRedemptionsSchema.parse(data);
+}
+
+/** Resgata o link (auth): CPF (+ plano nos mensais) → URL do checkout Stripe. */
 export async function redeemPlanLink(
 	token: string,
-	payload: { cpf: string; plan_key: string },
+	payload: { cpf: string; plan_key?: string },
 ): Promise<{ checkout_url: string }> {
 	const { data } = await apiCourses.post(
 		`/v1/plan-links/${token}/redeem`,

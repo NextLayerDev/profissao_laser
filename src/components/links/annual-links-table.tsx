@@ -1,6 +1,6 @@
 'use client';
 
-import { Copy, Link2, Loader2, Power, PowerOff } from 'lucide-react';
+import { CalendarRange, Copy, Loader2, Power, PowerOff } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { usePlanLinks, useUpdatePlanLinkStatus } from '@/hooks/use-plan-links';
@@ -43,13 +43,13 @@ function effectiveStatus(link: PlanLinkListItem): string {
 	return 'active';
 }
 
-export function PlanLinksTable() {
+/** Links ANUAIS (plano único travado, 1º ano = piso mensal × 12). */
+export function AnnualLinksTable() {
 	const { data, isLoading } = usePlanLinks();
 	const toggleMutation = useUpdatePlanLinkStatus();
 	const [copiedId, setCopiedId] = useState<string | null>(null);
 
-	// Esta aba lista só os links MENSAIS; os anuais têm aba própria.
-	const links = data?.filter((l) => l.kind === 'monthly_choice');
+	const links = (data ?? []).filter((l) => l.kind === 'annual_fixed');
 
 	async function copyLink(token: string, id: string) {
 		const url = `${window.location.origin}/link-plano/${token}`;
@@ -81,15 +81,16 @@ export function PlanLinksTable() {
 		);
 	}
 
-	if (!links || links.length === 0) {
+	if (links.length === 0) {
 		return (
 			<div className="text-center py-20">
-				<Link2 className="w-10 h-10 text-slate-400 dark:text-gray-700 mx-auto mb-4" />
+				<CalendarRange className="w-10 h-10 text-slate-400 dark:text-gray-700 mx-auto mb-4" />
 				<p className="text-slate-600 dark:text-gray-400 font-medium">
-					Nenhum link de plano criado
+					Nenhum link anual criado
 				</p>
 				<p className="text-slate-500 dark:text-gray-600 text-sm mt-1">
-					Gere um link especial para oferecer o 1º mês a preço de custo.
+					Gere um link anual: você escolhe o plano e o 1º ano sai pelo piso
+					mensal × 12.
 				</p>
 			</div>
 		);
@@ -102,6 +103,7 @@ export function PlanLinksTable() {
 					<tr className="border-b border-slate-200 dark:border-gray-800">
 						{[
 							'Link',
+							'Plano',
 							'Voxxys de presente',
 							'Usos',
 							'Status',
@@ -131,6 +133,11 @@ export function PlanLinksTable() {
 									<code className="text-xs text-slate-600 dark:text-gray-400">
 										…/link-plano/{link.token.slice(0, 8)}…
 									</code>
+								</td>
+								<td className="py-3 px-4">
+									<span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border bg-violet-500/10 text-violet-500 dark:text-violet-300 border-violet-500/20">
+										{link.plan_name ?? link.plan_key ?? '—'}
+									</span>
 								</td>
 								<td className="py-3 px-4">
 									<span className="inline-flex items-center gap-1 text-violet-500 dark:text-violet-400 font-semibold">
