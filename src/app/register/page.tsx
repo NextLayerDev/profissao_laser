@@ -35,8 +35,7 @@ export default function Register() {
 					phone: phone.trim().replace(/\D/g, ''), // Send only digits
 				},
 				{
-					onSuccess: () =>
-						toast.success('Conta criada! Faça login para continuar.'),
+					onSuccess: () => toast.success('Conta criada com sucesso!'),
 					onError: () => toast.error('Erro ao criar conta. Tente novamente.'),
 				},
 			);
