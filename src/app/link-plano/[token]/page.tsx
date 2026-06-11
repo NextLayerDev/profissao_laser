@@ -176,16 +176,25 @@ function PlanCard({
 	plan,
 	selected,
 	onSelect,
+	hero = false,
 }: {
 	plan: PublicPlanLinkPlan;
 	selected: boolean;
 	onSelect: () => void;
+	/** Card único (link anual): sempre em destaque. */
+	hero?: boolean;
 }) {
 	const a = accentFor(plan.key);
 	const features = PLAN_FEATURES[plan.key] ?? [];
 	const tagline = PLAN_TAGLINES[plan.key] ?? plan.description ?? '';
-	const featured = plan.key === FEATURED_KEY;
-	const promo = plan.eligible ? splitCents(plan.first_month_cents) : null;
+	const featured = hero || plan.key === FEATURED_KEY;
+	// Campos genéricos (interval/price_cents) com fallback nos legados (API antiga).
+	const yearly = plan.interval === 'yearly';
+	const per = yearly ? '/ano' : '/mês';
+	const priceCents = plan.price_cents ?? plan.price_monthly_cents ?? 0;
+	const firstCents =
+		plan.first_period_cents ?? plan.first_month_cents ?? priceCents;
+	const promo = plan.eligible ? splitCents(firstCents) : null;
 
 	return (
 		<motion.div
@@ -213,7 +222,7 @@ function PlanCard({
 
 			{featured && (
 				<div className="btn-accent absolute -top-3 left-1/2 -translate-x-1/2 z-20 text-white text-[10px] font-bold uppercase tracking-[0.18em] px-3 py-1 rounded-full shadow-brand whitespace-nowrap">
-					MAIS ESCOLHIDO
+					{hero ? 'PLANO ANUAL' : 'MAIS ESCOLHIDO'}
 				</div>
 			)}
 
@@ -242,7 +251,8 @@ function PlanCard({
 				{promo ? (
 					<>
 						<div className="text-slate-500 text-sm line-through tabular-nums">
-							R$ {fmt(plan.price_monthly_cents)}/mês
+							R$ {fmt(priceCents)}
+							{per}
 						</div>
 						<div className="flex items-baseline justify-center gap-1 mt-1">
 							<span className="text-slate-400 text-base font-bold mr-1">
@@ -256,10 +266,14 @@ function PlanCard({
 							</span>
 						</div>
 						<div className="text-emerald-400 text-xs mt-1 font-bold uppercase tracking-wider">
-							no 1º mês
+							{yearly ? 'no 1º ano' : 'no 1º mês'}
 						</div>
 						<div className="text-slate-500 text-xs mt-1 font-mono">
-							depois R$ {fmt(plan.price_monthly_cents)}/mês
+							depois R$ {fmt(priceCents)}
+							{per}
+							{yearly && (
+								<> · equivale a R$ {fmt(Math.round(priceCents / 12))}/mês</>
+							)}
 						</div>
 					</>
 				) : (
@@ -269,10 +283,11 @@ function PlanCard({
 								R$
 							</span>
 							<span className="font-display text-white text-5xl font-black tracking-tight tabular-nums">
-								{splitCents(plan.price_monthly_cents).int}
+								{splitCents(priceCents).int}
 							</span>
 							<span className="text-slate-400 text-sm font-bold">
-								,{splitCents(plan.price_monthly_cents).cents}/mês
+								,{splitCents(priceCents).cents}
+								{per}
 							</span>
 						</div>
 						<div className="text-slate-500 text-xs mt-2 font-mono">
@@ -340,6 +355,9 @@ export default function PlanLinkPage() {
 	const authed = meQuery.isSuccess;
 	const checkingAuth = !mounted || meQuery.isLoading;
 
+	// Link anual: plano único travado pelo admin; redeem dispensa plan_key.
+	const isAnnual = data?.kind === 'annual_fixed';
+
 	const eligiblePlans = data?.plans.filter((p) => p.eligible) ?? [];
 	const selected =
 		eligiblePlans.find((p) => p.key === selectedKey) ??
@@ -360,15 +378,12 @@ export default function PlanLinkPage() {
 			toast.error('Informe um CPF válido para continuar.');
 			return;
 		}
-		redeem.mutate(
-			{ cpf, plan_key: selected.key },
-			{
-				onSuccess: ({ checkout_url }) => {
-					window.location.href = checkout_url;
-				},
-				onError: (err) => toast.error(redeemErrorMessage(err)),
+		redeem.mutate(isAnnual ? { cpf } : { cpf, plan_key: selected.key }, {
+			onSuccess: ({ checkout_url }) => {
+				window.location.href = checkout_url;
 			},
-		);
+			onError: (err) => toast.error(redeemErrorMessage(err)),
+		});
 	}
 
 	const unavailable =
@@ -419,11 +434,17 @@ export default function PlanLinkPage() {
 					<>
 						<div className="text-center mb-8">
 							<h2 className="font-display text-3xl md:text-[2.5rem] font-black text-white tracking-tight">
-								Seu <span className="grad-brand">1º mês a preço de custo</span>
+								Seu{' '}
+								<span className="grad-brand">
+									{isAnnual
+										? '1º ano a preço de custo'
+										: '1º mês a preço de custo'}
+								</span>
 							</h2>
 							<p className="text-gray-400 text-sm mt-3 max-w-xl mx-auto">
-								Você recebeu um link especial: escolha o plano ideal pra você,
-								pague quase nada no primeiro mês e depois siga no valor normal.
+								{isAnnual
+									? 'Você recebeu um link especial: assine o plano anual pagando quase nada no primeiro ano e depois siga no valor normal.'
+									: 'Você recebeu um link especial: escolha o plano ideal pra você, pague quase nada no primeiro mês e depois siga no valor normal.'}
 							</p>
 							{data && data.vox_grant > 0 && (
 								<div className="mt-5 inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-sm font-semibold text-violet-300">
@@ -434,17 +455,22 @@ export default function PlanLinkPage() {
 							)}
 						</div>
 
-						{/* Planos — mesmo grid adaptativo da landing */}
+						{/* Planos — grid adaptativo (mensal) ou card hero único (anual) */}
 						<div className="flex flex-wrap justify-center gap-5 mb-12">
 							{(data?.plans ?? []).map((plan) => (
 								<div
 									key={plan.key}
-									className="flex grow basis-[250px] min-w-[200px] max-w-[340px]"
+									className={
+										isAnnual
+											? 'flex w-full max-w-[400px]'
+											: 'flex grow basis-[250px] min-w-[200px] max-w-[340px]'
+									}
 								>
 									<PlanCard
 										plan={plan}
 										selected={selected?.key === plan.key}
 										onSelect={() => selectPlan(plan.key)}
+										hero={isAnnual}
 									/>
 								</div>
 							))}
@@ -480,11 +506,22 @@ export default function PlanLinkPage() {
 										{selected && (
 											<>
 												{' '}
-												· 1º mês por{' '}
+												· {isAnnual ? '1º ano' : '1º mês'} por{' '}
 												<span className="text-emerald-400 font-semibold">
-													R$ {fmt(selected.first_month_cents)}
+													R${' '}
+													{fmt(
+														selected.first_period_cents ??
+															selected.first_month_cents ??
+															0,
+													)}
 												</span>{' '}
-												· depois R$ {fmt(selected.price_monthly_cents)}/mês
+												· depois R${' '}
+												{fmt(
+													selected.price_cents ??
+														selected.price_monthly_cents ??
+														0,
+												)}
+												{isAnnual ? '/ano' : '/mês'}
 											</>
 										)}
 									</p>
