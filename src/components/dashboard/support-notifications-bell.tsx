@@ -3,6 +3,7 @@
 import {
 	Bell,
 	CheckCircle2,
+	GraduationCap,
 	Headphones,
 	HelpCircle,
 	MessageSquare,
@@ -79,6 +80,7 @@ export function SupportNotificationsBell() {
 		unreadChats,
 		liveWaiting,
 		ticketsPending,
+		lessonDoubtsPending,
 		forumUnanswered,
 		grandTotal,
 	} = useAdminPendings(enabled);
@@ -144,6 +146,7 @@ export function SupportNotificationsBell() {
 								{/* Resumo por área */}
 								{(liveWaiting > 0 ||
 									ticketsPending > 0 ||
+									lessonDoubtsPending > 0 ||
 									forumUnanswered > 0) && (
 									<>
 										<SectionHeader label="Abertos e pendentes" />
@@ -153,7 +156,7 @@ export function SupportNotificationsBell() {
 												label="Chats aguardando atendimento"
 												count={liveWaiting}
 												color="bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400"
-												onClick={() => go('/suporte')}
+												onClick={() => go('/suporte?tab=chat-online')}
 											/>
 										)}
 										{ticketsPending > 0 && (
@@ -162,7 +165,16 @@ export function SupportNotificationsBell() {
 												label="Chamados pendentes de resposta"
 												count={ticketsPending}
 												color="bg-violet-100 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400"
-												onClick={() => go('/suporte')}
+												onClick={() => go('/suporte?tab=chamados')}
+											/>
+										)}
+										{lessonDoubtsPending > 0 && (
+											<PendingRow
+												icon={GraduationCap}
+												label="Dúvidas de aula sem resposta"
+												count={lessonDoubtsPending}
+												color="bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400"
+												onClick={() => go('/suporte?tab=duvidas-aula')}
 											/>
 										)}
 										{forumUnanswered > 0 && (
@@ -185,7 +197,7 @@ export function SupportNotificationsBell() {
 											<button
 												key={chat.id}
 												type="button"
-												onClick={() => go('/suporte')}
+												onClick={() => go('/suporte?tab=chat-online')}
 												className="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
 											>
 												<div className="flex items-center justify-between gap-2">

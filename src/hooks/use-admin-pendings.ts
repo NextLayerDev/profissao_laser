@@ -2,14 +2,15 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { getDoubtChatsAdmin } from '@/services/doubt-chat';
+import { getAdminLessonDoubts } from '@/services/doubts';
 import { getForumPosts } from '@/services/forum';
 import { useAdminSupportNotifications } from './use-support-notifications';
 
 /**
  * Central de pendências do staff: agrega tudo que precisa de atenção —
  * mensagens novas e chats aguardando no atendimento ao vivo, chamados
- * pendentes e threads do fórum sem resposta. Alimenta o sino do header,
- * os badges da sidebar e as abas da página de Suporte.
+ * pendentes, dúvidas de aula sem resposta e threads do fórum sem resposta.
+ * Alimenta o sino do header, os badges da sidebar e as abas de Suporte.
  */
 export function useAdminPendings(enabled = true) {
 	// Chat ao vivo: mensagens não lidas + aguardando humano (poll 10s já existente).
@@ -22,6 +23,20 @@ export function useAdminPendings(enabled = true) {
 		queryFn: async () => {
 			const chats = await getDoubtChatsAdmin();
 			return chats.filter((c) => c.status === 'pending').length;
+		},
+		enabled,
+		refetchInterval: 60_000,
+	});
+
+	// Dúvidas de aula sem resposta (endpoint agregado — 1 chamada leve).
+	const { data: lessonDoubtsPending = 0 } = useQuery({
+		queryKey: ['admin-pendings', 'lesson-doubts'],
+		queryFn: async () => {
+			const res = await getAdminLessonDoubts({
+				status: 'unanswered',
+				limit: 1,
+			});
+			return res.unansweredCount;
 		},
 		enabled,
 		refetchInterval: 60_000,
@@ -40,7 +55,8 @@ export function useAdminPendings(enabled = true) {
 
 	const liveWaiting = waitingChats.length;
 	/** Total da área de Suporte (badge da sidebar). */
-	const supportTotal = unreadCount + liveWaiting + ticketsPending;
+	const supportTotal =
+		unreadCount + liveWaiting + ticketsPending + lessonDoubtsPending;
 	/** Total geral (badge do sino). */
 	const grandTotal = supportTotal + forumUnanswered;
 
@@ -53,6 +69,8 @@ export function useAdminPendings(enabled = true) {
 		markSeen,
 		// chamados
 		ticketsPending,
+		// dúvidas de aula
+		lessonDoubtsPending,
 		// fórum
 		forumUnanswered,
 		// agregados

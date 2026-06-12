@@ -4,6 +4,7 @@ import {
 	BookOpen,
 	CalendarCog,
 	FileText,
+	GraduationCap,
 	Headphones,
 	MessageSquare,
 } from 'lucide-react';
@@ -13,17 +14,25 @@ import { Header } from '@/components/dashboard/header';
 import { FAQAdminSection } from '@/components/duvidas-admin/faq-admin-section';
 import { KBAdminSection } from '@/components/duvidas-admin/kb-admin-section';
 import { AppointmentConfigSection } from '@/components/suporte/appointment-config-section';
+import { LessonDoubtsAdmin } from '@/components/suporte/lesson-doubts-admin';
 import { SuporteAdminView } from '@/components/suporte/suporte-admin-view';
 import { SuporteQuickBooking } from '@/components/suporte/suporte-quick-booking';
 import { SupportChatAdmin } from '@/components/suporte/support-chat-admin';
 import { useAdminPendings } from '@/hooks/use-admin-pendings';
 import { usePermissions } from '@/modules/access';
 
-type Tab = 'chamados' | 'chat-online' | 'faq' | 'kb' | 'agendamentos';
+type Tab =
+	| 'chamados'
+	| 'chat-online'
+	| 'duvidas-aula'
+	| 'faq'
+	| 'kb'
+	| 'agendamentos';
 
 const TABS: { key: Tab; label: string; icon: typeof Headphones }[] = [
 	{ key: 'chamados', label: 'Chamados', icon: Headphones },
 	{ key: 'chat-online', label: 'Chat ao vivo', icon: MessageSquare },
+	{ key: 'duvidas-aula', label: 'Dúvidas de aulas', icon: GraduationCap },
 	{ key: 'faq', label: 'FAQ', icon: BookOpen },
 	{ key: 'kb', label: 'Base de Conhecimento', icon: FileText },
 	{ key: 'agendamentos', label: 'Agendamentos', icon: CalendarCog },
@@ -34,14 +43,23 @@ export default function SuportePage() {
 	const { can, isLoading } = usePermissions();
 	const allowed = can('suporte.view');
 	const [activeTab, setActiveTab] = useState<Tab>('chamados');
-	const { unreadCount, liveWaiting, ticketsPending } =
+	const { unreadCount, liveWaiting, ticketsPending, lessonDoubtsPending } =
 		useAdminPendings(allowed);
 
 	/** Pendências por aba — staff vê de cara onde precisa agir. */
 	const tabBadges: Partial<Record<Tab, number>> = {
 		chamados: ticketsPending,
 		'chat-online': unreadCount + liveWaiting,
+		'duvidas-aula': lessonDoubtsPending,
 	};
+
+	// Deep-link: /suporte?tab=duvidas-aula abre direto na aba pedida.
+	useEffect(() => {
+		const tab = new URLSearchParams(window.location.search).get('tab');
+		if (tab && TABS.some((t) => t.key === tab)) {
+			setActiveTab(tab as Tab);
+		}
+	}, []);
 
 	useEffect(() => {
 		if (!isLoading && !allowed) {
@@ -100,6 +118,11 @@ export default function SuportePage() {
 			{activeTab === 'chat-online' && (
 				<div className="flex-1 overflow-y-auto px-4 md:px-8 py-6">
 					<SupportChatAdmin />
+				</div>
+			)}
+			{activeTab === 'duvidas-aula' && (
+				<div className="flex-1 overflow-y-auto px-4 md:px-8 py-6">
+					<LessonDoubtsAdmin />
 				</div>
 			)}
 			{activeTab === 'faq' && (

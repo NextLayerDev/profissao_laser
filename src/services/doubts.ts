@@ -1,5 +1,9 @@
 import { api } from '@/lib/fetch';
-import type { Doubt } from '@/types/doubts';
+import type {
+	AdminLessonDoubtsResponse,
+	AdminLessonDoubtsStatus,
+	Doubt,
+} from '@/types/doubts';
 
 export interface GetDoubtsParams {
 	page?: number;
@@ -36,6 +40,27 @@ export async function replyToDoubt(
 	const { data } = await api.post<Doubt['replies'][0]>(
 		`/doubt/${doubtId}/reply`,
 		{ content },
+	);
+	return data;
+}
+
+export interface GetAdminLessonDoubtsParams {
+	status?: AdminLessonDoubtsStatus;
+	page?: number;
+	limit?: number;
+}
+
+/** Visão agregada do admin: todas as dúvidas de aula em uma chamada. */
+export async function getAdminLessonDoubts(
+	params?: GetAdminLessonDoubtsParams,
+): Promise<AdminLessonDoubtsResponse> {
+	const searchParams = new URLSearchParams();
+	if (params?.status) searchParams.set('status', params.status);
+	if (params?.page) searchParams.set('page', String(params.page));
+	if (params?.limit) searchParams.set('limit', String(params.limit));
+	const query = searchParams.toString();
+	const { data } = await api.get<AdminLessonDoubtsResponse>(
+		`/doubts/admin${query ? `?${query}` : ''}`,
 	);
 	return data;
 }

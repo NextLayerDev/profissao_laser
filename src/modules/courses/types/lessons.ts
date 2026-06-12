@@ -34,3 +34,21 @@ export const updateLessonSchema = z.object({
 	is_free: z.boolean().optional(),
 });
 export type UpdateLessonPayload = z.infer<typeof updateLessonSchema>;
+
+/** Entrada do índice plano de aulas (GET /v1/admin/lessons-index). */
+export const lessonIndexEntrySchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	position: z.number().int(),
+	module: z.object({
+		id: z.string(),
+		title: z.string(),
+		position: z.number().int(),
+	}),
+	course: z.object({
+		id: z.string(),
+		title: z.string(),
+		slug: z.string(),
+	}),
+});
+export type LessonIndexEntry = z.infer<typeof lessonIndexEntrySchema>;

@@ -3,6 +3,8 @@ import { apiCourses as api } from '@/shared/lib/api-courses';
 import {
 	type CreateLessonPayload,
 	type Lesson,
+	type LessonIndexEntry,
+	lessonIndexEntrySchema,
 	lessonSchema,
 	type UpdateLessonPayload,
 } from '../types/lessons';
@@ -11,6 +13,12 @@ import { type Material, materialSchema } from '../types/materials';
 export async function listModuleLessons(moduleId: string): Promise<Lesson[]> {
 	const { data } = await api.get(`/v1/module/${moduleId}/lessons`);
 	return lessonSchema.array().parse(data);
+}
+
+/** Índice plano de todas as aulas com módulo+curso em uma chamada (staff). */
+export async function listLessonsIndex(): Promise<LessonIndexEntry[]> {
+	const { data } = await api.get('/v1/admin/lessons-index');
+	return lessonIndexEntrySchema.array().parse(data);
 }
 
 export async function getLesson(id: string): Promise<Lesson> {
