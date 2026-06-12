@@ -2,7 +2,9 @@
 
 import { CheckCircle2, ChevronUp, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
+import { Avatar } from '@/components/ui/avatar';
 import { ForumListSkeleton } from '@/components/ui/skeletons/forum-skeleton';
+import { useMemberAvatarMap } from '@/hooks/use-community';
 import { useForumPosts } from '@/hooks/use-forum';
 import type { ForumSort } from '@/services/forum';
 import { formatMessageTime } from '@/utils/formatDate';
@@ -37,6 +39,7 @@ export function ForumRecentDiscussions({
 		categoryId: categoryId || undefined,
 	});
 	const posts = postsResponse?.posts ?? [];
+	const avatarMap = useMemberAvatarMap();
 
 	if (isLoading) {
 		return (
@@ -94,15 +97,12 @@ export function ForumRecentDiscussions({
 							>
 								{/* Tópico */}
 								<div className="flex items-start gap-2.5 min-w-0">
-									<div
-										className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5"
-										style={{
-											backgroundColor: `${categoryColor}22`,
-											color: categoryColor,
-										}}
-									>
-										{post.author?.[0]?.toUpperCase() ?? '?'}
-									</div>
+									<Avatar
+										src={avatarMap.get(post.authorId) ?? null}
+										name={post.author}
+										className="w-9 h-9 text-xs mt-0.5"
+										rounded="rounded-full"
+									/>
 									<div className="min-w-0">
 										<div className="flex items-center gap-1.5 min-w-0">
 											<p className="text-sm font-semibold text-slate-900 dark:text-white truncate group-hover:text-violet-600 dark:group-hover:text-violet-300 transition-colors">
