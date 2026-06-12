@@ -15,7 +15,8 @@ export async function getForumCategories(): Promise<ForumCategory[]> {
 
 export async function createForumCategory(payload: {
 	name: string;
-	color: string;
+	/** Opcional — sem cor, o backend sorteia uma da paleta. */
+	color?: string;
 }): Promise<ForumCategory> {
 	const { data } = await api.post<ForumCategory>('/forum/category', payload);
 	return data;
@@ -34,6 +35,18 @@ export async function updateForumCategory(
 
 export async function deleteForumCategory(id: string): Promise<void> {
 	await api.delete(`/forum/category/${id}`);
+}
+
+/** Tema inteligente: a API escolhe (ou cria) o tema certo pra thread. */
+export async function suggestForumCategory(payload: {
+	title?: string;
+	content: string;
+}): Promise<{ category: ForumCategory; isNew: boolean }> {
+	const { data } = await api.post<{ category: ForumCategory; isNew: boolean }>(
+		'/forum/suggest-category',
+		payload,
+	);
+	return data;
 }
 
 // ─── Posts ────────────────────────────────────────────────────────────────────

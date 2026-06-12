@@ -18,6 +18,7 @@ import {
 	getForumCategories,
 	getForumPost,
 	getForumPosts,
+	suggestForumCategory,
 	updateForumCategory,
 	updateForumPost,
 	updateForumReply,
@@ -41,8 +42,20 @@ export function useForumCategories(enabled = true) {
 export function useCreateForumCategory() {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (payload: { name: string; color: string }) =>
+		mutationFn: (payload: { name: string; color?: string }) =>
 			createForumCategory(payload),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'categories'] });
+		},
+	});
+}
+
+/** Tema inteligente: a API analisa título+mensagem e escolhe/cria o tema. */
+export function useSuggestForumCategory() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (payload: { title?: string; content: string }) =>
+			suggestForumCategory(payload),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'categories'] });
 		},
