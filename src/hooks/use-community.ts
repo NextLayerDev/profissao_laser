@@ -6,7 +6,7 @@ import {
 	useQuery,
 	useQueryClient,
 } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import {
 	createChannel,
@@ -297,6 +297,15 @@ export function useCommunityMembers(
 		queryFn: () => getMembers({ search, category, featured, online }),
 		staleTime: STALE_MINUTES,
 	});
+}
+
+/** Mapa authorId → foto do membro (lista cacheada) — avatares do fórum. */
+export function useMemberAvatarMap() {
+	const { data: members } = useCommunityMembers();
+	return useMemo(
+		() => new Map((members ?? []).map((m) => [m.id, m.image ?? null])),
+		[members],
+	);
 }
 
 export function useOnlineMembers() {

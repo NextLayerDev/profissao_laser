@@ -2,6 +2,8 @@
 
 import { ChevronRight, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
+import { Avatar } from '@/components/ui/avatar';
+import { useMemberAvatarMap } from '@/hooks/use-community';
 import type { ForumCategory, ForumPost } from '@/types/forum';
 import { formatMessageTime } from '@/utils/formatDate';
 
@@ -14,6 +16,7 @@ interface ForumBoardRowProps {
 /** Card de tema do fórum — acento na cor da categoria. */
 export function ForumBoardRow({ category, lastPost }: ForumBoardRowProps) {
 	const color = category.color || '#8b5cf6';
+	const avatarMap = useMemberAvatarMap();
 
 	return (
 		<Link
@@ -49,12 +52,12 @@ export function ForumBoardRow({ category, lastPost }: ForumBoardRowProps) {
 
 			{lastPost ? (
 				<div className="flex items-center gap-2.5 pt-3 border-t border-slate-100 dark:border-white/5 min-w-0">
-					<div
-						className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
-						style={{ backgroundColor: `${color}22`, color }}
-					>
-						{lastPost.author?.[0]?.toUpperCase() ?? '?'}
-					</div>
+					<Avatar
+						src={avatarMap.get(lastPost.authorId) ?? null}
+						name={lastPost.author}
+						className="w-7 h-7 text-[11px]"
+						rounded="rounded-full"
+					/>
 					<div className="min-w-0">
 						<p className="text-xs font-medium text-slate-700 dark:text-gray-200 truncate">
 							{lastPost.title}

@@ -1,7 +1,14 @@
 'use client';
 
-import { Loader2, MessageSquare, Send, UserCheck, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import {
+	Loader2,
+	MessageSquare,
+	Reply,
+	Send,
+	UserCheck,
+	X,
+} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
 	useAdminCloseSupportChat,
@@ -68,6 +75,27 @@ export function SupportChatAdmin() {
 	const closeChat = useAdminCloseSupportChat(selectedId);
 	const { unreadIds, markSeen } = useAdminSupportNotifications();
 
+	/** Cliente falou por último e a conversa está viva → pendente de resposta. */
+	const needsReply = useCallback(
+		(c: (typeof chats)[number]) =>
+			c.lastMessageRole === 'customer' && c.status !== 'closed',
+		[],
+	);
+
+	// Pendentes de resposta primeiro; dentro de cada grupo, mais recente em cima.
+	const sortedChats = useMemo(
+		() =>
+			[...chats].sort((a, b) => {
+				const ra = needsReply(a) ? 0 : 1;
+				const rb = needsReply(b) ? 0 : 1;
+				if (ra !== rb) return ra - rb;
+				return (b.lastMessageAt ?? b.updatedAt).localeCompare(
+					a.lastMessageAt ?? a.updatedAt,
+				);
+			}),
+		[chats, needsReply],
+	);
+
 	// Chat aberto = lido (inclusive quando chega mensagem nova com ele aberto).
 	useEffect(() => {
 		if (selectedId && chat?.lastMessageAt) {
@@ -116,17 +144,19 @@ export function SupportChatAdmin() {
 						<div className="flex justify-center py-8">
 							<Loader2 className="w-5 h-5 animate-spin text-violet-500" />
 						</div>
-					) : chats.length === 0 ? (
+					) : sortedChats.length === 0 ? (
 						<p className="text-sm text-slate-500 dark:text-gray-400 text-center py-8">
 							Nenhum chat.
 						</p>
 					) : (
-						chats.map((c) => (
+						sortedChats.map((c) => (
 							<button
 								key={c.id}
 								type="button"
 								onClick={() => setSelectedId(c.id)}
-								className={`w-full text-left px-4 py-3 border-b border-slate-100 dark:border-white/5 transition-colors ${
+								className={`w-full text-left px-4 py-3 border-b border-slate-100 dark:border-white/5 border-l-2 transition-colors ${
+									needsReply(c) ? 'border-l-red-500' : 'border-l-transparent'
+								} ${
 									selectedId === c.id
 										? 'bg-violet-50 dark:bg-violet-500/10'
 										: 'hover:bg-slate-50 dark:hover:bg-white/5'
@@ -141,10 +171,18 @@ export function SupportChatAdmin() {
 											{c.customerName ?? 'Cliente'}
 										</span>
 									</span>
-									<StatusBadge status={c.status} />
+									<span className="flex items-center gap-1.5 shrink-0">
+										{needsReply(c) && (
+											<span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-400 whitespace-nowrap">
+												<Reply className="w-3 h-3" />
+												Responder
+											</span>
+										)}
+										<StatusBadge status={c.status} />
+									</span>
 								</div>
 								<p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5 truncate">
-									{unreadIds.has(c.id) && c.lastMessagePreview
+									{needsReply(c) && c.lastMessagePreview
 										? c.lastMessagePreview
 										: c.attendantName
 											? `Atendente: ${c.attendantName}`

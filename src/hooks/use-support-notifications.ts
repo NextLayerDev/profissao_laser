@@ -105,6 +105,12 @@ export function useAdminSupportNotifications(enabled = true) {
 		[chats, unreadIds],
 	);
 
+	/** Chats aguardando atendimento humano (pendência do staff). */
+	const waitingChats = useMemo(
+		() => (chats ?? []).filter((c) => c.status === 'waiting_human'),
+		[chats],
+	);
+
 	const unreadCount = unreadIds.size;
 
 	const markSeen = useCallback((chatId: string, at?: string | null) => {
@@ -148,5 +154,5 @@ export function useAdminSupportNotifications(enabled = true) {
 		};
 	}, [unreadCount]);
 
-	return { unreadCount, unreadIds, unreadChats, markSeen };
+	return { unreadCount, unreadIds, unreadChats, waitingChats, markSeen };
 }

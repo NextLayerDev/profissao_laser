@@ -4,7 +4,7 @@ import { BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAdminSupportNotifications } from '@/hooks/use-support-notifications';
+import { useAdminPendings } from '@/hooks/use-admin-pendings';
 import { usePermissions } from '@/modules/access';
 import { navItems } from '@/utils/constants/navigation';
 import { canSeeNavItem } from '@/utils/constants/permissions';
@@ -23,7 +23,13 @@ export function Sidebar({ collapsed, onToggle }: Props) {
 	);
 
 	const canSeeSuporte = canSeeNavItem('Suporte', can);
-	const { unreadCount } = useAdminSupportNotifications(canSeeSuporte);
+	const { supportTotal, forumUnanswered } = useAdminPendings(canSeeSuporte);
+
+	/** Pendências por rota — badges nos itens da sidebar. */
+	const badgeByHref: Record<string, number> = {
+		'/suporte': supportTotal,
+		'/forum': forumUnanswered,
+	};
 
 	return (
 		<aside
@@ -67,6 +73,7 @@ export function Sidebar({ collapsed, onToggle }: Props) {
 							pathname === item.href ||
 							(item.href !== '/dashboard' &&
 								pathname.startsWith(`${item.href}/`));
+						const badge = badgeByHref[item.href] ?? 0;
 						return (
 							<Link
 								key={item.name}
@@ -82,16 +89,16 @@ export function Sidebar({ collapsed, onToggle }: Props) {
 							>
 								<span className="relative shrink-0">
 									<item.icon className="w-5 h-5" />
-									{item.href === '/suporte' && unreadCount > 0 && collapsed && (
+									{badge > 0 && collapsed && (
 										<span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-[#06070a]" />
 									)}
 								</span>
 								{!collapsed && (
 									<span className="flex items-center gap-2 min-w-0">
 										<span className="truncate">{item.name}</span>
-										{item.href === '/suporte' && unreadCount > 0 && (
+										{badge > 0 && (
 											<span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500 text-white leading-none">
-												{unreadCount}
+												{badge > 99 ? '99+' : badge}
 											</span>
 										)}
 									</span>

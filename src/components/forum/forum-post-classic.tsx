@@ -1,6 +1,8 @@
 'use client';
 
 import { CheckCircle2, ChevronUp, GraduationCap } from 'lucide-react';
+import { Avatar } from '@/components/ui/avatar';
+import { useMemberAvatarMap } from '@/hooks/use-community';
 import type { ForumPost, ForumReply } from '@/types/forum';
 import { formatMessageTime } from '@/utils/formatDate';
 
@@ -10,6 +12,13 @@ interface ForumPostClassicProps {
 	/** True = é o post inicial (OP) da thread, false = uma reply. */
 	isOp: boolean;
 	onUpvote?: () => void;
+}
+
+/** Autores antigos podem estar salvos como email — exibe só a parte local. */
+function displayAuthorName(raw: string | null | undefined): string {
+	const name = (raw ?? '').trim();
+	if (!name) return 'Anônimo';
+	return name.includes('@') ? (name.split('@')[0] ?? name) : name;
 }
 
 export function ForumPostClassic({
@@ -22,6 +31,11 @@ export function ForumPostClassic({
 		'isInstructor' in post ? Boolean(post.isInstructor) : false;
 	const isAccepted = 'isAccepted' in post ? Boolean(post.isAccepted) : false;
 
+	// Foto real do membro (mesma usada em Membros/feed), via lista cacheada.
+	const avatarMap = useMemberAvatarMap();
+	const avatarSrc = avatarMap.get(post.authorId) ?? null;
+	const authorName = displayAuthorName(post.author);
+
 	return (
 		<article
 			className={`bg-white dark:bg-white/5 border rounded-xl overflow-hidden ${
@@ -32,13 +46,16 @@ export function ForumPostClassic({
 		>
 			<div className="grid grid-cols-1 md:grid-cols-[180px_1fr]">
 				{/* Sidebar do autor */}
-				<aside className="bg-slate-50 dark:bg-white/[0.03] border-b md:border-b-0 md:border-r border-slate-200 dark:border-white/10 p-4 flex md:flex-col items-center md:items-start gap-3">
-					<div className="w-14 h-14 rounded-lg bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center text-white font-bold text-lg shrink-0">
-						{post.author?.[0]?.toUpperCase() ?? '?'}
-					</div>
-					<div className="min-w-0">
-						<p className="text-sm font-bold text-slate-900 dark:text-white truncate">
-							{post.author || 'Anônimo'}
+				<aside className="bg-slate-50 dark:bg-white/[0.03] border-b md:border-b-0 md:border-r border-slate-200 dark:border-white/10 p-4 flex md:flex-col items-center md:items-start gap-3 overflow-hidden min-w-0">
+					<Avatar
+						src={avatarSrc}
+						name={authorName}
+						className="w-14 h-14 text-lg"
+						rounded="rounded-xl"
+					/>
+					<div className="w-full min-w-0">
+						<p className="text-sm font-bold text-slate-900 dark:text-white break-words leading-snug">
+							{authorName}
 						</p>
 						{isInstructor ? (
 							<span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300">
@@ -54,7 +71,7 @@ export function ForumPostClassic({
 				</aside>
 
 				{/* Conteúdo */}
-				<div className="flex flex-col">
+				<div className="flex flex-col min-w-0">
 					{/* Header */}
 					<div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
 						<p className="text-xs text-slate-500 dark:text-gray-400">
@@ -66,13 +83,13 @@ export function ForumPostClassic({
 					</div>
 
 					{/* Body */}
-					<div className="p-4 flex-1">
+					<div className="p-4 flex-1 min-w-0">
 						{isOp && 'title' in post ? (
-							<h2 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
+							<h2 className="text-xl font-bold text-slate-900 dark:text-white mb-3 break-words">
 								{post.title}
 							</h2>
 						) : null}
-						<div className="prose prose-sm dark:prose-invert max-w-none text-slate-700 dark:text-gray-200 whitespace-pre-wrap">
+						<div className="prose prose-sm dark:prose-invert max-w-none text-slate-700 dark:text-gray-200 whitespace-pre-wrap break-words">
 							{post.content}
 						</div>
 					</div>
