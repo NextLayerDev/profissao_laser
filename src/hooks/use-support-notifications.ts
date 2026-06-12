@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { listAdminSupportChats } from '@/services/support-chat';
 import type { SupportChatSummary } from '@/types/support-chat';
@@ -10,6 +10,8 @@ import type { SupportChatSummary } from '@/types/support-chat';
 // pela API) com o último "visto" guardado em localStorage — por navegador.
 const ADMIN_SEEN_KEY = 'pl-support-admin-seen';
 const SOUND_KEY = 'pl-support-sound';
+/** Timestamp da mensagem mais nova já anunciada com toast/som (por navegador). */
+const NOTIFIED_KEY = 'pl-support-admin-notified';
 
 type SeenMap = Record<string, string>;
 
@@ -112,19 +114,30 @@ export function useAdminSupportNotifications(enabled = true) {
 		setSeenVersion((v) => v + 1);
 	}, []);
 
-	// Efeitos quando a contagem CRESCE: toast + beep.
-	const prevCount = useRef(0);
+	// Toast + beep SÓ quando chega mensagem mais nova do que a última já
+	// notificada (baseline persistido) — abrir aba/página ou logar de novo
+	// não re-notifica: o pendente fica só no badge do sino.
 	useEffect(() => {
-		if (unreadCount > prevCount.current) {
+		if (!chats || chats.length === 0) return;
+		const maxUnreadAt = unreadChats[0]?.lastMessageAt;
+		if (!maxUnreadAt) return;
+
+		const notifiedUpTo = localStorage.getItem(NOTIFIED_KEY);
+		if (!notifiedUpTo) {
+			// Primeira vez neste navegador: não notifica o histórico.
+			localStorage.setItem(NOTIFIED_KEY, maxUnreadAt);
+			return;
+		}
+		if (maxUnreadAt > notifiedUpTo) {
+			localStorage.setItem(NOTIFIED_KEY, maxUnreadAt);
 			toast.info(
-				unreadCount === 1
+				unreadChats.length === 1
 					? 'Nova mensagem no chat de atendimento'
-					: `${unreadCount} chats com mensagens novas`,
+					: `${unreadChats.length} chats com mensagens novas`,
 			);
 			if (isSupportSoundEnabled()) playBeep();
 		}
-		prevCount.current = unreadCount;
-	}, [unreadCount]);
+	}, [chats, unreadChats]);
 
 	// Contador no título da aba.
 	useEffect(() => {
