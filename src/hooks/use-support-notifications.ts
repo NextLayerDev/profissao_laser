@@ -92,6 +92,17 @@ export function useAdminSupportNotifications(enabled = true) {
 		return ids;
 	}, [chats, seen]);
 
+	/** Chats não lidos, mais recentes primeiro (p/ o sino do header). */
+	const unreadChats = useMemo(
+		() =>
+			(chats ?? [])
+				.filter((c) => unreadIds.has(c.id))
+				.sort((a, b) =>
+					(b.lastMessageAt ?? '').localeCompare(a.lastMessageAt ?? ''),
+				),
+		[chats, unreadIds],
+	);
+
 	const unreadCount = unreadIds.size;
 
 	const markSeen = useCallback((chatId: string, at?: string | null) => {
@@ -124,5 +135,5 @@ export function useAdminSupportNotifications(enabled = true) {
 		};
 	}, [unreadCount]);
 
-	return { unreadCount, unreadIds, markSeen };
+	return { unreadCount, unreadIds, unreadChats, markSeen };
 }
