@@ -62,8 +62,6 @@ import type {
 } from '@/types/previas';
 import {
 	finishForMaterial,
-	pickValidPreset,
-	smartPresetFor,
 	suggestedBackgrounds,
 } from '@/utils/constants/previa-smart-presets';
 
@@ -84,9 +82,9 @@ const DEFAULT_LASER_SETTINGS: LaserSettings = {
 	tamanhoNome: 'medio',
 	orientacaoLogo: 'horizontal',
 	orientacaoNome: 'horizontal',
-	material: 'madeira',
+	material: 'aco-inox',
 	estiloGravacao: 'clean',
-	acabamentoSuperficie: 'fosco',
+	acabamentoSuperficie: 'escovado',
 	contraste: 50,
 	efeitoSombra: 0,
 	moldura: 'nenhuma',
@@ -153,12 +151,19 @@ function downloadUrl(url: string, filename: string) {
 
 const loadedFonts = new Set<string>();
 
+/** Nome primário de uma stack CSS ("'Ubuntu', sans-serif" → "Ubuntu"). */
+function primaryFontName(family: string): string {
+	return (family.split(',')[0] ?? family).trim().replace(/^['"]|['"]$/g, '');
+}
+
 function loadGoogleFont(family: string) {
-	if (loadedFonts.has(family)) return;
-	loadedFonts.add(family);
+	// O catálogo manda a stack CSS completa — o Google Fonts só aceita o nome.
+	const primary = primaryFontName(family);
+	if (!primary || loadedFonts.has(primary)) return;
+	loadedFonts.add(primary);
 	const link = document.createElement('link');
 	link.rel = 'stylesheet';
-	link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}&display=swap`;
+	link.href = `https://fonts.googleapis.com/css2?family=${primary.replace(/ /g, '+')}:wght@400;700&display=swap`;
 	document.head.appendChild(link);
 }
 
@@ -309,7 +314,7 @@ function FontSelector({
 				{selectedFont && (
 					<div
 						className="flex-1 min-w-0 flex items-center px-3 py-2 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-base text-slate-900 dark:text-white truncate"
-						style={{ fontFamily: `'${selectedFont.family}', sans-serif` }}
+						style={{ fontFamily: selectedFont.family }}
 					>
 						Profissao Laser — Abc 123
 					</div>
@@ -1141,23 +1146,11 @@ export function PreviasView() {
 		setSelectedVariantId(null);
 	}, []);
 
-	// Ao escolher a variante, aplica um preset inteligente (material + acabamento)
-	// derivado do produto — clampado contra as opções reais de /previas/options.
-	const handleSelectVariant = useCallback(
-		(id: string) => {
-			setSelectedVariantId(id || null);
-			if (!selectedProduct) return;
-			const valid = pickValidPreset(smartPresetFor(selectedProduct), {
-				material: options?.material?.map((m) => m.value) ?? [],
-				acabamentoSuperficie:
-					options?.acabamentoSuperficie?.map((m) => m.value) ?? [],
-			});
-			if (Object.keys(valid).length > 0) {
-				setLaserSettings((prev) => ({ ...prev, ...valid }));
-			}
-		},
-		[selectedProduct, options],
-	);
+	// Pré-seleção fixa: aço inox (pedido do cliente) — o produto não sobrescreve
+	// mais o material; o usuário ajusta manualmente se quiser.
+	const handleSelectVariant = useCallback((id: string) => {
+		setSelectedVariantId(id || null);
+	}, []);
 
 	// Helper to get range from options or fallback
 	const getRange = useCallback(
@@ -1553,7 +1546,7 @@ export function PreviasView() {
 						{selectedVariantId && (
 							<p className="col-span-full -mt-1 flex items-center gap-1.5 text-xs text-violet-600 dark:text-violet-300">
 								<Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
-								Material e acabamento sugeridos pelo produto — ajuste se quiser.
+								Aço inox pré-selecionado — ajuste o material se quiser.
 							</p>
 						)}
 						<DynamicSelect
