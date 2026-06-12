@@ -3,6 +3,7 @@
 import { BookOpen, Store } from 'lucide-react';
 import Link from 'next/link';
 import { ChatButton } from '@/components/dashboard/chat-button';
+import { SupportNotificationsBell } from '@/components/dashboard/support-notifications-bell';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
 
@@ -24,6 +25,7 @@ export function Header() {
 			<div className="flex items-center gap-2">
 				<ChatButton variant="inline" />
 				<Separator />
+				<SupportNotificationsBell />
 				<ThemeToggle />
 				<Separator />
 				<Link

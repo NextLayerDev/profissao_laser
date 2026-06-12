@@ -18,6 +18,7 @@ const ADMIN_PATHS = [
 	'/agendamentos',
 	'/acessos',
 	'/alunos',
+	'/grupo-whatsapp',
 	'/duvidas-admin',
 	'/suporte',
 	'/parametros',

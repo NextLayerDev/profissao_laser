@@ -6,6 +6,7 @@ import {
 	HelpCircle,
 	Home,
 	Link2,
+	MessageCircle,
 	MessageSquare,
 	Package,
 	PenLine,
@@ -54,6 +55,12 @@ export const navItems: NavItem[] = [
 	},
 	{ name: 'Acessos', icon: ShieldCheck, href: '/acessos', hasDropdown: false },
 	{ name: 'Alunos', icon: Users, href: '/alunos', hasDropdown: false },
+	{
+		name: 'Grupo WhatsApp',
+		icon: MessageCircle,
+		href: '/grupo-whatsapp',
+		hasDropdown: false,
+	},
 	{ name: 'Previas IA', icon: Eye, href: '/previas-admin', hasDropdown: false },
 	{
 		name: 'Vetorizacao',

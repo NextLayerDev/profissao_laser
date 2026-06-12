@@ -10,15 +10,23 @@ import {
 	useForumPosts,
 	useUpvoteForumPost,
 } from '@/hooks/use-forum';
+import type { ForumSort } from '@/services/forum';
 import type { ForumPost } from '@/types/forum';
 
 interface ForumTabProps {
 	currentUserId: string;
 }
 
+const SORT_OPTIONS: { value: ForumSort; label: string }[] = [
+	{ value: 'recent', label: 'Mais recentes' },
+	{ value: 'top', label: 'Mais votados' },
+	{ value: 'unanswered', label: 'Sem resposta' },
+];
+
 export function ForumTab({ currentUserId }: ForumTabProps) {
 	const [search, setSearch] = useState('');
 	const [categoryId, setCategoryId] = useState('');
+	const [sort, setSort] = useState<ForumSort>('recent');
 	const [selectedPost, setSelectedPost] = useState<ForumPost | null>(null);
 	const [showNewModal, setShowNewModal] = useState(false);
 
@@ -26,6 +34,7 @@ export function ForumTab({ currentUserId }: ForumTabProps) {
 	const { data: postsData, isLoading } = useForumPosts({
 		search: search || undefined,
 		categoryId: categoryId || undefined,
+		sort: sort === 'recent' ? undefined : sort,
 		limit: 30,
 	});
 	const upvote = useUpvoteForumPost();
@@ -58,6 +67,19 @@ export function ForumTab({ currentUserId }: ForumTabProps) {
 					/>
 				</div>
 
+				{/* Sort */}
+				<select
+					value={sort}
+					onChange={(e) => setSort(e.target.value as ForumSort)}
+					className="px-3 py-2 text-sm bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+				>
+					{SORT_OPTIONS.map((o) => (
+						<option key={o.value} value={o.value}>
+							{o.label}
+						</option>
+					))}
+				</select>
+
 				{/* Category filter */}
 				{categories.length > 0 && (
 					<select
@@ -66,6 +88,7 @@ export function ForumTab({ currentUserId }: ForumTabProps) {
 						className="px-3 py-2 text-sm bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
 					>
 						<option value="">Todas as categorias</option>
+						<option value="none">Sem tema</option>
 						{categories.map((cat) => (
 							<option key={cat.id} value={cat.id}>
 								{cat.name}
@@ -118,6 +141,17 @@ export function ForumTab({ currentUserId }: ForumTabProps) {
 							{cat.name}
 						</button>
 					))}
+					<button
+						type="button"
+						onClick={() => setCategoryId(categoryId === 'none' ? '' : 'none')}
+						className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${
+							categoryId === 'none'
+								? 'bg-slate-600 text-white'
+								: 'bg-slate-100 dark:bg-[#1a1a1d] text-slate-600 dark:text-gray-400 hover:bg-slate-200 dark:hover:bg-white/10'
+						}`}
+					>
+						Sem tema
+					</button>
 				</div>
 			)}
 
