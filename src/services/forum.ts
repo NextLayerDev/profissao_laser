@@ -15,7 +15,8 @@ export async function getForumCategories(): Promise<ForumCategory[]> {
 
 export async function createForumCategory(payload: {
 	name: string;
-	color: string;
+	/** Opcional — sem cor, o backend sorteia uma da paleta. */
+	color?: string;
 }): Promise<ForumCategory> {
 	const { data } = await api.post<ForumCategory>('/forum/category', payload);
 	return data;
@@ -36,13 +37,29 @@ export async function deleteForumCategory(id: string): Promise<void> {
 	await api.delete(`/forum/category/${id}`);
 }
 
+/** Tema inteligente: a API escolhe (ou cria) o tema certo pra thread. */
+export async function suggestForumCategory(payload: {
+	title?: string;
+	content: string;
+}): Promise<{ category: ForumCategory; isNew: boolean }> {
+	const { data } = await api.post<{ category: ForumCategory; isNew: boolean }>(
+		'/forum/suggest-category',
+		payload,
+	);
+	return data;
+}
+
 // ─── Posts ────────────────────────────────────────────────────────────────────
+
+export type ForumSort = 'recent' | 'top' | 'unanswered';
 
 export interface GetForumPostsParams {
 	page?: number;
 	limit?: number;
+	/** uuid da categoria ou 'none' (posts sem tema). */
 	categoryId?: string;
 	search?: string;
+	sort?: ForumSort;
 }
 
 export async function getForumPosts(
@@ -53,6 +70,7 @@ export async function getForumPosts(
 	if (params.limit) query.set('limit', String(params.limit));
 	if (params.categoryId) query.set('categoryId', params.categoryId);
 	if (params.search) query.set('search', params.search);
+	if (params.sort) query.set('sort', params.sort);
 	const qs = query.toString();
 	const { data } = await api.get<ForumPostsResponse>(
 		`/forum/posts${qs ? `?${qs}` : ''}`,

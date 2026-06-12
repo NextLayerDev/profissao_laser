@@ -1,8 +1,8 @@
 'use client';
 
 import { TrendingDown, TrendingUp } from 'lucide-react';
-import { usePermissions } from '@/hooks/use-permissions';
 import { useSales } from '@/hooks/use-sales';
+import { usePermissions } from '@/modules/access';
 import { formatCurrency } from '@/utils/format-currency';
 
 const BAR_COLORS = [

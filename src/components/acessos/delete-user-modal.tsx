@@ -2,10 +2,10 @@
 
 import { AlertTriangle, Loader2, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
-import type { User } from '@/types/users';
+import type { AppUser } from '@/modules/users';
 
 interface DeleteUserModalProps {
-	user: User | null;
+	user: AppUser | null;
 	isOpen: boolean;
 	onClose: () => void;
 	onDelete: (id: string) => Promise<void>;
@@ -55,7 +55,7 @@ export function DeleteUserModal({
 					Tem certeza que deseja excluir o utilizador:
 				</p>
 				<p className="text-slate-900 dark:text-white font-semibold mb-1">
-					{user.name}
+					{user.name ?? '—'}
 				</p>
 				<p className="text-slate-500 dark:text-gray-500 text-sm mb-6">
 					{user.email}

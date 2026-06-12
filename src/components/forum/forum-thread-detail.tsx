@@ -45,12 +45,18 @@ export function ForumThreadDetail({
 					Fórum
 				</Link>
 				<span className="text-slate-400">/</span>
-				<Link
-					href={`/course/forum/${categoryId}`}
-					className="text-violet-600 dark:text-violet-400 hover:underline"
-				>
-					{post.categoryName || 'Categoria'}
-				</Link>
+				{post.categoryName ? (
+					<Link
+						href={`/course/forum/${categoryId}`}
+						className="text-violet-600 dark:text-violet-400 hover:underline"
+					>
+						{post.categoryName}
+					</Link>
+				) : (
+					<span className="text-slate-500 dark:text-gray-400 italic">
+						Sem tema
+					</span>
+				)}
 			</div>
 
 			{/* OP */}

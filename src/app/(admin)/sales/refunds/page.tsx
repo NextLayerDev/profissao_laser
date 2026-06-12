@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Header } from '@/components/dashboard/header';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/modules/access';
 import { RefundsSection } from '@/modules/analytics';
 
 export default function RefundsPage() {
@@ -19,7 +19,7 @@ export default function RefundsPage() {
 		}
 	}, [allowed, permissionsLoading, router]);
 
-	if (!allowed && !permissionsLoading) return null;
+	if (permissionsLoading || !allowed) return null;
 
 	return (
 		<div className="min-h-screen text-slate-900 dark:text-white">

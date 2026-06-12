@@ -7,7 +7,7 @@ import { Header } from '@/components/dashboard/header';
 import { LaserProductsAdminView } from '@/components/previas/laser-products-admin-view';
 import { MachinesAdminView } from '@/components/previas/machines-admin-view';
 import { PreviasAdminView } from '@/components/previas/previas-admin-view';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/modules/access';
 
 type Tab = 'catalogo' | 'uso' | 'maquinas';
 

@@ -4,7 +4,8 @@ import { BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { usePermissions } from '@/hooks/use-permissions';
+import { useAdminPendings } from '@/hooks/use-admin-pendings';
+import { usePermissions } from '@/modules/access';
 import { navItems } from '@/utils/constants/navigation';
 import { canSeeNavItem } from '@/utils/constants/permissions';
 
@@ -20,6 +21,15 @@ export function Sidebar({ collapsed, onToggle }: Props) {
 	const visibleNavItems = navItems.filter((item) =>
 		canSeeNavItem(item.name, can),
 	);
+
+	const canSeeSuporte = canSeeNavItem('Suporte', can);
+	const { supportTotal, forumUnanswered } = useAdminPendings(canSeeSuporte);
+
+	/** Pendências por rota — badges nos itens da sidebar. */
+	const badgeByHref: Record<string, number> = {
+		'/suporte': supportTotal,
+		'/forum': forumUnanswered,
+	};
 
 	return (
 		<aside
@@ -63,6 +73,7 @@ export function Sidebar({ collapsed, onToggle }: Props) {
 							pathname === item.href ||
 							(item.href !== '/dashboard' &&
 								pathname.startsWith(`${item.href}/`));
+						const badge = badgeByHref[item.href] ?? 0;
 						return (
 							<Link
 								key={item.name}
@@ -76,8 +87,22 @@ export function Sidebar({ collapsed, onToggle }: Props) {
 										: 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200'
 								}`}
 							>
-								<item.icon className="w-5 h-5 shrink-0" />
-								{!collapsed && <span>{item.name}</span>}
+								<span className="relative shrink-0">
+									<item.icon className="w-5 h-5" />
+									{badge > 0 && collapsed && (
+										<span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-[#06070a]" />
+									)}
+								</span>
+								{!collapsed && (
+									<span className="flex items-center gap-2 min-w-0">
+										<span className="truncate">{item.name}</span>
+										{badge > 0 && (
+											<span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500 text-white leading-none">
+												{badge > 99 ? '99+' : badge}
+											</span>
+										)}
+									</span>
+								)}
 							</Link>
 						);
 					})}

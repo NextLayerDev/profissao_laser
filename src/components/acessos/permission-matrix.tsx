@@ -1,6 +1,6 @@
 'use client';
 
-import type { PermissionModule } from '@/types/roles';
+import type { PermissionModule } from '@/modules/access';
 
 const ACTION_COLUMNS: { action: string; label: string }[] = [
 	{ action: 'view', label: 'Ver' },

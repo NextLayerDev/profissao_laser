@@ -2,8 +2,9 @@
 
 import { Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { usePermissionCatalog, useRoles } from '@/hooks/use-roles';
-import type { Role, RolePayload } from '@/types/roles';
+import type { Role, RolePayload } from '@/modules/access';
+import { usePermissionCatalog, useRoles } from '@/modules/access';
+import { ModulesSection } from './modules-section';
 import { RoleFormModal } from './role-form-modal';
 
 interface RolesTabProps {
@@ -28,7 +29,7 @@ export function RolesTab({ canEdit }: RolesTabProps) {
 		setShowForm(true);
 	};
 
-	const handleSubmit = async (payload: RolePayload, id?: number) => {
+	const handleSubmit = async (payload: RolePayload, id?: string) => {
 		if (id) await updateRole({ id, payload });
 		else await createRole(payload);
 		setShowForm(false);
@@ -63,6 +64,8 @@ export function RolesTab({ canEdit }: RolesTabProps) {
 				)}
 			</div>
 
+			<ModulesSection canEdit={canEdit} />
+
 			{isLoading ? (
 				<div className="py-16 text-center text-slate-500 dark:text-gray-500">
 					A carregar cargos...
@@ -81,10 +84,10 @@ export function RolesTab({ canEdit }: RolesTabProps) {
 									</div>
 									<div className="min-w-0">
 										<p className="font-semibold text-slate-900 dark:text-white truncate">
-											{role.label || role.role}
+											{role.label || role.key}
 										</p>
 										<p className="text-xs text-slate-400 dark:text-gray-500">
-											ID {role.id} · {role.role}
+											{role.key}
 										</p>
 									</div>
 								</div>
@@ -140,7 +143,7 @@ export function RolesTab({ canEdit }: RolesTabProps) {
 							Excluir cargo?
 						</h3>
 						<p className="text-sm text-slate-600 dark:text-gray-400 mb-6">
-							O cargo "{deleteTarget.label || deleteTarget.role}" será excluído.
+							O cargo "{deleteTarget.label || deleteTarget.key}" será excluído.
 							Não é possível se houver usuários usando-o.
 						</p>
 						<div className="flex gap-3">

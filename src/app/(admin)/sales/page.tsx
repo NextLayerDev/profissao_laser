@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Header } from '@/components/dashboard/header';
 import { VoxxysIcon } from '@/components/ui/voxxys-icon';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/modules/access';
 import {
 	EntriesSection,
 	FailedPaymentsSection,
@@ -75,7 +75,7 @@ export default function VendasPage() {
 		}
 	}, [allowed, permissionsLoading, router]);
 
-	if (!allowed && !permissionsLoading) return null;
+	if (permissionsLoading || !allowed) return null;
 
 	return (
 		<div className="min-h-screen text-slate-900 dark:text-white">

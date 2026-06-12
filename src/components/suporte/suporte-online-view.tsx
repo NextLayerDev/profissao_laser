@@ -17,6 +17,7 @@ import {
 	X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { AppointmentForm } from '@/components/agendamentos/appointment-form';
 import { DoubtChatView } from '@/components/duvidas/doubt-chat-view';
 import { NewDoubtFlow } from '@/components/duvidas/new-doubt-flow';
@@ -424,6 +425,24 @@ export function SuporteOnlineView({
 	useEffect(() => {
 		if (supportChatOpen) setSupportChatSeen(supportMsgCount);
 	}, [supportChatOpen, supportMsgCount]);
+
+	// Toast quando o atendente responde com o widget fechado (o badge no botão
+	// flutuante já existe — isso garante que o cliente perceba na hora).
+	const lastSupportMsg = supportChat?.messages[supportChat.messages.length - 1];
+	const notifiedMsgId = useRef<string | null>(null);
+	useEffect(() => {
+		if (
+			!supportChatOpen &&
+			supportUnread > 0 &&
+			lastSupportMsg &&
+			(lastSupportMsg.role === 'attendant' ||
+				lastSupportMsg.role === 'system') &&
+			notifiedMsgId.current !== lastSupportMsg.id
+		) {
+			toast.info('O atendente respondeu no chat de suporte');
+			notifiedMsgId.current = lastSupportMsg.id;
+		}
+	}, [supportChatOpen, supportUnread, lastSupportMsg]);
 
 	function handleChatCreated(_chat: DoubtChat) {
 		setNewDoubtOpen(false);

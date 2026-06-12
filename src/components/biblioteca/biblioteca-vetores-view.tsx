@@ -22,7 +22,6 @@ import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { VectorLibraryBreadcrumbs } from '@/components/community/vector-library-breadcrumbs';
-import { usePermissions } from '@/hooks/use-permissions';
 import {
 	useFavoriteFile,
 	useVectorLibraryBreadcrumbs,
@@ -32,6 +31,7 @@ import {
 	useVectorLibraryFormats,
 	useVectorLibraryStats,
 } from '@/hooks/use-vector-library';
+import { usePermissions } from '@/modules/access';
 import type { VectorLibraryFile } from '@/types/vector-library';
 import { VectorPreviewModal } from './vector-preview-modal';
 

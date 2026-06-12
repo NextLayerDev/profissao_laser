@@ -23,6 +23,11 @@ export function ForumNewPostModal({ onClose }: ForumNewPostModalProps) {
 			toast.error('Preencha o título e o conteúdo');
 			return;
 		}
+		// Tema obrigatório: post sem tema some dos filtros por categoria.
+		if (categories.length > 0 && !categoryId) {
+			toast.error('Escolha um tema para a sua pergunta');
+			return;
+		}
 		create.mutate(
 			{
 				title: title.trim(),
@@ -74,15 +79,18 @@ export function ForumNewPostModal({ onClose }: ForumNewPostModalProps) {
 								htmlFor="post-category"
 								className="block text-xs font-semibold text-slate-600 dark:text-gray-400 mb-1.5"
 							>
-								Categoria (opcional)
+								Tema *
 							</label>
 							<select
 								id="post-category"
 								value={categoryId}
 								onChange={(e) => setCategoryId(e.target.value)}
+								required
 								className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50"
 							>
-								<option value="">Sem categoria</option>
+								<option value="" disabled>
+									Selecione um tema…
+								</option>
 								{categories.map((cat) => (
 									<option key={cat.id} value={cat.id}>
 										{cat.name}
