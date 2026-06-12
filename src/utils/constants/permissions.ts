@@ -58,6 +58,7 @@ export const NAV_VIEW_KEYS: Record<string, string[]> = {
 	Parametros: ['acessos.view'],
 	Acessos: ['acessos.view'],
 	Alunos: ['alunos.view'],
+	'Grupo WhatsApp': ['alunos.view'],
 	'Previas IA': ['ferramentas.view'],
 	Vetorizacao: ['ferramentas.view'],
 };

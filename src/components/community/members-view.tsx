@@ -1,6 +1,6 @@
 'use client';
 
-import { Crown, Eye, Search, Users, X } from 'lucide-react';
+import { Crown, Eye, Phone, Search, Users, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Avatar } from '@/components/ui/avatar';
 import { ModalOverlay } from '@/components/ui/modal-overlay';
@@ -139,6 +139,19 @@ export function MembersView({ isAdmin: _isAdmin = false }: MembersViewProps) {
 										</span>
 									) : null}
 								</div>
+
+								{/* Telefone (só vem da API p/ staff — atendimento dos técnicos) */}
+								{selectedProfile.phone && (
+									<a
+										href={`https://wa.me/${selectedProfile.phone.replace(/\D/g, '')}`}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-sm font-semibold hover:bg-emerald-500/25 transition-colors"
+									>
+										<Phone className="w-4 h-4" />
+										{selectedProfile.phone}
+									</a>
+								)}
 							</div>
 
 							{/* Badges reais */}

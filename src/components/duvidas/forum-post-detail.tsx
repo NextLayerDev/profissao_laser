@@ -14,7 +14,9 @@ import { ForumReplyItem } from '@/components/duvidas/forum-reply-item';
 import {
 	useCreateForumReply,
 	useDeleteForumPost,
+	useForumCategories,
 	useForumPost,
+	useUpdateForumPost,
 	useUpvoteForumPost,
 } from '@/hooks/use-forum';
 import { isAdmin } from '@/lib/auth';
@@ -47,8 +49,22 @@ export function ForumPostDetail({
 	const upvote = useUpvoteForumPost();
 	const createReply = useCreateForumReply(postId);
 	const deletePost = useDeleteForumPost();
+	const updatePost = useUpdateForumPost();
 	const [admin, setAdmin] = useState(false);
 	useEffect(() => setAdmin(isAdmin()), []);
+	// Admin pode recategorizar posts (arruma os antigos sem tema).
+	const { data: categories = [] } = useForumCategories(admin);
+
+	function handleChangeCategory(categoryId: string) {
+		if (!categoryId) return;
+		updatePost.mutate(
+			{ id: postId, categoryId },
+			{
+				onSuccess: () => toast.success('Tema atualizado'),
+				onError: () => toast.error('Erro ao mudar o tema'),
+			},
+		);
+	}
 
 	function handleUpvote() {
 		upvote.mutate(postId);
@@ -133,6 +149,24 @@ export function ForumPostDetail({
 									>
 										{post.categoryName}
 									</span>
+								)}
+								{admin && categories.length > 0 && (
+									<select
+										value={post.categoryId ?? ''}
+										onChange={(e) => handleChangeCategory(e.target.value)}
+										disabled={updatePost.isPending}
+										title="Mudar tema (admin)"
+										className="px-2 py-0.5 text-xs bg-slate-50 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-lg text-slate-600 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+									>
+										<option value="" disabled>
+											Mudar tema…
+										</option>
+										{categories.map((cat) => (
+											<option key={cat.id} value={cat.id}>
+												{cat.name}
+											</option>
+										))}
+									</select>
 								)}
 							</div>
 							{(isOwner || admin) && (

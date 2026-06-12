@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { CourseSidebar } from '@/components/course/home/course-sidebar';
 import { CourseTopHeader } from '@/components/course/home/course-top-header';
+import { usePresenceHeartbeat } from '@/hooks/use-presence';
 import { getToken } from '@/lib/auth';
 
 const STORAGE_KEY = 'course-sidebar-collapsed';
@@ -18,6 +19,9 @@ export default function CourseShellLayout({
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [isAdmin, setIsAdmin] = useState(false);
 	const [mobileOpen, setMobileOpen] = useState(false);
+
+	// Presença online: ping a cada 60s enquanto o aluno usa a plataforma.
+	usePresenceHeartbeat();
 
 	useEffect(() => {
 		setIsAdmin(!!getToken('user'));

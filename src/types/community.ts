@@ -47,6 +47,8 @@ export interface Member {
 	image?: string | null;
 	isOnline?: boolean;
 	lastSeenAt?: string | null;
+	/** Só vem da API quando o usuário logado é staff/admin (técnicos). */
+	phone?: string | null;
 }
 
 export type ActivityType =

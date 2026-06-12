@@ -38,11 +38,15 @@ export async function deleteForumCategory(id: string): Promise<void> {
 
 // ─── Posts ────────────────────────────────────────────────────────────────────
 
+export type ForumSort = 'recent' | 'top' | 'unanswered';
+
 export interface GetForumPostsParams {
 	page?: number;
 	limit?: number;
+	/** uuid da categoria ou 'none' (posts sem tema). */
 	categoryId?: string;
 	search?: string;
+	sort?: ForumSort;
 }
 
 export async function getForumPosts(
@@ -53,6 +57,7 @@ export async function getForumPosts(
 	if (params.limit) query.set('limit', String(params.limit));
 	if (params.categoryId) query.set('categoryId', params.categoryId);
 	if (params.search) query.set('search', params.search);
+	if (params.sort) query.set('sort', params.sort);
 	const qs = query.toString();
 	const { data } = await api.get<ForumPostsResponse>(
 		`/forum/posts${qs ? `?${qs}` : ''}`,

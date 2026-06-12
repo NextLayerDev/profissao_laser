@@ -10,6 +10,7 @@ import {
 	useAdminSupportChats,
 	useTakeOverSupportChat,
 } from '@/hooks/use-support-chat-admin';
+import { useAdminSupportNotifications } from '@/hooks/use-support-notifications';
 import type { SupportChatStatus } from '@/types/support-chat';
 import { SupportMessageBubble } from './support-message-bubble';
 
@@ -65,6 +66,14 @@ export function SupportChatAdmin() {
 	const sendMessage = useAdminSendMessage(selectedId);
 	const takeOver = useTakeOverSupportChat(selectedId);
 	const closeChat = useAdminCloseSupportChat(selectedId);
+	const { unreadIds, markSeen } = useAdminSupportNotifications();
+
+	// Chat aberto = lido (inclusive quando chega mensagem nova com ele aberto).
+	useEffect(() => {
+		if (selectedId && chat?.lastMessageAt) {
+			markSeen(selectedId, chat.lastMessageAt);
+		}
+	}, [selectedId, chat?.lastMessageAt, markSeen]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: rola ao mudar mensagens
 	useEffect(() => {
@@ -124,15 +133,22 @@ export function SupportChatAdmin() {
 								}`}
 							>
 								<div className="flex items-center justify-between gap-2">
-									<span className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-										{c.customerName ?? 'Cliente'}
+									<span className="flex items-center gap-1.5 min-w-0 text-sm font-semibold text-slate-900 dark:text-white">
+										{unreadIds.has(c.id) && (
+											<span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+										)}
+										<span className="truncate">
+											{c.customerName ?? 'Cliente'}
+										</span>
 									</span>
 									<StatusBadge status={c.status} />
 								</div>
 								<p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5 truncate">
-									{c.attendantName
-										? `Atendente: ${c.attendantName}`
-										: 'Sem atendente'}
+									{unreadIds.has(c.id) && c.lastMessagePreview
+										? c.lastMessagePreview
+										: c.attendantName
+											? `Atendente: ${c.attendantName}`
+											: 'Sem atendente'}
 								</p>
 							</button>
 						))

@@ -36,6 +36,7 @@ import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { MyMachineSection } from '@/components/previas/my-machine-section';
 import { PreviaBackgroundPicker } from '@/components/previas/previa-background-picker';
+import { PreviaTurntableViewer } from '@/components/previas/previa-turntable-viewer';
 import { PageHeader } from '@/components/ui/page-header';
 import { useEntitlements } from '@/hooks/use-entitlements';
 import { useLaserProduct, useLaserProducts } from '@/hooks/use-laser-products';
@@ -1803,12 +1804,21 @@ export function PreviasView() {
 										</p>
 									</div>
 								</div>
-								<div className="mx-auto w-full max-w-lg bg-slate-100 dark:bg-black/30 rounded-xl flex items-center justify-center overflow-hidden shadow-inner">
-									<img
-										src={generatedPrevia.previewUrl}
-										alt="Previa gerada"
-										className="w-full max-h-[60vh] object-contain"
-									/>
+								<div className="mx-auto w-full max-w-lg bg-slate-100 dark:bg-black/30 rounded-xl overflow-hidden shadow-inner">
+									{laserSettings.tipoVisualizacao === 'turntable-4' ? (
+										<PreviaTurntableViewer
+											src={generatedPrevia.previewUrl}
+											alt="Previa gerada — mockup girando"
+										/>
+									) : (
+										<div className="flex items-center justify-center">
+											<img
+												src={generatedPrevia.previewUrl}
+												alt="Previa gerada"
+												className="w-full max-h-[60vh] object-contain"
+											/>
+										</div>
+									)}
 								</div>
 								<button
 									type="button"
