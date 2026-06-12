@@ -16,6 +16,7 @@ import { AppointmentConfigSection } from '@/components/suporte/appointment-confi
 import { SuporteAdminView } from '@/components/suporte/suporte-admin-view';
 import { SuporteQuickBooking } from '@/components/suporte/suporte-quick-booking';
 import { SupportChatAdmin } from '@/components/suporte/support-chat-admin';
+import { useAdminPendings } from '@/hooks/use-admin-pendings';
 import { usePermissions } from '@/modules/access';
 
 type Tab = 'chamados' | 'chat-online' | 'faq' | 'kb' | 'agendamentos';
@@ -33,6 +34,14 @@ export default function SuportePage() {
 	const { can, isLoading } = usePermissions();
 	const allowed = can('suporte.view');
 	const [activeTab, setActiveTab] = useState<Tab>('chamados');
+	const { unreadCount, liveWaiting, ticketsPending } =
+		useAdminPendings(allowed);
+
+	/** Pendências por aba — staff vê de cara onde precisa agir. */
+	const tabBadges: Partial<Record<Tab, number>> = {
+		chamados: ticketsPending,
+		'chat-online': unreadCount + liveWaiting,
+	};
 
 	useEffect(() => {
 		if (!isLoading && !allowed) {
@@ -62,6 +71,7 @@ export default function SuportePage() {
 				<div className="flex gap-1 overflow-x-auto">
 					{TABS.map((tab) => {
 						const Icon = tab.icon;
+						const badge = tabBadges[tab.key] ?? 0;
 						return (
 							<button
 								key={tab.key}
@@ -75,6 +85,11 @@ export default function SuportePage() {
 							>
 								<Icon className="w-4 h-4" />
 								{tab.label}
+								{badge > 0 && (
+									<span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500 text-white leading-none">
+										{badge > 99 ? '99+' : badge}
+									</span>
+								)}
 							</button>
 						);
 					})}
