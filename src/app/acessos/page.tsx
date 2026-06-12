@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { Pencil, Plus, ShieldCheck, Trash2, Users2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -8,10 +9,9 @@ import { DeleteUserModal } from '@/components/acessos/delete-user-modal';
 import { EditUserModal } from '@/components/acessos/edit-user-modal';
 import { RolesTab } from '@/components/acessos/roles-tab';
 import { Header } from '@/components/dashboard/header';
-import { usePermissions } from '@/hooks/use-permissions';
-import { useRoles } from '@/hooks/use-roles';
-import { useUsers } from '@/hooks/use-users';
-import type { User } from '@/types/users';
+import { usePermissions } from '@/modules/access';
+import type { AppUser } from '@/modules/users';
+import { deleteUser, usersQueryKeys, useTeamUsers } from '@/modules/users';
 
 type Tab = 'users' | 'roles';
 
@@ -22,20 +22,19 @@ export default function AcessosPage() {
 	const canEdit = can('acessos.edit');
 	const canDelete = can('acessos.delete');
 
-	const {
-		users,
-		isLoading: usersLoading,
-		error,
-		updateUser,
-		deleteUser,
-		isDeleting,
-	} = useUsers(allowed);
-	const { roles } = useRoles(allowed);
+	const { data: users = [], isLoading: usersLoading, error } = useTeamUsers();
+
+	const panelUsers = users;
 
 	const [tab, setTab] = useState<Tab>('users');
 	const [showCreate, setShowCreate] = useState(false);
-	const [editUser, setEditUser] = useState<User | null>(null);
-	const [deleteUserTarget, setDeleteUserTarget] = useState<User | null>(null);
+	const [editUser, setEditUser] = useState<AppUser | null>(null);
+	const [deleteUserTarget, setDeleteUserTarget] = useState<AppUser | null>(
+		null,
+	);
+
+	const queryClient = useQueryClient();
+	const [isDeleting, setIsDeleting] = useState(false);
 
 	useEffect(() => {
 		if (!permissionsLoading && !allowed) {
@@ -43,23 +42,15 @@ export default function AcessosPage() {
 		}
 	}, [allowed, permissionsLoading, router]);
 
-	async function handleSave(
-		id: string,
-		payload: {
-			name: string;
-			email: string;
-			role: string;
-			Permissions: number | null;
-			overrides: { granted: string[]; revoked: string[] };
-		},
-	) {
-		await updateUser({ id, payload });
-		setEditUser(null);
-	}
-
 	async function handleDelete(id: string) {
-		await deleteUser(id);
-		setDeleteUserTarget(null);
+		setIsDeleting(true);
+		try {
+			await deleteUser(id);
+			queryClient.invalidateQueries({ queryKey: usersQueryKeys.all });
+			setDeleteUserTarget(null);
+		} finally {
+			setIsDeleting(false);
+		}
 	}
 
 	if (permissionsLoading || !allowed) {
@@ -69,9 +60,6 @@ export default function AcessosPage() {
 			</div>
 		);
 	}
-
-	const roleLabel = (permId: number | null) =>
-		roles.find((r) => r.id === permId)?.label ?? `ID ${permId ?? '—'}`;
 
 	return (
 		<div className="min-h-screen text-slate-900 dark:text-white">
@@ -156,7 +144,7 @@ export default function AcessosPage() {
 										</tr>
 									</thead>
 									<tbody>
-										{(!users || users.length === 0) && (
+										{panelUsers.length === 0 && (
 											<tr>
 												<td
 													colSpan={4}
@@ -166,19 +154,21 @@ export default function AcessosPage() {
 												</td>
 											</tr>
 										)}
-										{users?.map((user) => (
+										{panelUsers.map((user) => (
 											<tr
 												key={user.id}
 												className="border-t border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/2 transition-colors"
 											>
 												<td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
-													{user.name}
+													{user.name ?? '—'}
 												</td>
 												<td className="px-4 py-3 text-slate-600 dark:text-gray-400">
 													{user.email}
 												</td>
-												<td className="px-4 py-3 text-slate-900 dark:text-white">
-													{roleLabel(user.Permissions)}
+												<td className="px-4 py-3 text-slate-500 dark:text-gray-500">
+													{user.access_role?.label || (
+														<span className="capitalize">{user.role}</span>
+													)}
 												</td>
 												<td className="px-4 py-3 text-right">
 													<div className="flex items-center justify-end gap-2">
@@ -222,7 +212,6 @@ export default function AcessosPage() {
 				user={editUser}
 				isOpen={!!editUser}
 				onClose={() => setEditUser(null)}
-				onSave={handleSave}
 			/>
 			<DeleteUserModal
 				user={deleteUserTarget}

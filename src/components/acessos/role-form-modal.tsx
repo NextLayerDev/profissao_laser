@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ModalOverlay } from '@/components/ui/modal-overlay';
-import type { PermissionModule, Role, RolePayload } from '@/types/roles';
+import type { PermissionModule, Role, RolePayload } from '@/modules/access';
 import { PermissionMatrix } from './permission-matrix';
 
 interface RoleFormModalProps {
@@ -11,7 +11,7 @@ interface RoleFormModalProps {
 	isOpen: boolean;
 	isSaving: boolean;
 	onClose: () => void;
-	onSubmit: (payload: RolePayload, id?: number) => Promise<void>;
+	onSubmit: (payload: RolePayload, id?: string) => Promise<void>;
 }
 
 export function RoleFormModal({
@@ -29,7 +29,7 @@ export function RoleFormModal({
 
 	useEffect(() => {
 		if (!isOpen) return;
-		setName(role?.role ?? '');
+		setName(role?.key ?? '');
 		setLabel(role?.label ?? '');
 		setIsSuperAdmin(role?.isSuperAdmin ?? false);
 		setGrants(role?.grants ?? []);
@@ -44,7 +44,7 @@ export function RoleFormModal({
 		if (!name.trim()) return;
 		await onSubmit(
 			{
-				role: name.trim(),
+				key: name.trim(),
 				label: label.trim() || name.trim(),
 				grants: isSuperAdmin ? [] : grants,
 				isSuperAdmin,

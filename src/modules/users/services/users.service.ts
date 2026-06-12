@@ -13,6 +13,11 @@ export async function listUsers(
 	return appUserSchema.array().parse(data);
 }
 
+export async function listTeamUsers(): Promise<AppUser[]> {
+	const { data } = await api.get('/v1/admin/team');
+	return appUserSchema.array().parse(data);
+}
+
 export async function getUser(id: string): Promise<AppUser> {
 	const { data } = await api.get(`/v1/user/${id}`);
 	return appUserSchema.parse(data);
@@ -55,4 +60,8 @@ export async function demoteUser(
 ): Promise<AppUser> {
 	const { data } = await api.post(`/v1/user/${id}/demote`, { role });
 	return appUserSchema.parse(data);
+}
+
+export async function deleteUser(id: string): Promise<void> {
+	await api.delete(`/v1/user/${id}`);
 }

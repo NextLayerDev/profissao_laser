@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { Header } from '@/components/dashboard/header';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/modules/access';
 import { useVoxSales, VoxSalesTable } from '@/modules/voxes';
 
 const LIMIT = 50;

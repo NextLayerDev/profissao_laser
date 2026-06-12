@@ -16,7 +16,7 @@ import { AppointmentConfigSection } from '@/components/suporte/appointment-confi
 import { SuporteAdminView } from '@/components/suporte/suporte-admin-view';
 import { SuporteQuickBooking } from '@/components/suporte/suporte-quick-booking';
 import { SupportChatAdmin } from '@/components/suporte/support-chat-admin';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/modules/access';
 
 type Tab = 'chamados' | 'chat-online' | 'faq' | 'kb' | 'agendamentos';
 

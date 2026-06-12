@@ -4,13 +4,16 @@ export {
 	usersQueryKeys,
 	useSetUserBlocked,
 	useSetUserPassword,
+	useTeamUsers,
 	useUpdateUserRole,
 	useUser,
 	useUsers,
 } from './hooks/use-users';
 export {
+	deleteUser,
 	demoteUser,
 	getUser,
+	listTeamUsers,
 	listUsers,
 	promoteUser,
 	setUserBlocked,

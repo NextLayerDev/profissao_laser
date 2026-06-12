@@ -1,81 +1,79 @@
 'use client';
 
 import { Loader2, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
-import { usePermissionCatalog, useRoles } from '@/hooks/use-roles';
-import type { User } from '@/types/users';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+	usePermissionCatalog,
+	useRoles,
+	useUserAccess,
+} from '@/modules/access';
+import type { AppUser } from '@/modules/users';
 import { PermissionMatrix } from './permission-matrix';
 
-interface EditUserSavePayload {
-	name: string;
-	email: string;
-	role: string;
-	Permissions: number | null;
-	overrides: { granted: string[]; revoked: string[] };
-}
-
 interface EditUserModalProps {
-	user: User | null;
+	user: AppUser | null;
 	isOpen: boolean;
 	onClose: () => void;
-	onSave: (id: string, payload: EditUserSavePayload) => Promise<void>;
 }
 
-export function EditUserModal({
-	user,
-	isOpen,
-	onClose,
-	onSave,
-}: EditUserModalProps) {
+export function EditUserModal({ user, isOpen, onClose }: EditUserModalProps) {
 	const { roles } = useRoles(isOpen);
 	const { data: catalog = [] } = usePermissionCatalog(isOpen);
+	const { access, isLoading, updateAccess, isSaving } = useUserAccess(
+		isOpen ? (user?.id ?? null) : null,
+	);
 
-	const [name, setName] = useState('');
-	const [email, setEmail] = useState('');
-	const [permId, setPermId] = useState<number | null>(null);
+	const [roleId, setRoleId] = useState<string | null>(null);
 	const [effective, setEffective] = useState<string[]>([]);
-	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const allKeys = useMemo(
 		() => catalog.flatMap((m) => m.actions.map((a) => `${m.module}.${a}`)),
 		[catalog],
 	);
 
-	const selectedRole = roles.find((r) => r.id === permId) ?? null;
+	const selectedRole = roles.find((r) => r.id === roleId) ?? null;
 
-	// Inicializa a partir do usuário (cargo + overrides) quando abre / roles carregam.
+	// Inicializa o formulário UMA vez por usuário (quando os dados chegam). Um
+	// guard por id evita que um refetch em background (ex.: foco da janela)
+	// sobrescreva edições não salvas. Sem cargo atribuído, fica em branco —
+	// força uma escolha explícita em vez de pré-selecionar um cargo arbitrário.
+	const initializedFor = useRef<string | null>(null);
 	useEffect(() => {
-		if (!isOpen || !user) return;
-		setName(user.name);
-		setEmail(user.email);
-		const pid = user.Permissions ?? roles[0]?.id ?? null;
-		setPermId(pid);
-		const role = roles.find((r) => r.id === pid) ?? null;
+		if (!isOpen) {
+			initializedFor.current = null;
+			return;
+		}
+		if (!user || isLoading || roles.length === 0 || allKeys.length === 0) {
+			return;
+		}
+		if (initializedFor.current === user.id) return;
+		initializedFor.current = user.id;
+
+		const rid = access?.roleId ?? null;
+		setRoleId(rid);
+		const role = roles.find((r) => r.id === rid) ?? null;
 		if (role?.isSuperAdmin) {
 			setEffective(allKeys);
 		} else {
 			const base = new Set(role?.grants ?? []);
-			for (const k of user.overrides?.granted ?? []) base.add(k);
-			for (const k of user.overrides?.revoked ?? []) base.delete(k);
+			for (const k of access?.overrides.granted ?? []) base.add(k);
+			for (const k of access?.overrides.revoked ?? []) base.delete(k);
 			setEffective([...base]);
 		}
-	}, [isOpen, user, roles, allKeys]);
+	}, [isOpen, user, isLoading, access, roles, allKeys]);
 
 	if (!isOpen || !user) return null;
 
-	function handleRoleChange(id: number) {
-		setPermId(id);
+	function handleRoleChange(id: string) {
+		setRoleId(id);
 		const role = roles.find((r) => r.id === id) ?? null;
-		// Ao trocar de cargo, parte dos padrões do novo cargo (sem overrides).
 		setEffective(role?.isSuperAdmin ? allKeys : (role?.grants ?? []));
 	}
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
-		if (!user || !name.trim() || !email.trim() || permId == null) return;
+		if (!user || roleId == null) return;
 
-		// Override = diff entre o conjunto efetivo escolhido e os grants do cargo.
 		const base = new Set(selectedRole?.grants ?? []);
 		const effSet = new Set(effective);
 		const overrides = selectedRole?.isSuperAdmin
@@ -85,22 +83,8 @@ export function EditUserModal({
 					revoked: [...base].filter((k) => !effSet.has(k)),
 				};
 
-		setIsSubmitting(true);
-		try {
-			await onSave(user.id, {
-				name: name.trim(),
-				email: email.trim(),
-				role: selectedRole?.role ?? user.role,
-				Permissions: permId,
-				overrides,
-			});
-			toast.success('Utilizador atualizado com sucesso.');
-			onClose();
-		} catch {
-			toast.error('Erro ao atualizar utilizador.');
-		} finally {
-			setIsSubmitting(false);
-		}
+		await updateAccess({ id: user.id, payload: { roleId, overrides } });
+		onClose();
 	}
 
 	return (
@@ -119,7 +103,7 @@ export function EditUserModal({
 			<div className="relative bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl">
 				<div className="flex items-center justify-between mb-6">
 					<h2 className="text-xl font-bold text-slate-900 dark:text-white">
-						Editar utilizador
+						Acesso do utilizador
 					</h2>
 					<button
 						type="button"
@@ -130,43 +114,14 @@ export function EditUserModal({
 					</button>
 				</div>
 
-				<form onSubmit={handleSubmit} className="space-y-4">
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-						<div>
-							<label
-								htmlFor="edit-name"
-								className="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1.5"
-							>
-								Nome
-							</label>
-							<input
-								id="edit-name"
-								type="text"
-								required
-								minLength={2}
-								value={name}
-								onChange={(e) => setName(e.target.value)}
-								className="w-full bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50"
-							/>
-						</div>
-						<div>
-							<label
-								htmlFor="edit-email"
-								className="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1.5"
-							>
-								E-mail
-							</label>
-							<input
-								id="edit-email"
-								type="email"
-								required
-								value={email}
-								onChange={(e) => setEmail(e.target.value)}
-								className="w-full bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50"
-							/>
-						</div>
-					</div>
+				<div className="mb-4 text-sm text-slate-600 dark:text-gray-400">
+					<p className="font-medium text-slate-900 dark:text-white">
+						{user.name ?? '—'}
+					</p>
+					<p>{user.email}</p>
+				</div>
 
+				<form onSubmit={handleSubmit} className="space-y-4">
 					<div>
 						<label
 							htmlFor="edit-role"
@@ -176,15 +131,16 @@ export function EditUserModal({
 						</label>
 						<select
 							id="edit-role"
-							value={permId ?? ''}
-							onChange={(e) =>
-								handleRoleChange(Number.parseInt(e.target.value, 10))
-							}
+							value={roleId ?? ''}
+							onChange={(e) => handleRoleChange(e.target.value)}
 							className="w-full bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50 appearance-none"
 						>
+							<option value="" disabled>
+								Selecione um cargo
+							</option>
 							{roles.map((r) => (
 								<option key={r.id} value={r.id}>
-									{r.label || r.role} (ID {r.id})
+									{r.label || r.key}
 								</option>
 							))}
 						</select>
@@ -210,6 +166,7 @@ export function EditUserModal({
 								catalog={catalog}
 								value={effective}
 								onChange={setEffective}
+								disabled={isSaving}
 							/>
 						)}
 					</div>
@@ -224,10 +181,10 @@ export function EditUserModal({
 						</button>
 						<button
 							type="submit"
-							disabled={isSubmitting}
+							disabled={isSaving || isLoading || roleId == null}
 							className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-medium text-sm bg-violet-600 hover:bg-violet-700 text-white disabled:opacity-50"
 						>
-							{isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+							{isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
 							Guardar
 						</button>
 					</div>

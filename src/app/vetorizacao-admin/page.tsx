@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Header } from '@/components/dashboard/header';
 import { VectorSupportAdminView } from '@/components/vetorizacao-admin/vector-support-admin-view';
 import { VetorizacaoHelpAdminView } from '@/components/vetorizacao-admin/vetorizacao-help-admin-view';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/modules/access';
 
 type Tab = 'ajuda' | 'suporte';
 

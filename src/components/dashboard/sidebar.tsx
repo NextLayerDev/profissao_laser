@@ -4,7 +4,7 @@ import { BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/modules/access';
 import { navItems } from '@/utils/constants/navigation';
 import { canSeeNavItem } from '@/utils/constants/permissions';
 

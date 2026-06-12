@@ -1,8 +1,8 @@
 'use client';
 
 import { Layers, ShoppingCart, TrendingUp, Users2 } from 'lucide-react';
-import { usePermissions } from '@/hooks/use-permissions';
 import { useSales } from '@/hooks/use-sales';
+import { usePermissions } from '@/modules/access';
 import { useAdminCourses } from '@/modules/courses';
 import { formatCurrency } from '@/utils/format-currency';
 

@@ -6,6 +6,7 @@ import { getApiErrorMessage } from '@/shared/lib/api-error';
 import {
 	demoteUser,
 	getUser,
+	listTeamUsers,
 	listUsers,
 	promoteUser,
 	setUserBlocked,
@@ -17,6 +18,7 @@ import type { ListUsersParams, UserRole } from '../types/users';
 export const usersQueryKeys = {
 	all: ['users'] as const,
 	list: (params: ListUsersParams) => ['users', 'list', params] as const,
+	team: () => ['users', 'team'] as const,
 	detail: (id: string) => ['users', 'detail', id] as const,
 };
 
@@ -24,6 +26,13 @@ export function useUsers(params: ListUsersParams = {}) {
 	return useQuery({
 		queryKey: usersQueryKeys.list(params),
 		queryFn: () => listUsers(params),
+	});
+}
+
+export function useTeamUsers() {
+	return useQuery({
+		queryKey: usersQueryKeys.team(),
+		queryFn: listTeamUsers,
 	});
 }
 

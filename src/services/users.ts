@@ -1,5 +1,10 @@
 import { api } from '@/lib/fetch';
-import { type UpdateUserPayload, type User, userSchema } from '@/types/users';
+import {
+	type CreateStaffPayload,
+	type UpdateUserPayload,
+	type User,
+	userSchema,
+} from '@/types/users';
 
 export async function getUsers(): Promise<User[]> {
 	const { data } = await api.get('/users');
@@ -8,6 +13,13 @@ export async function getUsers(): Promise<User[]> {
 
 export async function getUser(id: string): Promise<User> {
 	const { data } = await api.get(`/user/${id}`);
+	return userSchema.parse(data);
+}
+
+export async function createStaffUser(
+	payload: CreateStaffPayload,
+): Promise<User> {
+	const { data } = await api.post('/v1/admin/users', payload);
 	return userSchema.parse(data);
 }
 

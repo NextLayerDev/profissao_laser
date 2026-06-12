@@ -9,6 +9,14 @@ export const appUserSchema = z.object({
 	phone: z.string().nullable().optional(),
 	name: z.string().nullable().optional(),
 	role: userRoleSchema,
+	access_role_id: z.string().uuid().nullable().optional(),
+	access_role: z
+		.object({
+			key: z.string(),
+			label: z.string().nullable().optional(),
+		})
+		.nullable()
+		.optional(),
 	blocked: z.boolean(),
 	created_at: z.string(),
 	updated_at: z.string(),
