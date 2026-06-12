@@ -34,22 +34,17 @@ export function ForumBoardList() {
 	if (categories.length === 0) {
 		return (
 			<div className="py-10 text-center text-sm text-slate-500 dark:text-gray-400 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl">
-				Sem categorias definidas — veja as discussões recentes abaixo.
+				Sem temas definidos — veja as discussões recentes abaixo.
 			</div>
 		);
 	}
 
 	return (
-		<div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden">
-			{/* Header de colunas */}
-			<div className="grid grid-cols-[1fr_80px_240px] gap-4 px-4 py-2.5 bg-slate-100 dark:bg-white/[0.03] border-b border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400">
-				<span>Categoria</span>
-				<span className="text-center">Posts</span>
-				<span>Última atividade</span>
-			</div>
-
-			{/* Rows */}
-			<div>
+		<section className="space-y-3">
+			<h2 className="font-display text-base font-bold text-slate-900 dark:text-white">
+				Temas
+			</h2>
+			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 				{categories.map((cat) => (
 					<ForumBoardRow
 						key={cat.id}
@@ -58,6 +53,6 @@ export function ForumBoardList() {
 					/>
 				))}
 			</div>
-		</div>
+		</section>
 	);
 }
