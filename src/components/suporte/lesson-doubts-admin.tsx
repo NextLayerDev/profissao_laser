@@ -98,7 +98,7 @@ export function LessonDoubtsAdmin() {
 		page,
 		limit: PAGE_SIZE,
 	});
-	const { map: lessonMap } = useLessonsIndexMap();
+	const { map: lessonMap, isSuccess: indexReady } = useLessonsIndexMap();
 	const avatarMap = useMemberAvatarMap();
 	const replyMut = useReplyToLessonDoubt();
 
@@ -134,8 +134,10 @@ export function LessonDoubtsAdmin() {
 	}
 
 	function contextLine(d: AdminLessonDoubt): string {
+		// Índice ainda carregando (ou indisponível): não acusar aula inexistente.
+		if (!indexReady) return 'Carregando contexto da aula…';
 		const entry = lessonMap.get(d.lessonId);
-		if (!entry) return 'Aula não encontrada no catálogo';
+		if (!entry) return 'Aula removida do catálogo';
 		return `${entry.course.title} › ${entry.module.title} › ${entry.title}`;
 	}
 
