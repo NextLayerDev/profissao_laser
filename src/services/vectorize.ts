@@ -6,7 +6,9 @@ export type VectorizePreset = 'automatico' | 'rapido' | 'detalhado' | 'svg';
  *  for enviado usa o default do backend. */
 export interface VectorizeParams {
 	preset?: VectorizePreset;
-	mode?: 'trace' | 'posterize';
+	mode?: 'trace' | 'posterize' | 'color';
+	/** Vetorização em cores: nº de cores da paleta (k-means). */
+	maxColors?: number;
 	// pré-processamento
 	threshold?: number;
 	invert?: boolean;

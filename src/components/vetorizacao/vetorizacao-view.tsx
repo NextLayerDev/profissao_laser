@@ -895,18 +895,29 @@ function StepParams({
 							/>
 						</Group>
 
-						<Group title="Posterize (modo Detalhado)">
+						<Group title="Algoritmo">
 							<SelectRow
-								label="Algoritmo"
+								label="Modo"
 								value={params.mode ?? 'trace'}
 								options={[
-									{ value: 'trace', label: 'Trace (traço)' },
+									{ value: 'trace', label: 'Traço (P&B)' },
+									{ value: 'color', label: 'Cores (camadas)' },
 									{ value: 'posterize', label: 'Posterize (tons)' },
 								]}
 								onChange={(v) => set('mode', v as VectorizeParams['mode'])}
 							/>
+							{params.mode === 'color' && (
+								<RangeRow
+									label="Cores"
+									value={params.maxColors ?? 8}
+									min={2}
+									max={16}
+									step={1}
+									onChange={(v) => set('maxColors', v)}
+								/>
+							)}
 							<RangeRow
-								label="Níveis"
+								label="Níveis (posterize)"
 								value={params.posterizeLevels ?? 4}
 								min={2}
 								max={10}
