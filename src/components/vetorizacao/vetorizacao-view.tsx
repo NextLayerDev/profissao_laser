@@ -35,6 +35,7 @@ import {
 	useCustomerVectors,
 	useSaveVector,
 	useVectorizeImage,
+	useVectorizePreview,
 } from '@/hooks/use-vectors';
 import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
 import type {
@@ -88,14 +89,16 @@ const DEFAULT_PARAMS: VectorizeParams = {
 const PRESET_PARAMS: Record<VectorizePreset, Partial<VectorizeParams>> = {
 	// Rápido = traço P&B simples → cai no fast-path da API
 	rapido: { mode: 'trace', threshold: 128, turdSize: 5, optTolerance: 0.4 },
-	// Detalhado = posterize com tons + leve desfoque p/ ruído
+	// Detalhado = trace limpo de alta qualidade (não posterize). Posterize
+	// empilhava N camadas por forma → "linhas sobrepostas" e fontes quebradas.
+	// O motor faz supersampling antes de traçar; sharpen recupera bordas.
 	detalhado: {
-		mode: 'posterize',
-		posterizeLevels: 4,
-		posterizeFillStrategy: 'dominant',
+		mode: 'trace',
+		threshold: 128,
 		turdSize: 2,
 		optTolerance: 0.2,
-		blur: 0.6,
+		alphaMax: 1.0,
+		sharpen: true,
 	},
 	// Apenas SVG = traço puro e limpo, sem pós-processamento
 	svg: {
@@ -553,6 +556,8 @@ function StepParams({
 	onVectorize,
 	onBack,
 	isVectorizing,
+	file,
+	originalUrl,
 }: {
 	preset: VectorizePreset;
 	onApplyPreset: (p: VectorizePreset) => void;
@@ -564,8 +569,17 @@ function StepParams({
 	onVectorize: () => void;
 	onBack: () => void;
 	isVectorizing: boolean;
+	file: File | null;
+	originalUrl: string | null;
 }) {
 	const [advancedOpen, setAdvancedOpen] = useState(false);
+
+	// Preview ao vivo (NÃO cobrado): re-renderiza conforme os sliders mudam.
+	const { data: preview, isFetching: previewLoading } = useVectorizePreview(
+		file,
+		{ ...params, preset },
+		true,
+	);
 
 	const presets: {
 		key: VectorizePreset;
@@ -582,7 +596,7 @@ function StepParams({
 		{
 			key: 'detalhado',
 			label: 'Profissional',
-			desc: 'Posterize com tons e curvas',
+			desc: 'Traço limpo de alta qualidade',
 			icon: <Layers className="w-6 h-6" />,
 		},
 		{
@@ -595,6 +609,54 @@ function StepParams({
 
 	return (
 		<div className="space-y-8">
+			{/* Preview ao vivo: original × vetor, atualiza com os parâmetros */}
+			<div>
+				<div className="flex items-center justify-between mb-3">
+					<h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+						Pré-visualização ao vivo
+					</h4>
+					{previewLoading && (
+						<span className="flex items-center gap-1.5 text-xs text-violet-600 dark:text-violet-400">
+							<Loader2 className="w-3.5 h-3.5 animate-spin" /> atualizando…
+						</span>
+					)}
+				</div>
+				<div className="grid grid-cols-2 gap-3">
+					<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-[repeating-conic-gradient(#f1f5f9_0_25%,#fff_0_50%)] dark:bg-[#1a1a1d] bg-[length:16px_16px] overflow-hidden aspect-square flex items-center justify-center">
+						{originalUrl ? (
+							// biome-ignore lint/performance/noImgElement: preview local (blob/data URL)
+							<img
+								src={originalUrl}
+								alt="Original"
+								className="max-w-full max-h-full object-contain"
+							/>
+						) : null}
+					</div>
+					<div className="relative rounded-xl border border-slate-200 dark:border-white/10 bg-[repeating-conic-gradient(#f1f5f9_0_25%,#fff_0_50%)] dark:bg-[#0d0d0f] bg-[length:16px_16px] overflow-hidden aspect-square flex items-center justify-center">
+						{preview?.svgContent ? (
+							// biome-ignore lint/performance/noImgElement: SVG vetorizado local
+							<img
+								src={svgToDataUrl(preview.svgContent)}
+								alt="Pré-visualização do vetor"
+								className={`max-w-full max-h-full object-contain transition-opacity ${
+									previewLoading ? 'opacity-60' : 'opacity-100'
+								}`}
+							/>
+						) : (
+							<span className="text-xs text-slate-400 dark:text-gray-500 px-3 text-center">
+								{previewLoading
+									? 'Gerando pré-visualização…'
+									: 'Ajuste os parâmetros para ver o resultado'}
+							</span>
+						)}
+					</div>
+				</div>
+				<p className="text-[11px] text-slate-400 dark:text-gray-500 mt-2">
+					Prévia rápida e gratuita — não consome voxxys. A vetorização final usa
+					a resolução cheia.
+				</p>
+			</div>
+
 			{/* Presets */}
 			<div>
 				<h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
@@ -1458,6 +1520,8 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 						onVectorize={handleVectorize}
 						onBack={() => setStep(1)}
 						isVectorizing={billing.pending}
+						file={file}
+						originalUrl={originalPreviewUrl}
 					/>
 				)}
 

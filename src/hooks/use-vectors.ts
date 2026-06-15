@@ -7,13 +7,18 @@ import {
 	useQueryClient,
 } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { type VectorizeParams, vectorizeImage } from '@/services/vectorize';
+import {
+	previewVectorize,
+	type VectorizeParams,
+	vectorizeImage,
+} from '@/services/vectorize';
 import {
 	deleteCustomerVector,
 	getCustomerVectors,
 	saveVector,
 	updateVector,
 } from '@/services/vectors';
+import { useDebouncedValue } from './use-debounced-value';
 
 const VECTORS_KEYS = {
 	list: (page?: number, limit?: number, search?: string) =>
@@ -49,6 +54,30 @@ export function useVectorizeImage() {
 			toast.success('Imagem vetorizada com sucesso!');
 		},
 		// Erros (incl. refund) são tratados pelo orquestrador useRunTool.
+	});
+}
+
+/**
+ * Preview ao vivo (NÃO cobrado): conforme os sliders mudam, busca um SVG de
+ * preview no backend com debounce. Mantém o último resultado durante o refetch
+ * (sem flicker) e não dá retry — o run final cobrado é o `useVectorizeImage`.
+ */
+export function useVectorizePreview(
+	file: File | null,
+	params: VectorizeParams,
+	enabled: boolean,
+) {
+	const debouncedParams = useDebouncedValue(params, 400);
+	const fileKey = file
+		? `${file.name}:${file.size}:${file.lastModified}`
+		: null;
+	return useQuery({
+		queryKey: ['vectorize-preview', fileKey, JSON.stringify(debouncedParams)],
+		queryFn: () => previewVectorize(file as File, debouncedParams),
+		enabled: enabled && !!file,
+		staleTime: 5 * 60_000,
+		placeholderData: keepPreviousData,
+		retry: false,
 	});
 }
 

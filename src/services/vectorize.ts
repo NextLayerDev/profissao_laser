@@ -95,3 +95,26 @@ export async function vectorizeImage(
 	const { data } = await api.post<VectorizeResult>('/api/vectorize', formData);
 	return data;
 }
+
+/**
+ * Preview rápido e NÃO cobrado: o backend reduz a imagem (~600px), roda o motor
+ * sem supersampling e devolve só o SVG inline (sem storage/DB). Para o feedback
+ * ao vivo dos sliders — não consome voxes.
+ */
+export async function previewVectorize(
+	file: File,
+	params: VectorizeParams,
+): Promise<{ svgContent: string }> {
+	const formData = new FormData();
+	formData.append('image', file);
+	for (const [key, value] of Object.entries(params)) {
+		if (value !== undefined && value !== null) {
+			formData.append(key, String(value));
+		}
+	}
+	const { data } = await api.post<{ svgContent: string }>(
+		'/api/vectorize/preview',
+		formData,
+	);
+	return data;
+}
