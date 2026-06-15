@@ -22,12 +22,14 @@ import { LaserLineTypesAdminSection } from '@/components/parametros/laser-line-t
 import { ParameterForm } from '@/components/parametros/parameter-form';
 import { ParameterGridCard } from '@/components/parametros/parameter-grid-card';
 import { VocabAdminSection } from '@/components/parametros/vocab-admin-section';
+import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { useMachines } from '@/hooks/use-machines';
 import {
 	useCreateParameter,
 	useDeleteParameter,
 	useExportParameters,
 	useParameterMaterials,
+	useParameterOptions,
 	useParameterPasses,
 	useParameterStats,
 	useParameters,
@@ -132,10 +134,14 @@ export function ParametrosAdminView() {
 	const [activeTab, setActiveTab] = useState<AdminTab>('parameters');
 	const [currentPage, setCurrentPage] = useState(1);
 	const [searchQuery, setSearchQuery] = useState('');
+	const debouncedSearch = useDebouncedValue(searchQuery, 400);
 	const [filterMachine, setFilterMachine] = useState('');
 	const [filterMaterial, setFilterMaterial] = useState('');
 	const [filterThickness, setFilterThickness] = useState('');
 	const [filterMode, setFilterMode] = useState('');
+	const [filterLens, setFilterLens] = useState('');
+	const [filterCategory, setFilterCategory] = useState('');
+	const [filterColor, setFilterColor] = useState('');
 	const limit = 20;
 
 	/* modals */
@@ -150,24 +156,35 @@ export function ParametrosAdminView() {
 	const { data: statsData } = useParameterStats();
 	const { data: machineCatalog = [] } = useMachines();
 	const { data: materials = [] } = useParameterMaterials();
+	// Vocabulário (mesma fonte dos filtros do cliente) — paridade dos filtros.
+	const { data: lensOptions = [] } = useParameterOptions('lens');
+	const { data: modeOptions = [] } = useParameterOptions('mode');
+	const { data: categoryOptions = [] } = useParameterOptions('category');
+	const { data: colorOptions = [] } = useParameterOptions('color');
 
 	const queryParams = useMemo(
 		() => ({
 			page: currentPage,
 			limit,
-			...(searchQuery && { search: searchQuery }),
+			...(debouncedSearch && { search: debouncedSearch }),
 			...(filterMachine && { machine: filterMachine }),
 			...(filterMaterial && { material: filterMaterial }),
 			...(filterThickness && { thickness: filterThickness }),
 			...(filterMode && { mode: filterMode }),
+			...(filterLens && { lens: filterLens }),
+			...(filterCategory && { category: filterCategory }),
+			...(filterColor && { color: filterColor }),
 		}),
 		[
 			currentPage,
-			searchQuery,
+			debouncedSearch,
 			filterMachine,
 			filterMaterial,
 			filterThickness,
 			filterMode,
+			filterLens,
+			filterCategory,
+			filterColor,
 		],
 	);
 
@@ -232,11 +249,14 @@ export function ParametrosAdminView() {
 		setSelectedIds(new Set());
 	}, [
 		currentPage,
-		searchQuery,
+		debouncedSearch,
 		filterMachine,
 		filterMaterial,
 		filterThickness,
 		filterMode,
+		filterLens,
+		filterCategory,
+		filterColor,
 	]);
 
 	const thicknesses = useMemo(() => {
@@ -257,6 +277,9 @@ export function ParametrosAdminView() {
 		setFilterMaterial('');
 		setFilterThickness('');
 		setFilterMode('');
+		setFilterLens('');
+		setFilterCategory('');
+		setFilterColor('');
 		setSearchQuery('');
 		setCurrentPage(1);
 	};
@@ -500,10 +523,59 @@ export function ParametrosAdminView() {
 							}}
 						>
 							<option value="">Modo</option>
-							<option value="Corte">Corte</option>
-							<option value="Gravacao">Gravacao</option>
-							<option value="Preenchimento">Preenchimento</option>
-							<option value="Limpeza">Limpeza</option>
+							{modeOptions.map((m) => (
+								<option key={m.value} value={m.value}>
+									{m.value}
+								</option>
+							))}
+						</select>
+
+						<select
+							className={selectCls}
+							value={filterLens}
+							onChange={(e) => {
+								setFilterLens(e.target.value);
+								setCurrentPage(1);
+							}}
+						>
+							<option value="">Lente</option>
+							{lensOptions.map((l) => (
+								<option key={l.value} value={l.value}>
+									{l.value}
+								</option>
+							))}
+						</select>
+
+						<select
+							className={selectCls}
+							value={filterCategory}
+							onChange={(e) => {
+								setFilterCategory(e.target.value);
+								setCurrentPage(1);
+							}}
+						>
+							<option value="">Categoria</option>
+							{categoryOptions.map((c) => (
+								<option key={c.value} value={c.value}>
+									{c.value}
+								</option>
+							))}
+						</select>
+
+						<select
+							className={selectCls}
+							value={filterColor}
+							onChange={(e) => {
+								setFilterColor(e.target.value);
+								setCurrentPage(1);
+							}}
+						>
+							<option value="">Cor</option>
+							{colorOptions.map((c) => (
+								<option key={c.value} value={c.value}>
+									{c.value}
+								</option>
+							))}
 						</select>
 
 						<div className="ml-auto flex items-center gap-2">
@@ -520,7 +592,10 @@ export function ParametrosAdminView() {
 									type="text"
 									placeholder="Buscar..."
 									value={searchQuery}
-									onChange={(e) => setSearchQuery(e.target.value)}
+									onChange={(e) => {
+										setSearchQuery(e.target.value);
+										setCurrentPage(1);
+									}}
 									onKeyDown={(e) => e.key === 'Enter' && setCurrentPage(1)}
 									className="pl-9 pr-4 py-2 w-40 md:w-52 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition"
 								/>
