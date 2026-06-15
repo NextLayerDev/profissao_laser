@@ -12,8 +12,6 @@ interface Props {
 }
 
 export function DeleteCustomerModal({ student, onClose }: Props) {
-	// TODO(upvox): upvox has no student-delete endpoint yet — `useDeleteStudent`
-	// still calls the legacy main API (`api.delete('/customer')`) for now.
 	const deleteMut = useDeleteStudent();
 
 	if (!student) return null;

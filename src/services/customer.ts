@@ -1,4 +1,5 @@
 import { api } from '@/lib/fetch';
+import { apiCourses } from '@/shared/lib/api-courses';
 import type { UpdateCustomerPayload } from '@/types/auth';
 import { type Customer, customerSchema } from '@/types/customer';
 
@@ -15,7 +16,7 @@ export async function getCustomers(): Promise<Customer[]> {
 }
 
 export async function deleteCustomer(id: string): Promise<void> {
-	await api.delete('/customer', { data: { id } });
+	await apiCourses.delete(`/v1/user/${id}`);
 }
 
 export async function blockCustomer(
