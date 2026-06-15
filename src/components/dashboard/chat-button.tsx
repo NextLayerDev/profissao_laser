@@ -2,9 +2,8 @@
 
 import { MessageCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { useAdminPendings } from '@/hooks/use-admin-pendings';
-import { getToken } from '@/lib/auth';
+import { usePermissions } from '@/modules/access';
 
 type ChatButtonVariant = 'inline' | 'floating';
 
@@ -20,16 +19,15 @@ interface ChatButtonProps {
  */
 export function ChatButton({ variant = 'inline' }: ChatButtonProps) {
 	const router = useRouter();
-	const [isAdmin, setIsAdmin] = useState(false);
+	const { can } = usePermissions();
 
-	useEffect(() => {
-		setIsAdmin(!!getToken('user'));
-	}, []);
+	// Mesmo gate do sino de notificações e da navbar (Suporte → home.view).
+	const allowed = can('suporte.view');
 
-	const { lessonDoubtsPending, ticketsPending } = useAdminPendings(isAdmin);
+	const { lessonDoubtsPending, ticketsPending } = useAdminPendings(allowed);
 	const unansweredCount = lessonDoubtsPending + ticketsPending;
 
-	if (!isAdmin) return null;
+	if (!allowed) return null;
 
 	const isInline = variant === 'inline';
 

@@ -13,7 +13,6 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useAdminPendings } from '@/hooks/use-admin-pendings';
 import { usePermissions } from '@/modules/access';
-import { canSeeNavItem } from '@/utils/constants/permissions';
 
 function timeAgo(iso: string | null | undefined): string {
 	if (!iso) return '';
@@ -74,7 +73,7 @@ function PendingRow({
 export function SupportNotificationsBell() {
 	const router = useRouter();
 	const { can } = usePermissions();
-	const enabled = canSeeNavItem('Suporte', can);
+	const enabled = can('suporte.view');
 	const {
 		unreadCount,
 		unreadChats,

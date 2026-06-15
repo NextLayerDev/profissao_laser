@@ -59,8 +59,8 @@ export const NAV_VIEW_KEYS: Record<string, string[]> = {
 	Acessos: ['acessos.view'],
 	Alunos: ['alunos.view'],
 	'Grupo WhatsApp': ['alunos.view'],
-	'Previas IA': ['ferramentas.view'],
-	Vetorizacao: ['ferramentas.view'],
+	'Previas IA': ['previas.view'],
+	Vetorizacao: ['vetorizacao.view'],
 };
 
 /** True se o usuário pode ver um item de navbar (qualquer uma das chaves). */

@@ -18,16 +18,17 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { getToken } from '@/lib/auth';
 
 export default function DuvidasAdminPage() {
-	const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+	const [allowed, setAllowed] = useState<boolean | null>(null);
 	const [activeTab, setActiveTab] = useState<
 		'faq' | 'categories' | 'questions' | 'forum-categories'
 	>('faq');
 
 	useEffect(() => {
-		setIsAdmin(!!getToken('user'));
+		// Apenas admin/staff possuem token "user"; customers usam token "customer".
+		setAllowed(!!getToken('user'));
 	}, []);
 
-	if (isAdmin === null) {
+	if (allowed === null) {
 		return (
 			<div className="min-h-screen flex items-center justify-center">
 				<Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
@@ -35,16 +36,16 @@ export default function DuvidasAdminPage() {
 		);
 	}
 
-	if (!isAdmin) {
+	if (!allowed) {
 		return (
 			<div className="min-h-screen flex items-center justify-center">
 				<div className="text-center">
 					<MessageSquare className="w-12 h-12 text-slate-400 dark:text-gray-600 mx-auto mb-4" />
 					<p className="text-slate-600 dark:text-gray-400 font-medium mb-2">
-						Acesso restrito
+						Você não tem permissão
 					</p>
 					<p className="text-sm text-slate-500 dark:text-gray-500 mb-4">
-						Esta página é apenas para administradores.
+						Esta página é apenas para administradores e staff.
 					</p>
 					<Link
 						href="/dashboard"
