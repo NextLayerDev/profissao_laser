@@ -32,12 +32,15 @@ import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/page-header';
 import { useEntitlements } from '@/hooks/use-entitlements';
 import {
+	useAnalyzeVectorize,
 	useCustomerVectors,
 	useSaveVector,
 	useVectorizeImage,
+	useVectorizePreview,
 } from '@/hooks/use-vectors';
 import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
 import type {
+	ImageProfile,
 	VectorizeParams,
 	VectorizePreset,
 	VectorizeResult,
@@ -86,16 +89,21 @@ const DEFAULT_PARAMS: VectorizeParams = {
 };
 
 const PRESET_PARAMS: Record<VectorizePreset, Partial<VectorizeParams>> = {
+	// Automático = ponto de partida; a análise da imagem sobrescreve com os
+	// parâmetros ideais (router + image analytics) assim que chega.
+	automatico: { mode: 'trace', threshold: 128, turdSize: 3, optTolerance: 0.2 },
 	// Rápido = traço P&B simples → cai no fast-path da API
 	rapido: { mode: 'trace', threshold: 128, turdSize: 5, optTolerance: 0.4 },
-	// Detalhado = posterize com tons + leve desfoque p/ ruído
+	// Detalhado = trace limpo de alta qualidade (não posterize). Posterize
+	// empilhava N camadas por forma → "linhas sobrepostas" e fontes quebradas.
+	// O motor faz supersampling antes de traçar; sharpen recupera bordas.
 	detalhado: {
-		mode: 'posterize',
-		posterizeLevels: 4,
-		posterizeFillStrategy: 'dominant',
+		mode: 'trace',
+		threshold: 128,
 		turdSize: 2,
 		optTolerance: 0.2,
-		blur: 0.6,
+		alphaMax: 1.0,
+		sharpen: true,
 	},
 	// Apenas SVG = traço puro e limpo, sem pós-processamento
 	svg: {
@@ -553,6 +561,10 @@ function StepParams({
 	onVectorize,
 	onBack,
 	isVectorizing,
+	file,
+	originalUrl,
+	analysis,
+	analyzing,
 }: {
 	preset: VectorizePreset;
 	onApplyPreset: (p: VectorizePreset) => void;
@@ -564,8 +576,19 @@ function StepParams({
 	onVectorize: () => void;
 	onBack: () => void;
 	isVectorizing: boolean;
+	file: File | null;
+	originalUrl: string | null;
+	analysis: ImageProfile | null;
+	analyzing: boolean;
 }) {
 	const [advancedOpen, setAdvancedOpen] = useState(false);
+
+	// Preview ao vivo (NÃO cobrado): re-renderiza conforme os sliders mudam.
+	const { data: preview, isFetching: previewLoading } = useVectorizePreview(
+		file,
+		{ ...params, preset },
+		true,
+	);
 
 	const presets: {
 		key: VectorizePreset;
@@ -573,6 +596,12 @@ function StepParams({
 		desc: string;
 		icon: React.ReactNode;
 	}[] = [
+		{
+			key: 'automatico',
+			label: 'Automático (IA)',
+			desc: 'Detecta o tipo e ajusta tudo sozinho',
+			icon: <Wand2 className="w-6 h-6" />,
+		},
 		{
 			key: 'rapido',
 			label: 'Essencial',
@@ -582,7 +611,7 @@ function StepParams({
 		{
 			key: 'detalhado',
 			label: 'Profissional',
-			desc: 'Posterize com tons e curvas',
+			desc: 'Traço limpo de alta qualidade',
 			icon: <Layers className="w-6 h-6" />,
 		},
 		{
@@ -595,12 +624,60 @@ function StepParams({
 
 	return (
 		<div className="space-y-8">
+			{/* Preview ao vivo: original × vetor, atualiza com os parâmetros */}
+			<div>
+				<div className="flex items-center justify-between mb-3">
+					<h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+						Pré-visualização ao vivo
+					</h4>
+					{previewLoading && (
+						<span className="flex items-center gap-1.5 text-xs text-violet-600 dark:text-violet-400">
+							<Loader2 className="w-3.5 h-3.5 animate-spin" /> atualizando…
+						</span>
+					)}
+				</div>
+				<div className="grid grid-cols-2 gap-3">
+					<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-[repeating-conic-gradient(#f1f5f9_0_25%,#fff_0_50%)] dark:bg-[#1a1a1d] bg-[length:16px_16px] overflow-hidden aspect-square flex items-center justify-center">
+						{originalUrl ? (
+							// biome-ignore lint/performance/noImgElement: preview local (blob/data URL)
+							<img
+								src={originalUrl}
+								alt="Original"
+								className="max-w-full max-h-full object-contain"
+							/>
+						) : null}
+					</div>
+					<div className="relative rounded-xl border border-slate-200 dark:border-white/10 bg-[repeating-conic-gradient(#f1f5f9_0_25%,#fff_0_50%)] dark:bg-[#0d0d0f] bg-[length:16px_16px] overflow-hidden aspect-square flex items-center justify-center">
+						{preview?.svgContent ? (
+							// biome-ignore lint/performance/noImgElement: SVG vetorizado local
+							<img
+								src={svgToDataUrl(preview.svgContent)}
+								alt="Pré-visualização do vetor"
+								className={`max-w-full max-h-full object-contain transition-opacity ${
+									previewLoading ? 'opacity-60' : 'opacity-100'
+								}`}
+							/>
+						) : (
+							<span className="text-xs text-slate-400 dark:text-gray-500 px-3 text-center">
+								{previewLoading
+									? 'Gerando pré-visualização…'
+									: 'Ajuste os parâmetros para ver o resultado'}
+							</span>
+						)}
+					</div>
+				</div>
+				<p className="text-[11px] text-slate-400 dark:text-gray-500 mt-2">
+					Prévia rápida e gratuita — não consome voxxys. A vetorização final usa
+					a resolução cheia.
+				</p>
+			</div>
+
 			{/* Presets */}
 			<div>
 				<h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
 					Modo de vetorização
 				</h4>
-				<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+				<div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
 					{presets.map((m) => (
 						<button
 							key={m.key}
@@ -636,6 +713,45 @@ function StepParams({
 						</button>
 					))}
 				</div>
+
+				{/* Resultado da análise automática (router + image analytics) */}
+				{preset === 'automatico' && (
+					<div className="mt-3 rounded-xl border border-violet-200 dark:border-violet-500/20 bg-violet-50 dark:bg-violet-500/10 p-4">
+						{analyzing && !analysis ? (
+							<p className="flex items-center gap-2 text-sm text-violet-700 dark:text-violet-300">
+								<Loader2 className="w-4 h-4 animate-spin" /> Analisando a
+								imagem…
+							</p>
+						) : analysis ? (
+							<>
+								<div className="flex items-center gap-2">
+									<Wand2 className="w-4 h-4 text-violet-600 dark:text-violet-400 shrink-0" />
+									<p className="text-sm text-slate-700 dark:text-slate-200">
+										Detectamos:{' '}
+										<strong className="text-violet-700 dark:text-violet-300">
+											{analysis.label}
+										</strong>
+									</p>
+								</div>
+								<p className="text-xs text-slate-500 dark:text-gray-400 mt-1">
+									{analysis.reason} Ajustamos os parâmetros automaticamente —
+									você pode refinar nos controles abaixo.
+								</p>
+								{analysis.recommendTool === 'engraving' && (
+									<p className="text-xs text-amber-700 dark:text-amber-400 mt-2">
+										Dica: para fotos, a ferramenta{' '}
+										<strong>Gravação 1-Clique</strong> costuma render bem melhor
+										que a vetorização.
+									</p>
+								)}
+							</>
+						) : (
+							<p className="text-sm text-slate-500 dark:text-gray-400">
+								Suba uma imagem para a análise automática ajustar tudo.
+							</p>
+						)}
+					</div>
+				)}
 			</div>
 
 			{/* Configurações avançadas */}
@@ -779,18 +895,29 @@ function StepParams({
 							/>
 						</Group>
 
-						<Group title="Posterize (modo Detalhado)">
+						<Group title="Algoritmo">
 							<SelectRow
-								label="Algoritmo"
+								label="Modo"
 								value={params.mode ?? 'trace'}
 								options={[
-									{ value: 'trace', label: 'Trace (traço)' },
+									{ value: 'trace', label: 'Traço (P&B)' },
+									{ value: 'color', label: 'Cores (camadas)' },
 									{ value: 'posterize', label: 'Posterize (tons)' },
 								]}
 								onChange={(v) => set('mode', v as VectorizeParams['mode'])}
 							/>
+							{params.mode === 'color' && (
+								<RangeRow
+									label="Cores"
+									value={params.maxColors ?? 8}
+									min={2}
+									max={16}
+									step={1}
+									onChange={(v) => set('maxColors', v)}
+								/>
+							)}
 							<RangeRow
-								label="Níveis"
+								label="Níveis (posterize)"
 								value={params.posterizeLevels ?? 4}
 								min={2}
 								max={10}
@@ -1271,10 +1398,14 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 		undefined,
 	);
 
-	const [preset, setPreset] = useState<VectorizePreset>('rapido');
+	const [preset, setPreset] = useState<VectorizePreset>('automatico');
 	const [params, setParams] = useState<VectorizeParams>(() =>
-		presetParams('rapido'),
+		presetParams('automatico'),
 	);
+	// Análise automática (router + image analytics) — não cobrada.
+	const { data: analysis, isFetching: analyzing } = useAnalyzeVectorize(file);
+	// Garante aplicar a recomendação uma vez por imagem (não clobbera tweaks).
+	const autoAppliedFor = useRef<string | null>(null);
 
 	// portal só após montar (evita mismatch de hidratação)
 	const [mounted, setMounted] = useState(false);
@@ -1311,7 +1442,26 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 	const applyPreset = useCallback((p: VectorizePreset) => {
 		setPreset(p);
 		setParams(presetParams(p));
+		// Ao (re)selecionar Automático, destrava p/ reaplicar a recomendação.
+		if (p === 'automatico') autoAppliedFor.current = null;
 	}, []);
+
+	// Modo Automático: aplica os parâmetros recomendados pela análise — uma vez
+	// por imagem. Tweaks manuais não são sobrescritos (a análise não muda sem
+	// novo arquivo); trocar/voltar p/ Automático reaplica.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: dispara na chegada da análise
+	useEffect(() => {
+		if (preset !== 'automatico' || !analysis?.recommendedParams || !file)
+			return;
+		const key = `${file.name}:${file.size}:${file.lastModified}`;
+		if (autoAppliedFor.current === key) return;
+		autoAppliedFor.current = key;
+		setParams((p) => ({
+			...p,
+			...analysis.recommendedParams,
+			preset: 'automatico',
+		}));
+	}, [analysis, preset, file]);
 
 	const runVectorize = useCallback(async () => {
 		if (!file) return;
@@ -1458,6 +1608,10 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 						onVectorize={handleVectorize}
 						onBack={() => setStep(1)}
 						isVectorizing={billing.pending}
+						file={file}
+						originalUrl={originalPreviewUrl}
+						analysis={analysis ?? null}
+						analyzing={analyzing}
 					/>
 				)}
 
