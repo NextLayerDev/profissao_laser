@@ -3,12 +3,13 @@
 import {
 	ArrowDownToLine,
 	FileText,
+	Lock,
 	RefreshCw,
 	RotateCcw,
 	XCircle,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useState } from 'react';
 import { Header } from '@/components/dashboard/header';
 import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 import { usePermissions } from '@/modules/access';
@@ -63,19 +64,34 @@ const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
 ];
 
 export default function VendasPage() {
-	const router = useRouter();
 	const { can, isLoading: permissionsLoading } = usePermissions();
 	const allowed = can('vendas.view');
 
 	const [activeTab, setActiveTab] = useState<Tab>('entries');
 
-	useEffect(() => {
-		if (!permissionsLoading && !allowed) {
-			router.replace('/dashboard');
-		}
-	}, [allowed, permissionsLoading, router]);
+	if (permissionsLoading) return null;
 
-	if (permissionsLoading || !allowed) return null;
+	if (!allowed) {
+		return (
+			<div className="min-h-screen flex items-center justify-center">
+				<div className="text-center">
+					<Lock className="w-12 h-12 text-slate-400 dark:text-gray-600 mx-auto mb-4" />
+					<p className="text-slate-600 dark:text-gray-400 font-medium mb-2">
+						Você não tem permissão
+					</p>
+					<p className="text-sm text-slate-500 dark:text-gray-500 mb-4">
+						Você não tem acesso à página de Vendas.
+					</p>
+					<Link
+						href="/dashboard"
+						className="inline-block px-5 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors"
+					>
+						Voltar ao painel
+					</Link>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="min-h-screen text-slate-900 dark:text-white">

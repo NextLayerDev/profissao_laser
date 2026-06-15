@@ -20,6 +20,7 @@ import { SuporteQuickBooking } from '@/components/suporte/suporte-quick-booking'
 import { SupportChatAdmin } from '@/components/suporte/support-chat-admin';
 import { useAdminPendings } from '@/hooks/use-admin-pendings';
 import { usePermissions } from '@/modules/access';
+import { canSeeNavItem } from '@/utils/constants/permissions';
 
 type Tab =
 	| 'chamados'
@@ -41,7 +42,8 @@ const TABS: { key: Tab; label: string; icon: typeof Headphones }[] = [
 export default function SuportePage() {
 	const router = useRouter();
 	const { can, isLoading } = usePermissions();
-	const allowed = can('suporte.view');
+	// Mesmo gate da navbar/sino (Suporte → home.view); 'suporte.view' não existe no catálogo.
+	const allowed = canSeeNavItem('Suporte', can);
 	const [activeTab, setActiveTab] = useState<Tab>('chamados');
 	const { unreadCount, liveWaiting, ticketsPending, lessonDoubtsPending } =
 		useAdminPendings(allowed);
