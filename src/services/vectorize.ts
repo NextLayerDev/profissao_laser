@@ -1,6 +1,6 @@
 import { api } from '@/lib/fetch';
 
-export type VectorizePreset = 'rapido' | 'detalhado' | 'svg';
+export type VectorizePreset = 'automatico' | 'rapido' | 'detalhado' | 'svg';
 
 /** Parâmetros do motor Potrace (espelha a API). Campos opcionais; o que não
  *  for enviado usa o default do backend. */
@@ -76,6 +76,37 @@ export interface VectorizeResult {
 	dxfContent?: string;
 }
 
+export type VectorClass =
+	| 'text'
+	| 'line_art'
+	| 'logo'
+	| 'color_flat'
+	| 'grayscale_tonal'
+	| 'photo';
+
+/** Perfil da análise automática (router + image analytics). */
+export interface ImageProfile {
+	class: VectorClass;
+	label: string;
+	reason: string;
+	confidence: number;
+	metrics: {
+		width: number;
+		height: number;
+		hasAlpha: boolean;
+		colorCount: number;
+		grayEntropy: number;
+		otsuThreshold: number;
+		bimodality: number;
+		foregroundRatio: number;
+		darkBackground: boolean;
+		edgeDensity: number;
+		noise: number;
+	};
+	recommendedParams: VectorizeParams;
+	recommendTool?: 'engraving';
+}
+
 export async function vectorizeImage(
 	file: File,
 	opts: { invocationId?: string; params?: VectorizeParams },
@@ -114,6 +145,20 @@ export async function previewVectorize(
 	}
 	const { data } = await api.post<{ svgContent: string }>(
 		'/api/vectorize/preview',
+		formData,
+	);
+	return data;
+}
+
+/**
+ * Análise automática (router + image analytics) — NÃO cobrada. Detecta o tipo
+ * da imagem e devolve os parâmetros recomendados, que o modo Automático aplica.
+ */
+export async function analyzeVectorize(file: File): Promise<ImageProfile> {
+	const formData = new FormData();
+	formData.append('image', file);
+	const { data } = await api.post<ImageProfile>(
+		'/api/vectorize/analyze',
 		formData,
 	);
 	return data;

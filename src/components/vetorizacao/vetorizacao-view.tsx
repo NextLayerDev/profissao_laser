@@ -32,6 +32,7 @@ import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/page-header';
 import { useEntitlements } from '@/hooks/use-entitlements';
 import {
+	useAnalyzeVectorize,
 	useCustomerVectors,
 	useSaveVector,
 	useVectorizeImage,
@@ -39,6 +40,7 @@ import {
 } from '@/hooks/use-vectors';
 import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
 import type {
+	ImageProfile,
 	VectorizeParams,
 	VectorizePreset,
 	VectorizeResult,
@@ -87,6 +89,9 @@ const DEFAULT_PARAMS: VectorizeParams = {
 };
 
 const PRESET_PARAMS: Record<VectorizePreset, Partial<VectorizeParams>> = {
+	// Automático = ponto de partida; a análise da imagem sobrescreve com os
+	// parâmetros ideais (router + image analytics) assim que chega.
+	automatico: { mode: 'trace', threshold: 128, turdSize: 3, optTolerance: 0.2 },
 	// Rápido = traço P&B simples → cai no fast-path da API
 	rapido: { mode: 'trace', threshold: 128, turdSize: 5, optTolerance: 0.4 },
 	// Detalhado = trace limpo de alta qualidade (não posterize). Posterize
@@ -558,6 +563,8 @@ function StepParams({
 	isVectorizing,
 	file,
 	originalUrl,
+	analysis,
+	analyzing,
 }: {
 	preset: VectorizePreset;
 	onApplyPreset: (p: VectorizePreset) => void;
@@ -571,6 +578,8 @@ function StepParams({
 	isVectorizing: boolean;
 	file: File | null;
 	originalUrl: string | null;
+	analysis: ImageProfile | null;
+	analyzing: boolean;
 }) {
 	const [advancedOpen, setAdvancedOpen] = useState(false);
 
@@ -587,6 +596,12 @@ function StepParams({
 		desc: string;
 		icon: React.ReactNode;
 	}[] = [
+		{
+			key: 'automatico',
+			label: 'Automático (IA)',
+			desc: 'Detecta o tipo e ajusta tudo sozinho',
+			icon: <Wand2 className="w-6 h-6" />,
+		},
 		{
 			key: 'rapido',
 			label: 'Essencial',
@@ -662,7 +677,7 @@ function StepParams({
 				<h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
 					Modo de vetorização
 				</h4>
-				<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+				<div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
 					{presets.map((m) => (
 						<button
 							key={m.key}
@@ -698,6 +713,45 @@ function StepParams({
 						</button>
 					))}
 				</div>
+
+				{/* Resultado da análise automática (router + image analytics) */}
+				{preset === 'automatico' && (
+					<div className="mt-3 rounded-xl border border-violet-200 dark:border-violet-500/20 bg-violet-50 dark:bg-violet-500/10 p-4">
+						{analyzing && !analysis ? (
+							<p className="flex items-center gap-2 text-sm text-violet-700 dark:text-violet-300">
+								<Loader2 className="w-4 h-4 animate-spin" /> Analisando a
+								imagem…
+							</p>
+						) : analysis ? (
+							<>
+								<div className="flex items-center gap-2">
+									<Wand2 className="w-4 h-4 text-violet-600 dark:text-violet-400 shrink-0" />
+									<p className="text-sm text-slate-700 dark:text-slate-200">
+										Detectamos:{' '}
+										<strong className="text-violet-700 dark:text-violet-300">
+											{analysis.label}
+										</strong>
+									</p>
+								</div>
+								<p className="text-xs text-slate-500 dark:text-gray-400 mt-1">
+									{analysis.reason} Ajustamos os parâmetros automaticamente —
+									você pode refinar nos controles abaixo.
+								</p>
+								{analysis.recommendTool === 'engraving' && (
+									<p className="text-xs text-amber-700 dark:text-amber-400 mt-2">
+										Dica: para fotos, a ferramenta{' '}
+										<strong>Gravação 1-Clique</strong> costuma render bem melhor
+										que a vetorização.
+									</p>
+								)}
+							</>
+						) : (
+							<p className="text-sm text-slate-500 dark:text-gray-400">
+								Suba uma imagem para a análise automática ajustar tudo.
+							</p>
+						)}
+					</div>
+				)}
 			</div>
 
 			{/* Configurações avançadas */}
@@ -1333,10 +1387,14 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 		undefined,
 	);
 
-	const [preset, setPreset] = useState<VectorizePreset>('rapido');
+	const [preset, setPreset] = useState<VectorizePreset>('automatico');
 	const [params, setParams] = useState<VectorizeParams>(() =>
-		presetParams('rapido'),
+		presetParams('automatico'),
 	);
+	// Análise automática (router + image analytics) — não cobrada.
+	const { data: analysis, isFetching: analyzing } = useAnalyzeVectorize(file);
+	// Garante aplicar a recomendação uma vez por imagem (não clobbera tweaks).
+	const autoAppliedFor = useRef<string | null>(null);
 
 	// portal só após montar (evita mismatch de hidratação)
 	const [mounted, setMounted] = useState(false);
@@ -1373,7 +1431,26 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 	const applyPreset = useCallback((p: VectorizePreset) => {
 		setPreset(p);
 		setParams(presetParams(p));
+		// Ao (re)selecionar Automático, destrava p/ reaplicar a recomendação.
+		if (p === 'automatico') autoAppliedFor.current = null;
 	}, []);
+
+	// Modo Automático: aplica os parâmetros recomendados pela análise — uma vez
+	// por imagem. Tweaks manuais não são sobrescritos (a análise não muda sem
+	// novo arquivo); trocar/voltar p/ Automático reaplica.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: dispara na chegada da análise
+	useEffect(() => {
+		if (preset !== 'automatico' || !analysis?.recommendedParams || !file)
+			return;
+		const key = `${file.name}:${file.size}:${file.lastModified}`;
+		if (autoAppliedFor.current === key) return;
+		autoAppliedFor.current = key;
+		setParams((p) => ({
+			...p,
+			...analysis.recommendedParams,
+			preset: 'automatico',
+		}));
+	}, [analysis, preset, file]);
 
 	const runVectorize = useCallback(async () => {
 		if (!file) return;
@@ -1522,6 +1599,8 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 						isVectorizing={billing.pending}
 						file={file}
 						originalUrl={originalPreviewUrl}
+						analysis={analysis ?? null}
+						analyzing={analyzing}
 					/>
 				)}
 
