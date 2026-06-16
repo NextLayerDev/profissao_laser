@@ -43,7 +43,7 @@ export default function SuportePage() {
 	const router = useRouter();
 	const { can, isLoading } = usePermissions();
 	// Mesmo gate da navbar/sino (Suporte → home.view); 'suporte.view' não existe no catálogo.
-	const allowed = can('suporte.view');
+	const allowed = canSeeNavItem('Suporte', can);
 	const [activeTab, setActiveTab] = useState<Tab>('chamados');
 	const { unreadCount, liveWaiting, ticketsPending, lessonDoubtsPending } =
 		useAdminPendings(allowed);
