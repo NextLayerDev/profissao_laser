@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { api } from '@/lib/fetch';
 import { apiCourses } from '@/shared/lib/api-courses';
 
 /* ------------------------------------------------------------------ */
