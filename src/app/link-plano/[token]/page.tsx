@@ -340,13 +340,14 @@ export default function PlanLinkPage() {
 	const [selectedKey, setSelectedKey] = useState<string | null>(null);
 	const [cpf, setCpf] = useState('');
 	const [cpfTouched, setCpfTouched] = useState(false);
+	const [showAuthForm, setShowAuthForm] = useState(false);
 	const actionRef = useRef<HTMLDivElement>(null);
 
 	// Auth igual ao checkout de plano: /v1/me na upvox valida o token salvo.
 	const [mounted, setMounted] = useState(false);
 	useEffect(() => setMounted(true), []);
 	const meQuery = useQuery({
-		queryKey: ['courses-me'],
+		queryKey: ['courses-me', token],
 		queryFn: getCoursesMe,
 		enabled: mounted,
 		retry: false,
@@ -369,6 +370,12 @@ export default function PlanLinkPage() {
 	function selectPlan(key: string) {
 		setSelectedKey(key);
 		actionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+	}
+
+	function handleSwitchAccount() {
+		localStorage.removeItem('pl_customer_token');
+		localStorage.removeItem('pl_refresh_token');
+		setShowAuthForm(true);
 	}
 
 	function startRedeem() {
@@ -489,15 +496,27 @@ export default function PlanLinkPage() {
 								<div className="card-dark rounded-2xl border border-white/10 p-6 flex items-center justify-center min-h-[260px]">
 									<Loader2 className="w-7 h-7 text-violet-400 animate-spin" />
 								</div>
-							) : !authed ? (
-								<PlanAuthForm onAuthenticated={() => meQuery.refetch()} />
+							) : !authed || showAuthForm ? (
+								<PlanAuthForm
+									onAuthenticated={() => {
+										setShowAuthForm(false);
+										meQuery.refetch();
+									}}
+								/>
 							) : (
 								<div className="card-dark rounded-2xl border border-white/10 p-6">
-									<h3 className="font-display text-lg font-bold text-white mb-1 flex items-center gap-2">
+									<h3 className="font-display text-lg font-bold text-white mb-0.5 flex items-center gap-2">
 										<BadgeCheck className="w-5 h-5 text-emerald-400" />
 										Tudo pronto,{' '}
 										{meQuery.data?.name?.split(' ')[0] ?? 'tudo certo'}!
 									</h3>
+									<button
+										type="button"
+										onClick={handleSwitchAccount}
+										className="text-xs text-gray-500 hover:text-gray-300 transition-colors mb-4"
+									>
+										Não é você? Trocar conta
+									</button>
 									<p className="text-sm text-gray-400 mb-5">
 										Plano{' '}
 										<span className="text-white font-semibold">
