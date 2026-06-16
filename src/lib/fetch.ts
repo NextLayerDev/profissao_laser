@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { clearAllTokens, getActiveToken } from './auth';
+import { clearAllTokens, getActiveToken, getToken } from './auth';
 
 const API_URL = process.env.NEXT_PUBLIC_GATEWAY_URL;
 
@@ -42,7 +42,14 @@ api.interceptors.response.use(
 			const isPublicPage =
 				path === '/' || PUBLIC_PAGE_PREFIXES.some((p) => path.startsWith(p));
 
-			if (!isPublicPage) {
+			// Staff/colaborador (token de painel) navegando a área do aluno
+			// (/course) pode receber 401 em endpoints exclusivos de customer (ex.:
+			// feed da comunidade). Nesse caso NÃO derrubamos a sessão do painel.
+			// Fora de /course, 401 com token de painel é sessão expirada → redirect.
+			const isPanelInCourseArea =
+				!!getToken('user') && path.startsWith('/course');
+
+			if (!isPublicPage && !isPanelInCourseArea) {
 				clearAllTokens();
 				window.location.href = '/login';
 			}
