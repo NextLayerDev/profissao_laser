@@ -73,7 +73,7 @@ export const planLinkRedemptionSchema = z.object({
 	id: z.string(),
 	plan_link_id: z.string(),
 	customer_id: z.string(),
-	cpf: z.string(),
+	cpf: z.string().nullable(),
 	plan_id: z.string().nullable(),
 	status: z.enum(['pending', 'completed']),
 	floor_cents: z.number().int(),
