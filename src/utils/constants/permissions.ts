@@ -37,7 +37,19 @@ export const PERMISSION_CATALOG: PermissionModule[] = [
 		label: 'Acessos (cargos)',
 		actions: ['view', 'edit', 'delete'],
 	},
+	{
+		module: 'suporte',
+		label: 'Suporte & Agendamentos',
+		actions: ['view', 'edit', 'delete'],
+	},
 ];
+
+/**
+ * Gate do Suporte → 'suporte.view' (módulo dedicado no catálogo). Agendamentos
+ * reaproveita o mesmo array para aparecer exatamente para quem tem acesso à aba
+ * Suporte, sem risco de divergir.
+ */
+const SUPORTE_VIEW_KEYS = ['suporte.view'];
 
 /** Mapeia o `name` de cada item da navbar → chave(s) de permissão de "view". */
 export const NAV_VIEW_KEYS: Record<string, string[]> = {
@@ -53,8 +65,8 @@ export const NAV_VIEW_KEYS: Record<string, string[]> = {
 	Relatórios: ['relatorios.view'],
 	Comunidade: ['ferramentas.view'], // Ajustado conforme módulos disponíveis
 	Fórum: ['cursos.view'], // Ajustado conforme módulos disponíveis
-	Agendamentos: ['home.view'], // Fallback para home se não houver módulo
-	Suporte: ['home.view'], // Fallback para home se não houver módulo
+	Agendamentos: SUPORTE_VIEW_KEYS, // segue o mesmo gate da aba Suporte
+	Suporte: SUPORTE_VIEW_KEYS,
 	Parametros: ['acessos.view'],
 	Acessos: ['acessos.view'],
 	Alunos: ['alunos.view'],
