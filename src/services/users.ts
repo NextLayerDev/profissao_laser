@@ -1,4 +1,5 @@
 import { api } from '@/lib/fetch';
+import { type AppUser, appUserSchema } from '@/modules/users';
 import {
 	type CreateStaffPayload,
 	type UpdateUserPayload,
@@ -18,9 +19,9 @@ export async function getUser(id: string): Promise<User> {
 
 export async function createStaffUser(
 	payload: CreateStaffPayload,
-): Promise<User> {
+): Promise<AppUser> {
 	const { data } = await api.post('/v1/admin/users', payload);
-	return userSchema.parse(data);
+	return appUserSchema.parse(data);
 }
 
 export async function updateUser(
