@@ -9,6 +9,7 @@ import {
 	FileSpreadsheet,
 	FileText,
 	Gem,
+	Lightbulb,
 	Link2,
 	Loader2,
 	type LucideIcon,
@@ -16,6 +17,7 @@ import {
 	PiggyBank,
 	Receipt,
 	Search,
+	Sparkles,
 	TrendingUp,
 	Users,
 	Wallet,
@@ -29,8 +31,12 @@ import {
 	type InvoiceFilters,
 	useCompanyInvoice,
 } from '@/hooks/use-plan-links';
-import { getCompanyInvoice } from '@/services/plan-links';
-import type { CompanyInvoiceSource, VoxxyLastro } from '@/types/plan-link';
+import { getCompanyInvoice, getFinanceAnalysis } from '@/services/plan-links';
+import type {
+	CompanyInvoiceSource,
+	FinanceAnalysis,
+	VoxxyLastro,
+} from '@/types/plan-link';
 import {
 	exportFinanceiroExcel,
 	exportFinanceiroPdf,
@@ -384,9 +390,82 @@ const FINANCE_TABS = [
 	{ key: 'lastro' as const, label: 'Lastro Voxxys', Icon: Coins },
 ];
 
+const IMPACT_META: Record<
+	FinanceAnalysis['sugestoes'][number]['impacto'],
+	{ label: string; badge: string }
+> = {
+	alto: {
+		label: 'Alto impacto',
+		badge: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/25',
+	},
+	medio: {
+		label: 'Médio',
+		badge:
+			'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25',
+	},
+	baixo: {
+		label: 'Baixo',
+		badge:
+			'bg-slate-500/10 text-slate-500 dark:text-gray-400 border-slate-400/25',
+	},
+};
+
+/** Painel com o resultado da análise IA (resumo + sugestões). */
+function FinanceAnalysisPanel({ analysis }: { analysis: FinanceAnalysis }) {
+	return (
+		<div className="rounded-2xl border border-violet-300/50 dark:border-violet-500/25 bg-violet-50/60 dark:bg-violet-500/[0.06] p-5">
+			<div className="flex items-center gap-2 mb-2">
+				<Sparkles className="w-4 h-4 text-violet-600 dark:text-violet-300" />
+				<h3 className="text-sm font-semibold text-violet-700 dark:text-violet-200">
+					Análise IA — sugestões pra aumentar o ganho
+				</h3>
+			</div>
+			{analysis.resumo && (
+				<p className="text-sm text-slate-700 dark:text-gray-300 mb-4">
+					{analysis.resumo}
+				</p>
+			)}
+			<div className="space-y-2">
+				{analysis.sugestoes.map((s, i) => {
+					const meta = IMPACT_META[s.impacto];
+					return (
+						<div
+							key={`${i}-${s.titulo}`}
+							className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.03] p-3"
+						>
+							<div className="flex items-start justify-between gap-3">
+								<p className="flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-white">
+									<Lightbulb className="w-4 h-4 text-amber-500 shrink-0" />
+									{s.titulo}
+								</p>
+								<span
+									className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border shrink-0 ${meta.badge}`}
+								>
+									{meta.label}
+								</span>
+							</div>
+							{s.detalhe && (
+								<p className="text-sm text-slate-600 dark:text-gray-400 mt-1.5 pl-6">
+									{s.detalhe}
+								</p>
+							)}
+						</div>
+					);
+				})}
+			</div>
+			<p className="text-[11px] text-slate-400 dark:text-gray-600 mt-3">
+				Gerado por IA ({analysis.model}) a partir dos números agregados — revise
+				antes de decidir.
+			</p>
+		</div>
+	);
+}
+
 export function FaturaView() {
 	const [tab, setTab] = useState<'financeiro' | 'lastro'>('financeiro');
 	const [exporting, setExporting] = useState<'pdf' | 'excel' | null>(null);
+	const [analyzing, setAnalyzing] = useState(false);
+	const [analysis, setAnalysis] = useState<FinanceAnalysis | null>(null);
 	const [page, setPage] = useState(0);
 	const [source, setSource] = useState<CompanyInvoiceSource | ''>('');
 	const [from, setFrom] = useState('');
@@ -500,6 +579,32 @@ export function FaturaView() {
 		}
 	}
 
+	// Gera a análise IA (com os filtros atuais) e mostra na aba Financeiro.
+	async function handleAnalyze() {
+		if (analyzing) return;
+		setAnalyzing(true);
+		try {
+			const result = await getFinanceAnalysis({
+				source: source || undefined,
+				from: from || undefined,
+				to: to ? `${to}T23:59:59` : undefined,
+				q: q || undefined,
+			});
+			setAnalysis(result);
+			setTab('financeiro');
+		} catch (err) {
+			const status = (err as { response?: { status?: number } }).response
+				?.status;
+			toast.error(
+				status === 503
+					? 'IA não configurada (defina OPENROUTER_API_KEY no servidor).'
+					: 'Não foi possível gerar a análise.',
+			);
+		} finally {
+			setAnalyzing(false);
+		}
+	}
+
 	return (
 		<div className="space-y-6">
 			{/* Abas + exportar */}
@@ -522,6 +627,19 @@ export function FaturaView() {
 					))}
 				</div>
 				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						onClick={handleAnalyze}
+						disabled={analyzing || !data}
+						className="h-9 inline-flex items-center gap-1.5 px-3 rounded-xl border border-violet-300/60 dark:border-violet-500/30 bg-violet-50 dark:bg-violet-500/10 text-sm font-medium text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-500/20 disabled:opacity-50"
+					>
+						{analyzing ? (
+							<Loader2 className="w-4 h-4 animate-spin" />
+						) : (
+							<Sparkles className="w-4 h-4" />
+						)}
+						Análise IA
+					</button>
 					<button
 						type="button"
 						onClick={() => handleExport('excel')}
@@ -555,6 +673,8 @@ export function FaturaView() {
 				<LastroVoxxysSection voxxy={voxxy} />
 			) : (
 				<div className="space-y-6">
+					{analysis && <FinanceAnalysisPanel analysis={analysis} />}
+
 					{/* Topo financeiro: bruta → fatura upvox → líquido */}
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 						<HeroStat

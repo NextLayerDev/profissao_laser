@@ -185,6 +185,21 @@ export const voxxyLastroSchema = z.object({
 });
 export type VoxxyLastro = z.infer<typeof voxxyLastroSchema>;
 
+/** Sugestão da análise IA do financeiro. */
+export const financeSuggestionSchema = z.object({
+	titulo: z.string(),
+	detalhe: z.string(),
+	impacto: z.enum(['alto', 'medio', 'baixo']),
+});
+export type FinanceSuggestion = z.infer<typeof financeSuggestionSchema>;
+
+export const financeAnalysisSchema = z.object({
+	model: z.string(),
+	resumo: z.string(),
+	sugestoes: z.array(financeSuggestionSchema),
+});
+export type FinanceAnalysis = z.infer<typeof financeAnalysisSchema>;
+
 export const companyInvoiceSchema = z.object({
 	entries: z.array(companyInvoiceEntrySchema),
 	total: z.number().int(),
