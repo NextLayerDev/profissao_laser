@@ -6,6 +6,8 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	Coins,
+	FileSpreadsheet,
+	FileText,
 	Gem,
 	Link2,
 	Loader2,
@@ -21,12 +23,18 @@ import {
 	X,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import {
 	INVOICE_PAGE_SIZE,
 	type InvoiceFilters,
 	useCompanyInvoice,
 } from '@/hooks/use-plan-links';
+import { getCompanyInvoice } from '@/services/plan-links';
 import type { CompanyInvoiceSource, VoxxyLastro } from '@/types/plan-link';
+import {
+	exportFinanceiroExcel,
+	exportFinanceiroPdf,
+} from '@/utils/export-financeiro';
 
 function fmtBRL(cents: number): string {
 	return (cents / 100).toLocaleString('pt-BR', {
@@ -378,6 +386,7 @@ const FINANCE_TABS = [
 
 export function FaturaView() {
 	const [tab, setTab] = useState<'financeiro' | 'lastro'>('financeiro');
+	const [exporting, setExporting] = useState<'pdf' | 'excel' | null>(null);
 	const [page, setPage] = useState(0);
 	const [source, setSource] = useState<CompanyInvoiceSource | ''>('');
 	const [from, setFrom] = useState('');
@@ -464,25 +473,82 @@ export function FaturaView() {
 		setQ('');
 	};
 
+	// Exporta o financeiro completo (totais, mensal, top, lastro e extrato) com os
+	// filtros atuais. Busca todas as entries (não só a página) e gera o arquivo.
+	async function handleExport(kind: 'pdf' | 'excel') {
+		if (exporting) return;
+		setExporting(kind);
+		try {
+			const inv = await getCompanyInvoice({
+				limit: 200,
+				offset: 0,
+				...filters,
+			});
+			const meta = {
+				from: from || undefined,
+				to: to || undefined,
+				source: source || undefined,
+				q: q || undefined,
+				generatedAt: new Date().toLocaleString('pt-BR'),
+			};
+			if (kind === 'excel') await exportFinanceiroExcel(inv, meta);
+			else await exportFinanceiroPdf(inv, meta);
+		} catch {
+			toast.error('Não foi possível gerar o arquivo.');
+		} finally {
+			setExporting(null);
+		}
+	}
+
 	return (
 		<div className="space-y-6">
-			{/* Abas: Financeiro | Lastro Voxxys */}
-			<div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 rounded-2xl p-1 w-fit">
-				{FINANCE_TABS.map((t) => (
+			{/* Abas + exportar */}
+			<div className="flex flex-wrap items-center justify-between gap-3">
+				<div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 rounded-2xl p-1 w-fit">
+					{FINANCE_TABS.map((t) => (
+						<button
+							key={t.key}
+							type="button"
+							onClick={() => setTab(t.key)}
+							className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+								tab === t.key
+									? 'bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm'
+									: 'text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200'
+							}`}
+						>
+							<t.Icon className="w-4 h-4" />
+							{t.label}
+						</button>
+					))}
+				</div>
+				<div className="flex items-center gap-2">
 					<button
-						key={t.key}
 						type="button"
-						onClick={() => setTab(t.key)}
-						className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-							tab === t.key
-								? 'bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm'
-								: 'text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200'
-						}`}
+						onClick={() => handleExport('excel')}
+						disabled={!!exporting || !data}
+						className="h-9 inline-flex items-center gap-1.5 px-3 rounded-xl border border-slate-200 dark:border-white/10 text-sm text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white disabled:opacity-50"
 					>
-						<t.Icon className="w-4 h-4" />
-						{t.label}
+						{exporting === 'excel' ? (
+							<Loader2 className="w-4 h-4 animate-spin" />
+						) : (
+							<FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+						)}
+						Excel
 					</button>
-				))}
+					<button
+						type="button"
+						onClick={() => handleExport('pdf')}
+						disabled={!!exporting || !data}
+						className="h-9 inline-flex items-center gap-1.5 px-3 rounded-xl border border-slate-200 dark:border-white/10 text-sm text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white disabled:opacity-50"
+					>
+						{exporting === 'pdf' ? (
+							<Loader2 className="w-4 h-4 animate-spin" />
+						) : (
+							<FileText className="w-4 h-4 text-red-600 dark:text-red-400" />
+						)}
+						PDF
+					</button>
+				</div>
 			</div>
 
 			{tab === 'lastro' ? (
