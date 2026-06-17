@@ -160,6 +160,31 @@ export const topCustomerSchema = z.object({
 });
 export type TopCustomer = z.infer<typeof topCustomerSchema>;
 
+/** Lastro de voxxys comprados por cliente. */
+export const voxxyLastroCustomerSchema = z.object({
+	customer_id: z.string(),
+	customer_name: z.string().nullable(),
+	customer_email: z.string().nullable(),
+	sold_cents: z.number().int(),
+	used_voxes: z.coerce.number(),
+	used_value_cents: z.number().int(),
+	upvox_share_cents: z.number().int(),
+	company_share_cents: z.number().int(),
+	lastro_cents: z.number().int(),
+});
+export type VoxxyLastroCustomer = z.infer<typeof voxxyLastroCustomerSchema>;
+
+/** Economia dos voxxys COMPRADOS: vendido = usado + lastro; usado divide 50/50. */
+export const voxxyLastroSchema = z.object({
+	sold_cents: z.number().int().optional().default(0),
+	used_value_cents: z.number().int().optional().default(0),
+	upvox_share_cents: z.number().int().optional().default(0),
+	company_share_cents: z.number().int().optional().default(0),
+	lastro_cents: z.number().int().optional().default(0),
+	per_customer: z.array(voxxyLastroCustomerSchema).optional().default([]),
+});
+export type VoxxyLastro = z.infer<typeof voxxyLastroSchema>;
+
 export const companyInvoiceSchema = z.object({
 	entries: z.array(companyInvoiceEntrySchema),
 	total: z.number().int(),
@@ -174,6 +199,8 @@ export const companyInvoiceSchema = z.object({
 		gross_revenue_cents: z.number().int().optional().default(0),
 		/** Líquido da empresa do curso = bruta − repasse total. */
 		company_net_cents: z.number().int().optional().default(0),
+		/** 50% da upvox sobre voxxys comprados usados (entra no repasse). */
+		vox_purchase_use_cents: z.number().int().optional().default(0),
 		vox_granted: z.coerce.number(),
 		/** Voxxys doados via planos (cobrados a R$1,20 no ato). */
 		vox_granted_plans: z.coerce.number().optional().default(0),
@@ -183,5 +210,7 @@ export const companyInvoiceSchema = z.object({
 	monthly: z.array(monthlyFinanceSchema).optional().default([]),
 	/** Ranking de clientes por receita (optional p/ retrocompat). */
 	top_customers: z.array(topCustomerSchema).optional().default([]),
+	/** Lastro de voxxys comprados (optional p/ retrocompat). */
+	voxxy_lastro: voxxyLastroSchema.optional(),
 });
 export type CompanyInvoice = z.infer<typeof companyInvoiceSchema>;
