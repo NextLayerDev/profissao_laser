@@ -134,6 +134,8 @@ export const companyInvoiceEntrySchema = z.object({
 	/** Taxa em basis points (350 = 3,5%; 10000 = 100%). */
 	rate_bps: z.number().int().nullable().optional().default(null),
 	voxes_spent: z.coerce.number(),
+	/** Nº de usos somados (>1 nas linhas de uso de ferramenta agrupadas por cliente). */
+	count: z.coerce.number().int().optional().default(1),
 	created_at: z.string(),
 });
 export type CompanyInvoiceEntry = z.infer<typeof companyInvoiceEntrySchema>;

@@ -353,9 +353,10 @@ export function FaturaView() {
 							{entries.map((entry) => {
 								const meta = SOURCE_META[entry.source];
 								const rate = fmtRate(entry.rate_bps);
+								// Uso de ferramenta vem agrupado por cliente: mostra o nº de usos.
 								const detail =
 									entry.source === 'link_tool_use'
-										? (entry.tool_name ?? entry.tool_key)
+										? `${entry.count} uso${entry.count > 1 ? 's' : ''} de ferramenta`
 										: entry.plan_name;
 								return (
 									<tr
