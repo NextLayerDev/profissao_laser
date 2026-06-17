@@ -8,6 +8,7 @@ import {
 	APPOINTMENT_STATUS_STYLES,
 } from '@/utils/constants/appointment-status';
 import { formatAppointmentDate } from '@/utils/formatDate';
+import { whatsappLink } from '@/utils/whatsapp';
 import { AppointmentsCalendar } from './appointments-calendar';
 
 interface TechnicianAppointmentsViewProps {
@@ -132,7 +133,7 @@ export function TechnicianAppointmentsView({
 											<p className="text-xs text-slate-500 dark:text-gray-500 mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
 												{apt.customerPhone && (
 													<a
-														href={`https://wa.me/${apt.customerPhone.replace(/\D/g, '')}`}
+														href={whatsappLink(apt.customerPhone)}
 														target="_blank"
 														rel="noopener noreferrer"
 														className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 hover:underline"

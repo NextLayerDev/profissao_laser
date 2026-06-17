@@ -31,6 +31,7 @@ import {
 	APPOINTMENT_STATUS_STYLES,
 } from '@/utils/constants/appointment-status';
 import { formatAppointmentDate } from '@/utils/formatDate';
+import { whatsappLink } from '@/utils/whatsapp';
 import { AppointmentsCalendar } from './appointments-calendar';
 import { ClientAppointmentsView } from './client-appointments-view';
 import { CreateAppointmentModal } from './create-appointment-modal';
@@ -278,7 +279,7 @@ export function AppointmentsTable({
 													<p className="text-xs text-slate-500 dark:text-gray-500 mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
 														{apt.customerPhone && (
 															<a
-																href={`https://wa.me/${apt.customerPhone.replace(/\D/g, '')}`}
+																href={whatsappLink(apt.customerPhone)}
 																target="_blank"
 																rel="noopener noreferrer"
 																onClick={(e) => e.stopPropagation()}
