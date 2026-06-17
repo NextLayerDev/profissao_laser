@@ -1,6 +1,7 @@
 import { apiCourses } from '@/shared/lib/api-courses';
 import {
 	type CompanyInvoice,
+	type CompanyInvoiceSource,
 	type CreatePlanLinkPayload,
 	companyInvoiceSchema,
 	type PlanLink,
@@ -69,10 +70,14 @@ export async function redeemPlanLink(
 	return data as { checkout_url: string };
 }
 
-/** Fatura aberta da empresa (staff/admin). */
+/** Fatura aberta da empresa (staff/admin), com filtros opcionais. */
 export async function getCompanyInvoice(params: {
 	limit?: number;
 	offset?: number;
+	source?: CompanyInvoiceSource;
+	from?: string;
+	to?: string;
+	q?: string;
 }): Promise<CompanyInvoice> {
 	const { data } = await apiCourses.get('/v1/admin/company-invoice', {
 		params,

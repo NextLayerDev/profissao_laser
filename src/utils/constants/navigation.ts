@@ -10,6 +10,7 @@ import {
 	MessageSquare,
 	Package,
 	PenLine,
+	Receipt,
 	ShieldCheck,
 	ShoppingCart,
 	SlidersHorizontal,
@@ -22,6 +23,7 @@ export const navItems: NavItem[] = [
 	{ name: 'Produtos', icon: Package, href: '/products', hasDropdown: false },
 	{ name: 'Vendas', icon: ShoppingCart, href: '/sales', hasDropdown: false },
 	{ name: 'Links', icon: Link2, href: '/links', hasDropdown: false },
+	{ name: 'Fatura', icon: Receipt, href: '/fatura', hasDropdown: false },
 	{
 		name: 'Relatórios',
 		icon: BarChart3,

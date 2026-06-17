@@ -99,13 +99,23 @@ export type PlanLinkRedemptions = z.infer<typeof planLinkRedemptionsSchema>;
 
 // ── Fatura aberta da empresa ──────────────────────────────────────────────────
 
+/**
+ * link_tool_use   = uso de tool por cliente de link (custo de plataforma);
+ * plan_grant      = voxxys do plano cobrados no ato (R$1,20/voxxy);
+ * subscription_fee= 3,5% de cada pagamento de assinatura;
+ * link_purchase   = 100% do 1º período pago numa compra por link.
+ */
+export const companyInvoiceSourceSchema = z.enum([
+	'link_tool_use',
+	'plan_grant',
+	'subscription_fee',
+	'link_purchase',
+]);
+export type CompanyInvoiceSource = z.infer<typeof companyInvoiceSourceSchema>;
+
 export const companyInvoiceEntrySchema = z.object({
 	id: z.string(),
-	/** link_tool_use = uso de tool por cliente de link; plan_grant = voxxys do plano (cobrados no ato). */
-	source: z
-		.enum(['link_tool_use', 'plan_grant'])
-		.optional()
-		.default('link_tool_use'),
+	source: companyInvoiceSourceSchema.optional().default('link_tool_use'),
 	redemption_id: z.string().nullable(),
 	plan_link_id: z.string().nullable(),
 	plan_id: z.string().nullable().optional().default(null),
@@ -119,6 +129,10 @@ export const companyInvoiceEntrySchema = z.object({
 	ref_id: z.string().nullable().optional().default(null),
 	kind: z.enum(['accrual', 'reversal']),
 	amount_cents: z.number().int(),
+	/** Valor base sobre o qual a taxa incide (assinatura/piso). */
+	base_amount_cents: z.number().int().nullable().optional().default(null),
+	/** Taxa em basis points (350 = 3,5%; 10000 = 100%). */
+	rate_bps: z.number().int().nullable().optional().default(null),
 	voxes_spent: z.coerce.number(),
 	created_at: z.string(),
 });
@@ -129,6 +143,11 @@ export const companyInvoiceSchema = z.object({
 	total: z.number().int(),
 	totals: z.object({
 		open_cents: z.number().int(),
+		/** Quebra por origem (optional p/ retrocompat com API antiga). */
+		tools_cents: z.number().int().optional().default(0),
+		plan_grants_cents: z.number().int().optional().default(0),
+		subscription_fees_cents: z.number().int().optional().default(0),
+		link_purchases_cents: z.number().int().optional().default(0),
 		vox_granted: z.coerce.number(),
 		/** Voxxys doados via planos (cobrados a R$1,20 no ato). */
 		vox_granted_plans: z.coerce.number().optional().default(0),

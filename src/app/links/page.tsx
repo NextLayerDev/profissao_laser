@@ -1,22 +1,20 @@
 'use client';
 
-import { CalendarRange, Link2, Plus, Receipt, Users } from 'lucide-react';
+import { CalendarRange, Link2, Plus, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Header } from '@/components/dashboard/header';
 import { AnnualLinksTable } from '@/components/links/annual-links-table';
-import { CompanyInvoiceTab } from '@/components/links/company-invoice-tab';
 import { CreateAnnualLinkModal } from '@/components/links/create-annual-link-modal';
 import { CreatePlanLinkModal } from '@/components/links/create-plan-link-modal';
 import { LinkSubscribersTable } from '@/components/links/link-subscribers-table';
 import { PlanLinksTable } from '@/components/links/plan-links-table';
 
-type Tab = 'links' | 'annual' | 'subscribers' | 'invoice';
+type Tab = 'links' | 'annual' | 'subscribers';
 
 const TABS: { id: Tab; label: string; Icon: typeof Link2 }[] = [
 	{ id: 'links', label: 'Links de Plano', Icon: Link2 },
 	{ id: 'annual', label: 'Links Anuais', Icon: CalendarRange },
 	{ id: 'subscribers', label: 'Assinantes', Icon: Users },
-	{ id: 'invoice', label: 'Fatura aberta', Icon: Receipt },
 ];
 
 export default function LinksPage() {
@@ -87,7 +85,6 @@ export default function LinksPage() {
 					{activeTab === 'links' && <PlanLinksTable />}
 					{activeTab === 'annual' && <AnnualLinksTable />}
 					{activeTab === 'subscribers' && <LinkSubscribersTable />}
-					{activeTab === 'invoice' && <CompanyInvoiceTab />}
 				</div>
 			</main>
 

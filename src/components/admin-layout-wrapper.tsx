@@ -12,6 +12,7 @@ const ADMIN_PATHS = [
 	'/planos',
 	'/sales',
 	'/links',
+	'/fatura',
 	'/reports',
 	'/community',
 	'/forum',
