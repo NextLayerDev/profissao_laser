@@ -140,6 +140,26 @@ export const companyInvoiceEntrySchema = z.object({
 });
 export type CompanyInvoiceEntry = z.infer<typeof companyInvoiceEntrySchema>;
 
+/** Bruta × repasse × líquido de um mês. */
+export const monthlyFinanceSchema = z.object({
+	month: z.string(),
+	gross_cents: z.number().int(),
+	repasse_cents: z.number().int(),
+	net_cents: z.number().int(),
+});
+export type MonthlyFinance = z.infer<typeof monthlyFinanceSchema>;
+
+/** Cliente no ranking de receita do financeiro. */
+export const topCustomerSchema = z.object({
+	customer_id: z.string(),
+	customer_name: z.string().nullable(),
+	customer_email: z.string().nullable(),
+	gross_cents: z.number().int(),
+	repasse_cents: z.number().int(),
+	net_cents: z.number().int(),
+});
+export type TopCustomer = z.infer<typeof topCustomerSchema>;
+
 export const companyInvoiceSchema = z.object({
 	entries: z.array(companyInvoiceEntrySchema),
 	total: z.number().int(),
@@ -150,10 +170,18 @@ export const companyInvoiceSchema = z.object({
 		plan_grants_cents: z.number().int().optional().default(0),
 		subscription_fees_cents: z.number().int().optional().default(0),
 		link_purchases_cents: z.number().int().optional().default(0),
+		/** Receita bruta dos alunos na janela (pagamentos reais). */
+		gross_revenue_cents: z.number().int().optional().default(0),
+		/** Líquido da empresa do curso = bruta − repasse total. */
+		company_net_cents: z.number().int().optional().default(0),
 		vox_granted: z.coerce.number(),
 		/** Voxxys doados via planos (cobrados a R$1,20 no ato). */
 		vox_granted_plans: z.coerce.number().optional().default(0),
 		vox_rate_cents: z.number().int(),
 	}),
+	/** Levantamento mês a mês (optional p/ retrocompat com API antiga). */
+	monthly: z.array(monthlyFinanceSchema).optional().default([]),
+	/** Ranking de clientes por receita (optional p/ retrocompat). */
+	top_customers: z.array(topCustomerSchema).optional().default([]),
 });
 export type CompanyInvoice = z.infer<typeof companyInvoiceSchema>;
