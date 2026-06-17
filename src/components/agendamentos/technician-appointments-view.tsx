@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarPlus, Loader2 } from 'lucide-react';
+import { CalendarPlus, Loader2, Mail, Phone } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useAppointmentsByTechnician } from '@/hooks/use-appointments';
 import {
@@ -116,7 +116,7 @@ export function TechnicianAppointmentsView({
 									key={apt.id}
 									className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] p-4 flex items-center justify-between gap-4"
 								>
-									<div>
+									<div className="min-w-0">
 										<p className="font-medium text-slate-900 dark:text-white">
 											{apt.customerName} — {apt.service}
 											{apt.machine && ` · ${apt.machine}`}
@@ -128,6 +128,32 @@ export function TechnicianAppointmentsView({
 											})}{' '}
 											às {apt.time}
 										</p>
+										{(apt.customerPhone || apt.customerEmail) && (
+											<p className="text-xs text-slate-500 dark:text-gray-500 mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+												{apt.customerPhone && (
+													<a
+														href={`https://wa.me/${apt.customerPhone.replace(/\D/g, '')}`}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 hover:underline"
+													>
+														<Phone className="w-3 h-3 shrink-0" />
+														{apt.customerPhone}
+													</a>
+												)}
+												{apt.customerEmail && (
+													<a
+														href={`mailto:${apt.customerEmail}`}
+														className="inline-flex items-center gap-1 hover:underline truncate max-w-[220px]"
+													>
+														<Mail className="w-3 h-3 shrink-0" />
+														<span className="truncate">
+															{apt.customerEmail}
+														</span>
+													</a>
+												)}
+											</p>
+										)}
 									</div>
 									<span
 										className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0 ${

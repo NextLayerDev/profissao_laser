@@ -6,6 +6,8 @@ import {
 	Check,
 	CheckCircle,
 	Loader2,
+	Mail,
+	Phone,
 	Plus,
 	Trash2,
 	UserCheck,
@@ -262,7 +264,7 @@ export function AppointmentsTable({
 											key={apt.id}
 											className="flex items-center justify-between gap-4 py-2 border-b border-slate-100 dark:border-white/5 last:border-0"
 										>
-											<div>
+											<div className="min-w-0">
 												<p className="font-medium text-slate-900 dark:text-white">
 													{apt.customerName}
 												</p>
@@ -272,6 +274,34 @@ export function AppointmentsTable({
 													{apt.technicianId &&
 														` · ${userNameMap[apt.technicianId] ?? '—'}`}
 												</p>
+												{(apt.customerPhone || apt.customerEmail) && (
+													<p className="text-xs text-slate-500 dark:text-gray-500 mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+														{apt.customerPhone && (
+															<a
+																href={`https://wa.me/${apt.customerPhone.replace(/\D/g, '')}`}
+																target="_blank"
+																rel="noopener noreferrer"
+																onClick={(e) => e.stopPropagation()}
+																className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 hover:underline"
+															>
+																<Phone className="w-3 h-3 shrink-0" />
+																{apt.customerPhone}
+															</a>
+														)}
+														{apt.customerEmail && (
+															<a
+																href={`mailto:${apt.customerEmail}`}
+																onClick={(e) => e.stopPropagation()}
+																className="inline-flex items-center gap-1 hover:underline truncate max-w-[220px]"
+															>
+																<Mail className="w-3 h-3 shrink-0" />
+																<span className="truncate">
+																	{apt.customerEmail}
+																</span>
+															</a>
+														)}
+													</p>
+												)}
 											</div>
 											<span
 												className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${
