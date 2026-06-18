@@ -48,8 +48,11 @@
 
 Antes de preencher os esqueletos, garanta que a Onda 0 está feita:
 - [ ] Route groups `app/(student)/` e `app/(admin)/` criados.
-- [ ] `optimizePackageImports: ['lucide-react', 'recharts']` no `next.config.ts`.
-- [ ] Ambiente de testes (Vitest + Testing Library + MSW) configurado.
+- [x] `optimizePackageImports` no `next.config.ts` (lucide-react, recharts + módulos migrados).
+- [x] Ambiente de testes (Vitest + Testing Library + MSW) configurado: `npm test`,
+      `vitest.config.ts`, `vitest.setup.ts`, `src/test/msw/server.ts`. Job `test`
+      no CI gateando o deploy. Exemplos: `src/lib/cpf.test.ts` (unidade) e
+      `src/modules/catalog/services/products.service.test.ts` (service + MSW).
 
 ## Definição de pronto (cada item)
 
