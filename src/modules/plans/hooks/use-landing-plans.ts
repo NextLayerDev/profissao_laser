@@ -4,26 +4,13 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import {
 	createPlanCheckout,
 	getPublicPlans,
-	type PlanInterval,
-} from '@/services/landing-plans';
+} from '../services/landing-plans.service';
+import type { LandingPlan, PlanInterval } from '../types/landing-plans';
 
 /** Plano destacado ("MAIS ESCOLHIDO"). */
 const FEATURED_KEY = 'avan';
 
-/** Shape de exibição usado pela seção de planos da landing. */
-export interface LandingPlan {
-	id: string;
-	key: string;
-	name: string;
-	tagline: string;
-	/** Em reais (já dividido por 100). null = não configurado. */
-	monthly: number | null;
-	annual: number | null;
-	/** Parcela = anual / 12 (sem juros). */
-	installment: number | null;
-	featured: boolean;
-	badge?: string;
-}
+export const landingPlansQueryKey = ['landing-plans'] as const;
 
 /**
  * Busca os planos publicados (público) e mapeia pro shape de exibição.
@@ -31,7 +18,7 @@ export interface LandingPlan {
  */
 export function useLandingPlans() {
 	return useQuery({
-		queryKey: ['landing-plans'],
+		queryKey: landingPlansQueryKey,
 		queryFn: async (): Promise<LandingPlan[]> => {
 			const plans = await getPublicPlans();
 			return plans.map((p) => {

@@ -15,9 +15,12 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { PlanAuthForm } from '@/components/checkout/plan-auth-form';
-import { useLandingPlans, usePlanCheckout } from '@/hooks/use-landing-plans';
+import {
+	type PlanInterval,
+	useLandingPlans,
+	usePlanCheckout,
+} from '@/modules/plans';
 import { getCoursesMe } from '@/services/courses-auth';
-import type { PlanInterval } from '@/services/landing-plans';
 import { PLAN_FEATURES, PLAN_TAGLINES } from '@/utils/constants/plans-content';
 
 function fmt(v: number): string {

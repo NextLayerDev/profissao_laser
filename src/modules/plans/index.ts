@@ -8,6 +8,11 @@ export {
 	useUpdateCoursePlan,
 } from './hooks/use-course-plan';
 export {
+	landingPlansQueryKey,
+	useLandingPlans,
+	usePlanCheckout,
+} from './hooks/use-landing-plans';
+export {
 	planDetailsQueryKey,
 	usePlanDetails,
 } from './hooks/use-plan-details';
@@ -28,6 +33,10 @@ export {
 	deleteCoursePlan,
 	updateCoursePlan,
 } from './services/course-plan.service';
+export {
+	createPlanCheckout,
+	getPublicPlans,
+} from './services/landing-plans.service';
 export { getPlanDetails } from './services/plan-details.service';
 export {
 	removePlanTool,
@@ -48,6 +57,7 @@ export {
 	coursePlanRowSchema,
 	upsertCoursePlanSchema,
 } from './types/course-plan';
+export type { LandingPlan, PlanInterval } from './types/landing-plans';
 export type {
 	PlanDetails,
 	PlanDetailsCourse,

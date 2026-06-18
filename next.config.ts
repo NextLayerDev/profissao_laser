@@ -3,6 +3,11 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
 	output: 'standalone',
 	reactCompiler: true,
+	experimental: {
+		// Reescreve imports de barrel em imports diretos (tree-shaking).
+		// Adicionar cada `@/modules/<dominio>` conforme migrado (ver docs/ARCHITECTURE.md).
+		optimizePackageImports: ['lucide-react', 'recharts', '@/modules/plans'],
+	},
 	images: {
 		remotePatterns: [
 			{

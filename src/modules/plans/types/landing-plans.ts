@@ -1,14 +1,20 @@
+/** Intervalo de cobrança de um plano. */
+export type PlanInterval = 'monthly' | 'yearly';
+
 /**
- * MIGRAÇÃO — Onda 1 · módulo `plans`
- * Origem legada: tipos hoje espalhados em src/services/landing-plans.ts / src/types.
- *
- * [ ] Reunir os tipos de landing plans aqui.
- * [ ] Adicionar schema Zod (`landingPlanSchema`).
- * [ ] Exportar type + schema no index.ts do módulo.
+ * Shape de exibição usado pela seção de planos da landing (derivado de `Plan`).
+ * Não é resposta de API — a validação Zod fica no service, sobre `planSchema`.
  */
-
-// import { z } from 'zod';
-// export const landingPlanSchema = z.object({ ... });
-// export type LandingPlan = z.infer<typeof landingPlanSchema>;
-
-export {};
+export interface LandingPlan {
+	id: string;
+	key: string;
+	name: string;
+	tagline: string;
+	/** Em reais (já dividido por 100). null = não configurado. */
+	monthly: number | null;
+	annual: number | null;
+	/** Parcela = anual / 12 (sem juros). */
+	installment: number | null;
+	featured: boolean;
+	badge?: string;
+}

@@ -3,8 +3,8 @@
 import { AlertTriangle, Check, Copy, Loader2, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { useLandingPlans } from '@/hooks/use-landing-plans';
 import { useCreatePlanLink } from '@/hooks/use-plan-links';
+import { useLandingPlans } from '@/modules/plans';
 import type { PlanLink } from '@/types/plan-link';
 
 interface CreateAnnualLinkModalProps {

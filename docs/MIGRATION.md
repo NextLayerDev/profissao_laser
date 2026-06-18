@@ -25,8 +25,10 @@
 - [ ] Mover `src/services/courses-auth.ts`, `src/services/course.ts`
 
 ### 3. `plans`
-- [ ] `modules/plans/services/landing-plans.service.ts` ← `src/services/landing-plans.ts`
-- [ ] `modules/plans/types/landing-plans.ts` (+ Zod)
+- [x] `modules/plans/services/landing-plans.service.ts` ← `src/services/landing-plans.ts`
+- [x] `modules/plans/types/landing-plans.ts` (view model — Zod fica no service, sobre `planSchema`)
+- [x] `modules/plans/hooks/use-landing-plans.ts` (`landingPlansQueryKey` exportada)
+- [x] Consumidores migrados p/ `@/modules/plans`; legados deletados; build limpo.
 
 ### 4. `catalog`
 - [ ] `modules/catalog/services/products.service.ts` ← `src/services/products.ts`

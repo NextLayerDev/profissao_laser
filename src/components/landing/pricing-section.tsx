@@ -4,8 +4,11 @@ import { Check, Shield } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { type LandingPlan, useLandingPlans } from '@/hooks/use-landing-plans';
-import type { PlanInterval } from '@/services/landing-plans';
+import {
+	type LandingPlan,
+	type PlanInterval,
+	useLandingPlans,
+} from '@/modules/plans';
 import { PLAN_FEATURES, PLAN_TAGLINES } from '@/utils/constants/plans-content';
 import { ScrollReveal, StaggerReveal } from './scroll-reveal';
 
