@@ -62,7 +62,7 @@ export function EcosystemVideo() {
 							</p>
 							<div className="mt-4 relative w-full rounded-2xl bg-card border border-primary/30 overflow-hidden shadow-glow aspect-video">
 								<iframe
-									src="https://www.youtube.com/embed/EHI-vDIjUk4?rel=0"
+									src="https://www.youtube.com/embed/Dr0wAxccaXs?rel=0"
 									title="Comunidade Profissão Laser"
 									className="absolute inset-0 w-full h-full"
 									allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
