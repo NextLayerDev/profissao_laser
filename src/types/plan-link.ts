@@ -160,27 +160,38 @@ export const topCustomerSchema = z.object({
 });
 export type TopCustomer = z.infer<typeof topCustomerSchema>;
 
-/** Lastro de voxxys comprados por cliente. */
+/** Lastro de voxxys por cliente (comprados + de plano, split 50/50 no uso). */
 export const voxxyLastroCustomerSchema = z.object({
 	customer_id: z.string(),
 	customer_name: z.string().nullable(),
 	customer_email: z.string().nullable(),
+	// Comprados (pacotes):
 	sold_cents: z.number().int(),
 	used_voxes: z.coerce.number(),
 	used_value_cents: z.number().int(),
 	upvox_share_cents: z.number().int(),
 	company_share_cents: z.number().int(),
 	lastro_cents: z.number().int(),
+	// Voxxys do plano (R$1,20/vox): usado divide 50/50; não usado = custo empresa.
+	plan_used_voxes: z.coerce.number().optional().default(0),
+	plan_used_value_cents: z.number().int().optional().default(0),
+	plan_upvox_share_cents: z.number().int().optional().default(0),
+	plan_company_share_cents: z.number().int().optional().default(0),
+	plan_unused_value_cents: z.number().int().optional().default(0),
 });
 export type VoxxyLastroCustomer = z.infer<typeof voxxyLastroCustomerSchema>;
 
-/** Economia dos voxxys COMPRADOS: vendido = usado + lastro; usado divide 50/50. */
+/** Economia dos voxxys: comprados (vendido = usado + lastro) + de plano usados. */
 export const voxxyLastroSchema = z.object({
 	sold_cents: z.number().int().optional().default(0),
 	used_value_cents: z.number().int().optional().default(0),
 	upvox_share_cents: z.number().int().optional().default(0),
 	company_share_cents: z.number().int().optional().default(0),
 	lastro_cents: z.number().int().optional().default(0),
+	plan_used_value_cents: z.number().int().optional().default(0),
+	plan_upvox_share_cents: z.number().int().optional().default(0),
+	plan_company_share_cents: z.number().int().optional().default(0),
+	plan_unused_value_cents: z.number().int().optional().default(0),
 	per_customer: z.array(voxxyLastroCustomerSchema).optional().default([]),
 });
 export type VoxxyLastro = z.infer<typeof voxxyLastroSchema>;
@@ -216,6 +227,8 @@ export const companyInvoiceSchema = z.object({
 		company_net_cents: z.number().int().optional().default(0),
 		/** 50% da upvox sobre voxxys comprados usados (entra no repasse). */
 		vox_purchase_use_cents: z.number().int().optional().default(0),
+		/** 50% que volta pra empresa nos voxxys de PLANO usados (sai do repasse). */
+		plan_use_company_share_cents: z.number().int().optional().default(0),
 		vox_granted: z.coerce.number(),
 		/** Voxxys doados via planos (cobrados a R$1,20 no ato). */
 		vox_granted_plans: z.coerce.number().optional().default(0),
