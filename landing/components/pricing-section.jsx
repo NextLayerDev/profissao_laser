@@ -61,7 +61,7 @@ const PLANS = [
 		annual: 999,
 		installments: 109,
 		inherits: 'Pro',
-		addons: ['Prévias com marca d\u2019água', 'Canva com IA'],
+		addons: ['Prévias com marca d\u2019água'],
 		cta: 'ESCOLHER PLANO',
 		featured: false,
 	},

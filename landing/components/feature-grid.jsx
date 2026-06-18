@@ -1,4 +1,4 @@
-/* FeatureGrid — 14 vibrant multi-color tiles (matching the print) with
+/* FeatureGrid — 13 vibrant multi-color tiles (matching the print) with
    3D tilt on hover, shine sweep, and a unique mini-animation inside each tile. */
 
 const FEATURES = [
@@ -102,14 +102,6 @@ const FEATURES = [
 		desc: 'Inspire-se com projetos incríveis pra aumentar o mix de produtos da sua loja.',
 		from: '#ec4899',
 		to: '#be185d',
-	},
-	{
-		icon: 'ILayers',
-		title: 'Canva com IA',
-		anim: 'grid',
-		desc: 'Templates e artes editáveis com IA — edite suas artes ou prévias de forma simples.',
-		from: '#06b6d4',
-		to: '#1e40af',
 	},
 	{
 		icon: 'IPhone',
