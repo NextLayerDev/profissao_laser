@@ -17,11 +17,46 @@
 - [ ] `modules/subscriptions/services/provisioning.service.ts` ← `src/services/provisioning.ts`
 - [ ] Mover `src/services/purchase.ts`
 - [ ] Mover `src/services/my-subscription.ts` (hoje legado, já consome o módulo)
-- [ ] ⚠️ COLISÃO: `src/services/subscription.ts` (API legada `/subscription`, via `@/lib/fetch`)
-      tem `createSubscription`/`upgradeSubscription`/`cancelSubscription` homônimas das do
-      upvox (`subscriptions.service.ts`, `/v1/...`). São sistemas diferentes — decidir se
-      o legado ainda é usado (consumidores: `use-subscription.ts`, `use-my-subscription.ts`)
-      antes de mover/renomear. NÃO consolidar às cegas.
+### Colisão subscription legado vs upvox — INVESTIGADO (decisão: upvox é o futuro)
+
+Existem dois sistemas de assinatura homônimos:
+- **Legado** `src/services/subscription.ts` + `src/hooks/use-subscription.ts` +
+  `src/hooks/use-my-subscription.ts` (+ bridge `src/services/my-subscription.ts`) →
+  API antiga `/subscription`. **É o que a UI usa hoje** (checkout, troca de plano admin,
+  página `assinatura`).
+- **upvox (alvo)** `modules/subscriptions` → `/v1/subscription`. Decisão do dono:
+  **é a fonte de verdade FUTURA.** Hoje só `getEntitlements`, `listMySubscriptions` e
+  `cancelSubscription` (via bridge) estão em uso; as mutações `createSubscription`/
+  `upgradeSubscription`/`downgradeSubscription` e os 5 hooks (`useMySubscriptions`,
+  `useCreate/Upgrade/Downgrade/CancelSubscription`) estão prontos mas **não ligados na UI**.
+
+**RESOLVIDO (write-path).** A spec do backend confirmou que as rotas reais de escrita
+são `/subscription`, `/subscription/upgrade`, `/subscription/downgrade` (não `/v1/...`).
+O módulo agora implementa essas rotas reais (portado do legado, que estava correto):
+- [x] `subscriptions.service.ts` reescrito p/ rotas reais (`createSubscription`,
+      `upgradeSubscription`, `downgradeSubscription`); read/cancel `/v1/...` mantidos.
+- [x] types: `CreateSubscriptionPayload` (email/stripeProductId/...),
+      `SubscriptionChangePayload` (`{productId}`), `SubscriptionChangeResponse`.
+- [x] hooks reescritos; comentário "dead code" removido (agora é a casa real).
+- [x] Consumidores repontados: `create-subscription-modal`, `checkout-confirm-button`,
+      `hooks/use-my-subscription` (upgrade/downgrade), `utils/parse-subscription-csv`.
+- [x] **Testes** `subscriptions.service.test.ts` (MSW: create 201, upgrade/downgrade + schema inválido) ✓
+- [x] Legado deletado: `services/subscription.ts`, `hooks/use-subscription.ts`,
+      `types/subscription.ts`, `types/subscription-change.ts`.
+      Dead code dropado no caminho: `adminChangePlan`/`useAdminChangePlan`,
+      `cancelSubscription({email,subscriptionId})` (rota `/customer/subscription/cancel`).
+
+**Resta (read/cancel "minha assinatura"), em pass futuro:**
+- [ ] Mover o bridge `services/my-subscription.ts` + `hooks/use-my-subscription.ts` +
+      `types/my-subscription.ts` para dentro do módulo (leitura via `listMySubscriptions`
+      + `getEntitlements`; cancel via `cancelSubscription(id)` `/v1/.../cancel`).
+- ⚠️ Confirmar com o backend se `/v1/me/subscriptions` e `/v1/subscription/{id}/cancel`
+      são as rotas oficiais (não vieram na spec compartilhada).
+
+### subscriptions — moves mecânicos restantes (independentes da colisão)
+- [ ] `modules/subscriptions/services/addons.service.ts` ← `src/services/addons.ts` (+ `types/addons.ts`)
+- [ ] `modules/subscriptions/services/provisioning.service.ts` ← `src/services/provisioning.ts`
+- [ ] Mover `src/services/purchase.ts`
 
 ### 2. `courses`
 - [ ] `modules/courses/services/classes.service.ts` ← `src/services/classes.ts` (+ `system-classes.ts`)

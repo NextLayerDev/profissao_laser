@@ -13,11 +13,11 @@ import {
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { usePurchase } from '@/hooks/use-purchase';
+import { getCurrentUser } from '@/lib/auth';
 import {
 	useDowngradeSubscription,
 	useUpgradeSubscription,
-} from '@/hooks/use-subscription';
-import { getCurrentUser } from '@/lib/auth';
+} from '@/modules/subscriptions';
 import type { OwnershipStatus } from '@/utils/ownership';
 
 interface CheckoutConfirmButtonProps {

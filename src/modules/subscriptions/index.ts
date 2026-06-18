@@ -27,15 +27,19 @@ export {
 	entitlementToolSchema,
 } from './types/entitlements';
 export type {
-	ChangeSubscriptionPayload,
 	CheckoutResponse,
 	CreateSubscriptionPayload,
 	Subscription,
+	SubscriptionChangePayload,
+	SubscriptionChangeResponse,
 	SubscriptionInterval,
 	SubscriptionStatus,
 } from './types/subscriptions';
 export {
 	checkoutResponseSchema,
+	createSubscriptionPayloadSchema,
+	subscriptionChangePayloadSchema,
+	subscriptionChangeResponseSchema,
 	subscriptionIntervalSchema,
 	subscriptionSchema,
 	subscriptionStatusSchema,

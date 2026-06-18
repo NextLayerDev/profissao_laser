@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { useCreateSubscription } from '@/hooks/use-subscription';
+import { useCreateSubscription } from '@/modules/subscriptions';
 import {
 	type CsvSubscriptionRow,
 	parseSubscriptionCsv,

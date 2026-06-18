@@ -1,8 +1,13 @@
 'use client';
 
+/**
+ * Camada de assinaturas (write nas rotas reais do backend: `/subscription`,
+ * `/subscription/upgrade`, `/subscription/downgrade`; read/cancel via `/v1/...`).
+ * Casa única — o sistema legado `@/hooks/use-subscription` + `@/services/subscription`
+ * foi aposentado e consolidado aqui.
+ */
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { getApiErrorMessage } from '@/shared/lib/api-error';
 import {
 	cancelSubscription,
 	createSubscription,
@@ -11,8 +16,8 @@ import {
 	upgradeSubscription,
 } from '../services/subscriptions.service';
 import type {
-	ChangeSubscriptionPayload,
 	CreateSubscriptionPayload,
+	SubscriptionChangePayload,
 } from '../types/subscriptions';
 
 export const mySubscriptionsQueryKey = ['me', 'subscriptions'] as const;
@@ -28,46 +33,30 @@ export function useCreateSubscription() {
 	return useMutation({
 		mutationFn: (payload: CreateSubscriptionPayload) =>
 			createSubscription(payload),
-		onError: (err) =>
-			toast.error(getApiErrorMessage(err, 'Erro ao iniciar assinatura')),
 	});
 }
 
 export function useUpgradeSubscription() {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({
-			id,
-			payload,
-		}: {
-			id: string;
-			payload: ChangeSubscriptionPayload;
-		}) => upgradeSubscription(id, payload),
+		mutationFn: (payload: SubscriptionChangePayload) =>
+			upgradeSubscription(payload),
 		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: mySubscriptionsQueryKey });
-			toast.success('Plano atualizado!');
+			qc.invalidateQueries({ queryKey: ['customer-plans'] });
+			qc.invalidateQueries({ queryKey: ['my-subscription'] });
 		},
-		onError: (err) =>
-			toast.error(getApiErrorMessage(err, 'Erro ao fazer upgrade')),
 	});
 }
 
 export function useDowngradeSubscription() {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({
-			id,
-			payload,
-		}: {
-			id: string;
-			payload: ChangeSubscriptionPayload;
-		}) => downgradeSubscription(id, payload),
+		mutationFn: (payload: SubscriptionChangePayload) =>
+			downgradeSubscription(payload),
 		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: mySubscriptionsQueryKey });
-			toast.success('Plano atualizado!');
+			qc.invalidateQueries({ queryKey: ['customer-plans'] });
+			qc.invalidateQueries({ queryKey: ['my-subscription'] });
 		},
-		onError: (err) =>
-			toast.error(getApiErrorMessage(err, 'Erro ao fazer downgrade')),
 	});
 }
 
@@ -77,9 +66,7 @@ export function useCancelSubscription() {
 		mutationFn: (id: string) => cancelSubscription(id),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: mySubscriptionsQueryKey });
-			toast.success('Assinatura cancelada.');
+			qc.invalidateQueries({ queryKey: ['my-subscription'] });
 		},
-		onError: (err) =>
-			toast.error(getApiErrorMessage(err, 'Erro ao cancelar assinatura')),
 	});
 }

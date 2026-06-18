@@ -1,4 +1,4 @@
-import type { CreateSubscriptionPayload } from '@/types/subscription';
+import type { CreateSubscriptionPayload } from '@/modules/subscriptions';
 
 export const SUBSCRIPTION_INTERVALS = ['day', 'week', 'month', 'year'] as const;
 

@@ -12,6 +12,7 @@ export const subscriptionStatusSchema = z.enum([
 ]);
 export type SubscriptionStatus = z.infer<typeof subscriptionStatusSchema>;
 
+/** Assinatura como vem do read `/v1/me/subscriptions`. */
 export const subscriptionSchema = z.object({
 	id: z.string(),
 	customer_id: z.string(),
@@ -34,12 +35,35 @@ export const checkoutResponseSchema = z.object({
 });
 export type CheckoutResponse = z.infer<typeof checkoutResponseSchema>;
 
-export interface CreateSubscriptionPayload {
-	plan_key: string;
-	interval: SubscriptionInterval;
-}
+// ── Write path (backend real: POST /subscription, /subscription/upgrade|downgrade) ──
 
-export interface ChangeSubscriptionPayload {
-	plan_key: string;
-	interval?: SubscriptionInterval;
-}
+/** Cria a assinatura Stripe (admin/checkout). Rota `POST /subscription`. */
+export const createSubscriptionPayloadSchema = z.object({
+	email: z.string().email(),
+	stripeProductId: z.string().min(1),
+	amount: z.number().min(0),
+	interval: z.enum(['day', 'week', 'month', 'year']),
+	intervalCount: z.number().int().min(1),
+	endsAt: z.string(),
+});
+export type CreateSubscriptionPayload = z.infer<
+	typeof createSubscriptionPayloadSchema
+>;
+
+/** Troca de plano (upgrade/downgrade). Rotas `POST /subscription/{upgrade,downgrade}`. */
+export const subscriptionChangePayloadSchema = z.object({
+	productId: z.uuid(),
+});
+export type SubscriptionChangePayload = z.infer<
+	typeof subscriptionChangePayloadSchema
+>;
+
+export const subscriptionChangeResponseSchema = z.object({
+	subscriptionId: z.string(),
+	status: z.string(),
+	previousPlan: z.string(),
+	newPlan: z.string(),
+});
+export type SubscriptionChangeResponse = z.infer<
+	typeof subscriptionChangeResponseSchema
+>;

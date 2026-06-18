@@ -1,42 +1,43 @@
 import { apiCourses as api } from '@/shared/lib/api-courses';
 import {
-	type ChangeSubscriptionPayload,
-	type CheckoutResponse,
 	type CreateSubscriptionPayload,
-	checkoutResponseSchema,
 	type Subscription,
+	type SubscriptionChangePayload,
+	type SubscriptionChangeResponse,
+	subscriptionChangeResponseSchema,
 	subscriptionSchema,
 } from '../types/subscriptions';
 
-/** Inicia checkout de assinatura; retorna a URL do Stripe. */
+/** Cria a assinatura Stripe do customer. `POST /subscription`. */
 export async function createSubscription(
 	payload: CreateSubscriptionPayload,
-): Promise<CheckoutResponse> {
-	const { data } = await api.post('/v1/subscription', payload);
-	return checkoutResponseSchema.parse(data);
+): Promise<void> {
+	await api.post('/subscription', payload);
 }
 
+/** Upgrade do plano atual. `POST /subscription/upgrade`. */
 export async function upgradeSubscription(
-	id: string,
-	payload: ChangeSubscriptionPayload,
-): Promise<Subscription> {
-	const { data } = await api.post(`/v1/subscription/${id}/upgrade`, payload);
-	return subscriptionSchema.parse(data);
+	payload: SubscriptionChangePayload,
+): Promise<SubscriptionChangeResponse> {
+	const { data } = await api.post('/subscription/upgrade', payload);
+	return subscriptionChangeResponseSchema.parse(data);
 }
 
+/** Downgrade do plano atual. `POST /subscription/downgrade`. */
 export async function downgradeSubscription(
-	id: string,
-	payload: ChangeSubscriptionPayload,
-): Promise<Subscription> {
-	const { data } = await api.post(`/v1/subscription/${id}/downgrade`, payload);
-	return subscriptionSchema.parse(data);
+	payload: SubscriptionChangePayload,
+): Promise<SubscriptionChangeResponse> {
+	const { data } = await api.post('/subscription/downgrade', payload);
+	return subscriptionChangeResponseSchema.parse(data);
 }
 
+/** Cancela uma assinatura pelo id (read/cancel path upvox). */
 export async function cancelSubscription(id: string): Promise<Subscription> {
 	const { data } = await api.post(`/v1/subscription/${id}/cancel`);
 	return subscriptionSchema.parse(data);
 }
 
+/** Assinaturas do customer logado. `GET /v1/me/subscriptions`. */
 export async function listMySubscriptions(): Promise<Subscription[]> {
 	const { data } = await api.get('/v1/me/subscriptions');
 	return subscriptionSchema.array().parse(data);

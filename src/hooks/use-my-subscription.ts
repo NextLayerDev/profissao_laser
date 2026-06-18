@@ -2,14 +2,14 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+	downgradeSubscription,
+	type SubscriptionChangePayload,
+	upgradeSubscription,
+} from '@/modules/subscriptions';
+import {
 	cancelMySubscription,
 	getMySubscription,
 } from '@/services/my-subscription';
-import {
-	downgradeSubscription,
-	upgradeSubscription,
-} from '@/services/subscription';
-import type { SubscriptionChangePayload } from '@/types/subscription-change';
 
 export function useMySubscription() {
 	return useQuery({
