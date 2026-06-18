@@ -4,7 +4,7 @@ import { Loader2, Lock, Store, User } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { useRegisterCustomer, useRegisterUser } from '@/hooks/use-auth';
+import { useRegisterCustomer, useRegisterUser } from '@/modules/access';
 
 type Tab = 'customer' | 'user';
 

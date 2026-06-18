@@ -35,8 +35,11 @@
 - [ ] `modules/catalog/types/products.ts` (+ Zod)
 
 ### 5. `access`
-- [ ] `modules/access/services/auth.service.ts` ← `src/services/auth.ts`
-- [ ] `modules/access/types/auth.ts` (+ Zod)
+- [x] `modules/access/services/auth.service.ts` ← `src/services/auth.ts` (client → `apiCourses`)
+- [x] `modules/access/types/auth.ts` (Zod já existia; login/registro movidos)
+- [x] `modules/access/hooks/use-auth.ts` (`useLogin`/`useRegisterCustomer`/`useRegisterUser`)
+- [x] Consumidores (`app/login`, `app/register`) → `@/modules/access`; legados deletados; build limpo.
+- Nota: `UpdateCustomerPayload` ficou em `src/types/auth.ts` (domínio customer → migra com `account`).
 
 ## Pré-requisitos (Onda 0)
 

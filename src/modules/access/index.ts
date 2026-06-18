@@ -6,6 +6,11 @@ export {
 	useUserAccess,
 } from './hooks/use-access';
 export {
+	useLogin,
+	useRegisterCustomer,
+	useRegisterUser,
+} from './hooks/use-auth';
+export {
 	createPermissionModule,
 	createRole,
 	deletePermissionModule,
@@ -18,6 +23,12 @@ export {
 	updateRole,
 	updateUserAccess,
 } from './services/access.service';
+export {
+	loginCustomer,
+	loginUser,
+	registerCustomer,
+	registerUser,
+} from './services/auth.service';
 export type {
 	MyPermissions,
 	PermissionModule,
@@ -34,3 +45,19 @@ export {
 	roleSchema,
 	userAccessSchema,
 } from './types/access';
+export type {
+	AuthMessageResponse,
+	AuthTokenResponse,
+	LoginCustomerPayload,
+	LoginUserPayload,
+	RegisterCustomerPayload,
+	RegisterUserPayload,
+} from './types/auth';
+export {
+	authMessageResponseSchema,
+	authTokenResponseSchema,
+	loginCustomerSchema,
+	loginUserSchema,
+	registerCustomerSchema,
+	registerUserSchema,
+} from './types/auth';

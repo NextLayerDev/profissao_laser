@@ -6,7 +6,12 @@ const nextConfig: NextConfig = {
 	experimental: {
 		// Reescreve imports de barrel em imports diretos (tree-shaking).
 		// Adicionar cada `@/modules/<dominio>` conforme migrado (ver docs/ARCHITECTURE.md).
-		optimizePackageImports: ['lucide-react', 'recharts', '@/modules/plans'],
+		optimizePackageImports: [
+			'lucide-react',
+			'recharts',
+			'@/modules/access',
+			'@/modules/plans',
+		],
 	},
 	images: {
 		remotePatterns: [

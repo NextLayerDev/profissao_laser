@@ -4,7 +4,7 @@ import { Loader2, Store } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { useLogin } from '@/hooks/use-auth';
+import { useLogin } from '@/modules/access';
 
 export default function Login() {
 	const [email, setEmail] = useState('');
