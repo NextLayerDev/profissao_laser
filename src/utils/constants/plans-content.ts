@@ -56,7 +56,6 @@ export const PLAN_FEATURES: Record<string, string[]> = {
 		'Lista de fornecedores',
 		'Eventos e Lives fechadas e suporte online',
 		'Prévias',
-		'Canva com IA',
 		'Pacote de 150 Voxxys',
 		'10 Horas de mentoria online',
 		'Gravação 360° - Grupo de 5 pessoas',
