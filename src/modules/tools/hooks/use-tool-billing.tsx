@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { type ReactNode, useCallback } from 'react';
 import { toast } from 'sonner';
-import { useEntitlements } from '@/hooks/use-entitlements';
+import { useEntitlements } from '@/modules/subscriptions';
 import { ToolCostNotice } from '../components/tool-cost-notice';
 import { applyVoxCharge } from '../lib/vox-fx';
 import { consumeTool } from '../services/tools.service';

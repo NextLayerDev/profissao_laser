@@ -30,7 +30,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/page-header';
-import { useEntitlements } from '@/hooks/use-entitlements';
 import {
 	useAnalyzeVectorize,
 	useCustomerVectors,
@@ -38,6 +37,7 @@ import {
 	useVectorizeImage,
 	useVectorizePreview,
 } from '@/hooks/use-vectors';
+import { useEntitlements } from '@/modules/subscriptions';
 import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
 import type {
 	ImageProfile,

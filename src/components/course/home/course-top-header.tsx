@@ -13,9 +13,9 @@ import { toast } from 'sonner';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { VoxxysIcon } from '@/components/ui/voxxys-icon';
-import { useEntitlements } from '@/hooks/use-entitlements';
 import { useIsTestUnlimited } from '@/hooks/use-is-test-unlimited';
 import { formatVox } from '@/lib/format';
+import { useEntitlements } from '@/modules/subscriptions';
 import { VoxSpendFx } from './vox-spend-fx';
 
 interface CourseTopHeaderProps {

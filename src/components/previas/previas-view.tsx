@@ -38,7 +38,6 @@ import { MyMachineSection } from '@/components/previas/my-machine-section';
 import { PreviaBackgroundPicker } from '@/components/previas/previa-background-picker';
 import { PreviaTurntableViewer } from '@/components/previas/previa-turntable-viewer';
 import { PageHeader } from '@/components/ui/page-header';
-import { useEntitlements } from '@/hooks/use-entitlements';
 import { useLaserProduct, useLaserProducts } from '@/hooks/use-laser-products';
 import {
 	useDeletePrevia,
@@ -50,6 +49,7 @@ import {
 	useUploadWatermark,
 	useWatermark,
 } from '@/hooks/use-previas';
+import { useEntitlements } from '@/modules/subscriptions';
 import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
 import type {
 	GeneratePreviaPayload,

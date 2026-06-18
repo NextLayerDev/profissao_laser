@@ -14,10 +14,10 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { CardListSkeleton } from '@/components/ui/skeletons/card-list-skeleton';
-import { useEntitlements } from '@/hooks/use-entitlements';
 import { useJornadaProgress } from '@/hooks/use-jornada-progress';
 import { getCurrentUser, getToken } from '@/lib/auth';
 import { catalogQueryKeys, listPublicCourses } from '@/modules/catalog';
+import { useEntitlements } from '@/modules/subscriptions';
 import type { CustomerPlan } from '@/types/plans';
 
 export default function JornadaCoursePage() {

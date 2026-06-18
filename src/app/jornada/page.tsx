@@ -15,9 +15,9 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { useEntitlements } from '@/hooks/use-entitlements';
 import { useJornadaProgress } from '@/hooks/use-jornada-progress';
 import { getCurrentUser } from '@/lib/auth';
+import { useEntitlements } from '@/modules/subscriptions';
 import type { CustomerPlan } from '@/types/plans';
 
 const Background = () => (

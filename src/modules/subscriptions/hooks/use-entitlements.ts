@@ -2,7 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { getToken } from '@/lib/auth';
-import { type EntitlementTool, getEntitlements } from '@/services/entitlements';
+import { getEntitlements } from '../services/entitlements.service';
+import type { EntitlementTool } from '../types/entitlements';
 
 export const ENTITLEMENTS_KEY = (courseSlug?: string) =>
 	['entitlements', courseSlug ?? null] as const;

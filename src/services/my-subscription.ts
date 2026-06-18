@@ -1,9 +1,9 @@
+import { getEntitlements } from '@/modules/subscriptions';
 import {
 	cancelSubscription,
 	listMySubscriptions,
 } from '@/modules/subscriptions/services/subscriptions.service';
 import type { Subscription } from '@/modules/subscriptions/types/subscriptions';
-import { getEntitlements } from '@/services/entitlements';
 import type { MySubscription } from '@/types/my-subscription';
 
 /** A assinatura ativa do customer agora vive no upvox (não mais na base legada). */

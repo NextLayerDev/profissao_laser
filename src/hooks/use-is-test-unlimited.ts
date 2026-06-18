@@ -1,6 +1,6 @@
 'use client';
 
-import { useEntitlements } from '@/hooks/use-entitlements';
+import { useEntitlements } from '@/modules/subscriptions';
 
 /**
  * True se o customer logado é uma "conta de teste ilimitada" (tudo

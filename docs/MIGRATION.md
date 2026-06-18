@@ -8,13 +8,20 @@
 ## Checklist por arquivo-esqueleto criado
 
 ### 1. `subscriptions`
-- [ ] `modules/subscriptions/services/addons.service.ts` ← `src/services/addons.ts`
-- [ ] `modules/subscriptions/services/entitlements.service.ts` ← `src/services/entitlements.ts`
+- [x] `modules/subscriptions/services/entitlements.service.ts` ← `src/services/entitlements.ts` (Zod já existia)
+- [x] `modules/subscriptions/types/entitlements.ts` (+ schemas) — lógica crítica
+- [x] `modules/subscriptions/hooks/use-entitlements.ts` (`ENTITLEMENTS_KEY`, `useEntitlements`)
+- [x] **Testes** `entitlements.service.test.ts` (MSW: parse, course_slug, subscription nula, schema inválido) ✓
+- [x] 17 consumidores (3 service + 14 hook) repontados p/ `@/modules/subscriptions`; legados deletados; build limpo.
+- [ ] `modules/subscriptions/services/addons.service.ts` ← `src/services/addons.ts` (+ `types/addons.ts`)
 - [ ] `modules/subscriptions/services/provisioning.service.ts` ← `src/services/provisioning.ts`
-- [ ] `modules/subscriptions/types/addons.ts` ← `src/types/addons.ts` (+ Zod)
-- [ ] `modules/subscriptions/types/entitlements.ts` ← `src/types/entitlements.ts` (+ Zod)
-- [ ] Dedupe `src/services/subscription.ts` + `src/services/my-subscription.ts` com o `subscriptions.service.ts` existente
 - [ ] Mover `src/services/purchase.ts`
+- [ ] Mover `src/services/my-subscription.ts` (hoje legado, já consome o módulo)
+- [ ] ⚠️ COLISÃO: `src/services/subscription.ts` (API legada `/subscription`, via `@/lib/fetch`)
+      tem `createSubscription`/`upgradeSubscription`/`cancelSubscription` homônimas das do
+      upvox (`subscriptions.service.ts`, `/v1/...`). São sistemas diferentes — decidir se
+      o legado ainda é usado (consumidores: `use-subscription.ts`, `use-my-subscription.ts`)
+      antes de mover/renomear. NÃO consolidar às cegas.
 
 ### 2. `courses`
 - [ ] `modules/courses/services/classes.service.ts` ← `src/services/classes.ts` (+ `system-classes.ts`)

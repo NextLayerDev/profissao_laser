@@ -26,7 +26,7 @@ import {
 	useEditorAiGenerate,
 	useRemoveBackground,
 } from '@/hooks/use-editor-ai';
-import { useEntitlements } from '@/hooks/use-entitlements';
+import { useEntitlements } from '@/modules/subscriptions';
 import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
 import type { EditorAiMode } from '@/types/editor-ai';
 

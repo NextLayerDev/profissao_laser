@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
 			'@/modules/access',
 			'@/modules/catalog',
 			'@/modules/plans',
+			'@/modules/subscriptions',
 		],
 	},
 	images: {

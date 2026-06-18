@@ -4,8 +4,8 @@ import { Lock } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { WizardSkeleton } from '@/components/ui/skeletons/wizard-skeleton';
-import { useEntitlements } from '@/hooks/use-entitlements';
 import { getToken } from '@/lib/auth';
+import { useEntitlements } from '@/modules/subscriptions';
 
 /**
  * Gates a tool area: only customers with an ACTIVE plan (or test-unlimited, or

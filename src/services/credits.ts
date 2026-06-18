@@ -1,5 +1,5 @@
 import { api } from '@/lib/fetch';
-import { getEntitlements } from '@/services/entitlements';
+import { getEntitlements } from '@/modules/subscriptions';
 import { apiCourses } from '@/shared/lib/api-courses';
 import {
 	type AdjustVoxPayload,

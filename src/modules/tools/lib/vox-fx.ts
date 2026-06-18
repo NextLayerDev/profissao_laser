@@ -1,7 +1,7 @@
 'use client';
 
 import type { QueryClient } from '@tanstack/react-query';
-import type { Entitlements } from '@/services/entitlements';
+import type { Entitlements } from '@/modules/subscriptions';
 
 /**
  * Efeitos de gasto de voxxys, compartilhados por TODAS as ferramentas (escalável):

@@ -3,8 +3,8 @@
 import { Search } from 'lucide-react';
 import { useState } from 'react';
 import { StoreCourseCard } from '@/components/store/store-course-card';
-import { useEntitlements } from '@/hooks/use-entitlements';
 import { useCourses } from '@/modules/courses';
+import { useEntitlements } from '@/modules/subscriptions';
 
 export function StoreContent() {
 	const [search, setSearch] = useState('');

@@ -11,8 +11,8 @@ import {
 } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
-import { useEntitlements } from '@/hooks/use-entitlements';
 import { useSaveVector, useVectorizeImage } from '@/hooks/use-vectors';
+import { useEntitlements } from '@/modules/subscriptions';
 import { invokeTool } from '@/modules/tools/services/tools.service';
 import type { VectorizeResult } from '@/services/vectorize';
 

@@ -1,4 +1,8 @@
 export {
+	ENTITLEMENTS_KEY,
+	useEntitlements,
+} from './hooks/use-entitlements';
+export {
 	mySubscriptionsQueryKey,
 	useCancelSubscription,
 	useCreateSubscription,
@@ -6,6 +10,7 @@ export {
 	useMySubscriptions,
 	useUpgradeSubscription,
 } from './hooks/use-subscriptions';
+export { getEntitlements } from './services/entitlements.service';
 export {
 	cancelSubscription,
 	createSubscription,
@@ -13,6 +18,14 @@ export {
 	listMySubscriptions,
 	upgradeSubscription,
 } from './services/subscriptions.service';
+export type {
+	Entitlements,
+	EntitlementTool,
+} from './types/entitlements';
+export {
+	entitlementsSchema,
+	entitlementToolSchema,
+} from './types/entitlements';
 export type {
 	ChangeSubscriptionPayload,
 	CheckoutResponse,

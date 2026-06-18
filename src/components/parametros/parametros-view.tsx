@@ -25,7 +25,6 @@ import { ParameterGridCard } from '@/components/parametros/parameter-grid-card';
 import { PageHeader } from '@/components/ui/page-header';
 import { ParameterGridSkeleton } from '@/components/ui/skeletons/parameter-grid-skeleton';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
-import { useEntitlements } from '@/hooks/use-entitlements';
 import {
 	useCommunityParameters,
 	useLikeParameter,
@@ -36,6 +35,7 @@ import {
 	useSaveParameter,
 	useSubmitParameter,
 } from '@/hooks/use-parameters';
+import { useEntitlements } from '@/modules/subscriptions';
 import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
 import type { CreateParameterPayload } from '@/services/parameters';
 

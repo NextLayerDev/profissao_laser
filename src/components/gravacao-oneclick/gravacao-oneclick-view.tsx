@@ -21,10 +21,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/page-header';
-import { useEntitlements } from '@/hooks/use-entitlements';
 import { useLaserPrep } from '@/hooks/use-laser-prep';
 import { downloadBmpFromPng } from '@/lib/bmp';
 import { buildLbrn2, downloadLbrn2, type LaserType } from '@/lib/lightburn';
+import { useEntitlements } from '@/modules/subscriptions';
 import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
 import {
 	LASER_PREP_MATERIALS,
