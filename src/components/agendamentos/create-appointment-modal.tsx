@@ -1,18 +1,124 @@
 'use client';
 
-import { Loader2, Plus, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Loader2, Plus, Search, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
 	useAvailableSlots,
 	useAvailableSlotsForAnyTechnician,
 	useCreateAppointment,
 } from '@/hooks/use-appointments';
+import { useStudents } from '@/hooks/use-students';
 import { useUsers } from '@/hooks/use-users';
 import type { CreateAppointmentPayload } from '@/types/appointments';
 import { APPOINTMENT_MACHINES } from '@/utils/constants/appointment-machines';
 import { APPOINTMENT_SERVICES } from '@/utils/constants/appointment-services';
 import { TimeSlotPicker } from './time-slot-picker';
+
+/**
+ * Busca um aluno/cliente já cadastrado (server-side, por nome/email) e devolve
+ * nome/email/telefone pra preencher o form. Opcional — pra walk-ins é só digitar
+ * direto nos campos. Só é montado com o modal aberto (não consulta à toa).
+ */
+function StudentPicker({
+	onSelect,
+}: {
+	onSelect: (s: { name: string; email: string; phone: string }) => void;
+}) {
+	const [search, setSearch] = useState('');
+	const [debounced, setDebounced] = useState('');
+	const [open, setOpen] = useState(false);
+	const ref = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const id = setTimeout(() => setDebounced(search.trim()), 300);
+		return () => clearTimeout(id);
+	}, [search]);
+
+	const { data, isFetching } = useStudents({
+		q: debounced || undefined,
+		limit: 8,
+	});
+	const students = data?.items ?? [];
+
+	useEffect(() => {
+		function onDoc(e: MouseEvent) {
+			if (ref.current && !ref.current.contains(e.target as Node))
+				setOpen(false);
+		}
+		if (open) document.addEventListener('mousedown', onDoc);
+		return () => document.removeEventListener('mousedown', onDoc);
+	}, [open]);
+
+	return (
+		<div className="sm:col-span-2 relative" ref={ref}>
+			<label
+				htmlFor="create-student-search"
+				className="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1"
+			>
+				Aluno cadastrado (opcional)
+			</label>
+			<div className="relative">
+				<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-gray-600" />
+				<input
+					id="create-student-search"
+					type="text"
+					value={search}
+					onChange={(e) => {
+						setSearch(e.target.value);
+						setOpen(true);
+					}}
+					onFocus={() => setOpen(true)}
+					placeholder="Buscar por nome ou email…"
+					autoComplete="off"
+					className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 pl-9 pr-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-500"
+				/>
+			</div>
+			{open && (
+				<div className="absolute z-20 mt-1 w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1f1f23] shadow-lg max-h-64 overflow-y-auto">
+					{isFetching && students.length === 0 ? (
+						<div className="px-3 py-2 text-sm text-slate-500 flex items-center gap-2">
+							<Loader2 className="w-4 h-4 animate-spin" /> Buscando…
+						</div>
+					) : students.length === 0 ? (
+						<div className="px-3 py-2 text-sm text-slate-500">
+							Nenhum aluno encontrado.
+						</div>
+					) : (
+						students.map((s) => (
+							<button
+								key={s.id}
+								type="button"
+								onClick={() => {
+									onSelect({
+										name: s.name ?? '',
+										email: s.email,
+										phone: s.phone ?? '',
+									});
+									setSearch(s.name ?? s.email);
+									setOpen(false);
+								}}
+								className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-white/5"
+							>
+								<p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+									{s.name ?? s.email}
+								</p>
+								<p className="text-xs text-slate-500 dark:text-gray-500 truncate">
+									{s.email}
+									{s.phone ? ` · ${s.phone}` : ''}
+								</p>
+							</button>
+						))
+					)}
+				</div>
+			)}
+			<p className="text-xs text-slate-400 dark:text-gray-600 mt-1">
+				Selecione pra preencher nome, email e telefone — ou deixe em branco e
+				digite manual.
+			</p>
+		</div>
+	);
+}
 
 interface CreateAppointmentModalProps {
 	isOpen: boolean;
@@ -177,6 +283,13 @@ export function CreateAppointmentModal({
 
 				<form onSubmit={handleSubmit} className="p-6 space-y-4">
 					<div className="grid gap-4 sm:grid-cols-2">
+						<StudentPicker
+							onSelect={(s) => {
+								setCustomerName(s.name);
+								setCustomerEmail(s.email);
+								setCustomerPhone(s.phone);
+							}}
+						/>
 						<div>
 							<label
 								htmlFor="create-customerName"

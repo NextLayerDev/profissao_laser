@@ -59,6 +59,29 @@ export interface CreateDayOffPayload {
 	reason?: string;
 }
 
+export type Weekday = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+
+/** Bloqueio que fecha um dia da semana TODA semana (dia todo ou faixa de hora). */
+export interface RecurringBlock {
+	id: string;
+	technicianId: string | null;
+	weekday: Weekday;
+	/** Faixa bloqueada; null/null = dia inteiro. */
+	startTime: string | null;
+	endTime: string | null;
+	reason: string | null;
+	createdBy: string | null;
+	createdAt: string;
+}
+
+export interface CreateRecurringBlockPayload {
+	technicianId?: string | null;
+	weekday: Weekday;
+	startTime?: string | null;
+	endTime?: string | null;
+	reason?: string;
+}
+
 export interface TechnicianSchedule {
 	id: string;
 	technicianId: string;

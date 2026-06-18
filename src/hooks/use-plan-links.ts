@@ -8,12 +8,23 @@ import {
 	redeemPlanLink,
 	updatePlanLinkStatus,
 } from '@/services/plan-links';
-import type { CreatePlanLinkPayload } from '@/types/plan-link';
+import type {
+	CompanyInvoiceSource,
+	CreatePlanLinkPayload,
+} from '@/types/plan-link';
+
+export interface InvoiceFilters {
+	source?: CompanyInvoiceSource;
+	from?: string;
+	to?: string;
+	q?: string;
+}
 
 const KEYS = {
 	links: ['plan-links'] as const,
 	public: (token: string) => ['plan-link-public', token] as const,
-	invoice: (offset: number) => ['company-invoice', offset] as const,
+	invoice: (offset: number, filters: InvoiceFilters) =>
+		['company-invoice', offset, filters] as const,
 	redemptions: (offset: number) => ['plan-link-redemptions', offset] as const,
 };
 
@@ -61,11 +72,12 @@ export function useRedeemPlanLink(token: string) {
 
 const INVOICE_PAGE_SIZE = 50;
 
-export function useCompanyInvoice(page: number) {
+export function useCompanyInvoice(page: number, filters: InvoiceFilters = {}) {
 	const offset = page * INVOICE_PAGE_SIZE;
 	return useQuery({
-		queryKey: KEYS.invoice(offset),
-		queryFn: () => getCompanyInvoice({ limit: INVOICE_PAGE_SIZE, offset }),
+		queryKey: KEYS.invoice(offset, filters),
+		queryFn: () =>
+			getCompanyInvoice({ limit: INVOICE_PAGE_SIZE, offset, ...filters }),
 		placeholderData: (prev) => prev,
 	});
 }

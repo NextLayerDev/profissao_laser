@@ -5,18 +5,22 @@ import { toast } from 'sonner';
 import {
 	addDayOff,
 	addHoliday,
+	addRecurringBlock,
 	deleteDayOff,
 	deleteHoliday,
+	deleteRecurringBlock,
 	getGlobalConfig,
 	getTechSchedule,
 	listDaysOff,
 	listHolidays,
+	listRecurringBlocks,
 	updateGlobalConfig,
 	upsertTechSchedule,
 } from '@/services/appointment-config';
 import type {
 	CreateDayOffPayload,
 	CreateHolidayPayload,
+	CreateRecurringBlockPayload,
 	UpdateGlobalConfigPayload,
 	UpsertTechnicianSchedulePayload,
 } from '@/types/appointment-config';
@@ -117,6 +121,47 @@ export function useDeleteDayOff() {
 			toast.success('Folga removida');
 		},
 		onError: () => toast.error('Erro ao remover folga'),
+	});
+}
+
+const recurringBlocksKey = (technicianId?: string, weekday?: string) =>
+	['appointment-config', 'recurring-blocks', technicianId, weekday] as const;
+
+export function useRecurringBlocks(params?: {
+	technicianId?: string;
+	weekday?: string;
+}) {
+	return useQuery({
+		queryKey: recurringBlocksKey(params?.technicianId, params?.weekday),
+		queryFn: () => listRecurringBlocks(params),
+	});
+}
+
+export function useAddRecurringBlock() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (payload: CreateRecurringBlockPayload) =>
+			addRecurringBlock(payload),
+		onSuccess: () => {
+			invalidateAll(qc);
+			toast.success('Bloqueio recorrente adicionado!');
+		},
+		onError: (e) =>
+			toast.error(
+				e instanceof Error ? e.message : 'Erro ao adicionar bloqueio',
+			),
+	});
+}
+
+export function useDeleteRecurringBlock() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (id: string) => deleteRecurringBlock(id),
+		onSuccess: () => {
+			invalidateAll(qc);
+			toast.success('Bloqueio removido');
+		},
+		onError: () => toast.error('Erro ao remover bloqueio'),
 	});
 }
 

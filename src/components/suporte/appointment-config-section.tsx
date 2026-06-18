@@ -6,6 +6,7 @@ import {
 	Clock,
 	Loader2,
 	Plus,
+	Repeat,
 	Trash2,
 	UserCog,
 } from 'lucide-react';
@@ -13,11 +14,14 @@ import { useState } from 'react';
 import {
 	useAddDayOff,
 	useAddHoliday,
+	useAddRecurringBlock,
 	useDaysOff,
 	useDeleteDayOff,
 	useDeleteHoliday,
+	useDeleteRecurringBlock,
 	useGlobalConfig,
 	useHolidays,
+	useRecurringBlocks,
 	useTechSchedule,
 	useUpdateGlobalConfig,
 	useUpsertTechSchedule,
@@ -26,8 +30,21 @@ import { useUsers } from '@/hooks/use-users';
 import type {
 	UpdateGlobalConfigPayload,
 	UpsertTechnicianSchedulePayload,
+	Weekday,
 	WorkingDays,
 } from '@/types/appointment-config';
+
+const WEEKDAY_LABELS: Array<{ key: Weekday; label: string }> = [
+	{ key: 'mon', label: 'Segunda' },
+	{ key: 'tue', label: 'Terça' },
+	{ key: 'wed', label: 'Quarta' },
+	{ key: 'thu', label: 'Quinta' },
+	{ key: 'fri', label: 'Sexta' },
+	{ key: 'sat', label: 'Sábado' },
+	{ key: 'sun', label: 'Domingo' },
+];
+const weekdayLabel = (w: Weekday) =>
+	WEEKDAY_LABELS.find((d) => d.key === w)?.label ?? w;
 
 const DAY_LABELS: Array<{ key: keyof WorkingDays; label: string }> = [
 	{ key: 'mon', label: 'Seg' },
@@ -478,6 +495,167 @@ function DaysOffCard() {
 	);
 }
 
+// ─── Recurring blocks card ───────────────────────────────────────────────
+
+function RecurringBlocksCard() {
+	const { users } = useUsers();
+	const technicians = users.filter(
+		(u) =>
+			u.role?.toLowerCase() === 'tecnico' ||
+			u.role?.toLowerCase() === 'colaborador',
+	);
+	const { data: blocks = [], isLoading } = useRecurringBlocks();
+	const add = useAddRecurringBlock();
+	const del = useDeleteRecurringBlock();
+
+	const [techId, setTechId] = useState<string>('');
+	const [weekday, setWeekday] = useState<Weekday>('fri');
+	const [startTime, setStartTime] = useState('');
+	const [endTime, setEndTime] = useState('');
+	const [reason, setReason] = useState('');
+
+	// Faixa: ou os dois preenchidos (e início < fim), ou nenhum (dia todo).
+	const rangeInvalid =
+		(!!startTime && !endTime) ||
+		(!startTime && !!endTime) ||
+		(!!startTime && !!endTime && startTime >= endTime);
+
+	const onAdd = () => {
+		if (rangeInvalid) return;
+		add.mutate(
+			{
+				technicianId: techId || null,
+				weekday,
+				startTime: startTime || null,
+				endTime: endTime || null,
+				reason: reason.trim() || undefined,
+			},
+			{
+				onSuccess: () => {
+					setStartTime('');
+					setEndTime('');
+					setReason('');
+				},
+			},
+		);
+	};
+
+	return (
+		<CardShell title="Bloqueios recorrentes" icon={Repeat}>
+			<div className="space-y-3">
+				<div className="grid grid-cols-2 gap-2">
+					<select
+						value={techId}
+						onChange={(e) => setTechId(e.target.value)}
+						className="h-10 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white px-3 focus:outline-none focus:border-violet-500"
+					>
+						<option value="">Geral (todos)</option>
+						{technicians.map((t) => (
+							<option key={t.id} value={t.id}>
+								{t.name}
+							</option>
+						))}
+					</select>
+					<select
+						value={weekday}
+						onChange={(e) => setWeekday(e.target.value as Weekday)}
+						className="h-10 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white px-3 focus:outline-none focus:border-violet-500"
+					>
+						{WEEKDAY_LABELS.map((d) => (
+							<option key={d.key} value={d.key}>
+								Toda {d.label}
+							</option>
+						))}
+					</select>
+				</div>
+				<div className="grid grid-cols-[1fr_1fr_auto] gap-2">
+					<input
+						type="time"
+						value={startTime}
+						onChange={(e) => setStartTime(e.target.value)}
+						aria-label="Início do bloqueio"
+						className="h-10 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white px-3 focus:outline-none focus:border-violet-500"
+					/>
+					<input
+						type="time"
+						value={endTime}
+						onChange={(e) => setEndTime(e.target.value)}
+						aria-label="Fim do bloqueio"
+						className="h-10 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white px-3 focus:outline-none focus:border-violet-500"
+					/>
+					<button
+						type="button"
+						onClick={onAdd}
+						disabled={rangeInvalid || add.isPending}
+						className="inline-flex items-center gap-1 px-3 h-10 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg"
+					>
+						<Plus className="w-4 h-4" />
+						Add
+					</button>
+				</div>
+				<p className="text-xs text-slate-500 dark:text-gray-400">
+					{rangeInvalid
+						? 'Preencha início e fim (início antes do fim), ou deixe os dois vazios.'
+						: 'Horário vazio = fecha o dia todo. Vale toda semana.'}
+				</p>
+				<input
+					type="text"
+					value={reason}
+					onChange={(e) => setReason(e.target.value)}
+					placeholder="Motivo (opcional)"
+					className="w-full h-10 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 px-3 focus:outline-none focus:border-violet-500"
+				/>
+
+				{isLoading ? (
+					<Loader2 className="w-5 h-5 animate-spin text-violet-600 mt-2" />
+				) : blocks.length === 0 ? (
+					<p className="text-sm text-slate-500 dark:text-gray-400 py-4 text-center">
+						Nenhum bloqueio recorrente.
+					</p>
+				) : (
+					<ul className="space-y-2 max-h-72 overflow-y-auto">
+						{blocks.map((b) => {
+							const techName = b.technicianId
+								? (technicians.find((t) => t.id === b.technicianId)?.name ??
+									b.technicianId)
+								: 'Todos';
+							const when =
+								b.startTime && b.endTime
+									? `${b.startTime}–${b.endTime}`
+									: 'dia todo';
+							return (
+								<li
+									key={b.id}
+									className="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-white/5"
+								>
+									<div className="min-w-0">
+										<p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+											Toda {weekdayLabel(b.weekday)} · {when} — {techName}
+										</p>
+										{b.reason && (
+											<p className="text-xs text-slate-500 dark:text-gray-400 truncate">
+												{b.reason}
+											</p>
+										)}
+									</div>
+									<button
+										type="button"
+										onClick={() => del.mutate(b.id)}
+										className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+										aria-label="Remover"
+									>
+										<Trash2 className="w-4 h-4" />
+									</button>
+								</li>
+							);
+						})}
+					</ul>
+				)}
+			</div>
+		</CardShell>
+	);
+}
+
 // ─── Technician override card ────────────────────────────────────────────
 
 function TechnicianOverrideCard() {
@@ -698,14 +876,16 @@ export function AppointmentConfigBody() {
 					Configurações de agendamento
 				</h2>
 				<p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
-					Define horários, almoço, feriados e folgas. O slot picker do customer
-					respeita tudo isso automaticamente.
+					Define horários, almoço, feriados, folgas e bloqueios recorrentes
+					(ex.: toda sexta às 16h). O slot picker do customer respeita tudo isso
+					automaticamente.
 				</p>
 			</div>
 			<div className="grid gap-4 lg:grid-cols-2">
 				<GlobalHoursCard />
 				<HolidaysCard />
 				<DaysOffCard />
+				<RecurringBlocksCard />
 				<TechnicianOverrideCard />
 			</div>
 		</div>

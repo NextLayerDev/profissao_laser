@@ -12,7 +12,8 @@ export const PERMISSION_CATALOG: PermissionModule[] = [
 		label: 'Planos & Links',
 		actions: ['view', 'edit', 'delete', 'price'],
 	},
-	{ module: 'faturamento', label: 'Faturamento', actions: ['view'] },
+	{ module: 'faturamento', label: 'Faturas', actions: ['view'] },
+	{ module: 'financeiro', label: 'Financeiro', actions: ['view'] },
 	{ module: 'assinaturas', label: 'Assinaturas', actions: ['view', 'edit'] },
 	{ module: 'reembolsos', label: 'Reembolsos', actions: ['view', 'edit'] },
 	{ module: 'voxes', label: 'Voxes', actions: ['view'] },
@@ -62,6 +63,7 @@ export const NAV_VIEW_KEYS: Record<string, string[]> = {
 		'reembolsos.view',
 	],
 	Links: ['planos.view'],
+	Financeiro: ['financeiro.view'],
 	Relatórios: ['relatorios.view'],
 	Comunidade: ['ferramentas.view'], // Ajustado conforme módulos disponíveis
 	Fórum: ['cursos.view'], // Ajustado conforme módulos disponíveis

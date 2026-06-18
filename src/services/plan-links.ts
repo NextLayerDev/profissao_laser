@@ -1,8 +1,11 @@
 import { apiCourses } from '@/shared/lib/api-courses';
 import {
 	type CompanyInvoice,
+	type CompanyInvoiceSource,
 	type CreatePlanLinkPayload,
 	companyInvoiceSchema,
+	type FinanceAnalysis,
+	financeAnalysisSchema,
 	type PlanLink,
 	type PlanLinkListItem,
 	type PlanLinkRedemptions,
@@ -69,13 +72,30 @@ export async function redeemPlanLink(
 	return data as { checkout_url: string };
 }
 
-/** Fatura aberta da empresa (staff/admin). */
+/** Fatura aberta da empresa (staff/admin), com filtros opcionais. */
 export async function getCompanyInvoice(params: {
 	limit?: number;
 	offset?: number;
+	source?: CompanyInvoiceSource;
+	from?: string;
+	to?: string;
+	q?: string;
 }): Promise<CompanyInvoice> {
 	const { data } = await apiCourses.get('/v1/admin/company-invoice', {
 		params,
 	});
 	return companyInvoiceSchema.parse(data);
+}
+
+/** Análise IA do financeiro (sugestões pra aumentar o ganho), com os filtros. */
+export async function getFinanceAnalysis(params: {
+	source?: CompanyInvoiceSource;
+	from?: string;
+	to?: string;
+	q?: string;
+}): Promise<FinanceAnalysis> {
+	const { data } = await apiCourses.get('/v1/admin/company-invoice/analysis', {
+		params,
+	});
+	return financeAnalysisSchema.parse(data);
 }

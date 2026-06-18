@@ -2,9 +2,11 @@ import { api } from '@/lib/fetch';
 import type {
 	CreateDayOffPayload,
 	CreateHolidayPayload,
+	CreateRecurringBlockPayload,
 	DayOff,
 	GlobalConfig,
 	Holiday,
+	RecurringBlock,
 	TechnicianSchedule,
 	UpdateGlobalConfigPayload,
 	UpsertTechnicianSchedulePayload,
@@ -58,6 +60,30 @@ export async function addDayOff(payload: CreateDayOffPayload): Promise<DayOff> {
 
 export async function deleteDayOff(id: string): Promise<void> {
 	await api.delete(`${BASE}/days-off/${encodeURIComponent(id)}`);
+}
+
+export async function listRecurringBlocks(params?: {
+	technicianId?: string;
+	weekday?: string;
+}): Promise<RecurringBlock[]> {
+	const { data } = await api.get<RecurringBlock[]>(`${BASE}/recurring-blocks`, {
+		params: params ?? undefined,
+	});
+	return data ?? [];
+}
+
+export async function addRecurringBlock(
+	payload: CreateRecurringBlockPayload,
+): Promise<RecurringBlock> {
+	const { data } = await api.post<RecurringBlock>(
+		`${BASE}/recurring-blocks`,
+		payload,
+	);
+	return data;
+}
+
+export async function deleteRecurringBlock(id: string): Promise<void> {
+	await api.delete(`${BASE}/recurring-blocks/${encodeURIComponent(id)}`);
 }
 
 export async function getTechSchedule(
