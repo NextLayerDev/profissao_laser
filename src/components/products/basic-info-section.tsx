@@ -26,9 +26,9 @@ import {
 	useClasses,
 	useRemoveProductFromClass,
 } from '@/hooks/use-classes';
-import { useUpdateProduct, useUploadProductImage } from '@/hooks/use-products';
 import { usePermissions } from '@/modules/access';
-import type { Product } from '@/types/products';
+import type { Product } from '@/modules/catalog';
+import { useUpdateProduct, useUploadProductImage } from '@/modules/catalog';
 import { TIER_STYLES } from '@/utils/constants/tier-styles';
 import { formatCurrency } from '@/utils/format-currency';
 import { formatDate } from '@/utils/formatDate';

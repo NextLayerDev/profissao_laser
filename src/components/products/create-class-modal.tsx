@@ -10,7 +10,7 @@ import {
 	useRemoveProductFromClass,
 	useUpdateClass,
 } from '@/hooks/use-classes';
-import { useProducts } from '@/hooks/use-products';
+import { useProducts } from '@/modules/catalog';
 import type { ClassTier } from '@/types/classes';
 import type { CreateClassModalProps } from '@/types/components/create-class-modal';
 import { TIER_OPTIONS, TIER_STYLES } from '@/utils/constants/tier-styles';

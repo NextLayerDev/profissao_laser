@@ -10,12 +10,14 @@ import {
 	type UpdateProductPayload,
 	updateProduct,
 	uploadProductImage,
-} from '@/services/products';
-import type { Product } from '@/types/products';
+} from '../services/products.service';
+import type { Product } from '../types/products';
+
+export const productsQueryKey = ['products'] as const;
 
 export function useProducts() {
 	const { data, error, isLoading } = useQuery({
-		queryKey: ['products'],
+		queryKey: productsQueryKey,
 		queryFn: getProducts,
 	});
 
@@ -30,7 +32,7 @@ export function useCreateProduct() {
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (payload: CreateProductPayload) => createProduct(payload),
-		onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }),
+		onSuccess: () => qc.invalidateQueries({ queryKey: productsQueryKey }),
 	});
 }
 
@@ -38,7 +40,7 @@ export function useDeleteProduct() {
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (id: string) => deleteProduct(id),
-		onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }),
+		onSuccess: () => qc.invalidateQueries({ queryKey: productsQueryKey }),
 	});
 }
 
@@ -52,7 +54,7 @@ export function useUpdateProduct() {
 			id: string;
 			payload: UpdateProductPayload;
 		}) => updateProduct(id, payload),
-		onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }),
+		onSuccess: () => qc.invalidateQueries({ queryKey: productsQueryKey }),
 	});
 }
 
@@ -61,7 +63,7 @@ export function useUploadProductImage() {
 	return useMutation({
 		mutationFn: ({ id, file }: { id: string; file: File }) =>
 			uploadProductImage(id, file),
-		onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }),
+		onSuccess: () => qc.invalidateQueries({ queryKey: productsQueryKey }),
 	});
 }
 
@@ -80,7 +82,7 @@ export function useDuplicateProduct() {
 			systemClassIds?: string[];
 		}) => duplicateProduct(product, classId, payment, systemClassIds ?? []),
 		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: ['products'] });
+			qc.invalidateQueries({ queryKey: productsQueryKey });
 			qc.invalidateQueries({ queryKey: ['classes'] });
 			qc.invalidateQueries({ queryKey: ['system-classes'] });
 		},

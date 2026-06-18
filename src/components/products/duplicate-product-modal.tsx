@@ -4,13 +4,13 @@ import { Check, Copy, Loader2, Settings2, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useClasses } from '@/hooks/use-classes';
-import { useDuplicateProduct } from '@/hooks/use-products';
 import { useSystemClasses } from '@/hooks/use-system-classes';
+import type { Product } from '@/modules/catalog';
+import { useDuplicateProduct } from '@/modules/catalog';
 import type {
 	ProductClassInfo,
 	ProductSystemClassInfo,
 } from '@/types/components/product-card';
-import type { Product } from '@/types/products';
 import { TIER_STYLES } from '@/utils/constants/tier-styles';
 
 interface DuplicateProductModalProps {

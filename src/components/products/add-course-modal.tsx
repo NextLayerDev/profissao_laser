@@ -4,8 +4,7 @@ import { ImagePlus, Loader2, X } from 'lucide-react';
 import Image from 'next/image';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { useCreateProduct } from '@/hooks/use-products';
-import { uploadProductImage } from '@/services/products';
+import { uploadProductImage, useCreateProduct } from '@/modules/catalog';
 import type { AddCourseModalProps } from '@/types/components/add-course-modal';
 
 const LANGUAGE_OPTIONS = [

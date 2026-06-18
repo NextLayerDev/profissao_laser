@@ -2,7 +2,7 @@
 
 import { Gift, Link2, X } from 'lucide-react';
 import { useState } from 'react';
-import type { Product } from '@/types/products';
+import type { Product } from '@/modules/catalog';
 import { PaymentLinksTable } from './payment-links-table';
 import { PromoLinksTable } from './promo-links-table';
 

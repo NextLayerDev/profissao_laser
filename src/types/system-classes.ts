@@ -1,6 +1,6 @@
 import { z } from 'zod';
+import { productSchema } from '@/modules/catalog';
 import { classSchema } from './classes';
-import { productSchema } from './products';
 
 export const systemClassSchema = z.object({
 	id: z.string().uuid(),

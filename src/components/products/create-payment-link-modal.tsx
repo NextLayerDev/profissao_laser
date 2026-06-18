@@ -4,8 +4,8 @@ import { Check, Copy, Loader2, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useCreatePaymentLink } from '@/hooks/use-payment-links';
+import type { Product } from '@/modules/catalog';
 import type { CreatePaymentLinkResponse } from '@/types/payment-link';
-import type { Product } from '@/types/products';
 
 interface CreatePaymentLinkModalProps {
 	product: Product;

@@ -8,7 +8,7 @@ import {
 	useMyAddons,
 	useRemoveAddon,
 } from '@/hooks/use-addons';
-import { useProducts } from '@/hooks/use-products';
+import { useProducts } from '@/modules/catalog';
 import type { SubscriptionAddonItem } from '@/types/addons';
 import { formatCurrency } from '@/utils/format-currency';
 import { RemoveAddonModal } from './remove-addon-modal';

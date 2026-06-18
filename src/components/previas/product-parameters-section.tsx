@@ -21,10 +21,10 @@ import {
 	useProductParameters,
 	useUpdateProductParameter,
 } from '@/hooks/use-product-parameters';
+import { getProducts } from '@/modules/catalog';
 import { listAdminCourses } from '@/modules/courses';
 import { getCourse } from '@/services/course';
 import type { PassRecipe } from '@/services/parameters';
-import { getProducts } from '@/services/products';
 import type { Machine, MachineOptionCategory } from '@/types/machines';
 import type {
 	CreateProductParameterPayload,

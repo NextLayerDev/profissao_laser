@@ -1,6 +1,6 @@
+import type { Product } from '@/modules/catalog';
 import type { ClassWithProducts } from '@/types/classes';
 import type { CustomerPlan } from '@/types/plans';
-import type { Product } from '@/types/products';
 import type { SystemClassWithRelations } from '@/types/system-classes';
 
 export interface ProductVariant {

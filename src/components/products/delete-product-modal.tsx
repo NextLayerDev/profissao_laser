@@ -2,8 +2,8 @@
 
 import { AlertTriangle, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { useDeleteProduct } from '@/hooks/use-products';
-import type { Product } from '@/types/products';
+import type { Product } from '@/modules/catalog';
+import { useDeleteProduct } from '@/modules/catalog';
 
 interface DeleteProductModalProps {
 	product: Product;

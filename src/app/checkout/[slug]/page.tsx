@@ -16,12 +16,12 @@ import { CheckoutConfirmButton } from '@/components/checkout/checkout-confirm-bu
 import { CheckoutProductSummary } from '@/components/checkout/checkout-product-summary';
 import { useClasses } from '@/hooks/use-classes';
 import { useOwnership } from '@/hooks/use-ownership';
-import { useProducts } from '@/hooks/use-products';
 import { useSystemClasses } from '@/hooks/use-system-classes';
 import { getCurrentUser } from '@/lib/auth';
+import type { Product } from '@/modules/catalog';
+import { useProducts } from '@/modules/catalog';
 import { createPurchase } from '@/services/purchase';
 import type { ClassWithProducts } from '@/types/classes';
-import type { Product } from '@/types/products';
 import type { SystemClassWithRelations } from '@/types/system-classes';
 
 interface ProductVariant {

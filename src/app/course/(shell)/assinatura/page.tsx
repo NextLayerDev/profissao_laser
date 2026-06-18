@@ -21,10 +21,10 @@ import {
 	useMySubscription,
 	useUpgradeMySubscription,
 } from '@/hooks/use-my-subscription';
-import { useProducts } from '@/hooks/use-products';
 import { getCurrentUser } from '@/lib/auth';
+import type { Product } from '@/modules/catalog';
+import { useProducts } from '@/modules/catalog';
 import type { MySubscription } from '@/types/my-subscription';
-import type { Product } from '@/types/products';
 
 function formatDate(iso: string) {
 	return new Date(iso).toLocaleDateString('pt-BR', {

@@ -31,8 +31,11 @@
 - [x] Consumidores migrados p/ `@/modules/plans`; legados deletados; build limpo.
 
 ### 4. `catalog`
-- [ ] `modules/catalog/services/products.service.ts` ← `src/services/products.ts`
-- [ ] `modules/catalog/types/products.ts` (+ Zod)
+- [x] `modules/catalog/services/products.service.ts` ← `src/services/products.ts` (client → `apiCourses`; upload via apiCourses)
+- [x] `modules/catalog/types/products.ts` (Zod já existia)
+- [x] `modules/catalog/hooks/use-products.ts` (`productsQueryKey` exportada)
+- [x] ~30 consumidores migrados p/ `@/modules/catalog`; legados deletados; build limpo.
+- Nota: `lib/duplicate-product.ts` importa os subcaminhos do catalog (não o barrel) para evitar ciclo com o hook.
 
 ### 5. `access`
 - [x] `modules/access/services/auth.service.ts` ← `src/services/auth.ts` (client → `apiCourses`)

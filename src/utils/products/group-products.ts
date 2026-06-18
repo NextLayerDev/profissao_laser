@@ -1,4 +1,4 @@
-import type { Product } from '@/types/products';
+import type { Product } from '@/modules/catalog';
 
 /**
  * Agrupa produtos por `name`, preservando a ordem de primeira aparição

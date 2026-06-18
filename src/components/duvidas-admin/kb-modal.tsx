@@ -3,7 +3,7 @@
 import { ChevronRight, Loader2, Play, X } from 'lucide-react';
 import { useState } from 'react';
 import { useCourseContent } from '@/hooks/use-course-content';
-import { useProducts } from '@/hooks/use-products';
+import { useProducts } from '@/modules/catalog';
 import type { CreateKnowledgeBasePayload } from '@/services/knowledge-base';
 import type { KnowledgeBaseArticle } from '@/types/knowledge-base';
 

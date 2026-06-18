@@ -19,8 +19,7 @@ import { DuplicateProductModal } from '@/components/products/duplicate-product-m
 import { ProductSystemClassesSection } from '@/components/products/product-system-classes-section';
 import { VersionSelector } from '@/components/products/version-selector';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { useProducts } from '@/hooks/use-products';
-import { updateProductStatus } from '@/services/products';
+import { updateProductStatus, useProducts } from '@/modules/catalog';
 import { pickDefaultVersion } from '@/utils/products/group-products';
 
 type ActiveMenu =

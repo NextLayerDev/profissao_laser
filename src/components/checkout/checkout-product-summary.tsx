@@ -3,8 +3,8 @@
 import { Check, ShieldCheck, Sparkles, Star, X } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
+import type { Product } from '@/modules/catalog';
 import type { ClassWithProducts } from '@/types/classes';
-import type { Product } from '@/types/products';
 import type { SystemClassWithRelations } from '@/types/system-classes';
 import { CLASS_FEATURES } from '@/utils/constants/class-features';
 import { SC_OPTIONS } from '@/utils/constants/system-class-options';

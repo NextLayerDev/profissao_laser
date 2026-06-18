@@ -4,13 +4,13 @@ import { Layers, Loader2, Package, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useClasses } from '@/hooks/use-classes';
-import { useProducts } from '@/hooks/use-products';
 import {
 	useLinkClass,
 	useLinkProduct,
 	useUnlinkClass,
 	useUnlinkProduct,
 } from '@/hooks/use-system-classes';
+import { useProducts } from '@/modules/catalog';
 import type { SystemClassAssociationsModalProps } from '@/types/components/system-class-associations-modal';
 
 export function SystemClassAssociationsModal({

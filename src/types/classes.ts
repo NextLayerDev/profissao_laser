@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { productSchema } from './products';
+import { productSchema } from '@/modules/catalog';
 
 export const classTierSchema = z.enum(['prata', 'ouro', 'platina']);
 export type ClassTier = z.infer<typeof classTierSchema>;

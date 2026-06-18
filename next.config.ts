@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
 			'lucide-react',
 			'recharts',
 			'@/modules/access',
+			'@/modules/catalog',
 			'@/modules/plans',
 		],
 	},

@@ -1,5 +1,5 @@
+import type { Product } from '@/modules/catalog';
 import type { ClassTier } from '../classes';
-import type { Product } from '../products';
 
 export interface ProductClassInfo {
 	id: string;

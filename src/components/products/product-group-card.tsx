@@ -3,8 +3,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import type { Product } from '@/modules/catalog';
 import type { ProductSystemClassInfo } from '@/types/components/product-card';
-import type { Product } from '@/types/products';
 import { formatCurrency } from '@/utils/format-currency';
 import {
 	groupStartingPrice,

@@ -1,5 +1,5 @@
+import type { Product } from '@/modules/catalog';
 import type { ClassWithProducts } from '../classes';
-import type { Product } from '../products';
 import type { SystemClassWithRelations } from '../system-classes';
 
 export interface ProductGridProps {

@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { useCourseContent } from '@/hooks/use-course-content';
-import { useProducts } from '@/hooks/use-products';
+import { useProducts } from '@/modules/catalog';
 import type {
 	CreateVectorizeHelpPayload,
 	VectorizeHelpIcon,

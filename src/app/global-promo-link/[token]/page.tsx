@@ -29,11 +29,11 @@ import {
 	useGlobalPromoLinkInfo,
 	useRedeemGlobalPromoLink,
 } from '@/hooks/use-global-promo-links';
-import { useProducts } from '@/hooks/use-products';
 import { useSystemClasses } from '@/hooks/use-system-classes';
+import type { Product } from '@/modules/catalog';
+import { useProducts } from '@/modules/catalog';
 import type { ClassWithProducts } from '@/types/classes';
 import type { GlobalPromoLinkProduct } from '@/types/global-promo-link';
-import type { Product } from '@/types/products';
 import type { SystemClassWithRelations } from '@/types/system-classes';
 import { CLASS_FEATURES } from '@/utils/constants/class-features';
 import {

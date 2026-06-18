@@ -1,4 +1,5 @@
 import { api } from '@/lib/fetch';
+import { type Product, productSchema } from '@/modules/catalog';
 import {
 	type CreateAddonPayload,
 	type RemoveAddonResponse,
@@ -6,7 +7,6 @@ import {
 	type SubscriptionAddonItem,
 	subscriptionAddonItemSchema,
 } from '@/types/addons';
-import { type Product, productSchema } from '@/types/products';
 
 export async function createAddon(
 	payload: CreateAddonPayload,

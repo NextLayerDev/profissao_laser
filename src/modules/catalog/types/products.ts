@@ -1,14 +1,24 @@
-/**
- * MIGRAÇÃO — Onda 1 · módulo `catalog`
- * Origem legada: tipos de produto hoje em src/types.
- *
- * [ ] Reunir os tipos de produto aqui.
- * [ ] Adicionar schema Zod (`productSchema`).
- * [ ] Exportar type + schema no index.ts do módulo.
- */
+import { z } from 'zod';
 
-// import { z } from 'zod';
-// export const productSchema = z.object({ ... });
-// export type Product = z.infer<typeof productSchema>;
+export const productSchema = z.object({
+	id: z.uuid(),
+	name: z.string(),
+	type: z.string(),
+	description: z.string().nullable(),
+	image: z.string().nullable(),
+	price: z.number(),
+	status: z.enum(['ativo', 'inativo', 'excluido']),
+	slug: z.string(),
+	createdAt: z.string(),
+	updatedAt: z.string(),
+	language: z.string(),
+	country: z.string(),
+	category: z.string().nullable(),
+	refundDays: z.number().nullable(),
+	stripeProductId: z.string().nullable(),
+	stripePriceId: z.string().nullable(),
+	machine: z.string().nullable(),
+	software: z.string().nullable(),
+});
 
-export {};
+export type Product = z.infer<typeof productSchema>;

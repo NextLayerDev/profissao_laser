@@ -1,3 +1,8 @@
+import {
+	createProduct,
+	uploadProductImage,
+} from '@/modules/catalog/services/products.service';
+import type { Product } from '@/modules/catalog/types/products';
 import { addProductToClass } from '@/services/classes';
 import {
 	createLesson,
@@ -5,7 +10,6 @@ import {
 	getLessons,
 	getModules,
 } from '@/services/modules';
-import { createProduct, uploadProductImage } from '@/services/products';
 import {
 	createLessonQuiz,
 	createQuestion,
@@ -13,7 +17,6 @@ import {
 } from '@/services/quiz';
 import { linkProduct } from '@/services/system-classes';
 import type { Lesson, Module } from '@/types/modules';
-import type { Product } from '@/types/products';
 import type { CreateQuestionPayload } from '@/types/quiz';
 
 function uniqueSlug(original: string): string {

@@ -4,7 +4,7 @@ import { Check, Copy, Loader2, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useCreatePromoLink } from '@/hooks/use-promo-links';
-import type { Product } from '@/types/products';
+import type { Product } from '@/modules/catalog';
 import type { CreatePromoLinkResponse } from '@/types/promo-link';
 
 interface CreatePromoLinkModalProps {
