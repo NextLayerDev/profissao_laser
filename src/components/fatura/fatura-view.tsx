@@ -292,6 +292,22 @@ function LastroVoxxysSection({ voxxy }: { voxxy: VoxxyLastro | undefined }) {
 	const company = voxxy?.company_share_cents ?? 0;
 	const perCustomer = voxxy?.per_customer ?? [];
 
+	// Voxxys do plano (R$1,20/vox doado): 50/50 no uso; não usado = custo empresa.
+	const planCompany = voxxy?.plan_company_share_cents ?? 0;
+	const planUsedValue = voxxy?.plan_used_value_cents ?? 0;
+	const planUpvox = voxxy?.plan_upvox_share_cents ?? 0;
+	const planUnused = voxxy?.plan_unused_value_cents ?? 0;
+	const planGranted = planUsedValue + planUnused;
+	const planPerCustomer = perCustomer
+		.filter(
+			(c) =>
+				(c.plan_used_value_cents ?? 0) + (c.plan_unused_value_cents ?? 0) > 0,
+		)
+		.sort(
+			(a, b) =>
+				(b.plan_company_share_cents ?? 0) - (a.plan_company_share_cents ?? 0),
+		);
+
 	return (
 		<div className="space-y-6">
 			{/* Cards */}
@@ -373,6 +389,104 @@ function LastroVoxxysSection({ voxxy }: { voxxy: VoxxyLastro | undefined }) {
 										</td>
 										<td className="py-2 text-right tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
 											{fmtBRL(c.company_share_cents)}
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
+				)}
+			</div>
+
+			{/* ── Voxxys do plano (doados) ── */}
+			<div className="pt-2">
+				<h3 className="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+					<Gem className="w-4 h-4 text-violet-500 dark:text-violet-400" />
+					Voxxys do plano (doados)
+				</h3>
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+					<HeroStat
+						tone="emerald"
+						Icon={PiggyBank}
+						label="Ganho da empresa"
+						value={fmtBRL(planCompany)}
+						hint="50% dos voxxys de plano que já foram usados."
+					/>
+					<HeroStat
+						tone="primary"
+						Icon={Coins}
+						label="Usados (valor)"
+						value={fmtBRL(planUsedValue)}
+						hint={`Split: upvox ${fmtBRL(planUpvox)} · empresa ${fmtBRL(planCompany)}.`}
+					/>
+					<HeroStat
+						tone="sky"
+						Icon={Boxes}
+						label="Não usados (custo)"
+						value={fmtBRL(planUnused)}
+						hint="Doados no plano e não usados (100% custo da empresa)."
+					/>
+					<HeroStat
+						tone="sky"
+						Icon={Gem}
+						label="Total concedido"
+						value={fmtBRL(planGranted)}
+						hint="Tudo que a empresa doou no plano (R$1,20/vox)."
+					/>
+				</div>
+			</div>
+
+			<p className="text-xs text-slate-500 dark:text-gray-500">
+				Voxxys que a empresa <strong>doa no plano</strong> (R$1,20/vox). No uso,
+				a upvox devolve <strong>50%</strong> pra empresa (sai da Fatura upvox);
+				o que não é usado fica 100% como custo dela.
+			</p>
+
+			{/* Plano por cliente */}
+			<div className="rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-5">
+				<div className="flex items-center gap-2 mb-3 text-sm font-semibold text-slate-700 dark:text-gray-300">
+					<Users className="w-4 h-4 text-slate-400 dark:text-gray-500" />
+					Plano por cliente
+				</div>
+				{planPerCustomer.length === 0 ? (
+					<p className="text-sm text-slate-500 dark:text-gray-600">
+						Nenhum voxxy de plano no período.
+					</p>
+				) : (
+					<div className="overflow-x-auto">
+						<table className="w-full text-sm">
+							<thead>
+								<tr className="text-left text-xs text-slate-400 dark:text-gray-600">
+									<th className="font-medium pb-2">Cliente</th>
+									<th className="font-medium pb-2 text-right">Concedido</th>
+									<th className="font-medium pb-2 text-right">Usou</th>
+									<th className="font-medium pb-2 text-right">Não usou</th>
+									<th className="font-medium pb-2 text-right">Ganho</th>
+								</tr>
+							</thead>
+							<tbody>
+								{planPerCustomer.map((c) => (
+									<tr
+										key={c.customer_id}
+										className="border-t border-slate-100 dark:border-gray-800/50"
+									>
+										<td className="py-2 text-slate-800 dark:text-gray-200 truncate max-w-[220px]">
+											{c.customer_name ?? c.customer_email ?? '—'}
+										</td>
+										<td className="py-2 text-right tabular-nums text-slate-600 dark:text-gray-400">
+											{fmtBRL(
+												(c.plan_used_value_cents ?? 0) +
+													(c.plan_unused_value_cents ?? 0),
+											)}
+										</td>
+										<td className="py-2 text-right tabular-nums text-slate-600 dark:text-gray-400">
+											{fmtBRL(c.plan_used_value_cents ?? 0)}
+										</td>
+										<td className="py-2 text-right tabular-nums text-sky-600 dark:text-sky-400">
+											{fmtBRL(c.plan_unused_value_cents ?? 0)}
+										</td>
+										<td className="py-2 text-right tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
+											{fmtBRL(c.plan_company_share_cents ?? 0)}
 										</td>
 									</tr>
 								))}
@@ -748,6 +862,13 @@ export function FaturaView() {
 								label="Voxxy comprado (50%)"
 								value={fmtBRL(totals?.vox_purchase_use_cents ?? 0)}
 								hint="50% da upvox sobre voxxy comprado usado."
+							/>
+							<SummaryCard
+								tone="emerald"
+								Icon={Sparkles}
+								label="Voxxys do plano (−50%)"
+								value={`− ${fmtBRL(totals?.plan_use_company_share_cents ?? 0)}`}
+								hint="Crédito: 50% volta pra empresa nos voxxys de plano usados."
 							/>
 						</div>
 					</div>
