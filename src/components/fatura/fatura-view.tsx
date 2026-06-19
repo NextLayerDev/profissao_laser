@@ -887,7 +887,7 @@ export function FaturaView() {
 						<h3 className="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-3">
 							Composição do repasse à upvox
 						</h3>
-						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
 							<SummaryCard
 								tone="violet"
 								Icon={Gem}
