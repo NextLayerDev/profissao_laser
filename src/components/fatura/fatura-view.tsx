@@ -24,13 +24,14 @@ import {
 	Wrench,
 	X,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { type ComponentType, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
 	FinanceCharts,
 	type MonthRow,
 	type Slice,
 } from '@/components/fatura/finance-charts';
+import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 import {
 	INVOICE_PAGE_SIZE,
 	type InvoiceFilters,
@@ -211,12 +212,15 @@ function SummaryCard({
 	value,
 	hint,
 	tone,
+	accent = false,
 }: {
-	Icon: LucideIcon;
+	Icon: ComponentType<{ className?: string }>;
 	label: string;
 	value: string;
 	hint: string;
 	tone: 'emerald' | 'amber' | 'slate' | 'violet' | 'teal';
+	/** Pinta o valor com a cor do tom (reforça sensação de ganho). */
+	accent?: boolean;
 }) {
 	const tones: Record<typeof tone, string> = {
 		emerald:
@@ -243,7 +247,11 @@ function SummaryCard({
 				<Icon className="w-4 h-4" />
 				{label}
 			</div>
-			<p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white tabular-nums">
+			<p
+				className={`mt-2 text-2xl font-bold tabular-nums ${
+					accent ? iconTones[tone] : 'text-slate-900 dark:text-white'
+				}`}
+			>
 				{value}
 			</p>
 			<p className="text-xs text-slate-500 dark:text-gray-500 mt-1">{hint}</p>
@@ -925,10 +933,11 @@ export function FaturaView() {
 							/>
 							<SummaryCard
 								tone="emerald"
-								Icon={Sparkles}
-								label="Voxxys do plano (−50%)"
-								value={`− ${fmtBRL(totals?.plan_use_company_share_cents ?? 0)}`}
-								hint="Crédito: 50% volta pra empresa nos voxxys de plano usados."
+								accent
+								Icon={VoxxysIcon}
+								label="Voxxys de plano ganhos"
+								value={fmtBRL(totals?.plan_use_company_share_cents ?? 0)}
+								hint="50% que volta pra empresa nos voxxys de plano usados."
 							/>
 						</div>
 					</div>
