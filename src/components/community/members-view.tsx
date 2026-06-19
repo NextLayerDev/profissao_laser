@@ -7,6 +7,7 @@ import { ModalOverlay } from '@/components/ui/modal-overlay';
 import { MemberCardsSkeleton } from '@/components/ui/skeletons/community-grid-skeleton';
 import { useCommunityMembers } from '@/hooks/use-community';
 import type { Member } from '@/types/community';
+import { DEFAULT_BANNER } from '@/utils/constants/banner-presets';
 
 interface MembersViewProps {
 	isAdmin?: boolean;
@@ -79,14 +80,19 @@ export function MembersView({ isAdmin: _isAdmin = false }: MembersViewProps) {
 							<X className="h-4 w-4" />
 						</button>
 
-						{/* Banner */}
+						{/* Banner do membro (padrão p/ quem não escolheu) */}
 						<div
-							className={`h-28 ${
+							className={`relative h-28 bg-cover bg-center bg-violet-600 ${
 								selectedProfile.featured
-									? 'bg-gradient-to-r from-amber-500 via-orange-500 to-violet-600'
-									: 'bg-gradient-to-r from-violet-600 to-fuchsia-600'
+									? 'ring-2 ring-inset ring-amber-400/70'
+									: ''
 							}`}
-						/>
+							style={{
+								backgroundImage: `url(${selectedProfile.banner || DEFAULT_BANNER})`,
+							}}
+						>
+							<div className="absolute inset-0 bg-gradient-to-t from-black/35 to-transparent" />
+						</div>
 
 						<div className="px-6 pb-6">
 							{/* Avatar retangular sobreposto + dot de online */}
@@ -246,16 +252,21 @@ export function MembersView({ isAdmin: _isAdmin = false }: MembersViewProps) {
 									key={`${member.id}-${index}`}
 									className="group relative bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden hover:-translate-y-1 hover:border-violet-500/40 hover:shadow-xl hover:shadow-violet-500/10 transition-all duration-300"
 								>
-									{/* Banner */}
+									{/* Banner do membro (padrão p/ quem não escolheu) */}
 									<div
-										className={`relative h-20 ${
+										className={`relative h-20 bg-cover bg-center bg-violet-600 ${
 											member.featured
-												? 'bg-gradient-to-r from-amber-500 via-orange-500 to-violet-600'
-												: 'bg-gradient-to-r from-violet-600 to-fuchsia-600'
+												? 'ring-2 ring-inset ring-amber-400/70'
+												: ''
 										}`}
+										style={{
+											backgroundImage: `url(${member.banner || DEFAULT_BANNER})`,
+										}}
 									>
+										{/* leve escurecida embaixo p/ legibilidade do avatar/badge */}
+										<div className="absolute inset-0 bg-gradient-to-t from-black/35 to-transparent" />
 										{member.featured && (
-											<span className="absolute top-2 right-2 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/25 backdrop-blur-sm text-white text-[11px] font-semibold">
+											<span className="absolute top-2 right-2 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/35 backdrop-blur-sm text-white text-[11px] font-semibold">
 												<Crown className="h-3 w-3" />
 												{member.featuredRole || 'Destaque'}
 											</span>
