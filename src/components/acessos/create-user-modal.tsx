@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { usersQueryKeys } from '@/modules/users';
 import { createStaffUser } from '@/services/users';
+import { toE164 } from '@/utils/phone';
 
 interface CreateUserModalProps {
 	isOpen: boolean;
@@ -53,7 +54,7 @@ export function CreateUserModal({ isOpen, onClose }: CreateUserModalProps) {
 			email: email.trim(),
 			password,
 			role,
-			phone: phone.trim() || undefined,
+			phone: toE164(phone) || undefined,
 		});
 	}
 
