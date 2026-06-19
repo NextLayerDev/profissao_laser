@@ -3,6 +3,7 @@
 import {
 	Camera,
 	Check,
+	ImageIcon,
 	KeyRound,
 	Loader2,
 	Save,
@@ -18,8 +19,10 @@ import {
 	useChangeMyPassword,
 	useMyProfile,
 	useRemoveMyAvatar,
+	useRemoveMyBanner,
 	useUpdateMyProfile,
 	useUploadMyAvatar,
+	useUploadMyBanner,
 } from '@/hooks/use-profile';
 import {
 	AVATAR_PRESETS,
@@ -28,14 +31,23 @@ import {
 	isFestaSeason,
 	seasonalUrl,
 } from '@/utils/constants/avatar-presets';
+import {
+	BANNER_PRESETS,
+	bannerPresetUrl,
+	DEFAULT_BANNER,
+	isBannerPresetUrl,
+} from '@/utils/constants/banner-presets';
 
 export default function PerfilPage() {
 	const { data: profile, isLoading } = useMyProfile();
 	const updateProfile = useUpdateMyProfile();
 	const uploadAvatar = useUploadMyAvatar();
 	const removeAvatar = useRemoveMyAvatar();
+	const uploadBanner = useUploadMyBanner();
+	const removeBanner = useRemoveMyBanner();
 	const changePassword = useChangeMyPassword();
 	const fileRef = useRef<HTMLInputElement>(null);
+	const bannerFileRef = useRef<HTMLInputElement>(null);
 
 	const [name, setName] = useState('');
 	const [nickname, setNickname] = useState('');
@@ -77,6 +89,33 @@ export default function PerfilPage() {
 			{
 				onSuccess: () => toast.success('Ícone atualizado!'),
 				onError: () => toast.error('Erro ao trocar o ícone.'),
+			},
+		);
+	}
+
+	function handleBannerSelected(e: React.ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0];
+		e.target.value = '';
+		if (!file) return;
+		uploadBanner.mutate(file, {
+			onSuccess: () => toast.success('Banner atualizado!'),
+			onError: () => toast.error('Erro ao enviar o banner. Tente novamente.'),
+		});
+	}
+
+	function handleRemoveBanner() {
+		removeBanner.mutate(undefined, {
+			onSuccess: () => toast.success('Banner restaurado ao padrão.'),
+			onError: () => toast.error('Erro ao remover o banner. Tente novamente.'),
+		});
+	}
+
+	function pickBanner(url: string) {
+		updateProfile.mutate(
+			{ banner: url },
+			{
+				onSuccess: () => toast.success('Banner atualizado!'),
+				onError: () => toast.error('Erro ao trocar o banner.'),
 			},
 		);
 	}
@@ -142,6 +181,11 @@ export default function PerfilPage() {
 		'bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-6';
 
 	const avatarBusy = uploadAvatar.isPending || removeAvatar.isPending;
+	const bannerBusy = uploadBanner.isPending || removeBanner.isPending;
+	const currentBanner = profile?.banner || DEFAULT_BANNER;
+	// "Próprio" = banner enviado pelo cliente (URL do Bunny), não um dos presets.
+	const hasCustomBanner =
+		!!profile?.banner && !isBannerPresetUrl(profile.banner);
 
 	return (
 		<div className="px-4 sm:px-6 py-8 max-w-4xl mx-auto">
@@ -157,7 +201,49 @@ export default function PerfilPage() {
 				<div className="space-y-6">
 					{/* Hero / banner com avatar */}
 					<div className="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d]">
-						<div className="h-28 sm:h-36 bg-gradient-to-r from-violet-600 via-violet-500 to-fuchsia-500" />
+						<div
+							className="relative h-28 sm:h-36 bg-violet-600 bg-cover bg-center"
+							style={{ backgroundImage: `url(${currentBanner})` }}
+						>
+							{/* leve escurecida embaixo pra legibilidade dos controles */}
+							<div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+							{bannerBusy && (
+								<div className="absolute inset-0 grid place-items-center bg-black/40">
+									<Loader2 className="h-6 w-6 animate-spin text-white" />
+								</div>
+							)}
+							<div className="absolute right-3 top-3 flex items-center gap-2">
+								<button
+									type="button"
+									onClick={() => bannerFileRef.current?.click()}
+									disabled={bannerBusy}
+									title="Enviar banner"
+									className="inline-flex items-center gap-1.5 rounded-lg bg-black/45 px-2.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-black/60 disabled:opacity-60"
+								>
+									<Camera className="h-3.5 w-3.5" />
+									Enviar
+								</button>
+								{profile?.banner && (
+									<button
+										type="button"
+										onClick={handleRemoveBanner}
+										disabled={bannerBusy}
+										title="Restaurar banner padrão"
+										className="inline-flex items-center gap-1.5 rounded-lg bg-black/45 px-2.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-red-600/80 disabled:opacity-60"
+									>
+										<Trash2 className="h-3.5 w-3.5" />
+										Padrão
+									</button>
+								)}
+							</div>
+							<input
+								ref={bannerFileRef}
+								type="file"
+								accept="image/png,image/jpeg,image/webp,image/gif"
+								className="hidden"
+								onChange={handleBannerSelected}
+							/>
+						</div>
 						<div className="px-6 pb-6">
 							<div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-14 sm:-mt-16">
 								<div className="relative shrink-0">
@@ -279,6 +365,61 @@ export default function PerfilPage() {
 									</button>
 								);
 							})}
+						</div>
+					</div>
+
+					{/* Banner do perfil (subir o próprio ou escolher um padrão) */}
+					<div className={cardClass}>
+						<h3 className="font-display text-base font-bold text-slate-900 dark:text-white mb-1">
+							Banner do perfil
+						</h3>
+						<p className="text-sm text-slate-500 dark:text-gray-400 mb-4">
+							Escolha um dos padrões ou use “Enviar” no banner para subir a sua
+							imagem (JPG, PNG, WEBP ou GIF). Proporção ideal 4:1.
+						</p>
+						<div className="flex flex-wrap gap-3">
+							{BANNER_PRESETS.map((preset) => {
+								const url = bannerPresetUrl(preset);
+								const selected = !hasCustomBanner && currentBanner === url;
+								return (
+									<button
+										key={preset}
+										type="button"
+										onClick={() => pickBanner(url)}
+										disabled={updateProfile.isPending || bannerBusy}
+										title={preset}
+										className={`relative overflow-hidden rounded-xl transition-all disabled:opacity-60 ${
+											selected
+												? 'ring-2 ring-violet-500 ring-offset-2 ring-offset-white dark:ring-offset-[#1a1a1d]'
+												: 'opacity-80 hover:scale-[1.03] hover:opacity-100'
+										}`}
+									>
+										<img
+											src={url}
+											alt={preset}
+											className="h-14 w-56 object-cover sm:h-16 sm:w-64"
+										/>
+										{selected ? (
+											<span className="absolute bottom-1 right-1 grid h-5 w-5 place-items-center rounded-full bg-violet-600 text-white">
+												<Check className="h-3 w-3" />
+											</span>
+										) : null}
+									</button>
+								);
+							})}
+							{/* Cartão "seu banner" quando o cliente subiu o próprio */}
+							{hasCustomBanner ? (
+								<div className="relative overflow-hidden rounded-xl ring-2 ring-violet-500 ring-offset-2 ring-offset-white dark:ring-offset-[#1a1a1d]">
+									<img
+										src={profile?.banner ?? ''}
+										alt="Seu banner"
+										className="h-14 w-56 object-cover sm:h-16 sm:w-64"
+									/>
+									<span className="absolute bottom-1 left-1 inline-flex items-center gap-1 rounded-md bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white">
+										<ImageIcon className="h-3 w-3" /> Seu banner
+									</span>
+								</div>
+							) : null}
 						</div>
 					</div>
 

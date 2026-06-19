@@ -1,10 +1,11 @@
 /**
- * Ícones de perfil (estilo Netflix). 7 cores em /public/avatars.
+ * Ícones de perfil (estilo Netflix) em /public/avatars.
  * Default por gênero do nome: feminino rosa/roxo, masculino azul/verde.
- * Laranja, lima e vermelho são extras (disponíveis no picker pra todo mundo).
+ * Laranja, lima, vermelho e copa são extras (disponíveis no picker pra todo
+ * mundo). `copa` é tema próprio (Copa do Mundo) e NÃO tem variante de festa.
  *
- * Durante a Festa Junina (até 15/07), `seasonalUrl` troca cada ícone pela sua
- * versão temática em /avatars/festa — só no render, sem gravar nada no banco.
+ * Durante a Festa Junina (até 15/07), `seasonalUrl` troca os ícones de cor pela
+ * sua versão temática em /avatars/festa — só no render, sem gravar nada.
  */
 export const AVATAR_PRESETS = [
 	'rosa',
@@ -14,6 +15,7 @@ export const AVATAR_PRESETS = [
 	'laranja',
 	'lima',
 	'vermelho',
+	'copa',
 ] as const;
 export type AvatarPreset = (typeof AVATAR_PRESETS)[number];
 
@@ -33,6 +35,17 @@ export function isAvatarPresetUrl(url?: string | null): boolean {
 // sozinho ao normal — nada temático é gravado, a troca acontece só no render.
 const FESTA_UNTIL = new Date('2026-07-16T00:00:00-03:00');
 
+/** Presets com variante de festa em /avatars/festa (copa fica de fora). */
+const SEASONAL_PRESETS = [
+	'rosa',
+	'roxo',
+	'azul',
+	'verde',
+	'laranja',
+	'lima',
+	'vermelho',
+] as const;
+
 /** Estamos no período de Festa Junina? (até 15/07, inclusive). */
 export function isFestaSeason(now: Date = new Date()): boolean {
 	return now < FESTA_UNTIL;
@@ -45,7 +58,7 @@ export function isFestaSeason(now: Date = new Date()): boolean {
  */
 export function seasonalUrl(url: string): string {
 	if (!isFestaSeason()) return url;
-	for (const p of AVATAR_PRESETS) {
+	for (const p of SEASONAL_PRESETS) {
 		if (url.endsWith(`/avatars/${p}.png`)) return `/avatars/festa/${p}.png`;
 	}
 	return url;
