@@ -27,6 +27,11 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
+	FinanceCharts,
+	type MonthRow,
+	type Slice,
+} from '@/components/fatura/finance-charts';
+import {
 	INVOICE_PAGE_SIZE,
 	type InvoiceFilters,
 	useCompanyInvoice,
@@ -144,39 +149,58 @@ function HeroStat({
 	tone: 'sky' | 'primary' | 'emerald';
 	badge?: string;
 }) {
-	const tones: Record<typeof tone, string> = {
-		sky: 'border-sky-300/50 dark:border-sky-500/25 bg-sky-50 dark:bg-sky-500/[0.07]',
-		primary:
-			'border-violet-300/50 dark:border-violet-500/25 bg-violet-50 dark:bg-violet-500/[0.07]',
-		emerald:
-			'border-emerald-300/60 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/[0.09]',
+	const tones: Record<
+		typeof tone,
+		{ grad: string; chip: string; faded: string }
+	> = {
+		sky: {
+			grad: 'from-sky-100 to-white dark:from-sky-600/30 dark:to-[#1a1a1d]',
+			chip: 'bg-sky-600',
+			faded: 'text-sky-400',
+		},
+		primary: {
+			grad: 'from-violet-100 to-white dark:from-violet-600/30 dark:to-[#1a1a1d]',
+			chip: 'bg-violet-600',
+			faded: 'text-violet-400',
+		},
+		emerald: {
+			grad: 'from-emerald-100 to-white dark:from-emerald-600/30 dark:to-[#1a1a1d]',
+			chip: 'bg-emerald-600',
+			faded: 'text-emerald-400',
+		},
 	};
-	const iconTones: Record<typeof tone, string> = {
-		sky: 'text-sky-600 dark:text-sky-300',
-		primary: 'text-violet-600 dark:text-violet-300',
-		emerald: 'text-emerald-600 dark:text-emerald-400',
-	};
+	const c = tones[tone];
 	return (
-		<div className={`rounded-2xl border p-5 ${tones[tone]}`}>
-			<div className="flex items-center justify-between">
-				<div
-					className={`flex items-center gap-2 text-xs font-semibold uppercase tracking-wider ${iconTones[tone]}`}
-				>
-					<Icon className="w-4 h-4" />
+		<div
+			className={`relative overflow-hidden bg-linear-to-br ${c.grad} rounded-2xl p-6 border border-slate-200 dark:border-gray-800/50 shadow-sm dark:shadow-none`}
+		>
+			<Icon
+				className={`absolute bottom-2 right-3 w-20 h-20 ${c.faded} opacity-10`}
+				aria-hidden="true"
+			/>
+			<div className="flex items-start justify-between mb-4">
+				<span className="text-slate-600 dark:text-gray-400 text-sm">
 					{label}
+				</span>
+				<div className={`${c.chip} p-2.5 rounded-xl`}>
+					<Icon className="w-5 h-5 text-white" />
 				</div>
+			</div>
+			<div className="text-3xl font-bold mb-1 text-slate-900 dark:text-white tabular-nums">
+				{value}
+			</div>
+			<div className="flex flex-wrap items-center gap-2">
+				<span className="text-sm text-slate-500 dark:text-gray-500">
+					{hint}
+				</span>
 				{badge && (
 					<span
-						className={`text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/70 dark:bg-black/20 ${iconTones[tone]}`}
+						className={`text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/70 dark:bg-black/30 ${c.faded}`}
 					>
 						{badge}
 					</span>
 				)}
 			</div>
-			<p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white tabular-nums">
-				{value}
-			</p>
-			<p className="text-xs text-slate-500 dark:text-gray-500 mt-1">{hint}</p>
 		</div>
 	);
 }
@@ -656,6 +680,42 @@ export function FaturaView() {
 			color: 'bg-teal-500',
 		},
 		{ label: 'Líquido da empresa', cents: netCents, color: 'bg-emerald-500' },
+	];
+
+	// Dados pros gráficos (recharts) — em reais; mensal em ordem cronológica.
+	const chartMonthly: MonthRow[] = [...monthly].reverse().map((m) => ({
+		label: fmtMonth(m.month),
+		bruta: m.gross_cents / 100,
+		repasse: m.repasse_cents / 100,
+		liquido: m.net_cents / 100,
+	}));
+	const chartComposition: Slice[] = [
+		{
+			name: 'Voxxys do plano',
+			value: (totals?.plan_grants_cents ?? 0) / 100,
+			color: '#7c3aed',
+		},
+		{
+			name: 'Compras via link',
+			value: (totals?.link_purchases_cents ?? 0) / 100,
+			color: '#f59e0b',
+		},
+		{
+			name: 'Assinaturas (3,5%)',
+			value: (totals?.subscription_fees_cents ?? 0) / 100,
+			color: '#0ea5e9',
+		},
+		{
+			name: 'Ferramentas',
+			value: (totals?.tools_cents ?? 0) / 100,
+			color: '#94a3b8',
+		},
+		{
+			name: 'Voxxy comprado (50%)',
+			value: (totals?.vox_purchase_use_cents ?? 0) / 100,
+			color: '#14b8a6',
+		},
+		{ name: 'Líquido da empresa', value: netCents / 100, color: '#10b981' },
 	];
 
 	const clearFilters = () => {
@@ -1193,6 +1253,11 @@ export function FaturaView() {
 							</div>
 						)}
 					</div>
+
+					<FinanceCharts
+						monthly={chartMonthly}
+						composition={chartComposition}
+					/>
 				</div>
 			)}
 		</div>

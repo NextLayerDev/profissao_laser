@@ -1,11 +1,12 @@
 /**
  * Exporta o Financeiro completo (totais, composição, mensal, top clientes,
  * lastro de voxxys e extrato) em Excel e PDF — SEM dependências externas:
- * - Excel: SpreadsheetML 2003 (.xls), multi-aba, gerado como string XML.
+ * - Excel: .xlsx real (OOXML), multi-aba — abre no Excel, Google Sheets e Numbers.
  * - PDF: relatório HTML estilizado aberto numa janela com print → "Salvar como PDF".
  */
 
 import type { CompanyInvoice } from '@/types/plan-link';
+import { downloadXlsx, type XlsxSheet } from '@/utils/xlsx';
 
 export type FinanceExportMeta = {
 	from?: string;
@@ -79,21 +80,9 @@ function download(filename: string, content: string, mime: string) {
 	setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/* ── Excel (SpreadsheetML 2003, multi-aba, sem lib) ───────────────────────── */
+/* ── Excel (.xlsx real via util/xlsx, multi-aba) ──────────────────────────── */
 
 type Row = (string | number)[];
-
-function xmlCell(v: string | number): string {
-	const isNum = typeof v === 'number' && Number.isFinite(v);
-	return `<Cell><Data ss:Type="${isNum ? 'Number' : 'String'}">${esc(v)}</Data></Cell>`;
-}
-function xmlSheet(name: string, rows: Row[]): string {
-	const safe = name.replace(/[\\/?*[\]:]/g, ' ').slice(0, 31);
-	const body = rows
-		.map((r) => `<Row>${r.map(xmlCell).join('')}</Row>`)
-		.join('');
-	return `<Worksheet ss:Name="${esc(safe)}"><Table>${body}</Table></Worksheet>`;
-}
 
 export async function exportFinanceiroExcel(
 	inv: CompanyInvoice,
@@ -101,120 +90,136 @@ export async function exportFinanceiroExcel(
 ): Promise<void> {
 	const { t, gross, net, repasse, margin, vx } = derive(inv);
 
-	const sheets = [
-		xmlSheet('Resumo', [
-			['Financeiro — Profissão Laser'],
-			['Gerado em', meta.generatedAt],
-			['Período', periodLabel(meta)],
-			[],
-			['Indicador', 'Valor (R$)'],
-			['Receita bruta', reais(gross)],
-			['Fatura upvox (repasse)', reais(repasse)],
-			['Líquido da empresa', reais(net)],
-			['Margem (%)', Number(margin.toFixed(1))],
-			[],
-			['Composição do repasse', 'Valor (R$)'],
-			['Voxxys do plano', reais(t.plan_grants_cents ?? 0)],
-			['Compras via link (100%)', reais(t.link_purchases_cents ?? 0)],
-			['Assinaturas (3,5%)', reais(t.subscription_fees_cents ?? 0)],
-			['Ferramentas', reais(t.tools_cents ?? 0)],
-			['Voxxy comprado (50%)', reais(t.vox_purchase_use_cents ?? 0)],
-			[
-				'Voxxys do plano (crédito −50%)',
-				-reais(t.plan_use_company_share_cents ?? 0),
+	const sheets: XlsxSheet[] = [
+		{
+			name: 'Resumo',
+			rows: [
+				['Financeiro — Profissão Laser'],
+				['Gerado em', meta.generatedAt],
+				['Período', periodLabel(meta)],
+				[],
+				['Indicador', 'Valor (R$)'],
+				['Receita bruta', reais(gross)],
+				['Fatura upvox (repasse)', reais(repasse)],
+				['Líquido da empresa', reais(net)],
+				['Margem (%)', Number(margin.toFixed(1))],
+				[],
+				['Composição do repasse', 'Valor (R$)'],
+				['Voxxys do plano', reais(t.plan_grants_cents ?? 0)],
+				['Compras via link (100%)', reais(t.link_purchases_cents ?? 0)],
+				['Assinaturas (3,5%)', reais(t.subscription_fees_cents ?? 0)],
+				['Ferramentas', reais(t.tools_cents ?? 0)],
+				['Voxxy comprado (50%)', reais(t.vox_purchase_use_cents ?? 0)],
+				[
+					'Voxxys do plano (crédito −50%)',
+					-reais(t.plan_use_company_share_cents ?? 0),
+				],
 			],
-		]),
-		xmlSheet('Mensal', [
-			['Mês', 'Bruta (R$)', 'Repasse (R$)', 'Líquido (R$)'],
-			...inv.monthly.map((m) => [
-				m.month,
-				reais(m.gross_cents),
-				reais(m.repasse_cents),
-				reais(m.net_cents),
-			]),
-		]),
-		xmlSheet('Top clientes', [
-			['Cliente', 'Email', 'Bruta (R$)', 'Repasse (R$)', 'Líquido (R$)'],
-			...inv.top_customers.map((c) => [
-				c.customer_name ?? '',
-				c.customer_email ?? '',
-				reais(c.gross_cents),
-				reais(c.repasse_cents),
-				reais(c.net_cents),
-			]),
-		]),
-		xmlSheet('Lastro Voxxys', [
-			['Indicador', 'Valor (R$)'],
-			['Vendido', reais(vx?.sold_cents ?? 0)],
-			['Usado (valor)', reais(vx?.used_value_cents ?? 0)],
-			['upvox (50%)', reais(vx?.upvox_share_cents ?? 0)],
-			['Empresa (50%)', reais(vx?.company_share_cents ?? 0)],
-			['Lastro (não usados)', reais(vx?.lastro_cents ?? 0)],
-			[],
-			['Cliente', 'Email', 'Comprou', 'Usou', 'Lastro', 'Ganho'],
-			...(vx?.per_customer ?? []).map((c) => [
-				c.customer_name ?? '',
-				c.customer_email ?? '',
-				reais(c.sold_cents),
-				reais(c.used_value_cents),
-				reais(c.lastro_cents),
-				reais(c.company_share_cents),
-			]),
-			[],
-			['Voxxys do plano (R$1,20/vox)', 'Valor (R$)'],
-			[
-				'Concedido',
-				reais(
-					(vx?.plan_used_value_cents ?? 0) + (vx?.plan_unused_value_cents ?? 0),
-				),
+		},
+		{
+			name: 'Mensal',
+			rows: [
+				['Mês', 'Bruta (R$)', 'Repasse (R$)', 'Líquido (R$)'],
+				...inv.monthly.map((m) => [
+					m.month,
+					reais(m.gross_cents),
+					reais(m.repasse_cents),
+					reais(m.net_cents),
+				]),
 			],
-			['Usado (valor)', reais(vx?.plan_used_value_cents ?? 0)],
-			['upvox (50%)', reais(vx?.plan_upvox_share_cents ?? 0)],
-			['Empresa (50%)', reais(vx?.plan_company_share_cents ?? 0)],
-			['Não usados (custo)', reais(vx?.plan_unused_value_cents ?? 0)],
-			[],
-			['Cliente (plano)', 'Email', 'Concedido', 'Usou', 'Não usou', 'Ganho'],
-			...(vx?.per_customer ?? [])
-				.filter(
-					(c) =>
-						(c.plan_used_value_cents ?? 0) + (c.plan_unused_value_cents ?? 0) >
-						0,
-				)
-				.map((c) => [
+		},
+		{
+			name: 'Top clientes',
+			rows: [
+				['Cliente', 'Email', 'Bruta (R$)', 'Repasse (R$)', 'Líquido (R$)'],
+				...inv.top_customers.map((c) => [
 					c.customer_name ?? '',
 					c.customer_email ?? '',
-					reais(
-						(c.plan_used_value_cents ?? 0) + (c.plan_unused_value_cents ?? 0),
-					),
-					reais(c.plan_used_value_cents ?? 0),
-					reais(c.plan_unused_value_cents ?? 0),
-					reais(c.plan_company_share_cents ?? 0),
+					reais(c.gross_cents),
+					reais(c.repasse_cents),
+					reais(c.net_cents),
 				]),
-		]),
-		xmlSheet('Extrato', [
-			[
-				'Data',
-				'Cliente',
-				'Origem',
-				'Base (R$)',
-				'Taxa',
-				'Voxxys',
-				'Valor (R$)',
 			],
-			...inv.entries.map((e) => [
-				fmtDate(e.created_at),
-				e.customer_name ?? e.customer_email ?? '',
-				SOURCE_LABEL[e.source] ?? e.source,
-				e.base_amount_cents != null ? reais(e.base_amount_cents) : '',
-				fmtRate(e.rate_bps),
-				e.voxes_spent || '',
-				reais(e.amount_cents),
-			]),
-		]),
-	].join('');
+		},
+		{
+			name: 'Lastro Voxxys',
+			rows: [
+				['Indicador', 'Valor (R$)'],
+				['Vendido', reais(vx?.sold_cents ?? 0)],
+				['Usado (valor)', reais(vx?.used_value_cents ?? 0)],
+				['upvox (50%)', reais(vx?.upvox_share_cents ?? 0)],
+				['Empresa (50%)', reais(vx?.company_share_cents ?? 0)],
+				['Lastro (não usados)', reais(vx?.lastro_cents ?? 0)],
+				[],
+				['Cliente', 'Email', 'Comprou', 'Usou', 'Lastro', 'Ganho'],
+				...(vx?.per_customer ?? []).map((c) => [
+					c.customer_name ?? '',
+					c.customer_email ?? '',
+					reais(c.sold_cents),
+					reais(c.used_value_cents),
+					reais(c.lastro_cents),
+					reais(c.company_share_cents),
+				]),
+				[],
+				['Voxxys do plano (R$1,20/vox)', 'Valor (R$)'],
+				[
+					'Concedido',
+					reais(
+						(vx?.plan_used_value_cents ?? 0) +
+							(vx?.plan_unused_value_cents ?? 0),
+					),
+				],
+				['Usado (valor)', reais(vx?.plan_used_value_cents ?? 0)],
+				['upvox (50%)', reais(vx?.plan_upvox_share_cents ?? 0)],
+				['Empresa (50%)', reais(vx?.plan_company_share_cents ?? 0)],
+				['Não usados (custo)', reais(vx?.plan_unused_value_cents ?? 0)],
+				[],
+				['Cliente (plano)', 'Email', 'Concedido', 'Usou', 'Não usou', 'Ganho'],
+				...(vx?.per_customer ?? [])
+					.filter(
+						(c) =>
+							(c.plan_used_value_cents ?? 0) +
+								(c.plan_unused_value_cents ?? 0) >
+							0,
+					)
+					.map((c) => [
+						c.customer_name ?? '',
+						c.customer_email ?? '',
+						reais(
+							(c.plan_used_value_cents ?? 0) + (c.plan_unused_value_cents ?? 0),
+						),
+						reais(c.plan_used_value_cents ?? 0),
+						reais(c.plan_unused_value_cents ?? 0),
+						reais(c.plan_company_share_cents ?? 0),
+					]),
+			],
+		},
+		{
+			name: 'Extrato',
+			rows: [
+				[
+					'Data',
+					'Cliente',
+					'Origem',
+					'Base (R$)',
+					'Taxa',
+					'Voxxys',
+					'Valor (R$)',
+				],
+				...inv.entries.map((e) => [
+					fmtDate(e.created_at),
+					e.customer_name ?? e.customer_email ?? '',
+					SOURCE_LABEL[e.source] ?? e.source,
+					e.base_amount_cents != null ? reais(e.base_amount_cents) : '',
+					fmtRate(e.rate_bps),
+					e.voxes_spent || '',
+					reais(e.amount_cents),
+				]),
+			],
+		},
+	];
 
-	const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<?mso-application progid="Excel.Sheet"?>\n<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">${sheets}</Workbook>`;
-	download(`financeiro-${stamp()}.xls`, xml, 'application/vnd.ms-excel');
+	downloadXlsx(`financeiro-${stamp()}.xlsx`, sheets);
 }
 
 /* ── PDF (relatório HTML → print → "Salvar como PDF", sem lib) ─────────────── */
