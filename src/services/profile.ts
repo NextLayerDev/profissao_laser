@@ -29,6 +29,18 @@ export async function removeMyAvatar(): Promise<{ avatar: string | null }> {
 	return data;
 }
 
+export async function uploadMyBanner(file: File): Promise<{ banner: string }> {
+	const fd = new FormData();
+	fd.append('file', file);
+	const { data } = await api.post<{ banner: string }>('/me/banner', fd);
+	return data;
+}
+
+export async function removeMyBanner(): Promise<{ banner: string | null }> {
+	const { data } = await api.delete<{ banner: string | null }>('/me/banner');
+	return data;
+}
+
 export async function changeMyPassword(
 	payload: ChangePasswordPayload,
 ): Promise<void> {
