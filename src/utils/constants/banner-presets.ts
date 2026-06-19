@@ -1,9 +1,10 @@
 /**
  * Banners do perfil (servidos de /public/banners). O cliente escolhe um destes
- * 4 padrões OU sobe o próprio (vira URL do Bunny). Quem ainda não escolheu vê
- * o DEFAULT_BANNER (Banner 3 — moeda Voxxys) — vale pra atuais e novos.
+ * padrões OU sobe o próprio (vira URL do Bunny). Quem ainda não escolheu vê
+ * o DEFAULT_BANNER (Copa do Mundo 2026) — vale pra atuais e novos.
  */
 export const BANNER_PRESETS = [
+	'banner-copa',
 	'banner-1',
 	'banner-2',
 	'banner-3',
@@ -16,8 +17,8 @@ export function bannerPresetUrl(b: BannerPreset): string {
 	return `/banners/${b}.png`;
 }
 
-/** Banner padrão exibido pra quem não escolheu nenhum. */
-export const DEFAULT_BANNER = '/banners/banner-3.png';
+/** Banner padrão exibido pra quem não escolheu nenhum (tema Copa do Mundo). */
+export const DEFAULT_BANNER = '/banners/banner-copa.png';
 
 /** True se a URL é um dos banners-preset (vs. banner enviado). */
 export function isBannerPresetUrl(url?: string | null): boolean {
