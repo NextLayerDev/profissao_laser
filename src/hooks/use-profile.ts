@@ -5,8 +5,10 @@ import {
 	changeMyPassword,
 	getMyProfile,
 	removeMyAvatar,
+	removeMyBanner,
 	updateMyProfile,
 	uploadMyAvatar,
+	uploadMyBanner,
 } from '@/services/profile';
 import type {
 	ChangePasswordPayload,
@@ -50,6 +52,26 @@ export function useRemoveMyAvatar() {
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: () => removeMyAvatar(),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: PROFILE_KEY });
+		},
+	});
+}
+
+export function useUploadMyBanner() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (file: File) => uploadMyBanner(file),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: PROFILE_KEY });
+		},
+	});
+}
+
+export function useRemoveMyBanner() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: () => removeMyBanner(),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: PROFILE_KEY });
 		},

@@ -45,6 +45,8 @@ export interface Member {
 	featured?: boolean;
 	category?: string | null;
 	image?: string | null;
+	/** Banner do perfil exibido no topo do card (padrão p/ quem não escolheu). */
+	banner?: string | null;
 	isOnline?: boolean;
 	lastSeenAt?: string | null;
 	/** Só vem da API quando o usuário logado é staff/admin (técnicos). */
