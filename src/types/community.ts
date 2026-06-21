@@ -112,6 +112,8 @@ export interface Event {
 	streamProvider?: 'youtube' | 'vimeo' | null;
 	waitingRoomOpensMinutesBefore?: number;
 	hostId?: string | null;
+	/** Keys de planos que podem acessar (vazio/ausente = todos). */
+	allowedPlanKeys?: string[] | null;
 }
 
 export interface EventAttendee {
