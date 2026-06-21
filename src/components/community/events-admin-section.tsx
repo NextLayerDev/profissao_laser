@@ -284,7 +284,7 @@ export function EventsAdminSection() {
 					/>
 					<form
 						onSubmit={handleSubmit}
-						className="relative bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-2xl shadow-xl max-w-md w-full p-6"
+						className="relative bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-gray-800 rounded-2xl shadow-xl max-w-md w-full p-5 sm:p-6 max-h-[90dvh] overflow-y-auto overscroll-contain"
 						onClick={(e) => e.stopPropagation()}
 						onKeyDown={(e) => e.stopPropagation()}
 					>
