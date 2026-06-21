@@ -5,6 +5,7 @@ import {
 	ChevronLeft,
 	Clock,
 	Loader2,
+	Lock,
 	LogOut,
 	Tv,
 	Video,
@@ -189,6 +190,40 @@ export function EventWaitingRoom({ eventId }: EventWaitingRoomProps) {
 	}
 
 	if (error || !data) {
+		// Acesso direto à URL sem o plano: backend devolve 403 plan_not_allowed.
+		const planBlocked =
+			!!error &&
+			typeof error === 'object' &&
+			'response' in error &&
+			(
+				error as {
+					response?: { status?: number; data?: { message?: string } };
+				}
+			).response?.status === 403 &&
+			(error as { response?: { data?: { message?: string } } }).response?.data
+				?.message === 'plan_not_allowed';
+
+		if (planBlocked) {
+			return (
+				<div className="rounded-2xl border border-amber-300/60 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-950/20 p-8 text-center">
+					<Lock className="w-10 h-10 text-amber-500 mx-auto mb-3" />
+					<h3 className="font-semibold text-slate-900 dark:text-white mb-1">
+						Seu plano não dá acesso a esta live
+					</h3>
+					<p className="text-sm text-slate-600 dark:text-gray-400 mb-4">
+						Faça upgrade do seu plano para participar das mentorias exclusivas.
+					</p>
+					<Link
+						href="/course/store"
+						className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-white text-sm font-semibold rounded-lg transition-colors"
+					>
+						<Lock className="w-4 h-4" />
+						Ver planos
+					</Link>
+				</div>
+			);
+		}
+
 		return (
 			<div className="rounded-2xl border border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-950/20 p-8 text-center">
 				<AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-3" />

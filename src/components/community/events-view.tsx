@@ -1,10 +1,12 @@
 'use client';
 
-import { ArrowLeft, Calendar, Clock, Video } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Lock, Video } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { ModalOverlay } from '@/components/ui/modal-overlay';
 import { useCommunityEvents } from '@/hooks/use-community';
+import { useEntitlements } from '@/hooks/use-entitlements';
+import { usePlans } from '@/modules/plans/hooks/use-plans';
 import type { Event } from '@/types/community';
 import {
 	formatEventDateParts,
@@ -40,6 +42,19 @@ export function EventsView({ isAdmin: _isAdmin = false }: EventsViewProps) {
 	});
 
 	const { data: events = [] } = useCommunityEvents();
+	const { entitlements, isTestUnlimited } = useEntitlements();
+	const { data: plans = [] } = usePlans();
+	const userPlanKey = entitlements?.subscription?.plan?.key ?? null;
+
+	// Evento bloqueado p/ este usuário? allowedPlanKeys vazio = aberto a todos;
+	// conta-teste-ilimitada sempre passa. Senão exige plano ativo na lista.
+	const isLocked = (event: Event): boolean => {
+		const keys = event.allowedPlanKeys ?? [];
+		if (keys.length === 0 || isTestUnlimited) return false;
+		return !userPlanKey || !keys.includes(userPlanKey);
+	};
+	const planLabels = (keys: string[]): string =>
+		keys.map((k) => plans.find((p) => p.key === k)?.name ?? k).join(', ');
 
 	return (
 		<>
@@ -259,6 +274,8 @@ export function EventsView({ isAdmin: _isAdmin = false }: EventsViewProps) {
 					) : (
 						events.map((event) => {
 							const badge = getEventTypeBadge(event);
+							const locked = isLocked(event);
+							const lockNames = planLabels(event.allowedPlanKeys ?? []);
 							return (
 								<div
 									key={event.id}
@@ -277,6 +294,11 @@ export function EventsView({ isAdmin: _isAdmin = false }: EventsViewProps) {
 											>
 												{badge.label}
 											</span>
+											{locked && (
+												<span className="mt-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 text-xs font-medium">
+													<Lock className="h-3 w-3" /> Bloqueado
+												</span>
+											)}
 										</div>
 										<div className="p-8 flex-1">
 											<h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
@@ -285,12 +307,32 @@ export function EventsView({ isAdmin: _isAdmin = false }: EventsViewProps) {
 											<p className="text-slate-600 dark:text-gray-400 mb-4">
 												{event.description ?? ''}
 											</p>
-											<Link
-												href={`/course/eventos/${event.id}/sala-de-espera`}
-												className="inline-flex items-center gap-2 px-6 py-2 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-full"
-											>
-												<Video className="h-4 w-4" /> Entrar na Sala de Espera
-											</Link>
+											{locked ? (
+												<div className="space-y-3">
+													<div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 text-sm font-medium">
+														<Lock className="h-4 w-4" />
+														{lockNames
+															? `Exclusivo do plano ${lockNames}`
+															: 'Exclusivo de planos superiores'}
+													</div>
+													<div>
+														<Link
+															href="/course/store"
+															className="inline-flex items-center gap-2 px-6 py-2 bg-amber-500 hover:bg-amber-400 text-white font-medium rounded-full"
+														>
+															<Lock className="h-4 w-4" /> Seu plano não dá
+															acesso — fazer upgrade
+														</Link>
+													</div>
+												</div>
+											) : (
+												<Link
+													href={`/course/eventos/${event.id}/sala-de-espera`}
+													className="inline-flex items-center gap-2 px-6 py-2 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-full"
+												>
+													<Video className="h-4 w-4" /> Entrar na Sala de Espera
+												</Link>
+											)}
 										</div>
 									</div>
 								</div>

@@ -226,6 +226,7 @@ export async function createEvent(body: {
 	streamUrl?: string;
 	streamProvider?: 'youtube' | 'vimeo';
 	waitingRoomOpensMinutesBefore?: number;
+	allowedPlanKeys?: string[];
 }): Promise<Event> {
 	const { data } = await api.post<Event>('/community/events', body);
 	return data as Event;
@@ -242,6 +243,7 @@ export async function updateEvent(
 		streamUrl?: string | null;
 		streamProvider?: 'youtube' | 'vimeo' | null;
 		waitingRoomOpensMinutesBefore?: number;
+		allowedPlanKeys?: string[];
 	},
 ): Promise<Event> {
 	const { data: result } = await api.patch<Event>(
