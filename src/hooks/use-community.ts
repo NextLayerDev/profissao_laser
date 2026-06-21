@@ -532,6 +532,7 @@ export interface EventFormPayload {
 	streamUrl?: string;
 	streamProvider?: 'youtube' | 'vimeo';
 	waitingRoomOpensMinutesBefore?: number;
+	allowedPlanKeys?: string[];
 }
 
 export function useCreateEvent() {

@@ -16,6 +16,7 @@ import {
 	useDeleteEvent,
 	useUpdateEvent,
 } from '@/hooks/use-community';
+import { usePlans } from '@/modules/plans/hooks/use-plans';
 import type { Event } from '@/types/community';
 import { formatEventDateShort } from '@/utils/formatDate';
 
@@ -60,6 +61,7 @@ interface EventFormData {
 	streamUrl: string;
 	streamProvider: 'youtube' | 'vimeo' | '';
 	waitingRoomOpensMinutesBefore: number;
+	allowedPlanKeys: string[];
 }
 
 const emptyForm: EventFormData = {
@@ -71,6 +73,7 @@ const emptyForm: EventFormData = {
 	streamUrl: '',
 	streamProvider: '',
 	waitingRoomOpensMinutesBefore: 15,
+	allowedPlanKeys: [],
 };
 
 export function EventsAdminSection() {
@@ -80,9 +83,18 @@ export function EventsAdminSection() {
 	const [form, setForm] = useState<EventFormData>(emptyForm);
 
 	const { data: events = [], isLoading } = useCommunityEvents();
+	const { data: plans = [] } = usePlans();
 	const createMutation = useCreateEvent();
 	const updateMutation = useUpdateEvent();
 	const deleteMutation = useDeleteEvent();
+
+	const togglePlan = (key: string) =>
+		setForm((f) => ({
+			...f,
+			allowedPlanKeys: f.allowedPlanKeys.includes(key)
+				? f.allowedPlanKeys.filter((k) => k !== key)
+				: [...f.allowedPlanKeys, key],
+		}));
 
 	const handleOpenCreate = () => {
 		setEditingEvent(null);
@@ -114,6 +126,7 @@ export function EventsAdminSection() {
 			streamUrl: event.streamUrl ?? '',
 			streamProvider: event.streamProvider ?? '',
 			waitingRoomOpensMinutesBefore: event.waitingRoomOpensMinutesBefore ?? 15,
+			allowedPlanKeys: event.allowedPlanKeys ?? [],
 		});
 		setShowModal(true);
 	};
@@ -137,6 +150,8 @@ export function EventsAdminSection() {
 			streamUrl: form.streamUrl.trim() || undefined,
 			streamProvider: form.streamProvider || undefined,
 			waitingRoomOpensMinutesBefore: form.waitingRoomOpensMinutesBefore,
+			// Sempre envia (vazio = libera p/ todos).
+			allowedPlanKeys: form.allowedPlanKeys,
 		};
 
 		if (editingEvent) {
@@ -382,6 +397,45 @@ export function EventsAdminSection() {
 									<option value="live">Live</option>
 									<option value="qa">Q&A</option>
 								</select>
+							</div>
+
+							<div className="pt-3 border-t border-slate-200 dark:border-white/10">
+								<p className="text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wide mb-1">
+									Planos com acesso
+								</p>
+								<p className="text-xs text-slate-500 dark:text-gray-400 mb-3">
+									Marque quem pode entrar na live. Vazio = todos os planos.
+								</p>
+								{plans.length === 0 ? (
+									<span className="text-xs text-slate-400">
+										Nenhum plano cadastrado.
+									</span>
+								) : (
+									<div className="flex flex-wrap gap-2">
+										{plans.map((plan) => {
+											const active = form.allowedPlanKeys.includes(plan.key);
+											return (
+												<button
+													key={plan.key}
+													type="button"
+													onClick={() => togglePlan(plan.key)}
+													className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+														active
+															? 'bg-violet-600 border-violet-600 text-white'
+															: 'bg-slate-50 dark:bg-[#252528] border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-300 hover:border-violet-400'
+													}`}
+												>
+													{plan.name}
+												</button>
+											);
+										})}
+									</div>
+								)}
+								{form.allowedPlanKeys.length === 0 && plans.length > 0 && (
+									<p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2">
+										Aberto a todos os planos.
+									</p>
+								)}
 							</div>
 
 							<div className="pt-3 border-t border-slate-200 dark:border-white/10">
