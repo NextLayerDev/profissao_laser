@@ -42,9 +42,33 @@ export const roomStateSchema = z.object({
 	hasJoined: z.boolean(),
 	access: z.enum(['included', 'pay', 'blocked']),
 	voxCost: z.number(),
+	features: z.object({
+		recording: z.boolean(),
+		chat: z.boolean(),
+		materials: z.boolean(),
+	}),
 	externalUrl: z.string().nullable(),
 });
 export type RoomState = z.infer<typeof roomStateSchema>;
+
+export const materialSchema = z.object({
+	id: z.string(),
+	sessionId: z.string(),
+	title: z.string(),
+	url: z.string(),
+	createdAt: z.string(),
+});
+export type Material = z.infer<typeof materialSchema>;
+
+export const messageSchema = z.object({
+	id: z.string(),
+	customerId: z.string(),
+	customerName: z.string().nullable(),
+	customerImage: z.string().nullable(),
+	content: z.string(),
+	createdAt: z.string(),
+});
+export type Message = z.infer<typeof messageSchema>;
 
 export const joinResultSchema = z.object({
 	externalUrl: z.string(),
@@ -122,4 +146,46 @@ export async function updateMentorshipSession(
 
 export async function deleteMentorshipSession(id: string): Promise<void> {
 	await api.delete(`/mentorship/sessions/${encodeURIComponent(id)}`);
+}
+
+/* ── Materiais (M4) ── */
+export async function listMaterials(sessionId: string): Promise<Material[]> {
+	const { data } = await api.get(
+		`/mentorship/sessions/${encodeURIComponent(sessionId)}/materials`,
+	);
+	return z.array(materialSchema).parse(data);
+}
+
+export async function addMaterial(
+	sessionId: string,
+	body: { title: string; url: string },
+): Promise<Material> {
+	const { data } = await api.post(
+		`/mentorship/sessions/${encodeURIComponent(sessionId)}/materials`,
+		body,
+	);
+	return materialSchema.parse(data);
+}
+
+export async function deleteMaterial(materialId: string): Promise<void> {
+	await api.delete(`/mentorship/materials/${encodeURIComponent(materialId)}`);
+}
+
+/* ── Chat (M4) ── */
+export async function listMessages(sessionId: string): Promise<Message[]> {
+	const { data } = await api.get(
+		`/mentorship/sessions/${encodeURIComponent(sessionId)}/messages`,
+	);
+	return z.array(messageSchema).parse(data);
+}
+
+export async function postMessage(
+	sessionId: string,
+	content: string,
+): Promise<Message> {
+	const { data } = await api.post(
+		`/mentorship/sessions/${encodeURIComponent(sessionId)}/messages`,
+		{ content },
+	);
+	return messageSchema.parse(data);
 }

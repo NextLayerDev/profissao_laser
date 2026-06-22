@@ -6,13 +6,18 @@ import { toast } from 'sonner';
 import { db } from '@/lib/db';
 import { getApiErrorMessage } from '@/shared/lib/api-error';
 import {
+	addMaterial,
 	type CreateSessionBody,
 	createMentorshipSession,
+	deleteMaterial,
 	deleteMentorshipSession,
 	getRoomState,
 	joinSession,
 	leaveSession,
+	listMaterials,
 	listMentorshipSessions,
+	listMessages,
+	postMessage,
 	type UpdateSessionBody,
 	updateMentorshipSession,
 } from '../services/mentorship.service';
@@ -131,5 +136,92 @@ export function useDeleteSession(toolKey: string) {
 		},
 		onError: (err) =>
 			toast.error(getApiErrorMessage(err, 'Erro ao remover a sessão')),
+	});
+}
+
+/* ── Materiais (M4) ── */
+const MATERIALS_KEY = (sessionId: string) =>
+	['mentorship', 'materials', sessionId] as const;
+
+export function useMaterials(sessionId: string | null, enabled = true) {
+	return useQuery({
+		queryKey: MATERIALS_KEY(sessionId ?? ''),
+		queryFn: () => listMaterials(sessionId as string),
+		enabled: !!sessionId && enabled,
+		staleTime: 30_000,
+	});
+}
+
+export function useAddMaterial(sessionId: string) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (body: { title: string; url: string }) =>
+			addMaterial(sessionId, body),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: MATERIALS_KEY(sessionId) });
+			toast.success('Material adicionado.');
+		},
+		onError: (err) =>
+			toast.error(getApiErrorMessage(err, 'Erro ao adicionar material')),
+	});
+}
+
+export function useDeleteMaterial(sessionId: string) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (materialId: string) => deleteMaterial(materialId),
+		onSuccess: () =>
+			qc.invalidateQueries({ queryKey: MATERIALS_KEY(sessionId) }),
+		onError: (err) =>
+			toast.error(getApiErrorMessage(err, 'Erro ao remover material')),
+	});
+}
+
+/* ── Chat (M4) ── */
+const MESSAGES_KEY = (sessionId: string) =>
+	['mentorship', 'messages', sessionId] as const;
+
+export function useMessages(sessionId: string | null, enabled = true) {
+	return useQuery({
+		queryKey: MESSAGES_KEY(sessionId ?? ''),
+		queryFn: () => listMessages(sessionId as string),
+		enabled: !!sessionId && enabled,
+		refetchInterval: 8_000,
+		staleTime: 2_000,
+	});
+}
+
+/** Realtime de chat (INSERT em pl_mentorship_message) → invalida na hora. */
+export function useMessagesRealtime(sessionId: string | null, enabled = true) {
+	const qc = useQueryClient();
+	useEffect(() => {
+		if (!sessionId || !enabled) return;
+		const channel = db
+			.channel(`pl_mentorship_message:${sessionId}`)
+			.on(
+				'postgres_changes',
+				{
+					event: 'INSERT',
+					schema: 'public',
+					table: 'pl_mentorship_message',
+					filter: `sessionId=eq.${sessionId}`,
+				},
+				() => qc.invalidateQueries({ queryKey: MESSAGES_KEY(sessionId) }),
+			)
+			.subscribe();
+		return () => {
+			db.removeChannel(channel);
+		};
+	}, [sessionId, enabled, qc]);
+}
+
+export function usePostMessage(sessionId: string) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (content: string) => postMessage(sessionId, content),
+		onSuccess: () =>
+			qc.invalidateQueries({ queryKey: MESSAGES_KEY(sessionId) }),
+		onError: (err) =>
+			toast.error(getApiErrorMessage(err, 'Erro ao enviar mensagem')),
 	});
 }

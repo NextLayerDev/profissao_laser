@@ -3,25 +3,35 @@
 import { useQueryClient } from '@tanstack/react-query';
 import {
 	CalendarClock,
+	ExternalLink,
 	Lock,
+	MessageSquare,
+	Paperclip,
 	Pencil,
 	Plus,
+	Send,
 	Trash2,
 	Users,
 	Video,
 	X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/page-header';
 import { useEntitlements } from '@/hooks/use-entitlements';
 import { usePermissions } from '@/hooks/use-permissions';
 import {
+	useAddMaterial,
 	useCreateSession,
+	useDeleteMaterial,
 	useDeleteSession,
 	useJoinRoomFree,
+	useMaterials,
 	useMentorshipSessions,
+	useMessages,
+	useMessagesRealtime,
+	usePostMessage,
 	useRoomPresenceRealtime,
 	useRoomState,
 	useUpdateSession,
@@ -79,11 +89,13 @@ function RoomModal({
 	sessionId,
 	toolKey,
 	courseSlug,
+	isAdmin,
 	onClose,
 }: {
 	sessionId: string;
 	toolKey: string;
 	courseSlug?: string;
+	isAdmin: boolean;
 	onClose: () => void;
 }) {
 	const qc = useQueryClient();
@@ -272,9 +284,190 @@ function RoomModal({
 							{state.voxCost} voxxys (cobrado uma vez por sessão).
 						</p>
 					)}
+
+					{state.features.materials &&
+						(state.access === 'included' || state.hasJoined) && (
+							<MaterialsSection sessionId={sessionId} isAdmin={isAdmin} />
+						)}
+					{state.features.chat && state.hasJoined && (
+						<ChatPanel sessionId={sessionId} />
+					)}
 				</>
 			)}
 		</ModalShell>
+	);
+}
+
+/* ════════════════════ Materiais ════════════════════ */
+function MaterialsSection({
+	sessionId,
+	isAdmin,
+}: {
+	sessionId: string;
+	isAdmin: boolean;
+}) {
+	const { data: materials } = useMaterials(sessionId);
+	const add = useAddMaterial(sessionId);
+	const del = useDeleteMaterial(sessionId);
+	const [title, setTitle] = useState('');
+	const [url, setUrl] = useState('');
+
+	const submit = () => {
+		if (!title.trim() || !url.trim()) return;
+		add.mutate(
+			{ title: title.trim(), url: url.trim() },
+			{
+				onSuccess: () => {
+					setTitle('');
+					setUrl('');
+				},
+			},
+		);
+	};
+
+	const list = materials ?? [];
+	return (
+		<div className="mt-5 border-t border-slate-200 pt-4 dark:border-white/10">
+			<h4 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-gray-200">
+				<Paperclip className="size-4" /> Materiais
+			</h4>
+			{list.length === 0 ? (
+				<p className="text-sm text-slate-400 dark:text-gray-500">
+					Nenhum material ainda.
+				</p>
+			) : (
+				<ul className="space-y-1.5">
+					{list.map((m) => (
+						<li key={m.id} className="flex items-center gap-2">
+							<a
+								href={m.url}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="flex flex-1 items-center gap-1.5 truncate text-sm text-[#ff3b30] hover:underline"
+							>
+								<ExternalLink className="size-3.5 shrink-0" />
+								<span className="truncate">{m.title}</span>
+							</a>
+							{isAdmin && (
+								<button
+									type="button"
+									onClick={() => del.mutate(m.id)}
+									className="rounded p-1 text-slate-400 hover:text-red-500"
+								>
+									<Trash2 className="size-3.5" />
+								</button>
+							)}
+						</li>
+					))}
+				</ul>
+			)}
+			{isAdmin && (
+				<div className="mt-3 flex flex-col gap-2 sm:flex-row">
+					<input
+						value={title}
+						onChange={(e) => setTitle(e.target.value)}
+						placeholder="Título"
+						className="flex-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm dark:border-white/10 dark:bg-[#1a1a1d] dark:text-white"
+					/>
+					<input
+						value={url}
+						onChange={(e) => setUrl(e.target.value)}
+						placeholder="https://…"
+						className="flex-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm dark:border-white/10 dark:bg-[#1a1a1d] dark:text-white"
+					/>
+					<button
+						type="button"
+						disabled={add.isPending}
+						onClick={submit}
+						className="flex items-center justify-center gap-1 rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-900 disabled:opacity-60 dark:bg-white/10 dark:hover:bg-white/20"
+					>
+						<Plus className="size-4" /> Add
+					</button>
+				</div>
+			)}
+		</div>
+	);
+}
+
+/* ════════════════════ Chat ao vivo ════════════════════ */
+function ChatPanel({ sessionId }: { sessionId: string }) {
+	const { data: messages } = useMessages(sessionId);
+	useMessagesRealtime(sessionId);
+	const post = usePostMessage(sessionId);
+	const [text, setText] = useState('');
+	const endRef = useRef<HTMLDivElement>(null);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: rola ao chegar msg nova
+	useEffect(() => {
+		endRef.current?.scrollIntoView({ behavior: 'smooth' });
+	}, [messages]);
+
+	const send = () => {
+		const t = text.trim();
+		if (!t) return;
+		post.mutate(t, { onSuccess: () => setText('') });
+	};
+
+	const list = messages ?? [];
+	return (
+		<div className="mt-5 border-t border-slate-200 pt-4 dark:border-white/10">
+			<h4 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-gray-200">
+				<MessageSquare className="size-4" /> Chat ao vivo
+			</h4>
+			<div className="max-h-60 space-y-2 overflow-y-auto rounded-lg bg-slate-50 p-3 dark:bg-white/5">
+				{list.length === 0 ? (
+					<p className="text-sm text-slate-400 dark:text-gray-500">
+						Seja o primeiro a falar.
+					</p>
+				) : (
+					list.map((m) => (
+						<div key={m.id} className="flex items-start gap-2">
+							<span className="mt-0.5 grid size-6 shrink-0 place-items-center overflow-hidden rounded-full bg-slate-200 text-[10px] font-semibold text-slate-600 dark:bg-white/10 dark:text-gray-200">
+								{m.customerImage ? (
+									// biome-ignore lint/performance/noImgElement: avatar dinâmico
+									<img
+										src={m.customerImage}
+										alt={m.customerName ?? ''}
+										className="size-full object-cover"
+									/>
+								) : (
+									(m.customerName ?? '?').charAt(0).toUpperCase()
+								)}
+							</span>
+							<div className="min-w-0">
+								<span className="text-xs font-semibold text-slate-600 dark:text-gray-300">
+									{m.customerName ?? 'Aluno'}
+								</span>
+								<p className="break-words text-sm text-slate-700 dark:text-gray-200">
+									{m.content}
+								</p>
+							</div>
+						</div>
+					))
+				)}
+				<div ref={endRef} />
+			</div>
+			<div className="mt-2 flex gap-2">
+				<input
+					value={text}
+					onChange={(e) => setText(e.target.value)}
+					onKeyDown={(e) => {
+						if (e.key === 'Enter') send();
+					}}
+					placeholder="Mensagem…"
+					maxLength={2000}
+					className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-[#1a1a1d] dark:text-white"
+				/>
+				<button
+					type="button"
+					disabled={post.isPending || !text.trim()}
+					onClick={send}
+					className="grid size-10 shrink-0 place-items-center rounded-lg bg-[#ff3b30] text-white hover:opacity-90 disabled:opacity-50"
+				>
+					<Send className="size-4" />
+				</button>
+			</div>
+		</div>
 	);
 }
 
@@ -657,6 +850,7 @@ export function DynamicRoomView({ toolKey }: { toolKey: string }) {
 					sessionId={roomId}
 					toolKey={toolKey}
 					courseSlug={courseSlug}
+					isAdmin={isSuperAdmin}
 					onClose={() => setRoomId(null)}
 				/>
 			)}
