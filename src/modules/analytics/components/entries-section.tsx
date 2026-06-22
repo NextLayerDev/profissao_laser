@@ -1,6 +1,12 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, RefreshCw, Search } from 'lucide-react';
+import {
+	ChevronLeft,
+	ChevronRight,
+	RefreshCw,
+	RotateCcw,
+	Search,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 import { formatCurrency } from '@/utils/format-currency';
@@ -12,6 +18,7 @@ import type {
 	EntryRow,
 	EntryType,
 } from '../types/analytics';
+import { RefundSubscriptionModal } from './refund-subscription-modal';
 
 type DatePreset = '7d' | '30d' | '90d' | 'custom';
 
@@ -71,6 +78,16 @@ function formatCents(cents: number) {
 	return formatCurrency(cents / 100, 'BRL');
 }
 
+const REFUND_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** Assinatura reembolsável: dentro da janela de 7 dias desde a entrada. */
+function isRefundable(row: EntryRow): boolean {
+	if (row.entry_type !== 'subscription' || !row.subscription?.subscription_id)
+		return false;
+	const occurred = new Date(row.occurred_at).getTime();
+	return Number.isFinite(occurred) && Date.now() - occurred <= REFUND_WINDOW_MS;
+}
+
 export function EntriesSection() {
 	const [preset, setPreset] = useState<DatePreset>('30d');
 	const [customFrom, setCustomFrom] = useState('');
@@ -78,6 +95,7 @@ export function EntriesSection() {
 	const [search, setSearch] = useState('');
 	const [entryType, setEntryType] = useState<EntryType | ''>('');
 	const [page, setPage] = useState(1);
+	const [refundTarget, setRefundTarget] = useState<EntryRow | null>(null);
 
 	const range = getRange(preset, customFrom, customTo);
 
@@ -250,12 +268,15 @@ export function EntriesSection() {
 								<th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-gray-500 uppercase tracking-wide whitespace-nowrap">
 									Data
 								</th>
+								<th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 dark:text-gray-500 uppercase tracking-wide">
+									Ações
+								</th>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-slate-100 dark:divide-white/5">
 							{(listLoading || isFetching) && !analytics?.data.length && (
 								<tr>
-									<td colSpan={5} className="text-center py-16">
+									<td colSpan={6} className="text-center py-16">
 										<div className="flex justify-center">
 											<div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
 										</div>
@@ -265,7 +286,7 @@ export function EntriesSection() {
 							{!listLoading && analytics?.data.length === 0 && (
 								<tr>
 									<td
-										colSpan={5}
+										colSpan={6}
 										className="text-center py-16 text-slate-500 dark:text-gray-500"
 									>
 										Nenhuma entrada encontrada
@@ -273,7 +294,11 @@ export function EntriesSection() {
 								</tr>
 							)}
 							{analytics?.data.map((row) => (
-								<EntryRowItem key={row.id} row={row} />
+								<EntryRowItem
+									key={row.id}
+									row={row}
+									onRefund={() => setRefundTarget(row)}
+								/>
 							))}
 						</tbody>
 					</table>
@@ -331,14 +356,36 @@ export function EntriesSection() {
 					</div>
 				)}
 			</div>
+
+			{refundTarget?.subscription?.subscription_id && (
+				<RefundSubscriptionModal
+					subscriptionId={refundTarget.subscription.subscription_id}
+					productName={refundTarget.subscription.plan.name}
+					customerName={refundTarget.customer.name ?? '—'}
+					customerEmail={refundTarget.customer.email}
+					amountLabel={formatCents(refundTarget.amount_cents)}
+					isOpen={!!refundTarget}
+					onClose={() => {
+						setRefundTarget(null);
+						refetchList();
+					}}
+				/>
+			)}
 		</div>
 	);
 }
 
 // ─── Row ────────────────────────────────────────
 
-function EntryRowItem({ row }: { row: EntryRow }) {
+function EntryRowItem({
+	row,
+	onRefund,
+}: {
+	row: EntryRow;
+	onRefund: () => void;
+}) {
 	const cfg = TYPE_CONFIG[row.entry_type];
+	const refundable = isRefundable(row);
 	return (
 		<tr className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
 			<td className="px-4 py-3">
@@ -391,6 +438,20 @@ function EntryRowItem({ row }: { row: EntryRow }) {
 			</td>
 			<td className="px-4 py-3 text-xs text-slate-500 dark:text-gray-400 whitespace-nowrap">
 				{formatDate(row.occurred_at)}
+			</td>
+			<td className="px-4 py-3 text-right whitespace-nowrap">
+				{refundable ? (
+					<button
+						type="button"
+						onClick={onRefund}
+						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-red-500/30 text-red-500 hover:bg-red-500/10 transition-colors"
+					>
+						<RotateCcw className="w-3.5 h-3.5" />
+						Reembolsar
+					</button>
+				) : (
+					<span className="text-slate-300 dark:text-gray-700">—</span>
+				)}
 			</td>
 		</tr>
 	);

@@ -245,6 +245,7 @@ export const entryRowSchema = z.object({
 	customer: customerRefSchema,
 	subscription: z
 		.object({
+			subscription_id: z.string().optional(),
 			billing_reason: billingReasonSchema,
 			interval: z.enum(['monthly', 'yearly']),
 			plan: z.object({ id: z.string(), key: z.string(), name: z.string() }),
