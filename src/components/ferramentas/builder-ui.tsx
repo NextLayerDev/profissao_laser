@@ -13,7 +13,6 @@ import {
 	Type as TypeIcon,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
 import type { BuilderField, FieldType } from './builder-model';
 import { ac } from './forge-theme';
 
@@ -56,7 +55,7 @@ export function FormSection({
 	return (
 		<section
 			id={id ?? `builder-step-${step}`}
-			className="forge-rise group relative scroll-mt-[180px] overflow-hidden rounded-2xl border border-white/[0.07] bg-gradient-to-b from-[#0e1217] to-[#0a0c10] shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset,0_18px_40px_-24px_rgba(0,0,0,0.8)]"
+			className="forge-rise group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-gradient-to-b from-[#0e1217] to-[#0a0c10] shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset,0_18px_40px_-24px_rgba(0,0,0,0.8)]"
 			style={{ animationDelay: `${delay}ms` }}
 		>
 			<div
@@ -454,47 +453,33 @@ export interface StepDef {
 	accent: string;
 }
 
-export function StepperBar({ steps }: { steps: StepDef[] }) {
-	const [active, setActive] = useState(steps[0]?.id);
-
-	// destaca o passo cuja seção está mais perto do topo da viewport.
-	useEffect(() => {
-		const els = steps
-			.map((s) => document.getElementById(s.id))
-			.filter((e): e is HTMLElement => !!e);
-		if (els.length === 0) return;
-		const obs = new IntersectionObserver(
-			(entries) => {
-				const vis = entries
-					.filter((e) => e.isIntersecting)
-					.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-				if (vis[0]) setActive(vis[0].target.id);
-			},
-			{ rootMargin: '-150px 0px -55% 0px', threshold: 0 },
-		);
-		for (const el of els) obs.observe(el);
-		return () => obs.disconnect();
-	}, [steps]);
-
-	const jump = (id: string) => {
-		document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-		setActive(id);
-	};
-
+/**
+ * Stepper controlado: o passo ativo é dono do parent (wizard de 1 passo por
+ * tela). Clicar num passo NÃO rola a página — troca a etapa renderizada.
+ */
+export function StepperBar({
+	steps,
+	activeId,
+	onSelect,
+}: {
+	steps: StepDef[];
+	activeId: string;
+	onSelect: (id: string) => void;
+}) {
 	return (
 		<nav
 			aria-label="Etapas da ferramenta"
 			className="flex items-center gap-1 overflow-x-auto rounded-2xl border border-white/[0.07] bg-[#0a0c10]/90 p-1.5 backdrop-blur"
 		>
 			{steps.map((s, i) => {
-				const on = active === s.id;
+				const on = activeId === s.id;
 				const a = ac(s.accent);
 				return (
 					<button
 						key={s.id}
 						type="button"
 						aria-current={on ? 'step' : undefined}
-						onClick={() => jump(s.id)}
+						onClick={() => onSelect(s.id)}
 						className={`flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 ${
 							on
 								? `${a.chip} ring-1`
