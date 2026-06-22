@@ -20,9 +20,11 @@ import {
 	Unlink,
 	Workflow,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { usePlans } from '@/modules/plans/hooks/use-plans';
+import { DynamicRoomView } from '@/modules/tools/components/dynamic-room-view';
 import { DynamicToolView } from '@/modules/tools/components/dynamic-tool-view';
 import { useTools } from '@/modules/tools/hooks/use-tools';
 import { resolveToolIcon, TOOL_ICONS } from '@/modules/tools/lib/tool-icons';
@@ -510,6 +512,10 @@ export function ToolBuilderView() {
 	);
 	const [showPreview, setShowPreview] = useState(true);
 	const [showAgent, setShowAgent] = useState(true);
+	// Preview de sala (room_v1): alterna entre a tela do aluno e a do admin.
+	const [previewRole, setPreviewRole] = useState<'customer' | 'admin'>(
+		'customer',
+	);
 
 	const goHub = () => {
 		setView('gallery');
@@ -599,6 +605,23 @@ export function ToolBuilderView() {
 		}
 		setView('editor');
 	};
+
+	// Deep-link `?open=<defId>` (vindo do menu admin p/ tools de pipeline): abre
+	// essa tool no editor. Rastreia o último id tratado (e não um booleano), pois
+	// /ferramentas é o mesmo segmento de rota — trocar de tool pela sidebar muda só
+	// o search param sem desmontar, então precisamos recarregar quando o id muda.
+	const searchParams = useSearchParams();
+	const lastOpenedRef = useRef<string | null>(null);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: guard por lastOpenedRef
+	useEffect(() => {
+		const openId = searchParams.get('open');
+		if (!openId || openId === lastOpenedRef.current || !defs.data) return;
+		const found = defs.data.find((d) => d.id === openId);
+		if (found) {
+			lastOpenedRef.current = openId;
+			loadFabrica(found);
+		}
+	}, [searchParams, defs.data]);
 
 	const loadBilling = (tool: Tool) => {
 		setBillingTool(tool);
@@ -1485,22 +1508,56 @@ export function ToolBuilderView() {
 					{/* direita: preview ao vivo (só no editor, quando visível) */}
 					{view === 'editor' && state && showPreview && (
 						<aside className="space-y-3 self-start lg:sticky lg:top-[148px]">
-							<div className="flex items-center gap-2 text-emerald-300">
-								<Eye className="h-4 w-4" />
-								<span className="font-mono text-[11px] uppercase tracking-widest">
-									Como o cliente vê
-								</span>
-							</div>
-							<div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0c0f12]/80">
-								{previewDef ? (
-									<div className="origin-top scale-[0.98]">
-										<DynamicToolView
-											toolKey={previewDef.tool_key}
-											definitionOverride={previewDef}
-										/>
+							<div className="flex items-center justify-between gap-2">
+								<div className="flex items-center gap-2 text-emerald-300">
+									<Eye className="h-4 w-4" />
+									<span className="font-mono text-[11px] uppercase tracking-widest">
+										{previewDef?.engine_runtime === 'room_v1'
+											? previewRole === 'admin'
+												? 'Como o admin vê'
+												: 'Como o aluno vê'
+											: 'Como o cliente vê'}
+									</span>
+								</div>
+								{previewDef?.engine_runtime === 'room_v1' && (
+									<div className="flex overflow-hidden rounded-lg border border-white/10 text-[11px] font-semibold">
+										<button
+											type="button"
+											onClick={() => setPreviewRole('customer')}
+											className={`px-2.5 py-1 ${previewRole === 'customer' ? 'bg-emerald-500/20 text-emerald-200' : 'text-slate-400 hover:text-slate-200'}`}
+										>
+											Aluno
+										</button>
+										<button
+											type="button"
+											onClick={() => setPreviewRole('admin')}
+											className={`px-2.5 py-1 ${previewRole === 'admin' ? 'bg-emerald-500/20 text-emerald-200' : 'text-slate-400 hover:text-slate-200'}`}
+										>
+											Admin
+										</button>
 									</div>
+								)}
+							</div>
+							<div className="overflow-hidden rounded-2xl border border-white/10">
+								{previewDef ? (
+									previewDef.engine_runtime === 'room_v1' ? (
+										<div className="origin-top scale-[0.98] bg-slate-50 p-3 dark:bg-[#0c0f12]">
+											<DynamicRoomView
+												toolKey={previewDef.tool_key}
+												definitionOverride={previewDef}
+												previewAs={previewRole}
+											/>
+										</div>
+									) : (
+										<div className="origin-top scale-[0.98] bg-[#0c0f12]/80">
+											<DynamicToolView
+												toolKey={previewDef.tool_key}
+												definitionOverride={previewDef}
+											/>
+										</div>
+									)
 								) : (
-									<p className="p-6 text-sm text-rose-400">
+									<p className="bg-[#0c0f12]/80 p-6 text-sm text-rose-400">
 										Definição incompleta — confira as etapas / o resultado.
 									</p>
 								)}

@@ -2,6 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import {
+	Activity,
 	CalendarClock,
 	ExternalLink,
 	Lock,
@@ -34,6 +35,7 @@ import {
 	usePostMessage,
 	useRoomPresenceRealtime,
 	useRoomState,
+	useSessionAttendees,
 	useUpdateSession,
 } from '../hooks/use-mentorship';
 import { useRunTool } from '../hooks/use-run-tool';
@@ -43,6 +45,7 @@ import {
 	joinSession,
 	type MentorshipSession,
 } from '../services/mentorship.service';
+import type { AiToolDefinition } from '../services/tool-definitions.service';
 
 /** Formata data (YYYY-MM-DD) + hora (HH:MM) para exibição BRT amigável. */
 function formatWhen(date: string, time?: string | null): string {
@@ -59,6 +62,104 @@ function formatWhen(date: string, time?: string | null): string {
 	} catch {
 		return date;
 	}
+}
+
+/** Status visual da sessão (só p/ exibição — a autoridade de acesso é o servidor). */
+type SessionStatus = 'agendada' | 'ao-vivo' | 'encerrada';
+function sessionStatus(s: MentorshipSession): SessionStatus {
+	try {
+		const time = s.time?.length ? s.time : '00:00';
+		const start = new Date(`${s.date}T${time}:00-03:00`).getTime();
+		const end = start + (s.durationMin ?? 60) * 60_000;
+		const now = Date.now();
+		if (now < start) return 'agendada';
+		if (now < end) return 'ao-vivo';
+		return 'encerrada';
+	} catch {
+		return 'agendada';
+	}
+}
+
+/** Data+hora curta (BRT) de um timestamp ISO — usado na presença do admin. */
+function formatClock(iso: string | null): string {
+	if (!iso) return '—';
+	try {
+		return new Intl.DateTimeFormat('pt-BR', {
+			day: '2-digit',
+			month: '2-digit',
+			hour: '2-digit',
+			minute: '2-digit',
+			timeZone: 'America/Sao_Paulo',
+		}).format(new Date(iso));
+	} catch {
+		return '—';
+	}
+}
+
+function StatusBadge({ status }: { status: SessionStatus }) {
+	if (status === 'ao-vivo') {
+		return (
+			<span className="inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-semibold text-red-500">
+				<span className="size-1.5 animate-pulse rounded-full bg-red-500" />
+				AO VIVO
+			</span>
+		);
+	}
+	if (status === 'encerrada') {
+		return (
+			<span className="inline-flex items-center rounded-full bg-slate-500/15 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:text-gray-400">
+				Encerrada
+			</span>
+		);
+	}
+	return (
+		<span className="inline-flex items-center rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+			Agendada
+		</span>
+	);
+}
+
+/** Sessões fictícias p/ a pré-visualização do builder (sem tocar o backend). */
+function sampleSessions(def?: AiToolDefinition | null): MentorshipSession[] {
+	const room = (
+		def?.definition as { room?: { cap?: number | null } } | undefined
+	)?.room;
+	const cap = room?.cap ?? null;
+	const key = def?.tool_key ?? 'preview';
+	const now = new Date();
+	const pad = (n: number) => String(n).padStart(2, '0');
+	const ymd = (d: Date) =>
+		`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+	const live = new Date(now.getTime() - 20 * 60_000);
+	const tomorrow = new Date(now.getTime() + 24 * 3_600_000);
+	return [
+		{
+			id: 'preview-live',
+			toolKey: key,
+			title: 'Sessão ao vivo (exemplo)',
+			description: 'Exemplo de uma sessão em andamento.',
+			date: ymd(now),
+			time: `${pad(live.getHours())}:${pad(live.getMinutes())}`,
+			durationMin: 120,
+			joinOpensMinutesBefore: 10,
+			cap,
+			recordingUrl: null,
+			hostId: null,
+		},
+		{
+			id: 'preview-scheduled',
+			toolKey: key,
+			title: 'Próxima sessão (exemplo)',
+			description: 'Exemplo de uma sessão agendada.',
+			date: ymd(tomorrow),
+			time: '20:00',
+			durationMin: 60,
+			joinOpensMinutesBefore: 10,
+			cap,
+			recordingUrl: null,
+			hostId: null,
+		},
+	];
 }
 
 /** Overlay + backdrop clicável (botão, a11y-safe) + cartão central. */
@@ -685,6 +786,156 @@ function SessionFormModal({
 	);
 }
 
+/* ════════════════════ Acompanhamento (admin) ════════════════════ */
+function SessionMonitorModal({
+	session,
+	toolKey,
+	onClose,
+}: {
+	session: MentorshipSession;
+	toolKey: string;
+	onClose: () => void;
+}) {
+	const { data: attendees, isLoading } = useSessionAttendees(session.id);
+	const update = useUpdateSession(toolKey);
+	const [recording, setRecording] = useState(session.recordingUrl ?? '');
+	const status = sessionStatus(session);
+	const list = attendees ?? [];
+	const active = list.filter((a) => !a.leftAt).length;
+
+	const saveRecording = () =>
+		update.mutate({
+			id: session.id,
+			body: { recordingUrl: recording.trim() || null },
+		});
+
+	return (
+		<ModalShell onClose={onClose}>
+			<div className="flex items-start justify-between gap-3">
+				<div className="min-w-0">
+					<h3 className="flex items-center gap-1.5 text-lg font-bold text-slate-900 dark:text-white">
+						<Activity className="size-5 text-[#ff3b30]" />
+						<span className="truncate">{session.title}</span>
+					</h3>
+					<p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-sm text-slate-500 dark:text-gray-400">
+						<CalendarClock className="size-4" />
+						{formatWhen(session.date, session.time)}
+						<StatusBadge status={status} />
+					</p>
+				</div>
+				<button
+					type="button"
+					onClick={onClose}
+					className="shrink-0 rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/10"
+				>
+					<X className="size-5" />
+				</button>
+			</div>
+
+			{/* Presença (histórico completo — não precisa entrar na sala) */}
+			<div className="mt-4">
+				<div className="mb-2 flex items-center justify-between">
+					<h4 className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-gray-200">
+						<Users className="size-4" /> Presença
+					</h4>
+					<span className="text-xs text-slate-500 dark:text-gray-400">
+						{active} na sala · {list.length} no total
+					</span>
+				</div>
+				{isLoading ? (
+					<p className="text-sm text-slate-400 dark:text-gray-500">
+						A carregar presença…
+					</p>
+				) : list.length === 0 ? (
+					<p className="rounded-xl border border-dashed border-slate-200 py-6 text-center text-sm text-slate-400 dark:border-white/10 dark:text-gray-500">
+						Ninguém entrou nesta sessão ainda.
+					</p>
+				) : (
+					<ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 dark:divide-white/5 dark:border-white/10">
+						{list.map((a) => (
+							<li
+								key={a.customerId}
+								className="flex items-center gap-3 px-3 py-2"
+							>
+								<span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-full bg-slate-200 text-xs font-semibold text-slate-600 dark:bg-white/10 dark:text-gray-200">
+									{a.customerImage ? (
+										// biome-ignore lint/performance/noImgElement: avatar dinâmico
+										<img
+											src={a.customerImage}
+											alt={a.customerName ?? ''}
+											className="size-full object-cover"
+										/>
+									) : (
+										(a.customerName ?? '?').charAt(0).toUpperCase()
+									)}
+								</span>
+								<div className="min-w-0 flex-1">
+									<p className="truncate text-sm font-medium text-slate-800 dark:text-gray-100">
+										{a.customerName ?? 'Aluno'}
+									</p>
+									<p className="truncate text-xs text-slate-400 dark:text-gray-500">
+										entrou {formatClock(a.joinedAt)}
+										{a.leftAt ? ` · saiu ${formatClock(a.leftAt)}` : ''}
+									</p>
+								</div>
+								{a.paid && (
+									<span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+										pago
+									</span>
+								)}
+								<span
+									className={`size-2 shrink-0 rounded-full ${
+										a.leftAt
+											? 'bg-slate-300 dark:bg-white/20'
+											: 'bg-emerald-500'
+									}`}
+									title={a.leftAt ? 'Saiu' : 'Na sala'}
+								/>
+							</li>
+						))}
+					</ul>
+				)}
+			</div>
+
+			{/* Gravação */}
+			<div className="mt-5 border-t border-slate-200 pt-4 dark:border-white/10">
+				<h4 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-gray-200">
+					<Video className="size-4" /> Gravação
+				</h4>
+				<div className="flex flex-col gap-2 sm:flex-row">
+					<input
+						value={recording}
+						onChange={(e) => setRecording(e.target.value)}
+						placeholder="https://… (link da gravação)"
+						className="flex-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm dark:border-white/10 dark:bg-[#1a1a1d] dark:text-white"
+					/>
+					<button
+						type="button"
+						disabled={update.isPending}
+						onClick={saveRecording}
+						className="flex items-center justify-center gap-1 rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-900 disabled:opacity-60 dark:bg-white/10 dark:hover:bg-white/20"
+					>
+						Salvar
+					</button>
+				</div>
+				{session.recordingUrl && (
+					<a
+						href={session.recordingUrl}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="mt-2 inline-flex items-center gap-1.5 text-xs text-[#ff3b30] hover:underline"
+					>
+						<ExternalLink className="size-3.5" /> Abrir gravação atual
+					</a>
+				)}
+			</div>
+
+			{/* Materiais (mesmo componente do aluno, em modo admin) */}
+			<MaterialsSection sessionId={session.id} isAdmin />
+		</ModalShell>
+	);
+}
+
 /* ════════════════════ Card de sessão ════════════════════ */
 function SessionCard({
 	session,
@@ -692,12 +943,14 @@ function SessionCard({
 	isAdmin,
 	onEdit,
 	onDelete,
+	onMonitor,
 }: {
 	session: MentorshipSession;
 	onEnter: () => void;
 	isAdmin: boolean;
 	onEdit: () => void;
 	onDelete: () => void;
+	onMonitor: () => void;
 }) {
 	return (
 		<div className="group relative flex flex-col rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-[#ff3b30]/40 dark:border-white/10 dark:bg-[#1a1a1d]">
@@ -709,7 +962,7 @@ function SessionCard({
 					<h4 className="truncate font-semibold text-slate-900 dark:text-white">
 						{session.title}
 					</h4>
-					<p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500 dark:text-gray-400">
+					<p className="mt-0.5 flex flex-wrap items-center gap-1 text-xs text-slate-500 dark:text-gray-400">
 						<CalendarClock className="size-3.5" />
 						{formatWhen(session.date, session.time)}
 						{session.cap != null && (
@@ -717,6 +970,11 @@ function SessionCard({
 								<span className="mx-1">·</span>
 								<Users className="size-3.5" /> {session.cap} vagas
 							</>
+						)}
+						{isAdmin && (
+							<span className="ml-1">
+								<StatusBadge status={sessionStatus(session)} />
+							</span>
 						)}
 					</p>
 				</div>
@@ -736,6 +994,14 @@ function SessionCard({
 				</button>
 				{isAdmin && (
 					<>
+						<button
+							type="button"
+							onClick={onMonitor}
+							title="Acompanhar (presença, gravação, materiais)"
+							className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5"
+						>
+							<Activity className="size-4" /> Acompanhar
+						</button>
 						<button
 							type="button"
 							onClick={onEdit}
@@ -758,15 +1024,36 @@ function SessionCard({
 }
 
 /* ════════════════════ View principal ════════════════════ */
-export function DynamicRoomView({ toolKey }: { toolKey: string }) {
-	const def = useToolDefinition(toolKey);
-	const { data: sessions, isLoading } = useMentorshipSessions(toolKey);
+export function DynamicRoomView({
+	toolKey,
+	definitionOverride,
+	previewAs,
+}: {
+	toolKey: string;
+	/** Quando passado (pré-visualização do builder), usa a def rascunho e NÃO toca o backend. */
+	definitionOverride?: AiToolDefinition;
+	/** Força o papel no preview ('customer' | 'admin'); fora do preview, usa as permissões reais. */
+	previewAs?: 'customer' | 'admin';
+}) {
+	const isPreview = !!definitionOverride;
+	const defQuery = useToolDefinition(toolKey, { enabled: !definitionOverride });
+	const def = definitionOverride ?? defQuery.data;
+	const { data: fetchedSessions, isLoading: fetchLoading } =
+		useMentorshipSessions(toolKey, !isPreview);
 	const { isSuperAdmin } = usePermissions();
-	const { courses } = useEntitlements();
+	const isAdmin = previewAs ? previewAs === 'admin' : isSuperAdmin;
+	// No preview o courseSlug só alimentaria o RoomModal (que nunca monta) —
+	// desliga a query de entitlements p/ honrar o "não toca o backend".
+	const { courses } = useEntitlements(undefined, { enabled: !isPreview });
 	const courseSlug = courses[0]?.slug;
 	const del = useDeleteSession(toolKey);
 
+	// No preview, renderiza sessões de exemplo (sem backend) e fica inerte.
+	const sessions = isPreview ? sampleSessions(def) : fetchedSessions;
+	const isLoading = isPreview ? false : fetchLoading;
+
 	const [roomId, setRoomId] = useState<string | null>(null);
+	const [monitorId, setMonitorId] = useState<string | null>(null);
 	const [formOpen, setFormOpen] = useState(false);
 	const [editing, setEditing] = useState<MentorshipSession | null>(null);
 
@@ -778,11 +1065,20 @@ export function DynamicRoomView({ toolKey }: { toolKey: string }) {
 		[sessions],
 	);
 
+	// Se a sessão do monitor sumir (removida em outra aba/admin), fecha o modal.
+	useEffect(() => {
+		if (monitorId && !sorted.some((x) => x.id === monitorId)) {
+			setMonitorId(null);
+		}
+	}, [monitorId, sorted]);
+
 	const openCreate = () => {
+		if (isPreview) return;
 		setEditing(null);
 		setFormOpen(true);
 	};
 	const openEdit = (s: MentorshipSession) => {
+		if (isPreview) return;
 		setEditing(s);
 		setFormOpen(true);
 	};
@@ -791,13 +1087,12 @@ export function DynamicRoomView({ toolKey }: { toolKey: string }) {
 		<div className="mx-auto max-w-4xl">
 			<div className="flex items-start justify-between gap-3">
 				<PageHeader
-					title={def.data?.title ?? 'Mentoria'}
+					title={def?.title ?? 'Mentoria'}
 					subtitle={
-						def.data?.description ??
-						'Salas de vídeo e lives ao vivo da sua jornada.'
+						def?.description ?? 'Salas de vídeo e lives ao vivo da sua jornada.'
 					}
 				/>
-				{isSuperAdmin && (
+				{isAdmin && (
 					<button
 						type="button"
 						onClick={openCreate}
@@ -818,7 +1113,7 @@ export function DynamicRoomView({ toolKey }: { toolKey: string }) {
 					<p className="mt-3 text-slate-500 dark:text-gray-400">
 						Nenhuma sessão agendada ainda.
 					</p>
-					{isSuperAdmin && (
+					{isAdmin && (
 						<button
 							type="button"
 							onClick={openCreate}
@@ -834,10 +1129,16 @@ export function DynamicRoomView({ toolKey }: { toolKey: string }) {
 						<SessionCard
 							key={s.id}
 							session={s}
-							onEnter={() => setRoomId(s.id)}
-							isAdmin={isSuperAdmin}
+							onEnter={() => {
+								if (!isPreview) setRoomId(s.id);
+							}}
+							isAdmin={isAdmin}
 							onEdit={() => openEdit(s)}
+							onMonitor={() => {
+								if (!isPreview) setMonitorId(s.id);
+							}}
 							onDelete={() => {
+								if (isPreview) return;
 								if (confirm(`Remover a sessão "${s.title}"?`)) del.mutate(s.id);
 							}}
 						/>
@@ -850,10 +1151,21 @@ export function DynamicRoomView({ toolKey }: { toolKey: string }) {
 					sessionId={roomId}
 					toolKey={toolKey}
 					courseSlug={courseSlug}
-					isAdmin={isSuperAdmin}
+					isAdmin={isAdmin}
 					onClose={() => setRoomId(null)}
 				/>
 			)}
+			{monitorId &&
+				(() => {
+					const s = sorted.find((x) => x.id === monitorId);
+					return s ? (
+						<SessionMonitorModal
+							session={s}
+							toolKey={toolKey}
+							onClose={() => setMonitorId(null)}
+						/>
+					) : null;
+				})()}
 			{formOpen && (
 				<SessionFormModal
 					toolKey={toolKey}

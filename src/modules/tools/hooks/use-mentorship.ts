@@ -17,6 +17,7 @@ import {
 	listMaterials,
 	listMentorshipSessions,
 	listMessages,
+	listSessionAttendees,
 	postMessage,
 	type UpdateSessionBody,
 	updateMentorshipSession,
@@ -28,11 +29,11 @@ const ROOM_KEY = (sessionId: string) =>
 	['mentorship', 'room', sessionId] as const;
 
 /** Lista de sessões de uma Mentoria. */
-export function useMentorshipSessions(toolKey: string) {
+export function useMentorshipSessions(toolKey: string, enabled = true) {
 	return useQuery({
 		queryKey: SESSIONS_KEY(toolKey),
 		queryFn: () => listMentorshipSessions(toolKey),
-		enabled: !!toolKey,
+		enabled: !!toolKey && enabled,
 		staleTime: 30_000,
 	});
 }
@@ -223,5 +224,16 @@ export function usePostMessage(sessionId: string) {
 			qc.invalidateQueries({ queryKey: MESSAGES_KEY(sessionId) }),
 		onError: (err) =>
 			toast.error(getApiErrorMessage(err, 'Erro ao enviar mensagem')),
+	});
+}
+
+/* ── Acompanhamento admin (presença completa por sessão) ── */
+export function useSessionAttendees(sessionId: string | null, enabled = true) {
+	return useQuery({
+		queryKey: ['mentorship', 'attendees', sessionId ?? ''],
+		queryFn: () => listSessionAttendees(sessionId as string),
+		enabled: !!sessionId && enabled,
+		refetchInterval: 10_000,
+		staleTime: 5_000,
 	});
 }

@@ -189,3 +189,23 @@ export async function postMessage(
 	);
 	return messageSchema.parse(data);
 }
+
+/* ── Acompanhamento admin ── */
+export const adminAttendeeSchema = z.object({
+	customerId: z.string(),
+	customerName: z.string().nullable(),
+	customerImage: z.string().nullable(),
+	joinedAt: z.string(),
+	leftAt: z.string().nullable(),
+	paid: z.boolean(),
+});
+export type AdminAttendee = z.infer<typeof adminAttendeeSchema>;
+
+export async function listSessionAttendees(
+	sessionId: string,
+): Promise<AdminAttendee[]> {
+	const { data } = await api.get(
+		`/mentorship/sessions/${encodeURIComponent(sessionId)}/attendees`,
+	);
+	return z.array(adminAttendeeSchema).parse(data);
+}
