@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { usePermissions } from '@/hooks/use-permissions';
+import { useAdminToolNav } from '@/modules/tools/hooks/use-admin-tool-nav';
 import { navItems } from '@/utils/constants/navigation';
 import { canSeeNavItem } from '@/utils/constants/permissions';
 
@@ -15,11 +16,15 @@ interface Props {
 
 export function Sidebar({ collapsed, onToggle }: Props) {
 	const pathname = usePathname();
-	const { can } = usePermissions();
+	const { can, isSuperAdmin } = usePermissions();
 
-	const visibleNavItems = navItems.filter((item) =>
-		canSeeNavItem(item.name, can),
-	);
+	// Itens fixos (gateados por permissão) + tools da Fábrica publicadas (dinâmico:
+	// qualquer tool publicada aparece no menu sem hardcode, ex.: Mentoria).
+	const toolNav = useAdminToolNav(isSuperAdmin);
+	const visibleNavItems = [
+		...navItems.filter((item) => canSeeNavItem(item.name, can)),
+		...toolNav,
+	];
 
 	return (
 		<aside

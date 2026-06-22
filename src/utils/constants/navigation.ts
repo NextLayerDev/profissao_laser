@@ -13,7 +13,6 @@ import {
 	ShoppingCart,
 	SlidersHorizontal,
 	Users,
-	Video,
 	Wrench,
 } from 'lucide-react';
 import type { NavItem } from '@/types/navigation';
@@ -67,12 +66,6 @@ export const navItems: NavItem[] = [
 		name: 'Ferramentas',
 		icon: Wrench,
 		href: '/ferramentas',
-		hasDropdown: false,
-	},
-	{
-		name: 'Mentoria',
-		icon: Video,
-		href: '/course/t/mentoria',
 		hasDropdown: false,
 	},
 ];
