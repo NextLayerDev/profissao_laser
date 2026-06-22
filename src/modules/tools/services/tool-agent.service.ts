@@ -42,10 +42,15 @@ export interface AgentTurnInput {
 	state: BuilderState;
 	message: string;
 	history: { role: 'user' | 'assistant'; content: string }[];
+	/** Planos reais (key+nome) — p/ o agente usar keys válidas em salas. */
+	plans?: { key: string; name: string }[];
 }
 
 /** Monta o catálogo enviado ao agente a partir do estado atual do builder. */
-function buildCatalog(state: BuilderState) {
+function buildCatalog(
+	state: BuilderState,
+	plans?: { key: string; name: string }[],
+) {
 	return {
 		blocks: BLOCK_CATALOG,
 		custom_nodes: state.customNodes
@@ -56,6 +61,7 @@ function buildCatalog(state: BuilderState) {
 			type: f.type,
 			label: f.label,
 		})),
+		plans: plans ?? [],
 	};
 }
 
@@ -132,7 +138,7 @@ export async function* streamAgentTurn(
 		body: JSON.stringify({
 			session_id: input.session_id,
 			definition: buildDoc(input.state),
-			catalog: buildCatalog(input.state),
+			catalog: buildCatalog(input.state, input.plans),
 			message: input.message,
 			history: input.history,
 		}),

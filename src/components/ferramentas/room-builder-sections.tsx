@@ -39,6 +39,18 @@ export function RoomBuilderSections({
 		});
 	};
 
+	// Resumo em linguagem leiga do que o acesso configurado significa.
+	const includedNames = room.includedPlanKeys.map(
+		(k) => plans.find((p) => p.key === k)?.name ?? k,
+	);
+	const accessSummary = `${
+		includedNames.length ? includedNames.join(', ') : 'Nenhum plano'
+	} ${includedNames.length === 1 ? 'entra' : 'entram'} de graça; ${
+		room.allowVoxEntry
+			? `os demais pagam ${room.voxCost} voxxys por entrada`
+			: 'os demais não entram (só plano)'
+	}.`;
+
 	return (
 		<>
 			{/* ── Sala ── */}
@@ -232,6 +244,10 @@ export function RoomBuilderSections({
 						</Field>
 					)}
 				</div>
+
+				<p className="mt-3 rounded-lg bg-amber-500/5 px-3 py-2 text-[13px] text-amber-200/90">
+					{accessSummary}
+				</p>
 			</FormSection>
 		</>
 	);

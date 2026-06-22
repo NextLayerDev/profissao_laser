@@ -7,6 +7,7 @@ import {
 	type BuilderState,
 	docToState,
 } from '@/components/ferramentas/builder-model';
+import { usePlans } from '@/modules/plans/hooks/use-plans';
 import { applyVoxCharge, emitVoxSpend } from '../lib/vox-fx';
 import { streamAgentTurn } from '../services/tool-agent.service';
 
@@ -56,6 +57,16 @@ export function useToolAgent(
 		stateRef.current = state;
 	}, [state]);
 
+	// Planos reais (key+nome) p/ o agente usar keys válidas em salas (Mentoria).
+	const plansQuery = usePlans();
+	const plansRef = useRef<{ key: string; name: string }[]>([]);
+	useEffect(() => {
+		plansRef.current = (plansQuery.data ?? []).map((p) => ({
+			key: p.key,
+			name: p.name,
+		}));
+	}, [plansQuery.data]);
+
 	const patchMsg = useCallback(
 		(id: string, fn: (m: AgentMessage) => AgentMessage) => {
 			setMessages((prev) => prev.map((m) => (m.id === id ? fn(m) : m)));
@@ -89,6 +100,7 @@ export function useToolAgent(
 						state: stateRef.current ?? current,
 						message: text,
 						history: historyRef.current,
+						plans: plansRef.current,
 					},
 					ac.signal,
 				)) {
