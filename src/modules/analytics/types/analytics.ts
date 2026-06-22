@@ -132,6 +132,7 @@ export const billingReasonSchema = z.enum([
 	'subscription_cycle',
 	'subscription_update',
 	'manual',
+	'refund',
 ]);
 export type BillingReason = z.infer<typeof billingReasonSchema>;
 
@@ -249,6 +250,7 @@ export const entryRowSchema = z.object({
 			billing_reason: billingReasonSchema,
 			interval: z.enum(['monthly', 'yearly']),
 			plan: z.object({ id: z.string(), key: z.string(), name: z.string() }),
+			status: z.enum(['paid', 'payment_failed', 'refunded']).optional(),
 		})
 		.nullable()
 		.optional(),

@@ -56,11 +56,33 @@ const BILLING_REASON_LABEL: Record<BillingReason, string> = {
 	subscription_cycle: 'Renovação',
 	subscription_update: 'Atualização',
 	manual: 'Manual',
+	refund: 'Reembolso',
 };
 
 const INTERVAL_LABEL: Record<'monthly' | 'yearly', string> = {
 	monthly: 'Mensal',
 	yearly: 'Anual',
+};
+
+const SUBSCRIPTION_STATUS_CONFIG: Record<
+	'paid' | 'payment_failed' | 'refunded',
+	{ label: string; bg: string; text: string }
+> = {
+	paid: {
+		label: 'Pago',
+		bg: 'bg-emerald-500/10',
+		text: 'text-emerald-500',
+	},
+	payment_failed: {
+		label: 'Falhou',
+		bg: 'bg-red-500/10',
+		text: 'text-red-500',
+	},
+	refunded: {
+		label: 'Reembolsado',
+		bg: 'bg-amber-500/10',
+		text: 'text-amber-500',
+	},
 };
 
 function getRange(preset: DatePreset, customFrom: string, customTo: string) {
@@ -80,9 +102,11 @@ function formatCents(cents: number) {
 
 const REFUND_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
-/** Assinatura reembolsável: dentro da janela de 7 dias desde a entrada. */
+/** Assinatura reembolsável: paga, dentro da janela de 7 dias desde a entrada. */
 function isRefundable(row: EntryRow): boolean {
 	if (row.entry_type !== 'subscription' || !row.subscription?.subscription_id)
+		return false;
+	if (row.subscription.status && row.subscription.status !== 'paid')
 		return false;
 	const occurred = new Date(row.occurred_at).getTime();
 	return Number.isFinite(occurred) && Date.now() - occurred <= REFUND_WINDOW_MS;
@@ -407,9 +431,23 @@ function EntryRowItem({
 			<td className="px-4 py-3">
 				{row.entry_type === 'subscription' && row.subscription ? (
 					<>
-						<p className="text-slate-900 dark:text-white font-medium">
-							{row.subscription.plan.name}
-						</p>
+						<div className="flex items-center gap-2">
+							<p className="text-slate-900 dark:text-white font-medium">
+								{row.subscription.plan.name}
+							</p>
+							{row.subscription.status &&
+								(() => {
+									const s =
+										SUBSCRIPTION_STATUS_CONFIG[row.subscription.status!];
+									return (
+										<span
+											className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${s.bg} ${s.text}`}
+										>
+											{s.label}
+										</span>
+									);
+								})()}
+						</div>
 						<p className="text-xs text-slate-500 dark:text-gray-500">
 							{BILLING_REASON_LABEL[row.subscription.billing_reason]} ·{' '}
 							{INTERVAL_LABEL[row.subscription.interval]}
