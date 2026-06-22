@@ -46,6 +46,7 @@ import {
 	type BuilderNode,
 	type BuilderState,
 	buildDoc,
+	defaultRoom,
 	docToState,
 	type FieldType,
 	newField,
@@ -68,6 +69,7 @@ import {
 	TypeChip,
 } from './builder-ui';
 import { ToolCanvas } from './canvas/tool-canvas';
+import { RoomBuilderSections } from './room-builder-sections';
 import { ToolBillingPanel } from './tool-billing-panel';
 
 /* ───────── estilos + accents ───────── */
@@ -626,7 +628,9 @@ export function ToolBuilderView() {
 					status: 'draft',
 					title: state.title || 'Pré-visualização',
 					description: state.description || null,
-					engine_runtime: 'blocks_v1',
+					engine_runtime: (derivedDoc as { room?: unknown }).room
+						? 'room_v1'
+						: 'blocks_v1',
 					definition: derivedDoc,
 				}
 			: null;
@@ -638,10 +642,15 @@ export function ToolBuilderView() {
 				mode === 'json'
 					? toolDefinitionDocSchema.parse(JSON.parse(json))
 					: buildDoc(state);
+			// O tipo de motor segue o doc: sala (room) → room_v1; senão blocks_v1.
+			const engine_runtime = (definition as { room?: unknown }).room
+				? 'room_v1'
+				: 'blocks_v1';
 			if (selectedDefId) {
 				return updateToolDefinition(selectedDefId, {
 					title: state.title,
 					description: state.description || null,
+					engine_runtime,
 					definition,
 				});
 			}
@@ -649,6 +658,7 @@ export function ToolBuilderView() {
 				tool_key: state.toolKey,
 				title: state.title,
 				description: state.description || undefined,
+				engine_runtime,
 				definition,
 			});
 		},
@@ -937,40 +947,67 @@ export function ToolBuilderView() {
 							<>
 								<div className="sticky top-[142px] z-10 mb-1">
 									<StepperBar
-										steps={[
-											{
-												id: 'builder-step-01',
-												label: 'Identidade',
-												accent: 'emerald',
-												done: !!state.title && !!state.toolKey,
-											},
-											{
-												id: 'builder-step-02',
-												label: 'Campos',
-												accent: 'sky',
-												done: state.fields.length > 0,
-											},
-											{
-												id: 'builder-step-03',
-												label: 'Fluxo',
-												accent: 'cyan',
-												done: state.nodes.length > 0,
-											},
-											{
-												id: 'builder-step-04',
-												label: 'Resultado',
-												accent: 'violet',
-												done: !!state.output.primary,
-											},
-											{
-												id: 'builder-step-05',
-												label: 'Preço',
-												accent: 'amber',
-												done:
-													state.voxCost > 0 ||
-													Object.values(state.freeQuota).some((v) => v !== 0),
-											},
-										]}
+										steps={
+											state.toolType === 'room'
+												? [
+														{
+															id: 'builder-step-01',
+															label: 'Identidade',
+															accent: 'emerald',
+															done: !!state.title && !!state.toolKey,
+														},
+														{
+															id: 'builder-step-02',
+															label: 'Sala',
+															accent: 'cyan',
+															done: !!state.room,
+														},
+														{
+															id: 'builder-step-03',
+															label: 'Acesso',
+															accent: 'amber',
+															done:
+																(state.room?.includedPlanKeys.length ?? 0) >
+																	0 || (state.room?.voxCost ?? 0) > 0,
+														},
+													]
+												: [
+														{
+															id: 'builder-step-01',
+															label: 'Identidade',
+															accent: 'emerald',
+															done: !!state.title && !!state.toolKey,
+														},
+														{
+															id: 'builder-step-02',
+															label: 'Campos',
+															accent: 'sky',
+															done: state.fields.length > 0,
+														},
+														{
+															id: 'builder-step-03',
+															label: 'Fluxo',
+															accent: 'cyan',
+															done: state.nodes.length > 0,
+														},
+														{
+															id: 'builder-step-04',
+															label: 'Resultado',
+															accent: 'violet',
+															done: !!state.output.primary,
+														},
+														{
+															id: 'builder-step-05',
+															label: 'Preço',
+															accent: 'amber',
+															done:
+																state.voxCost > 0 ||
+																Object.values(state.freeQuota).some(
+																	(v) => v !== 0,
+																),
+														},
+													]
+										}
 									/>
 								</div>
 								{/* identidade */}
@@ -1053,98 +1090,45 @@ export function ToolBuilderView() {
 									</div>
 								</FormSection>
 
-								{/* entradas */}
-								<FormSection
-									step="02"
-									title="O que o cliente envia"
-									subtitle="Os campos do formulário."
-									icon={<Sparkles className="h-4 w-4" />}
-									accent="sky"
-									delay={60}
-								>
-									<div className="space-y-2">
-										{state.fields.map((f) => (
-											<FieldCard
-												key={f.name}
-												field={f}
-												onChange={(nf) =>
-													patch({
-														fields: state.fields.map((x) =>
-															x.name === nf.name ? nf : x,
-														),
-													})
-												}
-												onRemove={() =>
-													patch({
-														fields: state.fields.filter(
-															(x) => x.name !== f.name,
-														),
-													})
-												}
-											/>
-										))}
-									</div>
-									<div className="mt-4 flex flex-wrap items-center gap-2">
-										<span className="text-[13px] text-slate-500">
-											+ adicionar
-										</span>
-										{FIELD_TYPES.map((ft) => (
-											<TypeChip key={ft.type} onClick={() => addField(ft.type)}>
-												{ft.label}
-											</TypeChip>
-										))}
-									</div>
-								</FormSection>
-
-								{/* pipeline */}
-								<FormSection
-									step="03"
-									title="O que a ferramenta faz"
-									subtitle="Ligue a saída de uma etapa na entrada da outra."
-									icon={<Workflow className="h-4 w-4" />}
-									accent="cyan"
-									delay={120}
-								>
-									<div className="mb-4">
-										<SegmentedControl
-											value={pipelineMode}
-											onChange={setPipelineMode}
-											ariaLabel="Modo de montagem"
-											options={[
-												{ value: 'canvas', label: 'Canvas' },
-												{ value: 'steps', label: 'Etapas' },
-											]}
-										/>
-									</div>
-
-									{pipelineMode === 'canvas' ? (
-										<ToolCanvas state={state} onChange={(s) => setState(s)} />
-									) : (
-										<>
+								{state.toolType === 'room' && state.room ? (
+									<RoomBuilderSections
+										room={state.room}
+										plans={plans.data ?? []}
+										plansLoading={plans.isLoading}
+										setRoom={(partial) =>
+											patch({
+												room: { ...(state.room ?? defaultRoom()), ...partial },
+											})
+										}
+									/>
+								) : (
+									<>
+										{/* entradas */}
+										<FormSection
+											step="02"
+											title="O que o cliente envia"
+											subtitle="Os campos do formulário."
+											icon={<Sparkles className="h-4 w-4" />}
+											accent="sky"
+											delay={60}
+										>
 											<div className="space-y-2">
-												{state.nodes.map((n, i) => (
-													<StepCard
-														key={n.id}
-														node={n}
-														index={i}
-														total={state.nodes.length}
-														state={state}
-														onParam={(param, v) =>
+												{state.fields.map((f) => (
+													<FieldCard
+														key={f.name}
+														field={f}
+														onChange={(nf) =>
 															patch({
-																nodes: state.nodes.map((x) =>
-																	x.id === n.id
-																		? {
-																				...x,
-																				params: { ...x.params, [param]: v },
-																			}
-																		: x,
+																fields: state.fields.map((x) =>
+																	x.name === nf.name ? nf : x,
 																),
 															})
 														}
-														onMove={(dir) => moveNode(i, dir)}
 														onRemove={() =>
 															patch({
-																nodes: state.nodes.filter((x) => x.id !== n.id),
+																fields: state.fields.filter(
+																	(x) => x.name !== f.name,
+																),
 															})
 														}
 													/>
@@ -1152,197 +1136,281 @@ export function ToolBuilderView() {
 											</div>
 											<div className="mt-4 flex flex-wrap items-center gap-2">
 												<span className="text-[13px] text-slate-500">
-													+ etapa
+													+ adicionar
 												</span>
-												{BLOCK_CATALOG.map((b) => (
+												{FIELD_TYPES.map((ft) => (
 													<TypeChip
-														key={b.id}
-														onClick={() => addNode(b.id)}
-														accent={b.accent}
-														icon={<Glyph name={b.icon} className="h-4 w-4" />}
+														key={ft.type}
+														onClick={() => addField(ft.type)}
 													>
-														{b.label}
+														{ft.label}
 													</TypeChip>
 												))}
 											</div>
-										</>
-									)}
-								</FormSection>
+										</FormSection>
 
-								{/* saída */}
-								<FormSection
-									step="04"
-									title="Resultado"
-									subtitle="O que o cliente recebe no final."
-									icon={<Eye className="h-4 w-4" />}
-									accent="violet"
-									delay={180}
-								>
-									<div className="space-y-5">
-										<Field label="Arquivo final" htmlFor="out-primary">
-											<SelectInput
-												id="out-primary"
-												value={state.output.primary}
-												onChange={(v) =>
-													patch({ output: { ...state.output, primary: v } })
-												}
-												muted={!state.output.primary}
-											>
-												<option value="">— escolha a saída —</option>
-												{outputs.map((o) => (
-													<option key={o.value} value={o.value}>
-														{o.label}
-													</option>
-												))}
-											</SelectInput>
-										</Field>
-										<Field label="Prévia" hint="opcional" htmlFor="out-preview">
-											<SelectInput
-												id="out-preview"
-												value={state.output.preview}
-												onChange={(v) =>
-													patch({ output: { ...state.output, preview: v } })
-												}
-												muted={!state.output.preview}
-											>
-												<option value="">— nenhuma —</option>
-												{outputs.map((o) => (
-													<option key={o.value} value={o.value}>
-														{o.label}
-													</option>
-												))}
-											</SelectInput>
-										</Field>
-										{numberOutputs.length > 0 && (
-											<Field
-												label="Detalhes"
-												hint="números mostrados como etiqueta no resultado"
-											>
-												<div className="flex flex-wrap gap-2">
-													{numberOutputs.map((o) => {
-														const on = state.output.meta.includes(o.value);
-														return (
-															<button
-																key={o.value}
-																type="button"
-																aria-pressed={on}
-																onClick={() =>
+										{/* pipeline */}
+										<FormSection
+											step="03"
+											title="O que a ferramenta faz"
+											subtitle="Ligue a saída de uma etapa na entrada da outra."
+											icon={<Workflow className="h-4 w-4" />}
+											accent="cyan"
+											delay={120}
+										>
+											<div className="mb-4">
+												<SegmentedControl
+													value={pipelineMode}
+													onChange={setPipelineMode}
+													ariaLabel="Modo de montagem"
+													options={[
+														{ value: 'canvas', label: 'Canvas' },
+														{ value: 'steps', label: 'Etapas' },
+													]}
+												/>
+											</div>
+
+											{pipelineMode === 'canvas' ? (
+												<ToolCanvas
+													state={state}
+													onChange={(s) => setState(s)}
+												/>
+											) : (
+												<>
+													<div className="space-y-2">
+														{state.nodes.map((n, i) => (
+															<StepCard
+																key={n.id}
+																node={n}
+																index={i}
+																total={state.nodes.length}
+																state={state}
+																onParam={(param, v) =>
 																	patch({
-																		output: {
-																			...state.output,
-																			meta: on
-																				? state.output.meta.filter(
-																						(m) => m !== o.value,
-																					)
-																				: [...state.output.meta, o.value],
-																		},
+																		nodes: state.nodes.map((x) =>
+																			x.id === n.id
+																				? {
+																						...x,
+																						params: { ...x.params, [param]: v },
+																					}
+																				: x,
+																		),
 																	})
 																}
-																className={`rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 ${on ? 'bg-violet-500/15 text-violet-300 ring-1 ring-violet-400/30' : 'bg-white/[0.04] text-slate-400 hover:text-slate-200'}`}
+																onMove={(dir) => moveNode(i, dir)}
+																onRemove={() =>
+																	patch({
+																		nodes: state.nodes.filter(
+																			(x) => x.id !== n.id,
+																		),
+																	})
+																}
+															/>
+														))}
+													</div>
+													<div className="mt-4 flex flex-wrap items-center gap-2">
+														<span className="text-[13px] text-slate-500">
+															+ etapa
+														</span>
+														{BLOCK_CATALOG.map((b) => (
+															<TypeChip
+																key={b.id}
+																onClick={() => addNode(b.id)}
+																accent={b.accent}
+																icon={
+																	<Glyph name={b.icon} className="h-4 w-4" />
+																}
 															>
+																{b.label}
+															</TypeChip>
+														))}
+													</div>
+												</>
+											)}
+										</FormSection>
+
+										{/* saída */}
+										<FormSection
+											step="04"
+											title="Resultado"
+											subtitle="O que o cliente recebe no final."
+											icon={<Eye className="h-4 w-4" />}
+											accent="violet"
+											delay={180}
+										>
+											<div className="space-y-5">
+												<Field label="Arquivo final" htmlFor="out-primary">
+													<SelectInput
+														id="out-primary"
+														value={state.output.primary}
+														onChange={(v) =>
+															patch({ output: { ...state.output, primary: v } })
+														}
+														muted={!state.output.primary}
+													>
+														<option value="">— escolha a saída —</option>
+														{outputs.map((o) => (
+															<option key={o.value} value={o.value}>
 																{o.label}
-															</button>
+															</option>
+														))}
+													</SelectInput>
+												</Field>
+												<Field
+													label="Prévia"
+													hint="opcional"
+													htmlFor="out-preview"
+												>
+													<SelectInput
+														id="out-preview"
+														value={state.output.preview}
+														onChange={(v) =>
+															patch({ output: { ...state.output, preview: v } })
+														}
+														muted={!state.output.preview}
+													>
+														<option value="">— nenhuma —</option>
+														{outputs.map((o) => (
+															<option key={o.value} value={o.value}>
+																{o.label}
+															</option>
+														))}
+													</SelectInput>
+												</Field>
+												{numberOutputs.length > 0 && (
+													<Field
+														label="Detalhes"
+														hint="números mostrados como etiqueta no resultado"
+													>
+														<div className="flex flex-wrap gap-2">
+															{numberOutputs.map((o) => {
+																const on = state.output.meta.includes(o.value);
+																return (
+																	<button
+																		key={o.value}
+																		type="button"
+																		aria-pressed={on}
+																		onClick={() =>
+																			patch({
+																				output: {
+																					...state.output,
+																					meta: on
+																						? state.output.meta.filter(
+																								(m) => m !== o.value,
+																							)
+																						: [...state.output.meta, o.value],
+																				},
+																			})
+																		}
+																		className={`rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 ${on ? 'bg-violet-500/15 text-violet-300 ring-1 ring-violet-400/30' : 'bg-white/[0.04] text-slate-400 hover:text-slate-200'}`}
+																	>
+																		{o.label}
+																	</button>
+																);
+															})}
+														</div>
+													</Field>
+												)}
+											</div>
+										</FormSection>
+
+										{/* cobrança */}
+										<FormSection
+											step="05"
+											title="Preço e planos"
+											subtitle="Custo por uso e cota grátis por plano."
+											icon={<Rocket className="h-4 w-4" />}
+											accent="amber"
+											delay={240}
+										>
+											<Field
+												label="Custo por uso"
+												hint="cobrado em voxes"
+												htmlFor="vox-cost"
+												className="mb-5 max-w-[14rem]"
+											>
+												<div className="relative">
+													<input
+														id="vox-cost"
+														type="number"
+														step={0.05}
+														min={0}
+														value={state.voxCost}
+														onChange={(e) =>
+															patch({
+																voxCost: Math.max(0, Number(e.target.value)),
+															})
+														}
+														className={`${inputCls} pr-16 font-mono text-amber-200`}
+													/>
+													<span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 font-mono text-xs text-amber-400/80">
+														vox/uso
+													</span>
+												</div>
+											</Field>
+											<Field
+												label="Cota grátis por plano"
+												hint="quantos usos sem cobrar"
+											>
+												<div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+													{(plans.data ?? []).map((p) => {
+														const q = state.freeQuota[p.key] ?? 0;
+														const unlimited = q === null;
+														return (
+															<div
+																key={p.id}
+																className="rounded-xl border border-white/10 bg-black/20 p-3"
+															>
+																<div className="flex items-center justify-between gap-2">
+																	<span className="truncate text-[13px] font-medium text-slate-200">
+																		{p.name}
+																	</span>
+																	<button
+																		type="button"
+																		aria-pressed={unlimited}
+																		title="Ilimitado"
+																		onClick={() =>
+																			patch({
+																				freeQuota: {
+																					...state.freeQuota,
+																					[p.key]: unlimited ? 0 : null,
+																				},
+																			})
+																		}
+																		className={`rounded-md px-2 py-0.5 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 ${unlimited ? 'bg-cyan-500/15 text-cyan-300 ring-1 ring-cyan-400/30' : 'bg-white/[0.06] text-slate-500 hover:text-slate-300'}`}
+																	>
+																		∞
+																	</button>
+																</div>
+																<input
+																	type="number"
+																	min={0}
+																	disabled={unlimited}
+																	value={unlimited ? '' : (q ?? 0)}
+																	onChange={(e) =>
+																		patch({
+																			freeQuota: {
+																				...state.freeQuota,
+																				[p.key]: Math.max(
+																					0,
+																					Number(e.target.value),
+																				),
+																			},
+																		})
+																	}
+																	placeholder={unlimited ? '∞' : '0'}
+																	className="mt-2 h-9 w-full rounded-lg border border-white/10 bg-black/30 px-2.5 text-sm text-slate-100 placeholder:text-slate-500 disabled:opacity-40 focus-visible:outline-none focus-visible:border-emerald-400/50 focus-visible:ring-2 focus-visible:ring-emerald-400/30"
+																/>
+															</div>
 														);
 													})}
 												</div>
 											</Field>
-										)}
-									</div>
-								</FormSection>
+										</FormSection>
 
-								{/* cobrança */}
-								<FormSection
-									step="05"
-									title="Preço e planos"
-									subtitle="Custo por uso e cota grátis por plano."
-									icon={<Rocket className="h-4 w-4" />}
-									accent="amber"
-									delay={240}
-								>
-									<Field
-										label="Custo por uso"
-										hint="cobrado em voxes"
-										htmlFor="vox-cost"
-										className="mb-5 max-w-[14rem]"
-									>
-										<div className="relative">
-											<input
-												id="vox-cost"
-												type="number"
-												step={0.05}
-												min={0}
-												value={state.voxCost}
-												onChange={(e) =>
-													patch({
-														voxCost: Math.max(0, Number(e.target.value)),
-													})
-												}
-												className={`${inputCls} pr-16 font-mono text-amber-200`}
-											/>
-											<span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 font-mono text-xs text-amber-400/80">
-												vox/uso
-											</span>
-										</div>
-									</Field>
-									<Field
-										label="Cota grátis por plano"
-										hint="quantos usos sem cobrar"
-									>
-										<div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-											{(plans.data ?? []).map((p) => {
-												const q = state.freeQuota[p.key] ?? 0;
-												const unlimited = q === null;
-												return (
-													<div
-														key={p.id}
-														className="rounded-xl border border-white/10 bg-black/20 p-3"
-													>
-														<div className="flex items-center justify-between gap-2">
-															<span className="truncate text-[13px] font-medium text-slate-200">
-																{p.name}
-															</span>
-															<button
-																type="button"
-																aria-pressed={unlimited}
-																title="Ilimitado"
-																onClick={() =>
-																	patch({
-																		freeQuota: {
-																			...state.freeQuota,
-																			[p.key]: unlimited ? 0 : null,
-																		},
-																	})
-																}
-																className={`rounded-md px-2 py-0.5 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 ${unlimited ? 'bg-cyan-500/15 text-cyan-300 ring-1 ring-cyan-400/30' : 'bg-white/[0.06] text-slate-500 hover:text-slate-300'}`}
-															>
-																∞
-															</button>
-														</div>
-														<input
-															type="number"
-															min={0}
-															disabled={unlimited}
-															value={unlimited ? '' : (q ?? 0)}
-															onChange={(e) =>
-																patch({
-																	freeQuota: {
-																		...state.freeQuota,
-																		[p.key]: Math.max(
-																			0,
-																			Number(e.target.value),
-																		),
-																	},
-																})
-															}
-															placeholder={unlimited ? '∞' : '0'}
-															className="mt-2 h-9 w-full rounded-lg border border-white/10 bg-black/30 px-2.5 text-sm text-slate-100 placeholder:text-slate-500 disabled:opacity-40 focus-visible:outline-none focus-visible:border-emerald-400/50 focus-visible:ring-2 focus-visible:ring-emerald-400/30"
-														/>
-													</div>
-												);
-											})}
-										</div>
-									</Field>
-								</FormSection>
+										{/* fim das seções de pipeline (sala usa Sala+Acesso acima) */}
+									</>
+								)}
 
 								{/* avançado */}
 								<div className="forge-rise overflow-hidden rounded-2xl border border-white/10 bg-[#0c0f12]/80">
