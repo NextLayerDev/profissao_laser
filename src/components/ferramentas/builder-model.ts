@@ -106,8 +106,25 @@ export function resolveParam(
 	return resolveSpec(blockId, customs)?.params.find((p) => p.name === name);
 }
 
+/**
+ * Config de uma tool de "sala" (Mentoria) — engine_runtime='room_v1'. Não é
+ * pipeline: o admin define a sala (cap, agenda, link externo, features) e o
+ * acesso (planos inclusos grátis / custo em voxes / se pode entrar pagando).
+ */
+export interface BuilderRoomState {
+	cap: number | null; // null = sem limite
+	opensMinutesBefore: number;
+	defaultDurationMin: number;
+	features: { recording: boolean; chat: boolean; materials: boolean };
+	includedPlanKeys: string[]; // planos com entrada grátis
+	voxCost: number; // custo p/ quem não tem plano
+	allowVoxEntry: boolean; // false = só plano (sem comprar entrada)
+}
+
 export interface BuilderState {
 	templateId: string;
+	/** 'pipeline' (tools de IA) | 'room' (Mentoria/sala). */
+	toolType: 'pipeline' | 'room';
 	toolKey: string;
 	title: string;
 	description: string;
@@ -121,6 +138,8 @@ export interface BuilderState {
 	output: { primary: string; preview: string; meta: string[] };
 	voxCost: number;
 	freeQuota: Record<string, number | null>;
+	/** Presente só quando toolType='room'. */
+	room?: BuilderRoomState;
 }
 
 /** Planos conhecidos (fallback p/ seeds; a UI usa os planos reais via usePlans). */
@@ -195,7 +214,45 @@ function fieldToControl(f: BuilderField): ToolControl {
 	return c;
 }
 
+/** Doc de uma tool de sala (Mentoria): sem pipeline; config em `room`. */
+function buildRoomDoc(state: BuilderState): ToolDefinitionDoc {
+	const r = state.room ?? defaultRoom();
+	// billing derivado p/ preview/compat; o publish é a fonte (lê room.access).
+	const freeQuota: Record<string, number | null> = {};
+	for (const k of r.includedPlanKeys) freeQuota[k] = null;
+	return {
+		schemaVersion: 1,
+		input: {},
+		pipeline: [],
+		room: {
+			cap: r.cap,
+			schedule: {
+				opensMinutesBefore: r.opensMinutesBefore,
+				defaultDurationMin: r.defaultDurationMin,
+			},
+			link: { mode: 'external' },
+			features: { ...r.features },
+			access: {
+				includedPlanKeys: [...r.includedPlanKeys],
+				voxCost: r.voxCost,
+				allowVoxEntry: r.allowVoxEntry,
+			},
+		},
+		output: {},
+		ui: {
+			layout: 'room',
+			icon: state.icon,
+			title: state.title,
+			description: state.description,
+			action: { label: state.actionLabel || 'Entrar na sala' },
+		},
+		billing: { vox_cost: r.voxCost, free_quota: freeQuota },
+	} as unknown as ToolDefinitionDoc;
+}
+
 export function buildDoc(state: BuilderState): ToolDefinitionDoc {
+	if (state.toolType === 'room') return buildRoomDoc(state);
+
 	const input: Record<string, ToolInputSpec> = {};
 	for (const f of state.fields) input[f.name] = fieldToSpec(f);
 
@@ -264,6 +321,19 @@ function inferFieldWidget(spec: ToolInputSpec, ctl?: ToolControl): FieldWidget {
 	return 'text';
 }
 
+/** Estado-base de uma sala nova (Mentoria). */
+export function defaultRoom(): BuilderRoomState {
+	return {
+		cap: null,
+		opensMinutesBefore: 10,
+		defaultDurationMin: 60,
+		features: { recording: false, chat: false, materials: false },
+		includedPlanKeys: [],
+		voxCost: 0,
+		allowVoxEntry: true,
+	};
+}
+
 export function docToState(def: {
 	tool_key: string;
 	title: string;
@@ -271,6 +341,11 @@ export function docToState(def: {
 	definition: ToolDefinitionDoc;
 }): BuilderState {
 	const doc = def.definition;
+
+	// Tool de sala (Mentoria): reconstrói o estado de room (sem pipeline).
+	const roomDoc = (doc as { room?: Record<string, unknown> }).room;
+	if (roomDoc) return roomDocToState(def, roomDoc);
+
 	const inputSpec = (doc.input ?? {}) as Record<string, ToolInputSpec>;
 	const controls = (doc.ui?.controls ?? []) as ToolControl[];
 	const controlByName = new Map(
@@ -341,6 +416,7 @@ export function docToState(def: {
 
 	return {
 		templateId: 'custom',
+		toolType: 'pipeline',
 		toolKey: def.tool_key,
 		title: def.title,
 		description: def.description ?? '',
@@ -356,6 +432,54 @@ export function docToState(def: {
 		},
 		voxCost: typeof billing.vox_cost === 'number' ? billing.vox_cost : 0,
 		freeQuota,
+	};
+}
+
+/** definition de sala → BuilderState (round-trip idempotente com buildRoomDoc). */
+function roomDocToState(
+	def: { tool_key: string; title: string; description: string | null },
+	roomDoc: Record<string, unknown>,
+): BuilderState {
+	const r = roomDoc as {
+		cap?: number | null;
+		schedule?: { opensMinutesBefore?: number; defaultDurationMin?: number };
+		features?: { recording?: boolean; chat?: boolean; materials?: boolean };
+		access?: {
+			includedPlanKeys?: string[];
+			voxCost?: number;
+			allowVoxEntry?: boolean;
+		};
+	};
+	const room: BuilderRoomState = {
+		cap: r.cap ?? null,
+		opensMinutesBefore: r.schedule?.opensMinutesBefore ?? 10,
+		defaultDurationMin: r.schedule?.defaultDurationMin ?? 60,
+		features: {
+			recording: !!r.features?.recording,
+			chat: !!r.features?.chat,
+			materials: !!r.features?.materials,
+		},
+		includedPlanKeys: Array.isArray(r.access?.includedPlanKeys)
+			? r.access.includedPlanKeys
+			: [],
+		voxCost: r.access?.voxCost ?? 0,
+		allowVoxEntry: r.access?.allowVoxEntry !== false,
+	};
+	return {
+		templateId: 'mentoria',
+		toolType: 'room',
+		toolKey: def.tool_key,
+		title: def.title,
+		description: def.description ?? '',
+		icon: 'video',
+		actionLabel: 'Entrar na sala',
+		fields: [],
+		nodes: [],
+		customNodes: [],
+		output: { primary: '', preview: '', meta: [] },
+		voxCost: room.voxCost,
+		freeQuota: {},
+		room,
 	};
 }
 
@@ -552,6 +676,7 @@ const blank: Template = {
 	accent: 'cyan',
 	seed: () => ({
 		templateId: 'blank',
+		toolType: 'pipeline',
 		toolKey: '',
 		title: '',
 		description: '',
@@ -574,6 +699,7 @@ const laser: Template = {
 	accent: 'orange',
 	seed: () => ({
 		templateId: 'laser',
+		toolType: 'pipeline',
 		toolKey: '',
 		title: 'Gravação a laser',
 		description: 'Prepara uma foto pra gravação a laser.',
@@ -678,6 +804,7 @@ const vectorize: Template = {
 	accent: 'emerald',
 	seed: () => ({
 		templateId: 'vectorize',
+		toolType: 'pipeline',
 		toolKey: '',
 		title: 'Vetorização',
 		description: 'Converte uma imagem em vetor (SVG).',
@@ -715,7 +842,31 @@ const vectorize: Template = {
 	}),
 };
 
-export const TEMPLATES: Template[] = [blank, laser, vectorize];
+const mentoria: Template = {
+	id: 'mentoria',
+	name: 'Mentoria (sala ao vivo)',
+	tagline: 'Sala de vídeo/live com acesso por plano ou voxes e cap de gente.',
+	icon: 'video',
+	accent: 'violet',
+	seed: () => ({
+		templateId: 'mentoria',
+		toolType: 'room',
+		toolKey: '',
+		title: 'Mentoria',
+		description: 'Sessões de mentoria ao vivo (sala de vídeo).',
+		icon: 'video',
+		actionLabel: 'Entrar na sala',
+		fields: [],
+		nodes: [],
+		customNodes: [],
+		output: { primary: '', preview: '', meta: [] },
+		voxCost: 0,
+		freeQuota: {},
+		room: defaultRoom(),
+	}),
+};
+
+export const TEMPLATES: Template[] = [blank, laser, vectorize, mentoria];
 
 export function slugifyKey(title: string): string {
 	return title
