@@ -10,7 +10,6 @@ import {
 	ChevronRight,
 	Code2,
 	Eye,
-	EyeOff,
 	Link2,
 	Loader2,
 	Plus,
@@ -513,11 +512,10 @@ export function ToolBuilderView() {
 	const [pipelineMode, setPipelineMode] = useState<'canvas' | 'steps'>(
 		'canvas',
 	);
-	const [showPreview, setShowPreview] = useState(true);
 	const [showAgent, setShowAgent] = useState(true);
-	// Preview de sala (room_v1): alterna entre a tela do aluno e a do admin.
-	const [previewRole, setPreviewRole] = useState<'customer' | 'admin'>(
-		'customer',
+	// Abas do editor em largura total: Edição (builder) | Aluno/Cliente | Admin.
+	const [editorTab, setEditorTab] = useState<'edit' | 'customer' | 'admin'>(
+		'edit',
 	);
 
 	const goHub = () => {
@@ -589,6 +587,7 @@ export function ToolBuilderView() {
 		setBillingTool(null);
 		setActiveStep(0);
 		setFlowMounted(false);
+		setEditorTab('edit');
 		setView('editor');
 	};
 
@@ -610,6 +609,7 @@ export function ToolBuilderView() {
 		}
 		setActiveStep(0);
 		setFlowMounted(false);
+		setEditorTab('edit');
 		setView('editor');
 	};
 
@@ -649,21 +649,47 @@ export function ToolBuilderView() {
 		return null;
 	}, [mode, json, state]);
 
-	const previewDef: AiToolDefinition | null =
-		derivedDoc && state
-			? {
-					id: selectedDefId ?? 'draft',
-					tool_key: state.toolKey || 'preview',
-					version: 0,
-					status: 'draft',
-					title: state.title || 'Pré-visualização',
-					description: state.description || null,
-					engine_runtime: (derivedDoc as { room?: unknown }).room
-						? 'room_v1'
-						: 'blocks_v1',
-					definition: derivedDoc,
-				}
-			: null;
+	const previewDef = useMemo<AiToolDefinition | null>(
+		() =>
+			derivedDoc && state
+				? {
+						id: selectedDefId ?? 'draft',
+						tool_key: state.toolKey || 'preview',
+						version: 0,
+						status: 'draft',
+						title: state.title || 'Pré-visualização',
+						description: state.description || null,
+						engine_runtime: (derivedDoc as { room?: unknown }).room
+							? 'room_v1'
+							: 'blocks_v1',
+						definition: derivedDoc,
+					}
+				: null,
+		[derivedDoc, state, selectedDefId],
+	);
+
+	// Abas do editor: sala → Edição/Aluno/Admin; pipeline → Edição/Cliente.
+	const isRoomDraft = previewDef?.engine_runtime === 'room_v1';
+	const editorTabs = useMemo<
+		{ id: 'edit' | 'customer' | 'admin'; label: string }[]
+	>(
+		() =>
+			isRoomDraft
+				? [
+						{ id: 'edit', label: 'Edição' },
+						{ id: 'customer', label: 'Aluno' },
+						{ id: 'admin', label: 'Admin' },
+					]
+				: [
+						{ id: 'edit', label: 'Edição' },
+						{ id: 'customer', label: 'Cliente' },
+					],
+		[isRoomDraft],
+	);
+	// Se a aba ativa some (ex.: 'admin' numa tool de pipeline), volta p/ Edição.
+	useEffect(() => {
+		if (!editorTabs.some((t) => t.id === editorTab)) setEditorTab('edit');
+	}, [editorTabs, editorTab]);
 
 	const saveMut = useMutation({
 		mutationFn: async () => {
@@ -824,17 +850,14 @@ export function ToolBuilderView() {
 			window.scrollTo({ top: 0, behavior: 'smooth' });
 	};
 
-	// colunas do container por tela: galeria = lista + grade; editor = trabalho
-	// + prévia (ou só trabalho se prévia oculta); cobrança = centrado.
+	// colunas do container por tela: galeria = lista + grade; cobrança = centrado.
+	// Editor: na aba Edição, trabalho (+ agente opcional ao lado); nas abas de
+	// preview (Aluno/Admin), largura total.
 	const gridCls =
 		view === 'editor'
-			? showPreview && showAgent
-				? 'grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px_380px]'
-				: showPreview
-					? 'grid gap-5 lg:grid-cols-[minmax(0,1fr)_400px]'
-					: showAgent
-						? 'grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]'
-						: 'grid gap-5'
+			? editorTab === 'edit' && showAgent
+				? 'grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]'
+				: 'grid gap-5'
 			: view === 'billing'
 				? 'mx-auto grid max-w-4xl gap-5'
 				: 'grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)]';
@@ -931,33 +954,20 @@ export function ToolBuilderView() {
 									)}
 								</div>
 								<div className="ml-auto flex items-center gap-2">
-									<button
-										type="button"
-										onClick={() => setShowAgent((v) => !v)}
-										className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
-											showAgent
-												? 'border-violet-400/40 bg-violet-500/15 text-violet-200'
-												: 'border-white/10 bg-black/20 text-slate-300 hover:text-white'
-										}`}
-									>
-										<Sparkles className="h-4 w-4" />{' '}
-										{showAgent ? 'Ocultar agente' : 'Agente'}
-									</button>
-									<button
-										type="button"
-										onClick={() => setShowPreview((v) => !v)}
-										className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white"
-									>
-										{showPreview ? (
-											<>
-												<EyeOff className="h-4 w-4" /> Ocultar prévia
-											</>
-										) : (
-											<>
-												<Eye className="h-4 w-4" /> Mostrar prévia
-											</>
-										)}
-									</button>
+									{editorTab === 'edit' && (
+										<button
+											type="button"
+											onClick={() => setShowAgent((v) => !v)}
+											className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+												showAgent
+													? 'border-violet-400/40 bg-violet-500/15 text-violet-200'
+													: 'border-white/10 bg-black/20 text-slate-300 hover:text-white'
+											}`}
+										>
+											<Sparkles className="h-4 w-4" />{' '}
+											{showAgent ? 'Ocultar agente' : 'Agente'}
+										</button>
+									)}
 									{actionButtons}
 								</div>
 							</>
@@ -970,6 +980,37 @@ export function ToolBuilderView() {
 								</span>
 							</span>
 						)}
+					</div>
+				)}
+
+				{/* abas em largura total: Edição (builder) | Aluno/Cliente | Admin */}
+				{view === 'editor' && state && (
+					<div className="forge-rise mb-5 flex items-center gap-1 overflow-x-auto rounded-2xl border border-white/[0.07] bg-[#0a0c10]/90 p-1.5">
+						{editorTabs.map((t) => {
+							const on = editorTab === t.id;
+							return (
+								<button
+									key={t.id}
+									type="button"
+									aria-current={on ? 'page' : undefined}
+									onClick={() => setEditorTab(t.id)}
+									className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 ${
+										on
+											? t.id === 'edit'
+												? 'bg-emerald-500/15 text-emerald-200 ring-1 ring-emerald-400/30'
+												: 'bg-white/10 text-white ring-1 ring-white/15'
+											: 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'
+									}`}
+								>
+									{t.id === 'edit' ? (
+										<Save className="h-4 w-4" />
+									) : (
+										<Eye className="h-4 w-4" />
+									)}
+									{t.label}
+								</button>
+							);
+						})}
 					</div>
 				)}
 
@@ -1054,6 +1095,34 @@ export function ToolBuilderView() {
 							<ToolBillingPanel tool={billingTool} />
 						) : view === 'gallery' || !state ? (
 							<Gallery onPick={startNew} />
+						) : editorTab !== 'edit' ? (
+							/* abas de preview em largura total */
+							previewDef ? (
+								<div
+									className={
+										previewDef.engine_runtime === 'room_v1'
+											? 'mx-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-slate-50 p-4 dark:bg-[#0c0f12]'
+											: 'mx-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-[#0c0f12]/80'
+									}
+								>
+									{previewDef.engine_runtime === 'room_v1' ? (
+										<DynamicRoomView
+											toolKey={previewDef.tool_key}
+											definitionOverride={previewDef}
+											previewAs={editorTab === 'admin' ? 'admin' : 'customer'}
+										/>
+									) : (
+										<DynamicToolView
+											toolKey={previewDef.tool_key}
+											definitionOverride={previewDef}
+										/>
+									)}
+								</div>
+							) : (
+								<p className="rounded-2xl border border-white/10 bg-[#0c0f12]/80 p-8 text-center text-sm text-rose-400">
+									Definição incompleta — volte à aba Edição e confira as etapas.
+								</p>
+							)
 						) : (
 							<>
 								<div className="sticky top-[142px] z-10 mb-1">
@@ -1610,73 +1679,8 @@ export function ToolBuilderView() {
 						)}
 					</main>
 
-					{/* direita: preview ao vivo (só no editor, quando visível) */}
-					{view === 'editor' && state && showPreview && (
-						<aside className="space-y-3 self-start lg:sticky lg:top-[148px]">
-							<div className="flex items-center justify-between gap-2">
-								<div className="flex items-center gap-2 text-emerald-300">
-									<Eye className="h-4 w-4" />
-									<span className="font-mono text-[11px] uppercase tracking-widest">
-										{previewDef?.engine_runtime === 'room_v1'
-											? previewRole === 'admin'
-												? 'Como o admin vê'
-												: 'Como o aluno vê'
-											: 'Como o cliente vê'}
-									</span>
-								</div>
-								{previewDef?.engine_runtime === 'room_v1' && (
-									<div className="flex overflow-hidden rounded-lg border border-white/10 text-[11px] font-semibold">
-										<button
-											type="button"
-											onClick={() => setPreviewRole('customer')}
-											className={`px-2.5 py-1 ${previewRole === 'customer' ? 'bg-emerald-500/20 text-emerald-200' : 'text-slate-400 hover:text-slate-200'}`}
-										>
-											Aluno
-										</button>
-										<button
-											type="button"
-											onClick={() => setPreviewRole('admin')}
-											className={`px-2.5 py-1 ${previewRole === 'admin' ? 'bg-emerald-500/20 text-emerald-200' : 'text-slate-400 hover:text-slate-200'}`}
-										>
-											Admin
-										</button>
-									</div>
-								)}
-							</div>
-							<div className="overflow-hidden rounded-2xl border border-white/10">
-								{previewDef ? (
-									previewDef.engine_runtime === 'room_v1' ? (
-										<div className="origin-top scale-[0.98] bg-slate-50 p-3 dark:bg-[#0c0f12]">
-											<DynamicRoomView
-												toolKey={previewDef.tool_key}
-												definitionOverride={previewDef}
-												previewAs={previewRole}
-											/>
-										</div>
-									) : (
-										<div className="origin-top scale-[0.98] bg-[#0c0f12]/80">
-											<DynamicToolView
-												toolKey={previewDef.tool_key}
-												definitionOverride={previewDef}
-											/>
-										</div>
-									)
-								) : (
-									<p className="bg-[#0c0f12]/80 p-6 text-sm text-rose-400">
-										Definição incompleta — confira as etapas / o resultado.
-									</p>
-								)}
-							</div>
-							{!selectedDefId && (
-								<p className="flex items-center gap-1.5 text-[11px] text-slate-500">
-									<Check className="h-3 w-3" /> salve pra liberar a publicação
-								</p>
-							)}
-						</aside>
-					)}
-
-					{/* extrema direita: agente que monta a ferramenta ao vivo */}
-					{view === 'editor' && state && showAgent && (
+					{/* agente que monta a ferramenta ao vivo (só na aba Edição) */}
+					{view === 'editor' && state && editorTab === 'edit' && showAgent && (
 						<ToolAgentChat state={state} setState={setState} />
 					)}
 				</div>
