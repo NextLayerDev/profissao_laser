@@ -2,7 +2,7 @@
 
 import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/modules/access';
 import type { Product } from '@/types/products';
 import { formatCurrency } from '@/utils/format-currency';
 import { DeleteProductModal } from './delete-product-modal';

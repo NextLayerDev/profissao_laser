@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Header } from '@/components/dashboard/header';
 import { ToolBuilderView } from '@/components/ferramentas/tool-builder-view';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/modules/access';
 
 export default function FerramentasBuilderPage() {
 	const router = useRouter();

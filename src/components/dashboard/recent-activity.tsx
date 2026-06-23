@@ -1,7 +1,7 @@
 'use client';
 
-import { usePermissions } from '@/hooks/use-permissions';
 import { useSales } from '@/hooks/use-sales';
+import { usePermissions } from '@/modules/access';
 import { formatCurrency } from '@/utils/format-currency';
 import { toTitleCase } from '@/utils/title-case';
 

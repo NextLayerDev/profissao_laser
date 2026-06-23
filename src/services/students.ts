@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { api } from '@/lib/fetch';
 import { apiCourses } from '@/shared/lib/api-courses';
 
 /* ------------------------------------------------------------------ */
@@ -243,9 +242,9 @@ export async function setStudentPassword(
 
 /**
  * Delete a student.
- * TODO(upvox): upvox has no student-delete endpoint yet — keep the legacy main
- * API call (`api` from `@/lib/fetch`) until it lands, then move this to upvox.
+ * `DELETE /v1/user/{id}` — permanently deletes the user (auth + cascade to all
+ * related data). Cannot delete yourself. Admin only. Responds 204.
  */
 export async function deleteStudent(id: string): Promise<void> {
-	await api.delete('/customer', { data: { id } });
+	await apiCourses.delete(`/v1/user/${id}`);
 }

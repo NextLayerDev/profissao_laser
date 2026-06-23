@@ -20,7 +20,6 @@ export const salesRowSchema = z.object({
 	customer: customerRefSchema,
 	plan: z.object({ id: z.string(), key: z.string(), name: z.string() }),
 	sale_value_cents: z.number().int(),
-	mrr_cents: z.number().int(),
 });
 export type SalesRow = z.infer<typeof salesRowSchema>;
 
@@ -133,6 +132,7 @@ export const billingReasonSchema = z.enum([
 	'subscription_cycle',
 	'subscription_update',
 	'manual',
+	'refund',
 ]);
 export type BillingReason = z.infer<typeof billingReasonSchema>;
 
@@ -174,6 +174,7 @@ export const invoicesSummarySchema = z.object({
 		subscription_cycle: invoiceReasonStatsSchema,
 		subscription_update: invoiceReasonStatsSchema,
 		manual: invoiceReasonStatsSchema,
+		refund: invoiceReasonStatsSchema,
 	}),
 });
 export type InvoicesSummary = z.infer<typeof invoicesSummarySchema>;
@@ -188,6 +189,101 @@ export interface InvoicesAnalyticsParams {
 	q?: string;
 	page?: number;
 	per_page?: number;
+}
+
+// ---- Failed payments ----
+
+export const failedPaymentRowSchema = z.object({
+	id: z.string(),
+	subscription_id: z.string().nullable().optional(),
+	stripe_invoice_id: z.string(),
+	billing_reason: billingReasonSchema,
+	amount_cents: z.number().int(),
+	interval: z.enum(['monthly', 'yearly']),
+	period_start: z.string().nullable().optional(),
+	period_end: z.string().nullable().optional(),
+	created_at: z.string(),
+	customer: customerRefSchema,
+	plan: z
+		.object({ id: z.string(), key: z.string(), name: z.string() })
+		.nullable()
+		.optional(),
+});
+export type FailedPaymentRow = z.infer<typeof failedPaymentRowSchema>;
+
+export const failedPaymentsAnalyticsSchema = z.object({
+	data: failedPaymentRowSchema.array(),
+	page: z.number().int(),
+	per_page: z.number().int(),
+	total: z.number().int(),
+	total_pages: z.number().int(),
+});
+export type FailedPaymentsAnalytics = z.infer<
+	typeof failedPaymentsAnalyticsSchema
+>;
+
+export interface FailedPaymentsAnalyticsParams {
+	billing_reason?: BillingReason;
+	from?: string;
+	to?: string;
+	plan_id?: string;
+	interval?: 'month' | 'year';
+	customer_id?: string;
+	q?: string;
+	page?: number;
+	per_page?: number;
+}
+
+// ---- Entries (entradas) ----
+
+export const entryTypeSchema = z.enum(['subscription', 'vox']);
+export type EntryType = z.infer<typeof entryTypeSchema>;
+
+export const entryRowSchema = z.object({
+	entry_type: entryTypeSchema,
+	id: z.string(),
+	occurred_at: z.string(),
+	amount_cents: z.number().int(),
+	customer: customerRefSchema,
+	subscription: z
+		.object({
+			subscription_id: z.string().optional(),
+			billing_reason: billingReasonSchema,
+			interval: z.enum(['monthly', 'yearly']),
+			plan: z.object({ id: z.string(), key: z.string(), name: z.string() }),
+			status: z.enum(['paid', 'payment_failed', 'refunded']).optional(),
+		})
+		.nullable()
+		.optional(),
+	vox: z
+		.object({
+			package_id: z.string().nullable().optional(),
+			package_name: z.string().nullable().optional(),
+			vox_amount: z.number().int(),
+		})
+		.nullable()
+		.optional(),
+});
+export type EntryRow = z.infer<typeof entryRowSchema>;
+
+export const entriesAnalyticsSchema = z.object({
+	data: entryRowSchema.array(),
+	page: z.number().int(),
+	per_page: z.number().int(),
+	total: z.number().int(),
+	total_pages: z.number().int(),
+});
+export type EntriesAnalytics = z.infer<typeof entriesAnalyticsSchema>;
+
+export interface EntriesAnalyticsParams {
+	from?: string;
+	to?: string;
+	entry_type?: EntryType;
+	customer_id?: string;
+	q?: string;
+	page?: number;
+	per_page?: number;
+	sort?: 'occurred_at:asc' | 'occurred_at:desc';
 }
 
 // ---- Refunds ----

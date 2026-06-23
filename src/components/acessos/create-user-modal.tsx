@@ -4,8 +4,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { registerUser } from '@/services/auth';
-import { ROLES } from '@/utils/constants/roles';
+import { usersQueryKeys } from '@/modules/users';
+import { createStaffUser } from '@/services/users';
+import { toE164 } from '@/utils/phone';
 
 interface CreateUserModalProps {
 	isOpen: boolean;
@@ -17,19 +18,13 @@ export function CreateUserModal({ isOpen, onClose }: CreateUserModalProps) {
 	const [name, setName] = useState('');
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
-	const [role, setRole] = useState(ROLES[0].role);
-	const [permissions, setPermissions] = useState(ROLES[0].id);
+	const [role, setRole] = useState<'staff' | 'admin'>('staff');
+	const [phone, setPhone] = useState('');
 
 	const mutation = useMutation({
-		mutationFn: (payload: {
-			name: string;
-			email: string;
-			password: string;
-			role: string;
-			Permissions: number | null;
-		}) => registerUser(payload),
+		mutationFn: createStaffUser,
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ['users'] });
+			queryClient.invalidateQueries({ queryKey: usersQueryKeys.all });
 			toast.success('Utilizador criado com sucesso.');
 			handleClose();
 		},
@@ -40,28 +35,12 @@ export function CreateUserModal({ isOpen, onClose }: CreateUserModalProps) {
 
 	if (!isOpen) return null;
 
-	function handleRoleChange(newRole: string) {
-		const config = ROLES.find((r) => r.role === newRole);
-		if (config) {
-			setRole(config.role);
-			setPermissions(config.id);
-		}
-	}
-
-	function handlePermissionsChange(permId: number) {
-		const config = ROLES.find((r) => r.id === permId);
-		if (config) {
-			setPermissions(config.id);
-			setRole(config.role);
-		}
-	}
-
 	function handleClose() {
 		setName('');
 		setEmail('');
 		setPassword('');
-		setRole(ROLES[0].role);
-		setPermissions(ROLES[0].id);
+		setRole('staff');
+		setPhone('');
 		onClose();
 	}
 
@@ -75,7 +54,7 @@ export function CreateUserModal({ isOpen, onClose }: CreateUserModalProps) {
 			email: email.trim(),
 			password,
 			role,
-			Permissions: permissions,
+			phone: toE164(phone) || undefined,
 		});
 	}
 
@@ -165,46 +144,40 @@ export function CreateUserModal({ isOpen, onClose }: CreateUserModalProps) {
 
 					<div>
 						<label
-							htmlFor="create-role"
+							htmlFor="create-phone"
 							className="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1.5"
 						>
-							Cargo
+							Telemóvel (Opcional)
 						</label>
-						<select
-							id="create-role"
-							value={role}
-							onChange={(e) => handleRoleChange(e.target.value)}
-							className="w-full bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50 transition-colors appearance-none"
-						>
-							{ROLES.map((r) => (
-								<option key={r.id} value={r.role}>
-									{r.role}
-								</option>
-							))}
-						</select>
+						<input
+							id="create-phone"
+							type="tel"
+							value={phone}
+							onChange={(e) => setPhone(e.target.value)}
+							placeholder="+351 900 000 000"
+							className="w-full bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 transition-colors"
+						/>
 					</div>
 
 					<div>
 						<label
-							htmlFor="create-permissions"
+							htmlFor="create-role"
 							className="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1.5"
 						>
-							Permissões
+							Função
 						</label>
 						<select
-							id="create-permissions"
-							value={permissions}
-							onChange={(e) =>
-								handlePermissionsChange(Number.parseInt(e.target.value, 10))
-							}
+							id="create-role"
+							value={role}
+							onChange={(e) => setRole(e.target.value as 'staff' | 'admin')}
 							className="w-full bg-slate-50 dark:bg-[#0d0d0f] border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50 transition-colors appearance-none"
 						>
-							{ROLES.map((r) => (
-								<option key={r.id} value={r.id}>
-									{r.role} (ID {r.id})
-								</option>
-							))}
+							<option value="staff">Staff</option>
+							<option value="admin">Admin</option>
 						</select>
+						<p className="mt-1.5 text-xs text-slate-400 dark:text-gray-500">
+							O cargo de permissões é atribuído depois, em "Editar".
+						</p>
 					</div>
 
 					<div className="flex gap-3 pt-2">

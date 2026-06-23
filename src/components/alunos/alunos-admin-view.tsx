@@ -12,6 +12,7 @@ import {
 	Trash2,
 	UserCheck,
 	Users,
+	Wifi,
 	XCircle,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -19,6 +20,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { StatCard } from '@/components/ui/stat-card';
 import { VoxxysIcon } from '@/components/ui/voxxys-icon';
+import {
+	usePayingMembersCount,
+	usePresenceSummary,
+} from '@/hooks/use-presence';
 import {
 	usePlanOptions,
 	useSetStudentTestUnlimited,
@@ -82,6 +87,8 @@ export function AlunosAdminView() {
 
 	const { flat: planOptions } = usePlanOptions();
 	const setTestUnlimited = useSetStudentTestUnlimited();
+	const { data: payingCount } = usePayingMembersCount();
+	const { data: presence } = usePresenceSummary();
 
 	/* debounce the search box → drives `q`; reset to page 1 on change */
 	useEffect(() => {
@@ -144,12 +151,26 @@ export function AlunosAdminView() {
 			</div>
 
 			{/* Stats */}
-			<div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+			<div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
 				<StatCard
 					value={total.toLocaleString('pt-BR')}
 					label="Total de alunos"
 					icon={Users}
 					color="bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-400"
+				/>
+				<StatCard
+					value={
+						payingCount != null ? payingCount.toLocaleString('pt-BR') : '—'
+					}
+					label="Pagantes (ativos + trial)"
+					icon={UserCheck}
+					color="bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400"
+				/>
+				<StatCard
+					value={presence ? presence.onlineNow.toLocaleString('pt-BR') : '—'}
+					label="Online agora"
+					icon={Wifi}
+					color="bg-sky-100 text-sky-600 dark:bg-sky-500/20 dark:text-sky-400"
 				/>
 				<StatCard
 					value={pageActive}

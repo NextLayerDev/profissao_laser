@@ -52,3 +52,17 @@ export async function refundSale(payload: RefundSalePayload) {
 	const { data } = await api.post('/refund', payload);
 	return data;
 }
+
+export interface RefundSubscriptionResponse {
+	stripe_refund_id: string;
+	amount_cents: number;
+	status: string;
+	subscription_canceled: boolean;
+}
+
+export async function refundSubscription(
+	id: string,
+): Promise<RefundSubscriptionResponse> {
+	const { data } = await api.post(`/v1/refunds/subscription/${id}`);
+	return data;
+}

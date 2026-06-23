@@ -6,9 +6,11 @@ import {
 	HelpCircle,
 	Home,
 	Link2,
+	MessageCircle,
 	MessageSquare,
 	Package,
 	PenLine,
+	Receipt,
 	ShieldCheck,
 	ShoppingCart,
 	SlidersHorizontal,
@@ -22,6 +24,7 @@ export const navItems: NavItem[] = [
 	{ name: 'Produtos', icon: Package, href: '/products', hasDropdown: false },
 	{ name: 'Vendas', icon: ShoppingCart, href: '/sales', hasDropdown: false },
 	{ name: 'Links', icon: Link2, href: '/links', hasDropdown: false },
+	{ name: 'Financeiro', icon: Receipt, href: '/fatura', hasDropdown: false },
 	{
 		name: 'Relatórios',
 		icon: BarChart3,
@@ -55,6 +58,12 @@ export const navItems: NavItem[] = [
 	},
 	{ name: 'Acessos', icon: ShieldCheck, href: '/acessos', hasDropdown: false },
 	{ name: 'Alunos', icon: Users, href: '/alunos', hasDropdown: false },
+	{
+		name: 'Grupo WhatsApp',
+		icon: MessageCircle,
+		href: '/grupo-whatsapp',
+		hasDropdown: false,
+	},
 	{ name: 'Previas IA', icon: Eye, href: '/previas-admin', hasDropdown: false },
 	{
 		name: 'Vetorizacao',

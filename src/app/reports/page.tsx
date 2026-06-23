@@ -8,8 +8,8 @@ import { KpiCards } from '@/components/relatorios/kpi-cards';
 import { ProductsChart } from '@/components/relatorios/products-chart';
 import { RevenueChart } from '@/components/relatorios/revenue-chart';
 import { StatusChart } from '@/components/relatorios/status-chart';
-import { usePermissions } from '@/hooks/use-permissions';
 import { useSales } from '@/hooks/use-sales';
+import { usePermissions } from '@/modules/access';
 import { PERIODS, type Period } from '@/utils/constants/periods';
 import { STATUS_LABELS } from '@/utils/constants/status-label';
 import { getDateRange } from '@/utils/dateRange';
@@ -37,7 +37,9 @@ export default function Relatorios() {
 		}
 	}, [allowed, permissionsLoading, router]);
 
-	if (!allowed && !permissionsLoading) {
+	// Não renderiza o conteúdo enquanto as permissões carregam (evita flash de
+	// dados protegidos antes do redirect quando o usuário não tem acesso).
+	if (permissionsLoading || !allowed) {
 		return null;
 	}
 

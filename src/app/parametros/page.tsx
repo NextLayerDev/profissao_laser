@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Header } from '@/components/dashboard/header';
 import { ParametrosAdminView } from '@/components/parametros/parametros-admin-view';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/modules/access';
 
 export default function ParametrosAdminPage() {
 	const router = useRouter();

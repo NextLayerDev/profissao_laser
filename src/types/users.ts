@@ -28,3 +28,13 @@ export const updateUserPayloadSchema = z.object({
 });
 
 export type UpdateUserPayload = z.infer<typeof updateUserPayloadSchema>;
+
+export const createStaffPayloadSchema = z.object({
+	email: z.string().email(),
+	password: z.string().min(6),
+	role: z.enum(['staff', 'admin']),
+	name: z.string().min(1).optional(),
+	phone: z.string().optional(),
+});
+
+export type CreateStaffPayload = z.infer<typeof createStaffPayloadSchema>;

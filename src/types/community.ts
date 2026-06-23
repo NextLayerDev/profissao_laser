@@ -45,8 +45,12 @@ export interface Member {
 	featured?: boolean;
 	category?: string | null;
 	image?: string | null;
+	/** Banner do perfil exibido no topo do card (padrão p/ quem não escolheu). */
+	banner?: string | null;
 	isOnline?: boolean;
 	lastSeenAt?: string | null;
+	/** Só vem da API quando o usuário logado é staff/admin (técnicos). */
+	phone?: string | null;
 }
 
 export type ActivityType =
@@ -108,6 +112,8 @@ export interface Event {
 	streamProvider?: 'youtube' | 'vimeo' | null;
 	waitingRoomOpensMinutesBefore?: number;
 	hostId?: string | null;
+	/** Keys de planos que podem acessar (vazio/ausente = todos). */
+	allowedPlanKeys?: string[] | null;
 }
 
 export interface EventAttendee {

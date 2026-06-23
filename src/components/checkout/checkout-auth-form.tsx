@@ -3,8 +3,8 @@
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { saveToken } from '@/lib/auth';
-import { loginCustomer, registerCustomer } from '@/services/auth';
+import { saveRefreshToken, saveToken } from '@/lib/auth';
+import { loginCourses, signupCourses } from '@/services/courses-auth';
 
 interface CheckoutAuthFormProps {
 	onAuthenticated: () => void;
@@ -29,17 +29,15 @@ export function CheckoutAuthForm({ onAuthenticated }: CheckoutAuthFormProps) {
 
 		setIsLoading(true);
 		try {
-			// 1. Registrar conta
-			await registerCustomer({
+			// Signup já retorna os tokens (auto-login)
+			const { accessToken, refreshToken } = await signupCourses({
 				name: name.trim(),
 				email: email.trim(),
 				password: password.trim(),
-				phone: phone.trim().replace(/\D/g, ''), // Send only digits
+				phone: phone.trim(),
 			});
-
-			// 2. Login para pegar token
-			const { token } = await loginCustomer({ email, password });
-			saveToken('customer', token);
+			saveToken('customer', accessToken);
+			if (refreshToken) saveRefreshToken(refreshToken);
 
 			toast.success('Conta criada com sucesso!');
 			onAuthenticated();
@@ -68,8 +66,12 @@ export function CheckoutAuthForm({ onAuthenticated }: CheckoutAuthFormProps) {
 
 		setIsLoading(true);
 		try {
-			const { token } = await loginCustomer({ email, password });
-			saveToken('customer', token);
+			const { accessToken, refreshToken } = await loginCourses({
+				email,
+				password,
+			});
+			saveToken('customer', accessToken);
+			if (refreshToken) saveRefreshToken(refreshToken);
 
 			toast.success('Login realizado!');
 			onAuthenticated();

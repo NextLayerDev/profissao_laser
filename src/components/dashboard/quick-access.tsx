@@ -2,14 +2,16 @@
 
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/modules/access';
 import { quickAccessItems } from '@/utils/constants/dashboard';
 
 export function QuickAccess() {
-	const { canPrice } = usePermissions();
+	const { can } = usePermissions();
 
 	const visibleItems = quickAccessItems.filter((item) => {
-		if (item.href === '/reports' || item.href === '/sales') return canPrice;
+		// Espelha o gate das próprias páginas (que redirecionam por essas chaves).
+		if (item.href === '/reports') return can('relatorios.view');
+		if (item.href === '/sales') return can('vendas.view');
 		return true;
 	});
 

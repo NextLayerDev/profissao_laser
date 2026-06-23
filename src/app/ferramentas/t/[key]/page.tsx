@@ -4,7 +4,7 @@ import { Loader2 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Header } from '@/components/dashboard/header';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/modules/access';
 import { DynamicRoomView } from '@/modules/tools/components/dynamic-room-view';
 import { useToolDefinition } from '@/modules/tools/hooks/use-tool-definition';
 

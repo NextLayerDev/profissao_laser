@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Header } from '@/components/dashboard/header';
 import { GravacaoOneClickView } from '@/components/gravacao-oneclick/gravacao-oneclick-view';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/modules/access';
 
 /**
  * Tela ADMIN da Gravação 1-Clique — fica no shell de admin (`/ferramentas/*`

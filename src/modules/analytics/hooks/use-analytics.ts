@@ -2,6 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import {
+	getEntriesAnalytics,
+	getFailedPaymentsAnalytics,
 	getInvoicesAnalytics,
 	getInvoicesSummary,
 	getPlanRefunds,
@@ -12,6 +14,8 @@ import {
 	getVoxRefunds,
 } from '../services/analytics.service';
 import type {
+	EntriesAnalyticsParams,
+	FailedPaymentsAnalyticsParams,
 	InvoicesAnalyticsParams,
 	SalesAnalyticsParams,
 	VoxesAnalyticsParams,
@@ -30,6 +34,10 @@ export const analyticsQueryKeys = {
 		['analytics', 'invoices', params] as const,
 	invoicesSummary: (params: InvoicesAnalyticsParams) =>
 		['analytics', 'invoices', 'summary', params] as const,
+	failedPayments: (params: FailedPaymentsAnalyticsParams) =>
+		['analytics', 'invoices', 'failed', params] as const,
+	entries: (params: EntriesAnalyticsParams) =>
+		['analytics', 'entries', params] as const,
 	planRefunds: ['analytics', 'refunds', 'plans'] as const,
 	voxRefunds: ['analytics', 'refunds', 'vox'] as const,
 };
@@ -75,6 +83,22 @@ export function useInvoicesSummary(
 	return useQuery({
 		queryKey: analyticsQueryKeys.invoicesSummary(params),
 		queryFn: () => getInvoicesSummary(params),
+	});
+}
+
+export function useFailedPaymentsAnalytics(
+	params: FailedPaymentsAnalyticsParams = {},
+) {
+	return useQuery({
+		queryKey: analyticsQueryKeys.failedPayments(params),
+		queryFn: () => getFailedPaymentsAnalytics(params),
+	});
+}
+
+export function useEntriesAnalytics(params: EntriesAnalyticsParams = {}) {
+	return useQuery({
+		queryKey: analyticsQueryKeys.entries(params),
+		queryFn: () => getEntriesAnalytics(params),
 	});
 }
 

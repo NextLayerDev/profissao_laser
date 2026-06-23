@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { Header } from '@/components/dashboard/header';
 import { RecurringTable } from '@/components/vendas/recurring-table';
-import { usePermissions } from '@/hooks/use-permissions';
 import { useRecurringSales } from '@/hooks/use-sales';
+import { usePermissions } from '@/modules/access';
 import type { RecurringSubscription } from '@/types/sales';
 
 const ITEMS_PER_PAGE = 50;
@@ -53,7 +53,7 @@ export default function RecurringSales() {
 		setCurrentPage(1);
 	}
 
-	if (!allowed && !permissionsLoading) return null;
+	if (permissionsLoading || !allowed) return null;
 
 	return (
 		<div className="min-h-screen text-slate-900 dark:text-white">

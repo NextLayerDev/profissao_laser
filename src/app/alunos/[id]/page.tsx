@@ -6,8 +6,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { StudentDetailView } from '@/components/alunos/student-detail-view';
 import { Header } from '@/components/dashboard/header';
-import { usePermissions } from '@/hooks/use-permissions';
 import { useStudent } from '@/hooks/use-students';
+import { usePermissions } from '@/modules/access';
 
 export default function AlunoDetalhe() {
 	const { id } = useParams<{ id: string }>();

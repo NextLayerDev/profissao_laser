@@ -13,6 +13,7 @@ const PUBLIC_PATHS = [
 	'/payment-link',
 	'/promo-link',
 	'/global-promo-link',
+	'/link-plano',
 ];
 
 const ADMIN_PATHS = [

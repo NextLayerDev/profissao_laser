@@ -28,7 +28,7 @@ import {
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/page-header';
 import { useEntitlements } from '@/hooks/use-entitlements';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/modules/access';
 import {
 	useAddMaterial,
 	useCreateSession,

@@ -29,6 +29,9 @@ export interface SupportChatSummary {
 	createdAt: string;
 	updatedAt: string;
 	closedAt?: string | null;
+	lastMessageAt?: string | null;
+	lastMessageRole?: SupportMessageRole | null;
+	lastMessagePreview?: string | null;
 }
 
 export interface SupportChat extends SupportChatSummary {
