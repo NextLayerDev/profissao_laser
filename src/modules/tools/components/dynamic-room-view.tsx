@@ -17,7 +17,14 @@ import {
 	X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import {
+	type CSSProperties,
+	type ReactNode,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from 'react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/page-header';
 import { useEntitlements } from '@/hooks/use-entitlements';
@@ -40,6 +47,12 @@ import {
 } from '../hooks/use-mentorship';
 import { useRunTool } from '../hooks/use-run-tool';
 import { useToolDefinition } from '../hooks/use-tool-definition';
+import {
+	type ResolvedRoomUi,
+	RoomUiContext,
+	resolveRoomUi,
+	useRoomUi,
+} from '../lib/room-ui';
 import {
 	type CreateSessionBody,
 	joinSession,
@@ -162,6 +175,32 @@ function sampleSessions(def?: AiToolDefinition | null): MentorshipSession[] {
 	];
 }
 
+/** Banner/aviso personalizado no topo da sala (vem de room.ui[screen].notice). */
+function RoomNotice({
+	notice,
+}: {
+	notice: NonNullable<ResolvedRoomUi['notice']>;
+}) {
+	if (!notice.title && !notice.message) return null;
+	const type = notice.type ?? 'info';
+	const palette =
+		type === 'warning'
+			? 'border-amber-400/30 bg-amber-500/10 text-amber-700 dark:text-amber-200'
+			: type === 'success'
+				? 'border-emerald-400/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200'
+				: 'border-sky-400/30 bg-sky-500/10 text-sky-700 dark:text-sky-200';
+	return (
+		<div className={`mb-4 rounded-2xl border px-4 py-3 ${palette}`}>
+			{notice.title && <p className="text-sm font-semibold">{notice.title}</p>}
+			{notice.message && (
+				<p className="mt-0.5 whitespace-pre-wrap text-sm opacity-90">
+					{notice.message}
+				</p>
+			)}
+		</div>
+	);
+}
+
 /** Overlay + backdrop clicável (botão, a11y-safe) + cartão central. */
 function ModalShell({
 	onClose,
@@ -201,6 +240,7 @@ function RoomModal({
 }) {
 	const qc = useQueryClient();
 	const router = useRouter();
+	const ui = useRoomUi();
 	const { data: state, isLoading } = useRoomState(sessionId);
 	useRoomPresenceRealtime(sessionId);
 	const joinFree = useJoinRoomFree(sessionId);
@@ -361,9 +401,9 @@ function RoomModal({
 								type="button"
 								disabled={busy}
 								onClick={enterPaid}
-								className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#ff3b30] px-4 py-3 font-semibold text-white hover:opacity-90 disabled:opacity-60"
+								className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--room-accent)] px-4 py-3 font-semibold text-white hover:opacity-90 disabled:opacity-60"
 							>
-								<Video className="size-5" /> Entrar
+								<Video className="size-5" /> {ui.L('enter', 'Entrar')}
 								<span className="rounded-md bg-white/20 px-1.5 py-0.5 text-xs">
 									{state.voxCost} voxxys
 								</span>
@@ -373,9 +413,9 @@ function RoomModal({
 								type="button"
 								disabled={busy}
 								onClick={enterFree}
-								className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#ff3b30] px-4 py-3 font-semibold text-white hover:opacity-90 disabled:opacity-60"
+								className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--room-accent)] px-4 py-3 font-semibold text-white hover:opacity-90 disabled:opacity-60"
 							>
-								<Video className="size-5" /> Entrar
+								<Video className="size-5" /> {ui.L('enter', 'Entrar')}
 							</button>
 						)}
 					</div>
@@ -386,11 +426,11 @@ function RoomModal({
 						</p>
 					)}
 
-					{state.features.materials &&
+					{ui.showMaterials(state.features.materials) &&
 						(state.access === 'included' || state.hasJoined) && (
 							<MaterialsSection sessionId={sessionId} isAdmin={isAdmin} />
 						)}
-					{state.features.chat && state.hasJoined && (
+					{ui.showChat(state.features.chat) && state.hasJoined && (
 						<ChatPanel sessionId={sessionId} />
 					)}
 				</>
@@ -407,6 +447,7 @@ function MaterialsSection({
 	sessionId: string;
 	isAdmin: boolean;
 }) {
+	const ui = useRoomUi();
 	const { data: materials } = useMaterials(sessionId);
 	const add = useAddMaterial(sessionId);
 	const del = useDeleteMaterial(sessionId);
@@ -430,7 +471,7 @@ function MaterialsSection({
 	return (
 		<div className="mt-5 border-t border-slate-200 pt-4 dark:border-white/10">
 			<h4 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-gray-200">
-				<Paperclip className="size-4" /> Materiais
+				<Paperclip className="size-4" /> {ui.L('materialsTitle', 'Materiais')}
 			</h4>
 			{list.length === 0 ? (
 				<p className="text-sm text-slate-400 dark:text-gray-500">
@@ -444,7 +485,7 @@ function MaterialsSection({
 								href={m.url}
 								target="_blank"
 								rel="noopener noreferrer"
-								className="flex flex-1 items-center gap-1.5 truncate text-sm text-[#ff3b30] hover:underline"
+								className="flex flex-1 items-center gap-1.5 truncate text-sm text-[var(--room-accent)] hover:underline"
 							>
 								<ExternalLink className="size-3.5 shrink-0" />
 								<span className="truncate">{m.title}</span>
@@ -492,6 +533,7 @@ function MaterialsSection({
 
 /* ════════════════════ Chat ao vivo ════════════════════ */
 function ChatPanel({ sessionId }: { sessionId: string }) {
+	const ui = useRoomUi();
 	const { data: messages } = useMessages(sessionId);
 	useMessagesRealtime(sessionId);
 	const post = usePostMessage(sessionId);
@@ -513,7 +555,7 @@ function ChatPanel({ sessionId }: { sessionId: string }) {
 	return (
 		<div className="mt-5 border-t border-slate-200 pt-4 dark:border-white/10">
 			<h4 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-gray-200">
-				<MessageSquare className="size-4" /> Chat ao vivo
+				<MessageSquare className="size-4" /> {ui.L('chatTitle', 'Chat ao vivo')}
 			</h4>
 			<div className="max-h-60 space-y-2 overflow-y-auto rounded-lg bg-slate-50 p-3 dark:bg-white/5">
 				{list.length === 0 ? (
@@ -563,7 +605,7 @@ function ChatPanel({ sessionId }: { sessionId: string }) {
 					type="button"
 					disabled={post.isPending || !text.trim()}
 					onClick={send}
-					className="grid size-10 shrink-0 place-items-center rounded-lg bg-[#ff3b30] text-white hover:opacity-90 disabled:opacity-50"
+					className="grid size-10 shrink-0 place-items-center rounded-lg bg-[var(--room-accent)] text-white hover:opacity-90 disabled:opacity-50"
 				>
 					<Send className="size-4" />
 				</button>
@@ -778,7 +820,7 @@ function SessionFormModal({
 				type="button"
 				disabled={busy}
 				onClick={submit}
-				className="mt-5 w-full rounded-xl bg-[#ff3b30] px-4 py-3 font-semibold text-white hover:opacity-90 disabled:opacity-60"
+				className="mt-5 w-full rounded-xl bg-[var(--room-accent)] px-4 py-3 font-semibold text-white hover:opacity-90 disabled:opacity-60"
 			>
 				{busy ? 'A guardar…' : editing ? 'Guardar' : 'Criar sessão'}
 			</button>
@@ -814,7 +856,7 @@ function SessionMonitorModal({
 			<div className="flex items-start justify-between gap-3">
 				<div className="min-w-0">
 					<h3 className="flex items-center gap-1.5 text-lg font-bold text-slate-900 dark:text-white">
-						<Activity className="size-5 text-[#ff3b30]" />
+						<Activity className="size-5 text-[var(--room-accent)]" />
 						<span className="truncate">{session.title}</span>
 					</h3>
 					<p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-sm text-slate-500 dark:text-gray-400">
@@ -923,7 +965,7 @@ function SessionMonitorModal({
 						href={session.recordingUrl}
 						target="_blank"
 						rel="noopener noreferrer"
-						className="mt-2 inline-flex items-center gap-1.5 text-xs text-[#ff3b30] hover:underline"
+						className="mt-2 inline-flex items-center gap-1.5 text-xs text-[var(--room-accent)] hover:underline"
 					>
 						<ExternalLink className="size-3.5" /> Abrir gravação atual
 					</a>
@@ -952,10 +994,11 @@ function SessionCard({
 	onDelete: () => void;
 	onMonitor: () => void;
 }) {
+	const ui = useRoomUi();
 	return (
-		<div className="group relative flex flex-col rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-[#ff3b30]/40 dark:border-white/10 dark:bg-[#1a1a1d]">
+		<div className="group relative flex flex-col rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-[var(--room-accent)]/40 dark:border-white/10 dark:bg-[#1a1a1d]">
 			<div className="flex items-start gap-3">
-				<span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#ff3b30]/10 text-[#ff3b30]">
+				<span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--room-accent)]/10 text-[var(--room-accent)]">
 					<Video className="size-5" />
 				</span>
 				<div className="min-w-0 flex-1">
@@ -988,9 +1031,9 @@ function SessionCard({
 				<button
 					type="button"
 					onClick={onEnter}
-					className="flex-1 rounded-lg bg-[#ff3b30] px-3 py-2 text-sm font-semibold text-white hover:opacity-90"
+					className="flex-1 rounded-lg bg-[var(--room-accent)] px-3 py-2 text-sm font-semibold text-white hover:opacity-90"
 				>
-					Entrar
+					{ui.L('enter', 'Entrar')}
 				</button>
 				{isAdmin && (
 					<>
@@ -1000,7 +1043,7 @@ function SessionCard({
 							title="Acompanhar (presença, gravação, materiais)"
 							className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5"
 						>
-							<Activity className="size-4" /> Acompanhar
+							<Activity className="size-4" /> {ui.L('acompanhar', 'Acompanhar')}
 						</button>
 						<button
 							type="button"
@@ -1042,6 +1085,8 @@ export function DynamicRoomView({
 		useMentorshipSessions(toolKey, !isPreview);
 	const { isSuperAdmin } = usePermissions();
 	const isAdmin = previewAs ? previewAs === 'admin' : isSuperAdmin;
+	// Aparência personalizada desta tela (aluno/admin) — cor, tema, textos, etc.
+	const roomUi = useMemo(() => resolveRoomUi(def, isAdmin), [def, isAdmin]);
 	// No preview o courseSlug só alimentaria o RoomModal (que nunca monta) —
 	// desliga a query de entitlements p/ honrar o "não toca o backend".
 	const { courses } = useEntitlements(undefined, { enabled: !isPreview });
@@ -1083,96 +1128,114 @@ export function DynamicRoomView({
 		setFormOpen(true);
 	};
 
-	return (
-		<div className="mx-auto max-w-4xl">
-			<div className="flex items-start justify-between gap-3">
-				<PageHeader
-					title={def?.title ?? 'Mentoria'}
-					subtitle={
-						def?.description ?? 'Salas de vídeo e lives ao vivo da sua jornada.'
-					}
-				/>
-				{isAdmin && (
-					<button
-						type="button"
-						onClick={openCreate}
-						className="mt-1 flex shrink-0 items-center gap-1.5 rounded-xl bg-[#ff3b30] px-3 py-2 text-sm font-semibold text-white hover:opacity-90"
-					>
-						<Plus className="size-4" /> Nova sessão
-					</button>
-				)}
-			</div>
+	// Tema forçado (dark/light) ganha fundo próprio + respiro, senão só o miolo
+	// trocaria de cor e a faixa ao redor ficaria na cor do app (descasada).
+	const themedShell = roomUi.themeClass
+		? `rounded-2xl p-4 sm:p-6 ${roomUi.themeClass === 'dark' ? 'bg-[#0d0d0f]' : 'bg-slate-50'}`
+		: '';
 
-			{isLoading ? (
-				<p className="mt-8 text-center text-slate-500 dark:text-gray-400">
-					A carregar sessões…
-				</p>
-			) : sorted.length === 0 ? (
-				<div className="mt-10 rounded-2xl border border-dashed border-slate-300 py-16 text-center dark:border-white/10">
-					<Video className="mx-auto size-8 text-slate-300 dark:text-gray-600" />
-					<p className="mt-3 text-slate-500 dark:text-gray-400">
-						Nenhuma sessão agendada ainda.
-					</p>
+	return (
+		<RoomUiContext.Provider value={roomUi}>
+			<div
+				className={`mx-auto max-w-4xl ${roomUi.themeClass} ${themedShell}`}
+				style={{ '--room-accent': roomUi.accent } as CSSProperties}
+			>
+				{roomUi.notice && <RoomNotice notice={roomUi.notice} />}
+				<div className="flex items-start justify-between gap-3">
+					<PageHeader
+						title={def?.title ?? 'Mentoria'}
+						subtitle={
+							def?.description ??
+							roomUi.L(
+								'headerSubtitle',
+								'Salas de vídeo e lives ao vivo da sua jornada.',
+							)
+						}
+					/>
 					{isAdmin && (
 						<button
 							type="button"
 							onClick={openCreate}
-							className="mt-3 text-sm font-semibold text-[#ff3b30] hover:underline"
+							className="mt-1 flex shrink-0 items-center gap-1.5 rounded-xl bg-[var(--room-accent)] px-3 py-2 text-sm font-semibold text-white hover:opacity-90"
 						>
-							Agendar a primeira
+							<Plus className="size-4" />{' '}
+							{roomUi.L('novaSessao', 'Nova sessão')}
 						</button>
 					)}
 				</div>
-			) : (
-				<div className="mt-6 grid gap-3 sm:grid-cols-2">
-					{sorted.map((s) => (
-						<SessionCard
-							key={s.id}
-							session={s}
-							onEnter={() => {
-								if (!isPreview) setRoomId(s.id);
-							}}
-							isAdmin={isAdmin}
-							onEdit={() => openEdit(s)}
-							onMonitor={() => {
-								if (!isPreview) setMonitorId(s.id);
-							}}
-							onDelete={() => {
-								if (isPreview) return;
-								if (confirm(`Remover a sessão "${s.title}"?`)) del.mutate(s.id);
-							}}
-						/>
-					))}
-				</div>
-			)}
 
-			{roomId && (
-				<RoomModal
-					sessionId={roomId}
-					toolKey={toolKey}
-					courseSlug={courseSlug}
-					isAdmin={isAdmin}
-					onClose={() => setRoomId(null)}
-				/>
-			)}
-			{monitorId &&
-				(() => {
-					const s = sorted.find((x) => x.id === monitorId);
-					return s ? (
-						<SessionMonitorModal
-							session={s}
-							toolKey={toolKey}
-							onClose={() => setMonitorId(null)}
-						/>
-					) : null;
-				})()}
-			{formOpen && (
-				<SessionFormModal
-					toolKey={toolKey}
-					editing={editing}
-					onClose={() => setFormOpen(false)}
-				/>
-			)}
-		</div>
+				{isLoading ? (
+					<p className="mt-8 text-center text-slate-500 dark:text-gray-400">
+						A carregar sessões…
+					</p>
+				) : sorted.length === 0 ? (
+					<div className="mt-10 rounded-2xl border border-dashed border-slate-300 py-16 text-center dark:border-white/10">
+						<Video className="mx-auto size-8 text-slate-300 dark:text-gray-600" />
+						<p className="mt-3 text-slate-500 dark:text-gray-400">
+							{roomUi.L('emptyText', 'Nenhuma sessão agendada ainda.')}
+						</p>
+						{isAdmin && (
+							<button
+								type="button"
+								onClick={openCreate}
+								className="mt-3 text-sm font-semibold text-[var(--room-accent)] hover:underline"
+							>
+								{roomUi.L('emptyButton', 'Agendar a primeira')}
+							</button>
+						)}
+					</div>
+				) : (
+					<div className="mt-6 grid gap-3 sm:grid-cols-2">
+						{sorted.map((s) => (
+							<SessionCard
+								key={s.id}
+								session={s}
+								onEnter={() => {
+									if (!isPreview) setRoomId(s.id);
+								}}
+								isAdmin={isAdmin}
+								onEdit={() => openEdit(s)}
+								onMonitor={() => {
+									if (!isPreview) setMonitorId(s.id);
+								}}
+								onDelete={() => {
+									if (isPreview) return;
+									if (confirm(`Remover a sessão "${s.title}"?`))
+										del.mutate(s.id);
+								}}
+							/>
+						))}
+					</div>
+				)}
+
+				{roomId && (
+					<RoomModal
+						sessionId={roomId}
+						toolKey={toolKey}
+						courseSlug={courseSlug}
+						isAdmin={isAdmin}
+						onClose={() => setRoomId(null)}
+					/>
+				)}
+				{monitorId &&
+					(() => {
+						const s = sorted.find((x) => x.id === monitorId);
+						return s ? (
+							<SessionMonitorModal
+								session={s}
+								toolKey={toolKey}
+								onClose={() => setMonitorId(null)}
+							/>
+						) : null;
+					})()}
+				{formOpen && (
+					<SessionFormModal
+						toolKey={toolKey}
+						editing={editing}
+						onClose={() => setFormOpen(false)}
+					/>
+				)}
+			</div>
+		</RoomUiContext.Provider>
 	);
 }

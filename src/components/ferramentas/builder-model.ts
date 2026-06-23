@@ -111,6 +111,19 @@ export function resolveParam(
  * pipeline: o admin define a sala (cap, agenda, link externo, features) e o
  * acesso (planos inclusos grátis / custo em voxes / se pode entrar pagando).
  */
+/** Aparência de UMA tela da sala (aluno OU admin). Tudo opcional. */
+export interface RoomScreenUi {
+	accent?: string;
+	theme?: 'app' | 'light' | 'dark';
+	labels?: Record<string, string>;
+	notice?: {
+		type?: 'info' | 'warning' | 'success';
+		title?: string;
+		message?: string;
+	} | null;
+	sections?: { materials?: boolean; chat?: boolean };
+}
+
 export interface BuilderRoomState {
 	cap: number | null; // null = sem limite
 	opensMinutesBefore: number;
@@ -119,6 +132,8 @@ export interface BuilderRoomState {
 	includedPlanKeys: string[]; // planos com entrada grátis
 	voxCost: number; // custo p/ quem não tem plano
 	allowVoxEntry: boolean; // false = só plano (sem comprar entrada)
+	/** Aparência personalizável por tela (aluno/admin). */
+	ui?: { customer?: RoomScreenUi; admin?: RoomScreenUi };
 }
 
 export interface BuilderState {
@@ -237,6 +252,7 @@ function buildRoomDoc(state: BuilderState): ToolDefinitionDoc {
 				voxCost: r.voxCost,
 				allowVoxEntry: r.allowVoxEntry,
 			},
+			...(r.ui ? { ui: r.ui } : {}),
 		},
 		output: {},
 		ui: {
@@ -449,6 +465,7 @@ function roomDocToState(
 			voxCost?: number;
 			allowVoxEntry?: boolean;
 		};
+		ui?: BuilderRoomState['ui'];
 	};
 	const room: BuilderRoomState = {
 		cap: r.cap ?? null,
@@ -464,6 +481,7 @@ function roomDocToState(
 			: [],
 		voxCost: r.access?.voxCost ?? 0,
 		allowVoxEntry: r.access?.allowVoxEntry !== false,
+		...(r.ui ? { ui: r.ui } : {}),
 	};
 	return {
 		templateId: 'mentoria',

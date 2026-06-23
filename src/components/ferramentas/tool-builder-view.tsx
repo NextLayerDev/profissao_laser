@@ -73,6 +73,7 @@ import {
 	TypeChip,
 } from './builder-ui';
 import { ToolCanvas } from './canvas/tool-canvas';
+import { RoomAppearanceSection } from './room-appearance-section';
 import { RoomBuilderSections } from './room-builder-sections';
 import { ToolBillingPanel } from './tool-billing-panel';
 
@@ -794,6 +795,12 @@ export function ToolBuilderView() {
 						(state.room?.includedPlanKeys.length ?? 0) > 0 ||
 						(state.room?.voxCost ?? 0) > 0,
 				},
+				{
+					id: 'builder-step-04',
+					label: 'Aparência',
+					accent: 'violet',
+					done: !!state.room?.ui,
+				},
 			];
 		return [
 			{
@@ -1219,25 +1226,40 @@ export function ToolBuilderView() {
 								)}
 
 								{state.toolType === 'room' ? (
-									(activeId === 'builder-step-02' ||
-										activeId === 'builder-step-03') && (
-										<RoomBuilderSections
-											room={state.room ?? defaultRoom()}
-											plans={plans.data ?? []}
-											plansLoading={plans.isLoading}
-											section={
-												activeId === 'builder-step-03' ? 'access' : 'room'
-											}
-											setRoom={(partial) =>
-												patch({
-													room: {
-														...(state.room ?? defaultRoom()),
-														...partial,
-													},
-												})
-											}
-										/>
-									)
+									<>
+										{(activeId === 'builder-step-02' ||
+											activeId === 'builder-step-03') && (
+											<RoomBuilderSections
+												room={state.room ?? defaultRoom()}
+												plans={plans.data ?? []}
+												plansLoading={plans.isLoading}
+												section={
+													activeId === 'builder-step-03' ? 'access' : 'room'
+												}
+												setRoom={(partial) =>
+													patch({
+														room: {
+															...(state.room ?? defaultRoom()),
+															...partial,
+														},
+													})
+												}
+											/>
+										)}
+										{activeId === 'builder-step-04' && (
+											<RoomAppearanceSection
+												room={state.room ?? defaultRoom()}
+												setRoom={(partial) =>
+													patch({
+														room: {
+															...(state.room ?? defaultRoom()),
+															...partial,
+														},
+													})
+												}
+											/>
+										)}
+									</>
 								) : (
 									<>
 										{/* entradas */}
