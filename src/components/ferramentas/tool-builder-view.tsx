@@ -12,6 +12,7 @@ import {
 	Eye,
 	Link2,
 	Loader2,
+	MonitorSmartphone,
 	Plus,
 	Rocket,
 	Save,
@@ -73,8 +74,9 @@ import {
 	TypeChip,
 } from './builder-ui';
 import { ToolCanvas } from './canvas/tool-canvas';
-import { RoomAppearanceEditor } from './room-appearance-editor';
+import { RoomAppearanceSection } from './room-appearance-section';
 import { RoomBuilderSections } from './room-builder-sections';
+import { type PreviewDevice, RoomLivePreview } from './room-live-preview';
 import { ToolBillingPanel } from './tool-billing-panel';
 
 /* ───────── estilos + accents ───────── */
@@ -514,10 +516,28 @@ export function ToolBuilderView() {
 		'canvas',
 	);
 	const [showAgent, setShowAgent] = useState(true);
+	// Coluna direita na aba Edição: agente OU prévia ao vivo (Acompanhar).
+	const [rightMode, setRightMode] = useState<'agent' | 'preview'>('agent');
+	const [previewDevice, setPreviewDevice] = useState<PreviewDevice>('desktop');
+	// Aparência: tela editada + campo selecionado (sync form ⇄ prévia clicável).
+	const [apScreen, setApScreen] = useState<'customer' | 'admin'>('customer');
+	const [apSelected, setApSelected] = useState<string>();
 	// Abas do editor em largura total: Edição (builder) | Aluno/Cliente | Admin.
 	const [editorTab, setEditorTab] = useState<'edit' | 'customer' | 'admin'>(
 		'edit',
 	);
+
+	// Clique na prévia → seleciona + rola/foca o campo no formulário da Aparência.
+	const focusField = (field: string) => {
+		setApSelected(field);
+		if (typeof document === 'undefined') return;
+		const el = document.getElementById(
+			field === 'banner' ? 'ap-banner' : `ap-${field}`,
+		);
+		if (!el) return;
+		el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		if (el instanceof HTMLInputElement) el.focus({ preventScroll: true });
+	};
 
 	const goHub = () => {
 		setView('gallery');
@@ -860,10 +880,14 @@ export function ToolBuilderView() {
 	// colunas do container por tela: galeria = lista + grade; cobrança = centrado.
 	// Editor: na aba Edição, trabalho (+ agente opcional ao lado); nas abas de
 	// preview (Aluno/Admin), largura total.
+	const previewing =
+		editorTab === 'edit' && showAgent && rightMode === 'preview' && isRoomDraft;
 	const gridCls =
 		view === 'editor'
 			? editorTab === 'edit' && showAgent
-				? 'grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]'
+				? previewing
+					? 'grid gap-5 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)]'
+					: 'grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]'
 				: 'grid gap-5'
 			: view === 'billing'
 				? 'mx-auto grid max-w-4xl gap-5'
@@ -1247,18 +1271,42 @@ export function ToolBuilderView() {
 											/>
 										)}
 										{activeId === 'builder-step-04' && (
-											<RoomAppearanceEditor
-												room={state.room ?? defaultRoom()}
-												previewDef={previewDef}
-												setRoom={(partial) =>
-													patch({
-														room: {
-															...(state.room ?? defaultRoom()),
-															...partial,
-														},
-													})
-												}
-											/>
+											<div className="space-y-4">
+												<button
+													type="button"
+													onClick={() => {
+														setShowAgent(true);
+														setRightMode(
+															rightMode === 'preview' ? 'agent' : 'preview',
+														);
+													}}
+													className={`flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
+														previewing
+															? 'border-violet-400/40 bg-violet-500/15 text-violet-100'
+															: 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'
+													}`}
+												>
+													<MonitorSmartphone className="h-4 w-4" />
+													{previewing
+														? 'Prévia ao vivo aberta ao lado'
+														: 'Acompanhar em tempo real (Celular / PC)'}
+												</button>
+												<RoomAppearanceSection
+													room={state.room ?? defaultRoom()}
+													screen={apScreen}
+													onScreenChange={setApScreen}
+													selectedField={apSelected}
+													onFieldFocus={setApSelected}
+													setRoom={(partial) =>
+														patch({
+															room: {
+																...(state.room ?? defaultRoom()),
+																...partial,
+															},
+														})
+													}
+												/>
+											</div>
 										)}
 									</>
 								) : (
@@ -1702,10 +1750,25 @@ export function ToolBuilderView() {
 						)}
 					</main>
 
-					{/* agente que monta a ferramenta ao vivo (só na aba Edição) */}
-					{view === 'editor' && state && editorTab === 'edit' && showAgent && (
-						<ToolAgentChat state={state} setState={setState} />
-					)}
+					{/* coluna direita (só na aba Edição): agente OU prévia ao vivo */}
+					{view === 'editor' &&
+						state &&
+						editorTab === 'edit' &&
+						showAgent &&
+						(previewing ? (
+							<RoomLivePreview
+								previewDef={previewDef}
+								screen={apScreen}
+								onScreenChange={setApScreen}
+								device={previewDevice}
+								onDeviceChange={setPreviewDevice}
+								selected={apSelected}
+								onPick={focusField}
+								onBackToAgent={() => setRightMode('agent')}
+							/>
+						) : (
+							<ToolAgentChat state={state} setState={setState} />
+						))}
 				</div>
 			</div>
 		</div>
