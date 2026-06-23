@@ -58,6 +58,12 @@ const REASON_CONFIG: Record<
 		text: 'text-slate-400',
 		dot: 'bg-slate-400',
 	},
+	refund: {
+		label: 'Reembolso',
+		bg: 'bg-amber-500/10',
+		text: 'text-amber-400',
+		dot: 'bg-amber-400',
+	},
 };
 
 const ALL_REASONS = Object.keys(REASON_CONFIG) as BillingReason[];

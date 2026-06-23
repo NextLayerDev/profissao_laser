@@ -174,6 +174,7 @@ export const invoicesSummarySchema = z.object({
 		subscription_cycle: invoiceReasonStatsSchema,
 		subscription_update: invoiceReasonStatsSchema,
 		manual: invoiceReasonStatsSchema,
+		refund: invoiceReasonStatsSchema,
 	}),
 });
 export type InvoicesSummary = z.infer<typeof invoicesSummarySchema>;
