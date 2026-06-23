@@ -51,6 +51,7 @@ import {
 	type ResolvedRoomUi,
 	RoomUiContext,
 	resolveRoomUi,
+	useRoomEdit,
 	useRoomUi,
 } from '../lib/room-ui';
 import {
@@ -1030,6 +1031,7 @@ function SessionCard({
 			<div className="mt-3 flex items-center gap-2">
 				<button
 					type="button"
+					data-edit-field="enter"
 					onClick={onEnter}
 					className="flex-1 rounded-lg bg-[var(--room-accent)] px-3 py-2 text-sm font-semibold text-white hover:opacity-90"
 				>
@@ -1039,6 +1041,7 @@ function SessionCard({
 					<>
 						<button
 							type="button"
+							data-edit-field="acompanhar"
 							onClick={onMonitor}
 							title="Acompanhar (presença, gravação, materiais)"
 							className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5"
@@ -1087,6 +1090,8 @@ export function DynamicRoomView({
 	const isAdmin = previewAs ? previewAs === 'admin' : isSuperAdmin;
 	// Aparência personalizada desta tela (aluno/admin) — cor, tema, textos, etc.
 	const roomUi = useMemo(() => resolveRoomUi(def, isAdmin), [def, isAdmin]);
+	// Edição visual no builder (clicar nos elementos seleciona o campo no form).
+	const edit = useRoomEdit();
 	// No preview o courseSlug só alimentaria o RoomModal (que nunca monta) —
 	// desliga a query de entitlements p/ honrar o "não toca o backend".
 	const { courses } = useEntitlements(undefined, { enabled: !isPreview });
@@ -1134,27 +1139,52 @@ export function DynamicRoomView({
 		? `rounded-2xl p-4 sm:p-6 ${roomUi.themeClass === 'dark' ? 'bg-[#0d0d0f]' : 'bg-slate-50'}`
 		: '';
 
+	// Clique no canvas (modo edição) → seleciona o campo do elemento clicado.
+	const onCanvasClick = edit.editable
+		? (e: React.MouseEvent) => {
+				const t = (e.target as HTMLElement).closest('[data-edit-field]');
+				const f = t?.getAttribute('data-edit-field');
+				if (f) edit.onPick?.(f);
+			}
+		: undefined;
+
 	return (
 		<RoomUiContext.Provider value={roomUi}>
+			{/* biome-ignore lint/a11y/useKeyWithClickEvents: delegação só no modo edição do builder */}
 			<div
-				className={`mx-auto max-w-4xl ${roomUi.themeClass} ${themedShell}`}
+				className={`mx-auto max-w-4xl ${roomUi.themeClass} ${themedShell} ${edit.editable ? 'room-edit' : ''}`}
 				style={{ '--room-accent': roomUi.accent } as CSSProperties}
+				onClick={onCanvasClick}
 			>
-				{roomUi.notice && <RoomNotice notice={roomUi.notice} />}
+				{edit.editable && (
+					<style>{`
+						.room-edit [data-edit-field]{cursor:pointer}
+						.room-edit [data-edit-field]:hover{outline:1.5px dashed rgba(167,139,250,.7);outline-offset:3px;border-radius:10px}
+						${edit.selected ? `.room-edit [data-edit-field="${edit.selected}"]{outline:2px solid #a78bfa;outline-offset:3px;border-radius:10px}` : ''}
+					`}</style>
+				)}
+				{roomUi.notice && (
+					<div data-edit-field="banner">
+						<RoomNotice notice={roomUi.notice} />
+					</div>
+				)}
 				<div className="flex items-start justify-between gap-3">
-					<PageHeader
-						title={def?.title ?? 'Mentoria'}
-						subtitle={
-							def?.description ??
-							roomUi.L(
-								'headerSubtitle',
-								'Salas de vídeo e lives ao vivo da sua jornada.',
-							)
-						}
-					/>
+					<div data-edit-field="headerSubtitle" className="min-w-0 flex-1">
+						<PageHeader
+							title={def?.title ?? 'Mentoria'}
+							subtitle={
+								def?.description ??
+								roomUi.L(
+									'headerSubtitle',
+									'Salas de vídeo e lives ao vivo da sua jornada.',
+								)
+							}
+						/>
+					</div>
 					{isAdmin && (
 						<button
 							type="button"
+							data-edit-field="novaSessao"
 							onClick={openCreate}
 							className="mt-1 flex shrink-0 items-center gap-1.5 rounded-xl bg-[var(--room-accent)] px-3 py-2 text-sm font-semibold text-white hover:opacity-90"
 						>
@@ -1169,7 +1199,10 @@ export function DynamicRoomView({
 						A carregar sessões…
 					</p>
 				) : sorted.length === 0 ? (
-					<div className="mt-10 rounded-2xl border border-dashed border-slate-300 py-16 text-center dark:border-white/10">
+					<div
+						data-edit-field="emptyText"
+						className="mt-10 rounded-2xl border border-dashed border-slate-300 py-16 text-center dark:border-white/10"
+					>
 						<Video className="mx-auto size-8 text-slate-300 dark:text-gray-600" />
 						<p className="mt-3 text-slate-500 dark:text-gray-400">
 							{roomUi.L('emptyText', 'Nenhuma sessão agendada ainda.')}
@@ -1177,6 +1210,7 @@ export function DynamicRoomView({
 						{isAdmin && (
 							<button
 								type="button"
+								data-edit-field="emptyButton"
 								onClick={openCreate}
 								className="mt-3 text-sm font-semibold text-[var(--room-accent)] hover:underline"
 							>

@@ -1,7 +1,6 @@
 'use client';
 
 import { Palette } from 'lucide-react';
-import { useState } from 'react';
 import type { BuilderRoomState, RoomScreenUi } from './builder-model';
 import {
 	Field,
@@ -73,11 +72,20 @@ const LABEL_FIELDS: {
 export function RoomAppearanceSection({
 	room,
 	setRoom,
+	screen,
+	onScreenChange,
+	selectedField,
+	onFieldFocus,
 }: {
 	room: BuilderRoomState;
 	setRoom: (partial: Partial<BuilderRoomState>) => void;
+	/** Tela editada (controlado pelo editor 2-colunas). */
+	screen: 'customer' | 'admin';
+	onScreenChange: (s: 'customer' | 'admin') => void;
+	/** Campo selecionado no canvas (realça aqui no form). */
+	selectedField?: string;
+	onFieldFocus?: (field: string) => void;
 }) {
-	const [screen, setScreen] = useState<'customer' | 'admin'>('customer');
 	const cur: RoomScreenUi = room.ui?.[screen] ?? {};
 	const accent = cur.accent ?? '#ff3b30';
 
@@ -107,7 +115,7 @@ export function RoomAppearanceSection({
 			<div className="mb-5">
 				<SegmentedControl
 					value={screen}
-					onChange={(v) => setScreen(v as 'customer' | 'admin')}
+					onChange={(v) => onScreenChange(v as 'customer' | 'admin')}
 					ariaLabel="Tela a personalizar"
 					options={[
 						{ value: 'customer', label: 'Aluno' },
@@ -169,10 +177,12 @@ export function RoomAppearanceSection({
 										{f.label}
 									</span>
 									<input
+										id={`ap-${f.key}`}
 										value={cur.labels?.[f.key] ?? ''}
 										onChange={(e) => setLabel(f.key, e.target.value)}
+										onFocus={() => onFieldFocus?.(f.key)}
 										placeholder={f.placeholder}
-										className={inputCls}
+										className={`${inputCls} ${selectedField === f.key ? 'ring-2 ring-violet-400/60' : ''}`}
 									/>
 								</div>
 							),
@@ -180,7 +190,10 @@ export function RoomAppearanceSection({
 					</div>
 				</Field>
 
-				<div className="rounded-xl border border-white/10 bg-black/20 p-4">
+				<div
+					id="ap-banner"
+					className={`rounded-xl border bg-black/20 p-4 ${selectedField === 'banner' ? 'border-violet-400/60 ring-2 ring-violet-400/40' : 'border-white/10'}`}
+				>
 					<div className="flex items-center justify-between gap-3">
 						<div>
 							<p className="text-[13px] font-medium text-slate-200">

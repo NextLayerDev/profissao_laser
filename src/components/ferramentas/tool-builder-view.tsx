@@ -73,7 +73,7 @@ import {
 	TypeChip,
 } from './builder-ui';
 import { ToolCanvas } from './canvas/tool-canvas';
-import { RoomAppearanceSection } from './room-appearance-section';
+import { RoomAppearanceEditor } from './room-appearance-editor';
 import { RoomBuilderSections } from './room-builder-sections';
 import { ToolBillingPanel } from './tool-billing-panel';
 
@@ -1247,8 +1247,9 @@ export function ToolBuilderView() {
 											/>
 										)}
 										{activeId === 'builder-step-04' && (
-											<RoomAppearanceSection
+											<RoomAppearanceEditor
 												room={state.room ?? defaultRoom()}
+												previewDef={previewDef}
 												setRoom={(partial) =>
 													patch({
 														room: {

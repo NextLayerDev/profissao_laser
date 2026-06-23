@@ -86,3 +86,16 @@ export const accentTint = {
 	backgroundColor: 'color-mix(in srgb, var(--room-accent) 12%, transparent)',
 	color: 'var(--room-accent)',
 };
+
+/**
+ * Modo de EDIÇÃO no canvas (builder): quando `editable`, o DynamicRoomView marca
+ * os elementos clicáveis (data-edit-field) e avisa o editor qual foi escolhido,
+ * pra sincronizar com o formulário. Fora do builder fica desligado (no-op).
+ */
+export interface RoomEditCtx {
+	editable: boolean;
+	selected?: string;
+	onPick?: (field: string) => void;
+}
+export const RoomEditContext = createContext<RoomEditCtx>({ editable: false });
+export const useRoomEdit = () => useContext(RoomEditContext);
