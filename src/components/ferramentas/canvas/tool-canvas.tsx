@@ -62,9 +62,11 @@ const FIELD_TYPES: { type: FieldType; label: string }[] = [
 interface Props {
 	state: BuilderState;
 	onChange: (s: BuilderState) => void;
+	/** True quando a aba Canvas está visível — dispara um fitView ao revelar. */
+	active?: boolean;
 }
 
-function CanvasInner({ state, onChange }: Props) {
+function CanvasInner({ state, onChange, active }: Props) {
 	// Posições são EFÊMERAS e pertencem ao React Flow (não vão pra definition).
 	// O drag passa pelo applyNodeChanges (sem reconstruir nodes ⇒ sem flicker);
 	// `state` só reconstrói a ESTRUTURA, preservando as posições atuais.
@@ -98,6 +100,12 @@ function CanvasInner({ state, onChange }: Props) {
 			window.removeEventListener('keydown', onKey);
 		};
 	}, [maximized, creatingNode]);
+
+	// Container escondido (display:none) mede 0 → reenquadra quando a aba aparece.
+	useEffect(() => {
+		if (active)
+			setTimeout(() => rf.fitView({ duration: 200, padding: 0.18 }), 60);
+	}, [active, rf]);
 
 	// Edges são puramente derivadas do estado (independem de posição) — não
 	// recomputam durante o drag, então acompanham o nó sem piscar.

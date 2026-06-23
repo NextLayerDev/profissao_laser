@@ -73,6 +73,7 @@ import {
 	StepperBar,
 	TypeChip,
 } from './builder-ui';
+import { RoomFlowCanvas } from './canvas/room-flow-canvas';
 import { ToolCanvas } from './canvas/tool-canvas';
 import { RoomAppearanceSection } from './room-appearance-section';
 import { RoomBuilderSections } from './room-builder-sections';
@@ -523,9 +524,9 @@ export function ToolBuilderView() {
 	const [apScreen, setApScreen] = useState<'customer' | 'admin'>('customer');
 	const [apSelected, setApSelected] = useState<string>();
 	// Abas do editor em largura total: Edição (builder) | Aluno/Cliente | Admin.
-	const [editorTab, setEditorTab] = useState<'edit' | 'customer' | 'admin'>(
-		'edit',
-	);
+	const [editorTab, setEditorTab] = useState<
+		'edit' | 'canvas' | 'customer' | 'admin'
+	>('edit');
 
 	// Clique na prévia → seleciona + rola/foca o campo no formulário da Aparência.
 	const focusField = (field: string) => {
@@ -692,17 +693,19 @@ export function ToolBuilderView() {
 	// Abas do editor: sala → Edição/Aluno/Admin; pipeline → Edição/Cliente.
 	const isRoomDraft = previewDef?.engine_runtime === 'room_v1';
 	const editorTabs = useMemo<
-		{ id: 'edit' | 'customer' | 'admin'; label: string }[]
+		{ id: 'edit' | 'canvas' | 'customer' | 'admin'; label: string }[]
 	>(
 		() =>
 			isRoomDraft
 				? [
 						{ id: 'edit', label: 'Edição' },
+						{ id: 'canvas', label: 'Canvas' },
 						{ id: 'customer', label: 'Aluno' },
 						{ id: 'admin', label: 'Admin' },
 					]
 				: [
 						{ id: 'edit', label: 'Edição' },
+						{ id: 'canvas', label: 'Canvas' },
 						{ id: 'customer', label: 'Cliente' },
 					],
 		[isRoomDraft],
@@ -835,20 +838,15 @@ export function ToolBuilderView() {
 				accent: 'sky',
 				done: state.fields.length > 0,
 			},
+			// O "Fluxo" (canvas) saiu do wizard — agora vive na aba Canvas.
 			{
 				id: 'builder-step-03',
-				label: 'Fluxo',
-				accent: 'cyan',
-				done: state.nodes.length > 0,
-			},
-			{
-				id: 'builder-step-04',
 				label: 'Resultado',
 				accent: 'violet',
 				done: !!state.output.primary,
 			},
 			{
-				id: 'builder-step-05',
+				id: 'builder-step-04',
 				label: 'Preço',
 				accent: 'amber',
 				done:
@@ -864,12 +862,12 @@ export function ToolBuilderView() {
 		if (steps.length > 0 && activeStep > steps.length - 1) setActiveStep(0);
 	}, [steps.length, activeStep]);
 	const activeId = steps[activeStep]?.id ?? 'builder-step-01';
-	// Passo "Fluxo" (canvas): monta na 1ª visita e fica montado (escondido via CSS)
-	// p/ preservar o arranjo manual dos nós ao navegar entre passos.
+	// Aba "Canvas": monta na 1ª visita e fica montada (escondida via CSS) p/
+	// preservar o arranjo manual dos nós ao trocar de aba.
 	const [flowMounted, setFlowMounted] = useState(false);
 	useEffect(() => {
-		if (activeId === 'builder-step-03') setFlowMounted(true);
-	}, [activeId]);
+		if (editorTab === 'canvas') setFlowMounted(true);
+	}, [editorTab]);
 	const goStep = (id: string) => {
 		const i = steps.findIndex((s) => s.id === id);
 		if (i >= 0) setActiveStep(i);
@@ -1035,6 +1033,8 @@ export function ToolBuilderView() {
 								>
 									{t.id === 'edit' ? (
 										<Save className="h-4 w-4" />
+									) : t.id === 'canvas' ? (
+										<Workflow className="h-4 w-4" />
 									) : (
 										<Eye className="h-4 w-4" />
 									)}
@@ -1126,7 +1126,10 @@ export function ToolBuilderView() {
 							<ToolBillingPanel tool={billingTool} />
 						) : view === 'gallery' || !state ? (
 							<Gallery onPick={startNew} />
-						) : editorTab !== 'edit' ? (
+						) : editorTab ===
+							'canvas' ? /* o canvas real é o irmão sempre-montado abaixo (preserva
+							   o arranjo) — aqui só evitamos cair no preview/wizard */
+						null : editorTab !== 'edit' ? (
 							/* abas de preview em largura total */
 							previewDef ? (
 								<div
@@ -1359,105 +1362,10 @@ export function ToolBuilderView() {
 											</FormSection>
 										)}
 
-										{/* pipeline (Fluxo): fica montado após a 1ª visita p/
-										    preservar o arranjo do canvas ao trocar de passo */}
-										{flowMounted && (
-											<div
-												className={
-													activeId === 'builder-step-03' ? undefined : 'hidden'
-												}
-											>
-												<FormSection
-													step="03"
-													title="O que a ferramenta faz"
-													subtitle="Ligue a saída de uma etapa na entrada da outra."
-													icon={<Workflow className="h-4 w-4" />}
-													accent="cyan"
-													delay={120}
-												>
-													<div className="mb-4">
-														<SegmentedControl
-															value={pipelineMode}
-															onChange={setPipelineMode}
-															ariaLabel="Modo de montagem"
-															options={[
-																{ value: 'canvas', label: 'Canvas' },
-																{ value: 'steps', label: 'Etapas' },
-															]}
-														/>
-													</div>
-
-													{pipelineMode === 'canvas' ? (
-														<ToolCanvas
-															state={state}
-															onChange={(s) => setState(s)}
-														/>
-													) : (
-														<>
-															<div className="space-y-2">
-																{state.nodes.map((n, i) => (
-																	<StepCard
-																		key={n.id}
-																		node={n}
-																		index={i}
-																		total={state.nodes.length}
-																		state={state}
-																		onParam={(param, v) =>
-																			patch({
-																				nodes: state.nodes.map((x) =>
-																					x.id === n.id
-																						? {
-																								...x,
-																								params: {
-																									...x.params,
-																									[param]: v,
-																								},
-																							}
-																						: x,
-																				),
-																			})
-																		}
-																		onMove={(dir) => moveNode(i, dir)}
-																		onRemove={() =>
-																			patch({
-																				nodes: state.nodes.filter(
-																					(x) => x.id !== n.id,
-																				),
-																			})
-																		}
-																	/>
-																))}
-															</div>
-															<div className="mt-4 flex flex-wrap items-center gap-2">
-																<span className="text-[13px] text-slate-500">
-																	+ etapa
-																</span>
-																{BLOCK_CATALOG.map((b) => (
-																	<TypeChip
-																		key={b.id}
-																		onClick={() => addNode(b.id)}
-																		accent={b.accent}
-																		icon={
-																			<Glyph
-																				name={b.icon}
-																				className="h-4 w-4"
-																			/>
-																		}
-																	>
-																		{b.label}
-																	</TypeChip>
-																))}
-															</div>
-														</>
-													)}
-												</FormSection>
-											</div>
-										)}
-
 										{/* saída */}
-										{activeId === 'builder-step-04' && (
+										{activeId === 'builder-step-03' && (
 											<FormSection
-												step="04"
+												step="03"
 												title="Resultado"
 												subtitle="O que o cliente recebe no final."
 												icon={<Eye className="h-4 w-4" />}
@@ -1548,9 +1456,9 @@ export function ToolBuilderView() {
 										)}
 
 										{/* cobrança */}
-										{activeId === 'builder-step-05' && (
+										{activeId === 'builder-step-04' && (
 											<FormSection
-												step="05"
+												step="04"
 												title="Preço e planos"
 												subtitle="Custo por uso e cota grátis por plano."
 												icon={<Rocket className="h-4 w-4" />}
@@ -1747,6 +1655,105 @@ export function ToolBuilderView() {
 									)}
 								</div>
 							</>
+						)}
+						{/* Canvas (aba própria): montado 1× e escondido via CSS p/
+						    preservar o arranjo arrastado ao trocar de aba. */}
+						{view === 'editor' && state && flowMounted && (
+							<div className={editorTab === 'canvas' ? undefined : 'hidden'}>
+								{isRoomDraft ? (
+									<RoomFlowCanvas
+										room={state.room ?? defaultRoom()}
+										setRoom={(partial) =>
+											patch({
+												room: {
+													...(state.room ?? defaultRoom()),
+													...partial,
+												},
+											})
+										}
+										plans={plans.data ?? []}
+										plansLoading={plans.isLoading}
+										active={editorTab === 'canvas'}
+									/>
+								) : (
+									<div className="space-y-4">
+										<div className="flex flex-wrap items-center justify-between gap-3">
+											<span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-cyan-300">
+												<Workflow className="h-4 w-4" /> funcionamento · ligue a
+												saída de uma etapa na entrada da outra
+											</span>
+											<SegmentedControl
+												value={pipelineMode}
+												onChange={setPipelineMode}
+												ariaLabel="Modo de montagem"
+												options={[
+													{ value: 'canvas', label: 'Canvas' },
+													{ value: 'steps', label: 'Etapas' },
+												]}
+											/>
+										</div>
+										{pipelineMode === 'canvas' ? (
+											<ToolCanvas
+												state={state}
+												onChange={(s) => setState(s)}
+												active={editorTab === 'canvas'}
+											/>
+										) : (
+											<>
+												<div className="space-y-2">
+													{state.nodes.map((n, i) => (
+														<StepCard
+															key={n.id}
+															node={n}
+															index={i}
+															total={state.nodes.length}
+															state={state}
+															onParam={(param, v) =>
+																patch({
+																	nodes: state.nodes.map((x) =>
+																		x.id === n.id
+																			? {
+																					...x,
+																					params: {
+																						...x.params,
+																						[param]: v,
+																					},
+																				}
+																			: x,
+																	),
+																})
+															}
+															onMove={(dir) => moveNode(i, dir)}
+															onRemove={() =>
+																patch({
+																	nodes: state.nodes.filter(
+																		(x) => x.id !== n.id,
+																	),
+																})
+															}
+														/>
+													))}
+												</div>
+												<div className="mt-4 flex flex-wrap items-center gap-2">
+													<span className="text-[13px] text-slate-500">
+														+ etapa
+													</span>
+													{BLOCK_CATALOG.map((b) => (
+														<TypeChip
+															key={b.id}
+															onClick={() => addNode(b.id)}
+															accent={b.accent}
+															icon={<Glyph name={b.icon} className="h-4 w-4" />}
+														>
+															{b.label}
+														</TypeChip>
+													))}
+												</div>
+											</>
+										)}
+									</div>
+								)}
+							</div>
 						)}
 					</main>
 
