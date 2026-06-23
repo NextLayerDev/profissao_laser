@@ -15,6 +15,7 @@ import {
 	ShoppingCart,
 	SlidersHorizontal,
 	Users,
+	Wrench,
 } from 'lucide-react';
 import type { NavItem } from '@/types/navigation';
 
@@ -68,6 +69,12 @@ export const navItems: NavItem[] = [
 		name: 'Vetorizacao',
 		icon: PenLine,
 		href: '/vetorizacao-admin',
+		hasDropdown: false,
+	},
+	{
+		name: 'Ferramentas',
+		icon: Wrench,
+		href: '/ferramentas',
 		hasDropdown: false,
 	},
 ];
