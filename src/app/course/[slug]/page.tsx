@@ -25,7 +25,12 @@ import {
 	Zap,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useParams, useSearchParams } from 'next/navigation';
+import {
+	useParams,
+	usePathname,
+	useRouter,
+	useSearchParams,
+} from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { DoubtsTab } from '@/components/course/doubts-tab';
@@ -340,6 +345,8 @@ function QuizTab({ lessonId }: { lessonId: string | null }) {
 export default function CourseSlugPage() {
 	const { slug } = useParams<{ slug: string }>();
 	const searchParams = useSearchParams();
+	const router = useRouter();
+	const pathname = usePathname();
 	const lessonIdFromUrl = searchParams.get('lesson');
 	const [email, setEmail] = useState<string | null | undefined>(undefined);
 	const [isAdmin, setIsAdmin] = useState(false);
@@ -409,6 +416,11 @@ export default function CourseSlugPage() {
 		hasSetInitialLesson.current = false;
 		hasInitializedCollapsed.current = false;
 	}
+	// Espelha o set de aulas assistidas num ref para o efeito de seleção inicial
+	// ler o valor atual SEM depender dele (senão marcar uma aula re-dispara o
+	// efeito e joga o aluno de volta pra outra aula).
+	const watchedRef = useRef(watchedLessonIds);
+	watchedRef.current = watchedLessonIds;
 	useEffect(() => {
 		if (!course) return;
 		const modules = course.modules
@@ -427,12 +439,12 @@ export default function CourseSlugPage() {
 			return;
 		}
 
-		// Sem ?lesson= na URL: abrir na próxima aula após a última concluída
+		// Sem ?lesson= na URL: abrir na próxima aula após a última concluída (1×)
 		if (progressLoading || hasSetInitialLesson.current) return;
 		hasSetInitialLesson.current = true;
-		const nextLesson = lessons.find((l) => !watchedLessonIds.has(l.id));
+		const nextLesson = lessons.find((l) => !watchedRef.current.has(l.id));
 		setActiveLesson(nextLesson ?? lessons[0] ?? null);
-	}, [course, lessonIdFromUrl, progressLoading, watchedLessonIds]);
+	}, [course, lessonIdFromUrl, progressLoading]);
 
 	// Ao entrar na sala de aula, colapsar módulos com todas as aulas completas
 	useEffect(() => {
@@ -513,6 +525,9 @@ export default function CourseSlugPage() {
 	const handleSelectLesson = (lesson: CourseLesson) => {
 		setActiveLesson(lesson);
 		setShowEndScreen(false);
+		// Persiste a aula atual na URL: mantém a posição em reload/deep-link e
+		// impede o efeito de seleção inicial de reverter pra outra aula.
+		router.replace(`${pathname}?lesson=${lesson.id}`, { scroll: false });
 	};
 
 	const handleVideoEnded = () => {
