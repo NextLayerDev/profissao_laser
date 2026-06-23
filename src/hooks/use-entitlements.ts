@@ -12,8 +12,12 @@ export const ENTITLEMENTS_KEY = (courseSlug?: string) =>
  * + the dead `/credits/*` reads. Helpers expose the common derivations the UI
  * needs (active plan? this tool's free quota / cost? vox balance? unlimited?).
  */
-export function useEntitlements(courseSlug?: string) {
+export function useEntitlements(
+	courseSlug?: string,
+	opts?: { enabled?: boolean },
+) {
 	const enabled =
+		(opts?.enabled ?? true) &&
 		typeof window !== 'undefined' &&
 		(!!getToken('customer') || !!getToken('user'));
 

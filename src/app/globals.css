@@ -1,5 +1,10 @@
 @import "tailwindcss";
-@custom-variant dark (&:where(.dark, .dark *));
+/* `dark:` aplica em qualquer descendente de `.dark`, MENOS subárvores marcadas
+   `.room-light` — usado p/ forçar o tema CLARO numa sala (room_v1) mesmo com o
+   app em dark. Aditivo: só afeta quem opta por `.room-light`. */
+@custom-variant dark (&:where(.dark, .dark *):not(
+		:where(.room-light, .room-light *)
+	));
 
 @theme {
 	--color-workshop-bg: #f8fafc;
