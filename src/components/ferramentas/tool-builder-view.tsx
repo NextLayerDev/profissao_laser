@@ -735,10 +735,21 @@ export function ToolBuilderView() {
 						engine_runtime: (derivedDoc as { room?: unknown }).room
 							? 'room_v1'
 							: 'blocks_v1',
-						definition: derivedDoc,
+						definition: {
+							...derivedDoc,
+							// Banco e aparência (ui.admin/customer) vivem FORA do
+							// builder-model — injeta-os pro preview do Cliente bater
+							// EXATAMENTE com a tela real (galeria + cor/título/aviso).
+							bank: openDef?.definition.bank ?? derivedDoc.bank,
+							ui: {
+								...(derivedDoc.ui ?? {}),
+								...(tlScreens.admin ? { admin: tlScreens.admin } : {}),
+								...(tlScreens.customer ? { customer: tlScreens.customer } : {}),
+							},
+						},
 					}
 				: null,
-		[derivedDoc, state, selectedDefId],
+		[derivedDoc, state, selectedDefId, openDef, tlScreens],
 	);
 
 	// Abas do editor: sala → Edição/Aluno/Admin; pipeline → Edição/Cliente.

@@ -224,7 +224,12 @@ export function DynamicToolView({
 	// Banco do Admin: galeria de registros → form por registro escolhido.
 	const bank = def?.definition.bank;
 	const bankEnabled = !!bank?.enabled;
-	const bankQuery = useToolBank(toolKey, { enabled: bankEnabled && !isDraft });
+	// Busca os registros tb no preview do builder (draft) — só pula a key
+	// placeholder de uma tool ainda não salva — pra o preview do Cliente mostrar
+	// a galeria EXATAMENTE como o cliente vê (não cair no form).
+	const bankQuery = useToolBank(toolKey, {
+		enabled: bankEnabled && toolKey !== 'preview',
+	});
 	const [selectedEntry, setSelectedEntry] = useState<ToolBankEntry | null>(
 		null,
 	);
