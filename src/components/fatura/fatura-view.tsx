@@ -86,7 +86,7 @@ function fmtMonth(ym: string): string {
 	return `${MONTHS_PT[(m ?? 1) - 1] ?? '—'}/${y ?? ''}`;
 }
 
-/** Taxa em basis points → texto (350 → "3,5%"; 10000 → "100%"). */
+/** Taxa em basis points → texto (990 → "9,9%"; 2000 → "20%"; 10000 → "100%"). */
 function fmtRate(bps: number | null | undefined): string | null {
 	if (bps == null) return null;
 	return `${(bps / 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`;
@@ -127,7 +127,7 @@ const SOURCE_META: Record<CompanyInvoiceSource, SourceMeta> = {
 };
 
 const SOURCE_OPTIONS: { value: CompanyInvoiceSource; label: string }[] = [
-	{ value: 'subscription_fee', label: 'Taxa de assinatura (3,5%)' },
+	{ value: 'subscription_fee', label: 'Taxa de assinatura (9,9% + R$1)' },
 	{ value: 'link_purchase', label: 'Compra via link (100%)' },
 	{ value: 'link_tool_use', label: 'Uso de ferramenta' },
 	{ value: 'plan_grant', label: 'Voxxys do plano' },
@@ -673,7 +673,7 @@ export function FaturaView() {
 			color: 'bg-amber-500',
 		},
 		{
-			label: 'Assinaturas (3,5%)',
+			label: 'Assinaturas (9,9% + R$1)',
 			cents: totals?.subscription_fees_cents ?? 0,
 			color: 'bg-sky-500',
 		},
@@ -709,7 +709,7 @@ export function FaturaView() {
 			color: '#f59e0b',
 		},
 		{
-			name: 'Assinaturas (3,5%)',
+			name: 'Assinaturas (9,9% + R$1)',
 			value: (totals?.subscription_fees_cents ?? 0) / 100,
 			color: '#0ea5e9',
 		},
@@ -913,9 +913,9 @@ export function FaturaView() {
 							<SummaryCard
 								tone="emerald"
 								Icon={Percent}
-								label="Assinaturas (3,5%)"
+								label="Assinaturas (9,9% + R$1)"
 								value={fmtBRL(totals?.subscription_fees_cents ?? 0)}
-								hint="3,5% de cada pagamento de assinatura."
+								hint="9,9% + R$1,00 por pagamento (20% se < R$10)."
 							/>
 							<SummaryCard
 								tone="slate"

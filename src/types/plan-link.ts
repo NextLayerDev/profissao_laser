@@ -102,7 +102,7 @@ export type PlanLinkRedemptions = z.infer<typeof planLinkRedemptionsSchema>;
 /**
  * link_tool_use   = uso de tool por cliente de link (custo de plataforma);
  * plan_grant      = voxxys do plano cobrados no ato (R$1,20/voxxy);
- * subscription_fee= 3,5% de cada pagamento de assinatura;
+ * subscription_fee= taxa Hotmart de cada pagamento de assinatura (9,9% + R$1, ou 20% < R$10);
  * link_purchase   = 100% do 1º período pago numa compra por link.
  */
 export const companyInvoiceSourceSchema = z.enum([
@@ -131,7 +131,7 @@ export const companyInvoiceEntrySchema = z.object({
 	amount_cents: z.number().int(),
 	/** Valor base sobre o qual a taxa incide (assinatura/piso). */
 	base_amount_cents: z.number().int().nullable().optional().default(null),
-	/** Taxa em basis points (350 = 3,5%; 10000 = 100%). */
+	/** Taxa em basis points (990 = 9,9%; 2000 = 20%; 10000 = 100%). */
 	rate_bps: z.number().int().nullable().optional().default(null),
 	voxes_spent: z.coerce.number(),
 	/** Nº de usos somados (>1 nas linhas de uso de ferramenta agrupadas por cliente). */
