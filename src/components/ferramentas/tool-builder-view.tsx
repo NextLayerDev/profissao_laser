@@ -31,7 +31,7 @@ import { usePlans } from '@/modules/plans/hooks/use-plans';
 import { DynamicRoomView } from '@/modules/tools/components/dynamic-room-view';
 import { DynamicToolView } from '@/modules/tools/components/dynamic-tool-view';
 import { useTools } from '@/modules/tools/hooks/use-tools';
-import { resolveToolIcon, TOOL_ICONS } from '@/modules/tools/lib/tool-icons';
+import { resolveToolIcon } from '@/modules/tools/lib/tool-icons';
 import {
 	type AiToolDefinition,
 	type BankConfig,
@@ -70,7 +70,6 @@ import {
 	Field,
 	FieldCard,
 	FormSection,
-	IconPicker,
 	inputCls,
 	SegmentedControl,
 	SelectInput,
@@ -80,6 +79,7 @@ import {
 } from './builder-ui';
 import { RoomFlowCanvas } from './canvas/room-flow-canvas';
 import { ToolCanvas } from './canvas/tool-canvas';
+import { IconPicker } from './icon-picker';
 import { RoomAppearanceSection } from './room-appearance-section';
 import { RoomBuilderSections } from './room-builder-sections';
 import { type PreviewDevice, RoomLivePreview } from './room-live-preview';
@@ -1410,11 +1410,14 @@ export function ToolBuilderView() {
 													className={inputCls}
 												/>
 											</Field>
-											<Field label="Ícone" className="sm:col-span-2">
+											<Field
+												label="Ícone"
+												hint="busque por tema"
+												className="sm:col-span-2"
+											>
 												<IconPicker
 													value={state.icon}
 													onChange={(name) => patch({ icon: name })}
-													icons={TOOL_ICONS}
 												/>
 											</Field>
 										</div>
