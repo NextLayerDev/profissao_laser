@@ -80,6 +80,7 @@ function formFromEntry(entry: ToolBankEntry): BankFormValues {
 	const data: Record<string, string> = {};
 	for (const [k, v] of Object.entries(entry.data ?? {})) {
 		if (typeof v === 'string') data[k] = v;
+		else if (typeof v === 'number') data[k] = String(v);
 	}
 	return {
 		title: entry.title,
@@ -237,6 +238,52 @@ function BankFieldControl({
 
 function FieldShell({ children }: { children: ReactNode }) {
 	return <div className="grid gap-4 sm:grid-cols-2">{children}</div>;
+}
+
+/** `mode` do registro inclui imagem? ('imagem' | 'texto_imagem'). */
+function modeHasImage(mode: string | undefined): boolean {
+	return mode === 'imagem' || mode === 'texto_imagem';
+}
+
+/** Lê `data.max_images` (string no form) e clampa em 1–3 (default 1). */
+function parseMaxImages(raw: string | undefined): number {
+	const n = raw ? Number.parseInt(raw, 10) : 1;
+	if (!Number.isFinite(n)) return 1;
+	return Math.min(3, Math.max(1, n));
+}
+
+/** Segmentado 1 / 2 / 3 — quantas imagens de referência o cliente envia. */
+function MaxImagesControl({
+	value,
+	onChange,
+}: {
+	value: number;
+	onChange: (n: number) => void;
+}) {
+	return (
+		<div>
+			<span className={labelCls}>Quantas imagens de referência</span>
+			<div className="inline-flex overflow-hidden rounded-xl border border-white/10 bg-black/30">
+				{[1, 2, 3].map((n) => (
+					<button
+						key={n}
+						type="button"
+						onClick={() => onChange(n)}
+						className={`px-4 py-2 text-sm font-semibold transition-colors ${
+							value === n
+								? 'bg-gradient-to-r from-fuchsia-500 to-violet-500 text-white'
+								: 'text-slate-400 hover:text-slate-200'
+						}`}
+					>
+						{n}
+					</button>
+				))}
+			</div>
+			<p className="mt-1.5 text-[11px] text-slate-500">
+				O cliente verá {value} {value === 1 ? 'campo' : 'campos'} de upload.
+			</p>
+		</div>
+	);
 }
 
 interface ToolBankManagerProps {
@@ -514,6 +561,18 @@ export function ToolBankManager({
 									</div>
 								))}
 							</FieldShell>
+							{/* Quantas imagens de referência o cliente pode enviar (1–3).
+							    Só faz sentido quando o modo do registro inclui imagem. */}
+							{modeHasImage(form.data.mode) && (
+								<MaxImagesControl
+									value={parseMaxImages(form.data.max_images)}
+									onChange={(n) =>
+										patchForm({
+											data: { ...form.data, max_images: String(n) },
+										})
+									}
+								/>
+							)}
 						</div>
 					)}
 

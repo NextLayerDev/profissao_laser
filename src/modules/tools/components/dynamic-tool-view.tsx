@@ -123,20 +123,44 @@ function modeOf(entry: ToolBankEntry): string {
 	return typeof m === 'string' ? m : 'texto';
 }
 
+/** Lê `data.max_images` de um registro e clampa em 1–3 (default 1). */
+function maxImagesOf(entry: ToolBankEntry): number {
+	const raw = entry.data?.max_images;
+	const n =
+		typeof raw === 'number'
+			? raw
+			: typeof raw === 'string'
+				? Number.parseInt(raw, 10)
+				: 1;
+	if (!Number.isFinite(n)) return 1;
+	return Math.min(3, Math.max(1, Math.trunc(n)));
+}
+
 /** Drop de imagem de referência — visual igual ao widget de imagem das tools. */
 function ReferenceDrop({
+	label,
 	file,
 	onChange,
 }: {
+	label: string;
 	file: File | null;
 	onChange: (f: File | null) => void;
 }) {
 	const [dragging, setDragging] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
+	const previewUrl = useMemo(
+		() => (file ? URL.createObjectURL(file) : null),
+		[file],
+	);
+	useEffect(() => {
+		return () => {
+			if (previewUrl) URL.revokeObjectURL(previewUrl);
+		};
+	}, [previewUrl]);
 	return (
 		<div className="space-y-3">
 			<span className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-				Imagem de referência
+				{label}
 			</span>
 			<button
 				type="button"
@@ -180,8 +204,19 @@ function ReferenceDrop({
 			</button>
 			{file && (
 				<div className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-3">
-					<div className="rounded-lg bg-violet-100 p-2 dark:bg-violet-500/20">
-						<ImageIcon className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+					<div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-violet-100 dark:bg-violet-500/20">
+						{previewUrl ? (
+							// <img> intencional: preview local de Blob
+							<img
+								src={previewUrl}
+								alt={file.name}
+								className="h-full w-full object-cover"
+							/>
+						) : (
+							<div className="flex h-full w-full items-center justify-center">
+								<ImageIcon className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+							</div>
+						)}
 					</div>
 					<p className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900 dark:text-white">
 						{file.name}
@@ -234,7 +269,13 @@ export function DynamicToolView({
 		null,
 	);
 	const [tema, setTema] = useState('');
-	const [referencia, setReferencia] = useState<File | null>(null);
+	// Até 3 slots de imagem de referência; o registro escolhido define quantos
+	// aparecem (`data.max_images`, clamp 1–3).
+	const [referencias, setReferencias] = useState<(File | null)[]>([
+		null,
+		null,
+		null,
+	]);
 
 	const inputSpec = useMemo(() => def?.definition.input ?? {}, [def]);
 	const ui = def?.definition.ui;
@@ -253,7 +294,7 @@ export function DynamicToolView({
 		setResult(null);
 		setSelectedEntry(null);
 		setTema('');
-		setReferencia(null);
+		setReferencias([null, null, null]);
 	}, [def?.id, def?.tool_key]);
 
 	const setValue = useCallback((name: string, v: unknown) => {
@@ -300,18 +341,32 @@ export function DynamicToolView({
 		);
 	}, [missingRequired, isDraft, def, toolKey, values, inputSpec, billing]);
 
-	// Run de um registro do banco: manda bank_entry_id + tema/referencia.
+	// Run de um registro do banco: manda bank_entry_id + tema + referências.
+	// Cada slot vira um field próprio (`referencia`, `referencia2`, `referencia3`)
+	// pro motor mapear cada input de imagem pelo nome.
 	const runBank = useCallback(async () => {
 		if (!selectedEntry) return;
 		const mode = modeOf(selectedEntry);
+		const max = maxImagesOf(selectedEntry);
+		const chosen = referencias
+			.slice(0, max)
+			.filter((f): f is File => f instanceof File);
 		if (mode.includes('texto') && !tema.trim()) {
 			toast.error('Digite o tema.');
 			return;
 		}
+		if (mode === 'imagem' && chosen.length === 0) {
+			toast.error('Envie ao menos 1 imagem de referência.');
+			return;
+		}
 		const bankInputs: Record<string, unknown> = {};
 		if (mode.includes('texto')) bankInputs.tema = tema.trim();
-		if (mode.includes('imagem') && referencia)
-			bankInputs.referencia = referencia;
+		if (mode.includes('imagem')) {
+			const fieldNames = ['referencia', 'referencia2', 'referencia3'];
+			chosen.forEach((file, i) => {
+				bankInputs[fieldNames[i]] = file;
+			});
+		}
 
 		await billing.runEngine((invocationId) =>
 			runToolEngine(toolKey, {
@@ -325,7 +380,7 @@ export function DynamicToolView({
 				return r;
 			}),
 		);
-	}, [selectedEntry, tema, referencia, toolKey, billing]);
+	}, [selectedEntry, tema, referencias, toolKey, billing]);
 
 	if (!definitionOverride && query.isLoading) {
 		return (
@@ -404,7 +459,7 @@ export function DynamicToolView({
 									setSelectedEntry(entry);
 									setResult(null);
 									setTema('');
-									setReferencia(null);
+									setReferencias([null, null, null]);
 								}}
 							/>
 						)}
@@ -416,7 +471,14 @@ export function DynamicToolView({
 		const mode = modeOf(selectedEntry);
 		const needsTema = mode.includes('texto');
 		const needsImage = mode.includes('imagem');
-		const canGenerate = !needsTema || !!tema.trim();
+		const maxImages = maxImagesOf(selectedEntry);
+		const chosenImages = referencias
+			.slice(0, maxImages)
+			.filter((f): f is File => f instanceof File);
+		// Imagem-só exige ≥1 referência; modos com texto exigem o tema preenchido.
+		const canGenerate =
+			(!needsTema || !!tema.trim()) &&
+			(mode !== 'imagem' || chosenImages.length > 0);
 		const cardImg =
 			selectedEntry.example_after_url ?? selectedEntry.example_before_url;
 
@@ -495,7 +557,26 @@ export function DynamicToolView({
 							)}
 
 							{needsImage && (
-								<ReferenceDrop file={referencia} onChange={setReferencia} />
+								<div className="space-y-4">
+									{Array.from({ length: maxImages }).map((_, i) => (
+										<ReferenceDrop
+											key={`ref-${i}`}
+											label={
+												maxImages > 1
+													? `Imagem de referência ${i + 1}`
+													: 'Imagem de referência'
+											}
+											file={referencias[i] ?? null}
+											onChange={(f) =>
+												setReferencias((prev) => {
+													const next = [...prev];
+													next[i] = f;
+													return next;
+												})
+											}
+										/>
+									))}
+								</div>
 							)}
 
 							<button
