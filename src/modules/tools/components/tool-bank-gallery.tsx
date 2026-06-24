@@ -1,18 +1,25 @@
 'use client';
 
 import { ImageOff, Sparkles } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { type CSSProperties, useMemo, useState } from 'react';
 import type { ToolBankEntry } from '../services/tool-bank.service';
 
 /**
  * Galeria do Banco (cliente): grade de cards bonita (espelha a biblioteca de
  * vetores) — imagem de exemplo, título e categoria. Uma fileira de chips filtra
- * por categoria. Clicar num card escolhe o registro pra gerar.
+ * por categoria. Clicar num card escolhe o registro pra gerar. A cor de
+ * destaque (chip ativo + hover/realce dos cards) vem da var `--screen-accent`
+ * herdada do container (default fúcsia) — personalizável pela tela do cliente.
  */
 
 function cardImage(entry: ToolBankEntry): string | null {
 	return entry.example_after_url ?? entry.example_before_url ?? null;
 }
+
+/** Cor de destaque sólida (chip ativo). */
+const ACCENT_BG: CSSProperties = { backgroundColor: 'var(--screen-accent)' };
+/** Texto na cor de destaque ("Usar este" / categoria). */
+const ACCENT_TEXT: CSSProperties = { color: 'var(--screen-accent)' };
 
 export function ToolBankGallery({
 	entries,
@@ -51,15 +58,20 @@ export function ToolBankGallery({
 	}
 
 	return (
-		<div className="space-y-6">
+		<div className="bank-gallery space-y-6">
+			{/* Hover/realce dos cards na cor de destaque (não dá p/ inline em :hover). */}
+			<style>{`
+				.bank-gallery .bank-card:hover{border-color:color-mix(in srgb,var(--screen-accent) 40%,transparent);box-shadow:0 20px 25px -5px color-mix(in srgb,var(--screen-accent) 10%,transparent),0 8px 10px -6px color-mix(in srgb,var(--screen-accent) 10%,transparent)}
+			`}</style>
 			{categories.length > 0 && (
 				<div className="flex flex-wrap items-center gap-2">
 					<button
 						type="button"
 						onClick={() => setCategory(null)}
+						style={category === null ? ACCENT_BG : undefined}
 						className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
 							category === null
-								? 'bg-violet-600 text-white shadow-sm shadow-violet-500/30'
+								? 'text-white shadow-sm'
 								: 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10'
 						}`}
 					>
@@ -70,9 +82,10 @@ export function ToolBankGallery({
 							key={cat}
 							type="button"
 							onClick={() => setCategory(cat)}
+							style={category === cat ? ACCENT_BG : undefined}
 							className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
 								category === cat
-									? 'bg-violet-600 text-white shadow-sm shadow-violet-500/30'
+									? 'text-white shadow-sm'
 									: 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10'
 							}`}
 						>
@@ -90,7 +103,7 @@ export function ToolBankGallery({
 							key={entry.id}
 							type="button"
 							onClick={() => onSelect(entry)}
-							className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-left transition-all duration-200 hover:-translate-y-1 hover:border-violet-500/40 hover:shadow-xl hover:shadow-violet-500/10 dark:border-white/10 dark:bg-white/5"
+							className="bank-card group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-left transition-all duration-200 hover:-translate-y-1 dark:border-white/10 dark:bg-white/5"
 						>
 							<div className="relative aspect-square overflow-hidden bg-slate-100 dark:bg-white/5">
 								{img ? (
@@ -102,7 +115,10 @@ export function ToolBankGallery({
 									/>
 								) : (
 									<div className="flex h-full w-full items-center justify-center">
-										<div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-600 shadow-lg shadow-violet-500/20">
+										<div
+											className="flex h-16 w-16 items-center justify-center rounded-2xl shadow-lg"
+											style={ACCENT_BG}
+										>
 											<Sparkles className="h-8 w-8 text-white" />
 										</div>
 									</div>
@@ -122,7 +138,10 @@ export function ToolBankGallery({
 										{entry.description}
 									</span>
 								)}
-								<span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-violet-600 opacity-0 transition-opacity group-hover:opacity-100 dark:text-violet-400">
+								<span
+									className="mt-2 inline-flex items-center gap-1 text-xs font-semibold opacity-0 transition-opacity group-hover:opacity-100"
+									style={ACCENT_TEXT}
+								>
 									Usar este <Sparkles className="h-3.5 w-3.5" />
 								</span>
 							</div>

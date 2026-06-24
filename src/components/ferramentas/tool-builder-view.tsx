@@ -14,6 +14,7 @@ import {
 	Link2,
 	Loader2,
 	MonitorSmartphone,
+	Palette,
 	Plus,
 	Rocket,
 	Save,
@@ -38,6 +39,7 @@ import {
 	createToolDefinition,
 	listToolDefinitions,
 	publishToolDefinition,
+	type ScreenUi,
 	type ToolDefinitionDoc,
 	toolDefinitionDocSchema,
 	updateToolDefinition,
@@ -81,6 +83,10 @@ import { ToolCanvas } from './canvas/tool-canvas';
 import { RoomAppearanceSection } from './room-appearance-section';
 import { RoomBuilderSections } from './room-builder-sections';
 import { type PreviewDevice, RoomLivePreview } from './room-live-preview';
+import {
+	ToolAppearanceSection,
+	type ToolScreensUi,
+} from './tool-appearance-section';
 import { ToolBankConfigEditor } from './tool-bank-config-editor';
 import { ToolBankManager } from './tool-bank-manager';
 import { ToolBillingPanel } from './tool-billing-panel';
@@ -537,12 +543,17 @@ export function ToolBuilderView() {
 	// Aparência: tela editada + campo selecionado (sync form ⇄ prévia clicável).
 	const [apScreen, setApScreen] = useState<'customer' | 'admin'>('customer');
 	const [apSelected, setApSelected] = useState<string>();
-	// Abas do editor em largura total: Edição (builder) | Aluno/Cliente | Admin | Banco.
+	// Abas do editor em largura total: Edição (builder) | Aluno/Cliente | Admin | Banco | Aparência.
 	const [editorTab, setEditorTab] = useState<
-		'edit' | 'canvas' | 'customer' | 'admin' | 'bank'
+		'edit' | 'canvas' | 'customer' | 'admin' | 'bank' | 'appearance'
 	>('edit');
 	// "Configurar banco": editor da config (enable + fields + inject) por cima do manager.
 	const [bankConfigOpen, setBankConfigOpen] = useState(false);
+	// Aba "Aparência" (tools de pipeline): tela editada + rascunho local do
+	// `ui.admin`/`ui.customer` (commitado no Save abaixo). Sincroniza com a def
+	// aberta via useEffect quando ela muda.
+	const [tlScreen, setTlScreen] = useState<'admin' | 'customer'>('admin');
+	const [tlScreens, setTlScreens] = useState<ToolScreensUi>({});
 
 	// Clique na prévia → seleciona + rola/foca o campo no formulário da Aparência.
 	const focusField = (field: string) => {
@@ -691,6 +702,15 @@ export function ToolBuilderView() {
 		[openDef],
 	);
 
+	// Aparência (ui.admin/ui.customer) da definition aberta → rascunho local da
+	// aba "Aparência". Re-sincroniza quando troca de tool ou salva (openDef muda).
+	useEffect(() => {
+		const ui = openDef?.definition.ui as
+			| { admin?: ScreenUi; customer?: ScreenUi }
+			| undefined;
+		setTlScreens({ admin: ui?.admin, customer: ui?.customer });
+	}, [openDef]);
+
 	const derivedDoc = useMemo<ToolDefinitionDoc | null>(() => {
 		try {
 			if (mode === 'json')
@@ -724,7 +744,10 @@ export function ToolBuilderView() {
 	// Abas do editor: sala → Edição/Aluno/Admin; pipeline → Edição/Cliente.
 	const isRoomDraft = previewDef?.engine_runtime === 'room_v1';
 	const editorTabs = useMemo<
-		{ id: 'edit' | 'canvas' | 'customer' | 'admin' | 'bank'; label: string }[]
+		{
+			id: 'edit' | 'canvas' | 'customer' | 'admin' | 'bank' | 'appearance';
+			label: string;
+		}[]
 	>(
 		() =>
 			isRoomDraft
@@ -738,9 +761,15 @@ export function ToolBuilderView() {
 						{ id: 'edit', label: 'Edição' },
 						{ id: 'canvas', label: 'Canvas' },
 						{ id: 'customer', label: 'Cliente' },
-						// Banco do Admin: só faz sentido depois de salva (tem id), mas
-						// sempre deixamos abrir (o manager avisa se está desativado).
-						...(selectedDefId ? [{ id: 'bank' as const, label: 'Banco' }] : []),
+						// Banco do Admin + Aparência: só fazem sentido depois de salva
+						// (têm id) — a Aparência personaliza as telas Admin/Cliente
+						// (cor/tema/textos/banner), espelhando o editor das salas.
+						...(selectedDefId
+							? [
+									{ id: 'bank' as const, label: 'Banco' },
+									{ id: 'appearance' as const, label: 'Aparência' },
+								]
+							: []),
 					],
 		[isRoomDraft, selectedDefId],
 	);
@@ -820,6 +849,38 @@ export function ToolBuilderView() {
 		},
 		onError: (err) =>
 			toast.error(getApiErrorMessage(err, 'Falha ao configurar o banco.')),
+	});
+
+	// Salva a APARÊNCIA das telas (ui.admin/ui.customer) na definition aberta —
+	// patch do doc (merge no `ui`) + publish. Mesma mecânica do saveBankMut: é o
+	// que personaliza a tela do Admin e a do Cliente desta tool de pipeline.
+	const saveScreensMut = useMutation({
+		mutationFn: async (screens: ToolScreensUi) => {
+			if (!selectedDefId || !openDef)
+				throw new Error('salve a ferramenta antes');
+			const prevUi = (openDef.definition.ui ?? {}) as Record<string, unknown>;
+			const nextUi: Record<string, unknown> = { ...prevUi };
+			// undefined/{} → remove a customização da tela (volta ao padrão).
+			if (screens.admin && Object.keys(screens.admin).length)
+				nextUi.admin = screens.admin;
+			else delete nextUi.admin;
+			if (screens.customer && Object.keys(screens.customer).length)
+				nextUi.customer = screens.customer;
+			else delete nextUi.customer;
+			const nextDoc = {
+				...openDef.definition,
+				ui: nextUi,
+			} as ToolDefinitionDoc;
+			await updateToolDefinition(selectedDefId, { definition: nextDoc });
+			return publishToolDefinition(selectedDefId);
+		},
+		onSuccess: () => {
+			toast.success('Aparência salva e publicada 🚀');
+			qc.invalidateQueries({ queryKey: ['tool-definitions'] });
+			qc.invalidateQueries({ queryKey: ['tools'] });
+		},
+		onError: (err) =>
+			toast.error(getApiErrorMessage(err, 'Falha ao salvar a aparência.')),
 	});
 
 	const addField = (type: FieldType) => {
@@ -1088,6 +1149,8 @@ export function ToolBuilderView() {
 										<Workflow className="h-4 w-4" />
 									) : t.id === 'bank' ? (
 										<Database className="h-4 w-4" />
+									) : t.id === 'appearance' ? (
+										<Palette className="h-4 w-4" />
 									) : (
 										<Eye className="h-4 w-4" />
 									)}
@@ -1199,6 +1262,30 @@ export function ToolBuilderView() {
 										onConfigure={() => setBankConfigOpen(true)}
 									/>
 								)}
+							</div>
+						) : editorTab === 'appearance' ? (
+							/* Aparência: personaliza as telas Admin/Cliente desta tool de
+							   pipeline (cor/tema/textos/banner) — espelha o editor das salas. */
+							<div className="mx-auto w-full max-w-3xl space-y-4">
+								<ToolAppearanceSection
+									value={tlScreens}
+									onChange={setTlScreens}
+									screen={tlScreen}
+									onScreenChange={setTlScreen}
+								/>
+								<button
+									type="button"
+									onClick={() => saveScreensMut.mutate(tlScreens)}
+									disabled={saveScreensMut.isPending || !selectedDefId}
+									className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-500 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-fuchsia-500/25 disabled:opacity-40"
+								>
+									{saveScreensMut.isPending ? (
+										<Loader2 className="h-4 w-4 animate-spin" />
+									) : (
+										<Rocket className="h-4 w-4" />
+									)}
+									Salvar aparência e publicar
+								</button>
 							</div>
 						) : editorTab !== 'edit' ? (
 							/* abas de preview em largura total */

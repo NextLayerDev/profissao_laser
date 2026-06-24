@@ -75,6 +75,33 @@ export const bankConfigSchema = z
 	.passthrough();
 export type BankConfig = z.infer<typeof bankConfigSchema>;
 
+/**
+ * Aparência de UMA tela de uma tool de PIPELINE (Admin OU Cliente). Espelha o
+ * `RoomScreenUi` das salas, porém mais simples (sem materiais/chat): cor de
+ * destaque, tema, título/subtítulo do topo e um banner/aviso opcional. Tudo
+ * opcional — ausência = visual padrão. Guardado em `ui.admin` / `ui.customer`.
+ */
+export const screenUiSchema = z
+	.object({
+		accent: z
+			.string()
+			.regex(/^#[0-9a-fA-F]{6}$/)
+			.optional(),
+		theme: z.enum(['app', 'light', 'dark']).optional(),
+		title: z.string().optional(),
+		subtitle: z.string().optional(),
+		notice: z
+			.object({
+				type: z.enum(['info', 'warning', 'success']).optional(),
+				title: z.string().optional(),
+				message: z.string().optional(),
+			})
+			.nullable()
+			.optional(),
+	})
+	.passthrough();
+export type ScreenUi = z.infer<typeof screenUiSchema>;
+
 export const toolDefinitionDocSchema = z
 	.object({
 		schemaVersion: z.number().optional(),
@@ -102,6 +129,10 @@ export const toolDefinitionDocSchema = z
 					.partial()
 					.passthrough()
 					.optional(),
+				// Aparência personalizável da tela do Admin e do Cliente (pipeline).
+				// O resto de `ui` segue passthrough (icon/bank/custom_nodes/etc.).
+				admin: screenUiSchema.optional(),
+				customer: screenUiSchema.optional(),
 			})
 			.passthrough()
 			.default({ controls: [] }),

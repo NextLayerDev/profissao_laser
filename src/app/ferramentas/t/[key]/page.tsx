@@ -3,12 +3,14 @@
 import { Loader2, Pencil, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { type CSSProperties, useEffect } from 'react';
 import { Header } from '@/components/dashboard/header';
 import { ToolBankAdmin } from '@/components/ferramentas/tool-bank-admin';
 import { usePermissions } from '@/modules/access';
 import { DynamicRoomView } from '@/modules/tools/components/dynamic-room-view';
+import { ScreenNotice } from '@/modules/tools/components/screen-notice';
 import { useToolDefinition } from '@/modules/tools/hooks/use-tool-definition';
+import { resolveScreenUi } from '@/modules/tools/lib/screen-ui';
 
 /**
  * Tela ADMIN de uma tool da Fábrica — fica no shell do dashboard (sidebar de
@@ -54,6 +56,12 @@ export default function ToolAdminPage() {
 		);
 	}
 
+	// Aparência personalizada da tela do Admin (cor/tema/título/subtítulo/banner).
+	const adminUi = resolveScreenUi(def.data, 'admin');
+	const themedShell = adminUi.themeClass
+		? `rounded-2xl p-4 sm:p-6 ${adminUi.themeClass === 'dark' ? 'bg-[#0d0d0f]' : 'bg-slate-50'}`
+		: '';
+
 	return (
 		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
@@ -61,18 +69,30 @@ export default function ToolAdminPage() {
 				{isRoom ? (
 					<DynamicRoomView toolKey={key} />
 				) : hasBank && def.data ? (
-					<div className="mx-auto w-full max-w-3xl">
+					<div
+						className={`mx-auto w-full max-w-3xl ${adminUi.themeClass} ${themedShell}`}
+						style={{ '--screen-accent': adminUi.accent } as CSSProperties}
+					>
+						{adminUi.notice && <ScreenNotice notice={adminUi.notice} />}
 						<div className="mb-5 flex flex-wrap items-center justify-between gap-3">
 							<div className="flex items-center gap-3">
-								<div className="grid h-10 w-10 place-items-center rounded-xl bg-fuchsia-500/10 text-fuchsia-500">
+								<div
+									className="grid h-10 w-10 place-items-center rounded-xl"
+									style={{
+										backgroundColor:
+											'color-mix(in srgb, var(--screen-accent) 12%, transparent)',
+										color: 'var(--screen-accent)',
+									}}
+								>
 									<Sparkles className="h-5 w-5" />
 								</div>
 								<div>
 									<h1 className="text-lg font-bold leading-tight">
-										{def.data.title}
+										{adminUi.title ?? def.data.title}
 									</h1>
 									<p className="text-xs text-slate-500 dark:text-gray-400">
-										Banco do Admin · alimente os itens que o cliente usa
+										{adminUi.subtitle ??
+											'Banco do Admin · alimente os itens que o cliente usa'}
 									</p>
 								</div>
 							</div>
