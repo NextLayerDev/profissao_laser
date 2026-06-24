@@ -4,6 +4,7 @@ import {
 	ChevronRight,
 	FileText,
 	Lock,
+	Paperclip,
 	Pencil,
 	Plus,
 	Trash2,
@@ -21,6 +22,7 @@ import type {
 	UpdateLessonPayload,
 } from '../types/lessons';
 import { LessonFormModal } from './lesson-form-modal';
+import { LessonMaterialsModal } from './lesson-materials-modal';
 
 interface Props {
 	moduleId: string;
@@ -35,6 +37,7 @@ export function LessonsList({ moduleId, expanded }: Props) {
 
 	const [editing, setEditing] = useState<Lesson | null>(null);
 	const [open, setOpen] = useState(false);
+	const [materialsLesson, setMaterialsLesson] = useState<Lesson | null>(null);
 
 	if (!expanded) return null;
 
@@ -73,6 +76,17 @@ export function LessonsList({ moduleId, expanded }: Props) {
 								<span className="w-14" aria-hidden />
 							</button>
 							<div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100">
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										setMaterialsLesson(l);
+									}}
+									className="p-1.5 rounded text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10"
+									title="Materiais"
+								>
+									<Paperclip className="w-3.5 h-3.5" />
+								</button>
 								<button
 									type="button"
 									onClick={(e) => {
@@ -131,6 +145,14 @@ export function LessonsList({ moduleId, expanded }: Props) {
 							module_id: moduleId,
 						});
 					}}
+				/>
+			)}
+
+			{materialsLesson && (
+				<LessonMaterialsModal
+					lessonId={materialsLesson.id}
+					lessonTitle={materialsLesson.title}
+					onClose={() => setMaterialsLesson(null)}
 				/>
 			)}
 		</div>
