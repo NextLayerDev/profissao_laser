@@ -18,7 +18,7 @@ const TABS: { key: Tab; label: string; icon: typeof BookOpen }[] = [
 export default function VetorizacaoAdminPage() {
 	const router = useRouter();
 	const { can, isLoading: permissionsLoading } = usePermissions();
-	const allowed = can('vetorizacao.view');
+	const allowed = can('ferramentas.view');
 	const [activeTab, setActiveTab] = useState<Tab>('suporte');
 
 	useEffect(() => {

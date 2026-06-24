@@ -107,7 +107,7 @@ export async function exportFinanceiroExcel(
 				['Composição do repasse', 'Valor (R$)'],
 				['Voxxys do plano', reais(t.plan_grants_cents ?? 0)],
 				['Compras via link (100%)', reais(t.link_purchases_cents ?? 0)],
-				['Assinaturas (3,5%)', reais(t.subscription_fees_cents ?? 0)],
+				['Assinaturas (9,9% + R$1)', reais(t.subscription_fees_cents ?? 0)],
 				['Ferramentas', reais(t.tools_cents ?? 0)],
 				['Voxxy comprado (50%)', reais(t.vox_purchase_use_cents ?? 0)],
 				[
@@ -244,7 +244,7 @@ export async function exportFinanceiroPdf(
 			[
 				['Voxxys do plano', fmtBRL(t.plan_grants_cents ?? 0)],
 				['Compras via link (100%)', fmtBRL(t.link_purchases_cents ?? 0)],
-				['Assinaturas (3,5%)', fmtBRL(t.subscription_fees_cents ?? 0)],
+				['Assinaturas (9,9% + R$1)', fmtBRL(t.subscription_fees_cents ?? 0)],
 				['Ferramentas', fmtBRL(t.tools_cents ?? 0)],
 				['Voxxy comprado (50%)', fmtBRL(t.vox_purchase_use_cents ?? 0)],
 				[

@@ -30,7 +30,7 @@ export const PERMISSION_CATALOG: PermissionModule[] = [
 	},
 	{
 		module: 'ferramentas',
-		label: 'Ferramentas IA',
+		label: 'Ferramentas',
 		actions: ['view', 'edit', 'delete'],
 	},
 	{
@@ -73,8 +73,8 @@ export const NAV_VIEW_KEYS: Record<string, string[]> = {
 	Acessos: ['acessos.view'],
 	Alunos: ['alunos.view'],
 	'Grupo WhatsApp': ['alunos.view'],
-	'Previas IA': ['previas.view'],
-	Vetorizacao: ['vetorizacao.view'],
+	'Previas IA': ['ferramentas.view'],
+	Vetorizacao: ['ferramentas.view'],
 };
 
 /** True se o usuário pode ver um item de navbar (qualquer uma das chaves). */
