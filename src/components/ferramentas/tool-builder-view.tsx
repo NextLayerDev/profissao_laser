@@ -792,10 +792,21 @@ export function ToolBuilderView() {
 	const saveMut = useMutation({
 		mutationFn: async () => {
 			if (!state) throw new Error('sem estado');
-			const definition =
+			const built =
 				mode === 'json'
 					? toolDefinitionDocSchema.parse(JSON.parse(json))
 					: buildDoc(state);
+			// O banco e a aparência (ui.admin/customer) vivem FORA do builder-model
+			// — preserva-os da definition aberta pra o Salvar NUNCA apagar o banco
+			// da tool (bug: trocar o ícone wipava o banco → roteava pra fábrica).
+			const definition: ToolDefinitionDoc = openDef
+				? {
+						...openDef.definition,
+						...built,
+						bank: openDef.definition.bank ?? built.bank,
+						ui: { ...(openDef.definition.ui ?? {}), ...(built.ui ?? {}) },
+					}
+				: built;
 			// O tipo de motor segue o doc: sala (room) → room_v1; senão blocks_v1.
 			const engine_runtime = (definition as { room?: unknown }).room
 				? 'room_v1'
