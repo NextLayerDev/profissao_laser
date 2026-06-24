@@ -9,6 +9,7 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	Code2,
+	Database,
 	Eye,
 	Link2,
 	Loader2,
@@ -32,6 +33,8 @@ import { useTools } from '@/modules/tools/hooks/use-tools';
 import { resolveToolIcon, TOOL_ICONS } from '@/modules/tools/lib/tool-icons';
 import {
 	type AiToolDefinition,
+	type BankConfig,
+	bankConfigSchema,
 	createToolDefinition,
 	listToolDefinitions,
 	publishToolDefinition,
@@ -78,6 +81,8 @@ import { ToolCanvas } from './canvas/tool-canvas';
 import { RoomAppearanceSection } from './room-appearance-section';
 import { RoomBuilderSections } from './room-builder-sections';
 import { type PreviewDevice, RoomLivePreview } from './room-live-preview';
+import { ToolBankConfigEditor } from './tool-bank-config-editor';
+import { ToolBankManager } from './tool-bank-manager';
 import { ToolBillingPanel } from './tool-billing-panel';
 
 /* ───────── estilos + accents ───────── */
@@ -161,6 +166,15 @@ const ACCENTS: Record<string, AC> = {
 		badge: 'bg-violet-500/20 text-violet-300 ring-violet-400/30',
 		ico: 'bg-violet-500/15 text-violet-300',
 		text: 'text-violet-300',
+	},
+	fuchsia: {
+		bar: 'bg-fuchsia-400/70',
+		chip: 'bg-fuchsia-500/15 text-fuchsia-300 ring-fuchsia-400/20',
+		cardHover: 'hover:border-fuchsia-400/50 hover:shadow-fuchsia-500/40',
+		nodeHover: 'hover:border-fuchsia-400/50',
+		badge: 'bg-fuchsia-500/20 text-fuchsia-300 ring-fuchsia-400/30',
+		ico: 'bg-fuchsia-500/15 text-fuchsia-300',
+		text: 'text-fuchsia-300',
 	},
 	slate: {
 		bar: 'bg-slate-400/70',
@@ -523,10 +537,12 @@ export function ToolBuilderView() {
 	// Aparência: tela editada + campo selecionado (sync form ⇄ prévia clicável).
 	const [apScreen, setApScreen] = useState<'customer' | 'admin'>('customer');
 	const [apSelected, setApSelected] = useState<string>();
-	// Abas do editor em largura total: Edição (builder) | Aluno/Cliente | Admin.
+	// Abas do editor em largura total: Edição (builder) | Aluno/Cliente | Admin | Banco.
 	const [editorTab, setEditorTab] = useState<
-		'edit' | 'canvas' | 'customer' | 'admin'
+		'edit' | 'canvas' | 'customer' | 'admin' | 'bank'
 	>('edit');
+	// "Configurar banco": editor da config (enable + fields + inject) por cima do manager.
+	const [bankConfigOpen, setBankConfigOpen] = useState(false);
 
 	// Clique na prévia → seleciona + rola/foca o campo no formulário da Aparência.
 	const focusField = (field: string) => {
@@ -610,6 +626,7 @@ export function ToolBuilderView() {
 		setActiveStep(0);
 		setFlowMounted(false);
 		setEditorTab('edit');
+		setBankConfigOpen(false);
 		setView('editor');
 	};
 
@@ -632,6 +649,7 @@ export function ToolBuilderView() {
 		setActiveStep(0);
 		setFlowMounted(false);
 		setEditorTab('edit');
+		setBankConfigOpen(false);
 		setView('editor');
 	};
 
@@ -659,6 +677,19 @@ export function ToolBuilderView() {
 		setSelectedDefId(null);
 		setView('billing');
 	};
+
+	// status (rascunho/publicada) da definition aberta, p/ o cabeçalho do editor
+	// e pro Banco (config + manager dependem da definition salva).
+	const openDef = useMemo(
+		() => (defs.data ?? []).find((d) => d.id === selectedDefId) ?? null,
+		[defs.data, selectedDefId],
+	);
+
+	// Config do banco da definition aberta (default desligado se a tool não tem).
+	const bankConfig = useMemo<BankConfig>(
+		() => bankConfigSchema.parse(openDef?.definition.bank ?? {}),
+		[openDef],
+	);
 
 	const derivedDoc = useMemo<ToolDefinitionDoc | null>(() => {
 		try {
@@ -693,7 +724,7 @@ export function ToolBuilderView() {
 	// Abas do editor: sala → Edição/Aluno/Admin; pipeline → Edição/Cliente.
 	const isRoomDraft = previewDef?.engine_runtime === 'room_v1';
 	const editorTabs = useMemo<
-		{ id: 'edit' | 'canvas' | 'customer' | 'admin'; label: string }[]
+		{ id: 'edit' | 'canvas' | 'customer' | 'admin' | 'bank'; label: string }[]
 	>(
 		() =>
 			isRoomDraft
@@ -707,8 +738,11 @@ export function ToolBuilderView() {
 						{ id: 'edit', label: 'Edição' },
 						{ id: 'canvas', label: 'Canvas' },
 						{ id: 'customer', label: 'Cliente' },
+						// Banco do Admin: só faz sentido depois de salva (tem id), mas
+						// sempre deixamos abrir (o manager avisa se está desativado).
+						...(selectedDefId ? [{ id: 'bank' as const, label: 'Banco' }] : []),
 					],
-		[isRoomDraft],
+		[isRoomDraft, selectedDefId],
 	);
 	// Se a aba ativa some (ex.: 'admin' numa tool de pipeline), volta p/ Edição.
 	useEffect(() => {
@@ -765,6 +799,29 @@ export function ToolBuilderView() {
 			toast.error(getApiErrorMessage(err, 'Falha ao publicar.')),
 	});
 
+	// Salva a CONFIG do banco na definition aberta (patch do doc + publish) — é o
+	// que liga a galeria pro cliente e ensina o motor a injetar os campos.
+	const saveBankMut = useMutation({
+		mutationFn: async (bank: BankConfig) => {
+			if (!selectedDefId || !openDef)
+				throw new Error('salve a ferramenta antes');
+			const nextDoc = {
+				...openDef.definition,
+				bank,
+			} as ToolDefinitionDoc;
+			await updateToolDefinition(selectedDefId, { definition: nextDoc });
+			return publishToolDefinition(selectedDefId);
+		},
+		onSuccess: () => {
+			toast.success('Banco configurado e publicado 🚀');
+			qc.invalidateQueries({ queryKey: ['tool-definitions'] });
+			qc.invalidateQueries({ queryKey: ['tools'] });
+			setBankConfigOpen(false);
+		},
+		onError: (err) =>
+			toast.error(getApiErrorMessage(err, 'Falha ao configurar o banco.')),
+	});
+
 	const addField = (type: FieldType) => {
 		if (!state) return;
 		const idx = state.fields.length;
@@ -786,12 +843,6 @@ export function ToolBuilderView() {
 	const canSave = !!state?.toolKey && !!state?.title && !!derivedDoc;
 	const outputs = state ? allNodeOutputs(state) : [];
 	const numberOutputs = outputs.filter((o) => o.type === 'number');
-
-	// status (rascunho/publicada) da definition aberta, p/ o cabeçalho do editor
-	const openDef = useMemo(
-		() => (defs.data ?? []).find((d) => d.id === selectedDefId) ?? null,
-		[defs.data, selectedDefId],
-	);
 
 	// Wizard: 1 passo por tela. Os passos dependem do tipo de tool.
 	const steps = useMemo<StepDef[]>(() => {
@@ -1035,6 +1086,8 @@ export function ToolBuilderView() {
 										<Save className="h-4 w-4" />
 									) : t.id === 'canvas' ? (
 										<Workflow className="h-4 w-4" />
+									) : t.id === 'bank' ? (
+										<Database className="h-4 w-4" />
 									) : (
 										<Eye className="h-4 w-4" />
 									)}
@@ -1129,7 +1182,25 @@ export function ToolBuilderView() {
 						) : editorTab ===
 							'canvas' ? /* o canvas real é o irmão sempre-montado abaixo (preserva
 							   o arranjo) — aqui só evitamos cair no preview/wizard */
-						null : editorTab !== 'edit' ? (
+						null : editorTab === 'bank' ? (
+							/* Banco do Admin: gerenciador de registros (+ configurar config) */
+							<div className="mx-auto w-full max-w-3xl">
+								{bankConfigOpen ? (
+									<ToolBankConfigEditor
+										config={bankConfig}
+										saving={saveBankMut.isPending}
+										onSave={(c) => saveBankMut.mutate(c)}
+										onClose={() => setBankConfigOpen(false)}
+									/>
+								) : (
+									<ToolBankManager
+										toolKey={state.toolKey}
+										bank={bankConfig}
+										onConfigure={() => setBankConfigOpen(true)}
+									/>
+								)}
+							</div>
+						) : editorTab !== 'edit' ? (
 							/* abas de preview em largura total */
 							previewDef ? (
 								<div

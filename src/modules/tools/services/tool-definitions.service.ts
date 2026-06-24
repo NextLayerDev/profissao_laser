@@ -36,6 +36,45 @@ export const toolControlSchema = z
 	.passthrough();
 export type ToolControl = z.infer<typeof toolControlSchema>;
 
+/**
+ * "Banco" da tool (Banco do Admin / Prompts Mágicos): o admin alimenta uma lista
+ * de registros (cada um vira um card na galeria do cliente). `fields` descreve os
+ * campos próprios de cada registro (guardados em `data`); `card` mapeia o visual;
+ * `inject` diz como os campos do registro entram no run (motor genérico).
+ */
+export const bankFieldSchema = z.object({
+	name: z.string(),
+	label: z.string().optional(),
+	type: z.enum(['text', 'textarea', 'enum', 'image']),
+	options: z.array(z.string()).optional(),
+	required: z.boolean().optional(),
+	placeholder: z.string().optional(),
+});
+export type BankFieldDef = z.infer<typeof bankFieldSchema>;
+
+export const bankConfigSchema = z
+	.object({
+		enabled: z.boolean().default(false),
+		fields: z.array(bankFieldSchema).default([]),
+		card: z
+			.object({
+				image: z.string().optional(),
+				title: z.string().optional(),
+				subtitle: z.string().optional(),
+				category: z.string().optional(),
+			})
+			.partial()
+			.default({}),
+		inject: z
+			.record(
+				z.string(),
+				z.object({ from: z.string(), substitute: z.boolean().optional() }),
+			)
+			.default({}),
+	})
+	.passthrough();
+export type BankConfig = z.infer<typeof bankConfigSchema>;
+
 export const toolDefinitionDocSchema = z
 	.object({
 		schemaVersion: z.number().optional(),
@@ -74,6 +113,7 @@ export const toolDefinitionDocSchema = z
 			.partial()
 			.passthrough()
 			.optional(),
+		bank: bankConfigSchema.optional(),
 	})
 	.passthrough();
 export type ToolDefinitionDoc = z.infer<typeof toolDefinitionDocSchema>;
@@ -163,6 +203,13 @@ export interface RunToolEngineOpts {
 	invocationId?: string;
 	/** Definition inline p/ preview de rascunho (staff; o motor não cobra). */
 	draftDefinition?: ToolDefinitionDoc;
+	/**
+	 * Run de uma tool com Banco: o registro escolhido + os inputs do cliente por
+	 * registro. O motor substitui `{tema}` no script do registro e gera a imagem.
+	 * Campos `string`/`number` viram form fields; `File`s viram arquivos.
+	 */
+	bankEntryId?: string;
+	bankInputs?: Record<string, unknown>;
 }
 
 export async function runToolEngine(
@@ -175,6 +222,13 @@ export async function runToolEngine(
 		if (spec.type === 'image') {
 			if (v instanceof File) fd.append(name, v);
 		} else if (v !== undefined && v !== null && v !== '') {
+			fd.append(name, typeof v === 'boolean' ? String(v) : String(v));
+		}
+	}
+	if (opts.bankEntryId) fd.append('bank_entry_id', opts.bankEntryId);
+	for (const [name, v] of Object.entries(opts.bankInputs ?? {})) {
+		if (v instanceof File) fd.append(name, v);
+		else if (v !== undefined && v !== null && v !== '') {
 			fd.append(name, typeof v === 'boolean' ? String(v) : String(v));
 		}
 	}
