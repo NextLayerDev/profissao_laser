@@ -20,7 +20,7 @@ const TABS: { key: Tab; label: string; icon: typeof Eye }[] = [
 export default function PreviasAdminPage() {
 	const router = useRouter();
 	const { can, isLoading: permissionsLoading } = usePermissions();
-	const allowed = can('previas.view');
+	const allowed = can('ferramentas.view');
 	const [activeTab, setActiveTab] = useState<Tab>('catalogo');
 
 	useEffect(() => {
