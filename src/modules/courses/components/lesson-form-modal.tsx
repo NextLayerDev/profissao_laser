@@ -1,15 +1,106 @@
 'use client';
 
-import { ExternalLink, UploadCloud, Video, X } from 'lucide-react';
+import {
+	ExternalLink,
+	FileText,
+	Loader2,
+	Paperclip,
+	Trash2,
+	UploadCloud,
+	Video,
+	X,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { ModalOverlay } from '@/components/ui/modal-overlay';
+import {
+	useDeleteMaterial,
+	useLessonMaterials,
+	useUploadLessonMaterial,
+} from '../hooks/use-lesson-materials';
 import { getLesson, uploadLessonVideo } from '../services/lessons.service';
 import type {
 	CreateLessonPayload,
 	Lesson,
 	UpdateLessonPayload,
 } from '../types/lessons';
+
+function MaterialsSection({ lessonId }: { lessonId: string }) {
+	const fileInputRef = useRef<HTMLInputElement>(null);
+	const { data: materials = [], isLoading } = useLessonMaterials(lessonId);
+	const upload = useUploadLessonMaterial(lessonId);
+	const remove = useDeleteMaterial(lessonId);
+
+	return (
+		<div>
+			<div className="flex items-center justify-between mb-2">
+				<span className="block text-xs font-medium text-slate-500 dark:text-gray-400">
+					Material de apoio
+				</span>
+				<button
+					type="button"
+					onClick={() => fileInputRef.current?.click()}
+					disabled={upload.isPending}
+					className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-sky-600 dark:text-sky-400 hover:bg-sky-500/10 disabled:opacity-50 transition-colors"
+				>
+					{upload.isPending ? (
+						<Loader2 className="w-3.5 h-3.5 animate-spin" />
+					) : (
+						<Paperclip className="w-3.5 h-3.5" />
+					)}
+					{upload.isPending ? 'Enviando...' : 'Adicionar arquivo'}
+				</button>
+				<input
+					ref={fileInputRef}
+					type="file"
+					className="hidden"
+					onChange={(e) => {
+						const file = e.target.files?.[0];
+						if (file) upload.mutate(file);
+						e.target.value = '';
+					}}
+				/>
+			</div>
+
+			{isLoading ? (
+				<div className="flex justify-center py-3">
+					<Loader2 className="w-4 h-4 text-sky-400 animate-spin" />
+				</div>
+			) : materials.length === 0 ? (
+				<p className="text-xs text-slate-500 dark:text-gray-500 text-center py-3 border border-dashed border-slate-200 dark:border-white/10 rounded-lg">
+					Nenhum material adicionado
+				</p>
+			) : (
+				<ul className="space-y-1.5">
+					{materials.map((mat) => (
+						<li
+							key={mat.id}
+							className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] group"
+						>
+							<FileText className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+							<a
+								href={mat.file_url}
+								target="_blank"
+								rel="noreferrer"
+								className="flex-1 text-xs text-slate-800 dark:text-gray-200 hover:text-sky-600 dark:hover:text-sky-400 truncate transition-colors"
+							>
+								{mat.filename}
+							</a>
+							<button
+								type="button"
+								onClick={() => remove.mutate(mat.id)}
+								disabled={remove.isPending}
+								className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all disabled:opacity-50"
+							>
+								<Trash2 className="w-3 h-3" />
+							</button>
+						</li>
+					))}
+				</ul>
+			)}
+		</div>
+	);
+}
 
 interface Props {
 	editing: Lesson | null;
@@ -204,6 +295,8 @@ export function LessonFormModal({
 						</div>
 					)}
 				</Field>
+
+				{editing?.id && <MaterialsSection lessonId={editing.id} />}
 
 				<Field label="Posição (opcional)">
 					<input
