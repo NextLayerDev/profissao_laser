@@ -83,3 +83,16 @@ export async function getVectorSupportTicketsAdmin(
 export async function closeVectorSupportTicket(id: string): Promise<void> {
 	await api.post(`/vector-support/tickets/${id}/close`);
 }
+
+/** Vetorização pelo modelo avançado (em teste, staff). Devolve o SVG. */
+export async function advancedVectorize(
+	file: File,
+): Promise<{ svgContent: string }> {
+	const fd = new FormData();
+	fd.append('file', file);
+	const { data } = await api.post<{ svgContent: string }>(
+		'/vector-support/advanced-vectorize',
+		fd,
+	);
+	return data;
+}

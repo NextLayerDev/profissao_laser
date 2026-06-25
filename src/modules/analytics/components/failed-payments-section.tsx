@@ -66,6 +66,27 @@ const REASON_CONFIG: Record<
 
 const ALL_REASONS = Object.keys(REASON_CONFIG) as BillingReason[];
 
+const FAILURE_MESSAGE_PT: Record<string, string> = {
+	'Your card does not support this type of purchase.':
+		'Seu cartão não suporta este tipo de compra.',
+	'Your card has insufficient funds.': 'Seu cartão não tem saldo suficiente.',
+	'Your card was declined.': 'Seu cartão foi recusado.',
+	'Your card has expired.': 'Seu cartão está expirado.',
+	"Your card's security code is incorrect.":
+		'O código de segurança do cartão está incorreto.',
+	'Your card was declined. Your card is reported lost.':
+		'Seu cartão foi recusado. Cartão reportado como perdido.',
+	'Your card was declined. Your card has been reported stolen.':
+		'Seu cartão foi recusado. Cartão reportado como roubado.',
+	'An error occurred while processing your card. Try again in a little bit.':
+		'Ocorreu um erro ao processar seu cartão. Tente novamente.',
+};
+
+function translateFailure(message: string | null | undefined): string | null {
+	if (!message) return null;
+	return FAILURE_MESSAGE_PT[message] ?? message;
+}
+
 function getRange(preset: DatePreset, customFrom: string, customTo: string) {
 	if (preset === 'custom')
 		return { from: customFrom || undefined, to: customTo || undefined };
@@ -256,6 +277,9 @@ export function FailedPaymentsSection() {
 								<th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 dark:text-gray-500 uppercase tracking-wide">
 									Motivo
 								</th>
+								<th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-gray-500 uppercase tracking-wide">
+									Falha
+								</th>
 								<th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 dark:text-gray-500 uppercase tracking-wide whitespace-nowrap">
 									Intervalo
 								</th>
@@ -270,7 +294,7 @@ export function FailedPaymentsSection() {
 						<tbody className="divide-y divide-slate-100 dark:divide-white/5">
 							{(listLoading || isFetching) && !analytics?.data.length && (
 								<tr>
-									<td colSpan={7} className="text-center py-16">
+									<td colSpan={8} className="text-center py-16">
 										<div className="flex justify-center">
 											<div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
 										</div>
@@ -280,7 +304,7 @@ export function FailedPaymentsSection() {
 							{!listLoading && analytics?.data.length === 0 && (
 								<tr>
 									<td
-										colSpan={7}
+										colSpan={8}
 										className="text-center py-16 text-slate-500 dark:text-gray-500"
 									>
 										Nenhum pagamento falho encontrado
@@ -328,6 +352,24 @@ export function FailedPaymentsSection() {
 												<span className={`w-1 h-1 rounded-full ${cfg.dot}`} />
 												{cfg.label}
 											</span>
+										</td>
+										<td className="px-4 py-3">
+											{row.failure_code ? (
+												<div className="flex flex-col gap-0.5">
+													<span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-400 w-fit">
+														{row.failure_code}
+													</span>
+													{translateFailure(row.failure_message) && (
+														<span className="text-xs text-slate-500 dark:text-gray-400">
+															{translateFailure(row.failure_message)}
+														</span>
+													)}
+												</div>
+											) : (
+												<span className="text-slate-400 dark:text-gray-600 text-xs">
+													—
+												</span>
+											)}
 										</td>
 										<td className="px-4 py-3 text-center">
 											<span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-gray-400">
