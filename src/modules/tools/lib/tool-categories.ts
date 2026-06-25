@@ -1,4 +1,5 @@
-import type { ToolColorKey } from '@/utils/constants/tool-colors';
+import { TOOL_COLORS, type ToolColorKey } from '@/utils/constants/tool-colors';
+import type { ToolCategoryDTO } from '../services/tool-categories.service';
 
 /**
  * Catálogo curado de CATEGORIAS de ferramentas — a espinha dorsal do "catálogo
@@ -9,6 +10,12 @@ import type { ToolColorKey } from '@/utils/constants/tool-colors';
  *
  * As seções são ids canônicos (string-literal unions). A sidebar e o hub
  * renderizam os grupos NESTA ordem; tools sem pin vivem só no hub/⌘K.
+ *
+ * A lista abaixo (`TOOL_CATEGORIES`) é o FALLBACK estático. Em runtime, o hook
+ * `useToolCategories` alimenta um REGISTRY mutável (`setCategoryRegistry`) com as
+ * categorias dinâmicas vindas do upvox; os helpers puros (`categoryById` etc.)
+ * consultam o registry PRIMEIRO (por slug) e só então a lista estática. Assim
+ * todo call-site puro existente continua funcionando E passa a ser dinâmico.
  */
 
 // info: ordem aqui = ordem de render dos grupos na sidebar/hub do admin.
@@ -117,12 +124,48 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
 const FALLBACK: ToolCategory =
 	TOOL_CATEGORIES.find((c) => c.id === 'outros') ?? TOOL_CATEGORIES[0];
 
-const BY_ID = new Map(TOOL_CATEGORIES.map((c) => [c.id, c]));
+const STATIC_BY_ID = new Map(TOOL_CATEGORIES.map((c) => [c.id, c]));
 
-/** Resolve uma categoria por id; desconhecida/ausente → `outros`. */
+/**
+ * REGISTRY dinâmico (mutável, escopo de módulo): preenchido em runtime pelo hook
+ * `useToolCategories` a partir das categorias do upvox. Indexado por SLUG. Vazio
+ * por padrão → tudo resolve pela lista estática (comportamento legado intacto).
+ */
+const DYNAMIC_BY_SLUG = new Map<string, ToolCategory>();
+
+/** `color_key` do DTO só vale se existir em `TOOL_COLORS`; senão → 'parametros'. */
+function safeColor(colorKey: string): ToolColorKey {
+	return colorKey in TOOL_COLORS ? (colorKey as ToolColorKey) : 'parametros';
+}
+
+/**
+ * Alimenta o registry dinâmico a partir dos DTOs do upvox. Cada DTO vira uma
+ * `ToolCategory` interna: `slug` é o id, `admin_section`/`student_section` viram
+ * as seções e `color_key` é VALIDADO contra `TOOL_COLORS` (desconhecido →
+ * 'parametros'). Substitui o conteúdo inteiro (idempotente). Passar `[]` zera o
+ * registry e devolve a resolução ao fallback estático.
+ */
+export function setCategoryRegistry(dtos: ToolCategoryDTO[]): void {
+	DYNAMIC_BY_SLUG.clear();
+	for (const dto of dtos) {
+		DYNAMIC_BY_SLUG.set(dto.slug, {
+			id: dto.slug,
+			label: dto.label,
+			adminSection: dto.admin_section as AdminSection,
+			studentSection: dto.student_section as StudentSection,
+			color: safeColor(dto.color_key),
+		});
+	}
+}
+
+/**
+ * Resolve uma categoria por id/slug. Ordem: registry dinâmico (upvox) → lista
+ * estática (semente) → `outros`. Mantém todo call-site puro funcionando E
+ * dinâmico assim que o hook setar o registry.
+ */
 export function categoryById(id?: string | null): ToolCategory {
 	if (!id) return FALLBACK;
-	return BY_ID.get(id) ?? FALLBACK;
+	return DYNAMIC_BY_SLUG.get(id) ?? STATIC_BY_ID.get(id) ?? FALLBACK;
 }
 
 /** Seção (admin OU aluno) em que a categoria mora. */

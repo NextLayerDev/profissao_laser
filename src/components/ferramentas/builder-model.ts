@@ -158,6 +158,8 @@ export interface BuilderState {
 	order?: number;
 	/** Público-alvo: ambos / só admin / só aluno. Ausente = 'both'. */
 	audience?: 'both' | 'admin' | 'student';
+	/** Cor PRÓPRIA da tool (chave de TOOL_COLORS, ui.color) — sobrepõe a da categoria. */
+	color?: string;
 	actionLabel: string;
 	fields: BuilderField[];
 	nodes: BuilderNode[];
@@ -248,26 +250,37 @@ function fieldToControl(f: BuilderField): ToolControl {
  * `ui` — só quando setados, pra não poluir o doc nem sobrescrever defaults. O
  * `tool-categories`/`use-tool-catalog` resolvem ausências (outros/999/both).
  */
-function catalogUi(
-	state: BuilderState,
-): Partial<{ category: string; order: number; audience: string }> {
-	const ui: Partial<{ category: string; order: number; audience: string }> = {};
+function catalogUi(state: BuilderState): Partial<{
+	category: string;
+	order: number;
+	audience: string;
+	color: string;
+}> {
+	const ui: Partial<{
+		category: string;
+		order: number;
+		audience: string;
+		color: string;
+	}> = {};
 	if (state.category) ui.category = state.category;
 	if (state.order !== undefined) ui.order = state.order;
 	if (state.audience) ui.audience = state.audience;
+	if (state.color) ui.color = state.color;
 	return ui;
 }
 
-/** Lê `category`/`order`/`audience` de volta do `ui` do doc (round-trip). */
+/** Lê `category`/`order`/`audience`/`color` de volta do `ui` do doc (round-trip). */
 function readCatalogUi(ui: unknown): {
 	category?: string;
 	order?: number;
 	audience?: BuilderState['audience'];
+	color?: string;
 } {
 	const u = (ui ?? {}) as {
 		category?: unknown;
 		order?: unknown;
 		audience?: unknown;
+		color?: unknown;
 	};
 	const audience =
 		u.audience === 'admin' || u.audience === 'student' || u.audience === 'both'
@@ -277,6 +290,7 @@ function readCatalogUi(ui: unknown): {
 		category: typeof u.category === 'string' ? u.category : undefined,
 		order: typeof u.order === 'number' ? u.order : undefined,
 		audience,
+		color: typeof u.color === 'string' ? u.color : undefined,
 	};
 }
 
@@ -533,6 +547,7 @@ export function docToState(def: {
 		category: cat.category,
 		order: cat.order,
 		audience: cat.audience,
+		color: cat.color,
 		actionLabel: action?.label ?? 'Gerar',
 		fields,
 		nodes,
@@ -591,6 +606,7 @@ function roomDocToState(
 		category: cat.category,
 		order: cat.order,
 		audience: cat.audience,
+		color: cat.color,
 		actionLabel: 'Entrar na sala',
 		fields: [],
 		nodes: [],
@@ -628,6 +644,7 @@ function nativeDocToState(
 		category: cat.category,
 		order: cat.order,
 		audience: cat.audience,
+		color: cat.color,
 		href: typeof u.href === 'string' ? u.href : undefined,
 		permission: typeof u.permission === 'string' ? u.permission : undefined,
 		actionLabel: '',

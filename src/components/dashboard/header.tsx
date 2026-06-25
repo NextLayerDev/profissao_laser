@@ -5,6 +5,7 @@ import {
 	BookOpen,
 	ChevronDown,
 	FolderOpen,
+	FolderTree,
 	LayoutGrid,
 	type LucideIcon,
 	Menu,
@@ -320,6 +321,19 @@ function FerramentasDropdown({
 								<span className="flex-1 truncate">
 									Ver todas as ferramentas
 								</span>
+							</Link>
+							<Link
+								href="/ferramentas/categorias"
+								role="menuitem"
+								onClick={() => setOpen(false)}
+								className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors ${
+									isActive('/ferramentas/categorias')
+										? ACTIVE_CLASSES
+										: `${IDLE_CLASSES} ${HOVER_CLASSES}`
+								}`}
+							>
+								<FolderTree className="w-4 h-4 shrink-0" />
+								<span className="flex-1 truncate">Categorias</span>
 							</Link>
 							<Link
 								href="/ferramentas/analytics"
@@ -647,6 +661,18 @@ export function Header() {
 													<span className="truncate">
 														Ver todas as ferramentas
 													</span>
+												</Link>
+												<Link
+													href="/ferramentas/categorias"
+													onClick={() => setMobileOpen(false)}
+													className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+														isActive('/ferramentas/categorias')
+															? ACTIVE_CLASSES
+															: `${IDLE_CLASSES} ${HOVER_CLASSES}`
+													}`}
+												>
+													<FolderTree className="w-4 h-4 shrink-0" />
+													<span className="truncate">Categorias</span>
 												</Link>
 												<Link
 													href="/ferramentas/analytics"

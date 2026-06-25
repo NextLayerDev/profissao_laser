@@ -146,6 +146,10 @@ export const toolDefinitionDocSchema = z
 				// pipeline/Fábrica continuam válidas sem eles.
 				href: z.string().optional(),
 				permission: z.string().optional(),
+				// Cor PRÓPRIA da tool (chave de `TOOL_COLORS`) — sobrescreve a cor
+				// herdada da categoria no catálogo/board. Opcional → ausente = herda
+				// da categoria. Validada contra a paleta no consumo (`safeColor`).
+				color: z.string().optional(),
 			})
 			.passthrough()
 			.default({ controls: [] }),
@@ -218,6 +222,48 @@ export async function updateToolDefinition(
 ): Promise<AiToolDefinition> {
 	const { data } = await apiCourses.patch(`/v1/tool-definition/${id}`, body);
 	return aiToolDefinitionSchema.parse(data);
+}
+
+/**
+ * Move uma tool para outra CATEGORIA (slug). Reescreve só `definition.ui.category`
+ * com MERGE total — preserva `bank`/`pipeline`/`input`/`output` e o resto de `ui`
+ * (icon/order/audience/admin/customer/...). Mesmo padrão anti-wipe do `saveMut`:
+ * nunca mandamos um doc cru que apagaria o banco da tool.
+ */
+export async function setToolCategory(
+	def: AiToolDefinition,
+	slug: string,
+): Promise<AiToolDefinition> {
+	return updateToolDefinition(def.id, {
+		title: def.title,
+		description: def.description,
+		engine_runtime: def.engine_runtime,
+		definition: {
+			...def.definition,
+			ui: { ...(def.definition.ui ?? {}), category: slug },
+		},
+	});
+}
+
+/**
+ * Define a COR PRÓPRIA de uma tool (chave de `TOOL_COLORS`) — reescreve só
+ * `definition.ui.color` com MERGE total, espelhando `setToolCategory`. Preserva
+ * `bank`/`pipeline`/`input`/`output` e o resto de `ui` (icon/category/order/...).
+ * Mesmo padrão anti-wipe: nunca mandamos um doc cru que apagaria o banco.
+ */
+export async function setToolColor(
+	def: AiToolDefinition,
+	color: string,
+): Promise<AiToolDefinition> {
+	return updateToolDefinition(def.id, {
+		title: def.title,
+		description: def.description,
+		engine_runtime: def.engine_runtime,
+		definition: {
+			...def.definition,
+			ui: { ...(def.definition.ui ?? {}), color },
+		},
+	});
 }
 
 export const publishResultSchema = z.object({

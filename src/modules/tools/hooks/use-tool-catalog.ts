@@ -5,7 +5,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useEntitlements } from '@/hooks/use-entitlements';
 import { usePermissions } from '@/modules/access';
-import type { ToolColorKey } from '@/utils/constants/tool-colors';
+import { TOOL_COLORS, type ToolColorKey } from '@/utils/constants/tool-colors';
 import { categoryColor, categoryToSection } from '../lib/tool-categories';
 import { resolveToolIcon } from '../lib/tool-icons';
 import {
@@ -14,6 +14,7 @@ import {
 	listToolDefinitions,
 } from '../services/tool-definitions.service';
 import { SYSTEM_TOOLS } from '../system-tools';
+import { useToolCategories } from './use-tool-categories';
 import { TOOL_DEFINITION_KEY } from './use-tool-definition';
 
 /**
@@ -116,6 +117,8 @@ type ToolUi = {
 	category?: string;
 	order?: number;
 	audience?: ToolAudience;
+	/** Cor PRÓPRIA da tool (chave de `TOOL_COLORS`) — sobrescreve a da categoria. */
+	color?: string;
 	/** Tools nativas (`native_v1`): rota da página e permissão que a gateia. */
 	href?: string;
 	permission?: string;
@@ -123,6 +126,15 @@ type ToolUi = {
 
 function readUi(def: AiToolDefinition | undefined): ToolUi {
 	return (def?.definition.ui ?? {}) as ToolUi;
+}
+
+/**
+ * Cor final de uma tool: `ui.color` PRÓPRIA quando válida na paleta, senão a cor
+ * herdada da CATEGORIA (comportamento legado). Um único ponto de override.
+ */
+function safeColor(key: string | undefined, category?: string): ToolColorKey {
+	if (key && key in TOOL_COLORS) return key as ToolColorKey;
+	return categoryColor(category);
 }
 
 /** Ordena por `order` e desempata por título (estável). */
@@ -143,6 +155,11 @@ function useAdminCatalog(): UseToolCatalog {
 	// `listToolDefinitions`. A query fica `enabled` só pra ele; os demais veem
 	// apenas o fallback estático (`nativeStatic`) já gateado por permissão.
 	const enabled = isSuperAdmin;
+
+	// Alimenta o registry de categorias (side-effect no hook) e dá ao memo uma
+	// dependência reativa: ao criar/editar/reordenar categoria, `categories` muda
+	// → o catálogo recompõe e `categoryToSection`/`categoryColor` resolvem o novo.
+	const { categories } = useToolCategories();
 
 	const { data, isLoading } = useQuery({
 		queryKey: ['tool-definitions'],
@@ -208,7 +225,7 @@ function useAdminCatalog(): UseToolCatalog {
 					category: ui.category ?? 'outros',
 					section: categoryToSection(ui.category, 'admin'),
 					order: ui.order ?? 999,
-					color: categoryColor(ui.category),
+					color: safeColor(ui.color, ui.category),
 					href: ui.href ?? '#',
 					audience: 'admin',
 				};
@@ -238,7 +255,7 @@ function useAdminCatalog(): UseToolCatalog {
 					category: ui.category ?? 'outros',
 					section: categoryToSection(ui.category, 'admin'),
 					order: ui.order ?? 999,
-					color: categoryColor(ui.category),
+					color: safeColor(ui.color, ui.category),
 					href,
 					audience: ui.audience ?? 'both',
 				};
@@ -250,10 +267,13 @@ function useAdminCatalog(): UseToolCatalog {
 			(s) => !nativeRows.some((n) => n.key === s.key),
 		);
 
+		// `categories` (na dep do memo) força recompor seção/cor quando o admin mexe
+		// nas categorias — o registry já foi atualizado pelo `useToolCategories`.
+		void categories;
 		return [...code, ...published, ...nativeRows, ...nativeFallback].sort(
 			sortTools,
 		);
-	}, [data, isSuperAdmin, can]);
+	}, [data, isSuperAdmin, can, categories]);
 
 	return { tools, isLoading: enabled ? isLoading : false };
 }
@@ -261,6 +281,8 @@ function useAdminCatalog(): UseToolCatalog {
 /* ── Aluno: entitlements + def por key (lista é admin-only) ── */
 function useStudentCatalog(): UseToolCatalog {
 	const { tools: entTools } = useEntitlements();
+	// Mesma razão do admin: seta o registry + recompõe quando as categorias mudam.
+	const { categories } = useToolCategories();
 
 	const keys = useMemo(() => {
 		const known = new Set(SYSTEM_TOOLS.map((t) => t.key));
@@ -309,6 +331,9 @@ function useStudentCatalog(): UseToolCatalog {
 				}),
 		);
 		const known = new Set(SYSTEM_TOOLS.map((t) => t.key));
+		// `categories` (na dep do memo) força recompor seção/cor quando as categorias
+		// dinâmicas mudam — o registry já foi atualizado pelo `useToolCategories`.
+		void categories;
 		return entTools
 			.filter((t) => t.entitled && !known.has(t.key))
 			.map((t): CatalogTool => {
@@ -321,14 +346,14 @@ function useStudentCatalog(): UseToolCatalog {
 					category: ui.category ?? 'outros',
 					section: categoryToSection(ui.category, 'student'),
 					order: ui.order ?? 999,
-					color: categoryColor(ui.category),
+					color: safeColor(ui.color, ui.category),
 					href: `/course/t/${t.key}`,
 					audience: ui.audience ?? 'both',
 				};
 			})
 			.filter((t) => t.audience !== 'admin')
 			.sort(sortTools);
-	}, [entTools, uiKey]);
+	}, [entTools, uiKey, categories]);
 
 	return { tools, isLoading };
 }

@@ -30,8 +30,8 @@ import { toast } from 'sonner';
 import { usePlans } from '@/modules/plans/hooks/use-plans';
 import { DynamicRoomView } from '@/modules/tools/components/dynamic-room-view';
 import { DynamicToolView } from '@/modules/tools/components/dynamic-tool-view';
+import { useToolCategories } from '@/modules/tools/hooks/use-tool-categories';
 import { useTools } from '@/modules/tools/hooks/use-tools';
-import { TOOL_CATEGORIES } from '@/modules/tools/lib/tool-categories';
 import { resolveToolIcon } from '@/modules/tools/lib/tool-icons';
 import {
 	type AiToolDefinition,
@@ -47,6 +47,7 @@ import {
 } from '@/modules/tools/services/tool-definitions.service';
 import type { Tool } from '@/modules/tools/types/tools';
 import { getApiErrorMessage } from '@/shared/lib/api-error';
+import { TOOL_COLORS } from '@/utils/constants/tool-colors';
 import { ToolAgentChat } from './agent/tool-agent-chat';
 import { BLOCK_CATALOG, type BlockParam, type PortType } from './block-catalog';
 import { KeyValueEditor } from './builder-fields';
@@ -523,6 +524,9 @@ export function ToolBuilderView() {
 		queryFn: listToolDefinitions,
 	});
 	const plans = usePlans();
+	// Categorias DINÂMICAS (upvox) — alimentam o select de Categoria, então as
+	// categorias recém-criadas no board ficam selecionáveis aqui.
+	const { categories: toolCategories } = useToolCategories();
 
 	const [view, setView] = useState<'gallery' | 'editor' | 'billing'>('gallery');
 	const [state, setState] = useState<BuilderState | null>(null);
@@ -1478,12 +1482,47 @@ export function ToolBuilderView() {
 													muted={!state.category}
 													onChange={(v) => patch({ category: v })}
 												>
-													{TOOL_CATEGORIES.map((c) => (
-														<option key={c.id} value={c.id}>
+													{toolCategories.map((c) => (
+														<option key={c.id} value={c.slug}>
 															{c.label}
 														</option>
 													))}
 												</SelectInput>
+											</Field>
+											<Field
+												label="Cor"
+												hint="sobrepõe a cor da categoria (opcional)"
+											>
+												<div className="flex flex-wrap items-center gap-1.5">
+													<button
+														type="button"
+														onClick={() => patch({ color: undefined })}
+														aria-pressed={!state.color}
+														className={`h-7 rounded-lg border px-2 text-[11px] font-medium transition ${
+															!state.color
+																? 'border-violet-400/60 bg-violet-500/15 text-violet-200'
+																: 'border-white/10 text-slate-400 hover:text-slate-200'
+														}`}
+													>
+														Padrão
+													</button>
+													{(
+														Object.keys(
+															TOOL_COLORS,
+														) as (keyof typeof TOOL_COLORS)[]
+													).map((key) => (
+														<button
+															key={key}
+															type="button"
+															onClick={() => patch({ color: key })}
+															aria-label={`Cor ${key}`}
+															aria-pressed={state.color === key}
+															className={`h-7 w-7 rounded-lg bg-gradient-to-br ${TOOL_COLORS[key].gradient} ${
+																state.color === key ? 'ring-2 ring-white' : ''
+															}`}
+														/>
+													))}
+												</div>
 											</Field>
 											<Field
 												label="Ordem"
