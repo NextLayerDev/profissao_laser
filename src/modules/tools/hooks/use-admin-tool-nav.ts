@@ -51,9 +51,10 @@ export function useAdminToolNav(enabled = true): NavItem[] {
 			.filter((d) => d.status === 'published' && !known.has(d.tool_key))
 			.map((d): NavItem => {
 				const icon = (d.definition.ui as { icon?: string } | undefined)?.icon;
-				// Sala (room_v1) → tela admin de gestão; pipeline → editor no builder.
+				// Sala (room_v1) OU tool com Banco do Admin → tela dedicada de gestão
+				// (admin alimenta o banco); pipeline sem banco → editor no builder.
 				const href =
-					d.engine_runtime === 'room_v1'
+					d.engine_runtime === 'room_v1' || d.definition.bank?.enabled
 						? `/ferramentas/t/${d.tool_key}`
 						: `/ferramentas?open=${d.id}`;
 				return {

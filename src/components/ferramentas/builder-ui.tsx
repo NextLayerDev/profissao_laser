@@ -227,46 +227,6 @@ export function Switch({
 	);
 }
 
-/* ── picker de ícone ── */
-
-export function IconPicker({
-	value,
-	onChange,
-	icons,
-	accent = 'emerald',
-}: {
-	value: string;
-	onChange: (name: string) => void;
-	icons: { name: string; Icon: React.ComponentType<{ className?: string }> }[];
-	accent?: string;
-}) {
-	const a = ac(accent);
-	return (
-		<div className="flex flex-wrap gap-2">
-			{icons.map(({ name, Icon }) => {
-				const on = value === name;
-				return (
-					<button
-						key={name}
-						type="button"
-						title={name}
-						aria-label={`Ícone ${name}`}
-						aria-pressed={on}
-						onClick={() => onChange(name)}
-						className={`flex h-10 w-10 items-center justify-center rounded-xl border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 ${
-							on
-								? `${a.selBorder} ${a.ico}`
-								: 'border-white/10 bg-black/20 text-slate-400 hover:border-white/20 hover:text-slate-200'
-						}`}
-					>
-						<Icon className="h-[18px] w-[18px]" />
-					</button>
-				);
-			})}
-		</div>
-	);
-}
-
 /* ── chip "+ adicionar" (tipo de campo / bloco) ── */
 
 export function TypeChip({
