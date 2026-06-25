@@ -140,6 +140,12 @@ export const toolDefinitionDocSchema = z
 				category: z.string().optional(),
 				order: z.number().optional(),
 				audience: z.enum(['both', 'admin', 'student']).optional(),
+				// Tools NATIVAS (engine_runtime 'native_v1'): a tela é uma página/rota
+				// própria do app (não o DynamicToolView), então a definição carrega o
+				// `href` da rota e a `permission` que a gateia. Opcionais → tools de
+				// pipeline/Fábrica continuam válidas sem eles.
+				href: z.string().optional(),
+				permission: z.string().optional(),
 			})
 			.passthrough()
 			.default({ controls: [] }),

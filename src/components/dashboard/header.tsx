@@ -23,7 +23,10 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { useCommandPalette } from '@/components/tools/use-command-palette';
 import { useAdminPendings } from '@/hooks/use-admin-pendings';
 import { usePermissions } from '@/modules/access';
-import { useAdminToolNav } from '@/modules/tools/hooks/use-admin-tool-nav';
+import {
+	type CatalogTool,
+	useToolCatalog,
+} from '@/modules/tools/hooks/use-tool-catalog';
 import { ADMIN_SECTIONS } from '@/modules/tools/lib/tool-categories';
 import type { NavItem } from '@/types/navigation';
 import { navItems } from '@/utils/constants/navigation';
@@ -50,10 +53,8 @@ const SECTION_ICONS: Record<string, LucideIcon> = {
 /** Seção default p/ itens sem `section` declarada (não some do menu). */
 const DEFAULT_SECTION = 'PRINCIPAL';
 
-/** Item da top bar enriquecido p/ render — pode ser uma tool pinada (toolKey). */
-interface RenderItem extends NavItem {
-	toolKey?: string;
-}
+/** Item da top bar (alias de `NavItem`) — as seções fixas vêm de `navItems`. */
+type RenderItem = NavItem;
 
 interface RenderSection {
 	id: string;
@@ -210,14 +211,129 @@ function SectionDropdown({
 	);
 }
 
+/**
+ * Dropdown da seção FERRAMENTAS — NÃO vem de `navItems`, e sim do catálogo
+ * completo de tools do admin (`useToolCatalog('admin').tools`, já ordenado por
+ * `order`). Cada tool vira um item linkando pra `tool.href` com o `tool.Icon`.
+ * Rodapé opcional "Ver todas as ferramentas" → /ferramentas/hub, exibido só com
+ * permissão `tools.build`. Some por inteiro quando não há tools nem rodapé.
+ */
+function FerramentasDropdown({
+	tools,
+	canBuild,
+	isActive,
+}: {
+	tools: CatalogTool[];
+	canBuild: boolean;
+	isActive: (href: string) => boolean;
+}) {
+	const [open, setOpen] = useState(false);
+	const ref = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!open) return;
+		const onDown = (e: MouseEvent) => {
+			if (ref.current && !ref.current.contains(e.target as Node)) {
+				setOpen(false);
+			}
+		};
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') setOpen(false);
+		};
+		document.addEventListener('mousedown', onDown);
+		document.addEventListener('keydown', onKey);
+		return () => {
+			document.removeEventListener('mousedown', onDown);
+			document.removeEventListener('keydown', onKey);
+		};
+	}, [open]);
+
+	const hasActive =
+		tools.some((t) => isActive(t.href)) ||
+		(canBuild && isActive('/ferramentas/hub'));
+
+	return (
+		<div ref={ref} className="relative shrink-0">
+			<button
+				type="button"
+				onClick={() => setOpen((v) => !v)}
+				aria-expanded={open}
+				aria-haspopup="menu"
+				aria-label={SECTION_LABELS.FERRAMENTAS}
+				title={SECTION_LABELS.FERRAMENTAS}
+				className={`${NAV_TRIGGER} ${
+					hasActive
+						? 'bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300'
+						: `${IDLE_CLASSES} ${HOVER_CLASSES}`
+				}`}
+			>
+				<Wrench className="w-4 h-4 shrink-0" />
+				<span className="hidden xl:inline">{SECTION_LABELS.FERRAMENTAS}</span>
+				<ChevronDown
+					className={`w-3.5 h-3.5 shrink-0 opacity-60 transition-transform duration-200 ${
+						open ? 'rotate-180' : ''
+					}`}
+				/>
+			</button>
+
+			{open && (
+				<div
+					role="menu"
+					className="absolute left-0 top-full mt-1.5 w-60 max-w-[calc(100vw-1rem)] max-h-[70vh] overflow-y-auto z-50 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0a0b0f] shadow-lg dark:shadow-black/40 p-1.5"
+				>
+					{tools.map((tool) => {
+						const active = isActive(tool.href);
+						const ToolIcon = tool.Icon;
+						return (
+							<Link
+								key={tool.key}
+								href={tool.href}
+								role="menuitem"
+								onClick={() => setOpen(false)}
+								className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors ${
+									active ? ACTIVE_CLASSES : `${IDLE_CLASSES} ${HOVER_CLASSES}`
+								}`}
+							>
+								<ToolIcon className="w-4 h-4 shrink-0" />
+								<span className="flex-1 truncate">{tool.title}</span>
+							</Link>
+						);
+					})}
+					{canBuild && (
+						<Link
+							href="/ferramentas/hub"
+							role="menuitem"
+							onClick={() => setOpen(false)}
+							className={`mt-1 flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors ${
+								tools.length > 0
+									? 'border-t border-slate-200 dark:border-white/10 pt-2.5'
+									: ''
+							} ${
+								isActive('/ferramentas/hub')
+									? ACTIVE_CLASSES
+									: `${IDLE_CLASSES} ${HOVER_CLASSES}`
+							}`}
+						>
+							<Wrench className="w-4 h-4 shrink-0" />
+							<span className="flex-1 truncate">Ver todas as ferramentas</span>
+						</Link>
+					)}
+				</div>
+			)}
+		</div>
+	);
+}
+
 export function Header() {
 	const { open: openPalette } = useCommandPalette();
 	const pathname = usePathname();
-	const { can, isSuperAdmin } = usePermissions();
+	const { can } = usePermissions();
 
-	// Tools da Fábrica PINADAS (já gateadas no catálogo) — entram no dropdown
-	// "Ferramentas" + no drawer mobile (não mais como pills soltas na barra).
-	const toolNav = useAdminToolNav(isSuperAdmin);
+	// Seção FERRAMENTAS = catálogo COMPLETO de tools do admin (já gateado por
+	// público e ordenado por `order`). Substitui a injeção das tools pinadas.
+	const { tools: catalogTools } = useToolCatalog('admin');
+	// Rodapé "Ver todas as ferramentas" → /ferramentas/hub só com permissão.
+	const canBuildTools = can('tools.build');
 
 	const canSeeSuporte = canSeeNavItem('Suporte', can);
 	const { supportTotal, forumUnanswered } = useAdminPendings(canSeeSuporte);
@@ -238,7 +354,9 @@ export function Header() {
 		[pathname],
 	);
 
-	// Agrupa itens fixos (gateados) + tools pinadas por seção, na ordem canônica.
+	// Agrupa SÓ os itens fixos (gateados) por seção, na ordem canônica. A seção
+	// FERRAMENTAS é EXCLUÍDA aqui — ela é renderizada à parte a partir do catálogo
+	// completo de tools (ver `FerramentasDropdown`), e não mais de `navItems`.
 	const sections = useMemo<RenderSection[]>(() => {
 		const bySection = new Map<string, RenderItem[]>();
 		for (const id of ADMIN_SECTIONS) bySection.set(id, []);
@@ -249,28 +367,23 @@ export function Header() {
 		};
 
 		for (const item of navItems) {
+			if (item.section === 'FERRAMENTAS') continue;
 			if (!canSeeNavItem(item.name, can)) continue;
 			push(item.section ?? DEFAULT_SECTION, item);
 		}
-		// Tools pinadas entram na própria seção (quase sempre FERRAMENTAS).
-		for (const tool of toolNav) {
-			push(tool.section, {
-				name: tool.name,
-				icon: tool.icon,
-				href: tool.href,
-				hasDropdown: false,
-				section: tool.section,
-				toolKey: tool.toolKey,
-			});
-		}
 
-		return ADMIN_SECTIONS.map((id) => ({
-			id,
-			label: SECTION_LABELS[id] ?? id,
-			Icon: SECTION_ICONS[id] ?? LayoutGrid,
-			items: bySection.get(id) ?? [],
-		})).filter((s) => s.items.length > 0);
-	}, [can, toolNav]);
+		return ADMIN_SECTIONS.filter((id) => id !== 'FERRAMENTAS')
+			.map((id) => ({
+				id,
+				label: SECTION_LABELS[id] ?? id,
+				Icon: SECTION_ICONS[id] ?? LayoutGrid,
+				items: bySection.get(id) ?? [],
+			}))
+			.filter((s) => s.items.length > 0);
+	}, [can]);
+
+	/** FERRAMENTAS deve renderizar se há tools no catálogo OU rodapé do hub. */
+	const showFerramentas = catalogTools.length > 0 || canBuildTools;
 
 	const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -323,22 +436,38 @@ export function Header() {
 			  faixa encolher sem empurrar a marca/cluster.
 			*/}
 			<nav className="hidden lg:flex items-center gap-1 min-w-0">
-				{sections.map((section) =>
-					section.items.length === 1 ? (
-						<NavLinkTrigger
-							key={section.id}
-							item={section.items[0]}
-							active={isActive(section.items[0].href)}
-							badge={badgeByHref[section.items[0].href] ?? 0}
-						/>
-					) : (
-						<SectionDropdown
-							key={section.id}
-							section={section}
-							isActive={isActive}
-							badgeByHref={badgeByHref}
-						/>
-					),
+				{sections.map((section) => (
+					<span key={section.id} className="contents">
+						{/* FERRAMENTAS (catálogo) entra na posição canônica: antes de SISTEMA. */}
+						{section.id === 'SISTEMA' && showFerramentas && (
+							<FerramentasDropdown
+								tools={catalogTools}
+								canBuild={canBuildTools}
+								isActive={isActive}
+							/>
+						)}
+						{section.items.length === 1 ? (
+							<NavLinkTrigger
+								item={section.items[0]}
+								active={isActive(section.items[0].href)}
+								badge={badgeByHref[section.items[0].href] ?? 0}
+							/>
+						) : (
+							<SectionDropdown
+								section={section}
+								isActive={isActive}
+								badgeByHref={badgeByHref}
+							/>
+						)}
+					</span>
+				))}
+				{/* Sem SISTEMA visível, FERRAMENTAS ainda precisa aparecer ao final. */}
+				{showFerramentas && !sections.some((s) => s.id === 'SISTEMA') && (
+					<FerramentasDropdown
+						tools={catalogTools}
+						canBuild={canBuildTools}
+						isActive={isActive}
+					/>
 				)}
 			</nav>
 
@@ -420,37 +549,7 @@ export function Header() {
 
 						{/* Nav completa */}
 						<div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
-							{/* Pins */}
-							{toolNav.length > 0 && (
-								<div>
-									<p className="px-2 mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-600">
-										Fixados
-									</p>
-									<div className="space-y-0.5">
-										{toolNav.map((tool) => {
-											const active = isActive(tool.href);
-											const ToolIcon = tool.icon;
-											return (
-												<Link
-													key={tool.toolKey}
-													href={tool.href}
-													onClick={() => setMobileOpen(false)}
-													className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-														active
-															? ACTIVE_CLASSES
-															: `${IDLE_CLASSES} ${HOVER_CLASSES}`
-													}`}
-												>
-													<ToolIcon className="w-4 h-4 shrink-0" />
-													<span className="truncate">{tool.name}</span>
-												</Link>
-											);
-										})}
-									</div>
-								</div>
-							)}
-
-							{/* Seções */}
+							{/* Seções (FERRAMENTAS é renderizada à parte, do catálogo) */}
 							{sections.map((section) => {
 								const SectionIcon = section.Icon;
 								return (
@@ -486,20 +585,51 @@ export function Header() {
 								);
 							})}
 
-							{/* Link para o Hub de Ferramentas */}
-							{canSeeNavItem('Ferramentas', can) && (
-								<Link
-									href="/ferramentas/hub"
-									onClick={() => setMobileOpen(false)}
-									className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-										isActive('/ferramentas/hub')
-											? ACTIVE_CLASSES
-											: `${IDLE_CLASSES} ${HOVER_CLASSES}`
-									}`}
-								>
-									<Wrench className="w-4 h-4 shrink-0" />
-									<span className="truncate">Ver todas as ferramentas</span>
-								</Link>
+							{/* FERRAMENTAS — catálogo completo + rodapé do hub (gateado). */}
+							{showFerramentas && (
+								<div>
+									<p className="flex items-center gap-1.5 px-2 mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-600">
+										<Wrench className="w-3 h-3" />
+										{SECTION_LABELS.FERRAMENTAS}
+									</p>
+									<div className="space-y-0.5">
+										{catalogTools.map((tool) => {
+											const active = isActive(tool.href);
+											const ToolIcon = tool.Icon;
+											return (
+												<Link
+													key={tool.key}
+													href={tool.href}
+													onClick={() => setMobileOpen(false)}
+													className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+														active
+															? ACTIVE_CLASSES
+															: `${IDLE_CLASSES} ${HOVER_CLASSES}`
+													}`}
+												>
+													<ToolIcon className="w-4 h-4 shrink-0" />
+													<span className="flex-1 truncate">{tool.title}</span>
+												</Link>
+											);
+										})}
+										{canBuildTools && (
+											<Link
+												href="/ferramentas/hub"
+												onClick={() => setMobileOpen(false)}
+												className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+													isActive('/ferramentas/hub')
+														? ACTIVE_CLASSES
+														: `${IDLE_CLASSES} ${HOVER_CLASSES}`
+												}`}
+											>
+												<Wrench className="w-4 h-4 shrink-0" />
+												<span className="truncate">
+													Ver todas as ferramentas
+												</span>
+											</Link>
+										)}
+									</div>
+								</div>
 							)}
 						</div>
 

@@ -733,9 +733,15 @@ export function ToolBuilderView() {
 						status: 'draft',
 						title: state.title || 'Pré-visualização',
 						description: state.description || null,
-						engine_runtime: (derivedDoc as { room?: unknown }).room
-							? 'room_v1'
-							: 'blocks_v1',
+						engine_runtime:
+							state.toolType === 'native' ||
+							openDef?.engine_runtime === 'native_v1' ||
+							(derivedDoc.ui as { layout?: string } | undefined)?.layout ===
+								'native'
+								? 'native_v1'
+								: (derivedDoc as { room?: unknown }).room
+									? 'room_v1'
+									: 'blocks_v1',
 						definition: {
 							...derivedDoc,
 							// Banco e aparência (ui.admin/customer) vivem FORA do
@@ -753,8 +759,11 @@ export function ToolBuilderView() {
 		[derivedDoc, state, selectedDefId, openDef, tlScreens],
 	);
 
-	// Abas do editor: sala → Edição/Aluno/Admin; pipeline → Edição/Cliente.
+	// Abas do editor: nativa → só Edição (metadados); sala → Edição/Aluno/Admin;
+	// pipeline → Edição/Cliente.
 	const isRoomDraft = previewDef?.engine_runtime === 'room_v1';
+	const isNativeDraft =
+		state?.toolType === 'native' || previewDef?.engine_runtime === 'native_v1';
 	const editorTabs = useMemo<
 		{
 			id: 'edit' | 'canvas' | 'customer' | 'admin' | 'bank' | 'appearance';
@@ -762,28 +771,30 @@ export function ToolBuilderView() {
 		}[]
 	>(
 		() =>
-			isRoomDraft
-				? [
-						{ id: 'edit', label: 'Edição' },
-						{ id: 'canvas', label: 'Canvas' },
-						{ id: 'customer', label: 'Aluno' },
-						{ id: 'admin', label: 'Admin' },
-					]
-				: [
-						{ id: 'edit', label: 'Edição' },
-						{ id: 'canvas', label: 'Canvas' },
-						{ id: 'customer', label: 'Cliente' },
-						// Banco do Admin + Aparência: só fazem sentido depois de salva
-						// (têm id) — a Aparência personaliza as telas Admin/Cliente
-						// (cor/tema/textos/banner), espelhando o editor das salas.
-						...(selectedDefId
-							? [
-									{ id: 'bank' as const, label: 'Banco' },
-									{ id: 'appearance' as const, label: 'Aparência' },
-								]
-							: []),
-					],
-		[isRoomDraft, selectedDefId],
+			isNativeDraft
+				? [{ id: 'edit', label: 'Edição' }]
+				: isRoomDraft
+					? [
+							{ id: 'edit', label: 'Edição' },
+							{ id: 'canvas', label: 'Canvas' },
+							{ id: 'customer', label: 'Aluno' },
+							{ id: 'admin', label: 'Admin' },
+						]
+					: [
+							{ id: 'edit', label: 'Edição' },
+							{ id: 'canvas', label: 'Canvas' },
+							{ id: 'customer', label: 'Cliente' },
+							// Banco do Admin + Aparência: só fazem sentido depois de salva
+							// (têm id) — a Aparência personaliza as telas Admin/Cliente
+							// (cor/tema/textos/banner), espelhando o editor das salas.
+							...(selectedDefId
+								? [
+										{ id: 'bank' as const, label: 'Banco' },
+										{ id: 'appearance' as const, label: 'Aparência' },
+									]
+								: []),
+						],
+		[isNativeDraft, isRoomDraft, selectedDefId],
 	);
 	// Se a aba ativa some (ex.: 'admin' numa tool de pipeline), volta p/ Edição.
 	useEffect(() => {
@@ -808,10 +819,17 @@ export function ToolBuilderView() {
 						ui: { ...(openDef.definition.ui ?? {}), ...(built.ui ?? {}) },
 					}
 				: built;
-			// O tipo de motor segue o doc: sala (room) → room_v1; senão blocks_v1.
-			const engine_runtime = (definition as { room?: unknown }).room
-				? 'room_v1'
-				: 'blocks_v1';
+			// O tipo de motor segue o estado/doc, 3-way: tool nativa (página em
+			// código) → native_v1 (preserva ui.href/permission, NUNCA vira blocos);
+			// sala (room) → room_v1; senão pipeline → blocks_v1.
+			const engine_runtime =
+				state.toolType === 'native' ||
+				openDef?.engine_runtime === 'native_v1' ||
+				(definition.ui as { layout?: string } | undefined)?.layout === 'native'
+					? 'native_v1'
+					: (definition as { room?: unknown }).room
+						? 'room_v1'
+						: 'blocks_v1';
 			if (selectedDefId) {
 				return updateToolDefinition(selectedDefId, {
 					title: state.title,
@@ -931,6 +949,16 @@ export function ToolBuilderView() {
 	// Wizard: 1 passo por tela. Os passos dependem do tipo de tool.
 	const steps = useMemo<StepDef[]>(() => {
 		if (!state) return [];
+		// Tool nativa: 1 passo só (Identidade/Aparência) — sem pipeline/sala/preço.
+		if (state.toolType === 'native')
+			return [
+				{
+					id: 'builder-step-01',
+					label: 'Identidade',
+					accent: 'emerald',
+					done: !!state.title,
+				},
+			];
 		if (state.toolType === 'room')
 			return [
 				{
@@ -1340,13 +1368,16 @@ export function ToolBuilderView() {
 							)
 						) : (
 							<>
-								<div className="sticky top-[142px] z-10 mb-1">
-									<StepperBar
-										steps={steps}
-										activeId={activeId}
-										onSelect={goStep}
-									/>
-								</div>
+								{/* Stepper só pra pipeline/sala: a tool nativa tem 1 passo. */}
+								{!isNativeDraft && (
+									<div className="sticky top-[142px] z-10 mb-1">
+										<StepperBar
+											steps={steps}
+											activeId={activeId}
+											onSelect={goStep}
+										/>
+									</div>
+								)}
 								{/* identidade */}
 								{activeId === 'builder-step-01' && (
 									<FormSection
@@ -1395,17 +1426,21 @@ export function ToolBuilderView() {
 													className={`${inputCls} font-mono`}
 												/>
 											</Field>
-											<Field label="Texto do botão" htmlFor="tb-action">
-												<input
-													id="tb-action"
-													value={state.actionLabel}
-													onChange={(e) =>
-														patch({ actionLabel: e.target.value })
-													}
-													placeholder="Gerar"
-													className={inputCls}
-												/>
-											</Field>
+											{/* Texto do botão: irrelevante p/ tool nativa (a página
+											    vive em código) — esconde só nesse modo. */}
+											{state.toolType !== 'native' && (
+												<Field label="Texto do botão" htmlFor="tb-action">
+													<input
+														id="tb-action"
+														value={state.actionLabel}
+														onChange={(e) =>
+															patch({ actionLabel: e.target.value })
+														}
+														placeholder="Gerar"
+														className={inputCls}
+													/>
+												</Field>
+											)}
 											<Field
 												label="Descrição"
 												hint="uma linha"
@@ -1488,6 +1523,38 @@ export function ToolBuilderView() {
 													]}
 												/>
 											</Field>
+											{/* Tool nativa: rota/permissão vivem em código — só
+									    exibe (read-only). O builder edita só metadados. */}
+											{state.toolType === 'native' && (
+												<>
+													<Field
+														label="Rota"
+														hint="página nativa (em código)"
+														htmlFor="tb-native-href"
+													>
+														<input
+															id="tb-native-href"
+															value={state.href ?? '—'}
+															readOnly
+															disabled
+															className={`${inputCls} font-mono opacity-70`}
+														/>
+													</Field>
+													<Field
+														label="Permissão"
+														hint="gateia o acesso (em código)"
+														htmlFor="tb-native-perm"
+													>
+														<input
+															id="tb-native-perm"
+															value={state.permission ?? '—'}
+															readOnly
+															disabled
+															className={`${inputCls} font-mono opacity-70`}
+														/>
+													</Field>
+												</>
+											)}
 										</div>
 									</FormSection>
 								)}
@@ -1795,105 +1862,110 @@ export function ToolBuilderView() {
 									</>
 								)}
 
-								{/* navegação do wizard: 1 passo por tela */}
-								<div className="forge-rise flex items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-[#0a0c10]/80 px-3 py-2.5">
-									<button
-										type="button"
-										disabled={activeStep === 0}
-										onClick={() =>
-											goStep(steps[activeStep - 1]?.id ?? activeId)
-										}
-										className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-white/[0.05] disabled:opacity-30 disabled:hover:bg-transparent"
-									>
-										<ChevronLeft className="h-4 w-4" /> Voltar
-									</button>
-									<span className="font-mono text-[11px] text-slate-500">
-										Passo {activeStep + 1} de {steps.length}
-									</span>
-									{activeStep < steps.length - 1 ? (
+								{/* navegação do wizard + JSON avançado: só pipeline/sala. A
+								    tool nativa edita só metadados (1 passo, sem pipeline). */}
+								{!isNativeDraft && (
+									<div className="forge-rise flex items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-[#0a0c10]/80 px-3 py-2.5">
 										<button
 											type="button"
+											disabled={activeStep === 0}
 											onClick={() =>
-												goStep(steps[activeStep + 1]?.id ?? activeId)
+												goStep(steps[activeStep - 1]?.id ?? activeId)
 											}
-											className="flex items-center gap-1.5 rounded-xl bg-emerald-500/15 px-4 py-2 text-sm font-semibold text-emerald-200 ring-1 ring-emerald-400/30 transition-colors hover:bg-emerald-500/25"
+											className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-white/[0.05] disabled:opacity-30 disabled:hover:bg-transparent"
 										>
-											Avançar <ChevronRight className="h-4 w-4" />
+											<ChevronLeft className="h-4 w-4" /> Voltar
 										</button>
-									) : (
-										<span className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-400">
-											<Check className="h-4 w-4 text-emerald-400" /> Última
-											etapa
+										<span className="font-mono text-[11px] text-slate-500">
+											Passo {activeStep + 1} de {steps.length}
 										</span>
-									)}
-								</div>
+										{activeStep < steps.length - 1 ? (
+											<button
+												type="button"
+												onClick={() =>
+													goStep(steps[activeStep + 1]?.id ?? activeId)
+												}
+												className="flex items-center gap-1.5 rounded-xl bg-emerald-500/15 px-4 py-2 text-sm font-semibold text-emerald-200 ring-1 ring-emerald-400/30 transition-colors hover:bg-emerald-500/25"
+											>
+												Avançar <ChevronRight className="h-4 w-4" />
+											</button>
+										) : (
+											<span className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-400">
+												<Check className="h-4 w-4 text-emerald-400" /> Última
+												etapa
+											</span>
+										)}
+									</div>
+								)}
 
 								{/* avançado */}
-								<div className="forge-rise overflow-hidden rounded-2xl border border-white/10 bg-[#0c0f12]/80">
-									<button
-										type="button"
-										onClick={() => setAdvancedOpen((o) => !o)}
-										className="flex w-full items-center gap-2 px-5 py-3 text-left"
-									>
-										<Code2 className="h-4 w-4 text-slate-400" />
-										<span className="text-sm font-medium text-slate-300">
-											Avançado · JSON
-										</span>
-										<span className="ml-auto flex items-center gap-2">
-											{mode === 'json' && (
-												<span className="font-mono text-[10px] text-cyan-300">
-													manual
-												</span>
-											)}
-											<ChevronDown
-												className={`h-4 w-4 text-slate-500 transition-transform ${advancedOpen ? 'rotate-180' : ''}`}
-											/>
-										</span>
-									</button>
-									{advancedOpen && (
-										<div className="space-y-2 px-5 pb-5">
-											{mode === 'visual' ? (
-												<>
-													<pre className="max-h-72 overflow-auto rounded-lg border border-white/10 bg-black/40 p-3 font-mono text-[11px] text-slate-300">
-														{derivedDoc
-															? JSON.stringify(derivedDoc, null, 2)
-															: '// incompleto'}
-													</pre>
-													<button
-														type="button"
-														onClick={() => {
-															if (state)
-																setJson(
-																	JSON.stringify(buildDoc(state), null, 2),
-																);
-															setMode('json');
-														}}
-														className="rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-300"
-													>
-														Editar JSON manualmente
-													</button>
-												</>
-											) : (
-												<>
-													<textarea
-														value={json}
-														onChange={(e) => setJson(e.target.value)}
-														spellCheck={false}
-														rows={18}
-														className="w-full rounded-lg border border-white/10 bg-black/40 p-3 font-mono text-[11px] text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
-													/>
-													<button
-														type="button"
-														onClick={() => setMode('visual')}
-														className="text-xs text-slate-400 hover:text-slate-200"
-													>
-														← voltar ao modo visual
-													</button>
-												</>
-											)}
-										</div>
-									)}
-								</div>
+								{!isNativeDraft && (
+									<div className="forge-rise overflow-hidden rounded-2xl border border-white/10 bg-[#0c0f12]/80">
+										<button
+											type="button"
+											onClick={() => setAdvancedOpen((o) => !o)}
+											className="flex w-full items-center gap-2 px-5 py-3 text-left"
+										>
+											<Code2 className="h-4 w-4 text-slate-400" />
+											<span className="text-sm font-medium text-slate-300">
+												Avançado · JSON
+											</span>
+											<span className="ml-auto flex items-center gap-2">
+												{mode === 'json' && (
+													<span className="font-mono text-[10px] text-cyan-300">
+														manual
+													</span>
+												)}
+												<ChevronDown
+													className={`h-4 w-4 text-slate-500 transition-transform ${advancedOpen ? 'rotate-180' : ''}`}
+												/>
+											</span>
+										</button>
+										{advancedOpen && (
+											<div className="space-y-2 px-5 pb-5">
+												{mode === 'visual' ? (
+													<>
+														<pre className="max-h-72 overflow-auto rounded-lg border border-white/10 bg-black/40 p-3 font-mono text-[11px] text-slate-300">
+															{derivedDoc
+																? JSON.stringify(derivedDoc, null, 2)
+																: '// incompleto'}
+														</pre>
+														<button
+															type="button"
+															onClick={() => {
+																if (state)
+																	setJson(
+																		JSON.stringify(buildDoc(state), null, 2),
+																	);
+																setMode('json');
+															}}
+															className="rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-300"
+														>
+															Editar JSON manualmente
+														</button>
+													</>
+												) : (
+													<>
+														<textarea
+															value={json}
+															onChange={(e) => setJson(e.target.value)}
+															spellCheck={false}
+															rows={18}
+															className="w-full rounded-lg border border-white/10 bg-black/40 p-3 font-mono text-[11px] text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+														/>
+														<button
+															type="button"
+															onClick={() => setMode('visual')}
+															className="text-xs text-slate-400 hover:text-slate-200"
+														>
+															← voltar ao modo visual
+														</button>
+													</>
+												)}
+											</div>
+										)}
+									</div>
+								)}
 							</>
 						)}
 						{/* Canvas (aba própria): montado 1× e escondido via CSS p/

@@ -68,11 +68,57 @@ const ADMIN_CODE_TOOLS: {
 	},
 ];
 
+/**
+ * Tools NATIVAS do admin (engine_runtime `native_v1`): cada uma é uma PÁGINA
+ * própria do app (rota dedicada), não um pipeline da Fábrica. Esta lista é o
+ * fallback ESTÁTICO — garante que a tool apareça no catálogo mesmo quando o
+ * upvox não é consultado (staff não-super não chama `listToolDefinitions`, senão
+ * tomaria 403). Cada entrada é gateada pela sua `permission` (via `can`). Quando
+ * o super-admin tem a linha do banco (`native_v1`), ela tem prioridade — esta
+ * estática serve só de espelho/fallback. `category` mapeia pra seção/cor.
+ */
+const NATIVE_ADMIN_TOOLS: {
+	key: string;
+	title: string;
+	icon: string;
+	href: string;
+	category: string;
+	permission: string;
+}[] = [
+	{
+		key: 'parametros_admin',
+		title: 'Parâmetros',
+		icon: 'sliders-horizontal',
+		href: '/parametros',
+		category: 'parametros',
+		permission: 'acessos.view',
+	},
+	{
+		key: 'vetorizacao_admin',
+		title: 'Vetorização',
+		icon: 'pen-line',
+		href: '/vetorizacao-admin',
+		category: 'vetor',
+		permission: 'ferramentas.view',
+	},
+	{
+		key: 'grupo_whatsapp_admin',
+		title: 'Grupo WhatsApp',
+		icon: 'message-circle',
+		href: '/grupo-whatsapp',
+		category: 'comunicacao',
+		permission: 'alunos.view',
+	},
+];
+
 type ToolUi = {
 	icon?: string;
 	category?: string;
 	order?: number;
 	audience?: ToolAudience;
+	/** Tools nativas (`native_v1`): rota da página e permissão que a gateia. */
+	href?: string;
+	permission?: string;
 };
 
 function readUi(def: AiToolDefinition | undefined): ToolUi {
@@ -92,7 +138,10 @@ export interface UseToolCatalog {
 
 /* ── Admin: lista de definitions (admin enxerga tudo) ── */
 function useAdminCatalog(): UseToolCatalog {
-	const { isSuperAdmin } = usePermissions();
+	const { isSuperAdmin, can } = usePermissions();
+	// IMPORTANTE: só super-admin consulta o upvox — staff comum tomaria 403 em
+	// `listToolDefinitions`. A query fica `enabled` só pra ele; os demais veem
+	// apenas o fallback estático (`nativeStatic`) já gateado por permissão.
 	const enabled = isSuperAdmin;
 
 	const { data, isLoading } = useQuery({
@@ -103,8 +152,30 @@ function useAdminCatalog(): UseToolCatalog {
 	});
 
 	const tools = useMemo<CatalogTool[]>(() => {
-		if (!enabled) return [];
 		const known = new Set(SYSTEM_TOOLS.map((t) => t.key));
+
+		// Fallback estático das tools nativas — sempre disponível (não depende do
+		// upvox), gateado pela permissão de cada uma. É o ÚNICO que staff não-super
+		// recebe. Ordem padrão 10/20/30 pra preservar a sequência declarada.
+		const nativeStatic = NATIVE_ADMIN_TOOLS.filter((t) =>
+			can(t.permission),
+		).map(
+			(t, i): CatalogTool => ({
+				key: t.key,
+				title: t.title,
+				description: undefined,
+				Icon: resolveToolIcon(t.icon),
+				category: t.category,
+				section: categoryToSection(t.category, 'admin'),
+				order: (i + 1) * 10,
+				color: categoryColor(t.category),
+				href: t.href,
+				audience: 'admin',
+			}),
+		);
+
+		// Sem upvox (staff não-super): só as nativas estáticas permitidas.
+		if (!isSuperAdmin) return nativeStatic.sort(sortTools);
 
 		const code = ADMIN_CODE_TOOLS.map(
 			(t): CatalogTool => ({
@@ -121,8 +192,35 @@ function useAdminCatalog(): UseToolCatalog {
 			}),
 		);
 
+		// Tools nativas vindas do BANCO (reflete edições do super-admin). Inclui
+		// DRAFTS de propósito — deixa o super-admin ver/editar; front antigo de
+		// prod ignora rascunhos. Gateadas pela `permission` declarada na `ui`.
+		const nativeRows = (data ?? [])
+			.filter((d) => d.engine_runtime === 'native_v1')
+			.filter((d) => can(readUi(d).permission ?? ''))
+			.map((d): CatalogTool => {
+				const ui = readUi(d);
+				return {
+					key: d.tool_key,
+					title: d.title,
+					description: d.description ?? undefined,
+					Icon: resolveToolIcon(ui.icon),
+					category: ui.category ?? 'outros',
+					section: categoryToSection(ui.category, 'admin'),
+					order: ui.order ?? 999,
+					color: categoryColor(ui.category),
+					href: ui.href ?? '#',
+					audience: 'admin',
+				};
+			});
+
 		const published = (data ?? [])
-			.filter((d) => d.status === 'published' && !known.has(d.tool_key))
+			.filter(
+				(d) =>
+					d.status === 'published' &&
+					!known.has(d.tool_key) &&
+					d.engine_runtime !== 'native_v1',
+			)
 			.filter((d) => readUi(d).audience !== 'student')
 			.map((d): CatalogTool => {
 				const ui = readUi(d);
@@ -146,8 +244,16 @@ function useAdminCatalog(): UseToolCatalog {
 				};
 			});
 
-		return [...code, ...published].sort(sortTools);
-	}, [data, enabled]);
+		// Linha do banco tem prioridade sobre a estática (mesma `key`): adiciona a
+		// estática só quando não há linha correspondente (ainda não migrada).
+		const nativeFallback = nativeStatic.filter(
+			(s) => !nativeRows.some((n) => n.key === s.key),
+		);
+
+		return [...code, ...published, ...nativeRows, ...nativeFallback].sort(
+			sortTools,
+		);
+	}, [data, isSuperAdmin, can]);
 
 	return { tools, isLoading: enabled ? isLoading : false };
 }

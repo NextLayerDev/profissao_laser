@@ -138,12 +138,20 @@ export interface BuilderRoomState {
 
 export interface BuilderState {
 	templateId: string;
-	/** 'pipeline' (tools de IA) | 'room' (Mentoria/sala). */
-	toolType: 'pipeline' | 'room';
+	/**
+	 * 'pipeline' (tools de IA) | 'room' (Mentoria/sala) | 'native' (tool nativa
+	 * em código — engine_runtime='native_v1'). No modo 'native' o builder só
+	 * edita metadados (Identidade/Aparência) e NUNCA reescreve a tool pra blocos.
+	 */
+	toolType: 'pipeline' | 'room' | 'native';
 	toolKey: string;
 	title: string;
 	description: string;
 	icon: string;
+	/** Rota da página nativa (ui.href) — só p/ tools 'native' (read-only na UI). */
+	href?: string;
+	/** Permissão que gateia a tool nativa (ui.permission) — só p/ 'native'. */
+	permission?: string;
 	/** Categoria (id de TOOL_CATEGORIES) → seção/cor no catálogo. Ausente = 'outros'. */
 	category?: string;
 	/** Ordem dentro da seção (menor = primeiro). Ausente = 999. */
@@ -310,7 +318,33 @@ function buildRoomDoc(state: BuilderState): ToolDefinitionDoc {
 	} as unknown as ToolDefinitionDoc;
 }
 
+/**
+ * Doc de uma tool NATIVA (engine_runtime='native_v1'): a página/rota vive em
+ * código — o builder só grava metadados (Identidade/Aparência) em `ui`, sem
+ * pipeline nem billing. `ui.href`/`ui.permission` são preservados verbatim pra
+ * o catálogo/sidebar continuar apontando pra página nativa e gateando o acesso.
+ */
+function buildNativeDoc(state: BuilderState): ToolDefinitionDoc {
+	return {
+		schemaVersion: 1,
+		input: {},
+		pipeline: [],
+		output: {},
+		ui: {
+			layout: 'native',
+			icon: state.icon,
+			href: state.href,
+			permission: state.permission,
+			...catalogUi(state),
+			title: state.title,
+			description: state.description,
+		},
+		billing: { vox_cost: 0, free_quota: {} },
+	} as unknown as ToolDefinitionDoc;
+}
+
 export function buildDoc(state: BuilderState): ToolDefinitionDoc {
+	if (state.toolType === 'native') return buildNativeDoc(state);
 	if (state.toolType === 'room') return buildRoomDoc(state);
 
 	const input: Record<string, ToolInputSpec> = {};
@@ -399,9 +433,22 @@ export function docToState(def: {
 	tool_key: string;
 	title: string;
 	description: string | null;
+	engine_runtime?: string;
 	definition: ToolDefinitionDoc;
 }): BuilderState {
 	const doc = def.definition;
+
+	// Tool NATIVA (engine_runtime='native_v1' OU ui.layout='native' OU ui.href):
+	// detecta PRIMEIRO — a página vive em código, então só reconstruímos os
+	// metadados (sem pipeline/campos/billing) pra editar Identidade/Aparência.
+	const nativeUi = (doc.ui ?? {}) as { layout?: string; href?: string };
+	if (
+		def.engine_runtime === 'native_v1' ||
+		nativeUi.layout === 'native' ||
+		!!nativeUi.href
+	) {
+		return nativeDocToState(def, doc.ui);
+	}
 
 	// Tool de sala (Mentoria): reconstrói o estado de room (sem pipeline).
 	const roomDoc = (doc as { room?: Record<string, unknown> }).room;
@@ -552,6 +599,44 @@ function roomDocToState(
 		voxCost: room.voxCost,
 		freeQuota: {},
 		room,
+	};
+}
+
+/**
+ * definition de tool NATIVA → BuilderState (metadados only). NÃO reconstrói
+ * pipeline/campos/billing: a página vive em código. Lê título/descrição, ícone
+ * e catálogo (category/order/audience) do `ui`, mais `href`/`permission` por
+ * cast preciso — round-trip idempotente com `buildNativeDoc`.
+ */
+function nativeDocToState(
+	def: { tool_key: string; title: string; description: string | null },
+	topUi?: unknown,
+): BuilderState {
+	const u = (topUi ?? {}) as {
+		icon?: string;
+		href?: string;
+		permission?: string;
+	};
+	const cat = readCatalogUi(topUi);
+	return {
+		templateId: 'native',
+		toolType: 'native',
+		toolKey: def.tool_key,
+		title: def.title,
+		description: def.description ?? '',
+		icon: typeof u.icon === 'string' ? u.icon : 'wrench',
+		category: cat.category,
+		order: cat.order,
+		audience: cat.audience,
+		href: typeof u.href === 'string' ? u.href : undefined,
+		permission: typeof u.permission === 'string' ? u.permission : undefined,
+		actionLabel: '',
+		fields: [],
+		nodes: [],
+		customNodes: [],
+		output: { primary: '', preview: '', meta: [] },
+		voxCost: 0,
+		freeQuota: {},
 	};
 }
 
