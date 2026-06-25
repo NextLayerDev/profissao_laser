@@ -1,6 +1,7 @@
 'use client';
 
 import {
+	BarChart3,
 	BookOpen,
 	ChevronDown,
 	FolderOpen,
@@ -300,23 +301,42 @@ function FerramentasDropdown({
 						);
 					})}
 					{canBuild && (
-						<Link
-							href="/ferramentas/hub"
-							role="menuitem"
-							onClick={() => setOpen(false)}
-							className={`mt-1 flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors ${
-								tools.length > 0
-									? 'border-t border-slate-200 dark:border-white/10 pt-2.5'
-									: ''
-							} ${
-								isActive('/ferramentas/hub')
-									? ACTIVE_CLASSES
-									: `${IDLE_CLASSES} ${HOVER_CLASSES}`
-							}`}
-						>
-							<Wrench className="w-4 h-4 shrink-0" />
-							<span className="flex-1 truncate">Ver todas as ferramentas</span>
-						</Link>
+						<>
+							<Link
+								href="/ferramentas/hub"
+								role="menuitem"
+								onClick={() => setOpen(false)}
+								className={`mt-1 flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors ${
+									tools.length > 0
+										? 'border-t border-slate-200 dark:border-white/10 pt-2.5'
+										: ''
+								} ${
+									isActive('/ferramentas/hub')
+										? ACTIVE_CLASSES
+										: `${IDLE_CLASSES} ${HOVER_CLASSES}`
+								}`}
+							>
+								<Wrench className="w-4 h-4 shrink-0" />
+								<span className="flex-1 truncate">
+									Ver todas as ferramentas
+								</span>
+							</Link>
+							<Link
+								href="/ferramentas/analytics"
+								role="menuitem"
+								onClick={() => setOpen(false)}
+								className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors ${
+									isActive('/ferramentas/analytics')
+										? ACTIVE_CLASSES
+										: `${IDLE_CLASSES} ${HOVER_CLASSES}`
+								}`}
+							>
+								<BarChart3 className="w-4 h-4 shrink-0" />
+								<span className="flex-1 truncate">
+									Analytics de ferramentas
+								</span>
+							</Link>
+						</>
 					)}
 				</div>
 			)}
@@ -613,20 +633,36 @@ export function Header() {
 											);
 										})}
 										{canBuildTools && (
-											<Link
-												href="/ferramentas/hub"
-												onClick={() => setMobileOpen(false)}
-												className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-													isActive('/ferramentas/hub')
-														? ACTIVE_CLASSES
-														: `${IDLE_CLASSES} ${HOVER_CLASSES}`
-												}`}
-											>
-												<Wrench className="w-4 h-4 shrink-0" />
-												<span className="truncate">
-													Ver todas as ferramentas
-												</span>
-											</Link>
+											<>
+												<Link
+													href="/ferramentas/hub"
+													onClick={() => setMobileOpen(false)}
+													className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+														isActive('/ferramentas/hub')
+															? ACTIVE_CLASSES
+															: `${IDLE_CLASSES} ${HOVER_CLASSES}`
+													}`}
+												>
+													<Wrench className="w-4 h-4 shrink-0" />
+													<span className="truncate">
+														Ver todas as ferramentas
+													</span>
+												</Link>
+												<Link
+													href="/ferramentas/analytics"
+													onClick={() => setMobileOpen(false)}
+													className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+														isActive('/ferramentas/analytics')
+															? ACTIVE_CLASSES
+															: `${IDLE_CLASSES} ${HOVER_CLASSES}`
+													}`}
+												>
+													<BarChart3 className="w-4 h-4 shrink-0" />
+													<span className="truncate">
+														Analytics de ferramentas
+													</span>
+												</Link>
+											</>
 										)}
 									</div>
 								</div>

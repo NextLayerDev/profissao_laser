@@ -1,8 +1,9 @@
 'use client';
 
-import { Loader2, Search, Star, Wrench } from 'lucide-react';
+import { BarChart3, Loader2, Search, Star, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { type ReactNode, useMemo, useState } from 'react';
+import { usePermissions } from '@/modules/access';
 import { usePinnedTools } from '@/modules/tools/hooks/use-pinned-tools';
 import {
 	type CatalogTool,
@@ -44,6 +45,9 @@ function normalize(value: string): string {
 
 export function ToolsHub({ audience }: ToolsHubProps) {
 	const { tools, isLoading } = useToolCatalog(audience);
+	const { can } = usePermissions();
+	// Atalho p/ o dashboard de uso — só pra quem pode gerir ferramentas.
+	const canSeeAnalytics = can('tools.build');
 
 	// Defaults dos pins = espelham a sidebar (3 primeiras por ordem), pra estrela
 	// já vir marcada nas mesmas que o menu mostra antes de o usuário customizar.
@@ -81,13 +85,24 @@ export function ToolsHub({ audience }: ToolsHubProps) {
 
 	return (
 		<div className="mx-auto w-full max-w-6xl">
-			<header className="mb-6">
-				<h1 className="font-display text-2xl font-bold text-slate-900 sm:text-3xl dark:text-white">
-					{COPY[audience].title}
-				</h1>
-				<p className="mt-1 text-sm text-slate-500 dark:text-gray-400">
-					{COPY[audience].subtitle}
-				</p>
+			<header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+				<div>
+					<h1 className="font-display text-2xl font-bold text-slate-900 sm:text-3xl dark:text-white">
+						{COPY[audience].title}
+					</h1>
+					<p className="mt-1 text-sm text-slate-500 dark:text-gray-400">
+						{COPY[audience].subtitle}
+					</p>
+				</div>
+				{canSeeAnalytics && (
+					<Link
+						href="/ferramentas/analytics"
+						className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-violet-400 hover:text-violet-600 dark:border-white/10 dark:bg-[#1a1a1d] dark:text-gray-300 dark:hover:border-violet-500/50 dark:hover:text-white"
+					>
+						<BarChart3 className="h-4 w-4" />
+						Analytics de uso
+					</Link>
+				)}
 			</header>
 
 			<div className="relative mb-8">
