@@ -86,6 +86,17 @@ export const ACCENTS: Record<string, AccentClasses> = {
 		ring: 'ring-violet-400/40',
 		selBorder: 'border-violet-400/70',
 	},
+	fuchsia: {
+		bar: 'bg-fuchsia-400/70',
+		chip: 'bg-fuchsia-500/15 text-fuchsia-300 ring-fuchsia-400/20',
+		cardHover: 'hover:border-fuchsia-400/50 hover:shadow-fuchsia-500/40',
+		nodeHover: 'hover:border-fuchsia-400/50',
+		badge: 'bg-fuchsia-500/20 text-fuchsia-300 ring-fuchsia-400/30',
+		ico: 'bg-fuchsia-500/15 text-fuchsia-300',
+		text: 'text-fuchsia-300',
+		ring: 'ring-fuchsia-400/40',
+		selBorder: 'border-fuchsia-400/70',
+	},
 	slate: {
 		bar: 'bg-slate-400/70',
 		chip: 'bg-slate-500/15 text-slate-300 ring-slate-400/20',

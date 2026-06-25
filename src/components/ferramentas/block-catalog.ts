@@ -40,7 +40,7 @@ export interface BlockSpec {
 	sub: string;
 	icon: string;
 	accent: string;
-	category: 'image' | 'laser' | 'output' | 'util';
+	category: 'image' | 'laser' | 'output' | 'util' | 'ai';
 	params: BlockParam[];
 	outputs: BlockOutput[];
 }
@@ -209,6 +209,35 @@ export const BLOCK_CATALOG: BlockSpec[] = [
 			},
 		],
 		outputs: [{ name: 'svg', type: 'string', label: 'SVG' }],
+	},
+	{
+		id: 'ai.generate_image',
+		label: 'Gerar imagem (IA)',
+		sub: 'prompt → imagem por IA',
+		icon: 'wand',
+		accent: 'fuchsia',
+		category: 'ai',
+		params: [
+			{
+				name: 'prompt',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Prompt',
+				hint: 'O texto que descreve a imagem a gerar.',
+				required: true,
+			},
+			{
+				name: 'image',
+				kind: 'ref',
+				refType: 'buffer',
+				label: 'Referência (opcional)',
+				hint: 'Imagem de base/referência pra guiar a geração.',
+			},
+		],
+		outputs: [
+			{ name: 'png', type: 'buffer', label: 'PNG' },
+			{ name: 'pngBase64', type: 'string', label: 'PNG inline' },
+		],
 	},
 	{
 		id: 'output.upload_png',
