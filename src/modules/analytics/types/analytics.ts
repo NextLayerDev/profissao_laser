@@ -208,6 +208,8 @@ export const failedPaymentRowSchema = z.object({
 		.object({ id: z.string(), key: z.string(), name: z.string() })
 		.nullable()
 		.optional(),
+	failure_code: z.string().nullable().optional(),
+	failure_message: z.string().nullable().optional(),
 });
 export type FailedPaymentRow = z.infer<typeof failedPaymentRowSchema>;
 
