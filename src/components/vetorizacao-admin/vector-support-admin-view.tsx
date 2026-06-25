@@ -1,6 +1,13 @@
 'use client';
 
-import { Clock, Loader2, MessageSquare, Search, XCircle } from 'lucide-react';
+import {
+	Clock,
+	Loader2,
+	MessageSquare,
+	Search,
+	Wand2,
+	XCircle,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -9,6 +16,7 @@ import {
 	useVectorSupportTicket,
 	useVectorSupportTicketsAdmin,
 } from '@/hooks/use-vector-support';
+import { AdvancedVectorizePanel } from './advanced-vectorize-panel';
 import { VectorSupportChat } from './vector-support-chat';
 
 type StatusFilter = 'all' | 'open' | 'closed';
@@ -46,6 +54,7 @@ export function VectorSupportAdminView() {
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 	const [searchQuery, setSearchQuery] = useState('');
 	const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+	const [showAdvanced, setShowAdvanced] = useState(false);
 
 	const { data: tickets = [], isLoading: ticketsLoading } =
 		useVectorSupportTicketsAdmin();
@@ -243,17 +252,27 @@ export function VectorSupportAdminView() {
 											{selectedTicket.customerName}
 										</p>
 									</div>
-									{selectedTicket.status !== 'closed' && (
+									<div className="flex items-center gap-2 shrink-0">
 										<button
 											type="button"
-											onClick={() => void handleClose()}
-											disabled={closeMutation.isPending}
-											className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 border border-red-200 dark:border-red-500/30 rounded-lg transition-colors"
+											onClick={() => setShowAdvanced(true)}
+											className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-500/20 border border-violet-200 dark:border-violet-500/30 rounded-lg transition-colors"
 										>
-											<XCircle className="w-3.5 h-3.5" />
-											Fechar
+											<Wand2 className="w-3.5 h-3.5" />
+											Vetorizar (avançado)
 										</button>
-									)}
+										{selectedTicket.status !== 'closed' && (
+											<button
+												type="button"
+												onClick={() => void handleClose()}
+												disabled={closeMutation.isPending}
+												className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 border border-red-200 dark:border-red-500/30 rounded-lg transition-colors"
+											>
+												<XCircle className="w-3.5 h-3.5" />
+												Fechar
+											</button>
+										)}
+									</div>
 								</div>
 							</div>
 							{/* Chat view */}
@@ -276,6 +295,12 @@ export function VectorSupportAdminView() {
 					)}
 				</div>
 			</div>
+			{showAdvanced && selectedTicket && (
+				<AdvancedVectorizePanel
+					ticket={selectedTicket}
+					onClose={() => setShowAdvanced(false)}
+				/>
+			)}
 		</div>
 	);
 }
