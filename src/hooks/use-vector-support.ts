@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CreateVectorSupportTicketPayload } from '@/services/vector-support';
 import {
+	advancedVectorize,
 	closeVectorSupportTicket,
 	createVectorSupportTicket,
 	getVectorSupportTicket,
@@ -90,5 +91,11 @@ export function useCloseVectorSupportTicket() {
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: QUERY_KEY });
 		},
+	});
+}
+
+export function useAdvancedVectorize() {
+	return useMutation({
+		mutationFn: (file: File) => advancedVectorize(file),
 	});
 }
