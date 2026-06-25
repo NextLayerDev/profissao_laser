@@ -9,7 +9,6 @@ import {
 	Menu,
 	Search,
 	Settings2,
-	Store,
 	Users,
 	Wrench,
 	X,
@@ -18,7 +17,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChatButton } from '@/components/dashboard/chat-button';
 import { SupportNotificationsBell } from '@/components/dashboard/support-notifications-bell';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -40,7 +38,7 @@ const SECTION_LABELS: Record<string, string> = {
 	SISTEMA: 'Sistema',
 };
 
-/** Ícone do botão de cada seção na top bar (apenas visual). */
+/** Ícone do gatilho de cada seção na top bar (apenas visual). */
 const SECTION_ICONS: Record<string, LucideIcon> = {
 	PRINCIPAL: LayoutGrid,
 	CONTEUDO: BookOpen,
@@ -54,7 +52,6 @@ const DEFAULT_SECTION = 'PRINCIPAL';
 
 /** Item da top bar enriquecido p/ render — pode ser uma tool pinada (toolKey). */
 interface RenderItem extends NavItem {
-	/** Presente só nas ferramentas pinadas — herda o "desafixar" (não usado aqui). */
 	toolKey?: string;
 }
 
@@ -65,20 +62,19 @@ interface RenderSection {
 	items: RenderItem[];
 }
 
-/** Estilo de highlight ativo (espelha system_porteira). */
+/** Highlight ativo / hover / repouso (paleta da marca). */
 const ACTIVE_CLASSES =
 	'bg-gradient-to-r from-violet-100 to-purple-50 text-violet-700 dark:from-violet-950/60 dark:to-purple-900/30 dark:text-violet-300';
 const HOVER_CLASSES =
 	'hover:bg-violet-50/60 dark:hover:bg-violet-950/30 hover:text-violet-700 dark:hover:text-violet-300';
+const IDLE_CLASSES = 'text-slate-600 dark:text-gray-300';
 
-function Separator({ responsive }: { responsive?: boolean }) {
-	return (
-		<div
-			className={`w-px h-5 bg-slate-200 dark:bg-white/10 shrink-0 ${
-				responsive ? 'hidden lg:block' : ''
-			}`}
-		/>
-	);
+/** Gatilho da nav: ícone sempre; label só em lg+ (colapsa sem estourar). */
+const NAV_TRIGGER =
+	'h-9 flex items-center gap-1.5 px-2.5 rounded-lg text-sm font-medium transition-all duration-200 shrink-0';
+
+function Separator() {
+	return <div className="w-px h-5 bg-slate-200 dark:bg-white/10 shrink-0" />;
 }
 
 /** Badge numérico vermelho (pendências). */
@@ -87,14 +83,39 @@ function CountBadge({ count }: { count: number }) {
 	return (
 		<span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500 text-white leading-none shrink-0">
 			{count > 99 ? '99+' : count}
+			<span className="sr-only"> pendências</span>
 		</span>
 	);
 }
 
+/** Seção com 1 item só → link direto na barra (não vira dropdown bobo). */
+function NavLinkTrigger({
+	item,
+	active,
+	badge,
+}: {
+	item: RenderItem;
+	active: boolean;
+	badge: number;
+}) {
+	const Icon = item.icon;
+	return (
+		<Link
+			href={item.href}
+			title={item.name}
+			className={`${NAV_TRIGGER} ${active ? ACTIVE_CLASSES : `${IDLE_CLASSES} ${HOVER_CLASSES}`}`}
+		>
+			<Icon className="w-4 h-4 shrink-0" />
+			<span className="hidden xl:inline">{item.name}</span>
+			<CountBadge count={badge} />
+		</Link>
+	);
+}
+
 /**
- * Dropdown de uma seção: botão (ícone + label + chevron) + painel absoluto.
- * Fecha no clique fora (mousedown global) e ao navegar (mudança de pathname,
- * tratada pelo pai via `key`/`open` reset). Tailwind puro — sem radix.
+ * Dropdown de uma seção: gatilho (ícone + label + chevron) + painel absoluto.
+ * Fecha no clique fora (mousedown global), no Escape e ao clicar num item.
+ * Tailwind puro — sem radix. O painel NÃO é clipado (a nav não usa overflow).
  */
 function SectionDropdown({
 	section,
@@ -140,10 +161,12 @@ function SectionDropdown({
 				onClick={() => setOpen((v) => !v)}
 				aria-expanded={open}
 				aria-haspopup="menu"
-				className={`h-9 flex items-center gap-1.5 px-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+				aria-label={section.label}
+				title={section.label}
+				className={`${NAV_TRIGGER} ${
 					hasActive
 						? 'bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300'
-						: `text-slate-600 dark:text-gray-300 ${HOVER_CLASSES}`
+						: `${IDLE_CLASSES} ${HOVER_CLASSES}`
 				}`}
 			>
 				<SectionIcon className="w-4 h-4 shrink-0" />
@@ -159,7 +182,7 @@ function SectionDropdown({
 			{open && (
 				<div
 					role="menu"
-					className="absolute left-0 top-full mt-1.5 w-60 z-50 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0a0b0f] shadow-lg dark:shadow-black/40 p-1.5"
+					className="absolute left-0 top-full mt-1.5 w-60 max-w-[calc(100vw-1rem)] max-h-[70vh] overflow-y-auto z-50 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0a0b0f] shadow-lg dark:shadow-black/40 p-1.5"
 				>
 					{section.items.map((item) => {
 						const active = isActive(item.href);
@@ -172,9 +195,7 @@ function SectionDropdown({
 								role="menuitem"
 								onClick={() => setOpen(false)}
 								className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors ${
-									active
-										? ACTIVE_CLASSES
-										: `text-slate-600 dark:text-gray-300 ${HOVER_CLASSES}`
+									active ? ACTIVE_CLASSES : `${IDLE_CLASSES} ${HOVER_CLASSES}`
 								}`}
 							>
 								<ItemIcon className="w-4 h-4 shrink-0" />
@@ -194,7 +215,8 @@ export function Header() {
 	const pathname = usePathname();
 	const { can, isSuperAdmin } = usePermissions();
 
-	// Tools da Fábrica PINADAS (já gateadas no catálogo).
+	// Tools da Fábrica PINADAS (já gateadas no catálogo) — entram no dropdown
+	// "Ferramentas" + no drawer mobile (não mais como pills soltas na barra).
 	const toolNav = useAdminToolNav(isSuperAdmin);
 
 	const canSeeSuporte = canSeeNavItem('Suporte', can);
@@ -258,14 +280,14 @@ export function Header() {
 	}, [pathname]);
 
 	return (
-		<header className="h-[64px] px-3 md:px-6 flex items-center gap-2 border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-[#040405]/90 backdrop-blur-sm sticky top-0 z-30">
-			{/* LEFT: hamburger (mobile) + brand compacto */}
+		<header className="h-[64px] px-3 md:px-6 flex items-center gap-2 md:gap-3 border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-[#040405]/90 backdrop-blur-sm sticky top-0 z-30">
+			{/* LEFT: hambúrguer (mobile) + marca compacta */}
 			<div className="flex items-center gap-2 shrink-0">
 				<button
 					type="button"
 					onClick={() => setMobileOpen(true)}
 					aria-label="Abrir menu"
-					className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+					className="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
 				>
 					<Menu className="w-5 h-5" />
 				</button>
@@ -289,88 +311,56 @@ export function Header() {
 				</Link>
 			</div>
 
-			{/* MIDDLE: nav (desktop) — pins inline + dropdowns por seção */}
-			<nav className="hidden md:flex flex-1 items-center justify-center gap-1 min-w-0 overflow-hidden">
-				{/* Pins (compactos) */}
-				{toolNav.length > 0 && (
-					<>
-						<div className="flex flex-nowrap shrink-0 items-center gap-0.5">
-							{toolNav.map((tool) => {
-								const active = isActive(tool.href);
-								const ToolIcon = tool.icon;
-								return (
-									<Link
-										key={tool.toolKey}
-										href={tool.href}
-										title={tool.name}
-										className={`h-9 flex items-center gap-1.5 px-2 rounded-lg text-xs font-medium transition-all duration-200 ${
-											active
-												? ACTIVE_CLASSES
-												: `text-slate-600 dark:text-gray-300 ${HOVER_CLASSES}`
-										}`}
-									>
-										<ToolIcon className="w-4 h-4 shrink-0" />
-										<span className="hidden 2xl:inline truncate max-w-[8rem]">
-											{tool.name}
-										</span>
-									</Link>
-								);
-							})}
-						</div>
-						<Separator />
-					</>
-				)}
-				{/* Dropdowns por seção */}
-				<div className="flex flex-nowrap items-center justify-center gap-0.5 min-w-0">
-					{sections.map((section) => (
+			{/* Divisória marca ↔ nav (desktop) */}
+			<div className="hidden lg:block">
+				<Separator />
+			</div>
+
+			{/*
+			  MIDDLE: nav (desktop). Alinhada à ESQUERDA (sem justify-center, que
+			  causava sobreposição) e sem overflow-hidden (clipava o painel). Cada
+			  seção vira dropdown; seção de 1 item vira link direto. min-w-0 deixa a
+			  faixa encolher sem empurrar a marca/cluster.
+			*/}
+			<nav className="hidden lg:flex items-center gap-1 min-w-0">
+				{sections.map((section) =>
+					section.items.length === 1 ? (
+						<NavLinkTrigger
+							key={section.id}
+							item={section.items[0]}
+							active={isActive(section.items[0].href)}
+							badge={badgeByHref[section.items[0].href] ?? 0}
+						/>
+					) : (
 						<SectionDropdown
 							key={section.id}
 							section={section}
 							isActive={isActive}
 							badgeByHref={badgeByHref}
 						/>
-					))}
-				</div>
+					),
+				)}
 			</nav>
 
-			{/* Spacer p/ empurrar o cluster direito quando a nav está oculta (mobile) */}
-			<div className="flex-1 md:hidden" />
-
-			{/* RIGHT: cluster original (inalterado) */}
-			<div className="flex items-center gap-2 shrink-0">
+			{/* RIGHT: cluster enxuto, empurrado pra direita (ml-auto). */}
+			<div className="flex items-center gap-2 shrink-0 ml-auto">
 				<button
 					type="button"
 					onClick={openPalette}
 					aria-label="Buscar ferramentas e páginas"
+					title="Buscar (⌘K)"
 					className="h-9 flex items-center gap-2 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-violet-500/50 hover:bg-slate-100/80 dark:hover:bg-white/[0.07] px-3 rounded-lg text-sm text-slate-500 dark:text-gray-400 transition-all duration-200"
 				>
 					<Search className="w-4 h-4" />
-					<span className="hidden sm:inline">Buscar</span>
-					<kbd className="hidden md:inline-flex items-center px-1.5 h-5 rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-[10px] font-semibold text-slate-400 dark:text-gray-500">
+					<span className="hidden 2xl:inline">Buscar</span>
+					<kbd className="hidden 2xl:inline-flex items-center px-1.5 h-5 rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-[10px] font-semibold text-slate-400 dark:text-gray-500">
 						⌘K
 					</kbd>
 				</button>
 				<Separator />
-				<ChatButton variant="inline" />
-				<Separator />
 				<SupportNotificationsBell />
 				<ThemeToggle />
-				<Separator responsive />
-				<Link
-					href="/store"
-					className="h-9 flex items-center gap-2 bg-linear-to-br from-slate-100 to-slate-200 dark:from-white/8 dark:to-white/3 border border-slate-200 dark:border-white/10 hover:from-blue-50 hover:to-slate-100 dark:hover:from-white/12 dark:hover:to-white/6 px-3 rounded-lg text-sm text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-all duration-200 shadow-sm dark:shadow-none"
-				>
-					<Store className="w-4 h-4" />
-					<span className="hidden lg:inline">Ver loja</span>
-				</Link>
-				<Link
-					href="/course"
-					className="h-9 flex items-center gap-2 bg-linear-to-br from-slate-100 to-slate-200 dark:from-white/8 dark:to-white/3 border border-slate-200 dark:border-white/10 hover:from-blue-50 hover:to-slate-100 dark:hover:from-white/12 dark:hover:to-white/6 px-3 rounded-lg text-sm text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-all duration-200 shadow-sm dark:shadow-none"
-				>
-					<BookOpen className="w-4 h-4" />
-					<span className="hidden lg:inline">Ver cursos</span>
-				</Link>
-				<Separator responsive />
+				<Separator />
 				<UserBadge />
 			</div>
 
@@ -413,7 +403,7 @@ export function Header() {
 							</button>
 						</div>
 
-						{/* Ações compactas: ⌘K */}
+						{/* Ação compacta: ⌘K */}
 						<div className="px-3 py-3 border-b border-slate-200 dark:border-white/5">
 							<button
 								type="button"
@@ -448,7 +438,7 @@ export function Header() {
 													className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
 														active
 															? ACTIVE_CLASSES
-															: `text-slate-600 dark:text-gray-300 ${HOVER_CLASSES}`
+															: `${IDLE_CLASSES} ${HOVER_CLASSES}`
 													}`}
 												>
 													<ToolIcon className="w-4 h-4 shrink-0" />
@@ -482,7 +472,7 @@ export function Header() {
 														className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
 															active
 																? ACTIVE_CLASSES
-																: `text-slate-600 dark:text-gray-300 ${HOVER_CLASSES}`
+																: `${IDLE_CLASSES} ${HOVER_CLASSES}`
 														}`}
 													>
 														<ItemIcon className="w-4 h-4 shrink-0" />
@@ -496,7 +486,7 @@ export function Header() {
 								);
 							})}
 
-							{/* Link para o Hub de Ferramentas (sempre disponível p/ quem vê) */}
+							{/* Link para o Hub de Ferramentas */}
 							{canSeeNavItem('Ferramentas', can) && (
 								<Link
 									href="/ferramentas/hub"
@@ -504,11 +494,11 @@ export function Header() {
 									className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
 										isActive('/ferramentas/hub')
 											? ACTIVE_CLASSES
-											: `text-slate-600 dark:text-gray-300 ${HOVER_CLASSES}`
+											: `${IDLE_CLASSES} ${HOVER_CLASSES}`
 									}`}
 								>
 									<Wrench className="w-4 h-4 shrink-0" />
-									<span className="truncate">Ferramentas</span>
+									<span className="truncate">Ver todas as ferramentas</span>
 								</Link>
 							)}
 						</div>
