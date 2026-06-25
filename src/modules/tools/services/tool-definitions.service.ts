@@ -133,6 +133,13 @@ export const toolDefinitionDocSchema = z
 				// O resto de `ui` segue passthrough (icon/bank/custom_nodes/etc.).
 				admin: screenUiSchema.optional(),
 				customer: screenUiSchema.optional(),
+				// info: catálogo infinito — a tool se auto-organiza na sidebar/hub.
+				// `category` mapeia pra uma seção (admin/aluno), `order` ordena dentro
+				// dela, `audience` restringe onde aparece. Tudo opcional → tools
+				// antigas continuam válidas (cai em "outros"/"both" por padrão).
+				category: z.string().optional(),
+				order: z.number().optional(),
+				audience: z.enum(['both', 'admin', 'student']).optional(),
 			})
 			.passthrough()
 			.default({ controls: [] }),

@@ -88,21 +88,30 @@ export function CourseSidebar({
 								const isActive = !!item.href && pathname.startsWith(item.href);
 
 								if (!item.href) {
+									// "Em breve" — sem rota ainda. Tratamento mudo/desabilitado pra
+									// nao se confundir com um link funcional (mesmo que toaste).
 									return (
 										<button
 											key={item.label}
 											type="button"
-											title={isCollapsed ? item.label : undefined}
+											title={
+												isCollapsed ? `${item.label} (em breve)` : undefined
+											}
 											onClick={() =>
 												toast('Em breve', {
 													description: `${item.label} estara disponivel em breve!`,
 												})
 											}
-											className={sidebarItemClass(false, isCollapsed)}
+											className={`${sidebarItemClass(false, isCollapsed)} opacity-60 cursor-default`}
 										>
 											<item.Icon className="w-[18px] h-[18px] shrink-0" />
 											{!isCollapsed && (
-												<span className="text-sm truncate">{item.label}</span>
+												<>
+													<span className="text-sm truncate">{item.label}</span>
+													<span className="ml-auto shrink-0 rounded-full bg-slate-100 dark:bg-white/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400 dark:text-gray-500">
+														em breve
+													</span>
+												</>
 											)}
 										</button>
 									);

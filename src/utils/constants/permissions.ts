@@ -75,6 +75,8 @@ export const NAV_VIEW_KEYS: Record<string, string[]> = {
 	'Grupo WhatsApp': ['alunos.view'],
 	'Previas IA': ['ferramentas.view'],
 	Vetorizacao: ['ferramentas.view'],
+	// HUB da Fábrica (/ferramentas/hub) — mesmo gate da rota (super-admin/builder).
+	Ferramentas: ['tools.build'],
 };
 
 /** True se o usuário pode ver um item de navbar (qualquer uma das chaves). */

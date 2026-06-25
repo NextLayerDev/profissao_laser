@@ -31,6 +31,7 @@ import { usePlans } from '@/modules/plans/hooks/use-plans';
 import { DynamicRoomView } from '@/modules/tools/components/dynamic-room-view';
 import { DynamicToolView } from '@/modules/tools/components/dynamic-tool-view';
 import { useTools } from '@/modules/tools/hooks/use-tools';
+import { TOOL_CATEGORIES } from '@/modules/tools/lib/tool-categories';
 import { resolveToolIcon } from '@/modules/tools/lib/tool-icons';
 import {
 	type AiToolDefinition,
@@ -1429,6 +1430,62 @@ export function ToolBuilderView() {
 												<IconPicker
 													value={state.icon}
 													onChange={(name) => patch({ icon: name })}
+												/>
+											</Field>
+											<Field
+												label="Categoria"
+												hint="define seção e cor no catálogo"
+												htmlFor="tb-category"
+											>
+												<SelectInput
+													id="tb-category"
+													value={state.category ?? 'outros'}
+													muted={!state.category}
+													onChange={(v) => patch({ category: v })}
+												>
+													{TOOL_CATEGORIES.map((c) => (
+														<option key={c.id} value={c.id}>
+															{c.label}
+														</option>
+													))}
+												</SelectInput>
+											</Field>
+											<Field
+												label="Ordem"
+												hint="menor aparece primeiro"
+												htmlFor="tb-order"
+											>
+												<input
+													id="tb-order"
+													type="number"
+													value={state.order ?? ''}
+													onChange={(e) =>
+														patch({
+															order:
+																e.target.value === ''
+																	? undefined
+																	: Number(e.target.value),
+														})
+													}
+													placeholder="999"
+													className={inputCls}
+												/>
+											</Field>
+											<Field
+												label="Audiência"
+												hint="quem vê esta ferramenta"
+												className="sm:col-span-2"
+											>
+												<SegmentedControl
+													ariaLabel="Audiência da ferramenta"
+													accent="emerald"
+													value={state.audience ?? 'both'}
+													onChange={(v) => patch({ audience: v })}
+													options={[
+														{ value: 'both', label: 'Todos' },
+														{ value: 'admin', label: 'Admin' },
+														{ value: 'student', label: 'Aluno' },
+													]}
 												/>
 											</Field>
 										</div>
