@@ -194,6 +194,19 @@ export async function listToolDefinitions(): Promise<AiToolDefinition[]> {
 	return z.array(aiToolDefinitionSchema).parse(data);
 }
 
+/** Cor/categoria (ui) por tool_key — QUALQUER status, leve. Usado pra linkar a
+ * cor de uma feature do aluno à da tool admin correspondente (requireAuth). */
+export interface ToolColorRow {
+	tool_key: string;
+	color: string | null;
+	category: string | null;
+}
+
+export async function listToolColors(): Promise<ToolColorRow[]> {
+	const { data } = await apiCourses.get('/v1/tool-definitions/colors');
+	return (data ?? []) as ToolColorRow[];
+}
+
 export interface CreateToolDefinitionBody {
 	tool_key: string;
 	title: string;
