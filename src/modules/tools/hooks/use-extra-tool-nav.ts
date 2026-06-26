@@ -16,6 +16,41 @@ import { useToolCatalog } from './use-tool-catalog';
  * tool fica visualmente coerente com o resto da home. Sem pins salvos, default =
  * 3 primeiras por ordem.
  */
+/** Coage a `section` (string da categoria) numa das 3 do QuickAccessItem. */
+function toQuickSection(section: string): QuickAccessItem['section'] {
+	return section === 'CONTEUDO' ||
+		section === 'COMUNIDADE' ||
+		section === 'FERRAMENTAS'
+		? section
+		: 'FERRAMENTAS';
+}
+
+/**
+ * TODAS as tools da Fábrica disponíveis ao ALUNO (publicadas + com direito +
+ * audiência), já com a COR configurada (cor da categoria OU `ui.color` própria).
+ * Diferente de `useExtraToolNav` (só as PINADAS): a home do aluno mostra todas —
+ * toda tool publicada aparece com a cor definida no board/builder.
+ */
+export function useStudentToolItems(): QuickAccessItem[] {
+	const { tools } = useToolCatalog('student');
+	return useMemo(
+		() =>
+			tools.map((t): QuickAccessItem => {
+				const palette = TOOL_COLORS[t.color];
+				return {
+					label: t.title,
+					description: t.description ?? 'Ferramenta',
+					Icon: t.Icon,
+					section: toQuickSection(t.section),
+					href: t.href,
+					gradient: palette.gradient,
+					iconBg: palette.iconBg,
+				};
+			}),
+		[tools],
+	);
+}
+
 export function useExtraToolNav(): QuickAccessItem[] {
 	const { tools } = useToolCatalog('student');
 
