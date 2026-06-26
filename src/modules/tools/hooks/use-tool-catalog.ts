@@ -110,6 +110,14 @@ const NATIVE_ADMIN_TOOLS: {
 		category: 'comunicacao',
 		permission: 'alunos.view',
 	},
+	{
+		key: 'previas_admin',
+		title: 'Prévias IA',
+		icon: 'eye',
+		href: '/previas-admin',
+		category: 'imagem',
+		permission: 'ferramentas.view',
+	},
 ];
 
 type ToolUi = {

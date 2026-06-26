@@ -1,7 +1,6 @@
 import {
 	BarChart3,
 	CalendarClock,
-	Eye,
 	Headphones,
 	HelpCircle,
 	Home,
@@ -98,13 +97,6 @@ export const navItems: NavItem[] = [
 		name: 'Alunos',
 		icon: Users,
 		href: '/alunos',
-		hasDropdown: false,
-		section: 'CONTEUDO',
-	},
-	{
-		name: 'Previas IA',
-		icon: Eye,
-		href: '/previas-admin',
 		hasDropdown: false,
 		section: 'CONTEUDO',
 	},
