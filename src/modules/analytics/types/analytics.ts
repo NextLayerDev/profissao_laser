@@ -307,3 +307,60 @@ export const refundRowSchema = z.object({
 	created_at: z.string(),
 });
 export type RefundRow = z.infer<typeof refundRowSchema>;
+
+// ---- Tool usage analytics ----
+//
+// Dashboard genérico de uso de ferramentas: o backend faz GROUP BY tool_key
+// sobre tool_invocations JOIN tools, então TODA ferramenta aparece sozinha
+// (zero hardcoding). `platform_cost_cents` = usos succeeded × custo de
+// plataforma da tool; `voxes` = Σ voxes_spent dos succeeded.
+
+export const toolUsageGroupSchema = z.enum(['day', 'month']);
+export type ToolUsageGroup = z.infer<typeof toolUsageGroupSchema>;
+
+export const toolUsageStatusSchema = z.enum(['all', 'succeeded', 'refunded']);
+export type ToolUsageStatus = z.infer<typeof toolUsageStatusSchema>;
+
+export const toolUsageRowSchema = z.object({
+	tool_key: z.string(),
+	tool_name: z.string(),
+	category: z.string().nullable().optional(),
+	usage_count: z.number().int(),
+	refund_count: z.number().int(),
+	voxes: z.number(),
+	platform_cost_cents: z.number().int(),
+	unique_customers: z.number().int(),
+});
+export type ToolUsageRow = z.infer<typeof toolUsageRowSchema>;
+
+export const toolUsageSeriesPointSchema = z.object({
+	period: z.string(),
+	usage_count: z.number().int(),
+	voxes: z.number(),
+	platform_cost_cents: z.number().int(),
+});
+export type ToolUsageSeriesPoint = z.infer<typeof toolUsageSeriesPointSchema>;
+
+export const toolUsageTotalsSchema = z.object({
+	usage_count: z.number().int(),
+	refund_count: z.number().int(),
+	voxes: z.number(),
+	platform_cost_cents: z.number().int(),
+	unique_customers: z.number().int(),
+	tool_count: z.number().int(),
+});
+export type ToolUsageTotals = z.infer<typeof toolUsageTotalsSchema>;
+
+export const toolUsageAnalyticsSchema = z.object({
+	tools: toolUsageRowSchema.array(),
+	series: toolUsageSeriesPointSchema.array(),
+	totals: toolUsageTotalsSchema,
+});
+export type ToolUsageAnalytics = z.infer<typeof toolUsageAnalyticsSchema>;
+
+export interface ToolUsageParams {
+	from?: string;
+	to?: string;
+	status?: ToolUsageStatus;
+	group?: ToolUsageGroup;
+}

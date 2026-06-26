@@ -2,11 +2,15 @@
 
 import { Settings } from 'lucide-react';
 import Link from 'next/link';
+import { useMemo } from 'react';
 import { toast } from 'sonner';
+import { useStudentToolItems } from '@/modules/tools/hooks/use-extra-tool-nav';
+import { useToolColorByKey } from '@/modules/tools/hooks/use-tool-colors';
 import {
 	type QuickAccessItem,
 	quickAccessItems,
 } from '@/utils/constants/quick-access';
+import { TOOL_COLORS } from '@/utils/constants/tool-colors';
 
 interface QuickAccessGridProps {
 	onSavedLessonsOpen: () => void;
@@ -26,6 +30,53 @@ const SECTION_ORDER: QuickAccessItem['section'][] = [
 	'COMUNIDADE',
 ];
 
+const norm = (s: string) =>
+	s
+		.toLowerCase()
+		.normalize('NFD')
+		.replace(/\p{Diacritic}/gu, '')
+		.replace(/\s+/g, '');
+
+/** Feature built-in do aluno (nome normalizado) → tool admin de onde a COR vem. */
+const FEATURE_TOOL_KEY: Record<string, string> = {
+	vetorizacao: 'vetorizacao_admin',
+	previas: 'previas_admin',
+	parametros: 'parametros_admin',
+	gravacao1clique: 'gravacao_oneclick',
+};
+
+/**
+ * Lista final do aluno = atalhos ESTÁTICOS + TODAS as tools publicadas do
+ * catálogo (com a cor configurada no board/builder). Dedup por nome
+ * normalizado. Além disso, as features built-in mapeadas em FEATURE_TOOL_KEY
+ * HERDAM a cor da tool admin correspondente — então recolorir no board reflete
+ * no aluno (fonte única de cor por ferramenta).
+ */
+function useMergedQuickAccess(): QuickAccessItem[] {
+	const dynamic = useStudentToolItems();
+	const colorByKey = useToolColorByKey();
+	return useMemo(() => {
+		const byKey = new Map<string, QuickAccessItem>();
+		for (const it of quickAccessItems) byKey.set(norm(it.label), it);
+		for (const t of dynamic) {
+			const k = norm(t.label);
+			const existing = byKey.get(k);
+			byKey.set(
+				k,
+				existing ? { ...existing, gradient: t.gradient, iconBg: t.iconBg } : t,
+			);
+		}
+		// Link de cor: feature built-in herda a cor da tool admin correspondente.
+		const out: QuickAccessItem[] = [];
+		for (const [k, it] of byKey) {
+			const adminKey = FEATURE_TOOL_KEY[k];
+			const color = adminKey ? colorByKey.get(adminKey) : undefined;
+			out.push(color ? { ...it, ...TOOL_COLORS[color] } : it);
+		}
+		return out;
+	}, [dynamic, colorByKey]);
+}
+
 // Acesso 100% pelo plano: o grid vive dentro do SubscriptionGate (cliente já
 // tem assinatura ativa), então todos os atalhos ficam liberados — o billing/uso
 // de cada ferramenta é gatilhado na própria página dela.
@@ -41,6 +92,7 @@ export function QuickAccessGrid({ compact = false }: QuickAccessGridProps) {
 /* ─────────────────────────────────────────────────────────────────────── */
 
 function FullQuickAccess() {
+	const items = useMergedQuickAccess();
 	return (
 		<section>
 			<div className="flex justify-between items-end mb-5">
@@ -61,7 +113,7 @@ function FullQuickAccess() {
 				</button>
 			</div>
 			<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
-				{quickAccessItems.map((item) => (
+				{items.map((item) => (
 					<QuickAccessCard key={item.label} item={item} />
 				))}
 			</div>
@@ -75,6 +127,7 @@ function FullQuickAccess() {
 /* ─────────────────────────────────────────────────────────────────────── */
 
 function CompactQuickAccess() {
+	const merged = useMergedQuickAccess();
 	return (
 		<section className="space-y-5">
 			<div className="flex items-end justify-between">
@@ -86,7 +139,7 @@ function CompactQuickAccess() {
 				</span>
 			</div>
 			{SECTION_ORDER.map((section) => {
-				const items = quickAccessItems.filter((i) => i.section === section);
+				const items = merged.filter((i) => i.section === section);
 				if (items.length === 0) return null;
 				return (
 					<div key={section} className="space-y-2.5">

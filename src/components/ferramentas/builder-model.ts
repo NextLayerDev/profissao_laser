@@ -138,12 +138,28 @@ export interface BuilderRoomState {
 
 export interface BuilderState {
 	templateId: string;
-	/** 'pipeline' (tools de IA) | 'room' (Mentoria/sala). */
-	toolType: 'pipeline' | 'room';
+	/**
+	 * 'pipeline' (tools de IA) | 'room' (Mentoria/sala) | 'native' (tool nativa
+	 * em código — engine_runtime='native_v1'). No modo 'native' o builder só
+	 * edita metadados (Identidade/Aparência) e NUNCA reescreve a tool pra blocos.
+	 */
+	toolType: 'pipeline' | 'room' | 'native';
 	toolKey: string;
 	title: string;
 	description: string;
 	icon: string;
+	/** Rota da página nativa (ui.href) — só p/ tools 'native' (read-only na UI). */
+	href?: string;
+	/** Permissão que gateia a tool nativa (ui.permission) — só p/ 'native'. */
+	permission?: string;
+	/** Categoria (id de TOOL_CATEGORIES) → seção/cor no catálogo. Ausente = 'outros'. */
+	category?: string;
+	/** Ordem dentro da seção (menor = primeiro). Ausente = 999. */
+	order?: number;
+	/** Público-alvo: ambos / só admin / só aluno. Ausente = 'both'. */
+	audience?: 'both' | 'admin' | 'student';
+	/** Cor PRÓPRIA da tool (chave de TOOL_COLORS, ui.color) — sobrepõe a da categoria. */
+	color?: string;
 	actionLabel: string;
 	fields: BuilderField[];
 	nodes: BuilderNode[];
@@ -229,6 +245,55 @@ function fieldToControl(f: BuilderField): ToolControl {
 	return c;
 }
 
+/**
+ * Campos de catálogo (`category`/`order`/`audience`) que o builder grava em
+ * `ui` — só quando setados, pra não poluir o doc nem sobrescrever defaults. O
+ * `tool-categories`/`use-tool-catalog` resolvem ausências (outros/999/both).
+ */
+function catalogUi(state: BuilderState): Partial<{
+	category: string;
+	order: number;
+	audience: string;
+	color: string;
+}> {
+	const ui: Partial<{
+		category: string;
+		order: number;
+		audience: string;
+		color: string;
+	}> = {};
+	if (state.category) ui.category = state.category;
+	if (state.order !== undefined) ui.order = state.order;
+	if (state.audience) ui.audience = state.audience;
+	if (state.color) ui.color = state.color;
+	return ui;
+}
+
+/** Lê `category`/`order`/`audience`/`color` de volta do `ui` do doc (round-trip). */
+function readCatalogUi(ui: unknown): {
+	category?: string;
+	order?: number;
+	audience?: BuilderState['audience'];
+	color?: string;
+} {
+	const u = (ui ?? {}) as {
+		category?: unknown;
+		order?: unknown;
+		audience?: unknown;
+		color?: unknown;
+	};
+	const audience =
+		u.audience === 'admin' || u.audience === 'student' || u.audience === 'both'
+			? u.audience
+			: undefined;
+	return {
+		category: typeof u.category === 'string' ? u.category : undefined,
+		order: typeof u.order === 'number' ? u.order : undefined,
+		audience,
+		color: typeof u.color === 'string' ? u.color : undefined,
+	};
+}
+
 /** Doc de uma tool de sala (Mentoria): sem pipeline; config em `room`. */
 function buildRoomDoc(state: BuilderState): ToolDefinitionDoc {
 	const r = state.room ?? defaultRoom();
@@ -258,6 +323,7 @@ function buildRoomDoc(state: BuilderState): ToolDefinitionDoc {
 		ui: {
 			layout: 'room',
 			icon: state.icon,
+			...catalogUi(state),
 			title: state.title,
 			description: state.description,
 			action: { label: state.actionLabel || 'Entrar na sala' },
@@ -266,7 +332,33 @@ function buildRoomDoc(state: BuilderState): ToolDefinitionDoc {
 	} as unknown as ToolDefinitionDoc;
 }
 
+/**
+ * Doc de uma tool NATIVA (engine_runtime='native_v1'): a página/rota vive em
+ * código — o builder só grava metadados (Identidade/Aparência) em `ui`, sem
+ * pipeline nem billing. `ui.href`/`ui.permission` são preservados verbatim pra
+ * o catálogo/sidebar continuar apontando pra página nativa e gateando o acesso.
+ */
+function buildNativeDoc(state: BuilderState): ToolDefinitionDoc {
+	return {
+		schemaVersion: 1,
+		input: {},
+		pipeline: [],
+		output: {},
+		ui: {
+			layout: 'native',
+			icon: state.icon,
+			href: state.href,
+			permission: state.permission,
+			...catalogUi(state),
+			title: state.title,
+			description: state.description,
+		},
+		billing: { vox_cost: 0, free_quota: {} },
+	} as unknown as ToolDefinitionDoc;
+}
+
 export function buildDoc(state: BuilderState): ToolDefinitionDoc {
+	if (state.toolType === 'native') return buildNativeDoc(state);
 	if (state.toolType === 'room') return buildRoomDoc(state);
 
 	const input: Record<string, ToolInputSpec> = {};
@@ -306,6 +398,7 @@ export function buildDoc(state: BuilderState): ToolDefinitionDoc {
 		ui: {
 			layout: 'image-tool',
 			icon: state.icon,
+			...catalogUi(state),
 			controls: state.fields.filter((f) => f.visible).map(fieldToControl),
 			action: { label: state.actionLabel || 'Gerar', showCostNotice: true },
 			result: {
@@ -354,13 +447,26 @@ export function docToState(def: {
 	tool_key: string;
 	title: string;
 	description: string | null;
+	engine_runtime?: string;
 	definition: ToolDefinitionDoc;
 }): BuilderState {
 	const doc = def.definition;
 
+	// Tool NATIVA (engine_runtime='native_v1' OU ui.layout='native' OU ui.href):
+	// detecta PRIMEIRO — a página vive em código, então só reconstruímos os
+	// metadados (sem pipeline/campos/billing) pra editar Identidade/Aparência.
+	const nativeUi = (doc.ui ?? {}) as { layout?: string; href?: string };
+	if (
+		def.engine_runtime === 'native_v1' ||
+		nativeUi.layout === 'native' ||
+		!!nativeUi.href
+	) {
+		return nativeDocToState(def, doc.ui);
+	}
+
 	// Tool de sala (Mentoria): reconstrói o estado de room (sem pipeline).
 	const roomDoc = (doc as { room?: Record<string, unknown> }).room;
-	if (roomDoc) return roomDocToState(def, roomDoc);
+	if (roomDoc) return roomDocToState(def, roomDoc, doc.ui);
 
 	const inputSpec = (doc.input ?? {}) as Record<string, ToolInputSpec>;
 	const controls = (doc.ui?.controls ?? []) as ToolControl[];
@@ -429,6 +535,7 @@ export function docToState(def: {
 		freeQuota[k] = v;
 	}
 	const action = doc.ui?.action as { label?: string } | undefined;
+	const cat = readCatalogUi(doc.ui);
 
 	return {
 		templateId: 'custom',
@@ -437,6 +544,10 @@ export function docToState(def: {
 		title: def.title,
 		description: def.description ?? '',
 		icon: (doc.ui as { icon?: string } | undefined)?.icon ?? 'wrench',
+		category: cat.category,
+		order: cat.order,
+		audience: cat.audience,
+		color: cat.color,
 		actionLabel: action?.label ?? 'Gerar',
 		fields,
 		nodes,
@@ -455,6 +566,7 @@ export function docToState(def: {
 function roomDocToState(
 	def: { tool_key: string; title: string; description: string | null },
 	roomDoc: Record<string, unknown>,
+	topUi?: unknown,
 ): BuilderState {
 	const r = roomDoc as {
 		cap?: number | null;
@@ -483,6 +595,7 @@ function roomDocToState(
 		allowVoxEntry: r.access?.allowVoxEntry !== false,
 		...(r.ui ? { ui: r.ui } : {}),
 	};
+	const cat = readCatalogUi(topUi);
 	return {
 		templateId: 'mentoria',
 		toolType: 'room',
@@ -490,6 +603,10 @@ function roomDocToState(
 		title: def.title,
 		description: def.description ?? '',
 		icon: 'video',
+		category: cat.category,
+		order: cat.order,
+		audience: cat.audience,
+		color: cat.color,
 		actionLabel: 'Entrar na sala',
 		fields: [],
 		nodes: [],
@@ -498,6 +615,45 @@ function roomDocToState(
 		voxCost: room.voxCost,
 		freeQuota: {},
 		room,
+	};
+}
+
+/**
+ * definition de tool NATIVA → BuilderState (metadados only). NÃO reconstrói
+ * pipeline/campos/billing: a página vive em código. Lê título/descrição, ícone
+ * e catálogo (category/order/audience) do `ui`, mais `href`/`permission` por
+ * cast preciso — round-trip idempotente com `buildNativeDoc`.
+ */
+function nativeDocToState(
+	def: { tool_key: string; title: string; description: string | null },
+	topUi?: unknown,
+): BuilderState {
+	const u = (topUi ?? {}) as {
+		icon?: string;
+		href?: string;
+		permission?: string;
+	};
+	const cat = readCatalogUi(topUi);
+	return {
+		templateId: 'native',
+		toolType: 'native',
+		toolKey: def.tool_key,
+		title: def.title,
+		description: def.description ?? '',
+		icon: typeof u.icon === 'string' ? u.icon : 'wrench',
+		category: cat.category,
+		order: cat.order,
+		audience: cat.audience,
+		color: cat.color,
+		href: typeof u.href === 'string' ? u.href : undefined,
+		permission: typeof u.permission === 'string' ? u.permission : undefined,
+		actionLabel: '',
+		fields: [],
+		nodes: [],
+		customNodes: [],
+		output: { primary: '', preview: '', meta: [] },
+		voxCost: 0,
+		freeQuota: {},
 	};
 }
 

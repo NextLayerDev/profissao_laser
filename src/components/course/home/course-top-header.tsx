@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { useCommandPalette } from '@/components/tools/use-command-palette';
 import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 import { useEntitlements } from '@/hooks/use-entitlements';
 import { useIsTestUnlimited } from '@/hooks/use-is-test-unlimited';
@@ -33,6 +34,7 @@ export function CourseTopHeader({
 }: CourseTopHeaderProps) {
 	const { voxBalance, isLoading: balanceLoading } = useEntitlements();
 	const unlimited = useIsTestUnlimited();
+	const { open: openPalette } = useCommandPalette();
 	return (
 		<header
 			className={`fixed top-0 right-0 h-16 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.03)] z-30 bg-white/80 dark:bg-[#0d0d0f]/90 backdrop-blur-lg flex items-center justify-between px-4 md:px-6 lg:px-8 transition-all duration-300 ${
@@ -63,14 +65,20 @@ export function CourseTopHeader({
 					</span>
 				)}
 				<div className="flex-1 max-w-md">
-					<div className="relative flex items-center bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg overflow-hidden transition-all focus-within:border-violet-500/50 focus-within:ring-1 focus-within:ring-violet-500/20">
+					<button
+						type="button"
+						onClick={openPalette}
+						aria-label="Buscar ferramentas e páginas"
+						className="group relative flex w-full items-center gap-2 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg py-2 pl-10 pr-2 text-left transition-all hover:border-violet-500/50 hover:bg-slate-100/80 dark:hover:bg-white/[0.07]"
+					>
 						<Search className="absolute left-3 w-4 h-4 text-slate-400" />
-						<input
-							type="text"
-							placeholder="Buscar na comunidade..."
-							className="w-full bg-transparent border-none py-2 pl-10 pr-4 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none"
-						/>
-					</div>
+						<span className="flex-1 truncate text-sm text-slate-400 dark:text-gray-500">
+							Buscar ferramentas, páginas...
+						</span>
+						<kbd className="hidden sm:inline-flex items-center gap-0.5 shrink-0 px-1.5 h-5 rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-[10px] font-semibold text-slate-400 dark:text-gray-500">
+							⌘K
+						</kbd>
+					</button>
 				</div>
 			</div>
 
