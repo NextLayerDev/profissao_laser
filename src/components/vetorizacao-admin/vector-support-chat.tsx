@@ -1,12 +1,16 @@
 'use client';
 
-import { Paperclip, Send, X } from 'lucide-react';
+import { Download, Loader2, Paperclip, Send, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type {
 	VectorSupportFile,
 	VectorSupportMessage,
 	VectorSupportTicket,
 } from '@/types/vector-support';
+import {
+	downloadFileAsPng,
+	downloadFileAsSvg,
+} from '@/utils/download-vector-file';
 
 const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
 
@@ -28,26 +32,75 @@ function formatDate(iso: string) {
 	}
 }
 
+const DOWNLOAD_BTN =
+	'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white/95 dark:bg-slate-800 text-violet-700 dark:text-violet-300 border border-black/5 dark:border-white/10 shadow-sm hover:bg-white dark:hover:bg-slate-700 transition-colors disabled:opacity-60 disabled:cursor-default';
+
 function FileAttachment({ file }: { file: VectorSupportFile }) {
-	if (isImage(file.fileUrl)) {
+	const [busy, setBusy] = useState<'svg' | 'png' | null>(null);
+
+	if (!isImage(file.fileUrl)) {
 		return (
+			<a
+				href={file.fileUrl}
+				target="_blank"
+				rel="noopener noreferrer"
+				className="flex items-center gap-1.5 text-sm underline underline-offset-2 opacity-90 hover:opacity-100"
+			>
+				<Paperclip className="w-3.5 h-3.5 shrink-0" />
+				{file.fileName}
+			</a>
+		);
+	}
+
+	async function handleDownload(kind: 'svg' | 'png') {
+		setBusy(kind);
+		try {
+			if (kind === 'svg') {
+				await downloadFileAsSvg(file);
+			} else {
+				await downloadFileAsPng(file);
+			}
+		} finally {
+			setBusy(null);
+		}
+	}
+
+	return (
+		<div className="space-y-1.5">
 			<img
 				src={file.fileUrl}
 				alt={file.fileName}
 				className="max-w-full max-h-64 rounded-lg object-contain"
 			/>
-		);
-	}
-	return (
-		<a
-			href={file.fileUrl}
-			target="_blank"
-			rel="noopener noreferrer"
-			className="flex items-center gap-1.5 text-sm underline underline-offset-2 opacity-90 hover:opacity-100"
-		>
-			<Paperclip className="w-3.5 h-3.5 shrink-0" />
-			{file.fileName}
-		</a>
+			<div className="flex flex-wrap gap-1.5">
+				<button
+					type="button"
+					onClick={() => handleDownload('svg')}
+					disabled={busy !== null}
+					className={DOWNLOAD_BTN}
+				>
+					{busy === 'svg' ? (
+						<Loader2 className="w-3.5 h-3.5 animate-spin" />
+					) : (
+						<Download className="w-3.5 h-3.5" />
+					)}
+					Baixar SVG
+				</button>
+				<button
+					type="button"
+					onClick={() => handleDownload('png')}
+					disabled={busy !== null}
+					className={DOWNLOAD_BTN}
+				>
+					{busy === 'png' ? (
+						<Loader2 className="w-3.5 h-3.5 animate-spin" />
+					) : (
+						<Download className="w-3.5 h-3.5" />
+					)}
+					Baixar PNG
+				</button>
+			</div>
+		</div>
 	);
 }
 
