@@ -205,14 +205,14 @@ export function CategoryBoardView() {
 	const isLoading = catsLoading || defsLoading;
 
 	return (
-		<div className="mx-auto w-full max-w-[1600px]">
+		<div className="mx-auto w-full max-w-[1400px]">
 			<header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 				<div>
 					<h1 className="font-display text-2xl font-bold text-slate-900 sm:text-3xl dark:text-white">
 						Categorias
 					</h1>
 					<p className="mt-1 text-sm text-slate-500 dark:text-gray-400">
-						Arraste as ferramentas entre as colunas para reorganizar o catálogo.
+						Arraste as ferramentas entre as seções para organizar o catálogo.
 					</p>
 				</div>
 				<button
@@ -247,9 +247,9 @@ export function CategoryBoardView() {
 					onDragStart={handleDragStart}
 					onDragEnd={handleDragEnd}
 				>
-					<div className="flex gap-4 overflow-x-auto pb-4 [scrollbar-width:thin]">
+					<div className="space-y-8">
 						{categories.map((cat) => (
-							<CategoryColumn
+							<CategorySection
 								key={cat.id}
 								category={cat}
 								defs={byCategory.get(cat.slug) ?? []}
@@ -311,10 +311,10 @@ export function CategoryBoardView() {
 }
 
 /* ─────────────────────────────────────────────────────────────────────── */
-/*  Coluna (droppable) + header com menu                                    */
+/*  Seção (droppable) — cabeçalho + grid de cards (linguagem do Hub)         */
 /* ─────────────────────────────────────────────────────────────────────── */
 
-interface CategoryColumnProps {
+interface CategorySectionProps {
 	category: ToolCategoryDTO;
 	defs: AiToolDefinition[];
 	onRename: (label: string) => void;
@@ -323,14 +323,14 @@ interface CategoryColumnProps {
 	onSetColor: (def: AiToolDefinition, color: ToolColorKey) => void;
 }
 
-function CategoryColumn({
+function CategorySection({
 	category,
 	defs,
 	onRename,
 	onRecolor,
 	onDelete,
 	onSetColor,
-}: CategoryColumnProps) {
+}: CategorySectionProps) {
 	const { setNodeRef, isOver } = useDroppable({ id: category.slug });
 	const colorKey = safeColorKey(category.color_key);
 	const { gradient } = TOOL_COLORS[colorKey];
@@ -338,18 +338,21 @@ function CategoryColumn({
 	const canDelete = category.slug !== FALLBACK_SLUG;
 
 	return (
-		<section className="flex w-[280px] shrink-0 flex-col">
-			<div className="mb-3 flex items-center gap-2">
+		<section>
+			{/* Cabeçalho da seção (estilo Hub): bolinha + rótulo + contagem +
+			    divisória que preenche a largura + menu da categoria. */}
+			<div className="mb-3 flex items-center gap-3">
 				<span
-					className={`h-3 w-3 shrink-0 rounded-full bg-gradient-to-br ${gradient}`}
+					className={`h-3.5 w-3.5 shrink-0 rounded-full bg-gradient-to-br ${gradient}`}
 					aria-hidden
 				/>
-				<h2 className="min-w-0 flex-1 truncate font-display text-sm font-bold uppercase tracking-[0.14em] text-slate-600 dark:text-gray-300">
+				<h2 className="shrink-0 font-display text-sm font-bold uppercase tracking-[0.16em] text-slate-600 dark:text-gray-300">
 					{category.label}
 				</h2>
 				<span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:bg-white/5 dark:text-gray-400">
 					{defs.length}
 				</span>
+				<div className="h-px flex-1 bg-gradient-to-r from-slate-200 to-transparent dark:from-white/10" />
 				<ColumnMenu
 					category={category}
 					currentColor={colorKey}
@@ -360,27 +363,33 @@ function CategoryColumn({
 				/>
 			</div>
 
+			{/* Área droppable: grid responsivo (cheia) ou faixa-alvo tracejada
+			    (vazia). Realça em violeta quando um card está sobre ela. */}
 			<div
 				ref={setNodeRef}
-				className={`flex min-h-[140px] flex-1 flex-col gap-2.5 rounded-2xl border p-2.5 transition-colors ${
+				className={`rounded-2xl border p-2 transition-colors ${
 					isOver
 						? 'border-violet-400 bg-violet-500/5 dark:border-violet-500/50'
-						: 'border-slate-200 bg-slate-50/60 dark:border-white/10 dark:bg-white/[0.02]'
+						: defs.length === 0
+							? 'border-slate-200 border-dashed dark:border-white/10'
+							: 'border-transparent'
 				}`}
 			>
 				{defs.length === 0 ? (
-					<p className="px-1 py-8 text-center text-xs text-slate-400 dark:text-gray-500">
+					<p className="py-6 text-center text-xs text-slate-400 dark:text-gray-500">
 						Arraste ferramentas para cá.
 					</p>
 				) : (
-					defs.map((def) => (
-						<ToolDefCard
-							key={def.id}
-							def={def}
-							colorKey={colorKey}
-							onSetColor={(color) => onSetColor(def, color)}
-						/>
-					))
+					<div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+						{defs.map((def) => (
+							<ToolDefCard
+								key={def.id}
+								def={def}
+								colorKey={colorKey}
+								onSetColor={(color) => onSetColor(def, color)}
+							/>
+						))}
+					</div>
 				)}
 			</div>
 		</section>
