@@ -4,6 +4,7 @@ import {
 	BarChart3,
 	BookOpen,
 	ChevronDown,
+	Factory,
 	FolderOpen,
 	FolderTree,
 	LayoutGrid,
@@ -229,6 +230,7 @@ function FerramentasDropdown({
 	canBuild: boolean;
 	isActive: (href: string) => boolean;
 }) {
+	const pathname = usePathname();
 	const [open, setOpen] = useState(false);
 	const ref = useRef<HTMLDivElement>(null);
 
@@ -304,7 +306,7 @@ function FerramentasDropdown({
 					{canBuild && (
 						<>
 							<Link
-								href="/ferramentas/hub"
+								href="/ferramentas"
 								role="menuitem"
 								onClick={() => setOpen(false)}
 								className={`mt-1 flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -312,6 +314,19 @@ function FerramentasDropdown({
 										? 'border-t border-slate-200 dark:border-white/10 pt-2.5'
 										: ''
 								} ${
+									pathname === '/ferramentas'
+										? ACTIVE_CLASSES
+										: `${IDLE_CLASSES} ${HOVER_CLASSES}`
+								}`}
+							>
+								<Factory className="w-4 h-4 shrink-0" />
+								<span className="flex-1 truncate">Fábrica de tools</span>
+							</Link>
+							<Link
+								href="/ferramentas/hub"
+								role="menuitem"
+								onClick={() => setOpen(false)}
+								className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors ${
 									isActive('/ferramentas/hub')
 										? ACTIVE_CLASSES
 										: `${IDLE_CLASSES} ${HOVER_CLASSES}`
