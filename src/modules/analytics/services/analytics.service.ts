@@ -18,6 +18,9 @@ import {
 	type SalesSummary,
 	salesAnalyticsSchema,
 	salesSummarySchema,
+	type ToolUsageAnalytics,
+	type ToolUsageParams,
+	toolUsageAnalyticsSchema,
 	type VoxesAnalytics,
 	type VoxesAnalyticsParams,
 	type VoxesSummary,
@@ -87,6 +90,13 @@ export async function getEntriesAnalytics(
 ): Promise<EntriesAnalytics> {
 	const { data } = await api.get('/v1/admin/analytics/entries', { params });
 	return entriesAnalyticsSchema.parse(data);
+}
+
+export async function getToolUsage(
+	params: ToolUsageParams = {},
+): Promise<ToolUsageAnalytics> {
+	const { data } = await api.get('/v1/admin/analytics/tool-usage', { params });
+	return toolUsageAnalyticsSchema.parse(data);
 }
 
 export async function getPlanRefunds(): Promise<RefundRow[]> {

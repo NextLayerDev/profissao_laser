@@ -36,9 +36,24 @@ export default function ToolAdminPage() {
 		if (!permLoading && !allowed) router.replace('/dashboard');
 	}, [allowed, permLoading, router]);
 
+	// Tool NATIVA (engine_runtime='native_v1'): a página real vive em código —
+	// manda pra rota nativa (ui.href). Guarda contra href ausente → /ferramentas.
+	useEffect(() => {
+		if (def.data?.engine_runtime === 'native_v1') {
+			const href = (def.data.definition.ui as { href?: string } | undefined)
+				?.href;
+			router.replace(href ?? '/ferramentas');
+		}
+	}, [def.data, router]);
+
 	// Pipeline SEM banco: "gerenciar" = abrir no editor do builder.
 	useEffect(() => {
-		if (def.data && def.data.engine_runtime !== 'room_v1' && !hasBank) {
+		if (
+			def.data &&
+			def.data.engine_runtime !== 'room_v1' &&
+			def.data.engine_runtime !== 'native_v1' &&
+			!hasBank
+		) {
 			router.replace(`/ferramentas?open=${def.data.id}`);
 		}
 	}, [def.data, hasBank, router]);

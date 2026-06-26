@@ -9,6 +9,7 @@ import {
 	getPlanRefunds,
 	getSalesAnalytics,
 	getSalesSummary,
+	getToolUsage,
 	getVoxesAnalytics,
 	getVoxesSummary,
 	getVoxRefunds,
@@ -18,6 +19,7 @@ import type {
 	FailedPaymentsAnalyticsParams,
 	InvoicesAnalyticsParams,
 	SalesAnalyticsParams,
+	ToolUsageParams,
 	VoxesAnalyticsParams,
 } from '../types/analytics';
 
@@ -38,6 +40,8 @@ export const analyticsQueryKeys = {
 		['analytics', 'invoices', 'failed', params] as const,
 	entries: (params: EntriesAnalyticsParams) =>
 		['analytics', 'entries', params] as const,
+	toolUsage: (params: ToolUsageParams) =>
+		['analytics', 'tool-usage', params] as const,
 	planRefunds: ['analytics', 'refunds', 'plans'] as const,
 	voxRefunds: ['analytics', 'refunds', 'vox'] as const,
 };
@@ -99,6 +103,13 @@ export function useEntriesAnalytics(params: EntriesAnalyticsParams = {}) {
 	return useQuery({
 		queryKey: analyticsQueryKeys.entries(params),
 		queryFn: () => getEntriesAnalytics(params),
+	});
+}
+
+export function useToolUsage(params: ToolUsageParams = {}) {
+	return useQuery({
+		queryKey: analyticsQueryKeys.toolUsage(params),
+		queryFn: () => getToolUsage(params),
 	});
 }
 

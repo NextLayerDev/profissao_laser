@@ -133,6 +133,23 @@ export const toolDefinitionDocSchema = z
 				// O resto de `ui` segue passthrough (icon/bank/custom_nodes/etc.).
 				admin: screenUiSchema.optional(),
 				customer: screenUiSchema.optional(),
+				// info: catálogo infinito — a tool se auto-organiza na sidebar/hub.
+				// `category` mapeia pra uma seção (admin/aluno), `order` ordena dentro
+				// dela, `audience` restringe onde aparece. Tudo opcional → tools
+				// antigas continuam válidas (cai em "outros"/"both" por padrão).
+				category: z.string().optional(),
+				order: z.number().optional(),
+				audience: z.enum(['both', 'admin', 'student']).optional(),
+				// Tools NATIVAS (engine_runtime 'native_v1'): a tela é uma página/rota
+				// própria do app (não o DynamicToolView), então a definição carrega o
+				// `href` da rota e a `permission` que a gateia. Opcionais → tools de
+				// pipeline/Fábrica continuam válidas sem eles.
+				href: z.string().optional(),
+				permission: z.string().optional(),
+				// Cor PRÓPRIA da tool (chave de `TOOL_COLORS`) — sobrescreve a cor
+				// herdada da categoria no catálogo/board. Opcional → ausente = herda
+				// da categoria. Validada contra a paleta no consumo (`safeColor`).
+				color: z.string().optional(),
 			})
 			.passthrough()
 			.default({ controls: [] }),
@@ -177,6 +194,19 @@ export async function listToolDefinitions(): Promise<AiToolDefinition[]> {
 	return z.array(aiToolDefinitionSchema).parse(data);
 }
 
+/** Cor/categoria (ui) por tool_key — QUALQUER status, leve. Usado pra linkar a
+ * cor de uma feature do aluno à da tool admin correspondente (requireAuth). */
+export interface ToolColorRow {
+	tool_key: string;
+	color: string | null;
+	category: string | null;
+}
+
+export async function listToolColors(): Promise<ToolColorRow[]> {
+	const { data } = await apiCourses.get('/v1/tool-definitions/colors');
+	return (data ?? []) as ToolColorRow[];
+}
+
 export interface CreateToolDefinitionBody {
 	tool_key: string;
 	title: string;
@@ -205,6 +235,48 @@ export async function updateToolDefinition(
 ): Promise<AiToolDefinition> {
 	const { data } = await apiCourses.patch(`/v1/tool-definition/${id}`, body);
 	return aiToolDefinitionSchema.parse(data);
+}
+
+/**
+ * Move uma tool para outra CATEGORIA (slug). Reescreve só `definition.ui.category`
+ * com MERGE total — preserva `bank`/`pipeline`/`input`/`output` e o resto de `ui`
+ * (icon/order/audience/admin/customer/...). Mesmo padrão anti-wipe do `saveMut`:
+ * nunca mandamos um doc cru que apagaria o banco da tool.
+ */
+export async function setToolCategory(
+	def: AiToolDefinition,
+	slug: string,
+): Promise<AiToolDefinition> {
+	return updateToolDefinition(def.id, {
+		title: def.title,
+		description: def.description,
+		engine_runtime: def.engine_runtime,
+		definition: {
+			...def.definition,
+			ui: { ...(def.definition.ui ?? {}), category: slug },
+		},
+	});
+}
+
+/**
+ * Define a COR PRÓPRIA de uma tool (chave de `TOOL_COLORS`) — reescreve só
+ * `definition.ui.color` com MERGE total, espelhando `setToolCategory`. Preserva
+ * `bank`/`pipeline`/`input`/`output` e o resto de `ui` (icon/category/order/...).
+ * Mesmo padrão anti-wipe: nunca mandamos um doc cru que apagaria o banco.
+ */
+export async function setToolColor(
+	def: AiToolDefinition,
+	color: string,
+): Promise<AiToolDefinition> {
+	return updateToolDefinition(def.id, {
+		title: def.title,
+		description: def.description,
+		engine_runtime: def.engine_runtime,
+		definition: {
+			...def.definition,
+			ui: { ...(def.definition.ui ?? {}), color },
+		},
+	});
 }
 
 export const publishResultSchema = z.object({
