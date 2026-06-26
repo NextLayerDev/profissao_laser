@@ -112,6 +112,13 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
 		color: 'chat',
 	},
 	{
+		id: 'fornecedores',
+		label: 'Fornecedores',
+		adminSection: 'FERRAMENTAS',
+		studentSection: 'FERRAMENTAS',
+		color: 'fornecedores',
+	},
+	{
 		id: 'outros',
 		label: 'Outros',
 		adminSection: 'FERRAMENTAS',

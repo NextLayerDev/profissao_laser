@@ -118,6 +118,14 @@ const NATIVE_ADMIN_TOOLS: {
 		category: 'imagem',
 		permission: 'ferramentas.view',
 	},
+	{
+		key: 'fornecedores_admin',
+		title: 'Fornecedores',
+		icon: 'store',
+		href: '/fornecedores-admin',
+		category: 'fornecedores',
+		permission: 'ferramentas.view',
+	},
 ];
 
 type ToolUi = {
