@@ -538,9 +538,9 @@ export function ToolBuilderView() {
 	const [advancedOpen, setAdvancedOpen] = useState(false);
 	const [keyTouched, setKeyTouched] = useState(false);
 	const [search, setSearch] = useState('');
-	/** Filtro de status da lista: todas | publicadas | rascunhos. */
+	/** Filtro de status da lista: todas | publicadas | rascunhos | arquivadas. */
 	const [statusFilter, setStatusFilter] = useState<
-		'all' | 'published' | 'draft'
+		'all' | 'published' | 'draft' | 'archived'
 	>('all');
 	const [pipelineMode, setPipelineMode] = useState<'canvas' | 'steps'>(
 		'canvas',
@@ -598,9 +598,16 @@ export function ToolBuilderView() {
 			kind: 'fabrica' | 'codigo';
 			enabled?: boolean;
 			status?: string;
+			category?: string;
 			def?: AiToolDefinition;
 			tool?: Tool;
 		}[] = [];
+		// Categoria canônica da def: `definition.ui.category` (slug) → coluna `category`.
+		const catOf = (def?: AiToolDefinition): string | undefined => {
+			const ui = def?.definition.ui as { category?: unknown } | undefined;
+			const c = ui?.category ?? def?.category;
+			return typeof c === 'string' ? c : undefined;
+		};
 		for (const t of tools.data ?? []) {
 			const def = defByKey.get(t.key);
 			seen.add(t.key);
@@ -611,6 +618,7 @@ export function ToolBuilderView() {
 				kind: def ? 'fabrica' : 'codigo',
 				enabled: t.enabled,
 				status: def?.status,
+				category: catOf(def),
 				def,
 				tool: t,
 			});
@@ -623,6 +631,7 @@ export function ToolBuilderView() {
 				icon: (d.definition.ui as { icon?: string } | undefined)?.icon,
 				kind: 'fabrica',
 				status: d.status,
+				category: catOf(d),
 				def: d,
 			});
 		}
@@ -640,28 +649,86 @@ export function ToolBuilderView() {
 			});
 	}, [tools.data, defs.data, search]);
 
-	/** Contagens por status (pros chips do filtro). */
+	/** Contagens por status (pros chips do filtro). `código` (sem status) conta
+	 * como ativa/publicada. ARQUIVADAS ficam à parte (não poluem "Todas"). */
 	const statusCounts = useMemo(
 		() => ({
-			all: items.length,
+			all: items.filter((i) => i.status !== 'archived').length,
+			published: items.filter(
+				(i) => i.status !== 'draft' && i.status !== 'archived',
+			).length,
 			draft: items.filter((i) => i.status === 'draft').length,
-			published: items.filter((i) => i.status !== 'draft').length,
+			archived: items.filter((i) => i.status === 'archived').length,
 		}),
 		[items],
 	);
 
-	/** Lista visível após o filtro de status. */
-	const visibleItems = useMemo(
-		() =>
-			statusFilter === 'all'
-				? items
-				: items.filter((i) =>
-						statusFilter === 'draft'
-							? i.status === 'draft'
-							: i.status !== 'draft',
-					),
-		[items, statusFilter],
-	);
+	/** Lista visível após o filtro de status. "Todas" exclui as arquivadas. */
+	const visibleItems = useMemo(() => {
+		switch (statusFilter) {
+			case 'archived':
+				return items.filter((i) => i.status === 'archived');
+			case 'draft':
+				return items.filter((i) => i.status === 'draft');
+			case 'published':
+				return items.filter(
+					(i) => i.status !== 'draft' && i.status !== 'archived',
+				);
+			default:
+				return items.filter((i) => i.status !== 'archived');
+		}
+	}, [items, statusFilter]);
+
+	/** Agrupa a lista visível: ESTÚDIOS (mães) em destaque no topo, depois por
+	 * categoria (ordem do catálogo). Cada grupo herda a ordem de `items`
+	 * (publicadas antes, rascunhos por último). */
+	const groups = useMemo(() => {
+		const isMae = (key: string) => key.startsWith('estudio_');
+		const maes = visibleItems.filter((i) => isMae(i.key));
+		const rest = visibleItems.filter((i) => !isMae(i.key));
+
+		const catLabel = (slug: string) =>
+			toolCategories.find((c) => c.slug === slug)?.label ??
+			(slug === 'outros' ? 'Outras' : slug);
+		const catOrder = (slug: string) => {
+			const idx = toolCategories.findIndex((c) => c.slug === slug);
+			return idx < 0 ? 999 : idx;
+		};
+
+		const byCat = new Map<string, typeof rest>();
+		for (const it of rest) {
+			const slug = it.category ?? 'outros';
+			const arr = byCat.get(slug);
+			if (arr) arr.push(it);
+			else byCat.set(slug, [it]);
+		}
+		const catGroups = Array.from(byCat.entries())
+			.map(([slug, list]) => ({
+				slug,
+				label: catLabel(slug),
+				items: list,
+				featured: false,
+				order: catOrder(slug),
+			}))
+			.sort((a, b) => a.order - b.order || a.label.localeCompare(b.label));
+
+		const out: {
+			slug: string;
+			label: string;
+			items: typeof rest;
+			featured: boolean;
+		}[] = [];
+		if (maes.length) {
+			out.push({
+				slug: '__maes__',
+				label: '⭐ Estúdios (Mães)',
+				items: maes,
+				featured: true,
+			});
+		}
+		out.push(...catGroups.map(({ order: _o, ...g }) => g));
+		return out;
+	}, [visibleItems, toolCategories]);
 
 	const startNew = (t: Template) => {
 		setState(t.seed());
@@ -1274,13 +1341,19 @@ export function ToolBuilderView() {
 									className="w-full rounded-lg border border-white/10 bg-black/30 py-2 pl-8 pr-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
 								/>
 							</div>
-							{/* Filtro de status: rascunhos (não publicadas) caem por último na lista. */}
-							<div className="flex gap-1.5">
+							{/* Filtro de status: rascunhos por último; ARQUIVADAS escondidas das
+							    demais (só aparecem no próprio chip). */}
+							<div className="flex flex-wrap gap-1.5">
 								{(
 									[
 										['all', 'Todas', statusCounts.all],
 										['published', 'Publicadas', statusCounts.published],
 										['draft', 'Rascunhos', statusCounts.draft],
+										...(statusCounts.archived > 0
+											? ([
+													['archived', 'Arquivadas', statusCounts.archived],
+												] as const)
+											: []),
 									] as const
 								).map(([key, label, n]) => (
 									<button
@@ -1307,60 +1380,78 @@ export function ToolBuilderView() {
 									</div>
 								)}
 								<div className="max-h-[60vh] overflow-y-auto">
-									{visibleItems.map((it) => {
-										// Chip único de status: rascunho (âmbar) / publicada (esmeralda) /
-										// código (tools de código nativas, sem status na Fábrica).
-										const badge =
-											it.kind !== 'fabrica'
-												? {
-														label: 'código',
-														cls: 'bg-slate-500/15 text-slate-400',
-													}
-												: it.status === 'draft'
-													? {
-															label: 'rascunho',
-															cls: 'bg-amber-500/15 text-amber-300',
-														}
-													: {
-															label: 'publicada',
-															cls: 'bg-emerald-500/15 text-emerald-300',
-														};
-										return (
-											<button
-												key={it.key}
-												type="button"
-												onClick={() =>
-													it.kind === 'fabrica' && it.def
-														? loadFabrica(it.def)
-														: it.tool && loadBilling(it.tool)
-												}
-												className={`flex w-full items-center gap-2.5 border-b border-white/5 px-3 py-2.5 text-left transition-colors ${selectedKey === it.key ? 'bg-emerald-500/10' : 'hover:bg-white/[0.03]'}`}
+									{groups.map((g) => (
+										<div key={g.slug}>
+											{/* Cabeçalho da seção (categoria / Estúdios) — fica fixo no topo. */}
+											<div
+												className={`sticky top-0 z-10 flex items-center justify-between border-b border-white/5 bg-[#0c0f12] px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest ${g.featured ? 'text-amber-300' : 'text-slate-500'}`}
 											>
-												<Glyph
-													name={it.icon}
-													className="h-4 w-4 shrink-0 text-slate-400"
-												/>
-												<span className="min-w-0 flex-1">
-													<span className="block truncate text-sm text-slate-200">
-														{it.name}
-													</span>
-													<span className="block truncate font-mono text-[10px] text-slate-500">
-														{it.key}
-													</span>
-												</span>
-												<span
-													className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${badge.cls}`}
-												>
-													{badge.label}
-												</span>
-											</button>
-										);
-									})}
-									{visibleItems.length === 0 && !tools.isLoading && (
-										<p className="p-4 text-xs text-slate-500">
-											Nenhuma ferramenta.
-										</p>
-									)}
+												<span>{g.label}</span>
+												<span className="opacity-50">{g.items.length}</span>
+											</div>
+											{g.items.map((it) => {
+												// Chip único de status: rascunho (âmbar) / publicada
+												// (esmeralda) / arquivada (rosa) / código (tools nativas).
+												const badge =
+													it.kind !== 'fabrica'
+														? {
+																label: 'código',
+																cls: 'bg-slate-500/15 text-slate-400',
+															}
+														: it.status === 'draft'
+															? {
+																	label: 'rascunho',
+																	cls: 'bg-amber-500/15 text-amber-300',
+																}
+															: it.status === 'archived'
+																? {
+																		label: 'arquivada',
+																		cls: 'bg-rose-500/10 text-rose-300/80',
+																	}
+																: {
+																		label: 'publicada',
+																		cls: 'bg-emerald-500/15 text-emerald-300',
+																	};
+												return (
+													<button
+														key={it.key}
+														type="button"
+														onClick={() =>
+															it.kind === 'fabrica' && it.def
+																? loadFabrica(it.def)
+																: it.tool && loadBilling(it.tool)
+														}
+														className={`flex w-full items-center gap-2.5 border-b border-white/5 px-3 py-2.5 text-left transition-colors ${selectedKey === it.key ? 'bg-emerald-500/10' : 'hover:bg-white/[0.03]'} ${it.status === 'archived' ? 'opacity-60' : ''}`}
+													>
+														<Glyph
+															name={it.icon}
+															className="h-4 w-4 shrink-0 text-slate-400"
+														/>
+														<span className="min-w-0 flex-1">
+															<span className="block truncate text-sm text-slate-200">
+																{it.name}
+															</span>
+															<span className="block truncate font-mono text-[10px] text-slate-500">
+																{it.key}
+															</span>
+														</span>
+														<span
+															className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${badge.cls}`}
+														>
+															{badge.label}
+														</span>
+													</button>
+												);
+											})}
+										</div>
+									))}
+									{visibleItems.length === 0 &&
+										!tools.isLoading &&
+										!defs.isLoading && (
+											<p className="p-4 text-xs text-slate-500">
+												Nenhuma ferramenta.
+											</p>
+										)}
 								</div>
 							</div>
 						</aside>
