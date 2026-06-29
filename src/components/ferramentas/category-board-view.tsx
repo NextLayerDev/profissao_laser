@@ -172,11 +172,13 @@ export function CategoryBoardView() {
 	});
 
 	// Agrupa as definições por slug de categoria; tudo que não bate numa
-	// categoria conhecida cai em 'outros'.
+	// categoria conhecida cai em 'outros'. ARQUIVADAS ficam de fora do board
+	// (ex.: as 97 tools-filtro consolidadas nas mães).
 	const byCategory = useMemo(() => {
 		const knownSlugs = new Set(categories.map((c) => c.slug));
 		const map = new Map<string, AiToolDefinition[]>();
 		for (const def of defs ?? []) {
+			if (def.status === 'archived') continue;
 			const raw = defCategory(def);
 			const slug = knownSlugs.has(raw) ? raw : FALLBACK_SLUG;
 			const list = map.get(slug);
