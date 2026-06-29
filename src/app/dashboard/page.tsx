@@ -2,19 +2,24 @@
 
 import { Loader2, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { Header } from '@/components/dashboard/header';
 import { MonthSummary } from '@/components/dashboard/month-summary';
 import { RecentActivity } from '@/components/dashboard/recent-activity';
 import { StatsOverview } from '@/components/dashboard/stats-overview';
-import { usePermissions } from '@/modules/access';
-import { canSeeNavItem } from '@/utils/constants/permissions';
+import { getToken } from '@/lib/auth';
 
 export default function Dashboard() {
-	const { can, isLoading } = usePermissions();
-	// Mesmo gate da navbar (Home → home.view); customers não possuem essa chave.
-	const allowed = canSeeNavItem('Home', can);
+	// Gate: staff/admin têm pl_user_token; customers não. home.view controla
+	// visibilidade do item no menu, não o acesso ao painel em si — staff com
+	// outras permissões (suporte.view, alunos.view, etc.) também devem acessar.
+	const [allowed, setAllowed] = useState<boolean | null>(null);
 
-	if (isLoading) {
+	useEffect(() => {
+		setAllowed(!!getToken('user'));
+	}, []);
+
+	if (allowed === null) {
 		return (
 			<div className="min-h-screen flex items-center justify-center">
 				<Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
