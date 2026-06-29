@@ -538,6 +538,10 @@ export function ToolBuilderView() {
 	const [advancedOpen, setAdvancedOpen] = useState(false);
 	const [keyTouched, setKeyTouched] = useState(false);
 	const [search, setSearch] = useState('');
+	/** Filtro de status da lista: todas | publicadas | rascunhos. */
+	const [statusFilter, setStatusFilter] = useState<
+		'all' | 'published' | 'draft'
+	>('all');
 	const [pipelineMode, setPipelineMode] = useState<'canvas' | 'steps'>(
 		'canvas',
 	);
@@ -627,8 +631,37 @@ export function ToolBuilderView() {
 			.filter(
 				(i) => !q || i.name.toLowerCase().includes(q) || i.key.includes(q),
 			)
-			.sort((a2, b) => a2.name.localeCompare(b.name));
+			.sort((a2, b) => {
+				// Publicadas/ativas primeiro; RASCUNHOS por último. Empate → nome.
+				const da = a2.status === 'draft' ? 1 : 0;
+				const db = b.status === 'draft' ? 1 : 0;
+				if (da !== db) return da - db;
+				return a2.name.localeCompare(b.name);
+			});
 	}, [tools.data, defs.data, search]);
+
+	/** Contagens por status (pros chips do filtro). */
+	const statusCounts = useMemo(
+		() => ({
+			all: items.length,
+			draft: items.filter((i) => i.status === 'draft').length,
+			published: items.filter((i) => i.status !== 'draft').length,
+		}),
+		[items],
+	);
+
+	/** Lista visível após o filtro de status. */
+	const visibleItems = useMemo(
+		() =>
+			statusFilter === 'all'
+				? items
+				: items.filter((i) =>
+						statusFilter === 'draft'
+							? i.status === 'draft'
+							: i.status !== 'draft',
+					),
+		[items, statusFilter],
+	);
 
 	const startNew = (t: Template) => {
 		setState(t.seed());
@@ -1241,9 +1274,32 @@ export function ToolBuilderView() {
 									className="w-full rounded-lg border border-white/10 bg-black/30 py-2 pl-8 pr-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
 								/>
 							</div>
+							{/* Filtro de status: rascunhos (não publicadas) caem por último na lista. */}
+							<div className="flex gap-1.5">
+								{(
+									[
+										['all', 'Todas', statusCounts.all],
+										['published', 'Publicadas', statusCounts.published],
+										['draft', 'Rascunhos', statusCounts.draft],
+									] as const
+								).map(([key, label, n]) => (
+									<button
+										key={key}
+										type="button"
+										onClick={() => setStatusFilter(key)}
+										className={`flex-1 rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-colors ${
+											statusFilter === key
+												? 'bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40'
+												: 'bg-white/[0.03] text-slate-400 hover:bg-white/[0.06]'
+										}`}
+									>
+										{label} <span className="opacity-60">{n}</span>
+									</button>
+								))}
+							</div>
 							<div className="overflow-hidden rounded-xl border border-white/10 bg-[#0c0f12]/80">
 								<div className="border-b border-white/5 px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-slate-500">
-									Ferramentas ({items.length})
+									Ferramentas ({visibleItems.length})
 								</div>
 								{(tools.isLoading || defs.isLoading) && (
 									<div className="flex justify-center p-4">
@@ -1251,37 +1307,56 @@ export function ToolBuilderView() {
 									</div>
 								)}
 								<div className="max-h-[60vh] overflow-y-auto">
-									{items.map((it) => (
-										<button
-											key={it.key}
-											type="button"
-											onClick={() =>
-												it.kind === 'fabrica' && it.def
-													? loadFabrica(it.def)
-													: it.tool && loadBilling(it.tool)
-											}
-											className={`flex w-full items-center gap-2.5 border-b border-white/5 px-3 py-2.5 text-left transition-colors ${selectedKey === it.key ? 'bg-emerald-500/10' : 'hover:bg-white/[0.03]'}`}
-										>
-											<Glyph
-												name={it.icon}
-												className="h-4 w-4 shrink-0 text-slate-400"
-											/>
-											<span className="min-w-0 flex-1">
-												<span className="block truncate text-sm text-slate-200">
-													{it.name}
-												</span>
-												<span className="block truncate font-mono text-[10px] text-slate-500">
-													{it.key}
-												</span>
-											</span>
-											<span
-												className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${it.kind === 'fabrica' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-slate-500/15 text-slate-400'}`}
+									{visibleItems.map((it) => {
+										// Chip único de status: rascunho (âmbar) / publicada (esmeralda) /
+										// código (tools de código nativas, sem status na Fábrica).
+										const badge =
+											it.kind !== 'fabrica'
+												? {
+														label: 'código',
+														cls: 'bg-slate-500/15 text-slate-400',
+													}
+												: it.status === 'draft'
+													? {
+															label: 'rascunho',
+															cls: 'bg-amber-500/15 text-amber-300',
+														}
+													: {
+															label: 'publicada',
+															cls: 'bg-emerald-500/15 text-emerald-300',
+														};
+										return (
+											<button
+												key={it.key}
+												type="button"
+												onClick={() =>
+													it.kind === 'fabrica' && it.def
+														? loadFabrica(it.def)
+														: it.tool && loadBilling(it.tool)
+												}
+												className={`flex w-full items-center gap-2.5 border-b border-white/5 px-3 py-2.5 text-left transition-colors ${selectedKey === it.key ? 'bg-emerald-500/10' : 'hover:bg-white/[0.03]'}`}
 											>
-												{it.kind === 'fabrica' ? 'fábrica' : 'código'}
-											</span>
-										</button>
-									))}
-									{items.length === 0 && !tools.isLoading && (
+												<Glyph
+													name={it.icon}
+													className="h-4 w-4 shrink-0 text-slate-400"
+												/>
+												<span className="min-w-0 flex-1">
+													<span className="block truncate text-sm text-slate-200">
+														{it.name}
+													</span>
+													<span className="block truncate font-mono text-[10px] text-slate-500">
+														{it.key}
+													</span>
+												</span>
+												<span
+													className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${badge.cls}`}
+												>
+													{badge.label}
+												</span>
+											</button>
+										);
+									})}
+									{visibleItems.length === 0 && !tools.isLoading && (
 										<p className="p-4 text-xs text-slate-500">
 											Nenhuma ferramenta.
 										</p>
