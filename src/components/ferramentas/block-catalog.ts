@@ -5,6 +5,8 @@
  * por tipo. Curado: expõe os params úteis; o resto fica no default (ou JSON).
  */
 
+import { IMAGR_BLOCKS } from './imagr-block-catalog';
+
 export type RefType = 'buffer' | 'string';
 export type ValueType = 'enum' | 'number' | 'int' | 'bool' | 'string';
 export type PortType = RefType | 'number';
@@ -476,6 +478,8 @@ export const BLOCK_CATALOG: BlockSpec[] = [
 			{ name: 'json', type: 'string', label: 'json' },
 		],
 	},
+	// Biblioteca ImagR (97 blocos de imagem/laser/IA) — gerada do registry do back.
+	...IMAGR_BLOCKS,
 ];
 
 export function blockSpec(id: string): BlockSpec | undefined {

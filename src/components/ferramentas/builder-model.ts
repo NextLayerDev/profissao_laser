@@ -25,7 +25,8 @@ export type FieldWidget =
 	| 'slider'
 	| 'toggle'
 	| 'number'
-	| 'text';
+	| 'text'
+	| 'color';
 
 export interface BuilderField {
 	name: string;
