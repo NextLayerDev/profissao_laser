@@ -8,7 +8,7 @@ import type { BlockSpec } from './block-catalog';
 export const IMAGR_BLOCKS: BlockSpec[] = [
 	{
 		id: 'adjust.adaptiveThreshold',
-		label: 'Limiar adaptativo',
+		label: 'Limiar Adaptativo',
 		sub: 'Limiar adaptativo: compara cada pixel com a média local (rai',
 		icon: 'sliders-horizontal',
 		accent: 'emerald',
@@ -57,7 +57,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'adjust.autoContrast',
-		label: 'Contraste automático',
+		label: 'Contraste Automático',
 		sub: 'Contraste automático (normaliza pro range completo).',
 		icon: 'sliders-horizontal',
 		accent: 'emerald',
@@ -86,7 +86,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'adjust.autoLevels',
-		label: 'Níveis automáticos',
+		label: 'Níveis Automáticos',
 		sub: 'Níveis automáticos: estica o histograma (com clip de percent',
 		icon: 'sliders-horizontal',
 		accent: 'emerald',
@@ -125,7 +125,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'adjust.autoRefine',
-		label: 'Refino local de contraste',
+		label: 'Refino Automático',
 		sub: 'Refino local de contraste (CLAHE) por blocos.',
 		icon: 'sliders-horizontal',
 		accent: 'emerald',
@@ -266,7 +266,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'adjust.channelMixer',
-		label: 'Mixer de canais',
+		label: 'Mixer de Canais',
 		sub: 'Mixer de canais: recombina R,G,B (matriz 3×3).',
 		icon: 'sliders-horizontal',
 		accent: 'emerald',
@@ -404,7 +404,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'adjust.curves',
-		label: 'Curva por 3 pontos',
+		label: 'Curvas',
 		sub: 'Curva por 3 pontos: preto (low), meio (mid) e branco (high).',
 		icon: 'sliders-horizontal',
 		accent: 'emerald',
@@ -463,7 +463,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'adjust.dehaze',
-		label: 'Remove névoa',
+		label: 'Remover Névoa',
 		sub: 'Remove névoa (aprox.): reforça contraste e saturação.',
 		icon: 'sliders-horizontal',
 		accent: 'emerald',
@@ -512,7 +512,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'adjust.exposure',
-		label: 'Exposição em stops',
+		label: 'Exposição',
 		sub: 'Exposição em stops (-4 a 4): multiplica a luz por 2^stops.',
 		icon: 'sliders-horizontal',
 		accent: 'emerald',
@@ -588,7 +588,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'adjust.gradientMap',
-		label: 'Mapa de gradiente',
+		label: 'Mapa de Gradiente',
 		sub: 'Mapa de gradiente: mapeia o tom entre duas cores.',
 		icon: 'sliders-horizontal',
 		accent: 'emerald',
@@ -631,7 +631,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'adjust.grayscale',
-		label: 'Escala de cinza',
+		label: 'Escala de Cinza',
 		sub: 'Escala de cinza (Rec.709).',
 		icon: 'sliders-horizontal',
 		accent: 'emerald',
@@ -660,7 +660,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'adjust.highlightsShadows',
-		label: 'Sombras/altas-luzes',
+		label: 'Luzes e Sombras',
 		sub: 'Sombras/altas-luzes: levanta sombras e/ou recupera luzes.',
 		icon: 'sliders-horizontal',
 		accent: 'emerald',
@@ -719,7 +719,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'adjust.histogramStretch',
-		label: 'Estica o histograma pro range completo.',
+		label: 'Equalizar Histograma',
 		sub: 'Estica o histograma pro range completo.',
 		icon: 'sliders-horizontal',
 		accent: 'emerald',
@@ -748,7 +748,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'adjust.hsl',
-		label: 'HSL',
+		label: 'Matiz, Saturação e Luz',
 		sub: 'HSL: matiz (giro), saturação (mult) e luminosidade (soma).',
 		icon: 'sliders-horizontal',
 		accent: 'emerald',
@@ -946,7 +946,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'adjust.posterize',
-		label: 'Posterização',
+		label: 'Posterizar',
 		sub: 'Posterização: reduz pra N níveis por canal.',
 		icon: 'sliders-horizontal',
 		accent: 'emerald',
@@ -1024,7 +1024,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'adjust.temperature',
-		label: 'Temperatura',
+		label: 'Temperatura de Cor',
 		sub: 'Temperatura (-1 frio a 1 quente): desloca R↔B.',
 		icon: 'sliders-horizontal',
 		accent: 'emerald',
@@ -1190,7 +1190,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'adjust.toneCurve',
-		label: 'Curva tonal',
+		label: 'Curva de Tons',
 		sub: 'Curva tonal: S de contraste (s) + deslocamento do meio (m).',
 		icon: 'sliders-horizontal',
 		accent: 'emerald',
@@ -1288,7 +1288,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'ai.backgroundRemoval',
-		label: 'Remover fundo (IA)',
+		label: 'Remover Fundo (IA)',
 		sub: 'Remove o fundo deixando o objeto sobre fundo branco (IA — Ge',
 		icon: 'bot',
 		accent: 'pink',
@@ -1317,7 +1317,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'ai.colorize',
-		label: 'Colorir (IA)',
+		label: 'Colorir Foto (IA)',
 		sub: 'Coloriza foto P&B com cores realistas e naturais (IA — Gemin',
 		icon: 'bot',
 		accent: 'pink',
@@ -1346,7 +1346,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'ai.restoration',
-		label: 'Restaurar foto (IA)',
+		label: 'Restaurar Foto (IA)',
 		sub: 'Restaura foto antiga/danificada: remove riscos/ruído e recup',
 		icon: 'bot',
 		accent: 'pink',
@@ -1375,7 +1375,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'blur.box',
-		label: 'Desfoque box',
+		label: 'Desfoque Box',
 		sub: 'Desfoque box (aprox. ≈ gaussiano via sharp.blur).',
 		icon: 'wand-2',
 		accent: 'violet',
@@ -1414,7 +1414,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'blur.gaussian',
-		label: 'Desfoque gaussiano',
+		label: 'Desfoque Gaussiano',
 		sub: 'Desfoque gaussiano (sigma).',
 		icon: 'wand-2',
 		accent: 'violet',
@@ -1453,7 +1453,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'blur.motion',
-		label: 'Desfoque de movimento',
+		label: 'Desfoque de Movimento',
 		sub: 'Desfoque de movimento: convolução com linha no ângulo (distâ',
 		icon: 'wand-2',
 		accent: 'violet',
@@ -1502,7 +1502,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'blur.radial',
-		label: 'Desfoque radial',
+		label: 'Desfoque Radial',
 		sub: 'Desfoque radial (aprox.): média de cópias escaladas a partir',
 		icon: 'wand-2',
 		accent: 'violet',
@@ -1561,7 +1561,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'blur.surface',
-		label: 'Desfoque de superfície',
+		label: 'Desfoque de Superfície',
 		sub: 'Desfoque de superfície (aprox. bilateral via filtro de media',
 		icon: 'wand-2',
 		accent: 'violet',
@@ -1610,7 +1610,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'detail.denoise',
-		label: 'Redução de ruído',
+		label: 'Reduzir Ruído',
 		sub: 'Redução de ruído (aprox.): filtro de mediana proporcional.',
 		icon: 'wand-2',
 		accent: 'violet',
@@ -1649,7 +1649,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'detail.sharpen',
-		label: 'Nitidez por intensidade',
+		label: 'Nitidez',
 		sub: 'Nitidez por intensidade (0..2).',
 		icon: 'wand-2',
 		accent: 'violet',
@@ -1688,7 +1688,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'detail.unsharpMask',
-		label: 'Máscara de nitidez',
+		label: 'Máscara de Nitidez',
 		sub: 'Máscara de nitidez (unsharp) padrão.',
 		icon: 'wand-2',
 		accent: 'violet',
@@ -1717,7 +1717,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'dither.atkinson',
-		label: 'Atkinson',
+		label: 'Dither Atkinson',
 		sub: 'Atkinson: alto contraste, ótimo p/ laser (difunde 75% do err',
 		icon: 'grid-2x2',
 		accent: 'zinc',
@@ -1756,7 +1756,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'dither.bayer4',
-		label: 'Bayer 4×4',
+		label: 'Dither Bayer 4×4',
 		sub: 'Bayer 4×4: ordered dithering compacto (ignora threshold).',
 		icon: 'grid-2x2',
 		accent: 'zinc',
@@ -1795,7 +1795,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'dither.bayer8',
-		label: 'Bayer 8×8',
+		label: 'Dither Bayer 8×8',
 		sub: 'Bayer 8×8: ordered dithering estruturado (ignora threshold).',
 		icon: 'grid-2x2',
 		accent: 'zinc',
@@ -1834,7 +1834,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'dither.blueNoise',
-		label: 'Blue-noise',
+		label: 'Dither Blue Noise',
 		sub: 'Blue-noise (aprox.): limiar por ruído pseudo-aleatório deter',
 		icon: 'grid-2x2',
 		accent: 'zinc',
@@ -1873,7 +1873,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'dither.burkes',
-		label: 'Burkes',
+		label: 'Dither Burkes',
 		sub: 'Burkes: difusão de erro em 2 linhas (divisor 32).',
 		icon: 'grid-2x2',
 		accent: 'zinc',
@@ -1912,7 +1912,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'dither.errorDiffusion',
-		label: 'Difusão de erro multinível',
+		label: 'Dither Multinível',
 		sub: 'Difusão de erro multinível: Floyd-Steinberg quantizando em N',
 		icon: 'grid-2x2',
 		accent: 'zinc',
@@ -1951,7 +1951,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'dither.floydSteinberg',
-		label: 'Floyd-Steinberg',
+		label: 'Dither Floyd–Steinberg',
 		sub: 'Floyd-Steinberg: difusão de erro padrão (4 vizinhos).',
 		icon: 'grid-2x2',
 		accent: 'zinc',
@@ -1990,7 +1990,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'dither.halftone',
-		label: 'Halftone',
+		label: 'Meio-tom',
 		sub: 'Halftone: pontos tipo jornal (matriz radial, ignora threshol',
 		icon: 'grid-2x2',
 		accent: 'zinc',
@@ -2029,7 +2029,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'dither.jarvis',
-		label: 'Jarvis-Judice-Ninke',
+		label: 'Dither Jarvis',
 		sub: 'Jarvis-Judice-Ninke: kernel largo, gradientes suaves.',
 		icon: 'grid-2x2',
 		accent: 'zinc',
@@ -2068,7 +2068,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'dither.sierra',
-		label: 'Sierra',
+		label: 'Dither Sierra',
 		sub: 'Sierra (full): bom equilíbrio qualidade/velocidade.',
 		icon: 'grid-2x2',
 		accent: 'zinc',
@@ -2107,7 +2107,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'dither.sierra2',
-		label: 'Sierra-2-row',
+		label: 'Dither Sierra-2',
 		sub: 'Sierra-2-row: difusão de erro em 2 linhas (divisor 16).',
 		icon: 'grid-2x2',
 		accent: 'zinc',
@@ -2146,7 +2146,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'dither.sierraLite',
-		label: 'Sierra-Lite',
+		label: 'Dither Sierra Lite',
 		sub: 'Sierra-Lite: difusão de erro mínima (divisor 4, rápido).',
 		icon: 'grid-2x2',
 		accent: 'zinc',
@@ -2185,7 +2185,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'dither.stucki',
-		label: 'Stucki',
+		label: 'Dither Stucki',
 		sub: 'Stucki: alta qualidade p/ fotos (12 vizinhos).',
 		icon: 'grid-2x2',
 		accent: 'zinc',
@@ -2224,7 +2224,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'edge.canny',
-		label: 'Canny',
+		label: 'Bordas Canny',
 		sub: 'Canny (aprox.): blur gaussiano + Sobel + duplo limiar (histe',
 		icon: 'wand-2',
 		accent: 'violet',
@@ -2300,7 +2300,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'edge.edgeDetect',
-		label: 'Detecção de bordas',
+		label: 'Detectar Bordas',
 		sub: 'Detecção de bordas: Sobel normalizado + limiar, intensidade ',
 		icon: 'wand-2',
 		accent: 'violet',
@@ -2356,7 +2356,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'edge.highPass',
-		label: 'Passa-alta',
+		label: 'Passa-Alta',
 		sub: 'Passa-alta: original − blur gaussiano (5×5), recentrado em 1',
 		icon: 'wand-2',
 		accent: 'violet',
@@ -2443,7 +2443,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'fx.emboss',
-		label: 'Relevo direcional',
+		label: 'Relevo',
 		sub: 'Relevo direcional: convolução emboss + bias 128, misturado c',
 		icon: 'wand-2',
 		accent: 'violet',
@@ -2502,7 +2502,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'fx.filmGrain',
-		label: 'Grão de filme',
+		label: 'Granulado de Filme',
 		sub: 'Grão de filme (aprox.): ruído mono sutil modulado pela lumin',
 		icon: 'wand-2',
 		accent: 'violet',
@@ -2541,7 +2541,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'fx.invert',
-		label: 'Inverte as cores',
+		label: 'Inverter Cores',
 		sub: 'Inverte as cores (negativo), preservando o alpha.',
 		icon: 'wand-2',
 		accent: 'violet',
@@ -2570,7 +2570,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'fx.lensDistortion',
-		label: 'Distorção de lente',
+		label: 'Distorção de Lente',
 		sub: 'Distorção de lente: barril (>0) / almofada (<0) via remap ra',
 		icon: 'wand-2',
 		accent: 'violet',
@@ -2656,7 +2656,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'fx.noise',
-		label: 'Ruído mono',
+		label: 'Ruído',
 		sub: 'Ruído mono (aprox.): adiciona ±amount·255 determinístico por',
 		icon: 'wand-2',
 		accent: 'violet',
@@ -2695,7 +2695,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'geo.addText',
-		label: 'addText',
+		label: 'Adicionar Texto',
 		sub: 'Compõe um texto sobre a imagem na posição x,y (% do tamanho)',
 		icon: 'frame',
 		accent: 'sky',
@@ -2768,7 +2768,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'geo.border',
-		label: 'border',
+		label: 'Borda',
 		sub: 'Adiciona uma moldura sólida de N pixels ao redor.',
 		icon: 'frame',
 		accent: 'sky',
@@ -2814,7 +2814,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'geo.crop',
-		label: 'Recorte por porcentagem do tamanho',
+		label: 'Recortar',
 		sub: 'Recorte por porcentagem do tamanho (x,y = canto; w,h = taman',
 		icon: 'frame',
 		accent: 'sky',
@@ -2883,7 +2883,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'geo.edgeFade',
-		label: 'Desvanece as bordas pra transparente',
+		label: 'Bordas Esmaecidas',
 		sub: 'Desvanece as bordas pra transparente (vinheta no canal alpha',
 		icon: 'frame',
 		accent: 'sky',
@@ -2922,7 +2922,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'geo.flip',
-		label: 'Espelha horizontal',
+		label: 'Espelhar',
 		sub: 'Espelha horizontal (flop) e/ou vertical (flip).',
 		icon: 'frame',
 		accent: 'sky',
@@ -3014,7 +3014,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'geo.resize',
-		label: 'Redimensiona pra uma largura',
+		label: 'Redimensionar',
 		sub: 'Redimensiona pra uma largura (mantendo proporção ou quadrado',
 		icon: 'frame',
 		accent: 'sky',
@@ -3060,7 +3060,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'geo.rotate',
-		label: 'Rotaciona',
+		label: 'Girar',
 		sub: 'Rotaciona (-180 a 180 graus) preenchendo o fundo com a cor d',
 		icon: 'frame',
 		accent: 'sky',
@@ -3106,7 +3106,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'geo.scale',
-		label: 'Escala por fator',
+		label: 'Escalar',
 		sub: 'Escala por fator (0.1 a 4): multiplica largura e altura.',
 		icon: 'frame',
 		accent: 'sky',
@@ -3145,7 +3145,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'geo.skew',
-		label: 'Cisalhamento',
+		label: 'Inclinar',
 		sub: 'Cisalhamento (skew) em X e Y via transformação afim.',
 		icon: 'frame',
 		accent: 'sky',
@@ -3194,7 +3194,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'geo.tile',
-		label: 'Repete a imagem numa grade cols×rows',
+		label: 'Ladrilhar',
 		sub: 'Repete a imagem numa grade cols×rows (mantém o tamanho origi',
 		icon: 'frame',
 		accent: 'sky',
@@ -3243,7 +3243,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'image.upscale',
-		label: 'Ampliar (upscale)',
+		label: 'Ampliar Imagem',
 		sub: 'Amplia 2/4/8/16× com reamostragem Lanczos3 (não é IA).',
 		icon: 'bot',
 		accent: 'pink',
@@ -3280,7 +3280,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'laser.crystalEngraving',
-		label: 'Gravação em cristal',
+		label: 'Gravação em Cristal 3D',
 		sub: 'Gravação em cristal: prévia do mapa de profundidade (graysca',
 		icon: 'flame',
 		accent: 'orange',
@@ -3319,7 +3319,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'laser.materialPreset',
-		label: 'Preset de material',
+		label: 'Preset por Material',
 		sub: 'Preset de material: aplica uma curva tonal nomeada + graysca',
 		icon: 'flame',
 		accent: 'orange',
@@ -3466,7 +3466,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'laser.oneTouch',
-		label: 'One-Touch',
+		label: 'Ajuste Rápido',
 		sub: 'One-Touch: toggles rápidos (gama / remover ruído / nitidez) ',
 		icon: 'flame',
 		accent: 'orange',
@@ -3516,7 +3516,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'mask.alphaFeather',
-		label: 'Suaviza a borda do alpha',
+		label: 'Suavizar Borda',
 		sub: 'Suaviza a borda do alpha (aprox.): desfoque box só no canal ',
 		icon: 'wand-2',
 		accent: 'violet',
@@ -3555,7 +3555,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'mask.alphaThreshold',
-		label: 'Limiar de alpha',
+		label: 'Limiar de Transparência',
 		sub: 'Limiar de alpha: binariza o canal alpha com transição suave ',
 		icon: 'wand-2',
 		accent: 'violet',
@@ -3611,7 +3611,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'stylize.bloom',
-		label: 'Bloom',
+		label: 'Brilho Suave',
 		sub: 'Bloom: bright-pass + blur gaussiano somado de volta (screen)',
 		icon: 'sparkles',
 		accent: 'fuchsia',
@@ -3670,7 +3670,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'stylize.comic',
-		label: 'HQ',
+		label: 'Quadrinhos',
 		sub: 'HQ: posteriza + sobrepõe contornos pretos (edge laplaciano).',
 		icon: 'sparkles',
 		accent: 'fuchsia',
@@ -3709,7 +3709,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'stylize.crossProcess',
-		label: 'Cross-process',
+		label: 'Cross Process',
 		sub: 'Cross-process: curvas por canal (boost R/G, sombras B levant',
 		icon: 'sparkles',
 		accent: 'fuchsia',
@@ -3850,7 +3850,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'stylize.halftone',
-		label: 'Halftone',
+		label: 'Pontos de Jornal',
 		sub: 'Halftone: pontos tipo jornal — ponto por célula proporcional',
 		icon: 'sparkles',
 		accent: 'fuchsia',
@@ -3909,7 +3909,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'stylize.lightLeak',
-		label: 'Light leak',
+		label: 'Vazamento de Luz',
 		sub: 'Light leak: gradiente de luz colorido num canto, composto em',
 		icon: 'sparkles',
 		accent: 'fuchsia',
@@ -3955,7 +3955,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'stylize.oilPaint',
-		label: 'Pintura a óleo',
+		label: 'Pintura a Óleo',
 		sub: 'Pintura a óleo (aprox.): mediana (sharp) + leve posterização',
 		icon: 'sparkles',
 		accent: 'fuchsia',
@@ -3994,7 +3994,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'stylize.pixelate',
-		label: 'Pixelate',
+		label: 'Pixelizar',
 		sub: 'Pixelate: downscale + upscale nearest (blocos quadrados).',
 		icon: 'sparkles',
 		accent: 'fuchsia',
@@ -4072,7 +4072,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'stylize.sketch',
-		label: 'Esboço a lápis',
+		label: 'Desenho a Lápis',
 		sub: 'Esboço a lápis: gray dodge invert(blur(gray)) — out=gray*255',
 		icon: 'sparkles',
 		accent: 'fuchsia',
@@ -4121,7 +4121,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'stylize.splitToning',
-		label: 'Split-toning',
+		label: 'Split Toning',
 		sub: 'Split-toning: tinge sombras e luzes com cores distintas conf',
 		icon: 'sparkles',
 		accent: 'fuchsia',
@@ -4174,7 +4174,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'stylize.stipple',
-		label: 'Pontilhismo P&B',
+		label: 'Pontilhismo',
 		sub: 'Pontilhismo P&B: pontos pretos com probabilidade ~ (1-luma) ',
 		icon: 'sparkles',
 		accent: 'fuchsia',
@@ -4292,7 +4292,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'util.dpiTest',
-		label: 'Cartão de teste de DPI',
+		label: 'Teste de DPI',
 		sub: 'Cartão de teste de DPI: gera uma régua/grade de 25,4 mm e ra',
 		icon: 'flame',
 		accent: 'orange',
@@ -4324,7 +4324,7 @@ export const IMAGR_BLOCKS: BlockSpec[] = [
 	},
 	{
 		id: 'vector.contour',
-		label: 'Contorno vetorial',
+		label: 'Contorno Vetorial',
 		sub: 'Contorno vetorial: traça o limiar como linha (stroke) e devo',
 		icon: 'pen-line',
 		accent: 'cyan',
