@@ -26,6 +26,7 @@ import {
 import { PromptGallery } from './prompt-gallery';
 import { PromptGenerateView } from './prompt-generate-view';
 import { ScreenNotice } from './screen-notice';
+import { ToolStudioView } from './tool-studio-view';
 import { bindName, WidgetField } from './tool-widgets';
 
 function ResultPanel({
@@ -157,6 +158,11 @@ export function DynamicToolView({
 
 	const setValue = useCallback((name: string, v: unknown) => {
 		setValues((prev) => ({ ...prev, [name]: v }));
+	}, []);
+
+	// Aplica vários valores de uma vez (presets / restaurar do estúdio).
+	const setManyValues = useCallback((patch: Record<string, unknown>) => {
+		setValues((prev) => ({ ...prev, ...patch }));
 	}, []);
 
 	const missingRequired = useMemo(
@@ -293,6 +299,41 @@ export function DynamicToolView({
 		? `rounded-2xl p-4 sm:p-6 ${screenUi.themeClass === 'dark' ? 'bg-[#0d0d0f]' : 'bg-slate-50'}`
 		: '';
 	const screenStyle = { '--screen-accent': screenUi.accent } as CSSProperties;
+
+	/* ── Estúdio (tools-mãe): controles agrupados + preview ao vivo ── */
+	const studioUi = ui as
+		| {
+				layout?: string;
+				livePreview?: boolean;
+				presets?: { label: string; values: Record<string, unknown> }[];
+		  }
+		| undefined;
+	if (studioUi?.layout === 'studio') {
+		return (
+			<ToolStudioView
+				def={def}
+				toolKey={toolKey}
+				isDraft={isDraft}
+				header={header}
+				values={values}
+				setValue={setValue}
+				setManyValues={setManyValues}
+				controls={controls}
+				inputSpec={inputSpec}
+				presets={studioUi.presets ?? []}
+				livePreview={studioUi.livePreview ?? false}
+				onRun={run}
+				pending={pending}
+				result={result}
+				downloadKey={downloadKey}
+				showMeta={resultUi?.showMeta ?? true}
+				actionLabel={actionLabel}
+				insufficient={billing.insufficient}
+				missingRequired={missingRequired}
+				billingNotice={showCostNotice ? billing.notice : null}
+			/>
+		);
+	}
 
 	/* ── Banco do Admin: galeria → detalhe + geração por registro ── */
 	if (bankEnabled) {
