@@ -208,6 +208,33 @@ function NumberWidget({ control, spec, value, onChange }: WidgetProps) {
 	);
 }
 
+function ColorWidget({ control, spec, value, onChange }: WidgetProps) {
+	const id = `w-${bindName(control.bind)}`;
+	const current = String(value ?? spec?.default ?? '#000000');
+	const valid = /^#[0-9a-f]{6}$/i.test(current) ? current : '#000000';
+	return (
+		<div className="space-y-1.5">
+			<Label htmlFor={id}>{control.label ?? bindName(control.bind)}</Label>
+			<div className="flex items-center gap-2">
+				<input
+					id={id}
+					type="color"
+					value={valid}
+					onChange={(e) => onChange(e.target.value)}
+					className="h-9 w-12 cursor-pointer rounded-lg border border-slate-200 dark:border-white/10 bg-transparent p-0.5"
+				/>
+				<input
+					type="text"
+					value={current}
+					onChange={(e) => onChange(e.target.value)}
+					placeholder="#000000"
+					className={fieldClass}
+				/>
+			</div>
+		</div>
+	);
+}
+
 /** Registry de widgets — desenha `definition.ui.controls`. */
 const WIDGETS: Record<string, (props: WidgetProps) => ReactNode> = {
 	'file-drop': FileDropWidget,
@@ -215,6 +242,7 @@ const WIDGETS: Record<string, (props: WidgetProps) => ReactNode> = {
 	slider: SliderWidget,
 	toggle: ToggleWidget,
 	number: NumberWidget,
+	color: ColorWidget,
 };
 
 export function WidgetField(props: WidgetProps) {

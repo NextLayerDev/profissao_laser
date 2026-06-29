@@ -125,6 +125,43 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
 		studentSection: 'FERRAMENTAS',
 		color: 'parametros',
 	},
+	// Categorias ImagR (espelham as linhas em tool_categories do upvox; fallback
+	// estático caso o registro dinâmico ainda não tenha carregado).
+	{
+		id: 'ajustes',
+		label: 'Ajustes',
+		adminSection: 'FERRAMENTAS',
+		studentSection: 'FERRAMENTAS',
+		color: 'previas',
+	},
+	{
+		id: 'dither',
+		label: 'Dithering',
+		adminSection: 'FERRAMENTAS',
+		studentSection: 'FERRAMENTAS',
+		color: 'gravacao',
+	},
+	{
+		id: 'filtros',
+		label: 'Filtros',
+		adminSection: 'FERRAMENTAS',
+		studentSection: 'FERRAMENTAS',
+		color: 'vetorizacao',
+	},
+	{
+		id: 'estilizar',
+		label: 'Estilizar',
+		adminSection: 'FERRAMENTAS',
+		studentSection: 'FERRAMENTAS',
+		color: 'voxxys',
+	},
+	{
+		id: 'geometria',
+		label: 'Geometria',
+		adminSection: 'FERRAMENTAS',
+		studentSection: 'FERRAMENTAS',
+		color: 'parametros',
+	},
 ];
 
 /** Fallback obrigatório — sempre presente (último da lista). */

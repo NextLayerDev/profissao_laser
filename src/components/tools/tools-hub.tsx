@@ -62,16 +62,32 @@ export function ToolsHub({ audience }: ToolsHubProps) {
 	const { isPinned, toggle, isReady } = usePinnedTools(audience, defaults);
 
 	const [query, setQuery] = useState('');
+	/** Categoria ativa nos chips de filtro (ou 'all'). */
+	const [activeCategory, setActiveCategory] = useState('all');
+
+	// Chips de categoria (label + contagem) na ordem do catálogo já ordenado.
+	const categoryChips = useMemo(() => {
+		const counts = new Map<string, number>();
+		for (const t of tools)
+			counts.set(t.category, (counts.get(t.category) ?? 0) + 1);
+		return Array.from(counts.entries()).map(([category, count]) => ({
+			category,
+			label: categoryById(category).label,
+			count,
+		}));
+	}, [tools]);
 
 	const filtered = useMemo(() => {
 		const q = normalize(query.trim());
-		if (!q) return tools;
 		return tools.filter((t) => {
+			if (activeCategory !== 'all' && t.category !== activeCategory)
+				return false;
+			if (!q) return true;
 			const cat = categoryById(t.category).label;
 			const haystack = normalize(`${t.title} ${t.description ?? ''} ${cat}`);
 			return haystack.includes(q);
 		});
-	}, [tools, query]);
+	}, [tools, query, activeCategory]);
 
 	// Agrupa por CATEGORIA preservando a ordem em que as categorias aparecem no
 	// catálogo já ordenado (order → título), então a 1ª tool de cada categoria
@@ -99,6 +115,12 @@ export function ToolsHub({ audience }: ToolsHubProps) {
 					</h1>
 					<p className="mt-1 text-sm text-slate-500 dark:text-gray-400">
 						{COPY[audience].subtitle}
+						{tools.length > 0 && (
+							<span className="text-slate-400 dark:text-gray-500">
+								{' · '}
+								{tools.length} ferramentas
+							</span>
+						)}
 					</p>
 				</div>
 				{canSeeAnalytics && (
@@ -131,6 +153,26 @@ export function ToolsHub({ audience }: ToolsHubProps) {
 					className="w-full rounded-xl border border-slate-200 bg-white py-3 pr-4 pl-10 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-white/10 dark:bg-[#1a1a1d] dark:text-white dark:placeholder:text-gray-500"
 				/>
 			</div>
+
+			{!isLoading && categoryChips.length > 1 && (
+				<div className="mb-6 flex flex-wrap gap-2">
+					<CategoryChip
+						label="Todas"
+						count={tools.length}
+						active={activeCategory === 'all'}
+						onClick={() => setActiveCategory('all')}
+					/>
+					{categoryChips.map((c) => (
+						<CategoryChip
+							key={c.category}
+							label={c.label}
+							count={c.count}
+							active={activeCategory === c.category}
+							onClick={() => setActiveCategory(c.category)}
+						/>
+					))}
+				</div>
+			)}
 
 			{isLoading ? (
 				<HubState>
@@ -193,6 +235,42 @@ function HubState({ children }: { children: ReactNode }) {
 		<div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 border-dashed py-20 text-center dark:border-white/10">
 			{children}
 		</div>
+	);
+}
+
+/** Chip de filtro por categoria (label + contagem). */
+function CategoryChip({
+	label,
+	count,
+	active,
+	onClick,
+}: {
+	label: string;
+	count: number;
+	active: boolean;
+	onClick: () => void;
+}) {
+	return (
+		<button
+			type="button"
+			onClick={onClick}
+			className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+				active
+					? 'border-violet-500 bg-violet-500/10 text-violet-700 dark:text-violet-300'
+					: 'border-slate-200 bg-white text-slate-600 hover:border-violet-400 hover:text-violet-600 dark:border-white/10 dark:bg-[#1a1a1d] dark:text-gray-300 dark:hover:border-violet-500/50 dark:hover:text-white'
+			}`}
+		>
+			{label}
+			<span
+				className={`rounded-full px-1.5 text-[11px] font-semibold ${
+					active
+						? 'bg-violet-500/20 text-violet-700 dark:text-violet-200'
+						: 'bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-gray-400'
+				}`}
+			>
+				{count}
+			</span>
+		</button>
 	);
 }
 

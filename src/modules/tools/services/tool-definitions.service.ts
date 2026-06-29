@@ -28,6 +28,8 @@ export const toolControlSchema = z
 		bind: z.string(),
 		widget: z.string(),
 		label: z.string().optional(),
+		/** Seção do estúdio onde o controle aparece (ex.: "Luz", "Cor"). */
+		group: z.string().optional(),
 		min: z.number().optional(),
 		max: z.number().optional(),
 		step: z.number().optional(),
@@ -341,4 +343,36 @@ export async function runToolEngine(
 	}
 	const { data } = await api.post(`/api/tool-run/${key}`, fd);
 	return toolRunResultSchema.parse(data);
+}
+
+export interface RunToolPreviewOpts {
+	values: Record<string, unknown>;
+	inputSpec: Record<string, ToolInputSpec>;
+	/** Definition inline p/ preview de rascunho (staff). */
+	draftDefinition?: ToolDefinitionDoc;
+}
+
+/**
+ * Preview AO VIVO NÃO COBRADO (estúdio): manda a imagem + params pro endpoint
+ * `/preview`, que reduz a foto, tira os nós de saída/IA e devolve só `{ preview }`
+ * (base64). Sem billing, sem storage — é o feedback dos sliders.
+ */
+export async function runToolPreview(
+	key: string,
+	opts: RunToolPreviewOpts,
+): Promise<{ preview: string | null }> {
+	const fd = new FormData();
+	for (const [name, spec] of Object.entries(opts.inputSpec)) {
+		const v = opts.values[name];
+		if (spec.type === 'image') {
+			if (v instanceof File) fd.append(name, v);
+		} else if (v !== undefined && v !== null && v !== '') {
+			fd.append(name, typeof v === 'boolean' ? String(v) : String(v));
+		}
+	}
+	if (opts.draftDefinition) {
+		fd.append('definition', JSON.stringify(opts.draftDefinition));
+	}
+	const { data } = await api.post(`/api/tool-run/${key}/preview`, fd);
+	return (data ?? { preview: null }) as { preview: string | null };
 }

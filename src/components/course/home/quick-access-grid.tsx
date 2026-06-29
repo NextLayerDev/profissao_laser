@@ -1,16 +1,32 @@
 'use client';
 
-import { Settings } from 'lucide-react';
+import { LayoutGrid, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { toast } from 'sonner';
-import { useStudentToolItems } from '@/modules/tools/hooks/use-extra-tool-nav';
+import { useExtraToolNav } from '@/modules/tools/hooks/use-extra-tool-nav';
 import { useToolColorByKey } from '@/modules/tools/hooks/use-tool-colors';
 import {
 	type QuickAccessItem,
 	quickAccessItems,
 } from '@/utils/constants/quick-access';
 import { TOOL_COLORS } from '@/utils/constants/tool-colors';
+
+/**
+ * Card fixo "Outras ferramentas" → abre o catálogo COMPLETO do aluno
+ * (`/course/ferramentas`). Some no `useMergedQuickAccess` no fim da seção
+ * FERRAMENTAS, então a home mostra os destaques + as fixadas + este atalho,
+ * sem lotar com todas as tools publicadas.
+ */
+const OUTRAS_FERRAMENTAS: QuickAccessItem = {
+	label: 'Outras ferramentas',
+	description: 'Ver o catálogo completo',
+	Icon: LayoutGrid,
+	section: 'FERRAMENTAS',
+	href: '/course/ferramentas',
+	gradient: 'from-slate-600 to-slate-800',
+	iconBg: 'bg-white/15 text-white',
+};
 
 interface QuickAccessGridProps {
 	onSavedLessonsOpen: () => void;
@@ -46,14 +62,15 @@ const FEATURE_TOOL_KEY: Record<string, string> = {
 };
 
 /**
- * Lista final do aluno = atalhos ESTÁTICOS + TODAS as tools publicadas do
- * catálogo (com a cor configurada no board/builder). Dedup por nome
- * normalizado. Além disso, as features built-in mapeadas em FEATURE_TOOL_KEY
- * HERDAM a cor da tool admin correspondente — então recolorir no board reflete
- * no aluno (fonte única de cor por ferramenta).
+ * Lista final do aluno = atalhos ESTÁTICOS (destaques) + as tools da Fábrica
+ * que o aluno FIXOU (pins, via `useExtraToolNav`) + o card fixo "Outras
+ * ferramentas" (catálogo completo). NÃO injeta todas as publicadas — senão as
+ * 97 tools ImagR lotariam a home; o catálogo inteiro fica em `/course/ferramentas`.
+ * Dedup por nome normalizado. As features built-in mapeadas em FEATURE_TOOL_KEY
+ * HERDAM a cor da tool admin correspondente (fonte única de cor por ferramenta).
  */
 function useMergedQuickAccess(): QuickAccessItem[] {
-	const dynamic = useStudentToolItems();
+	const dynamic = useExtraToolNav();
 	const colorByKey = useToolColorByKey();
 	return useMemo(() => {
 		const byKey = new Map<string, QuickAccessItem>();
@@ -73,6 +90,8 @@ function useMergedQuickAccess(): QuickAccessItem[] {
 			const color = adminKey ? colorByKey.get(adminKey) : undefined;
 			out.push(color ? { ...it, ...TOOL_COLORS[color] } : it);
 		}
+		// Atalho pro catálogo completo, sempre por último na seção FERRAMENTAS.
+		out.push(OUTRAS_FERRAMENTAS);
 		return out;
 	}, [dynamic, colorByKey]);
 }
