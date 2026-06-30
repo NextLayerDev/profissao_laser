@@ -15,7 +15,7 @@ import { useToolBank } from '../hooks/use-tool-bank';
 import { useToolBilling } from '../hooks/use-tool-billing';
 import { useToolDefinition } from '../hooks/use-tool-definition';
 import { downloadUrl, maxImagesOf, modeOf } from '../lib/prompt-bank';
-import { resolveScreenUi } from '../lib/screen-ui';
+import { accentForTool, resolveScreenUi } from '../lib/screen-ui';
 import { resolveToolIcon } from '../lib/tool-icons';
 import type { ToolBankEntry } from '../services/tool-bank.service';
 import {
@@ -309,29 +309,36 @@ export function DynamicToolView({
 		  }
 		| undefined;
 	if (studioUi?.layout === 'studio') {
+		// Acento de identidade por tool (laser=vermelho / editor=rosa / IA=violeta),
+		// herdado por todos os componentes do estúdio via `--screen-accent`.
+		const studioStyle = {
+			'--screen-accent': accentForTool(def),
+		} as CSSProperties;
 		return (
-			<ToolStudioView
-				def={def}
-				toolKey={toolKey}
-				isDraft={isDraft}
-				header={header}
-				values={values}
-				setValue={setValue}
-				setManyValues={setManyValues}
-				controls={controls}
-				inputSpec={inputSpec}
-				presets={studioUi.presets ?? []}
-				livePreview={studioUi.livePreview ?? false}
-				onRun={run}
-				pending={pending}
-				result={result}
-				downloadKey={downloadKey}
-				showMeta={resultUi?.showMeta ?? true}
-				actionLabel={actionLabel}
-				insufficient={billing.insufficient}
-				missingRequired={missingRequired}
-				billingNotice={showCostNotice ? billing.notice : null}
-			/>
+			<div style={studioStyle}>
+				<ToolStudioView
+					def={def}
+					toolKey={toolKey}
+					isDraft={isDraft}
+					header={header}
+					values={values}
+					setValue={setValue}
+					setManyValues={setManyValues}
+					controls={controls}
+					inputSpec={inputSpec}
+					presets={studioUi.presets ?? []}
+					livePreview={studioUi.livePreview ?? false}
+					onRun={run}
+					pending={pending}
+					result={result}
+					downloadKey={downloadKey}
+					showMeta={resultUi?.showMeta ?? true}
+					actionLabel={actionLabel}
+					insufficient={billing.insufficient}
+					missingRequired={missingRequired}
+					billingNotice={showCostNotice ? billing.notice : null}
+				/>
+			</div>
 		);
 	}
 
