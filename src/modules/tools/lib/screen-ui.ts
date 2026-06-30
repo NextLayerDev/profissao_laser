@@ -1,10 +1,12 @@
 'use client';
 
 import { createContext, useContext } from 'react';
+import { TOOL_COLORS, type ToolColorKey } from '@/utils/constants/tool-colors';
 import type {
 	AiToolDefinition,
 	ScreenUi,
 } from '../services/tool-definitions.service';
+import { categoryColor } from './tool-categories';
 
 /**
  * Aparência das telas de uma tool de PIPELINE (Banco do Admin / Prompts Mágicos
@@ -64,6 +66,46 @@ export function resolveScreenUi(
 export const ScreenUiContext =
 	createContext<ResolvedScreenUi>(DEFAULT_RESOLVED);
 export const useScreenUi = () => useContext(ScreenUiContext);
+
+/**
+ * Hex do acento por chave de cor de tool (espelha as famílias Tailwind de
+ * `TOOL_COLORS`, tom 500). `--screen-accent`/`color-mix` precisam de hex.
+ */
+const COLOR_HEX: Partial<Record<ToolColorKey, string>> = {
+	aulas: '#3b82f6',
+	suporte: '#f97316',
+	biblioteca: '#f59e0b',
+	vetorizacao: '#22c55e',
+	gravacao: '#ef4444',
+	previas: '#ec4899',
+	voxxys: '#8b5cf6',
+	parametros: '#06b6d4',
+	forum: '#6366f1',
+	chat: '#14b8a6',
+	fornecedores: '#eab308',
+	eventos: '#f43f5e',
+	membros: '#d946ef',
+	vitrine: '#0ea5e9',
+};
+
+/**
+ * Acento (hex) da tela de uma tool, com identidade por categoria:
+ * cor customizada do admin (`ui.customer.accent`) > chave própria (`ui.color`)
+ * > cor da categoria (`categoryColor`) > padrão fúcsia. Usado pra dirigir
+ * `--screen-accent` no Estúdio sem tocar o banco.
+ */
+export function accentForTool(def: AiToolDefinition | undefined): string {
+	const ui = def?.definition.ui as
+		| { customer?: { accent?: string }; color?: string; category?: string }
+		| undefined;
+	const custom = ui?.customer?.accent;
+	if (custom && HEX.test(custom)) return custom;
+	const ownKey =
+		ui?.color && ui.color in TOOL_COLORS
+			? (ui.color as ToolColorKey)
+			: categoryColor(ui?.category);
+	return COLOR_HEX[ownKey] ?? DEFAULT_SCREEN_ACCENT;
+}
 
 /** Estilo inline da cor de destaque (sólido) via CSS var herdada do root. */
 export const screenAccentBg = { backgroundColor: 'var(--screen-accent)' };
