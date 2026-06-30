@@ -185,9 +185,33 @@ function StudioColorRow({
 	);
 }
 
-/** Rótulo "bonito" pra valores de option (Title Case nos slugs). */
+/** Rótulos PT-BR de valores de enum conhecidos (materiais do laser, efeitos com
+ * acento). O que não estiver aqui cai no Title Case do slug. */
+const PT_LABELS: Record<string, string> = {
+	// materiais (estúdio laser)
+	wood: 'Madeira',
+	'black slate': 'Ardósia preta',
+	glass: 'Vidro',
+	acrylic: 'Acrílico',
+	leather: 'Couro',
+	cork: 'Cortiça',
+	'andonized aluminum': 'Alumínio anodizado',
+	'stainless steel': 'Aço inox',
+	'white tile': 'Azulejo branco',
+	'white tile painted black': 'Azulejo preto',
+	// efeitos (acentos/PT)
+	nenhum: 'Nenhum',
+	oleo: 'Óleo',
+	cross_process: 'Cross process',
+	split_toning: 'Split toning',
+	vazamento_luz: 'Vazamento de luz',
+	brilho_suave: 'Brilho suave',
+};
+
+/** Rótulo "bonito" pra valores de option (mapa PT-BR → Title Case do slug). */
 function prettyOption(v: unknown): string {
 	const s = String(v);
+	if (PT_LABELS[s]) return PT_LABELS[s];
 	return s
 		.replace(/[_-]+/g, ' ')
 		.replace(/\b\w/g, (c) => c.toUpperCase())

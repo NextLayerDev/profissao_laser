@@ -54,8 +54,10 @@ export function StudioPreview({
 	return (
 		<div className="space-y-3">
 			<div className="relative rounded-2xl border border-slate-200 bg-white p-3 shadow-xl shadow-slate-900/5 dark:border-white/10 dark:bg-[#16161a] dark:shadow-black/40">
+				{/* Altura fixada por viewport (NÃO aspect-[4/3]): numa coluna larga o
+				    4:3 fica altíssimo e empurra a ação pra fora da tela. */}
 				<div
-					className={`flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-xl ${bgClass}`}
+					className={`flex h-[clamp(320px,56vh,600px)] w-full items-center justify-center overflow-hidden rounded-xl ${bgClass}`}
 				>
 					{firstLoad ? (
 						<div className="h-full w-full animate-pulse bg-slate-200/70 dark:bg-white/5" />
