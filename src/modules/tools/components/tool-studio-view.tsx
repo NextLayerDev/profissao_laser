@@ -1,23 +1,36 @@
 'use client';
 
 import {
+	Bot,
 	Download,
-	ImageUp,
+	Eraser,
+	Image as ImageIcon,
+	Layers,
 	Loader2,
+	type LucideIcon,
+	Maximize2,
+	Palette,
 	RotateCcw,
+	Ruler,
+	SlidersHorizontal,
 	Sparkles,
+	Sun,
 	Wand2,
 } from 'lucide-react';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { useToolPreview } from '../hooks/use-tool-preview';
 import { downloadUrl } from '../lib/prompt-bank';
+import { resolveToolIcon } from '../lib/tool-icons';
 import type {
 	AiToolDefinition,
 	ToolControl,
 	ToolInputSpec,
 	ToolRunResult,
 } from '../services/tool-definitions.service';
-import { bindName, WidgetField } from './tool-widgets';
+import { StudioDropzone } from './studio-dropzone';
+import { StudioPreview } from './studio-preview';
+import { StudioGroup, StudioWidgetField } from './tool-studio-controls';
+import { bindName } from './tool-widgets';
 
 interface ToolStudioPreset {
 	label: string;
@@ -54,17 +67,45 @@ const EXTRA_FORMATS: { key: string; label: string }[] = [
 	{ key: 'svg', label: 'SVG' },
 ];
 
-/**
- * Tela "Estúdio" das tools-mãe (ui.layout='studio'): esquerda = dropzone +
- * controles agrupados por seção + presets de 1 clique; direita = preview GRANDE
- * ao vivo (debounce, não cobrado) com a foto original de fundo enquanto recalcula
- * + botões de export. O run final (Exportar) é cobrado pelo fluxo normal.
- */
+/** Ícone por seção (header dos grupos). */
+const GROUP_ICONS: Record<string, LucideIcon> = {
+	Foto: ImageIcon,
+	Material: Layers,
+	Ajustes: SlidersHorizontal,
+	Tamanho: Ruler,
+	Luz: Sun,
+	Cor: Palette,
+	Efeito: Wand2,
+	Operação: Bot,
+};
+
+/** Metadados dos cards de operação da IA (label/ícone/descrição). */
+const OP_META: Record<
+	string,
+	{ icon: LucideIcon; label: string; desc: string }
+> = {
+	remover_fundo: {
+		icon: Eraser,
+		label: 'Remover fundo',
+		desc: 'Deixa o fundo transparente',
+	},
+	colorir: { icon: Palette, label: 'Colorir', desc: 'Dá cor a fotos P&B' },
+	restaurar: {
+		icon: Sparkles,
+		label: 'Restaurar',
+		desc: 'Recupera fotos antigas',
+	},
+	ampliar: {
+		icon: Maximize2,
+		label: 'Ampliar',
+		desc: 'Aumenta a resolução (2–16×)',
+	},
+};
+
 export function ToolStudioView({
 	def,
 	toolKey,
 	isDraft,
-	header,
 	values,
 	setValue,
 	setManyValues,
@@ -91,7 +132,19 @@ export function ToolStudioView({
 		[controls, inputSpec],
 	);
 
-	// Agrupa os controles por `control.group` (mantém a ordem de 1ª aparição).
+	// IA: a "Operação" vira cards (sem live preview). Heurística com fallback.
+	const opControl = useMemo(
+		() =>
+			!livePreview
+				? paramControls.find(
+						(c) =>
+							bindName(c.bind) === 'operacao' ||
+							(c.group ?? '').toLowerCase() === 'operação',
+					)
+				: undefined,
+		[livePreview, paramControls],
+	);
+
 	const groups = useMemo(() => {
 		const map = new Map<string, ToolControl[]>();
 		for (const c of paramControls) {
@@ -110,7 +163,6 @@ export function ToolStudioView({
 		return null;
 	}, [imageControls, values]);
 
-	// URL da foto original (feedback instantâneo enquanto a prévia processada vem).
 	const [originalUrl, setOriginalUrl] = useState<string | null>(null);
 	useEffect(() => {
 		if (!file) {
@@ -130,11 +182,6 @@ export function ToolStudioView({
 	const liveSrc = preview.data?.preview ?? null;
 	const out = result?.output;
 	const resultPreview = (out?.preview ?? out?.primary) as string | undefined;
-	// Canvas: enquanto edita, mostra a prévia ao vivo (ou a original de fundo);
-	// depois de Exportar, mostra o resultado salvo.
-	const canvasSrc = livePreview
-		? (liveSrc ?? resultPreview ?? originalUrl)
-		: (resultPreview ?? originalUrl);
 	const meta = out?.meta as Record<string, unknown> | undefined;
 
 	const exports = useMemo(() => {
@@ -149,7 +196,6 @@ export function ToolStudioView({
 		return list;
 	}, [out, downloadKey]);
 
-	// Reseta os valores não-imagem aos defaults (mantém a foto).
 	const resetParams = () => {
 		const patch: Record<string, unknown> = {};
 		for (const [name, spec] of Object.entries(inputSpec)) {
@@ -160,162 +206,231 @@ export function ToolStudioView({
 		setManyValues(patch);
 	};
 
+	const presetActive = (preset: ToolStudioPreset) =>
+		Object.entries(preset.values).every(
+			([k, v]) => String(values[k]) === String(v),
+		);
+
+	// Acento + ícone do cabeçalho-herói.
+	const HeroIcon = resolveToolIcon(
+		(def.definition.ui as { icon?: string } | undefined)?.icon,
+	);
+
+	/** Renderiza um control de parâmetro (com tratamento especial da IA). */
+	function renderControl(c: ToolControl): ReactNode {
+		const name = bindName(c.bind);
+		// IA: a operação é o grid de cards.
+		if (opControl && c === opControl) {
+			const opts = (c.options ?? inputSpec[name]?.options ?? []) as unknown[];
+			const current = String(values[name] ?? inputSpec[name]?.default ?? '');
+			return (
+				<div key={c.bind} className="grid grid-cols-2 gap-2 py-1">
+					{opts.map((raw) => {
+						const opt = String(raw);
+						const m = OP_META[opt] ?? {
+							icon: Sparkles,
+							label: opt,
+							desc: '',
+						};
+						const Icon = m.icon;
+						const active = current === opt;
+						return (
+							<button
+								key={opt}
+								type="button"
+								onClick={() => setValue(name, opt)}
+								style={
+									active
+										? {
+												borderColor: 'var(--screen-accent)',
+												backgroundColor:
+													'color-mix(in srgb, var(--screen-accent) 10%, transparent)',
+											}
+										: undefined
+								}
+								className={`flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition-colors ${
+									active
+										? ''
+										: 'border-slate-200 hover:border-slate-300 dark:border-white/10 dark:hover:border-white/20'
+								}`}
+							>
+								<span
+									className="flex h-8 w-8 items-center justify-center rounded-lg"
+									style={{
+										backgroundColor:
+											'color-mix(in srgb, var(--screen-accent) 14%, transparent)',
+										color: 'var(--screen-accent)',
+									}}
+								>
+									<Icon className="h-4 w-4" />
+								</span>
+								<span className="text-sm font-semibold text-slate-800 dark:text-white">
+									{m.label}
+								</span>
+								{m.desc && (
+									<span className="text-[11px] leading-tight text-slate-500 dark:text-gray-400">
+										{m.desc}
+									</span>
+								)}
+							</button>
+						);
+					})}
+				</div>
+			);
+		}
+		// "fator" só aparece quando a operação é "ampliar".
+		if (name === 'fator' && String(values.operacao) !== 'ampliar') return null;
+		return (
+			<StudioWidgetField
+				key={c.bind}
+				control={c}
+				spec={inputSpec[name]}
+				value={values[name]}
+				onChange={(v) => setValue(name, v)}
+			/>
+		);
+	}
+
+	const actionDisabled = pending || insufficient || missingRequired;
+
 	return (
 		<div className="p-4 md:p-8">
-			{header}
-
-			<div className="grid lg:grid-cols-[minmax(0,380px)_1fr] gap-6">
-				{/* ───────── Controles (esquerda) ───────── */}
-				<div className="space-y-5">
-					{/* Dropzone */}
-					<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-5">
-						<div className="flex items-center gap-2 mb-3">
-							<ImageUp className="w-4 h-4 text-violet-500" />
-							<h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-								Foto
-							</h3>
-						</div>
-						<div className="space-y-4">
-							{imageControls.map((control) => (
-								<WidgetField
-									key={control.bind}
-									control={control}
-									spec={inputSpec[bindName(control.bind)]}
-									value={values[bindName(control.bind)]}
-									onChange={(v) => setValue(bindName(control.bind), v)}
-								/>
-							))}
-						</div>
+			{/* Cabeçalho-herói com acento da tool */}
+			<div className="relative mb-6 overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10">
+				<div
+					className="absolute inset-0"
+					style={{
+						background:
+							'linear-gradient(120deg, color-mix(in srgb, var(--screen-accent) 20%, transparent), transparent 62%)',
+					}}
+				/>
+				<div className="relative flex items-center gap-4 px-6 py-6 sm:px-8">
+					<span
+						className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-lg"
+						style={{ backgroundColor: 'var(--screen-accent)' }}
+					>
+						<HeroIcon className="h-6 w-6" />
+					</span>
+					<div className="min-w-0">
+						<h1 className="font-display text-xl font-bold text-slate-900 dark:text-white sm:text-2xl">
+							{def.title}
+						</h1>
+						{def.description && (
+							<p className="truncate text-sm text-slate-500 dark:text-gray-400">
+								{def.description}
+							</p>
+						)}
 					</div>
+				</div>
+			</div>
+
+			<div className="grid gap-6 lg:grid-cols-[minmax(0,400px)_1fr]">
+				{/* ───────── Controles ───────── */}
+				<div className="space-y-4">
+					{/* Dropzone herói */}
+					{imageControls.map((c) => (
+						<StudioDropzone
+							key={c.bind}
+							label={c.label ?? 'Envie sua foto'}
+							file={values[bindName(c.bind)] instanceof File ? file : null}
+							onChange={(f) => setValue(bindName(c.bind), f)}
+						/>
+					))}
 
 					{/* Presets */}
 					{presets.length > 0 && (
-						<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-5">
-							<div className="flex items-center gap-2 mb-3">
-								<Sparkles className="w-4 h-4 text-amber-500" />
-								<h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-									Estilos rápidos
-								</h3>
+						<StudioGroup title="Estilos rápidos" icon={Sparkles}>
+							<div className="flex flex-wrap gap-2 py-2">
+								{presets.map((p) => {
+									const active = presetActive(p);
+									return (
+										<button
+											key={p.label}
+											type="button"
+											onClick={() => setManyValues(p.values)}
+											style={
+												active
+													? {
+															borderColor: 'var(--screen-accent)',
+															color: 'var(--screen-accent)',
+															backgroundColor:
+																'color-mix(in srgb, var(--screen-accent) 10%, transparent)',
+														}
+													: undefined
+											}
+											className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+												active
+													? ''
+													: 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:border-white/20'
+											}`}
+										>
+											{p.label}
+										</button>
+									);
+								})}
 							</div>
-							<div className="flex flex-wrap gap-2">
-								{presets.map((preset) => (
-									<button
-										key={preset.label}
-										type="button"
-										onClick={() => setManyValues(preset.values)}
-										className="px-3 py-1.5 rounded-full text-xs font-semibold border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-700 dark:text-slate-200 hover:border-violet-400 hover:text-violet-600 dark:hover:text-violet-300 transition-colors"
-									>
-										{preset.label}
-									</button>
-								))}
-							</div>
-						</div>
+						</StudioGroup>
 					)}
 
 					{/* Grupos de controles */}
 					{groups.map(([groupName, groupControls]) => (
-						<div
+						<StudioGroup
 							key={groupName}
-							className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-5"
+							title={groupName}
+							icon={GROUP_ICONS[groupName]}
 						>
-							<div className="flex items-center justify-between mb-3">
-								<h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-									{groupName}
-								</h3>
-							</div>
-							<div className="space-y-4">
-								{groupControls.map((control) => (
-									<WidgetField
-										key={control.bind}
-										control={control}
-										spec={inputSpec[bindName(control.bind)]}
-										value={values[bindName(control.bind)]}
-										onChange={(v) => setValue(bindName(control.bind), v)}
-									/>
-								))}
-							</div>
-						</div>
+							{groupControls.map(renderControl)}
+						</StudioGroup>
 					))}
 
 					{paramControls.length > 0 && (
 						<button
 							type="button"
 							onClick={resetParams}
-							className="w-full flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+							className="flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-slate-500 transition-colors hover:text-slate-700 dark:text-gray-400 dark:hover:text-slate-200"
 						>
-							<RotateCcw className="w-3.5 h-3.5" />
+							<RotateCcw className="h-3.5 w-3.5" />
 							Restaurar ajustes
 						</button>
 					)}
 				</div>
 
-				{/* ───────── Preview (direita) ───────── */}
-				<div className="space-y-4">
-					<div className="relative bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-4">
-						<div className="aspect-[4/3] w-full overflow-hidden rounded-xl bg-[repeating-conic-gradient(#e5e7eb_0%_25%,transparent_0%_50%)] dark:bg-[repeating-conic-gradient(#222_0%_25%,transparent_0%_50%)] bg-[length:24px_24px] flex items-center justify-center">
-							{canvasSrc ? (
-								/* <img> intencional: preview de data URL / CDN dinâmico */
-								<img
-									src={canvasSrc}
-									alt="Prévia"
-									className="max-w-full max-h-full object-contain"
-								/>
-							) : (
-								<div className="text-center px-6">
-									<ImageUp className="w-10 h-10 mx-auto mb-2 text-slate-300 dark:text-gray-600" />
-									<p className="text-sm text-slate-400 dark:text-gray-500">
-										Envie uma foto para ver a prévia ao vivo.
-									</p>
-								</div>
-							)}
-						</div>
+				{/* ───────── Preview + ação ───────── */}
+				<div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+					<StudioPreview
+						originalUrl={originalUrl}
+						liveSrc={liveSrc}
+						resultPreview={resultPreview ?? null}
+						isFetching={preview.isFetching}
+						isError={preview.isError}
+						livePreview={livePreview}
+						hasFile={!!file}
+						meta={showMeta ? meta : undefined}
+					/>
 
-						{/* Badge de status do preview */}
-						{file && livePreview && (
-							<div className="absolute top-6 left-6 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 text-white text-[11px] font-medium backdrop-blur">
-								{preview.isFetching ? (
-									<>
-										<Loader2 className="w-3 h-3 animate-spin" />
-										Atualizando…
-									</>
-								) : (
-									<>
-										<span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-										Prévia ao vivo
-									</>
-								)}
-							</div>
-						)}
-
-						{showMeta && meta && (
-							<div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
-								{Object.entries(meta).map(([k, v]) => (
-									<span
-										key={k}
-										className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-white/5 text-[11px] font-medium text-slate-600 dark:text-slate-300"
-									>
-										{k}: {String(v)}
-									</span>
-								))}
-							</div>
-						)}
-					</div>
-
-					{/* Ação principal (cobrada) */}
 					<button
 						type="button"
 						onClick={onRun}
-						disabled={pending || insufficient || missingRequired}
-						className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-colors disabled:opacity-60"
+						disabled={actionDisabled}
+						style={
+							actionDisabled
+								? undefined
+								: { backgroundColor: 'var(--screen-accent)' }
+						}
+						className={`flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-semibold text-white transition-opacity ${
+							actionDisabled
+								? 'cursor-not-allowed bg-slate-400 dark:bg-white/15'
+								: 'hover:opacity-90'
+						}`}
 					>
 						{pending ? (
 							<>
-								<Loader2 className="w-5 h-5 animate-spin" />
+								<Loader2 className="h-5 w-5 animate-spin" />
 								Processando…
 							</>
 						) : (
 							<>
-								<Wand2 className="w-5 h-5" />
+								<Wand2 className="h-5 w-5" />
 								{actionLabel}
 							</>
 						)}
@@ -323,17 +438,16 @@ export function ToolStudioView({
 
 					{billingNotice}
 
-					{/* Downloads (após exportar) */}
 					{exports.length > 0 && (
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+						<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
 							{exports.map((e) => (
 								<button
 									key={e.label}
 									type="button"
 									onClick={() => downloadUrl(e.url, `${toolKey}-${e.label}`)}
-									className="flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] hover:border-violet-400 text-slate-700 dark:text-slate-200 font-medium rounded-xl transition-colors"
+									className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 font-medium text-slate-700 transition-colors hover:border-slate-300 dark:border-white/10 dark:bg-[#16161a] dark:text-slate-200 dark:hover:border-white/20"
 								>
-									<Download className="w-4 h-4" />
+									<Download className="h-4 w-4" />
 									{e.label}
 								</button>
 							))}
