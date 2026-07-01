@@ -19,6 +19,14 @@ import type { DoubtChat } from '@/types/doubt-chat';
 
 type StatusFilter = 'all' | 'pending' | 'answered';
 
+/**
+ * Um chamado é "pendente" quando NÃO está respondido. O backend cria os chamados
+ * como `'open'` (não `'pending'`) e só marca `'answered'` na resposta do técnico —
+ * por isso não dá pra comparar `=== 'pending'` (isso zerava o card). O badge já
+ * usa essa mesma regra (tudo != answered vira "Pendente").
+ */
+const isPending = (c: DoubtChat) => c.status !== 'answered';
+
 function statusBadge(status: DoubtChat['status']) {
 	if (status === 'answered') {
 		return (
@@ -71,8 +79,10 @@ export function SuporteAdminView() {
 	const filteredChats = useMemo(() => {
 		let result = [...chats];
 
-		if (statusFilter !== 'all') {
-			result = result.filter((c) => c.status === statusFilter);
+		if (statusFilter === 'pending') {
+			result = result.filter(isPending);
+		} else if (statusFilter === 'answered') {
+			result = result.filter((c) => c.status === 'answered');
 		}
 
 		if (searchQuery.trim()) {
@@ -86,15 +96,17 @@ export function SuporteAdminView() {
 		}
 
 		result.sort((a, b) => {
-			if (a.status === 'pending' && b.status === 'answered') return -1;
-			if (a.status === 'answered' && b.status === 'pending') return 1;
+			// Pendentes (não respondidos) primeiro, depois por data desc.
+			const ap = isPending(a) ? 0 : 1;
+			const bp = isPending(b) ? 0 : 1;
+			if (ap !== bp) return ap - bp;
 			return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
 		});
 
 		return result;
 	}, [chats, statusFilter, searchQuery]);
 
-	const pendingCount = chats.filter((c) => c.status === 'pending').length;
+	const pendingCount = chats.filter(isPending).length;
 	const answeredCount = chats.filter((c) => c.status === 'answered').length;
 
 	function handleReply(content: string, file?: File) {
