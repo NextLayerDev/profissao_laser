@@ -40,7 +40,12 @@ export interface DoubtChat {
 	customerId: string;
 	customerName?: string;
 	ticketNumber?: number | null;
-	status: 'pending' | 'answered';
+	/**
+	 * Status do chamado. O backend cria como `'open'` e muda para `'answered'`
+	 * quando o técnico responde (`'pending'` é sinônimo legado de não-respondido).
+	 * Regra prática: qualquer coisa != `'answered'` conta como pendente.
+	 */
+	status: 'open' | 'pending' | 'answered';
 	messages?: ChatMessage[];
 	qualificationAnswers?: Record<string, string>;
 	category?: {

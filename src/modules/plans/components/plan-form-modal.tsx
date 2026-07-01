@@ -5,8 +5,10 @@ import { ModalOverlay } from '@/components/ui/modal-overlay';
 import type {
 	CreatePlanPayload,
 	Plan,
+	PlanFeatureItem,
 	UpdatePlanPayload,
 } from '../types/plans';
+import { PlanFeaturesEditor } from './plan-features-editor';
 
 interface Props {
 	editing: Plan | null;
@@ -28,6 +30,9 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 	);
 	const [voxGrant, setVoxGrant] = useState(
 		editing?.vox_monthly_grant ? String(editing.vox_monthly_grant) : '0',
+	);
+	const [features, setFeatures] = useState<PlanFeatureItem[]>(
+		editing?.features ?? [],
 	);
 
 	const voxGrantNum = Math.max(0, Math.trunc(Number(voxGrant) || 0));
@@ -129,6 +134,10 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 					</div>
 				)}
 
+				<div className="border-t border-slate-200 dark:border-white/10 pt-4">
+					<PlanFeaturesEditor value={features} onChange={setFeatures} />
+				</div>
+
 				<label className="flex items-center gap-2 text-sm">
 					<input
 						type="checkbox"
@@ -157,6 +166,7 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 								price_monthly_cents: reaisToCents(monthly),
 								price_yearly_cents: reaisToCents(yearly),
 								vox_monthly_grant: voxGrantNum,
+								features,
 							};
 							onSubmit(editing ? base : { ...base, key: key.trim() });
 						}}
