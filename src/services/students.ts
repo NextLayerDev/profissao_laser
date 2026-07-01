@@ -130,6 +130,15 @@ export type ListStudentsResponse = z.infer<typeof listStudentsResponseSchema>;
 
 const studentResponseSchema = z.object({ student: studentSchema });
 
+/** Resultado da tentativa imediata de cobrança da fatura aberta (Stripe). */
+export const forceChargeResponseSchema = z.object({
+	invoice_id: z.string(),
+	status: z.string(),
+	amount_paid: z.number(),
+	currency: z.string(),
+});
+export type ForceChargeResult = z.infer<typeof forceChargeResponseSchema>;
+
 export type ChangePlanMode = 'override' | 'stripe';
 
 export interface ListStudentsParams {
@@ -203,6 +212,21 @@ export async function cancelStudentSubscription(id: string): Promise<Student> {
 		`/v1/admin/students/${id}/cancel-subscription`,
 	);
 	return studentResponseSchema.parse(data).student;
+}
+
+/**
+ * Força uma nova tentativa de cobrança da fatura aberta da assinatura no Stripe.
+ * Use quando o pagamento falhou (past_due) e o aluno atualizou o método de
+ * pagamento. O status da assinatura é atualizado depois via webhook do Stripe.
+ * `POST /v1/admin/students/{id}/force-charge` — sem body. Admin/staff.
+ */
+export async function forceChargeStudent(
+	id: string,
+): Promise<ForceChargeResult> {
+	const { data } = await apiCourses.post(
+		`/v1/admin/students/${id}/force-charge`,
+	);
+	return forceChargeResponseSchema.parse(data);
 }
 
 export async function setStudentTestUnlimited(
