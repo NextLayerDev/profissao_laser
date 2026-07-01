@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronRight, MessageSquare } from 'lucide-react';
-import type { DoubtChat } from '@/types/doubt-chat';
+import { type DoubtChat, isDoubtPending } from '@/types/doubt-chat';
 
 function formatDate(iso: string) {
 	try {
@@ -29,7 +29,7 @@ export function DoubtsList({
 	onTabChange,
 	onSelectChat,
 }: DoubtsListProps) {
-	const pendingChats = chats.filter((c) => c.status === 'pending');
+	const pendingChats = chats.filter(isDoubtPending);
 	const answeredChats = chats.filter((c) => c.status === 'answered');
 	const displayedChats = activeTab === 'pending' ? pendingChats : answeredChats;
 
