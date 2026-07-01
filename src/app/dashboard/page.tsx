@@ -3,10 +3,13 @@
 import { Loader2, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { DoubtsPreview } from '@/components/dashboard/doubts-preview';
 import { Header } from '@/components/dashboard/header';
+import { LinksPreview } from '@/components/dashboard/links-preview';
 import { MonthSummary } from '@/components/dashboard/month-summary';
+import { ProductsShortcut } from '@/components/dashboard/products-shortcut';
 import { RecentActivity } from '@/components/dashboard/recent-activity';
-import { StatsOverview } from '@/components/dashboard/stats-overview';
+import { StudentsToolsShortcut } from '@/components/dashboard/students-tools-shortcut';
 import { getToken } from '@/lib/auth';
 
 export default function Dashboard() {
@@ -52,15 +55,31 @@ export default function Dashboard() {
 	return (
 		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
-			<main className="px-4 md:px-8 py-6 space-y-8">
-				<StatsOverview />
+			<main className="px-4 md:px-8 py-6 space-y-6">
+				<div>
+					<h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+						Painel
+					</h2>
+					<p className="text-slate-600 dark:text-gray-400 mt-1">
+						Visão geral de vendas e atividade recente do negócio.
+					</p>
+				</div>
+
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 					<div className="lg:col-span-2">
 						<RecentActivity />
 					</div>
-					<div>
+					<div className="space-y-4">
+						<StudentsToolsShortcut />
 						<MonthSummary />
 					</div>
+				</div>
+
+				<ProductsShortcut />
+
+				<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+					<DoubtsPreview />
+					<LinksPreview />
 				</div>
 			</main>
 			<footer className="px-4 md:px-8 py-4 mt-4 text-center text-xs text-slate-400 dark:text-gray-600">
