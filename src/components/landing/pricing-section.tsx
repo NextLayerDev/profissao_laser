@@ -65,6 +65,7 @@ const FALLBACK_PLANS: LandingPlan[] = [
 		annual: 299,
 		installment: 29.9,
 		featured: false,
+		features: [],
 	},
 	{
 		id: 'pro',
@@ -75,6 +76,7 @@ const FALLBACK_PLANS: LandingPlan[] = [
 		annual: 399,
 		installment: 39.9,
 		featured: false,
+		features: [],
 	},
 	{
 		id: 'avan',
@@ -86,6 +88,7 @@ const FALLBACK_PLANS: LandingPlan[] = [
 		installment: 59.9,
 		featured: true,
 		badge: 'MAIS ESCOLHIDO',
+		features: [],
 	},
 	{
 		id: 'max',
@@ -96,6 +99,7 @@ const FALLBACK_PLANS: LandingPlan[] = [
 		annual: 999,
 		installment: 99.9,
 		featured: false,
+		features: [],
 	},
 ];
 
@@ -180,7 +184,11 @@ function PlanCard({
 }) {
 	const isAnnual = billing === 'annual';
 	const a = accentFor(p.key);
-	const features = featuresFor(p.key);
+	// Itens definidos pelo admin (na tela de Planos); se o plano não tiver nenhum,
+	// cai na lista padrão hardcoded (`featuresFor`) — sem regressão visual.
+	const features = p.features.length
+		? p.features.map((f) => f.label)
+		: featuresFor(p.key);
 	const tagline = p.tagline || PLAN_TAGLINES[p.key] || '';
 	const annualP = p.annual != null ? splitPrice(p.annual) : null;
 	const monthlyP = p.monthly != null ? splitPrice(p.monthly) : null;
@@ -283,8 +291,11 @@ function PlanCard({
 
 			<div className="relative border-t border-white/10 pt-5 mb-5 flex-1">
 				<ul className="space-y-2.5">
-					{features.map((line) => (
-						<li key={line} className="flex items-start gap-2.5">
+					{features.map((line, idx) => (
+						<li
+							key={`${p.key}-${idx}-${line}`}
+							className="flex items-start gap-2.5"
+						>
 							<div
 								className={`w-4 h-4 rounded-full mt-0.5 grid place-items-center shrink-0 ${a.iconBg}`}
 							>

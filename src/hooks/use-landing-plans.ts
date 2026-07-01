@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery } from '@tanstack/react-query';
+import type { PlanFeatureItem } from '@/modules/plans/types/plans';
 import {
 	createPlanCheckout,
 	getPublicPlans,
@@ -23,6 +24,8 @@ export interface LandingPlan {
 	installment: number | null;
 	featured: boolean;
 	badge?: string;
+	/** Itens definidos pelo admin (tools/áreas/texto). Vazio → landing usa a lista padrão. */
+	features: PlanFeatureItem[];
 }
 
 /**
@@ -49,6 +52,7 @@ export function useLandingPlans() {
 					installment: annual != null ? annual / 12 : null,
 					featured: p.key === FEATURED_KEY,
 					badge: p.key === FEATURED_KEY ? 'MAIS ESCOLHIDO' : undefined,
+					features: p.features ?? [],
 				};
 			});
 		},
