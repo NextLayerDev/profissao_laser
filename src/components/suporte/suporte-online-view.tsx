@@ -38,7 +38,7 @@ import {
 import { useFAQs } from '@/hooks/use-faq';
 import { useKnowledgeBase } from '@/hooks/use-knowledge-base';
 import { useSupportChat } from '@/hooks/use-support-chat';
-import type { DoubtChat } from '@/types/doubt-chat';
+import { type DoubtChat, isDoubtPending } from '@/types/doubt-chat';
 import type { KnowledgeBaseArticle } from '@/types/knowledge-base';
 import { getEmbedUrl, getVideoType } from '@/utils/video';
 
@@ -396,8 +396,10 @@ export function SuporteOnlineView({
 
 	const sortedChats = useMemo(() => {
 		return [...allChats].sort((a, b) => {
-			if (a.status === 'pending' && b.status === 'answered') return -1;
-			if (a.status === 'answered' && b.status === 'pending') return 1;
+			// Pendentes (não respondidos) primeiro, depois por data desc.
+			const ap = isDoubtPending(a) ? 0 : 1;
+			const bp = isDoubtPending(b) ? 0 : 1;
+			if (ap !== bp) return ap - bp;
 			return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
 		});
 	}, [allChats]);
@@ -1013,7 +1015,7 @@ export function SuporteOnlineView({
 									chat={selectedChat}
 									customerName={customerName}
 									onSendMessage={
-										selectedChat.status === 'pending'
+										isDoubtPending(selectedChat)
 											? handleSendChatMessage
 											: undefined
 									}

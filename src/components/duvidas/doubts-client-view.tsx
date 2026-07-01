@@ -8,7 +8,7 @@ import {
 	useDoubtChats,
 	useSendDoubtMessage,
 } from '@/hooks/use-doubt-chat';
-import type { DoubtChat } from '@/types/doubt-chat';
+import { type DoubtChat, isDoubtPending } from '@/types/doubt-chat';
 import { DoubtChatView } from './doubt-chat-view';
 import { DoubtsList } from './doubts-list';
 import { NewDoubtFlow } from './new-doubt-flow';
@@ -117,9 +117,7 @@ export function DoubtsClientView({
 									chat={selectedChat}
 									customerName={customerName}
 									onSendMessage={
-										selectedChat.status === 'pending'
-											? handleSendMessage
-											: undefined
+										isDoubtPending(selectedChat) ? handleSendMessage : undefined
 									}
 								/>
 							) : null}
