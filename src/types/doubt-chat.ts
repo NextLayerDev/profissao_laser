@@ -67,3 +67,12 @@ export interface ChatMessage {
 	isTechnician: boolean;
 	createdAt: string;
 }
+
+/**
+ * Fonte única da regra "chamado pendente": tudo que NÃO está `'answered'`.
+ * O backend cria os chamados como `'open'` (não `'pending'`) e só marca
+ * `'answered'` na resposta do técnico — então comparar `=== 'pending'` zera
+ * contadores e desabilita ações em chamados abertos. Use isto em vez do literal.
+ */
+export const isDoubtPending = (c: Pick<DoubtChat, 'status'>): boolean =>
+	c.status !== 'answered';
