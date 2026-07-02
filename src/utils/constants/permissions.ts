@@ -43,6 +43,11 @@ export const PERMISSION_CATALOG: PermissionModule[] = [
 		label: 'Suporte & Agendamentos',
 		actions: ['view', 'edit', 'delete'],
 	},
+	{
+		module: 'omniresposta',
+		label: 'OmniResposta (WhatsApp IA)',
+		actions: ['view', 'edit'],
+	},
 ];
 
 /**
@@ -69,6 +74,7 @@ export const NAV_VIEW_KEYS: Record<string, string[]> = {
 	Fórum: ['cursos.view'], // Ajustado conforme módulos disponíveis
 	Agendamentos: SUPORTE_VIEW_KEYS, // segue o mesmo gate da aba Suporte
 	Suporte: SUPORTE_VIEW_KEYS,
+	OmniResposta: ['omniresposta.view'],
 	Parametros: ['acessos.view'],
 	Acessos: ['acessos.view'],
 	Alunos: ['alunos.view'],
