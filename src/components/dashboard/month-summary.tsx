@@ -22,22 +22,22 @@ export function MonthSummary() {
 	const paid = (sales ?? []).filter((s) => s.status === 'succeeded');
 	const currency = paid[0]?.currency ?? 'BRL';
 
-	// Top products from all-time paid sales
-	const productMap = new Map<string, number>();
+	// Top plans from all-time paid sales
+	const planMap = new Map<string, number>();
 	for (const s of paid) {
-		productMap.set(s.product, (productMap.get(s.product) ?? 0) + s.amount);
+		planMap.set(s.product, (planMap.get(s.product) ?? 0) + s.amount);
 	}
-	const topProducts = [...productMap.entries()]
+	const topPlans = [...planMap.entries()]
 		.sort((a, b) => b[1] - a[1])
 		.slice(0, 5);
-	const maxRevenue = topProducts[0]?.[1] ?? 1;
+	const maxRevenue = topPlans[0]?.[1] ?? 1;
 
 	return (
 		<div className="space-y-4">
-			{/* Produtos Mais Vendidos */}
+			{/* Planos Mais Vendidos */}
 			<div>
 				<h3 className="text-xs font-semibold text-slate-500 dark:text-gray-500 uppercase tracking-wider mb-4">
-					Produtos Mais Vendidos
+					Planos Mais Vendidos
 				</h3>
 				<div className="bg-white dark:bg-[#1a1a1d] rounded-2xl border border-slate-200 dark:border-gray-800/50 p-5 shadow-sm dark:shadow-none space-y-4">
 					{isLoading ? (
@@ -62,21 +62,21 @@ export function MonthSummary() {
 						</div>
 					) : (
 						<>
-							{topProducts.length === 0 && (
+							{topPlans.length === 0 && (
 								<p className="text-sm text-slate-500 dark:text-gray-500">
 									Sem dados disponíveis.
 								</p>
 							)}
-							{topProducts.map(([product, revenue], idx) => {
+							{topPlans.map(([plan, revenue], idx) => {
 								const pct = (revenue / maxRevenue) * 100;
 								return (
-									<div key={product}>
+									<div key={plan}>
 										<div className="flex items-center justify-between mb-1.5">
 											<span
 												className="text-sm text-slate-700 dark:text-gray-300 truncate max-w-[160px]"
-												title={product}
+												title={plan}
 											>
-												{product}
+												{plan}
 											</span>
 											<div className="text-right shrink-0 ml-2 flex items-center gap-1.5">
 												{canPrice && (

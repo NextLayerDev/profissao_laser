@@ -27,7 +27,7 @@ export function ProductsShortcut() {
 		<div>
 			<div className="flex items-center justify-between mb-4">
 				<h3 className="text-xs font-semibold text-slate-500 dark:text-gray-500 uppercase tracking-wider">
-					Produtos
+					Planos
 				</h3>
 				<Link
 					href="/products"
@@ -46,7 +46,7 @@ export function ProductsShortcut() {
 					))}
 				{!isLoading && preview.length === 0 && (
 					<div className="col-span-full bg-white dark:bg-[#1a1a1d] rounded-2xl border border-slate-200 dark:border-gray-800/50 p-6 text-center text-sm text-slate-500 dark:text-gray-500 shadow-sm dark:shadow-none">
-						Nenhum produto cadastrado.
+						Nenhum plano cadastrado.
 					</div>
 				)}
 				{preview.map((course, idx) => {
