@@ -4,6 +4,8 @@ import { ChevronLeft, ChevronRight, Home } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { toast } from 'sonner';
+import { useEntitlements } from '@/hooks/use-entitlements';
+import { getToken } from '@/lib/auth';
 import { useExtraToolNav } from '@/modules/tools/hooks/use-extra-tool-nav';
 import {
 	type QuickAccessItem,
@@ -29,7 +31,12 @@ export function CourseSidebar({
 	const pathname = usePathname();
 	// Tools publicadas pela Fábrica (sem tela própria) entram dinamicamente.
 	const extraTools = useExtraToolNav();
-	const allItems = [...quickAccessItems, ...extraTools];
+	const isStaff = typeof window !== 'undefined' && !!getToken('user');
+	const { isTestUnlimited, hasActiveSubscription } = useEntitlements();
+	const hasFullAccess = isStaff || isTestUnlimited || hasActiveSubscription;
+	const allItems = [...quickAccessItems, ...extraTools].filter(
+		(i) => !i.hideWhenSubscribed || !hasFullAccess,
+	);
 
 	const grouped = SECTIONS.reduce(
 		(acc, section) => {

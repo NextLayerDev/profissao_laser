@@ -4,6 +4,8 @@ import { LayoutGrid, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { toast } from 'sonner';
+import { useEntitlements } from '@/hooks/use-entitlements';
+import { getToken } from '@/lib/auth';
 import { useExtraToolNav } from '@/modules/tools/hooks/use-extra-tool-nav';
 import { useToolColorByKey } from '@/modules/tools/hooks/use-tool-colors';
 import {
@@ -72,6 +74,9 @@ const FEATURE_TOOL_KEY: Record<string, string> = {
 function useMergedQuickAccess(): QuickAccessItem[] {
 	const dynamic = useExtraToolNav();
 	const colorByKey = useToolColorByKey();
+	const isStaff = typeof window !== 'undefined' && !!getToken('user');
+	const { isTestUnlimited, hasActiveSubscription } = useEntitlements();
+	const hasFullAccess = isStaff || isTestUnlimited || hasActiveSubscription;
 	return useMemo(() => {
 		const byKey = new Map<string, QuickAccessItem>();
 		for (const it of quickAccessItems) byKey.set(norm(it.label), it);
@@ -86,6 +91,7 @@ function useMergedQuickAccess(): QuickAccessItem[] {
 		// Link de cor: feature built-in herda a cor da tool admin correspondente.
 		const out: QuickAccessItem[] = [];
 		for (const [k, it] of byKey) {
+			if (it.hideWhenSubscribed && hasFullAccess) continue;
 			const adminKey = FEATURE_TOOL_KEY[k];
 			const color = adminKey ? colorByKey.get(adminKey) : undefined;
 			out.push(color ? { ...it, ...TOOL_COLORS[color] } : it);
@@ -93,7 +99,7 @@ function useMergedQuickAccess(): QuickAccessItem[] {
 		// Atalho pro catálogo completo, sempre por último na seção FERRAMENTAS.
 		out.push(OUTRAS_FERRAMENTAS);
 		return out;
-	}, [dynamic, colorByKey]);
+	}, [dynamic, colorByKey, hasFullAccess]);
 }
 
 // Acesso 100% pelo plano: o grid vive dentro do SubscriptionGate (cliente já
