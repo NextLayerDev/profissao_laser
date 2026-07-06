@@ -12,11 +12,12 @@ import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 import { useIsTestUnlimited } from '@/hooks/use-is-test-unlimited';
 import {
 	useMyVoxes,
-	usePurchaseVoxes,
 	useVoxPackages,
 	VOX_LEDGER_REASON_LABELS,
 	type VoxLedgerReason,
+	type VoxPackage,
 } from '@/modules/voxes';
+import { VoxPurchaseModal } from './vox-purchase-modal';
 
 const REASON_CLASS: Record<VoxLedgerReason, string> = {
 	purchase: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
@@ -31,8 +32,8 @@ export function CreditsView() {
 
 	const { data: voxes, isLoading: voxesLoading, refetch } = useMyVoxes();
 	const { data: packages, isLoading: pkgLoading } = useVoxPackages();
-	const purchase = usePurchaseVoxes();
 	const unlimited = useIsTestUnlimited();
+	const [buyingPkg, setBuyingPkg] = useState<VoxPackage | null>(null);
 
 	const balance = voxes?.balance ?? null;
 	const ledger = voxes?.ledger ?? [];
@@ -172,13 +173,11 @@ export function CreditsView() {
 								)}
 								<button
 									type="button"
-									onClick={() => purchase.mutate({ package_id: p.id })}
-									disabled={purchase.isPending || !p.stripe_price_id}
+									onClick={() => setBuyingPkg(p)}
+									disabled={!p.stripe_price_id}
 									className="mt-4 w-full px-4 py-2.5 rounded-xl text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
 								>
-									{purchase.isPending && purchase.variables?.package_id === p.id
-										? 'Redirecionando...'
-										: 'Comprar'}
+									Comprar
 								</button>
 							</div>
 						))}
@@ -229,6 +228,10 @@ export function CreditsView() {
 					)}
 				</div>
 			</section>
+
+			{buyingPkg && (
+				<VoxPurchaseModal pkg={buyingPkg} onClose={() => setBuyingPkg(null)} />
+			)}
 		</div>
 	);
 }

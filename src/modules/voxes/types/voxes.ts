@@ -39,6 +39,8 @@ export type MyVoxesResponse = z.infer<typeof myVoxesResponseSchema>;
 
 export const purchaseVoxesPayloadSchema = z.object({
 	package_id: z.string(),
+	/** Cupom de desconto opcional (aplicado no checkout do Stripe). */
+	coupon_code: z.string().optional(),
 });
 export type PurchaseVoxesPayload = z.infer<typeof purchaseVoxesPayloadSchema>;
 

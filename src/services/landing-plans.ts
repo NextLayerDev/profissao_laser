@@ -62,6 +62,8 @@ export async function getPublicPlans(): Promise<Plan[]> {
 export async function createPlanCheckout(payload: {
 	plan_key: string;
 	interval: PlanInterval;
+	/** Cupom de desconto opcional (aplicado no checkout do Stripe). */
+	coupon_code?: string;
 }): Promise<{ checkout_url: string }> {
 	const { data } = await apiCourses.post('/v1/subscription', payload);
 	return data as { checkout_url: string };
