@@ -32,6 +32,16 @@ export const salesAnalyticsSchema = z.object({
 });
 export type SalesAnalytics = z.infer<typeof salesAnalyticsSchema>;
 
+export const salesByPlanSchema = z.object({
+	plan_id: z.string(),
+	plan_key: z.string(),
+	plan_name: z.string(),
+	sales_count: z.number().int(),
+	revenue_cents: z.number().int(),
+	mrr_cents: z.number().int(),
+});
+export type SalesByPlan = z.infer<typeof salesByPlanSchema>;
+
 export const salesSummarySchema = z.object({
 	totals_by_status: z.object({
 		active: z.number().int(),
@@ -47,6 +57,7 @@ export const salesSummarySchema = z.object({
 		count: z.number().int(),
 		mrr_at_risk_cents: z.number().int(),
 	}),
+	by_plan: salesByPlanSchema.array(),
 });
 export type SalesSummary = z.infer<typeof salesSummarySchema>;
 

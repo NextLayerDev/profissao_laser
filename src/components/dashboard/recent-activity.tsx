@@ -1,7 +1,7 @@
 'use client';
 
-import { useSales } from '@/hooks/use-sales';
 import { usePermissions } from '@/modules/access';
+import { useSalesAnalytics } from '@/modules/analytics';
 import { formatCurrency } from '@/utils/format-currency';
 import { toTitleCase } from '@/utils/title-case';
 
@@ -43,15 +43,17 @@ function timeAgo(dateStr: string) {
 }
 
 export function RecentActivity() {
-	const { sales, isLoading } = useSales();
 	const { canPrice, can } = usePermissions();
+	const { data, isLoading } = useSalesAnalytics({
+		sort: 'created_at:desc',
+		per_page: 8,
+		page: 1,
+	});
 
 	// Atividade recente é de vendas: oculta sem permissão de ver vendas.
 	if (!can('vendas.view')) return null;
 
-	const recent = [...(sales ?? [])]
-		.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-		.slice(0, 8);
+	const recent = data?.data ?? [];
 
 	return (
 		<div>
@@ -77,7 +79,7 @@ export function RecentActivity() {
 						const isLast = idx === recent.length - 1;
 						return (
 							<div
-								key={sale.id}
+								key={sale.subscription_id}
 								className={`flex items-center gap-4 px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors ${
 									!isLast ? 'border-b border-slate-100 dark:border-white/5' : ''
 								}`}
@@ -92,17 +94,17 @@ export function RecentActivity() {
 										{toTitleCase(name)}
 									</p>
 									<p className="text-xs text-slate-500 dark:text-gray-500 truncate">
-										{sale.product}
+										{sale.plan.name}
 									</p>
 								</div>
 								<div className="text-right shrink-0">
 									{canPrice && (
 										<p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-											{formatCurrency(sale.amount, sale.currency ?? 'BRL')}
+											{formatCurrency(sale.sale_value_cents / 100, 'BRL')}
 										</p>
 									)}
 									<p className="text-xs text-slate-400 dark:text-gray-600">
-										{timeAgo(sale.date)}
+										{timeAgo(sale.created_at)}
 									</p>
 								</div>
 							</div>

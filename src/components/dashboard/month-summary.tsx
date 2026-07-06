@@ -1,7 +1,7 @@
 'use client';
 
-import { useSales } from '@/hooks/use-sales';
 import { usePermissions } from '@/modules/access';
+import { useSalesSummary } from '@/modules/analytics';
 import { formatCurrency } from '@/utils/format-currency';
 
 const BAR_COLORS = [
@@ -13,24 +13,16 @@ const BAR_COLORS = [
 ];
 
 export function MonthSummary() {
-	const { sales, isLoading } = useSales();
 	const { canPrice, can } = usePermissions();
+	const { data, isLoading } = useSalesSummary();
 
 	// Sem permissão de ver vendas, nada de resumo de vendas/receita na home.
 	if (!can('vendas.view')) return null;
 
-	const paid = (sales ?? []).filter((s) => s.status === 'succeeded');
-	const currency = paid[0]?.currency ?? 'BRL';
-
-	// Top plans from all-time paid sales
-	const planMap = new Map<string, number>();
-	for (const s of paid) {
-		planMap.set(s.product, (planMap.get(s.product) ?? 0) + s.amount);
-	}
-	const topPlans = [...planMap.entries()]
-		.sort((a, b) => b[1] - a[1])
+	const topPlans = [...(data?.by_plan ?? [])]
+		.sort((a, b) => b.revenue_cents - a.revenue_cents)
 		.slice(0, 5);
-	const maxRevenue = topPlans[0]?.[1] ?? 1;
+	const maxRevenue = topPlans[0]?.revenue_cents ?? 1;
 
 	return (
 		<div className="space-y-4">
@@ -67,21 +59,21 @@ export function MonthSummary() {
 									Sem dados disponíveis.
 								</p>
 							)}
-							{topPlans.map(([plan, revenue], idx) => {
-								const pct = (revenue / maxRevenue) * 100;
+							{topPlans.map((plan, idx) => {
+								const pct = (plan.revenue_cents / maxRevenue) * 100;
 								return (
-									<div key={plan}>
+									<div key={plan.plan_id}>
 										<div className="flex items-center justify-between mb-1.5">
 											<span
 												className="text-sm text-slate-700 dark:text-gray-300 truncate max-w-[160px]"
-												title={plan}
+												title={plan.plan_name}
 											>
-												{plan}
+												{plan.plan_name}
 											</span>
 											<div className="text-right shrink-0 ml-2 flex items-center gap-1.5">
 												{canPrice && (
 													<span className="text-sm font-semibold text-slate-900 dark:text-white">
-														{formatCurrency(revenue, currency)}
+														{formatCurrency(plan.revenue_cents / 100, 'BRL')}
 													</span>
 												)}
 												<span className="text-xs text-slate-400 dark:text-gray-600">
