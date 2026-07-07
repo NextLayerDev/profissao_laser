@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, Percent, Wallet, X } from 'lucide-react';
+import { AlertTriangle, Loader2, Percent, Wallet, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useCreateCoupon, useUpdateCoupon } from '@/hooks/use-upvox-coupons';
@@ -200,6 +200,24 @@ export function CreateCouponModal({
 					>
 						<X className="w-5 h-5" />
 					</button>
+				</div>
+
+				{/* Aviso de cobrança: o desconto sai da empresa, não da plataforma. */}
+				<div className="mb-5 p-3.5 bg-amber-500/10 border border-amber-500/25 rounded-xl flex gap-3">
+					<AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+					<div className="text-xs text-amber-200/90 leading-snug">
+						<p className="font-semibold text-amber-300">
+							O desconto sai do seu bolso, não da plataforma.
+						</p>
+						<p className="mt-1 text-amber-200/70">
+							A upvox continua recebendo o valor cheio na sua fatura: nas
+							assinaturas, a taxa da plataforma (9,9% + R$ 1,00) incide sobre o
+							preço <span className="font-medium">cheio</span> do plano; nas
+							compras de voxxys, o lastro (R$ 1,20/voxxy) é cobrado pela
+							quantidade, independentemente do desconto. Quanto maior o
+							desconto, menor a sua margem naquela venda.
+						</p>
+					</div>
 				</div>
 
 				<div className="space-y-5">
