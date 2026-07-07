@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { CouponCodeInput } from '@/components/checkout/coupon-code-input';
 import { PlanAuthForm } from '@/components/checkout/plan-auth-form';
 import { useLandingPlans, usePlanCheckout } from '@/hooks/use-landing-plans';
 import { getCoursesMe } from '@/services/courses-auth';
@@ -39,6 +40,7 @@ export default function PlanCheckoutPage() {
 
 	const { data, isLoading } = useLandingPlans();
 	const checkout = usePlanCheckout();
+	const [couponCode, setCouponCode] = useState<string | null>(null);
 
 	// Só após montar (evita localStorage no SSR). /v1/me valida o token na upvox.
 	const [mounted, setMounted] = useState(false);
@@ -61,7 +63,7 @@ export default function PlanCheckoutPage() {
 
 	function startSubscription() {
 		checkout.mutate(
-			{ plan_key: planKey, interval },
+			{ plan_key: planKey, interval, coupon_code: couponCode ?? undefined },
 			{
 				onError: () =>
 					toast.error('Erro ao iniciar o pagamento. Tente novamente.'),
@@ -246,6 +248,13 @@ export default function PlanCheckoutPage() {
 									<p className="text-sm text-gray-400 mb-5">
 										Você já está logado. Confirme para ir ao pagamento seguro.
 									</p>
+									<CouponCodeInput
+										context="plan"
+										planKey={planKey}
+										interval={interval}
+										onApplied={setCouponCode}
+										className="mb-4"
+									/>
 									<button
 										type="button"
 										onClick={startSubscription}

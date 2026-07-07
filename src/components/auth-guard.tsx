@@ -21,6 +21,7 @@ const ADMIN_PATHS = [
 	'/products',
 	'/sales',
 	'/links',
+	'/cupons',
 	'/reports',
 	'/community',
 	'/acessos',

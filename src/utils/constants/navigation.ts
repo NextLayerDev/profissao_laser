@@ -10,6 +10,7 @@ import {
 	Receipt,
 	ShieldCheck,
 	ShoppingCart,
+	Ticket,
 	Users,
 	Wrench,
 } from 'lucide-react';
@@ -41,6 +42,13 @@ export const navItems: NavItem[] = [
 		name: 'Links',
 		icon: Link2,
 		href: '/links',
+		hasDropdown: false,
+		section: 'SISTEMA',
+	},
+	{
+		name: 'Cupons',
+		icon: Ticket,
+		href: '/cupons',
 		hasDropdown: false,
 		section: 'SISTEMA',
 	},

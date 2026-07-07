@@ -64,8 +64,11 @@ export function useLandingPlans() {
 /** Mutation de checkout: POST /v1/subscription → redireciona pro Stripe. */
 export function usePlanCheckout() {
 	return useMutation({
-		mutationFn: (payload: { plan_key: string; interval: PlanInterval }) =>
-			createPlanCheckout(payload),
+		mutationFn: (payload: {
+			plan_key: string;
+			interval: PlanInterval;
+			coupon_code?: string;
+		}) => createPlanCheckout(payload),
 		onSuccess: ({ checkout_url }) => {
 			if (checkout_url) window.location.href = checkout_url;
 		},
