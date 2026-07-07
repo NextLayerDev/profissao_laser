@@ -84,6 +84,10 @@ export const TOOL_COLORS = {
 		gradient: 'from-emerald-400 to-teal-600',
 		iconBg: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
 	},
+	promptsMagicos: {
+		gradient: 'from-purple-500 to-fuchsia-700',
+		iconBg: 'bg-purple-500/15 text-purple-600 dark:text-purple-400',
+	},
 } as const satisfies Record<string, ToolColor>;
 
 export type ToolColorKey = keyof typeof TOOL_COLORS;

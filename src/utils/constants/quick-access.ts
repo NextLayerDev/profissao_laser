@@ -12,6 +12,7 @@ import {
 	Radio,
 	ShoppingBag,
 	SlidersHorizontal,
+	Sparkles,
 	Truck,
 	Users,
 } from 'lucide-react';
@@ -98,6 +99,15 @@ export const quickAccessItems: QuickAccessItem[] = [
 		section: 'FERRAMENTAS',
 		href: '/course/previas',
 		...TOOL_COLORS.previas,
+	},
+	{
+		label: 'Prompts Mágicos',
+		description: 'Imagens a partir de texto',
+		Icon: Sparkles,
+		section: 'FERRAMENTAS',
+		// Tool da Fábrica (blocks_v1, publicada) — rota do aluno por chave.
+		href: '/course/t/prompts_magicos',
+		...TOOL_COLORS.promptsMagicos,
 	},
 	{
 		label: 'Voxxys',
