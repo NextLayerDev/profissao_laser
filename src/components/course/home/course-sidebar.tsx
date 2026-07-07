@@ -34,9 +34,16 @@ export function CourseSidebar({
 	const isStaff = typeof window !== 'undefined' && !!getToken('user');
 	const { isTestUnlimited, hasActiveSubscription } = useEntitlements();
 	const hasFullAccess = isStaff || isTestUnlimited || hasActiveSubscription;
-	const allItems = [...quickAccessItems, ...extraTools].filter(
-		(i) => !i.hideWhenSubscribed || !hasFullAccess,
-	);
+	// Dedup por label: uma tool que já é destaque ESTÁTICO e que o aluno também
+	// FIXOU (extraTools) apareceria 2x — mantém a 1ª (estática) e descarta a pinada.
+	const seenLabels = new Set<string>();
+	const allItems = [...quickAccessItems, ...extraTools]
+		.filter((i) => !i.hideWhenSubscribed || !hasFullAccess)
+		.filter((i) => {
+			if (seenLabels.has(i.label)) return false;
+			seenLabels.add(i.label);
+			return true;
+		});
 
 	const grouped = SECTIONS.reduce(
 		(acc, section) => {
