@@ -13,6 +13,7 @@ import {
 	cancelStudentSubscription,
 	changeStudentPlan,
 	deleteStudent,
+	forceChargeStudent,
 	getStudent,
 	getStudentActivity,
 	grantStudentVoxes,
@@ -123,6 +124,23 @@ export function useCancelStudentSubscription() {
 		},
 		onError: (err) =>
 			toast.error(getApiErrorMessage(err, 'Erro ao cancelar assinatura')),
+	});
+}
+
+export function useForceChargeStudent() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (id: string) => forceChargeStudent(id),
+		onSuccess: (result) => {
+			invalidate(qc);
+			toast.success(
+				result.status === 'paid'
+					? 'Cobrança aprovada. Assinatura será reativada.'
+					: `Cobrança enviada (status: ${result.status}).`,
+			);
+		},
+		onError: (err) =>
+			toast.error(getApiErrorMessage(err, 'Erro ao cobrar assinatura')),
 	});
 }
 

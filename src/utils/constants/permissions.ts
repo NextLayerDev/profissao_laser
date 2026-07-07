@@ -12,6 +12,7 @@ export const PERMISSION_CATALOG: PermissionModule[] = [
 		label: 'Planos & Links',
 		actions: ['view', 'edit', 'delete', 'price'],
 	},
+	{ module: 'cupons', label: 'Cupons', actions: ['view', 'edit'] },
 	{ module: 'faturamento', label: 'Faturas', actions: ['view'] },
 	{ module: 'financeiro', label: 'Financeiro', actions: ['view'] },
 	{ module: 'assinaturas', label: 'Assinaturas', actions: ['view', 'edit'] },
@@ -63,6 +64,7 @@ export const NAV_VIEW_KEYS: Record<string, string[]> = {
 		'reembolsos.view',
 	],
 	Links: ['planos.view'],
+	Cupons: ['cupons.view'],
 	Financeiro: ['financeiro.view'],
 	Relatórios: ['relatorios.view'],
 	Comunidade: ['ferramentas.view'], // Ajustado conforme módulos disponíveis

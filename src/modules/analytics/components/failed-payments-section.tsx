@@ -5,10 +5,13 @@ import {
 	ArrowUp,
 	ChevronLeft,
 	ChevronRight,
+	CreditCard,
+	Loader2,
 	RefreshCw,
 	Search,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useForceChargeStudent } from '@/hooks/use-students';
 import { formatCurrency } from '@/utils/format-currency';
 import { formatDate } from '@/utils/formatDate';
 import { useFailedPaymentsAnalytics } from '../hooks/use-analytics';
@@ -109,6 +112,8 @@ export function FailedPaymentsSection() {
 	const [search, setSearch] = useState('');
 	const [reason, setReason] = useState<BillingReason | ''>('');
 	const [page, setPage] = useState(1);
+
+	const forceCharge = useForceChargeStudent();
 
 	const range = getRange(preset, customFrom, customTo);
 
@@ -289,12 +294,15 @@ export function FailedPaymentsSection() {
 								<th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-gray-500 uppercase tracking-wide whitespace-nowrap">
 									Falhou em
 								</th>
+								<th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 dark:text-gray-500 uppercase tracking-wide">
+									Ações
+								</th>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-slate-100 dark:divide-white/5">
 							{(listLoading || isFetching) && !analytics?.data.length && (
 								<tr>
-									<td colSpan={8} className="text-center py-16">
+									<td colSpan={9} className="text-center py-16">
 										<div className="flex justify-center">
 											<div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
 										</div>
@@ -304,7 +312,7 @@ export function FailedPaymentsSection() {
 							{!listLoading && analytics?.data.length === 0 && (
 								<tr>
 									<td
-										colSpan={8}
+										colSpan={9}
 										className="text-center py-16 text-slate-500 dark:text-gray-500"
 									>
 										Nenhum pagamento falho encontrado
@@ -313,6 +321,9 @@ export function FailedPaymentsSection() {
 							)}
 							{analytics?.data.map((row) => {
 								const cfg = REASON_CONFIG[row.billing_reason];
+								const charging =
+									forceCharge.isPending &&
+									forceCharge.variables === row.customer.id;
 								return (
 									<tr
 										key={row.id}
@@ -393,6 +404,23 @@ export function FailedPaymentsSection() {
 										</td>
 										<td className="px-4 py-3 text-xs text-slate-500 dark:text-gray-400 whitespace-nowrap">
 											{formatDate(row.created_at)}
+										</td>
+										<td className="px-4 py-3 text-right whitespace-nowrap">
+											<button
+												type="button"
+												onClick={() => forceCharge.mutate(row.customer.id)}
+												disabled={forceCharge.isPending}
+												title="Tentar cobrar a fatura aberta novamente"
+												aria-label={`Cobrar ${row.customer.name ?? row.customer.email} agora`}
+												className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-50 transition-colors"
+											>
+												{charging ? (
+													<Loader2 className="w-3.5 h-3.5 animate-spin" />
+												) : (
+													<CreditCard className="w-3.5 h-3.5" />
+												)}
+												Cobrar
+											</button>
 										</td>
 									</tr>
 								);

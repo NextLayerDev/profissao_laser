@@ -2,6 +2,7 @@ import {
 	BookOpen,
 	Eye,
 	Flame,
+	Gift,
 	Headphones,
 	LayoutGrid,
 	MessageCircle,
@@ -32,6 +33,8 @@ export type QuickAccessItem = {
 	iconBg: string;
 	/** Ícone-imagem (ex.: logo 3D): renderiza maior e sem o box branco atrás. */
 	iconBare?: boolean;
+	/** Some do menu pra quem já tem assinatura ativa (ex.: prévias grátis). */
+	hideWhenSubscribed?: boolean;
 };
 
 export const quickAccessItems: QuickAccessItem[] = [
@@ -43,6 +46,15 @@ export const quickAccessItems: QuickAccessItem[] = [
 		featureKey: 'aula',
 		href: '/course/jornada',
 		...TOOL_COLORS.aulas,
+	},
+	{
+		label: 'Aulas Grátis',
+		description: 'Prévias liberadas pra todos',
+		Icon: Gift,
+		section: 'CONTEUDO',
+		href: '/course/aulas-gratis',
+		hideWhenSubscribed: true,
+		...TOOL_COLORS.aulasGratis,
 	},
 	{
 		label: 'Suporte on-line',
