@@ -1,14 +1,15 @@
 'use client';
 
-import { BookOpen, Layers, Puzzle, Wrench } from 'lucide-react';
+import { BookOpen, Gift, Layers, Puzzle, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import { Header } from '@/components/dashboard/header';
 import { CoursesAdminSection } from '@/modules/courses';
+import { FreeLessonsAdminSection } from '@/modules/lessons';
 import { PlansAdminSection } from '@/modules/plans';
 import { ToolsAdminSection } from '@/modules/tools';
 import { VoxesAdminSection } from '@/modules/voxes';
 
-type Tab = 'cursos' | 'voxes' | 'planos' | 'tools';
+type Tab = 'cursos' | 'voxes' | 'planos' | 'tools' | 'aulas-gratis';
 
 interface TabDef {
 	key: Tab;
@@ -52,6 +53,14 @@ const TABS: TabDef[] = [
 		activeClasses:
 			'bg-gradient-to-br from-emerald-500 to-cyan-600 text-white shadow-lg shadow-emerald-500/30',
 		iconInactiveClass: 'text-emerald-500',
+	},
+	{
+		key: 'aulas-gratis',
+		label: 'Aulas Grátis',
+		icon: Gift,
+		activeClasses:
+			'bg-gradient-to-br from-rose-500 to-pink-600 text-white shadow-lg shadow-rose-500/30',
+		iconInactiveClass: 'text-rose-500',
 	},
 ];
 
@@ -103,6 +112,7 @@ export default function Catalogo() {
 				{activeTab === 'voxes' && <VoxesAdminSection />}
 				{activeTab === 'planos' && <PlansAdminSection />}
 				{activeTab === 'tools' && <ToolsAdminSection />}
+				{activeTab === 'aulas-gratis' && <FreeLessonsAdminSection />}
 			</main>
 		</div>
 	);
