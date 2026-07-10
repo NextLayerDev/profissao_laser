@@ -21,6 +21,7 @@ import {
 	useCreateBankEntry,
 	useDeleteBankEntry,
 	useReorderBank,
+	useSmartInjectTema,
 	useToolBank,
 	useUpdateBankEntry,
 } from '@/modules/tools/hooks/use-tool-bank';
@@ -238,6 +239,80 @@ function BankFieldControl({
 
 function FieldShell({ children }: { children: ReactNode }) {
 	return <div className="grid gap-4 sm:grid-cols-2">{children}</div>;
+}
+
+/**
+ * Campo `prompt_script` com o botão "Add tema inteligente": a IA lê o script
+ * do admin e insere o marcador `{tema}` no lugar ideal (porta do "Injetar
+ * {USER_INPUT}" do comunidade_laser). Só aparece quando o modo inclui texto
+ * (`texto` / `texto_imagem`) — no modo só-imagem não há tema do aluno.
+ */
+function PromptScriptField({
+	field,
+	value,
+	onText,
+	mode,
+}: {
+	field: BankFieldDef;
+	value: string;
+	onText: (v: string) => void;
+	mode: string | undefined;
+}) {
+	const smartMut = useSmartInjectTema();
+	const label = field.label ?? field.name;
+	const modeAllowsText = mode !== 'imagem';
+
+	const runSmart = async () => {
+		if (!value.trim()) {
+			toast.error('Escreva um prompt antes de injetar o tema.');
+			return;
+		}
+		try {
+			const res = await smartMut.mutateAsync({
+				prompt_script: value,
+				mode,
+			});
+			if (res.already) toast.info('O prompt já contém o marcador {tema}.');
+			else if (res.not_needed) toast.info('Modo imagem não precisa de tema.');
+			else if (res.fallback)
+				toast.success('Tema adicionado no final (fallback).');
+			else toast.success('Tema inteligente inserido.');
+			onText(res.result);
+		} catch (err) {
+			toast.error(getApiErrorMessage(err, 'Falha ao analisar o prompt.'));
+		}
+	};
+
+	return (
+		<div>
+			<span className={labelCls}>
+				{label}
+				{field.required && <span className="text-rose-400"> *</span>}
+			</span>
+			<textarea
+				value={value}
+				onChange={(e) => onText(e.target.value)}
+				rows={4}
+				placeholder={field.placeholder}
+				className={`${areaCls} font-mono text-[12px]`}
+			/>
+			{modeAllowsText && (
+				<button
+					type="button"
+					onClick={runSmart}
+					disabled={smartMut.isPending}
+					className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-violet-400/30 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-200 transition-colors hover:bg-violet-500/20 disabled:opacity-50"
+				>
+					{smartMut.isPending ? (
+						<Loader2 className="h-3.5 w-3.5 animate-spin" />
+					) : (
+						<Sparkles className="h-3.5 w-3.5" />
+					)}
+					Add tema inteligente
+				</button>
+			)}
+		</div>
+	);
 }
 
 /** `mode` do registro inclui imagem? ('imagem' | 'texto_imagem'). */
@@ -545,19 +620,30 @@ export function ToolBankManager({
 											f.type === 'textarea' ? 'sm:col-span-2' : undefined
 										}
 									>
-										<BankFieldControl
-											field={f}
-											value={form.data[f.name] ?? ''}
-											imageFile={form.dataImages[f.name]}
-											onText={(v) =>
-												patchForm({ data: { ...form.data, [f.name]: v } })
-											}
-											onImage={(file) =>
-												patchForm({
-													dataImages: { ...form.dataImages, [f.name]: file },
-												})
-											}
-										/>
+										{f.name === 'prompt_script' ? (
+											<PromptScriptField
+												field={f}
+												value={form.data[f.name] ?? ''}
+												onText={(v) =>
+													patchForm({ data: { ...form.data, [f.name]: v } })
+												}
+												mode={form.data.mode}
+											/>
+										) : (
+											<BankFieldControl
+												field={f}
+												value={form.data[f.name] ?? ''}
+												imageFile={form.dataImages[f.name]}
+												onText={(v) =>
+													patchForm({ data: { ...form.data, [f.name]: v } })
+												}
+												onImage={(file) =>
+													patchForm({
+														dataImages: { ...form.dataImages, [f.name]: file },
+													})
+												}
+											/>
+										)}
 									</div>
 								))}
 							</FieldShell>

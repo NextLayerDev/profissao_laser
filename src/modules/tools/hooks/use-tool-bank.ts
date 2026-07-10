@@ -6,6 +6,8 @@ import {
 	deleteToolBankEntry,
 	listToolBank,
 	reorderToolBank,
+	type SmartTemaResult,
+	smartInjectTema,
 	type ToolBankEntry,
 	updateToolBankEntry,
 } from '../services/tool-bank.service';
@@ -66,5 +68,20 @@ export function useReorderBank(toolKey: string) {
 	return useMutation({
 		mutationFn: (ids: string[]) => reorderToolBank(toolKey, ids),
 		onSuccess: invalidate,
+	});
+}
+
+/**
+ * "Add tema inteligente": a IA insere o marcador `{tema}` no `prompt_script`.
+ * Não toca o banco (só transforma o texto); o admin revisa e salva depois.
+ */
+export function useSmartInjectTema() {
+	return useMutation<
+		SmartTemaResult,
+		Error,
+		{ prompt_script: string; mode?: string }
+	>({
+		mutationFn: ({ prompt_script, mode }) =>
+			smartInjectTema(prompt_script, mode),
 	});
 }
