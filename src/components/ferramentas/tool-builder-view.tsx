@@ -912,14 +912,17 @@ export function ToolBuilderView() {
 				mode === 'json'
 					? toolDefinitionDocSchema.parse(JSON.parse(json))
 					: buildDoc(state);
-			// O banco e a aparência (ui.admin/customer) vivem FORA do builder-model
-			// — preserva-os da definition aberta pra o Salvar NUNCA apagar o banco
-			// da tool (bug: trocar o ícone wipava o banco → roteava pra fábrica).
+			// O banco e a aparência (ui.admin/customer) são emitidos pelo buildDoc
+			// (round-trip fiel via state.bank/state.screens). `built` é autoritativo;
+			// `openDef` fica como safety net só se o state ainda não tiver banco
+			// (ex.: tool nova/legacy carregada antes do round-trip). Assim o Salvar
+			// NUNCA apaga o `bank.inject` — bug histórico: trocar o ícone wipava o
+			// banco (openDef stale) → roteava pra fábrica.
 			const definition: ToolDefinitionDoc = openDef
 				? {
 						...openDef.definition,
 						...built,
-						bank: openDef.definition.bank ?? built.bank,
+						bank: built.bank ?? openDef.definition.bank,
 						ui: { ...(openDef.definition.ui ?? {}), ...(built.ui ?? {}) },
 					}
 				: built;
@@ -986,8 +989,12 @@ export function ToolBuilderView() {
 			await updateToolDefinition(selectedDefId, { definition: nextDoc });
 			return publishToolDefinition(selectedDefId);
 		},
-		onSuccess: () => {
+		onSuccess: (_data, bank) => {
 			toast.success('Banco configurado e publicado 🚀');
+			// Mantém state.bank fresco: o próximo Salvar emite `built.bank` deste
+			// state (merge invertido o escolhe como autoritativo) — sem isso, o
+			// saveMut sobrescreveria o banco recém-publicado por um snapshot stale.
+			setState((s) => (s ? { ...s, bank } : s));
 			qc.invalidateQueries({ queryKey: ['tool-definitions'] });
 			qc.invalidateQueries({ queryKey: ['tools'] });
 			setBankConfigOpen(false);
@@ -1019,8 +1026,21 @@ export function ToolBuilderView() {
 			await updateToolDefinition(selectedDefId, { definition: nextDoc });
 			return publishToolDefinition(selectedDefId);
 		},
-		onSuccess: () => {
+		onSuccess: (_data, screens) => {
 			toast.success('Aparência salva e publicada 🚀');
+			// Espelha no state.screens o que foi de fato salvo (non-empty vira
+			// undefined se vazio), pra o próximo Salvar emitir `built.ui` fresco.
+			const hasAdmin = !!screens.admin && Object.keys(screens.admin).length > 0;
+			const hasCustomer =
+				!!screens.customer && Object.keys(screens.customer).length > 0;
+			const nextScreens =
+				hasAdmin || hasCustomer
+					? {
+							admin: hasAdmin ? screens.admin : undefined,
+							customer: hasCustomer ? screens.customer : undefined,
+						}
+					: undefined;
+			setState((s) => (s ? { ...s, screens: nextScreens } : s));
 			qc.invalidateQueries({ queryKey: ['tool-definitions'] });
 			qc.invalidateQueries({ queryKey: ['tools'] });
 		},
