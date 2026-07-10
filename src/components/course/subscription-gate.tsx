@@ -12,15 +12,26 @@ import { getToken } from '@/lib/auth';
  * staff) can enter. Access is 100% plan-driven — no active plan ⇒ "assine um
  * plano". Per-tool USAGE is gated separately (at invoke time). Replaces the old
  * all-or-nothing AccessGate + per-course feature model.
+ *
+ * `toolKey` opcionalmente libera a página quando essa tool está marcada como
+ * grátis (`entitlements.tools[].entitled` já vem `true` sem plano ativo).
  */
-export function SubscriptionGate({ children }: { children: ReactNode }) {
+export function SubscriptionGate({
+	children,
+	toolKey,
+}: {
+	children: ReactNode;
+	toolKey?: string;
+}) {
 	const isStaff = typeof window !== 'undefined' && !!getToken('user');
-	const { isTestUnlimited, hasActiveSubscription, isLoading } =
+	const { isTestUnlimited, hasActiveSubscription, isLoading, toolFor } =
 		useEntitlements();
+	const isFreeTool = !!toolKey && !!toolFor(toolKey)?.entitled;
 
 	if (isStaff) return <>{children}</>;
 	if (isLoading) return <WizardSkeleton />;
-	if (isTestUnlimited || hasActiveSubscription) return <>{children}</>;
+	if (isTestUnlimited || hasActiveSubscription || isFreeTool)
+		return <>{children}</>;
 
 	return (
 		<div className="flex flex-col items-center justify-center py-24 px-6 text-center animate-[fade-in-up_0.5s_ease-out_both]">

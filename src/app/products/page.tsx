@@ -6,7 +6,11 @@ import { Header } from '@/components/dashboard/header';
 import { CoursesAdminSection } from '@/modules/courses';
 import { FreeLessonsAdminSection } from '@/modules/lessons';
 import { PlansAdminSection } from '@/modules/plans';
-import { ToolsAdminSection } from '@/modules/tools';
+import {
+	FreeToolCategoriesAdminSection,
+	FreeToolsAdminSection,
+	ToolsAdminSection,
+} from '@/modules/tools';
 import { VoxesAdminSection } from '@/modules/voxes';
 
 type Tab = 'cursos' | 'voxes' | 'planos' | 'tools' | 'aulas-gratis';
@@ -56,7 +60,7 @@ const TABS: TabDef[] = [
 	},
 	{
 		key: 'aulas-gratis',
-		label: 'Aulas Grátis',
+		label: 'Conteúdo Grátis',
 		icon: Gift,
 		activeClasses:
 			'bg-gradient-to-br from-rose-500 to-pink-600 text-white shadow-lg shadow-rose-500/30',
@@ -112,7 +116,31 @@ export default function Catalogo() {
 				{activeTab === 'voxes' && <VoxesAdminSection />}
 				{activeTab === 'planos' && <PlansAdminSection />}
 				{activeTab === 'tools' && <ToolsAdminSection />}
-				{activeTab === 'aulas-gratis' && <FreeLessonsAdminSection />}
+				{activeTab === 'aulas-gratis' && (
+					<div className="space-y-10">
+						<FreeLessonsAdminSection />
+						<div>
+							<h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+								Abas grátis
+							</h3>
+							<p className="text-slate-600 dark:text-gray-400 mb-4">
+								Escolha quais abas de ferramentas (Chat, Lives...) ficam
+								visíveis para quem ainda não assinou.
+							</p>
+							<FreeToolCategoriesAdminSection />
+						</div>
+						<div>
+							<h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+								Ferramentas grátis
+							</h3>
+							<p className="text-slate-600 dark:text-gray-400 mb-4">
+								Escolha quais ferramentas ficam liberadas para quem ainda não
+								assinou.
+							</p>
+							<FreeToolsAdminSection />
+						</div>
+					</div>
+				)}
 			</main>
 		</div>
 	);

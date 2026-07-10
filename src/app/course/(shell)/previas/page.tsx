@@ -8,7 +8,7 @@ export default function PreviasCoursePage() {
 	// plano. SubscriptionGate abre só com assinatura ativa (ou conta ilimitada /
 	// staff). Sem voxxys por uso, sem invocation_id, sem modal de confirmação.
 	return (
-		<SubscriptionGate>
+		<SubscriptionGate toolKey="previa">
 			<PreviasView />
 		</SubscriptionGate>
 	);

@@ -9,6 +9,7 @@ export const toolSchema = z.object({
 	/** Custo real da plataforma por uso (cents) — alimenta a fatura aberta dos Links de Plano. */
 	platform_cost_cents: z.coerce.number().optional().default(0),
 	enabled: z.boolean(),
+	is_free: z.boolean().optional().default(false),
 	created_at: z.string(),
 	updated_at: z.string(),
 });
@@ -25,6 +26,7 @@ export const createToolSchema = z.object({
 	vox_cost: z.number().min(0).optional(),
 	platform_cost_cents: z.number().int().min(0).optional(),
 	enabled: z.boolean().optional(),
+	is_free: z.boolean().optional(),
 });
 export type CreateToolPayload = z.infer<typeof createToolSchema>;
 
