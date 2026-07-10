@@ -7,7 +7,7 @@ export default function GravacaoOneClickCoursePage() {
 	// Acesso 100% pelo plano: SubscriptionGate libera só com assinatura ativa
 	// (ou conta ilimitada / staff). O uso/cobrança é gatilhado dentro da view.
 	return (
-		<SubscriptionGate>
+		<SubscriptionGate toolKey="gravacao_oneclick">
 			<GravacaoOneClickView />
 		</SubscriptionGate>
 	);

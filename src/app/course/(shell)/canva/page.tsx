@@ -7,7 +7,7 @@ export default function CanvaCoursePage() {
 	// Acesso 100% pelo plano: SubscriptionGate libera só com assinatura ativa
 	// (ou conta ilimitada / staff). O uso do ai_canvas é cobrado no próprio editor.
 	return (
-		<SubscriptionGate>
+		<SubscriptionGate toolKey="ai_canvas">
 			<CanvaView />
 		</SubscriptionGate>
 	);

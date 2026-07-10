@@ -1,14 +1,19 @@
 'use client';
 
-import { BookOpen, Layers, Puzzle, Wrench } from 'lucide-react';
+import { BookOpen, Gift, Layers, Puzzle, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import { Header } from '@/components/dashboard/header';
 import { CoursesAdminSection } from '@/modules/courses';
+import { FreeLessonsAdminSection } from '@/modules/lessons';
 import { PlansAdminSection } from '@/modules/plans';
-import { ToolsAdminSection } from '@/modules/tools';
+import {
+	FreeToolCategoriesAdminSection,
+	FreeToolsAdminSection,
+	ToolsAdminSection,
+} from '@/modules/tools';
 import { VoxesAdminSection } from '@/modules/voxes';
 
-type Tab = 'cursos' | 'voxes' | 'planos' | 'tools';
+type Tab = 'cursos' | 'voxes' | 'planos' | 'tools' | 'aulas-gratis';
 
 interface TabDef {
 	key: Tab;
@@ -52,6 +57,14 @@ const TABS: TabDef[] = [
 		activeClasses:
 			'bg-gradient-to-br from-emerald-500 to-cyan-600 text-white shadow-lg shadow-emerald-500/30',
 		iconInactiveClass: 'text-emerald-500',
+	},
+	{
+		key: 'aulas-gratis',
+		label: 'Conteúdo Grátis',
+		icon: Gift,
+		activeClasses:
+			'bg-gradient-to-br from-rose-500 to-pink-600 text-white shadow-lg shadow-rose-500/30',
+		iconInactiveClass: 'text-rose-500',
 	},
 ];
 
@@ -103,6 +116,31 @@ export default function Catalogo() {
 				{activeTab === 'voxes' && <VoxesAdminSection />}
 				{activeTab === 'planos' && <PlansAdminSection />}
 				{activeTab === 'tools' && <ToolsAdminSection />}
+				{activeTab === 'aulas-gratis' && (
+					<div className="space-y-10">
+						<FreeLessonsAdminSection />
+						<div>
+							<h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+								Abas grátis
+							</h3>
+							<p className="text-slate-600 dark:text-gray-400 mb-4">
+								Escolha quais abas de ferramentas (Chat, Lives...) ficam
+								visíveis para quem ainda não assinou.
+							</p>
+							<FreeToolCategoriesAdminSection />
+						</div>
+						<div>
+							<h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+								Ferramentas grátis
+							</h3>
+							<p className="text-slate-600 dark:text-gray-400 mb-4">
+								Escolha quais ferramentas ficam liberadas para quem ainda não
+								assinou.
+							</p>
+							<FreeToolsAdminSection />
+						</div>
+					</div>
+				)}
 			</main>
 		</div>
 	);

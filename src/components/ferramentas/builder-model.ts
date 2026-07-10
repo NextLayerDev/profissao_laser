@@ -1,4 +1,6 @@
 import type {
+	BankConfig,
+	ScreenUi,
 	ToolControl,
 	ToolDefinitionDoc,
 	ToolInputSpec,
@@ -172,6 +174,21 @@ export interface BuilderState {
 	freeQuota: Record<string, number | null>;
 	/** Presente só quando toolType='room'. */
 	room?: BuilderRoomState;
+	/**
+	 * Config do banco do admin (bank.enabled/fields/inject/card). Round-trip
+	 * fiel: `buildDoc` emite e `docToState` lê de volta, pra o save não depender
+	 * do merge frágil com `openDef` (que wipava o `bank.inject` em save via JSON
+	 * mode ou com `openDef` stale).
+	 */
+	bank?: BankConfig;
+	/** Aparência personalizável das telas Admin/Cliente (ui.admin/ui.customer). */
+	screens?: BuilderScreensUi;
+}
+
+/** Aparência de cada tela de uma tool de pipeline (admin e/ou cliente). */
+export interface BuilderScreensUi {
+	admin?: ScreenUi;
+	customer?: ScreenUi;
 }
 
 /** Planos conhecidos (fallback p/ seeds; a UI usa os planos reais via usePlans). */
@@ -407,6 +424,8 @@ export function buildDoc(state: BuilderState): ToolDefinitionDoc {
 				downloadFrom: 'output.primary',
 				showMeta: state.output.meta.length > 0,
 			},
+			...(state.screens?.admin ? { admin: state.screens.admin } : {}),
+			...(state.screens?.customer ? { customer: state.screens.customer } : {}),
 			...(state.customNodes.length
 				? {
 						custom_nodes: {
@@ -417,6 +436,7 @@ export function buildDoc(state: BuilderState): ToolDefinitionDoc {
 				: {}),
 		},
 		billing: { vox_cost: state.voxCost, free_quota: state.freeQuota },
+		...(state.bank ? { bank: state.bank } : {}),
 	} as unknown as ToolDefinitionDoc;
 }
 
@@ -538,6 +558,19 @@ export function docToState(def: {
 	const action = doc.ui?.action as { label?: string } | undefined;
 	const cat = readCatalogUi(doc.ui);
 
+	// Round-trip do banco + aparência das telas: lê de volta o que o buildDoc
+	// emite, pra o state refletir a definition real (e o próximo save não wipar
+	// o `bank.inject` por depender de um `openDef` fresco).
+	const bankRaw = (doc as { bank?: BankConfig }).bank;
+	const screensUi = (doc.ui ?? {}) as {
+		admin?: ScreenUi;
+		customer?: ScreenUi;
+	};
+	const screens: BuilderScreensUi | undefined =
+		screensUi.admin || screensUi.customer
+			? { admin: screensUi.admin, customer: screensUi.customer }
+			: undefined;
+
 	return {
 		templateId: 'custom',
 		toolType: 'pipeline',
@@ -560,6 +593,8 @@ export function docToState(def: {
 		},
 		voxCost: typeof billing.vox_cost === 'number' ? billing.vox_cost : 0,
 		freeQuota,
+		...(bankRaw ? { bank: bankRaw } : {}),
+		...(screens ? { screens } : {}),
 	};
 }
 

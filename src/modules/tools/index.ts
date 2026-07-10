@@ -1,3 +1,5 @@
+export { FreeToolCategoriesAdminSection } from './components/free-tool-categories-admin-section';
+export { FreeToolsAdminSection } from './components/free-tools-admin-section';
 export { ToolsAdminSection } from './components/tools-admin-section';
 
 export { useInvokeTool } from './hooks/use-invoke-tool';

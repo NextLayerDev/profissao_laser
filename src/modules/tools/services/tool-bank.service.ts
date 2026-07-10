@@ -90,3 +90,29 @@ export async function uploadToolBankImage(
 	);
 	return uploadImageResultSchema.parse(data).url;
 }
+
+/**
+ * "Add tema inteligente" — a IA (gemini-2.5-flash) lê o `prompt_script` do
+ * admin e insere o marcador `{tema}` no lugar ideal (porta do "Injetar
+ * {USER_INPUT}" do comunidade_laser, adaptada ao marcador deste projeto).
+ * Admin-only; a análise não depende da tool, por isso o endpoint é não-keyed.
+ */
+export const smartTemaResultSchema = z.object({
+	result: z.string(),
+	already: z.boolean().optional(),
+	not_needed: z.boolean().optional(),
+	fallback: z.boolean().optional(),
+	error: z.string().optional(),
+});
+export type SmartTemaResult = z.infer<typeof smartTemaResultSchema>;
+
+export async function smartInjectTema(
+	promptScript: string,
+	mode?: string,
+): Promise<SmartTemaResult> {
+	const { data } = await api.post('/api/tools/smart-tema', {
+		prompt_script: promptScript,
+		mode,
+	});
+	return smartTemaResultSchema.parse(data);
+}
