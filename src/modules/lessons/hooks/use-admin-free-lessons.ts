@@ -3,6 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { toast } from 'sonner';
+import { catalogQueryKeys } from '@/modules/catalog/hooks/use-catalog';
+import { listPublicCourses } from '@/modules/catalog/services/catalog.service';
 import {
 	listLessonsIndex,
 	updateLesson,
@@ -17,7 +19,7 @@ export interface FreeLessonAdminEntry extends LessonIndexEntry {
 }
 
 export interface FreeLessonAdminCourseGroup {
-	course: LessonIndexEntry['course'];
+	course: LessonIndexEntry['course'] & { image_url?: string | null };
 	lessons: FreeLessonAdminEntry[];
 	freeCount: number;
 }
@@ -38,15 +40,29 @@ export function useAdminFreeLessons() {
 		queryFn: listFreeLessons,
 		staleTime: 60_000,
 	});
+	// Reaproveita a vitrine pública só pra pegar a imagem do curso (o índice de
+	// aulas do staff não expõe image_url).
+	const coursesQuery = useQuery({
+		queryKey: catalogQueryKeys.courses,
+		queryFn: listPublicCourses,
+		staleTime: 10 * 60_000,
+	});
 
 	const groups = useMemo(() => {
 		const freeIds = new Set((freeQuery.data ?? []).map((l) => l.id));
+		const imageByCourse = new Map(
+			(coursesQuery.data ?? []).map((c) => [c.id, c.image_url]),
+		);
 		const byCourse = new Map<string, FreeLessonAdminCourseGroup>();
 
 		for (const entry of indexQuery.data ?? []) {
 			const key = entry.course.id;
 			if (!byCourse.has(key)) {
-				byCourse.set(key, { course: entry.course, lessons: [], freeCount: 0 });
+				byCourse.set(key, {
+					course: { ...entry.course, image_url: imageByCourse.get(key) },
+					lessons: [],
+					freeCount: 0,
+				});
 			}
 			const group = byCourse.get(key);
 			if (!group) continue;
@@ -67,7 +83,7 @@ export function useAdminFreeLessons() {
 		return Array.from(byCourse.values()).sort((a, b) =>
 			a.course.title.localeCompare(b.course.title),
 		);
-	}, [indexQuery.data, freeQuery.data]);
+	}, [indexQuery.data, freeQuery.data, coursesQuery.data]);
 
 	const totalLessons = indexQuery.data?.length ?? 0;
 	const totalFree = freeQuery.data?.length ?? 0;

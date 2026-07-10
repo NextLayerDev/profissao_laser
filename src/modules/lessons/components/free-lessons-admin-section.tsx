@@ -83,13 +83,23 @@ function CourseGroupCard({
 	let lastModuleId: string | null = null;
 
 	return (
-		<div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] overflow-hidden">
+		<div className="break-inside-avoid mb-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] overflow-hidden">
 			<button
 				type="button"
 				onClick={() => setOpen((v) => !v)}
-				className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors"
+				className="w-full flex items-center gap-3 p-3 text-left hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors"
 			>
-				<BookOpen className="w-4 h-4 text-slate-400 shrink-0" />
+				{group.course.image_url ? (
+					<img
+						src={group.course.image_url}
+						alt=""
+						className="w-14 h-14 rounded-lg object-cover border border-slate-200 dark:border-white/10 shrink-0"
+					/>
+				) : (
+					<div className="w-14 h-14 rounded-lg bg-slate-100 dark:bg-white/5 flex items-center justify-center shrink-0">
+						<BookOpen className="w-5 h-5 text-slate-400" />
+					</div>
+				)}
 				<span className="flex-1 min-w-0 truncate text-sm font-semibold text-slate-900 dark:text-white">
 					{group.course.title}
 				</span>
@@ -207,7 +217,7 @@ export function FreeLessonsAdminSection() {
 					description="Crie um curso com módulos e aulas para liberar prévias grátis."
 				/>
 			) : (
-				<div className="space-y-3">
+				<div className="columns-1 lg:columns-2 gap-3">
 					{groups.map((group) => (
 						<CourseGroupCard
 							key={group.course.id}
