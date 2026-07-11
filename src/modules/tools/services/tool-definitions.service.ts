@@ -164,6 +164,13 @@ export const toolDefinitionDocSchema = z
 			.passthrough()
 			.optional(),
 		bank: bankConfigSchema.optional(),
+		// Override per-tool do modelo OpenRouter usado por `ai.generate_image`
+		// (catálogo curado: ver `image-models.service.ts`). O motor injeta
+		// automaticamente nos `params` dos nós `ai.generate_image` no main API.
+		model: z.string().optional(),
+		// System prompt opcional enviado ao `ai.generate_image`. SUBSTITUI o
+		// prompt laser padrão (decisão 2026-07-10: replace total).
+		system_prompt: z.string().optional(),
 	})
 	.passthrough();
 export type ToolDefinitionDoc = z.infer<typeof toolDefinitionDocSchema>;
@@ -279,6 +286,54 @@ export async function setToolColor(
 			ui: { ...(def.definition.ui ?? {}), color },
 		},
 	});
+}
+
+/**
+ * Define o MODELO de imagem (OpenRouter id) usado pelo `ai.generate_image`
+ * desta tool. Reescreve só `definition.model` com MERGE total. Preserva
+ * `bank`/`pipeline`/`input`/`output`/`ui` e o resto. `modelId === null` apaga
+ * a chave (volta ao default do sistema). Mesmo padrão anti-wipe do
+ * `setToolCategory` / `setToolColor`. Encadeia `publishToolDefinition` para
+ * o motor passar a usar o override na próxima invocação (cache de 60s no
+ * `loadPublishedToolDefinition` na main API torna a publicação obrigatória).
+ */
+export async function setToolModel(
+	def: AiToolDefinition,
+	modelId: string | null,
+): Promise<PublishResult> {
+	const next: ToolDefinitionDoc = { ...def.definition };
+	if (modelId) next.model = modelId;
+	else delete (next as { model?: string }).model;
+	await updateToolDefinition(def.id, {
+		title: def.title,
+		description: def.description,
+		engine_runtime: def.engine_runtime,
+		definition: next,
+	});
+	return publishToolDefinition(def.id);
+}
+
+/**
+ * Define o SYSTEM PROMPT customizado enviado ao `ai.generate_image` desta
+ * tool. SUBSTITUI o prompt laser padrão (decisão 2026-07-10: replace total).
+ * `prompt === null` ou vazio apaga a chave (volta ao default). Mesmo padrão
+ * anti-wipe do `setToolCategory` / `setToolColor`. Encadeia publish — ver
+ * `setToolModel` para a justificativa.
+ */
+export async function setToolSystemPrompt(
+	def: AiToolDefinition,
+	prompt: string | null,
+): Promise<PublishResult> {
+	const next: ToolDefinitionDoc = { ...def.definition };
+	if (prompt && prompt.trim().length > 0) next.system_prompt = prompt;
+	else delete (next as { system_prompt?: string }).system_prompt;
+	await updateToolDefinition(def.id, {
+		title: def.title,
+		description: def.description,
+		engine_runtime: def.engine_runtime,
+		definition: next,
+	});
+	return publishToolDefinition(def.id);
 }
 
 export const publishResultSchema = z.object({

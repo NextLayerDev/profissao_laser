@@ -41,6 +41,8 @@ import {
 	listToolDefinitions,
 	publishToolDefinition,
 	type ScreenUi,
+	setToolModel,
+	setToolSystemPrompt,
 	type ToolDefinitionDoc,
 	toolDefinitionDocSchema,
 	updateToolDefinition,
@@ -82,9 +84,11 @@ import {
 import { RoomFlowCanvas } from './canvas/room-flow-canvas';
 import { ToolCanvas } from './canvas/tool-canvas';
 import { IconPicker } from './icon-picker';
+import { ImageModelSelector } from './image-model-selector';
 import { RoomAppearanceSection } from './room-appearance-section';
 import { RoomBuilderSections } from './room-builder-sections';
 import { type PreviewDevice, RoomLivePreview } from './room-live-preview';
+import { SystemPromptOverrideEditor } from './system-prompt-override-editor';
 import {
 	ToolAppearanceSection,
 	type ToolScreensUi,
@@ -1048,6 +1052,49 @@ export function ToolBuilderView() {
 			toast.error(getApiErrorMessage(err, 'Falha ao salvar a aparência.')),
 	});
 
+	// ── IA: override do modelo + system prompt por tool ──
+	// Espelha o padrão de `tlScreens`: estado local, save = reescreve
+	// `definition.model`/`definition.system_prompt` com merge total (anti-wipe)
+	// via `setToolModel` / `setToolSystemPrompt` e republica. Só habilitado se a
+	// tool tem ao menos um bloco `ai.generate_image` no pipeline.
+	const hasAiImageBlock = (state?.nodes ?? []).some(
+		(n) => n.block === 'ai.generate_image',
+	);
+	const setToolModelMut = useMutation({
+		mutationFn: async (modelId: string | null) => {
+			if (!openDef) throw new Error('salve a ferramenta antes');
+			return setToolModel(openDef, modelId);
+		},
+		onSuccess: (_data, modelId) => {
+			toast.success(
+				modelId
+					? 'Modelo de imagem atualizado e publicado 🚀'
+					: 'Modelo removido (voltou ao default) e publicado 🚀',
+			);
+			qc.invalidateQueries({ queryKey: ['tool-definitions'] });
+			qc.invalidateQueries({ queryKey: ['tools'] });
+		},
+		onError: (err) =>
+			toast.error(getApiErrorMessage(err, 'Falha ao salvar o modelo.')),
+	});
+	const setToolSystemPromptMut = useMutation({
+		mutationFn: async (prompt: string | null) => {
+			if (!openDef) throw new Error('salve a ferramenta antes');
+			return setToolSystemPrompt(openDef, prompt);
+		},
+		onSuccess: (_data, prompt) => {
+			toast.success(
+				prompt && prompt.trim()
+					? 'System prompt customizado aplicado e publicado 🚀'
+					: 'System prompt removido (voltou ao padrão laser) e publicado 🚀',
+			);
+			qc.invalidateQueries({ queryKey: ['tool-definitions'] });
+			qc.invalidateQueries({ queryKey: ['tools'] });
+		},
+		onError: (err) =>
+			toast.error(getApiErrorMessage(err, 'Falha ao salvar o system prompt.')),
+	});
+
 	const addField = (type: FieldType) => {
 		if (!state) return;
 		const idx = state.fields.length;
@@ -1514,6 +1561,33 @@ export function ToolBuilderView() {
 									screen={tlScreen}
 									onScreenChange={setTlScreen}
 								/>
+								{hasAiImageBlock && openDef && (
+									<FormSection
+										step="IA"
+										title="Modelo de imagem"
+										subtitle="Qual IA gera as imagens desta tool (apenas `ai.generate_image`)."
+										icon={<Sparkles className="h-5 w-5 text-emerald-300" />}
+									>
+										<div className="space-y-5">
+											<ImageModelSelector
+												value={openDef.definition.model ?? null}
+												onChange={(m) => setToolModelMut.mutate(m)}
+												disabled={
+													setToolModelMut.isPending ||
+													setToolSystemPromptMut.isPending
+												}
+											/>
+											<SystemPromptOverrideEditor
+												value={openDef.definition.system_prompt ?? null}
+												onChange={(p) => setToolSystemPromptMut.mutate(p)}
+												disabled={
+													setToolModelMut.isPending ||
+													setToolSystemPromptMut.isPending
+												}
+											/>
+										</div>
+									</FormSection>
+								)}
 								<button
 									type="button"
 									onClick={() => saveScreensMut.mutate(tlScreens)}
