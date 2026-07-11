@@ -61,11 +61,16 @@ export function VectorList({
 	const updateMutation = useUpdateVector();
 	const deleteMutation = useDeleteCustomerVector();
 
-	// Debounce search
+	// Debounce search. Só dispara quando o texto REALMENTE mudou vs o já commitado
+	// (`search`). Sem esse guard, um re-render do pai (ex.: trocar de página, que
+	// recria o `onSearchChange` inline) re-rodava este efeito e chamava
+	// onSearchChange(searchInput) → o pai resetava a página pra 1 → a paginação
+	// "não avançava". Comparar com `search` evita o reset espúrio.
 	useEffect(() => {
+		if (searchInput === search) return;
 		const t = setTimeout(() => onSearchChange(searchInput), 300);
 		return () => clearTimeout(t);
-	}, [searchInput, onSearchChange]);
+	}, [searchInput, search, onSearchChange]);
 
 	// Sync search input when parent search changes (e.g. after reset)
 	useEffect(() => {
