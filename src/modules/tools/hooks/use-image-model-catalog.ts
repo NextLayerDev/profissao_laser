@@ -5,8 +5,9 @@ import type { ImageModelCatalog } from '../services/image-models.service';
 import { listImageModels } from '../services/image-models.service';
 
 /**
- * Hook do catálogo curado de modelos de imagem. Cache 1h (bate com o TTL do
- * endpoint e do cache in-process no main API).
+ * Hook do catálogo curado de modelos de imagem. Sempre revalida ao montar
+ * (`staleTime: 0` + endpoint `no-store`) pra que edições do catálogo pelo staff
+ * apareçam no dropdown na hora — antes um cache de 1h escondia mudanças.
  */
 export const imageModelsCatalogQueryKey = ['image-models-catalog'] as const;
 
@@ -14,7 +15,8 @@ export function useImageModelCatalog() {
 	return useQuery<ImageModelCatalog>({
 		queryKey: imageModelsCatalogQueryKey,
 		queryFn: () => listImageModels(),
-		staleTime: 60 * 60 * 1000,
-		gcTime: 2 * 60 * 60 * 1000,
+		staleTime: 0,
+		gcTime: 30 * 60 * 1000,
+		refetchOnMount: 'always',
 	});
 }

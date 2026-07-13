@@ -3,6 +3,7 @@
 import {
 	ArrowLeft,
 	Check,
+	Clock,
 	Download,
 	ImageIcon,
 	Loader2,
@@ -345,6 +346,111 @@ function PromptHero({ entry }: { entry: ToolBankEntry }) {
 
 /* ─────────────────── Main view ─────────────────── */
 
+/* ─────────────────── Estado "gerando" (loader premium) ─────────────────── */
+
+const GEN_MESSAGES = [
+	'Interpretando o tema…',
+	'Compondo a cena…',
+	'Desenhando os traços em preto e branco…',
+	'Trabalhando profundidade e hachura…',
+	'Ajustando a emenda do wrap 360°…',
+	'Refinando os detalhes finais…',
+	'Quase lá…',
+];
+
+function GeneratingState() {
+	const [idx, setIdx] = useState(0);
+	const [sec, setSec] = useState(0);
+	useEffect(() => {
+		const m = setInterval(
+			() => setIdx((i) => (i + 1) % GEN_MESSAGES.length),
+			3500,
+		);
+		const t = setInterval(() => setSec((s) => s + 1), 1000);
+		return () => {
+			clearInterval(m);
+			clearInterval(t);
+		};
+	}, []);
+	const mmss = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+
+	return (
+		<div
+			className="relative flex h-full min-h-[420px] flex-col items-center justify-center gap-5 overflow-hidden rounded-2xl border p-6"
+			style={{
+				borderColor:
+					'color-mix(in srgb, var(--screen-accent) 35%, transparent)',
+				backgroundColor:
+					'color-mix(in srgb, var(--screen-accent) 6%, transparent)',
+			}}
+		>
+			{/* "Canvas" 2:1 com traços de gravação sendo desenhados + scan */}
+			<div
+				className="relative w-full max-w-md overflow-hidden rounded-xl border border-white/10 bg-[#0b0b0d]"
+				style={{ aspectRatio: '2 / 1' }}
+			>
+				<div className="pmg-hatch absolute inset-0" />
+				<div
+					className="pmg-scan absolute inset-x-0 h-20"
+					style={{
+						background:
+							'linear-gradient(to bottom, transparent, color-mix(in srgb, var(--screen-accent) 45%, transparent), transparent)',
+					}}
+				/>
+				<div className="absolute inset-0 flex items-center justify-center">
+					<div className="relative flex h-16 w-16 items-center justify-center">
+						<div
+							className="pmg-ring absolute inset-0 rounded-full"
+							style={{
+								background:
+									'conic-gradient(from 0deg, transparent 0%, var(--screen-accent) 72%, transparent 100%)',
+							}}
+						/>
+						<div className="absolute inset-[3px] flex items-center justify-center rounded-full bg-[#0b0b0d]">
+							<Wand2
+								className="pmg-float h-7 w-7"
+								style={{ color: 'var(--screen-accent)' }}
+							/>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			{/* Mensagem que gira + timer + expectativa correta */}
+			<div className="text-center">
+				<p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+					{GEN_MESSAGES[idx]}
+				</p>
+				<p className="mt-1.5 flex items-center justify-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+					<Clock className="h-3 w-3" />
+					{mmss} · a IA está criando uma arte única — pode levar 1–3 min
+				</p>
+			</div>
+
+			{/* Barra de progresso indeterminada */}
+			<div className="h-1 w-full max-w-md overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
+				<div
+					className="pmg-bar h-full rounded-full"
+					style={{ backgroundColor: 'var(--screen-accent)' }}
+				/>
+			</div>
+
+			<style>{`
+				@keyframes pmgScan { 0%{transform:translateY(-5rem)} 100%{transform:translateY(220%)} }
+				.pmg-scan{ animation: pmgScan 2.4s ease-in-out infinite; }
+				@keyframes pmgSpin { to{transform:rotate(360deg)} }
+				.pmg-ring{ animation: pmgSpin 2.6s linear infinite; }
+				@keyframes pmgFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+				.pmg-float{ animation: pmgFloat 2.2s ease-in-out infinite; }
+				.pmg-hatch{ background-image: repeating-linear-gradient(58deg, rgba(255,255,255,.07) 0 2px, transparent 2px 8px); animation: pmgHatch 1.8s ease-in-out infinite; }
+				@keyframes pmgHatch { 0%,100%{opacity:.3} 50%{opacity:.65} }
+				@keyframes pmgBar { 0%{transform:translateX(-120%)} 100%{transform:translateX(320%)} }
+				.pmg-bar{ width:30%; animation: pmgBar 1.5s ease-in-out infinite; }
+			`}</style>
+		</div>
+	);
+}
+
 export interface PromptGenerateViewProps {
 	entry: ToolBankEntry;
 	/** Valor do tema (controlado pelo DynamicToolView). */
@@ -513,28 +619,7 @@ export function PromptGenerateView({
 							</button>
 						</div>
 					) : pending ? (
-						<div
-							className="flex h-full min-h-[280px] flex-col items-center justify-center rounded-2xl border border-dashed px-6 text-center"
-							style={{
-								borderColor:
-									'color-mix(in srgb, var(--screen-accent) 40%, transparent)',
-								backgroundColor:
-									'color-mix(in srgb, var(--screen-accent) 5%, transparent)',
-							}}
-						>
-							<div
-								className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
-								style={ACCENT_TINT}
-							>
-								<Loader2 className="h-7 w-7 animate-spin" style={ACCENT_TEXT} />
-							</div>
-							<p className="text-sm font-medium text-slate-600 dark:text-slate-200">
-								Gerando sua imagem...
-							</p>
-							<p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-								A IA está trabalhando — isso leva alguns segundos.
-							</p>
-						</div>
+						<GeneratingState />
 					) : (
 						<div className="flex h-full min-h-[280px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 px-6 text-center dark:border-white/10">
 							<div

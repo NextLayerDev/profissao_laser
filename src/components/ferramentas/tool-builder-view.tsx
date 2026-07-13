@@ -41,6 +41,7 @@ import {
 	listToolDefinitions,
 	publishToolDefinition,
 	type ScreenUi,
+	setToolImageSize,
 	setToolModel,
 	setToolSystemPrompt,
 	type ToolDefinitionDoc,
@@ -85,6 +86,7 @@ import { RoomFlowCanvas } from './canvas/room-flow-canvas';
 import { ToolCanvas } from './canvas/tool-canvas';
 import { IconPicker } from './icon-picker';
 import { ImageModelSelector } from './image-model-selector';
+import { ImageSizeEditor } from './image-size-editor';
 import { RoomAppearanceSection } from './room-appearance-section';
 import { RoomBuilderSections } from './room-builder-sections';
 import { type PreviewDevice, RoomLivePreview } from './room-live-preview';
@@ -1094,6 +1096,23 @@ export function ToolBuilderView() {
 		onError: (err) =>
 			toast.error(getApiErrorMessage(err, 'Falha ao salvar o system prompt.')),
 	});
+	const setToolImageSizeMut = useMutation({
+		mutationFn: async (size: { width: number; height: number } | null) => {
+			if (!openDef) throw new Error('salve a ferramenta antes');
+			return setToolImageSize(openDef, size);
+		},
+		onSuccess: (_data, size) => {
+			toast.success(
+				size
+					? `Dimensões ${size.width}×${size.height}px salvas e publicadas 🚀`
+					: 'Dimensões removidas (saída nativa) e publicadas 🚀',
+			);
+			qc.invalidateQueries({ queryKey: ['tool-definitions'] });
+			qc.invalidateQueries({ queryKey: ['tools'] });
+		},
+		onError: (err) =>
+			toast.error(getApiErrorMessage(err, 'Falha ao salvar as dimensões.')),
+	});
 
 	const addField = (type: FieldType) => {
 		if (!state) return;
@@ -1581,6 +1600,18 @@ export function ToolBuilderView() {
 												value={openDef.definition.system_prompt ?? null}
 												onChange={(p) => setToolSystemPromptMut.mutate(p)}
 												disabled={
+													setToolModelMut.isPending ||
+													setToolSystemPromptMut.isPending
+												}
+											/>
+											<ImageSizeEditor
+												value={{
+													width: openDef.definition.image_width,
+													height: openDef.definition.image_height,
+												}}
+												onChange={(s) => setToolImageSizeMut.mutate(s)}
+												disabled={
+													setToolImageSizeMut.isPending ||
 													setToolModelMut.isPending ||
 													setToolSystemPromptMut.isPending
 												}

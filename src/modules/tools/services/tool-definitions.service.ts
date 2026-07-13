@@ -171,6 +171,11 @@ export const toolDefinitionDocSchema = z
 		// System prompt opcional enviado ao `ai.generate_image`. SUBSTITUI o
 		// prompt laser padrão (decisão 2026-07-10: replace total).
 		system_prompt: z.string().optional(),
+		// Dimensões EXATAS de saída (px) — arte de gravação a laser precisa do
+		// tamanho exato. O motor injeta a proporção no prompt e redimensiona a
+		// saída pra image_width×image_height.
+		image_width: z.number().optional(),
+		image_height: z.number().optional(),
 	})
 	.passthrough();
 export type ToolDefinitionDoc = z.infer<typeof toolDefinitionDocSchema>;
@@ -327,6 +332,32 @@ export async function setToolSystemPrompt(
 	const next: ToolDefinitionDoc = { ...def.definition };
 	if (prompt && prompt.trim().length > 0) next.system_prompt = prompt;
 	else delete (next as { system_prompt?: string }).system_prompt;
+	await updateToolDefinition(def.id, {
+		title: def.title,
+		description: def.description,
+		engine_runtime: def.engine_runtime,
+		definition: next,
+	});
+	return publishToolDefinition(def.id);
+}
+
+/**
+ * Define as DIMENSÕES EXATAS de saída (px) do `ai.generate_image` desta tool —
+ * arte de gravação a laser precisa do tamanho exato. `null` apaga (volta à
+ * saída nativa do modelo). Mesmo padrão anti-wipe do `setToolModel`.
+ */
+export async function setToolImageSize(
+	def: AiToolDefinition,
+	size: { width: number; height: number } | null,
+): Promise<PublishResult> {
+	const next: ToolDefinitionDoc = { ...def.definition };
+	if (size && size.width > 0 && size.height > 0) {
+		next.image_width = Math.round(size.width);
+		next.image_height = Math.round(size.height);
+	} else {
+		delete (next as { image_width?: number }).image_width;
+		delete (next as { image_height?: number }).image_height;
+	}
 	await updateToolDefinition(def.id, {
 		title: def.title,
 		description: def.description,
