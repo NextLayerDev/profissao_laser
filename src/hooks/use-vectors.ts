@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
+	aiLineartVectorize,
 	analyzeVectorize,
 	previewVectorize,
 	type VectorizeParams,
@@ -55,6 +56,29 @@ export function useVectorizeImage() {
 			toast.success('Imagem vetorizada com sucesso!');
 		},
 		// Erros (incl. refund) são tratados pelo orquestrador useRunTool.
+	});
+}
+
+/**
+ * Line-art com IA (foto → gravura via IA → vetor). Cobrada NA GERAÇÃO. Demora
+ * ~30–40s. O `useRunTool` orquestra o invoke/settle; aqui só a chamada do motor.
+ */
+export function useAiLineartVectorize() {
+	return useMutation({
+		mutationFn: ({
+			file,
+			invocationId,
+			params,
+			variant,
+		}: {
+			file: File;
+			invocationId?: string;
+			params?: VectorizeParams;
+			variant?: 'lineart' | 'color';
+		}) => aiLineartVectorize(file, { invocationId, params, variant }),
+		onSuccess: () => {
+			toast.success('Vetor gerado com IA!');
+		},
 	});
 }
 

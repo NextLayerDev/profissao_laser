@@ -10,21 +10,14 @@ import {
 	XCircle,
 } from 'lucide-react';
 import { useCallback, useState } from 'react';
-import { CreditConfirmModal } from '@/components/credits/credit-confirm-modal';
 import { useEntitlements } from '@/hooks/use-entitlements';
 import { useSaveVector, useVectorizeImage } from '@/hooks/use-vectors';
-import { invokeTool } from '@/modules/tools/services/tools.service';
+import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
 import type { VectorizeResult } from '@/services/vectorize';
+import { chargeVectorFormat } from '@/services/vectorize';
 
 interface AxiosLikeError {
 	response?: { status?: number; data?: Record<string, unknown> };
-}
-
-interface FreeTierModalState {
-	limit: number;
-	used: number;
-	period: 'daily' | 'weekly';
-	resetsAt: string;
 }
 
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
@@ -59,14 +52,14 @@ function svgToDataUrl(svgContent: string): string {
 export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 	const [isDragging, setIsDragging] = useState(false);
 	const [files, setFiles] = useState<FileWithStatus[]>([]);
-	const [freeTierModal, setFreeTierModal] = useState<FreeTierModalState | null>(
-		null,
-	);
+	const [chargingId, setChargingId] = useState<string | null>(null);
 	const vectorizeMutation = useVectorizeImage();
 	const saveMutation = useSaveVector();
-	// Standalone bilha contra o curso ativo do customer (mono-curso).
+	// Standalone: bilha contra o curso ativo do customer (mono-curso).
 	const { courses } = useEntitlements();
 	const courseSlug = courses[0]?.slug;
+	// Geração grátis; cobrança POR FORMATO no download (igual ao fluxo principal).
+	const billing = useToolBilling('vectorize', courseSlug);
 
 	const validateFile = useCallback((file: File): string | null => {
 		if (!ACCEPTED_TYPES.includes(file.type)) {
@@ -105,16 +98,8 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 				]);
 
 				try {
-					if (!courseSlug) {
-						throw new Error('Nenhum curso ativo encontrado.');
-					}
-					// Billing pelo upvox: autoriza/debita por arquivo e devolve o id
-					// que o motor valida e liquida.
-					const inv = await invokeTool('vectorize', courseSlug);
-					const result = await vectorizeMutation.mutateAsync({
-						file,
-						invocationId: inv.invocation_id,
-					});
+					// Geração NÃO cobrada — o cliente paga só ao baixar (por formato).
+					const result = await vectorizeMutation.mutateAsync({ file });
 					setFiles((prev) =>
 						prev.map((f) =>
 							f.id === id ? { ...f, status: 'success' as const, result } : f,
@@ -123,45 +108,55 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 				} catch (err) {
 					const ax = err as AxiosLikeError;
 					const status = ax?.response?.status;
-					const data = ax?.response?.data ?? {};
-					if (status === 429 && data.code === 'FREE_TIER_LIMIT_REACHED') {
-						setFreeTierModal({
-							limit: (data.limit as number) ?? 5,
-							used: (data.used as number) ?? 0,
-							period:
-								(data.period as 'daily' | 'weekly' | undefined) ?? 'daily',
-							resetsAt: (data.resetsAt as string) ?? '',
-						});
-						setFiles((prev) =>
-							prev.map((f) =>
-								f.id === id
-									? {
-											...f,
-											status: 'error' as const,
-											error: 'Limite gratuito atingido',
-										}
-									: f,
-							),
-						);
-					} else {
-						const msg =
-							status === 402
-								? 'Saldo de voxxys insuficiente'
-								: status === 403
-									? 'Seu plano não dá acesso a esta ferramenta'
-									: 'Erro ao vetorizar';
-						setFiles((prev) =>
-							prev.map((f) =>
-								f.id === id
-									? { ...f, status: 'error' as const, error: msg }
-									: f,
-							),
-						);
-					}
+					const msg =
+						status === 403
+							? 'Seu plano não dá acesso a esta ferramenta'
+							: 'Erro ao vetorizar';
+					setFiles((prev) =>
+						prev.map((f) =>
+							f.id === id ? { ...f, status: 'error' as const, error: msg } : f,
+						),
+					);
 				}
 			}
 		},
-		[vectorizeMutation, validateFile, courseSlug],
+		[vectorizeMutation, validateFile],
+	);
+
+	// Cobrança POR FORMATO no download (SVG). Já pago (ou sem cobrança) → baixa
+	// direto; senão invoca a tool (debita) → grava/liquida no backend → baixa.
+	const handleDownload = useCallback(
+		async (item: FileWithStatus) => {
+			const result = item.result;
+			if (!result) return;
+			const doDownload = () =>
+				downloadSvg(result.svgContent, result.originalName);
+			if (result.paidFormats?.includes('svg') || !billing.billed) {
+				doDownload();
+				return;
+			}
+			if (chargingId) return;
+			setChargingId(item.id);
+			try {
+				const res = await billing.runEngine((invocationId) =>
+					chargeVectorFormat(result.id, 'svg', invocationId),
+				);
+				if (res && Array.isArray(res.paidFormats)) {
+					const paid = res.paidFormats;
+					setFiles((prev) =>
+						prev.map((f) =>
+							f.id === item.id && f.result
+								? { ...f, result: { ...f.result, paidFormats: paid } }
+								: f,
+						),
+					);
+					doDownload();
+				}
+			} finally {
+				setChargingId(null);
+			}
+		},
+		[billing, chargingId],
 	);
 
 	// Guarda o SVG já vetorizado (não re-vetoriza — evita cobrança dupla).
@@ -221,16 +216,6 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 
 	return (
 		<div className="space-y-6">
-			{freeTierModal && (
-				<CreditConfirmModal
-					variant="free-tier-exhausted"
-					cost={1}
-					balance={0}
-					freeTier={freeTierModal}
-					onConfirm={() => setFreeTierModal(null)}
-					onClose={() => setFreeTierModal(null)}
-				/>
-			)}
 			<section
 				aria-label="Arraste imagens ou clique para selecionar"
 				onDrop={handleDrop}
@@ -310,17 +295,15 @@ export function VectorizationUpload({ onSuccess }: { onSuccess?: () => void }) {
 											<>
 												<button
 													type="button"
-													onClick={() => {
-														if (item.result) {
-															downloadSvg(
-																item.result.svgContent,
-																item.result.originalName,
-															);
-														}
-													}}
-													className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-600 text-white text-sm font-medium transition-colors"
+													disabled={chargingId !== null}
+													onClick={() => handleDownload(item)}
+													className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors disabled:opacity-50"
 												>
-													<Download className="w-4 h-4" />
+													{chargingId === item.id ? (
+														<Loader2 className="w-4 h-4 animate-spin" />
+													) : (
+														<Download className="w-4 h-4" />
+													)}
 													Descarregar
 												</button>
 												<button
