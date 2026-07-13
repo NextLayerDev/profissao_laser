@@ -17,7 +17,7 @@ export interface VectorizeParams {
 	brightness?: number | null;
 	contrast?: number | null;
 	gamma?: number | null;
-	edgeDetection?: 'none' | 'sobel' | 'canny';
+	edgeDetection?: 'none' | 'sobel' | 'canny' | 'lineart';
 	// potrace
 	turdSize?: number;
 	optTolerance?: number;
@@ -76,7 +76,11 @@ export interface VectorizeResult {
 	svgUrl?: string;
 	pngUrl?: string;
 	dxfContent?: string;
+	/** Formatos já pagos deste vetor (svg/png/dxf) — cobrança por formato no download. */
+	paidFormats?: string[];
 }
+
+export type VectorFormat = 'svg' | 'png' | 'dxf';
 
 export type VectorClass =
 	| 'text'
@@ -126,6 +130,58 @@ export async function vectorizeImage(
 		}
 	}
 	const { data } = await api.post<VectorizeResult>('/api/vectorize', formData);
+	return data;
+}
+
+/**
+ * Line-art com IA (foto → gravura "nanquim" via IA → vetor). Cobrada NA GERAÇÃO
+ * (a IA custa): o front invoca (debita) e manda o `invocation_id`. Demora ~30–40s
+ * (roda o modelo de imagem), por isso o timeout maior. O resultado já vem com
+ * todos os formatos pagos (`paidFormats`), então o download não recobra.
+ */
+export async function aiLineartVectorize(
+	file: File,
+	opts: {
+		invocationId?: string;
+		params?: VectorizeParams;
+		variant?: 'lineart' | 'color';
+	},
+): Promise<VectorizeResult> {
+	const formData = new FormData();
+	formData.append('image', file);
+	formData.append('variant', opts.variant ?? 'lineart');
+	if (opts.invocationId) formData.append('invocation_id', opts.invocationId);
+	if (opts.params) {
+		for (const [key, value] of Object.entries(opts.params)) {
+			if (value !== undefined && value !== null) {
+				formData.append(key, String(value));
+			}
+		}
+	}
+	const { data } = await api.post<VectorizeResult>(
+		'/api/vectorize/ai-lineart',
+		formData,
+		{ timeout: 90_000 },
+	);
+	return data;
+}
+
+/**
+ * Cobrança POR FORMATO no download. A geração é grátis; ao baixar um formato
+ * ainda não pago deste vetor, o front invoca a tool no upvox (debita) e chama
+ * esta rota com o `invocation_id`. O backend grava o formato como pago e liquida.
+ * Formato já pago (inclusive re-download) NÃO cobra de novo. Devolve os formatos
+ * pagos atualizados.
+ */
+export async function chargeVectorFormat(
+	vectorId: string,
+	format: VectorFormat,
+	invocationId?: string,
+): Promise<{ paidFormats: string[] }> {
+	const { data } = await api.post<{ paidFormats: string[] }>(
+		`/api/vectorize/${vectorId}/download/${format}`,
+		{ invocation_id: invocationId },
+	);
 	return data;
 }
 

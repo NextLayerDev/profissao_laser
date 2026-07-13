@@ -13,7 +13,10 @@ import {
 import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useEntitlements } from '@/hooks/use-entitlements';
 import { useDeleteCustomerVector, useUpdateVector } from '@/hooks/use-vectors';
+import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
+import { chargeVectorFormat } from '@/services/vectorize';
 import type { CustomerVector } from '@/services/vectors';
 import { formatDate } from '@/utils/formatDate';
 
@@ -60,6 +63,37 @@ export function VectorList({
 
 	const updateMutation = useUpdateVector();
 	const deleteMutation = useDeleteCustomerVector();
+
+	// Cobrança POR FORMATO também no re-download da biblioteca: SVG já pago não
+	// recobra; SVG nunca pago cobra (fecha o bypass "gera grátis → baixa aqui").
+	const { courses } = useEntitlements();
+	const courseSlug = courses[0]?.slug;
+	const billing = useToolBilling('vectorize', courseSlug);
+	const [chargingId, setChargingId] = useState<string | null>(null);
+
+	const handleDownload = useCallback(
+		async (v: CustomerVector) => {
+			const doDownload = () => downloadFromUrl(v.svg_url, v.original_name);
+			if (v.paid_formats?.includes('svg') || !billing.billed) {
+				doDownload();
+				return;
+			}
+			if (chargingId) return;
+			setChargingId(v.id);
+			try {
+				const res = await billing.runEngine((invocationId) =>
+					chargeVectorFormat(v.id, 'svg', invocationId),
+				);
+				if (res && Array.isArray(res.paidFormats)) {
+					doDownload();
+					onRefetch(); // atualiza paid_formats na lista
+				}
+			} finally {
+				setChargingId(null);
+			}
+		},
+		[billing, chargingId, onRefetch],
+	);
 
 	// Debounce search. Só dispara quando o texto REALMENTE mudou vs o já commitado
 	// (`search`). Sem esse guard, um re-render do pai (ex.: trocar de página, que
@@ -209,13 +243,21 @@ export function VectorList({
 										<div className="flex items-center gap-2 mt-3 flex-wrap">
 											<button
 												type="button"
-												onClick={() =>
-													downloadFromUrl(v.svg_url, v.original_name)
-												}
-												className="flex items-center gap-1 px-2 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium transition-colors"
+												disabled={chargingId !== null}
+												onClick={() => handleDownload(v)}
+												className="flex items-center gap-1 px-2 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium transition-colors disabled:opacity-50"
 											>
-												<Download className="w-3 h-3" />
+												{chargingId === v.id ? (
+													<Loader2 className="w-3 h-3 animate-spin" />
+												) : (
+													<Download className="w-3 h-3" />
+												)}
 												Descarregar
+												{billing.billed &&
+													billing.cost > 0 &&
+													!v.paid_formats?.includes('svg') && (
+														<span className="opacity-80">· {billing.cost}</span>
+													)}
 											</button>
 											<button
 												type="button"

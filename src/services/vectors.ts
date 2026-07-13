@@ -14,6 +14,8 @@ export interface CustomerVector {
 		blackAndWhite?: boolean;
 		invertColors?: boolean;
 	} | null;
+	/** Formatos já pagos (svg/png/dxf) — cobrança por formato no download. */
+	paid_formats?: string[];
 	created_at: string;
 	updated_at?: string;
 }
