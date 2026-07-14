@@ -28,7 +28,7 @@ export default function EventosShellPage() {
 	}
 
 	return (
-		<SubscriptionGate>
+		<SubscriptionGate toolKey="eventos">
 			<EventsView isAdmin={isAdmin} />
 		</SubscriptionGate>
 	);

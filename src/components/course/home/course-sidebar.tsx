@@ -32,13 +32,17 @@ export function CourseSidebar({
 	// Tools publicadas pela Fábrica (sem tela própria) entram dinamicamente.
 	const extraTools = useExtraToolNav();
 	const isStaff = typeof window !== 'undefined' && !!getToken('user');
-	const { isTestUnlimited, hasActiveSubscription } = useEntitlements();
+	const { isTestUnlimited, hasActiveSubscription, toolFor } = useEntitlements();
 	const hasFullAccess = isStaff || isTestUnlimited || hasActiveSubscription;
 	// Dedup por label: uma tool que já é destaque ESTÁTICO e que o aluno também
 	// FIXOU (extraTools) apareceria 2x — mantém a 1ª (estática) e descarta a pinada.
 	const seenLabels = new Set<string>();
 	const allItems = [...quickAccessItems, ...extraTools]
 		.filter((i) => !i.hideWhenSubscribed || !hasFullAccess)
+		// Sem assinatura: só páginas sem gate ou cuja tool está grátis (entitled).
+		.filter(
+			(i) => hasFullAccess || !i.toolKey || !!toolFor(i.toolKey)?.entitled,
+		)
 		.filter((i) => {
 			if (seenLabels.has(i.label)) return false;
 			seenLabels.add(i.label);

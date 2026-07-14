@@ -28,7 +28,7 @@ export default function MembrosShellPage() {
 	}
 
 	return (
-		<SubscriptionGate>
+		<SubscriptionGate toolKey="membros">
 			<MembersView isAdmin={isAdmin} />
 		</SubscriptionGate>
 	);

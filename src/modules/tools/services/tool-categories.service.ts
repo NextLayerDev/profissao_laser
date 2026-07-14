@@ -21,7 +21,6 @@ export const toolCategoryDtoSchema = z
 		color_key: z.string(),
 		order_index: z.number(),
 		is_builtin: z.boolean(),
-		is_free: z.boolean().optional().default(false),
 	})
 	.passthrough();
 export type ToolCategoryDTO = z.infer<typeof toolCategoryDtoSchema>;
@@ -43,7 +42,6 @@ export interface UpdateToolCategoryInput {
 	admin_section?: string;
 	student_section?: string;
 	order_index?: number;
-	is_free?: boolean;
 }
 
 /* ── Leitura (qualquer autenticado) — já ordenado por `order_index` no back ── */

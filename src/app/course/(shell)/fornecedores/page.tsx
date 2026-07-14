@@ -33,7 +33,7 @@ export default function FornecedoresCoursePage() {
 	const fornecedores = (data ?? []).filter((f) => f.isActive);
 
 	return (
-		<SubscriptionGate>
+		<SubscriptionGate toolKey="fornecedores">
 			<div className="p-4 md:p-8">
 				<PageHeader
 					title="Fornecedores"

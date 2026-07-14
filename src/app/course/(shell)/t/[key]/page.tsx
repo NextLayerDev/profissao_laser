@@ -19,7 +19,7 @@ export default function DynamicToolPage() {
 	const isRoom = def?.engine_runtime === 'room_v1';
 
 	return (
-		<SubscriptionGate>
+		<SubscriptionGate toolKey={key}>
 			{isRoom ? (
 				<DynamicRoomView toolKey={key} />
 			) : (
