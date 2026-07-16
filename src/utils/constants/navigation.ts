@@ -1,5 +1,6 @@
 import {
 	BarChart3,
+	Bot,
 	CalendarClock,
 	Headphones,
 	HelpCircle,
@@ -91,6 +92,13 @@ export const navItems: NavItem[] = [
 		name: 'Suporte',
 		icon: Headphones,
 		href: '/suporte',
+		hasDropdown: false,
+		section: 'OPERACAO',
+	},
+	{
+		name: 'OmniResposta',
+		icon: Bot,
+		href: '/omniresposta',
 		hasDropdown: false,
 		section: 'OPERACAO',
 	},

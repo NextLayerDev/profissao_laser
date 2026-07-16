@@ -26,6 +26,7 @@ const ADMIN_PATHS = [
 	'/community',
 	'/acessos',
 	'/forum',
+	'/omniresposta',
 ];
 
 function isAdminPath(pathname: string): boolean {
