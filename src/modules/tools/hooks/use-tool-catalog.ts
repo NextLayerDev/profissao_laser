@@ -303,7 +303,7 @@ function useStudentCatalog(): UseToolCatalog {
 	const keys = useMemo(() => {
 		const known = new Set(SYSTEM_TOOLS.map((t) => t.key));
 		return entTools
-			.filter((t) => t.entitled && !known.has(t.key))
+			.filter((t) => (t.entitled || t.is_free) && !known.has(t.key))
 			.map((t) => t.key);
 	}, [entTools]);
 
@@ -351,7 +351,7 @@ function useStudentCatalog(): UseToolCatalog {
 		// dinâmicas mudam — o registry já foi atualizado pelo `useToolCategories`.
 		void categories;
 		return entTools
-			.filter((t) => t.entitled && !known.has(t.key))
+			.filter((t) => (t.entitled || t.is_free) && !known.has(t.key))
 			.map((t): CatalogTool => {
 				const ui = uiByKey.get(t.key) ?? {};
 				return {

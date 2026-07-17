@@ -78,8 +78,9 @@ function useMergedQuickAccess(): QuickAccessItem[] {
 	const { isTestUnlimited, hasActiveSubscription, tools } = useEntitlements();
 	const hasFullAccess = isStaff || isTestUnlimited || hasActiveSubscription;
 	return useMemo(() => {
-		const entitledKeys = new Set(
-			tools.filter((t) => t.entitled).map((t) => t.key),
+		// Assinante (entitled) ou tool grátis (is_free, só leitura) → aparece.
+		const viewableKeys = new Set(
+			tools.filter((t) => t.entitled || t.is_free).map((t) => t.key),
 		);
 		const byKey = new Map<string, QuickAccessItem>();
 		for (const it of quickAccessItems) byKey.set(norm(it.label), it);
@@ -95,8 +96,8 @@ function useMergedQuickAccess(): QuickAccessItem[] {
 		const out: QuickAccessItem[] = [];
 		for (const [k, it] of byKey) {
 			if (it.hideWhenSubscribed && hasFullAccess) continue;
-			// Sem assinatura: só páginas sem gate ou cuja tool está grátis (entitled).
-			if (!hasFullAccess && it.toolKey && !entitledKeys.has(it.toolKey))
+			// Sem assinatura: só páginas sem gate ou cuja tool está grátis (is_free).
+			if (!hasFullAccess && it.toolKey && !viewableKeys.has(it.toolKey))
 				continue;
 			const adminKey = FEATURE_TOOL_KEY[k];
 			const color = adminKey ? colorByKey.get(adminKey) : undefined;

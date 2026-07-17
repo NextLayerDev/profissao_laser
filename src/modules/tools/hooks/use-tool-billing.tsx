@@ -23,7 +23,9 @@ import { useRunTool } from './use-run-tool';
  * - `runEngine(engineFn)`: tools com motor (vectorize/ai_canvas/previa).
  * - `consume(onProceed)`: tools sem motor (páginas de dados, "abrir item").
  *
- * Renderize `{notice}` logo abaixo do botão da ação.
+ * `viewOnly` = tool grátis (`is_free`) que o aluno vê SEM assinatura: `consume`
+ * (consulta/GET) passa livre e sem cobrar; `runEngine` (usar/rodar) é bloqueado.
+ * Use-o pra esconder botões de escrita/uso. Renderize `{notice}` abaixo da ação.
  */
 export function useToolBilling(
 	featureKey: string,
@@ -32,7 +34,11 @@ export function useToolBilling(
 	const qc = useQueryClient();
 	const ent = useEntitlements(courseSlug);
 	const tool = ent.toolFor(featureKey);
-	const billed = !!tool;
+	// View-only: tool grátis (is_free) que o aluno vê sem assinatura. Pode
+	// consultar (GET), mas NÃO pode rodar/usar — use/invoke exigem plano.
+	const viewOnly = !!tool && !tool.entitled && tool.is_free;
+	// Só cobra quem realmente tem direito de usar (entitled). View-only não cobra.
+	const billed = !!tool && tool.entitled;
 	const cost = tool?.vox_cost ?? 0;
 	const remainingFree = ent.remainingFree(featureKey);
 	const voxBalance = ent.voxBalance;
@@ -58,12 +64,17 @@ export function useToolBilling(
 
 	const runEngine = useCallback(
 		async <T,>(engineFn: (invocationId?: string) => Promise<T>) => {
+			// View-only não roda a ferramenta — só assinante executa (use/invoke).
+			if (viewOnly) {
+				toast.error('Assine um plano para usar esta ferramenta.');
+				return;
+			}
 			if (insufficient) return; // o aviso inline mostra "comprar voxxys"
 			return billed
 				? runTool.run((invocationId) => engineFn(invocationId))
 				: Promise.resolve(engineFn(undefined));
 		},
-		[billed, insufficient, runTool],
+		[billed, viewOnly, insufficient, runTool],
 	);
 
 	const consume = useCallback(
@@ -95,6 +106,7 @@ export function useToolBilling(
 
 	return {
 		billed,
+		viewOnly,
 		cost,
 		remainingFree,
 		voxBalance,
