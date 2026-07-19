@@ -25,17 +25,7 @@ export const loginCustomerSchema = z.object({
 
 export type LoginCustomerPayload = z.infer<typeof loginCustomerSchema>;
 
-// ── User (admin) ──────────────────────────────────────────
-export const registerUserSchema = z.object({
-	name: z.string().min(2),
-	email: z.string().email(),
-	password: z.string().min(6),
-	role: z.string().min(1),
-	Permissions: z.number().nullable(),
-});
-
-export type RegisterUserPayload = z.infer<typeof registerUserSchema>;
-
+// ── User (login only) ─────────────────────────────────────
 export const loginUserSchema = z.object({
 	email: z.string().email(),
 	password: z.string().min(6),
