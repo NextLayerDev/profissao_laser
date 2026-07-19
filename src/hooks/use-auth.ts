@@ -3,12 +3,10 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { saveRefreshToken, saveToken } from '@/lib/auth';
-import { registerUser } from '@/services/auth';
 import { loginCourses, signupCourses } from '@/services/courses-auth';
 import type {
 	LoginCustomerPayload,
 	RegisterCustomerPayload,
-	RegisterUserPayload,
 } from '@/types/auth';
 
 /** Roles que acessam o painel administrativo (token de "user"). */
@@ -49,16 +47,6 @@ export function useRegisterCustomer() {
 				saveToken('customer', accessToken);
 				router.push('/course');
 			}
-		},
-	});
-}
-
-export function useRegisterUser() {
-	const router = useRouter();
-	return useMutation({
-		mutationFn: (payload: RegisterUserPayload) => registerUser(payload),
-		onSuccess: () => {
-			router.push('/login');
 		},
 	});
 }

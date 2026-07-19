@@ -1,60 +1,49 @@
 'use client';
 
-import { Loader2, Lock, Store, User } from 'lucide-react';
+import { isAxiosError } from 'axios';
+import { Loader2, Store } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { useRegisterCustomer, useRegisterUser } from '@/hooks/use-auth';
+import { useRegisterCustomer } from '@/hooks/use-auth';
 
-type Tab = 'customer' | 'user';
+/** Traduz o erro do backend (upvox) numa mensagem clara pro usuário. */
+function registerErrorMessage(err: unknown): string {
+	if (isAxiosError(err)) {
+		const code = err.response?.data?.message as string | undefined;
+		if (err.response?.status === 409) {
+			if (code === 'email_taken')
+				return 'Este e-mail já está cadastrado. Faça login ou use outro e-mail.';
+			if (code === 'phone_taken')
+				return 'Este telefone já está cadastrado. Use outro número.';
+			return 'Você já tem uma conta. Tente fazer login.';
+		}
+	}
+	return 'Erro ao criar conta. Tente novamente.';
+}
 
 export default function Register() {
-	const [tab, setTab] = useState<Tab>('customer');
 	const [name, setName] = useState('');
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
 	const [phone, setPhone] = useState('');
-	// user-only
-	const [role, setRole] = useState('');
 
 	const registerCustomer = useRegisterCustomer();
-	const registerUser = useRegisterUser();
-
-	const isPending =
-		tab === 'customer' ? registerCustomer.isPending : registerUser.isPending;
 
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
-
-		if (tab === 'customer') {
-			registerCustomer.mutate(
-				{
-					name: name.trim(),
-					email: email.trim(),
-					password: password.trim(),
-					phone: phone.trim().replace(/\D/g, ''), // Send only digits
-				},
-				{
-					onSuccess: () => toast.success('Conta criada com sucesso!'),
-					onError: () => toast.error('Erro ao criar conta. Tente novamente.'),
-				},
-			);
-		} else {
-			registerUser.mutate(
-				{
-					name: name.trim(),
-					email: email.trim(),
-					password: password.trim(),
-					role: role.trim(),
-					Permissions: null,
-				},
-				{
-					onSuccess: () =>
-						toast.success('Conta criada! Faça login para continuar.'),
-					onError: () => toast.error('Erro ao criar conta. Tente novamente.'),
-				},
-			);
-		}
+		registerCustomer.mutate(
+			{
+				name: name.trim(),
+				email: email.trim(),
+				password: password.trim(),
+				phone: phone.trim().replace(/\D/g, ''), // Send only digits
+			},
+			{
+				onSuccess: () => toast.success('Conta criada com sucesso!'),
+				onError: (err) => toast.error(registerErrorMessage(err)),
+			},
+		);
 	}
 
 	return (
@@ -69,36 +58,8 @@ export default function Register() {
 				<div className="bg-[#1a1a1d] rounded-2xl border border-gray-800 p-8">
 					<h1 className="text-2xl font-bold text-white mb-1">Criar conta</h1>
 					<p className="text-gray-400 text-sm mb-6">
-						Preencha os dados para se cadastrar
+						Crie sua conta grátis e comece agora
 					</p>
-
-					{/* Tabs */}
-					<div className="flex bg-[#0d0d0f] rounded-xl p-1 mb-6 gap-1">
-						<button
-							type="button"
-							onClick={() => setTab('customer')}
-							className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
-								tab === 'customer'
-									? 'bg-violet-600 text-white'
-									: 'text-gray-400 hover:text-white'
-							}`}
-						>
-							<User className="w-4 h-4" />
-							Aluno
-						</button>
-						<button
-							type="button"
-							onClick={() => setTab('user')}
-							className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
-								tab === 'user'
-									? 'bg-violet-600 text-white'
-									: 'text-gray-400 hover:text-white'
-							}`}
-						>
-							<Lock className="w-4 h-4" />
-							Administrador
-						</button>
-					</div>
 
 					<form onSubmit={handleSubmit} className="space-y-4">
 						<div>
@@ -138,26 +99,24 @@ export default function Register() {
 							/>
 						</div>
 
-						{tab === 'customer' && (
-							<div>
-								<label
-									htmlFor="phone"
-									className="block text-sm text-gray-400 mb-1.5"
-								>
-									Telefone
-								</label>
-								<input
-									id="phone"
-									type="tel"
-									required
-									minLength={8}
-									value={phone}
-									onChange={(e) => setPhone(e.target.value)}
-									placeholder="(11) 99999-9999"
-									className="w-full bg-[#0d0d0f] border border-gray-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-violet-500/60 transition-colors"
-								/>
-							</div>
-						)}
+						<div>
+							<label
+								htmlFor="phone"
+								className="block text-sm text-gray-400 mb-1.5"
+							>
+								Telefone
+							</label>
+							<input
+								id="phone"
+								type="tel"
+								required
+								minLength={8}
+								value={phone}
+								onChange={(e) => setPhone(e.target.value)}
+								placeholder="(11) 99999-9999"
+								className="w-full bg-[#0d0d0f] border border-gray-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-violet-500/60 transition-colors"
+							/>
+						</div>
 
 						<div>
 							<label
@@ -178,38 +137,18 @@ export default function Register() {
 							/>
 						</div>
 
-						{tab === 'user' && (
-							<div>
-								<label
-									htmlFor="role"
-									className="block text-sm text-gray-400 mb-1.5"
-								>
-									Cargo / Função
-								</label>
-								<input
-									id="role"
-									type="text"
-									required
-									value={role}
-									onChange={(e) => setRole(e.target.value)}
-									placeholder="Ex: admin, manager..."
-									className="w-full bg-[#0d0d0f] border border-gray-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-violet-500/60 transition-colors"
-								/>
-							</div>
-						)}
-
 						<button
 							type="submit"
-							disabled={isPending}
+							disabled={registerCustomer.isPending}
 							className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors duration-200 cursor-pointer mt-2"
 						>
-							{isPending ? (
+							{registerCustomer.isPending ? (
 								<>
 									<Loader2 className="w-4 h-4 animate-spin" />
 									Criando conta...
 								</>
 							) : (
-								'Criar conta'
+								'Criar conta grátis'
 							)}
 						</button>
 					</form>
