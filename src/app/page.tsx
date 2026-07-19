@@ -4,6 +4,7 @@ import { AboutFernando } from '@/components/lp/AboutFernando';
 import { CtaFooter } from '@/components/lp/CtaFooter';
 import { EcosystemVideo } from '@/components/lp/EcosystemVideo';
 import { Faq } from '@/components/lp/Faq';
+import { FreeAccess } from '@/components/lp/FreeAccess';
 import { Header } from '@/components/lp/Header';
 import { Hero } from '@/components/lp/Hero';
 import { Testimonials } from '@/components/lp/Testimonials';
@@ -23,6 +24,8 @@ export default function LandingPage() {
 				<Hero />
 				<EcosystemVideo />
 				<Tools />
+				{/* Divulga o acesso gratuito (dados ao vivo) logo antes dos planos. */}
+				<FreeAccess />
 				{/* Seção de planos: lógica + exibição + compra atuais (inalterada). */}
 				<PricingSection />
 				<Testimonials />
