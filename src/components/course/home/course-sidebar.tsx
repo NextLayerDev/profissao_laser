@@ -32,16 +32,16 @@ export function CourseSidebar({
 	// Tools publicadas pela Fábrica (sem tela própria) entram dinamicamente.
 	const extraTools = useExtraToolNav();
 	const isStaff = typeof window !== 'undefined' && !!getToken('user');
-	const { isTestUnlimited, hasActiveSubscription, canView } = useEntitlements();
+	const { isTestUnlimited, hasActiveSubscription } = useEntitlements();
 	const hasFullAccess = isStaff || isTestUnlimited || hasActiveSubscription;
 	// Dedup por label: uma tool que já é destaque ESTÁTICO e que o aluno também
 	// FIXOU (extraTools) apareceria 2x — mantém a 1ª (estática) e descarta a pinada.
+	// Itens gated (`toolKey`) SEMPRE aparecem no menu, mesmo sem assinatura — o
+	// clique leva à página, e é o `SubscriptionGate` de lá que barra/libera
+	// (mostrando "assine um plano" pra quem não tem acesso).
 	const seenLabels = new Set<string>();
 	const allItems = [...quickAccessItems, ...extraTools]
 		.filter((i) => !i.hideWhenSubscribed || !hasFullAccess)
-		// Sem assinatura: só páginas sem gate ou cuja tool está grátis (is_free, só
-		// leitura). `canView` cobre assinante (entitled) e free.
-		.filter((i) => hasFullAccess || !i.toolKey || canView(i.toolKey))
 		.filter((i) => {
 			if (seenLabels.has(i.label)) return false;
 			seenLabels.add(i.label);
