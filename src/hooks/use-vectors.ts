@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import {
 	aiLineartVectorize,
 	analyzeVectorize,
+	type InvertMode,
+	invertVector,
 	previewVectorize,
 	type VectorizeParams,
 	vectorizeImage,
@@ -78,6 +80,44 @@ export function useAiLineartVectorize() {
 		}) => aiLineartVectorize(file, { invocationId, params, variant }),
 		onSuccess: () => {
 			toast.success('Vetor gerado com IA!');
+		},
+	});
+}
+
+/**
+ * Vetor invertido (fundo preto). SEM `useToolBilling`: inverter é transformação
+ * pura de um vetor já gerado e não cobra — o crédito de formato já pago cobre o
+ * arquivo invertido.
+ */
+export function useInvertVector() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			vectorId,
+			mode,
+			persist,
+		}: {
+			vectorId: string;
+			mode?: InvertMode;
+			persist?: boolean;
+		}) => invertVector(vectorId, mode, persist),
+		onSuccess: (res) => {
+			// Guardou em "Meus vetores" → a lista precisa refletir o novo registro.
+			if (res.savedId) {
+				queryClient.invalidateQueries({ queryKey: ['customer', 'vectors'] });
+			}
+		},
+		onError: (err: unknown) => {
+			const status = (err as { response?: { status?: number } })?.response
+				?.status;
+			// 422 = a arte não tem negativo geométrico confiável (multi-cor, ou
+			// transform na árvore). O backend recusa em vez de gerar um arquivo
+			// de laser errado em silêncio.
+			toast.error(
+				status === 422
+					? 'Este vetor não pode ser invertido (disponível apenas para vetores em preto e branco).'
+					: 'Não foi possível inverter o vetor. Tente novamente.',
+			);
 		},
 	});
 }
