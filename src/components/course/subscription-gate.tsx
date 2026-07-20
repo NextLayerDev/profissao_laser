@@ -14,7 +14,8 @@ import { getToken } from '@/lib/auth';
  * all-or-nothing AccessGate + per-course feature model.
  *
  * `toolKey` opcionalmente libera a página quando essa tool está marcada como
- * grátis (`entitlements.tools[].entitled` já vem `true` sem plano ativo).
+ * grátis (`is_free`) — modo só leitura: a página abre, mas usar/rodar a tool
+ * continua bloqueado pelo billing (use/invoke exigem plano).
  */
 export function SubscriptionGate({
 	children,
@@ -24,9 +25,9 @@ export function SubscriptionGate({
 	toolKey?: string;
 }) {
 	const isStaff = typeof window !== 'undefined' && !!getToken('user');
-	const { isTestUnlimited, hasActiveSubscription, isLoading, toolFor } =
+	const { isTestUnlimited, hasActiveSubscription, isLoading, canView } =
 		useEntitlements();
-	const isFreeTool = !!toolKey && !!toolFor(toolKey)?.entitled;
+	const isFreeTool = !!toolKey && canView(toolKey);
 
 	if (isStaff) return <>{children}</>;
 	if (isLoading) return <WizardSkeleton />;

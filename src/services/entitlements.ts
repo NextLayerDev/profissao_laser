@@ -5,7 +5,9 @@ import { apiCourses } from '@/shared/lib/api-courses';
  * Consolidated "what the customer bought" from upvox (`GET /v1/me/entitlements`).
  * The single source of truth for access gating: active plan, accessible courses,
  * per-tool access (free_quota/remaining_free/vox_cost), vox balance and the
- * test-unlimited flag. Access is 100% plan-driven — no active plan ⇒ no tools.
+ * test-unlimited flag. Access is 100% plan-driven — no active plan ⇒ só tools
+ * `is_free`, listadas como view-only (`entitled: false`): dá pra VER a página
+ * (GETs liberados), mas usar/rodar (use/invoke) continua exigindo plano.
  */
 export const entitlementToolSchema = z.object({
 	key: z.string(),
@@ -14,6 +16,8 @@ export const entitlementToolSchema = z.object({
 	free_quota: z.number().nullable(), // null = ilimitado
 	remaining_free: z.number().nullable(),
 	vox_cost: z.number(),
+	/** Visível/consultável sem assinatura (só leitura). */
+	is_free: z.boolean().default(false),
 });
 export type EntitlementTool = z.infer<typeof entitlementToolSchema>;
 

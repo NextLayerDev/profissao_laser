@@ -40,7 +40,7 @@ export default function ComunityShellPage() {
 		: (email ?? 'U').substring(0, 2).toUpperCase();
 
 	return (
-		<SubscriptionGate>
+		<SubscriptionGate toolKey="chat">
 			<ChannelsView
 				userName={name || email?.split('@')[0] || 'Voce'}
 				userEmail={email}

@@ -44,7 +44,7 @@ export default function DuvidasCoursePage() {
 	}
 
 	return (
-		<SubscriptionGate>
+		<SubscriptionGate toolKey="suporte">
 			<SuporteOnlineView
 				customerId={customerId}
 				customerName={name || 'Utilizador'}

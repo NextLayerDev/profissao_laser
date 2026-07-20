@@ -40,7 +40,7 @@ export default function VitrineCoursePage() {
 		: (email ?? 'U').substring(0, 2).toUpperCase();
 
 	return (
-		<SubscriptionGate>
+		<SubscriptionGate toolKey="vitrine">
 			<ShowcaseView
 				userName={name || email?.split('@')[0] || 'Voce'}
 				userInitials={userInitials}

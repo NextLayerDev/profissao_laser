@@ -44,5 +44,10 @@ export function useEntitlements(
 			ent?.tools.find((t) => t.key === key),
 		remainingFree: (key: string): number | null =>
 			ent?.tools.find((t) => t.key === key)?.remaining_free ?? null,
+		/** Pode VER a página da tool: assinante (entitled) ou tool grátis (só leitura). */
+		canView: (key: string): boolean => {
+			const t = ent?.tools.find((x) => x.key === key);
+			return !!t && (t.entitled || t.is_free);
+		},
 	};
 }

@@ -166,23 +166,26 @@ export function ParametrosView() {
 					subtitle="Receitas testadas e aprovadas pela comunidade para resultados perfeitos."
 					icon={Table}
 				/>
-				<div className="mb-8 flex items-center gap-2">
-					<Link
-						href="/course/parametros/minhas"
-						className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:border-violet-400 hover:text-violet-600 dark:border-white/10 dark:text-gray-300 dark:hover:text-violet-400"
-					>
-						<ListChecks className="h-4 w-4" />
-						Minhas submissões
-					</Link>
-					<button
-						type="button"
-						onClick={() => setShowSubmit(true)}
-						className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-violet-700"
-					>
-						<Upload className="h-4 w-4" />
-						Enviar Parâmetro
-					</button>
-				</div>
+				{/* Ações de escrita: escondidas em modo só-leitura (tool grátis sem plano). */}
+				{!paramBilling.viewOnly && (
+					<div className="mb-8 flex items-center gap-2">
+						<Link
+							href="/course/parametros/minhas"
+							className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:border-violet-400 hover:text-violet-600 dark:border-white/10 dark:text-gray-300 dark:hover:text-violet-400"
+						>
+							<ListChecks className="h-4 w-4" />
+							Minhas submissões
+						</Link>
+						<button
+							type="button"
+							onClick={() => setShowSubmit(true)}
+							className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-violet-700"
+						>
+							<Upload className="h-4 w-4" />
+							Enviar Parâmetro
+						</button>
+					</div>
+				)}
 			</div>
 
 			{paramBilling.notice}
@@ -343,11 +346,23 @@ export function ParametrosView() {
 								<ParameterGridCard
 									key={p.id}
 									parameter={p}
-									onLike={() => likeMut.mutate(p.id)}
-									onSave={() =>
-										saveMut.mutate({ id: p.id, saved: !!p.isSaved })
+									// Escrita (curtir/salvar/avaliar) só pra quem pode usar; em modo
+									// só-leitura o card desabilita ao receber handler undefined.
+									onLike={
+										paramBilling.viewOnly
+											? undefined
+											: () => likeMut.mutate(p.id)
 									}
-									onRate={(n) => rateMut.mutate({ id: p.id, rating: n })}
+									onSave={
+										paramBilling.viewOnly
+											? undefined
+											: () => saveMut.mutate({ id: p.id, saved: !!p.isSaved })
+									}
+									onRate={
+										paramBilling.viewOnly
+											? undefined
+											: (n) => rateMut.mutate({ id: p.id, rating: n })
+									}
 									onViewDetails={() =>
 										paramBilling.consume(() => setDetailId(p.id))
 									}

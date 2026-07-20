@@ -6,11 +6,7 @@ import { Header } from '@/components/dashboard/header';
 import { CoursesAdminSection } from '@/modules/courses';
 import { FreeLessonsAdminSection } from '@/modules/lessons';
 import { PlansAdminSection } from '@/modules/plans';
-import {
-	FreeToolCategoriesAdminSection,
-	FreeToolsAdminSection,
-	ToolsAdminSection,
-} from '@/modules/tools';
+import { FreeToolsAdminSection, ToolsAdminSection } from '@/modules/tools';
 import { VoxesAdminSection } from '@/modules/voxes';
 
 type Tab = 'cursos' | 'voxes' | 'planos' | 'tools' | 'aulas-gratis';
@@ -121,21 +117,11 @@ export default function Catalogo() {
 						<FreeLessonsAdminSection />
 						<div>
 							<h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
-								Abas grátis
+								Páginas e ferramentas grátis
 							</h3>
 							<p className="text-slate-600 dark:text-gray-400 mb-4">
-								Escolha quais abas de ferramentas (Chat, Lives...) ficam
-								visíveis para quem ainda não assinou.
-							</p>
-							<FreeToolCategoriesAdminSection />
-						</div>
-						<div>
-							<h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
-								Ferramentas grátis
-							</h3>
-							<p className="text-slate-600 dark:text-gray-400 mb-4">
-								Escolha quais ferramentas ficam liberadas para quem ainda não
-								assinou.
+								O mesmo menu que o aluno vê — ligue o que fica visível e
+								acessível para quem ainda não assinou.
 							</p>
 							<FreeToolsAdminSection />
 						</div>

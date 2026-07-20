@@ -36,6 +36,12 @@ export type QuickAccessItem = {
 	iconBare?: boolean;
 	/** Some do menu pra quem já tem assinatura ativa (ex.: prévias grátis). */
 	hideWhenSubscribed?: boolean;
+	/**
+	 * Key da tool no registry (`tools.key`) que gateia esta página — o mesmo
+	 * passado ao `SubscriptionGate`. Item COM toolKey some do menu pra quem não
+	 * tem assinatura, a menos que a tool esteja `is_free` (entitled sem plano).
+	 */
+	toolKey?: string;
 };
 
 export const quickAccessItems: QuickAccessItem[] = [
@@ -59,6 +65,7 @@ export const quickAccessItems: QuickAccessItem[] = [
 	},
 	{
 		label: 'Suporte on-line',
+		toolKey: 'suporte',
 		description: 'Tire suas duvidas',
 		Icon: Headphones,
 		section: 'CONTEUDO',
@@ -68,6 +75,7 @@ export const quickAccessItems: QuickAccessItem[] = [
 	},
 	{
 		label: 'Biblioteca',
+		toolKey: 'biblioteca_vetores',
 		description: 'Vetores e arquivos',
 		Icon: BookOpen,
 		section: 'CONTEUDO',
@@ -77,6 +85,7 @@ export const quickAccessItems: QuickAccessItem[] = [
 	},
 	{
 		label: 'Vetorizacao',
+		toolKey: 'vectorize',
 		description: 'Aprenda a vetorizar',
 		Icon: PenLine,
 		section: 'FERRAMENTAS',
@@ -86,6 +95,7 @@ export const quickAccessItems: QuickAccessItem[] = [
 	},
 	{
 		label: 'Gravacao 1-Clique',
+		toolKey: 'gravacao_oneclick',
 		description: 'Prepare fotos pra gravar',
 		Icon: Flame,
 		section: 'FERRAMENTAS',
@@ -94,6 +104,7 @@ export const quickAccessItems: QuickAccessItem[] = [
 	},
 	{
 		label: 'Previas',
+		toolKey: 'previa',
 		description: 'Visualize antes',
 		Icon: Eye,
 		section: 'FERRAMENTAS',
@@ -102,6 +113,7 @@ export const quickAccessItems: QuickAccessItem[] = [
 	},
 	{
 		label: 'Prompts Mágicos',
+		toolKey: 'prompts_magicos',
 		description: 'Imagens a partir de texto',
 		Icon: Sparkles,
 		section: 'FERRAMENTAS',
@@ -137,6 +149,7 @@ export const quickAccessItems: QuickAccessItem[] = [
 	},
 	{
 		label: 'Chat',
+		toolKey: 'chat',
 		description: 'Converse em tempo real',
 		Icon: MessageSquare,
 		section: 'COMUNIDADE',
@@ -146,6 +159,7 @@ export const quickAccessItems: QuickAccessItem[] = [
 	},
 	{
 		label: 'Fornecedores',
+		toolKey: 'fornecedores',
 		description: 'Lista de fornecedores',
 		Icon: ShoppingBag,
 		section: 'FERRAMENTAS',
@@ -154,6 +168,7 @@ export const quickAccessItems: QuickAccessItem[] = [
 	},
 	{
 		label: 'Eventos e Lives',
+		toolKey: 'eventos',
 		description: 'Fique por dentro',
 		Icon: Radio,
 		section: 'COMUNIDADE',
@@ -162,6 +177,7 @@ export const quickAccessItems: QuickAccessItem[] = [
 	},
 	{
 		label: 'Membros',
+		toolKey: 'membros',
 		description: 'Conheca a comunidade',
 		Icon: Users,
 		section: 'COMUNIDADE',
@@ -170,6 +186,7 @@ export const quickAccessItems: QuickAccessItem[] = [
 	},
 	{
 		label: 'Vitrine de Projetos',
+		toolKey: 'vitrine',
 		description: 'Inspire-se',
 		Icon: LayoutGrid,
 		section: 'COMUNIDADE',

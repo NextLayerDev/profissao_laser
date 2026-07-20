@@ -7,6 +7,7 @@ import { useState } from 'react';
 const links = [
 	{ href: '#inicio', label: 'Início' },
 	{ href: '#ferramentas', label: 'Ferramentas' },
+	{ href: '#gratis', label: 'Grátis' },
 	{ href: '#depoimentos', label: 'Depoimentos' },
 	{ href: '#planos', label: 'Planos' },
 	{ href: '#perguntas', label: 'Perguntas' },
@@ -43,12 +44,20 @@ export function Header() {
 						</a>
 					))}
 				</nav>
-				<a
-					href="#planos"
-					className="hidden sm:inline-flex items-center gap-2 bg-gradient-primary text-primary-foreground text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-full shadow-glow hover:scale-105 transition-transform"
-				>
-					Quero fazer parte <ArrowRight className="w-3.5 h-3.5" />
-				</a>
+				<div className="hidden sm:flex items-center gap-3">
+					<a
+						href="/login"
+						className="inline-flex items-center gap-2 border border-border bg-card/40 text-foreground text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-full hover:bg-card transition-colors"
+					>
+						Entrar
+					</a>
+					<a
+						href="/register"
+						className="inline-flex items-center gap-2 bg-gradient-primary text-primary-foreground text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-full shadow-glow hover:scale-105 transition-transform"
+					>
+						Entrar de graça <ArrowRight className="w-3.5 h-3.5" />
+					</a>
+				</div>
 				<button
 					type="button"
 					aria-label="menu"
@@ -73,6 +82,22 @@ export function Header() {
 							{l.label}
 						</a>
 					))}
+					<div className="flex gap-3 pt-2">
+						<a
+							href="/login"
+							onClick={() => setOpen(false)}
+							className="flex-1 text-center border border-border bg-card/40 text-foreground text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-full"
+						>
+							Entrar
+						</a>
+						<a
+							href="/register"
+							onClick={() => setOpen(false)}
+							className="flex-1 text-center bg-gradient-primary text-primary-foreground text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-full shadow-glow"
+						>
+							Entrar de graça
+						</a>
+					</div>
 				</div>
 			)}
 		</motion.header>

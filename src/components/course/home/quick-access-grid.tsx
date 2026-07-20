@@ -75,9 +75,13 @@ function useMergedQuickAccess(): QuickAccessItem[] {
 	const dynamic = useExtraToolNav();
 	const colorByKey = useToolColorByKey();
 	const isStaff = typeof window !== 'undefined' && !!getToken('user');
-	const { isTestUnlimited, hasActiveSubscription } = useEntitlements();
+	const { isTestUnlimited, hasActiveSubscription, tools } = useEntitlements();
 	const hasFullAccess = isStaff || isTestUnlimited || hasActiveSubscription;
 	return useMemo(() => {
+		// Assinante (entitled) ou tool grátis (is_free, só leitura) → aparece.
+		const viewableKeys = new Set(
+			tools.filter((t) => t.entitled || t.is_free).map((t) => t.key),
+		);
 		const byKey = new Map<string, QuickAccessItem>();
 		for (const it of quickAccessItems) byKey.set(norm(it.label), it);
 		for (const t of dynamic) {
@@ -92,6 +96,9 @@ function useMergedQuickAccess(): QuickAccessItem[] {
 		const out: QuickAccessItem[] = [];
 		for (const [k, it] of byKey) {
 			if (it.hideWhenSubscribed && hasFullAccess) continue;
+			// Sem assinatura: só páginas sem gate ou cuja tool está grátis (is_free).
+			if (!hasFullAccess && it.toolKey && !viewableKeys.has(it.toolKey))
+				continue;
 			const adminKey = FEATURE_TOOL_KEY[k];
 			const color = adminKey ? colorByKey.get(adminKey) : undefined;
 			out.push(color ? { ...it, ...TOOL_COLORS[color] } : it);
@@ -99,7 +106,7 @@ function useMergedQuickAccess(): QuickAccessItem[] {
 		// Atalho pro catálogo completo, sempre por último na seção FERRAMENTAS.
 		out.push(OUTRAS_FERRAMENTAS);
 		return out;
-	}, [dynamic, colorByKey, hasFullAccess]);
+	}, [dynamic, colorByKey, hasFullAccess, tools]);
 }
 
 // Acesso 100% pelo plano: o grid vive dentro do SubscriptionGate (cliente já

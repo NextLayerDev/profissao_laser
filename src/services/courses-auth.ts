@@ -77,9 +77,27 @@ export async function loginCourses(payload: {
 	return toResult(data);
 }
 
-/** Dispara o envio do e-mail de recuperação de senha. */
+/**
+ * Dispara o e-mail com o CÓDIGO de recuperação (entregue pelo SMTP da upvox).
+ * Responde 204 mesmo se o e-mail não existir — não vaza quem tem conta.
+ */
 export async function forgotPasswordCourses(email: string): Promise<void> {
 	await apiCourses.post('/v1/auth/forgot-password', { email });
+}
+
+/**
+ * Troca o código de 6 dígitos pelo access_token de recuperação, que alimenta o
+ * `resetPasswordCourses`. Lança (401) se o código estiver errado/expirado.
+ */
+export async function verifyResetCodeCourses(
+	email: string,
+	code: string,
+): Promise<string> {
+	const { data } = await apiCourses.post<{ access_token: string }>(
+		'/v1/auth/verify-reset-code',
+		{ email, code },
+	);
+	return data.access_token;
 }
 
 /** Redefine a senha usando o access_token recebido por e-mail. */
