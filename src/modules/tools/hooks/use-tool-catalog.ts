@@ -126,6 +126,14 @@ const NATIVE_ADMIN_TOOLS: {
 		category: 'fornecedores',
 		permission: 'ferramentas.view',
 	},
+	{
+		key: 'prompts_magicos_admin',
+		title: 'Prompts Mágicos',
+		icon: 'sparkles',
+		href: '/ferramentas/t/prompts_magicos',
+		category: 'ia',
+		permission: 'prompts-magicos.view',
+	},
 ];
 
 type ToolUi = {

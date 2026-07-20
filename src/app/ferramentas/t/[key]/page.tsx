@@ -26,8 +26,12 @@ export default function ToolAdminPage() {
 	const key = String(params.key ?? '');
 
 	const { can, isLoading: permLoading } = usePermissions();
-	const allowed = can('tools.build');
 	const def = useToolDefinition(key);
+	// Builder (tools.build) sempre entra. Além disso, aceita o módulo de
+	// permissão específico da tool — convenção: slug do módulo em Acessos =
+	// tool key com `_` → `-` (ex.: tool `prompts_magicos` ↔ módulo
+	// `prompts-magicos`), permitindo dar acesso a um técnico sem tools.build.
+	const allowed = can('tools.build') || can(`${key.replace(/_/g, '-')}.view`);
 
 	const isRoom = def.data?.engine_runtime === 'room_v1';
 	const hasBank = Boolean(def.data?.definition.bank?.enabled);
