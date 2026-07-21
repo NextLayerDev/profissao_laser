@@ -36,6 +36,7 @@ import {
 	useAiLineartVectorize,
 	useAnalyzeVectorize,
 	useCustomerVectors,
+	useInvertVector,
 	useSaveVector,
 	useVectorizeImage,
 	useVectorizePreview,
@@ -43,6 +44,8 @@ import {
 import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
 import type {
 	ImageProfile,
+	InvertedVector,
+	InvertMode,
 	VectorFormat,
 	VectorizeParams,
 	VectorizePreset,
@@ -56,7 +59,10 @@ const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 type WizardStep = 1 | 2 | 3;
+/** Cor de fundo da PRÉVIA — puramente cosmética, não toca o arquivo. */
 type BgMode = 'transparent' | 'white' | 'black';
+/** Polaridade do ARQUIVO (SVG/PNG/DXF que o cliente baixa). */
+type Polarity = 'normal' | 'inverted';
 
 /* ─────────────── Presets de qualidade ─────────────── */
 
@@ -387,17 +393,20 @@ function StepUpload({
 function Switch({
 	checked,
 	onChange,
+	disabled,
 }: {
 	checked: boolean;
 	onChange: (v: boolean) => void;
+	disabled?: boolean;
 }) {
 	return (
 		<button
 			type="button"
 			role="switch"
 			aria-checked={checked}
+			disabled={disabled}
 			onClick={() => onChange(!checked)}
-			className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
+			className={`relative w-11 h-6 rounded-full transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed ${
 				checked ? 'bg-violet-600' : 'bg-slate-300 dark:bg-white/20'
 			}`}
 		>
@@ -414,15 +423,19 @@ function ToggleRow({
 	label,
 	checked,
 	onChange,
+	disabled,
 }: {
 	label: string;
 	checked: boolean;
 	onChange: (v: boolean) => void;
+	disabled?: boolean;
 }) {
 	return (
-		<div className="flex items-center justify-between py-2">
+		<div
+			className={`flex items-center justify-between py-2 ${disabled ? 'opacity-60' : ''}`}
+		>
 			<span className="text-sm text-slate-600 dark:text-gray-400">{label}</span>
-			<Switch checked={checked} onChange={onChange} />
+			<Switch checked={checked} onChange={onChange} disabled={disabled} />
 		</div>
 	);
 }
@@ -618,6 +631,8 @@ function StepParams({
 	colorChoice,
 	onColorChoice,
 	isAiLineart,
+	wantInverted,
+	onWantInverted,
 }: {
 	preset: VectorizePreset;
 	params: VectorizeParams;
@@ -635,6 +650,8 @@ function StepParams({
 	colorChoice: ColorChoice;
 	onColorChoice: (c: ColorChoice) => void;
 	isAiLineart: boolean;
+	wantInverted: boolean;
+	onWantInverted: (v: boolean) => void;
 }) {
 	const [advancedOpen, setAdvancedOpen] = useState(false);
 
@@ -858,6 +875,22 @@ function StepParams({
 						)}
 					</div>
 				)}
+
+				{/* Já entregar invertido. É a MESMA polaridade do passo 3 (grátis e
+				    reversível lá) — aqui só poupa um clique. */}
+				<div className="mt-3 rounded-xl border border-slate-200 dark:border-white/10 p-3">
+					<ToggleRow
+						label="Vetor invertido (fundo preto)"
+						checked={wantInverted}
+						onChange={onWantInverted}
+						disabled={colorChoice === 'color'}
+					/>
+					<p className="text-[11px] text-slate-500 dark:text-gray-400 leading-snug mt-1">
+						{colorChoice === 'color'
+							? 'Indisponível no modo Cores: vetor colorido não tem negativo geométrico. Use Laser (P&B) ou Automático.'
+							: 'O resultado já vem com a polaridade trocada — fundo sólido e a arte vazada. No resultado dá pra alternar entre normal e invertido, sem custo.'}
+					</p>
+				</div>
 			</div>
 
 			{/* Configurações avançadas */}
@@ -929,8 +962,11 @@ function StepParams({
 								checked={params.sharpen ?? false}
 								onChange={(v) => set('sharpen', v)}
 							/>
+							{/* NÃO confundir com "Polaridade: Invertido" do resultado: este
+						    negativa o RASTER antes do limiar (muda o que vira traço);
+						    aquele inverte o VETOR pronto (fundo preto de verdade). */}
 							<ToggleRow
-								label="Inverter cores"
+								label="Inverter cores (antes do limiar)"
 								checked={params.invert ?? false}
 								onChange={(v) => set('invert', v)}
 							/>
@@ -1246,6 +1282,11 @@ function StepResult({
 	costNotice,
 	billed,
 	perFormatCost,
+	polarity,
+	inverted,
+	isInverting,
+	onSetPolarity,
+	onSwapInvertMode,
 }: {
 	result: VectorizeResult;
 	originalUrl: string | null;
@@ -1259,8 +1300,23 @@ function StepResult({
 	costNotice: React.ReactNode;
 	billed: boolean;
 	perFormatCost: number;
+	polarity: Polarity;
+	inverted: InvertedVector | null;
+	isInverting: boolean;
+	onSetPolarity: (p: Polarity) => void;
+	onSwapInvertMode: () => void;
 }) {
 	const [bgMode, setBgMode] = useState<BgMode>('transparent');
+
+	const showingInverted = polarity === 'inverted' && !!inverted;
+	// O que a prévia e os downloads usam de fato.
+	const activeSvg = showingInverted ? inverted.svgContent : result.svgContent;
+
+	// A arte invertida é um campo preto — sobre fundo preto ela some. Ao ligar o
+	// invertido, força a prévia pra branco (que é como o arquivo vai ser usado).
+	useEffect(() => {
+		if (showingInverted) setBgMode('white');
+	}, [showingInverted]);
 
 	const bgClass = useMemo(() => {
 		switch (bgMode) {
@@ -1300,7 +1356,7 @@ function StepResult({
 						className={`aspect-[4/3] rounded-lg flex items-center justify-center overflow-hidden ${bgClass}`}
 					>
 						<img
-							src={svgToDataUrl(result.svgContent)}
+							src={svgToDataUrl(activeSvg)}
 							alt={result.originalName}
 							className="max-w-full max-h-full object-contain p-3"
 						/>
@@ -1308,9 +1364,80 @@ function StepResult({
 				</div>
 			</div>
 
+			{result.aiFallback && (
+				<div className="rounded-xl border border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 px-4 py-3">
+					<p className="text-sm text-amber-800 dark:text-amber-200">
+						A IA não conseguiu reproduzir sua imagem com fidelidade, então
+						usamos a vetorização normal. <strong>Não cobramos a geração</strong>{' '}
+						— você paga só ao baixar cada formato.
+					</p>
+				</div>
+			)}
+
+			{/* Polaridade: muda o ARQUIVO (não é a cor da prévia) */}
 			<div className="flex items-center gap-2 flex-wrap">
 				<span className="text-sm text-slate-500 dark:text-gray-400 mr-2">
-					Fundo:
+					Polaridade:
+				</span>
+				{[
+					{ key: 'normal' as const, label: 'Normal' },
+					{ key: 'inverted' as const, label: 'Invertido (fundo preto)' },
+				].map((p) => {
+					// Multi-cor não tem negativo geométrico — o backend também recusa.
+					const blocked = p.key === 'inverted' && result.isColor;
+					const active = polarity === p.key;
+					return (
+						<button
+							key={p.key}
+							type="button"
+							disabled={blocked || isInverting}
+							title={
+								blocked
+									? 'Disponível apenas para vetores em preto e branco.'
+									: undefined
+							}
+							onClick={() => onSetPolarity(p.key)}
+							className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+								active
+									? 'bg-violet-600 text-white'
+									: 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-gray-400 hover:bg-slate-300 dark:hover:bg-white/20'
+							}`}
+						>
+							{p.key === 'inverted' && isInverting && (
+								<Loader2 className="w-3.5 h-3.5 animate-spin" />
+							)}
+							{p.label}
+						</button>
+					);
+				})}
+			</div>
+
+			{showingInverted && (
+				<div className="rounded-lg bg-slate-100 dark:bg-white/5 px-3 py-2 space-y-1">
+					<p className="text-xs text-slate-600 dark:text-gray-400">
+						Negativo real: o Corel/LightBurn e o laser leem a polaridade
+						trocada.{' '}
+						<strong>
+							No DXF a inversão não altera o preenchimento (DXF não tem
+							preenchimento)
+						</strong>{' '}
+						— o arquivo ganha apenas o retângulo da moldura.
+					</p>
+					<button
+						type="button"
+						onClick={onSwapInvertMode}
+						disabled={isInverting}
+						className="text-xs font-medium text-violet-600 dark:text-violet-400 hover:underline disabled:opacity-40"
+					>
+						Trocar tipo de inversão (
+						{inverted.mode === 'geometric' ? 'geométrica' : 'silhueta'})
+					</button>
+				</div>
+			)}
+
+			<div className="flex items-center gap-2 flex-wrap">
+				<span className="text-sm text-slate-500 dark:text-gray-400 mr-2">
+					Fundo (só a prévia):
 				</span>
 				{[
 					{ key: 'transparent' as const, label: 'Transparente' },
@@ -1348,13 +1475,15 @@ function StepResult({
 								fmt: 'png',
 								label: 'PNG',
 								primary: false,
-								enabled: !!result.pngUrl,
+								enabled: showingInverted ? !!inverted.pngUrl : !!result.pngUrl,
 							},
 							{
 								fmt: 'dxf',
 								label: 'DXF',
 								primary: false,
-								enabled: !!result.dxfContent,
+								enabled: showingInverted
+									? !!inverted.dxfContent
+									: !!result.dxfContent,
 							},
 						] as {
 							fmt: VectorFormat;
@@ -1575,6 +1704,24 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 	const [chargingFormat, setChargingFormat] = useState<VectorFormat | null>(
 		null,
 	);
+	// Vetor invertido (fundo preto). Gerado sob demanda e GRÁTIS; depois de
+	// pronto, alternar polaridade é só troca local. Mora aqui (e não no
+	// StepResult) porque o handler de download precisa do conteúdo ativo.
+	const [inverted, setInverted] = useState<InvertedVector | null>(null);
+	const [polarity, setPolarity] = useState<Polarity>('normal');
+	// Escolha feita LÁ NO PASSO 2 ("já quero invertido"). Não é um parâmetro de
+	// geração — só diz qual polaridade aplicar assim que o vetor existir.
+	const [wantInverted, setWantInverted] = useState(false);
+	const invertMutation = useInvertVector();
+	// Descarta o invertido sempre que o VETOR muda (nova geração, novo arquivo,
+	// reset). Ancorado no id em vez de espalhado pelos setResult: atualizar
+	// `paidFormats` mantém o mesmo id e não descarta, e um setResult futuro não
+	// tem como esquecer de limpar.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: dispara na troca de vetor
+	useEffect(() => {
+		setInverted(null);
+		setPolarity('normal');
+	}, [result?.id]);
 	// Análise automática (router + image analytics) — não cobrada.
 	const { data: analysis, isFetching: analyzing } = useAnalyzeVectorize(file);
 	// Garante aplicar a recomendação uma vez por imagem (não clobbera tweaks).
@@ -1708,13 +1855,20 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 	const handleDownloadFormat = useCallback(
 		async (format: VectorFormat) => {
 			if (!result) return;
+			// O invertido é o MESMO vetor, então a cobrança continua chaveada em
+			// `result.paidFormats`/`result.id`: quem já pagou o formato leva as duas
+			// polaridades sem custo novo.
+			const useInverted = polarity === 'inverted' && inverted !== null;
+			const active = useInverted ? inverted : result;
+			const name = useInverted
+				? `${result.originalName.replace(/\.[^.]+$/, '')}-invertido`
+				: result.originalName;
 			const doDownload = () => {
-				if (format === 'svg')
-					downloadSvg(result.svgContent, result.originalName);
-				else if (format === 'png' && result.pngUrl)
-					downloadPng(result.pngUrl, result.originalName);
-				else if (format === 'dxf' && result.dxfContent)
-					downloadDxf(result.dxfContent, result.originalName);
+				if (format === 'svg') downloadSvg(active.svgContent, name);
+				else if (format === 'png' && active.pngUrl)
+					downloadPng(active.pngUrl, name);
+				else if (format === 'dxf' && active.dxfContent)
+					downloadDxf(active.dxfContent, name);
 			};
 			if (result.paidFormats?.includes(format) || !billing.billed) {
 				doDownload();
@@ -1735,8 +1889,72 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 				setChargingFormat(null);
 			}
 		},
-		[result, billing, chargingFormat],
+		[result, billing, chargingFormat, polarity, inverted],
 	);
+
+	/**
+	 * Liga/desliga o invertido. A primeira vez chama o backend (grátis); depois
+	 * é troca local. `mode` explícito refaz com o outro algoritmo.
+	 */
+	const handleSetPolarity = useCallback(
+		async (next: Polarity, mode?: InvertMode) => {
+			if (!result) return;
+			if (next === 'normal') {
+				setPolarity('normal');
+				return;
+			}
+			if (inverted && !mode) {
+				setPolarity('inverted');
+				return;
+			}
+			try {
+				const res = await invertMutation.mutateAsync({
+					vectorId: result.id,
+					mode,
+					// Guarda em "Meus vetores": o invertido é um arquivo que o cliente
+					// vai querer de volta depois. Idempotente por (pai, modo), então
+					// alternar a polaridade não duplica a biblioteca.
+					persist: true,
+				});
+				setInverted(res);
+				setPolarity('inverted');
+			} catch {
+				// toast já sai do hook; mantém a polaridade atual.
+				setPolarity('normal');
+			}
+		},
+		[result, inverted, invertMutation],
+	);
+
+	// A heurística automática erra às vezes — deixa trocar o algoritmo na mão.
+	const handleSwapInvertMode = useCallback(() => {
+		if (!inverted) return;
+		handleSetPolarity(
+			'inverted',
+			inverted.mode === 'geometric' ? 'silhouette' : 'geometric',
+		);
+	}, [inverted, handleSetPolarity]);
+
+	/**
+	 * Aplica a escolha do passo 2 assim que o vetor existe. O ref garante UMA
+	 * aplicação automática por vetor — sem ele, `handleSetPolarity` muda de
+	 * identidade ao gravar o resultado e o efeito se reinvocaria em loop. Só
+	 * rastreia o que foi automático, então trocar a polaridade na mão no passo 3
+	 * continua valendo.
+	 */
+	const autoInvertedFor = useRef<string | null>(null);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: dispara na chegada do vetor
+	useEffect(() => {
+		// Vetor colorido não tem negativo geométrico — o backend recusa com 422.
+		if (!result || result.isColor) return;
+		if (wantInverted && autoInvertedFor.current !== result.id) {
+			autoInvertedFor.current = result.id;
+			handleSetPolarity('inverted');
+		} else if (!wantInverted && autoInvertedFor.current === result.id) {
+			autoInvertedFor.current = null;
+			handleSetPolarity('normal');
+		}
+	}, [result?.id, result?.isColor, wantInverted]);
 	const saveMutation = useSaveVector();
 
 	const handleFileSelected = useCallback((selectedFile: File) => {
@@ -1769,6 +1987,7 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 		setPreset('automatico');
 		setParams(presetParams('automatico'));
 		setColorChoice('auto');
+		setWantInverted(false);
 	}, []);
 
 	const handleSave = useCallback(async () => {
@@ -1877,6 +2096,8 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 						colorChoice={colorChoice}
 						onColorChoice={applyColorChoice}
 						isAiLineart={isAi}
+						wantInverted={wantInverted}
+						onWantInverted={setWantInverted}
 					/>
 				)}
 
@@ -1903,6 +2124,11 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 							costNotice={billing.notice}
 							billed={billing.billed}
 							perFormatCost={billing.cost}
+							polarity={polarity}
+							inverted={inverted}
+							isInverting={invertMutation.isPending}
+							onSetPolarity={handleSetPolarity}
+							onSwapInvertMode={handleSwapInvertMode}
 						/>
 					</div>
 				)}

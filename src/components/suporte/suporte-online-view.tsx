@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { AppointmentForm } from '@/components/agendamentos/appointment-form';
 import { DoubtChatView } from '@/components/duvidas/doubt-chat-view';
 import { NewDoubtFlow } from '@/components/duvidas/new-doubt-flow';
+import { SupportChatHistory } from '@/components/suporte/support-chat-history';
 import { SupportChatWidget } from '@/components/suporte/support-chat-widget';
 import { ModalOverlay } from '@/components/ui/modal-overlay';
 import { ModalPortal } from '@/components/ui/modal-portal';
@@ -37,7 +38,7 @@ import {
 } from '@/hooks/use-doubt-chat';
 import { useFAQs } from '@/hooks/use-faq';
 import { useKnowledgeBase } from '@/hooks/use-knowledge-base';
-import { useSupportChat } from '@/hooks/use-support-chat';
+import { useSupportChat, useSupportChats } from '@/hooks/use-support-chat';
 import { type DoubtChat, isDoubtPending } from '@/types/doubt-chat';
 import type { KnowledgeBaseArticle } from '@/types/knowledge-base';
 import { getEmbedUrl, getVideoType } from '@/utils/video';
@@ -102,6 +103,38 @@ function formatDate(iso: string) {
 		});
 	} catch {
 		return iso;
+	}
+}
+
+/* ─── Badge do chat ao vivo: contador de mensagens já vistas ─────────────── */
+
+// O contador precisa sobreviver ao F5: sem isso, ao recarregar a página o
+// aluno veria o histórico inteiro do atendimento contado como "novo".
+const SUPPORT_SEEN_KEY = 'pl:support-chat-seen';
+
+function readSeenMap(): Record<string, number> {
+	if (typeof window === 'undefined') return {};
+	try {
+		const raw = window.localStorage.getItem(SUPPORT_SEEN_KEY);
+		return raw ? (JSON.parse(raw) as Record<string, number>) : {};
+	} catch {
+		return {};
+	}
+}
+
+function readSeen(chatId: string | null) {
+	if (!chatId) return 0;
+	return readSeenMap()[chatId] ?? 0;
+}
+
+function writeSeen(chatId: string, count: number) {
+	if (typeof window === 'undefined') return;
+	try {
+		const map = readSeenMap();
+		map[chatId] = count;
+		window.localStorage.setItem(SUPPORT_SEEN_KEY, JSON.stringify(map));
+	} catch {
+		// localStorage indisponível (modo privado): o badge só perde memória.
 	}
 }
 
@@ -352,10 +385,19 @@ export function SuporteOnlineView({
 }: SuporteOnlineViewProps) {
 	const [newDoubtOpen, setNewDoubtOpen] = useState(false);
 	const [supportChatOpen, setSupportChatOpen] = useState(false);
-	const [supportChatId, setSupportChatId] = useState<string | null>(null);
 	const [supportChatSeen, setSupportChatSeen] = useState(0);
+	// Atendimento encerrado aberto em modo leitura (vindo do histórico).
+	const [supportViewChatId, setSupportViewChatId] = useState<string | null>(
+		null,
+	);
 	const [schedulingOpen, setSchedulingOpen] = useState(false);
 	const sectionRef = useRef<HTMLDivElement>(null);
+
+	// O atendimento em andamento vem do SERVIDOR, não de estado local — é isso
+	// que faz o F5 (ou trocar de página) continuar na mesma conversa em vez de
+	// abrir um atendimento novo.
+	const { activeChat, closedChats } = useSupportChats(hasAccess);
+	const supportChatId = activeChat?.id ?? null;
 
 	// Mantém o chat em polling mesmo fechado, pra avisar de novas mensagens
 	// (IA/atendente) com um badge no botão flutuante.
@@ -423,10 +465,19 @@ export function SuporteOnlineView({
 		return () => window.clearTimeout(id);
 	}, [activeSection]);
 
+	// Ao (re)descobrir qual é o atendimento ativo, recupera quantas mensagens o
+	// aluno já tinha visto nele.
+	useEffect(() => {
+		setSupportChatSeen(readSeen(supportChatId));
+	}, [supportChatId]);
+
 	// Enquanto o chat está aberto, marca tudo como visto (zera o badge).
 	useEffect(() => {
-		if (supportChatOpen) setSupportChatSeen(supportMsgCount);
-	}, [supportChatOpen, supportMsgCount]);
+		if (supportChatOpen && supportChatId) {
+			setSupportChatSeen(supportMsgCount);
+			writeSeen(supportChatId, supportMsgCount);
+		}
+	}, [supportChatOpen, supportMsgCount, supportChatId]);
 
 	// Toast quando o atendente responde com o widget fechado (o badge no botão
 	// flutuante já existe — isso garante que o cliente perceba na hora).
@@ -448,6 +499,17 @@ export function SuporteOnlineView({
 
 	function handleChatCreated(_chat: DoubtChat) {
 		setNewDoubtOpen(false);
+	}
+
+	/** Abre o widget: no atendimento em andamento ou num anterior (leitura). */
+	function openSupportWidget(readOnlyChatId: string | null = null) {
+		setSupportViewChatId(readOnlyChatId);
+		setSupportChatOpen(true);
+	}
+
+	function closeSupportWidget() {
+		setSupportChatOpen(false);
+		setSupportViewChatId(null);
 	}
 
 	function handleSendChatMessage(content: string, file?: File) {
@@ -924,20 +986,36 @@ export function SuporteOnlineView({
 				<section className="rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] p-6 md:p-8 text-center">
 					<Headphones className="w-10 h-10 text-violet-600 mx-auto mb-3" />
 					<h3 className="font-display text-lg font-bold text-slate-900 dark:text-white">
-						Ainda precisa de ajuda?
+						{activeChat
+							? 'Voce tem um atendimento em andamento'
+							: 'Ainda precisa de ajuda?'}
 					</h3>
 					<p className="text-sm text-slate-500 dark:text-gray-400 mt-1 mb-5">
-						Nossa equipe esta disponivel para te ajudar em tempo real.
+						{activeChat
+							? 'Continue a conversa por aqui — nao precisa abrir outro atendimento.'
+							: 'Nossa equipe esta disponivel para te ajudar em tempo real.'}
 					</p>
+					{/* Com atendimento aberto o botão LEVA pro existente; sem ele, o
+					    widget deixa o aluno iniciar um novo. */}
 					<button
 						type="button"
-						onClick={() => setSupportChatOpen(true)}
+						onClick={() => openSupportWidget()}
 						className="inline-flex items-center gap-2 px-6 py-3 bg-violet-700 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors"
 					>
 						<MessageSquare className="w-4 h-4" />
-						Abrir chat agora
+						{activeChat ? 'Continuar atendimento' : 'Iniciar novo atendimento'}
 					</button>
 				</section>
+			)}
+
+			{/* ── 5.1 Histórico do chat ao vivo (recolhido) ──────────────────── */}
+			{/* Atenção: isto é o chat de suporte ao vivo, NÃO os "Meus chamados"
+			    (tickets) da seção 3 — sistemas diferentes. */}
+			{activeSection === 'home' && (
+				<SupportChatHistory
+					chats={closedChats}
+					onOpenChat={(id) => openSupportWidget(id)}
+				/>
 			)}
 
 			{/* ── 6. Widget lateral (fixo no viewport via portal) ─────────────── */}
@@ -945,7 +1023,7 @@ export function SuporteOnlineView({
 				<div className="fixed bottom-6 right-6 z-40">
 					<button
 						type="button"
-						onClick={() => setSupportChatOpen(true)}
+						onClick={() => openSupportWidget()}
 						className="group relative flex items-center gap-3 pl-5 pr-4 py-3 bg-violet-600 hover:bg-violet-400 text-white font-semibold rounded-lg shadow-xl shadow-violet-500/25 transition-all hover:shadow-violet-500/40"
 					>
 						{supportUnread > 0 && (
@@ -957,10 +1035,16 @@ export function SuporteOnlineView({
 							<span className="text-xs text-violet-200 font-normal leading-tight">
 								{supportUnread > 0
 									? 'Nova mensagem no suporte'
-									: 'Precisa de ajuda urgente?'}
+									: activeChat
+										? 'Atendimento em andamento'
+										: 'Precisa de ajuda urgente?'}
 							</span>
 							<span className="text-sm font-bold leading-tight">
-								{supportUnread > 0 ? 'Ver atendimento' : 'Abrir chat'}
+								{supportUnread > 0
+									? 'Ver atendimento'
+									: activeChat
+										? 'Continuar conversa'
+										: 'Abrir chat'}
 							</span>
 						</div>
 						<div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
@@ -1038,9 +1122,9 @@ export function SuporteOnlineView({
 			{/* ── Chat de suporte ao vivo (IA + atendente) ───────────────────── */}
 			<SupportChatWidget
 				isOpen={supportChatOpen}
-				onClose={() => setSupportChatOpen(false)}
-				chatId={supportChatId}
-				onChatId={setSupportChatId}
+				onClose={closeSupportWidget}
+				viewChatId={supportViewChatId}
+				onViewChatId={setSupportViewChatId}
 			/>
 
 			{/* ── Agendamento de atendimento ─────────────────────────────────── */}

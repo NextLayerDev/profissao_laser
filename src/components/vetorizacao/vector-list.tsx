@@ -4,6 +4,7 @@ import {
 	BookOpen,
 	ChevronLeft,
 	ChevronRight,
+	Contrast,
 	Download,
 	Loader2,
 	Pencil,
@@ -13,8 +14,13 @@ import {
 import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { toast } from 'sonner';
 import { useEntitlements } from '@/hooks/use-entitlements';
-import { useDeleteCustomerVector, useUpdateVector } from '@/hooks/use-vectors';
+import {
+	useDeleteCustomerVector,
+	useInvertVector,
+	useUpdateVector,
+} from '@/hooks/use-vectors';
 import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
 import { chargeVectorFormat } from '@/services/vectorize';
 import type { CustomerVector } from '@/services/vectors';
@@ -93,6 +99,29 @@ export function VectorList({
 			}
 		},
 		[billing, chargingId, onRefetch],
+	);
+
+	// Inversão rápida: gera o negativo do vetor e guarda como um registro próprio
+	// em "Meus vetores". NÃO cobra — é transformação de um vetor já gerado, e o
+	// registro novo herda os formatos já pagos do pai.
+	const invertMutation = useInvertVector();
+	const [invertingId, setInvertingId] = useState<string | null>(null);
+
+	const handleInvert = useCallback(
+		async (v: CustomerVector) => {
+			if (invertingId) return;
+			setInvertingId(v.id);
+			try {
+				await invertMutation.mutateAsync({ vectorId: v.id, persist: true });
+				toast.success('Vetor invertido guardado na sua biblioteca.');
+				onRefetch();
+			} catch {
+				// toast de erro sai do próprio hook (incl. 422 de vetor colorido)
+			} finally {
+				setInvertingId(null);
+			}
+		},
+		[invertMutation, invertingId, onRefetch],
 	);
 
 	// Debounce search. Só dispara quando o texto REALMENTE mudou vs o já commitado
@@ -258,6 +287,20 @@ export function VectorList({
 													!v.paid_formats?.includes('svg') && (
 														<span className="opacity-80">· {billing.cost}</span>
 													)}
+											</button>
+											<button
+												type="button"
+												disabled={invertingId !== null}
+												onClick={() => handleInvert(v)}
+												title="Gera o negativo real do vetor (fundo preto) e guarda na biblioteca. Não consome voxxys."
+												className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-800 dark:bg-white/20 hover:bg-slate-700 dark:hover:bg-white/30 text-white text-xs font-medium transition-colors disabled:opacity-50"
+											>
+												{invertingId === v.id ? (
+													<Loader2 className="w-3 h-3 animate-spin" />
+												) : (
+													<Contrast className="w-3 h-3" />
+												)}
+												Inverter
 											</button>
 											<button
 												type="button"

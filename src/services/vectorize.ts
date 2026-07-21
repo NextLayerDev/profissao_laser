@@ -78,6 +78,26 @@ export interface VectorizeResult {
 	dxfContent?: string;
 	/** Formatos já pagos deste vetor (svg/png/dxf) — cobrança por formato no download. */
 	paidFormats?: string[];
+	/**
+	 * A IA não reproduziu a arte com fidelidade (verificação estrutural no
+	 * backend) → estornaram a geração e devolveram a vetorização normal. O
+	 * cliente volta ao fluxo grátis: paga só ao baixar cada formato.
+	 */
+	aiFallback?: boolean;
+	aiFallbackReason?: string;
+}
+
+export type InvertMode = 'auto' | 'geometric' | 'silhouette';
+
+export interface InvertedVector {
+	/** Qual caminho rodou de fato. */
+	mode: 'geometric' | 'silhouette';
+	svgContent: string;
+	pngUrl: string;
+	dxfContent: string;
+	paidFormats: string[];
+	/** Id do invertido guardado em "Meus vetores" (quando pedido). */
+	savedId?: string;
 }
 
 export type VectorFormat = 'svg' | 'png' | 'dxf';
@@ -161,7 +181,34 @@ export async function aiLineartVectorize(
 	const { data } = await api.post<VectorizeResult>(
 		'/api/vectorize/ai-lineart',
 		formData,
-		{ timeout: 90_000 },
+		// 150s e não 90s: quando a verificação estrutural rejeita a 1ª saída, o
+		// backend refaz com prompt mais rígido — duas gerações mais o trace passam
+		// de 90s. Estourar aqui deixaria o servidor liquidar uma cobrança de um
+		// resultado que o cliente nunca veria.
+		{ timeout: 150_000 },
+	);
+	return data;
+}
+
+/**
+ * VETOR INVERTIDO (fundo preto): negativo REAL do vetor — o Corel/LightBurn e o
+ * laser enxergam a polaridade trocada, não é só a cor da prévia. **Não cobra**:
+ * é transformação pura de um vetor já gerado, e o crédito de formato já pago
+ * cobre o arquivo invertido.
+ */
+export async function invertVector(
+	vectorId: string,
+	mode: InvertMode = 'auto',
+	/**
+	 * Guarda o invertido em "Meus vetores". Idempotente por (pai, modo) e o
+	 * registro herda os formatos já pagos do pai — nunca recobra.
+	 */
+	persist = false,
+): Promise<InvertedVector> {
+	const { data } = await api.post<InvertedVector>(
+		`/api/vectorize/${vectorId}/invert`,
+		{ mode, persist },
+		{ timeout: 60_000 },
 	);
 	return data;
 }
