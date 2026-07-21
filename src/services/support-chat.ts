@@ -1,20 +1,27 @@
 import { api } from '@/lib/fetch';
 import type {
 	SupportChat,
+	SupportChatCreateResult,
 	SupportChatStatus,
 	SupportChatSummary,
 } from '@/types/support-chat';
 
 // ── Customer ──────────────────────────────────────────────────────────────
 
+/**
+ * Find-or-create: o backend nunca abre um segundo atendimento enquanto houver
+ * um em andamento — ele devolve o existente com `reused: true` (e anexa a
+ * mensagem nele, se tiver sido enviada). Normalizamos o flag pra boolean
+ * porque respostas antigas/cacheadas podem vir sem o campo.
+ */
 export async function createSupportChat(
 	message?: string,
-): Promise<SupportChat> {
-	const { data } = await api.post<SupportChat>(
+): Promise<SupportChatCreateResult> {
+	const { data } = await api.post<SupportChatCreateResult>(
 		'/support-chats',
 		message ? { message } : {},
 	);
-	return data;
+	return { ...data, reused: data.reused === true };
 }
 
 export async function getSupportChat(id: string): Promise<SupportChat> {
