@@ -71,6 +71,10 @@ export const NAV_VIEW_KEYS: Record<string, string[]> = {
 	Fórum: ['cursos.view'], // Ajustado conforme módulos disponíveis
 	Agendamentos: SUPORTE_VIEW_KEYS, // segue o mesmo gate da aba Suporte
 	Suporte: SUPORTE_VIEW_KEYS,
+	// Base de conhecimento da IA do chat ao vivo — quem atende o chat cuida dela.
+	// A API gateia por método: GET → suporte.view, POST/PATCH → suporte.edit,
+	// DELETE → suporte.delete.
+	'Cérebro da IA': SUPORTE_VIEW_KEYS,
 	Parametros: ['acessos.view'],
 	Acessos: ['acessos.view'],
 	Alunos: ['alunos.view'],

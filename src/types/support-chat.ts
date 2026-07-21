@@ -37,3 +37,13 @@ export interface SupportChatSummary {
 export interface SupportChat extends SupportChatSummary {
 	messages: SupportMessage[];
 }
+
+/**
+ * Resposta do POST /support-chats, que é find-or-create no backend:
+ * - 201 + reused=false → um atendimento novo foi criado
+ * - 200 + reused=true  → já existia um atendimento aberto e ele foi devolvido
+ *   (se veio mensagem junto, ela foi adicionada nesse atendimento existente)
+ */
+export interface SupportChatCreateResult extends SupportChat {
+	reused: boolean;
+}

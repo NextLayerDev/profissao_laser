@@ -110,6 +110,43 @@
 	}
 }
 
+/*
+ * Respiro do Cérebro da IA — o sinal de que existe uma mente acordada ali.
+ * Ritmo lento de propósito (5,4s, próximo de uma respiração humana em repouso):
+ * pulso rápido lê como alerta, e o estado saudável não deve pedir atenção.
+ * O ponto SÓ respira quando a busca por significado está no ar; quando ela cai,
+ * o componente troca a cor e para o movimento — a ausência de respiro é o aviso.
+ */
+@keyframes kb-respiro {
+	0%,
+	100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+	50% {
+		opacity: 0.45;
+		transform: scale(0.86);
+	}
+}
+
+.kb-respiro {
+	animation: kb-respiro 5.4s ease-in-out infinite;
+}
+
+/* Faixa da composição: leve elevação no hover, sem sombra. */
+.kb-seg:not(:disabled):hover {
+	transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.kb-respiro {
+		animation: none;
+	}
+	.kb-seg:not(:disabled):hover {
+		transform: none;
+	}
+}
+
 /* Grain texture overlay for dark mode */
 .grain-texture::after {
 	content: "";

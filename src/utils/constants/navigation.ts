@@ -1,5 +1,6 @@
 import {
 	BarChart3,
+	BrainCircuit,
 	CalendarClock,
 	Headphones,
 	HelpCircle,
@@ -91,6 +92,13 @@ export const navItems: NavItem[] = [
 		name: 'Suporte',
 		icon: Headphones,
 		href: '/suporte',
+		hasDropdown: false,
+		section: 'OPERACAO',
+	},
+	{
+		name: 'Cérebro da IA',
+		icon: BrainCircuit,
+		href: '/conhecimento',
 		hasDropdown: false,
 		section: 'OPERACAO',
 	},
