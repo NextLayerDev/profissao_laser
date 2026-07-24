@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { type ReactNode, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { useImageSizePresets } from '@/modules/tools/hooks/use-image-size-presets';
 import {
 	useCreateBankEntry,
 	useDeleteBankEntry,
@@ -31,7 +32,7 @@ import type {
 	BankFieldDef,
 } from '@/modules/tools/services/tool-definitions.service';
 import { getApiErrorMessage } from '@/shared/lib/api-error';
-import { inputCls } from './builder-ui';
+import { inputCls, SegmentedControl, Switch } from './builder-ui';
 
 /**
  * Gerenciador do Banco de uma tool (admin). Renderiza o form de cada registro
@@ -46,6 +47,15 @@ const labelCls = 'mb-1.5 block text-[13px] font-medium text-slate-300';
 const areaCls =
 	'w-full rounded-xl border border-white/10 bg-black/30 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 transition-colors focus-visible:outline-none focus-visible:border-emerald-400/50 focus-visible:ring-2 focus-visible:ring-emerald-400/30';
 
+/**
+ * Tamanho de saída do `ai.generate_image` pra este registro — vence o tamanho
+ * da tool inteira quando definido (ver `resolveImageSizePx` no backend).
+ */
+type ImageSizeValue =
+	| { unit: 'px'; width: number; height: number }
+	| { unit: 'mm'; width: number; height: number; dpi: number }
+	| { unit: 'preset'; presetId: string };
+
 interface BankFormValues {
 	title: string;
 	description: string;
@@ -55,6 +65,8 @@ interface BankFormValues {
 	data: Record<string, string>;
 	/** Arquivos dos campos de imagem do banco (name → File). */
 	dataImages: Record<string, File>;
+	/** `null` = herda o tamanho da tool. */
+	imageSize: ImageSizeValue | null;
 	exampleBefore: File | null;
 	exampleAfter: File | null;
 	/** Marcar pra limpar um exemplo existente na edição. */
@@ -70,6 +82,7 @@ function emptyForm(): BankFormValues {
 		active: true,
 		data: {},
 		dataImages: {},
+		imageSize: null,
 		exampleBefore: null,
 		exampleAfter: null,
 		removeBefore: false,
@@ -83,6 +96,13 @@ function formFromEntry(entry: ToolBankEntry): BankFormValues {
 		if (typeof v === 'string') data[k] = v;
 		else if (typeof v === 'number') data[k] = String(v);
 	}
+	const sizePx = entry.data?.image_size_px as
+		| { width?: unknown; height?: unknown }
+		| undefined;
+	const imageSize: ImageSizeValue | null =
+		typeof sizePx?.width === 'number' && typeof sizePx?.height === 'number'
+			? { unit: 'px', width: sizePx.width, height: sizePx.height }
+			: null;
 	return {
 		title: entry.title,
 		description: entry.description ?? '',
@@ -90,11 +110,143 @@ function formFromEntry(entry: ToolBankEntry): BankFormValues {
 		active: entry.active,
 		data,
 		dataImages: {},
+		imageSize,
 		exampleBefore: null,
 		exampleAfter: null,
 		removeBefore: false,
 		removeAfter: false,
 	};
+}
+
+/** Converte o `ImageSizeValue` do form pro payload que a API espera em `data.image_size`. */
+function imageSizeToPayload(v: ImageSizeValue): Record<string, unknown> {
+	if (v.unit === 'preset') return { unit: 'preset', preset_id: v.presetId };
+	if (v.unit === 'mm')
+		return { unit: 'mm', width: v.width, height: v.height, dpi: v.dpi };
+	return { unit: 'px', width: v.width, height: v.height };
+}
+
+/**
+ * Tamanho de saída da IA pra este registro (opcional — em branco herda o
+ * tamanho configurado na tool). Aceita px direto, mm+DPI (converte igual ao
+ * laser-prep) ou uma resolução padrão cadastrada em `/api/image-size-presets`.
+ */
+function ImageSizeControl({
+	value,
+	onChange,
+}: {
+	value: ImageSizeValue | null;
+	onChange: (v: ImageSizeValue | null) => void;
+}) {
+	const presets = useImageSizePresets();
+
+	if (!value) {
+		return (
+			<div className="flex items-center justify-between">
+				<div>
+					<span className={labelCls}>Tamanho de saída personalizado</span>
+					<p className="text-[11px] text-slate-500">
+						Desligado: usa o tamanho configurado na tool.
+					</p>
+				</div>
+				<Switch
+					checked={false}
+					onChange={(on) =>
+						onChange(on ? { unit: 'px', width: 1024, height: 1024 } : null)
+					}
+					label="Ativar tamanho personalizado"
+				/>
+			</div>
+		);
+	}
+
+	return (
+		<div className="space-y-3">
+			<div className="flex items-center justify-between">
+				<span className={labelCls}>Tamanho de saída personalizado</span>
+				<Switch
+					checked
+					onChange={(on) => onChange(on ? value : null)}
+					label="Ativar tamanho personalizado"
+				/>
+			</div>
+			<SegmentedControl
+				value={value.unit}
+				onChange={(unit) => {
+					if (unit === 'px')
+						onChange({ unit: 'px', width: 1024, height: 1024 });
+					else if (unit === 'mm')
+						onChange({ unit: 'mm', width: 100, height: 100, dpi: 300 });
+					else
+						onChange({
+							unit: 'preset',
+							presetId: presets.data?.[0]?.id ?? '',
+						});
+				}}
+				options={[
+					{ value: 'px', label: 'Pixels' },
+					{ value: 'mm', label: 'Milímetros' },
+					{ value: 'preset', label: 'Padrão' },
+				]}
+				ariaLabel="Unidade do tamanho de saída"
+			/>
+			{value.unit === 'preset' ? (
+				<select
+					value={value.presetId}
+					onChange={(e) =>
+						onChange({ unit: 'preset', presetId: e.target.value })
+					}
+					className={inputCls}
+					disabled={presets.isLoading}
+				>
+					<option value="">— escolha —</option>
+					{(presets.data ?? []).map((p) => (
+						<option key={p.id} value={p.id}>
+							{p.name} ({p.width}×{p.height}px)
+						</option>
+					))}
+				</select>
+			) : (
+				<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+					<div>
+						<span className={labelCls}>Largura ({value.unit})</span>
+						<input
+							type="number"
+							value={value.width}
+							onChange={(e) =>
+								onChange({ ...value, width: Number(e.target.value) })
+							}
+							className={inputCls}
+						/>
+					</div>
+					<div>
+						<span className={labelCls}>Altura ({value.unit})</span>
+						<input
+							type="number"
+							value={value.height}
+							onChange={(e) =>
+								onChange({ ...value, height: Number(e.target.value) })
+							}
+							className={inputCls}
+						/>
+					</div>
+					{value.unit === 'mm' && (
+						<div>
+							<span className={labelCls}>DPI</span>
+							<input
+								type="number"
+								value={value.dpi}
+								onChange={(e) =>
+									onChange({ ...value, dpi: Number(e.target.value) })
+								}
+								className={inputCls}
+							/>
+						</div>
+					)}
+				</div>
+			)}
+		</div>
+	);
 }
 
 /** Upload visual reutilizável (escolher arquivo). */
@@ -412,7 +564,10 @@ export function ToolBankManager({
 		fd.append('category', form.category.trim());
 		fd.append('active', String(form.active));
 		// Campos do banco: textos/enum vão no `data` JSON; imagens viram file fields.
-		fd.append('data', JSON.stringify(form.data));
+		const dataPayload: Record<string, unknown> = { ...form.data };
+		if (form.imageSize)
+			dataPayload.image_size = imageSizeToPayload(form.imageSize);
+		fd.append('data', JSON.stringify(dataPayload));
 		for (const [name, file] of Object.entries(form.dataImages)) {
 			fd.append(name, file);
 		}
@@ -447,6 +602,20 @@ export function ToolBankManager({
 				toast.error(`O campo "${f.label ?? f.name}" é obrigatório.`);
 				return;
 			}
+		}
+		if (form.imageSize?.unit === 'preset' && !form.imageSize.presetId) {
+			toast.error(
+				'Escolha uma resolução padrão (ou desligue o tamanho personalizado).',
+			);
+			return;
+		}
+		if (
+			form.imageSize &&
+			form.imageSize.unit !== 'preset' &&
+			(!form.imageSize.width || !form.imageSize.height)
+		) {
+			toast.error('Preencha largura e altura do tamanho personalizado.');
+			return;
 		}
 		try {
 			const fd = buildFormData();
@@ -661,6 +830,17 @@ export function ToolBankManager({
 							)}
 						</div>
 					)}
+
+					{/* Tamanho de saída da IA (opcional — vence o tamanho da tool) */}
+					<div className="space-y-4 border-t border-white/[0.06] pt-5">
+						<p className="font-mono text-[11px] uppercase tracking-widest text-cyan-300/80">
+							Tamanho de saída
+						</p>
+						<ImageSizeControl
+							value={form.imageSize}
+							onChange={(imageSize) => patchForm({ imageSize })}
+						/>
+					</div>
 
 					{/* Exemplos antes/depois */}
 					<div className="space-y-4 border-t border-white/[0.06] pt-5">
