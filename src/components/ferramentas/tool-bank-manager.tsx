@@ -33,6 +33,7 @@ import type {
 } from '@/modules/tools/services/tool-definitions.service';
 import { getApiErrorMessage } from '@/shared/lib/api-error';
 import { inputCls, SegmentedControl, Switch } from './builder-ui';
+import { ImageSizePresetModal } from './image-size-preset-modal';
 
 /**
  * Gerenciador do Banco de uma tool (admin). Renderiza o form de cada registro
@@ -139,6 +140,7 @@ function ImageSizeControl({
 	onChange: (v: ImageSizeValue | null) => void;
 }) {
 	const presets = useImageSizePresets();
+	const [managingPresets, setManagingPresets] = useState(false);
 
 	if (!value) {
 		return (
@@ -191,21 +193,33 @@ function ImageSizeControl({
 				ariaLabel="Unidade do tamanho de saída"
 			/>
 			{value.unit === 'preset' ? (
-				<select
-					value={value.presetId}
-					onChange={(e) =>
-						onChange({ unit: 'preset', presetId: e.target.value })
-					}
-					className={inputCls}
-					disabled={presets.isLoading}
-				>
-					<option value="">— escolha —</option>
-					{(presets.data ?? []).map((p) => (
-						<option key={p.id} value={p.id}>
-							{p.name} ({p.width}×{p.height}px)
-						</option>
-					))}
-				</select>
+				<div className="flex items-center gap-2">
+					<select
+						value={value.presetId}
+						onChange={(e) =>
+							onChange({ unit: 'preset', presetId: e.target.value })
+						}
+						className={inputCls}
+						disabled={presets.isLoading}
+					>
+						<option value="">— escolha —</option>
+						{(presets.data ?? []).map((p) => (
+							<option key={p.id} value={p.id}>
+								{p.name} ({p.width}×{p.height}px)
+							</option>
+						))}
+					</select>
+					<button
+						type="button"
+						onClick={() => setManagingPresets(true)}
+						className="shrink-0 whitespace-nowrap rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-white/10"
+					>
+						Gerenciar
+					</button>
+					{managingPresets && (
+						<ImageSizePresetModal onClose={() => setManagingPresets(false)} />
+					)}
+				</div>
 			) : (
 				<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
 					<div>
