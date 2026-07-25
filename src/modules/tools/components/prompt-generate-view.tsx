@@ -20,6 +20,7 @@ import {
 	useRef,
 	useState,
 } from 'react';
+import { useImageSizePresets } from '../hooks/use-image-size-presets';
 import {
 	coverOf,
 	downloadUrl,
@@ -33,7 +34,10 @@ import {
 } from '../lib/prompt-bank';
 import { screenAccentBg } from '../lib/screen-ui';
 import type { ToolBankEntry } from '../services/tool-bank.service';
-import type { ToolRunResult } from '../services/tool-definitions.service';
+import type {
+	RunToolEngineImageSize,
+	ToolRunResult,
+} from '../services/tool-definitions.service';
 
 /**
  * Tela de detalhe + geração de um "Prompt Mágico" (registro do Banco do Admin
@@ -74,6 +78,32 @@ function ReferenceDrop({
 			if (previewUrl) URL.revokeObjectURL(previewUrl);
 		};
 	}, [previewUrl]);
+
+	// Resolução real do arquivo escolhido (lida do próprio bitmap, não do EXIF).
+	const [dimensions, setDimensions] = useState<{
+		width: number;
+		height: number;
+	} | null>(null);
+	useEffect(() => {
+		if (!file) {
+			setDimensions(null);
+			return;
+		}
+		let cancelled = false;
+		const url = URL.createObjectURL(file);
+		const img = new Image();
+		img.onload = () => {
+			if (!cancelled) {
+				setDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+			}
+			URL.revokeObjectURL(url);
+		};
+		img.onerror = () => URL.revokeObjectURL(url);
+		img.src = url;
+		return () => {
+			cancelled = true;
+		};
+	}, [file]);
 	return (
 		<div className="space-y-3">
 			<span className="block text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -143,9 +173,16 @@ function ReferenceDrop({
 							</div>
 						)}
 					</div>
-					<p className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900 dark:text-white">
-						{file.name}
-					</p>
+					<div className="min-w-0 flex-1">
+						<p className="truncate text-sm font-medium text-slate-900 dark:text-white">
+							{file.name}
+						</p>
+						<p className="text-xs text-slate-400 dark:text-slate-500">
+							{dimensions
+								? `${dimensions.width}×${dimensions.height}px`
+								: 'lendo resolução…'}
+						</p>
+					</div>
 					<button
 						type="button"
 						onClick={() => onChange(null)}
@@ -344,6 +381,115 @@ function PromptHero({ entry }: { entry: ToolBankEntry }) {
 	);
 }
 
+/* ─────────────────── Resolução de saída (opcional) ─────────────────── */
+
+/** Select de resolução: default da tool, um preset cadastrado, ou personalizado. */
+function ImageSizePicker({
+	value,
+	onChange,
+}: {
+	value: RunToolEngineImageSize | null;
+	onChange: (v: RunToolEngineImageSize | null) => void;
+}) {
+	const { data: presets } = useImageSizePresets();
+	const customValue =
+		value && typeof value === 'object' && value.unit === 'px' ? value : null;
+	const isCustom = customValue !== null;
+	const [customW, setCustomW] = useState(
+		customValue ? String(customValue.width) : '',
+	);
+	const [customH, setCustomH] = useState(
+		customValue ? String(customValue.height) : '',
+	);
+
+	const selectValue =
+		value === null
+			? 'default'
+			: value === 'native'
+				? 'native'
+				: value.unit === 'preset'
+					? `preset:${value.preset_id}`
+					: 'custom';
+
+	return (
+		<div className="space-y-1.5">
+			<label
+				htmlFor="bank-image-size"
+				className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+			>
+				Resolução de saída{' '}
+				<span className="font-normal text-slate-400">(opcional)</span>
+			</label>
+			<select
+				id="bank-image-size"
+				value={selectValue}
+				onChange={(e) => {
+					const v = e.target.value;
+					if (v === 'default') onChange(null);
+					else if (v === 'native') onChange('native');
+					else if (v === 'custom') {
+						onChange({
+							unit: 'px',
+							width: Number(customW) || 1024,
+							height: Number(customH) || 1024,
+						});
+					} else
+						onChange({ unit: 'preset', preset_id: v.slice('preset:'.length) });
+				}}
+				className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-[color-mix(in_srgb,var(--screen-accent)_50%,transparent)] focus:outline-none focus:ring-2 focus:ring-[color-mix(in_srgb,var(--screen-accent)_30%,transparent)] dark:border-white/10 dark:bg-[#111] dark:text-slate-200"
+			>
+				<option value="default">Padrão da ferramenta</option>
+				<option value="native">
+					Manter resolução gerada pela IA (sem redimensionar)
+				</option>
+				{(presets ?? []).map((p) => (
+					<option key={p.id} value={`preset:${p.id}`}>
+						{p.name} ({p.width}×{p.height}px)
+					</option>
+				))}
+				<option value="custom">Personalizado…</option>
+			</select>
+			{isCustom && (
+				<div className="flex items-center gap-2">
+					<input
+						type="number"
+						min={64}
+						max={4096}
+						value={customW}
+						onChange={(e) => {
+							setCustomW(e.target.value);
+							onChange({
+								unit: 'px',
+								width: Number(e.target.value) || 64,
+								height: Number(customH) || 64,
+							});
+						}}
+						placeholder="Largura"
+						className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none dark:border-white/10 dark:bg-[#111] dark:text-slate-200"
+					/>
+					<span className="text-slate-400">×</span>
+					<input
+						type="number"
+						min={64}
+						max={4096}
+						value={customH}
+						onChange={(e) => {
+							setCustomH(e.target.value);
+							onChange({
+								unit: 'px',
+								width: Number(customW) || 64,
+								height: Number(e.target.value) || 64,
+							});
+						}}
+						placeholder="Altura"
+						className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none dark:border-white/10 dark:bg-[#111] dark:text-slate-200"
+					/>
+				</div>
+			)}
+		</div>
+	);
+}
+
 /* ─────────────────── Main view ─────────────────── */
 
 /* ─────────────────── Estado "gerando" (loader premium) ─────────────────── */
@@ -471,6 +617,9 @@ export interface PromptGenerateViewProps {
 	insufficient: boolean;
 	/** Validação local satisfeita (tema/imagens conforme o modo). */
 	canGenerate: boolean;
+	/** Resolução de saída escolhida (null = default da tool/banco). */
+	imageSize: RunToolEngineImageSize | null;
+	onImageSizeChange: (v: RunToolEngineImageSize | null) => void;
 	/** Dispara o run (runBank no DynamicToolView). */
 	onGenerate: () => void;
 	/** Limpa o resultado (Gerar outra). */
@@ -493,6 +642,8 @@ export function PromptGenerateView({
 	pending,
 	insufficient,
 	canGenerate,
+	imageSize,
+	onImageSizeChange,
 	onGenerate,
 	onResetResult,
 	onBack,
@@ -579,6 +730,8 @@ export function PromptGenerateView({
 							))}
 						</div>
 					)}
+
+					<ImageSizePicker value={imageSize} onChange={onImageSizeChange} />
 
 					<button
 						type="button"
