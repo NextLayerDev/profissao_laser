@@ -388,6 +388,16 @@ export const toolRunResultSchema = z.object({
 });
 export type ToolRunResult = z.infer<typeof toolRunResultSchema>;
 
+/**
+ * Resolução de saída escolhida pelo CLIENTE na hora da geração — mesmo formato
+ * do `bankImageSizeSchema` da main API (`unit: 'px' | 'preset'`). Enviada como
+ * `image_size` (JSON), vence o tamanho do item do banco e o default da tool.
+ */
+export type RunToolEngineImageSize =
+	| { unit: 'px'; width: number; height: number }
+	| { unit: 'preset'; preset_id: string }
+	| 'native';
+
 export interface RunToolEngineOpts {
 	values: Record<string, unknown>;
 	inputSpec: Record<string, ToolInputSpec>;
@@ -401,6 +411,8 @@ export interface RunToolEngineOpts {
 	 */
 	bankEntryId?: string;
 	bankInputs?: Record<string, unknown>;
+	/** Resolução de saída escolhida pelo cliente (ausente = usa o default). */
+	imageSize?: RunToolEngineImageSize;
 }
 
 export async function runToolEngine(
@@ -424,6 +436,12 @@ export async function runToolEngine(
 		}
 	}
 	if (opts.invocationId) fd.append('invocation_id', opts.invocationId);
+	if (opts.imageSize) {
+		fd.append(
+			'image_size',
+			opts.imageSize === 'native' ? 'native' : JSON.stringify(opts.imageSize),
+		);
+	}
 	if (opts.draftDefinition) {
 		fd.append('definition', JSON.stringify(opts.draftDefinition));
 	}

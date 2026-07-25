@@ -20,6 +20,7 @@ import { resolveToolIcon } from '../lib/tool-icons';
 import type { ToolBankEntry } from '../services/tool-bank.service';
 import {
 	type AiToolDefinition,
+	type RunToolEngineImageSize,
 	runToolEngine,
 	type ToolRunResult,
 } from '../services/tool-definitions.service';
@@ -135,6 +136,10 @@ export function DynamicToolView({
 		null,
 		null,
 	]);
+	// Resolução de saída escolhida pelo cliente (opcional; null = default da tool).
+	const [imageSize, setImageSize] = useState<RunToolEngineImageSize | null>(
+		null,
+	);
 
 	const inputSpec = useMemo(() => def?.definition.input ?? {}, [def]);
 	const ui = def?.definition.ui;
@@ -154,6 +159,7 @@ export function DynamicToolView({
 		setSelectedEntry(null);
 		setTema('');
 		setReferencias([null, null, null]);
+		setImageSize(null);
 	}, [def?.id, def?.tool_key]);
 
 	const setValue = useCallback((name: string, v: unknown) => {
@@ -239,12 +245,13 @@ export function DynamicToolView({
 				invocationId,
 				bankEntryId: selectedEntry.id,
 				bankInputs,
+				imageSize: imageSize ?? undefined,
 			}).then((r) => {
 				setResult(r);
 				return r;
 			}),
 		);
-	}, [selectedEntry, tema, referencias, toolKey, billing]);
+	}, [selectedEntry, tema, referencias, imageSize, toolKey, billing]);
 
 	if (!definitionOverride && query.isLoading) {
 		return (
@@ -362,6 +369,7 @@ export function DynamicToolView({
 								setResult(null);
 								setTema('');
 								setReferencias([null, null, null]);
+								setImageSize(null);
 							}}
 						/>
 					</div>
@@ -403,6 +411,8 @@ export function DynamicToolView({
 						pending={pending}
 						insufficient={billing.insufficient}
 						canGenerate={canGenerate}
+						imageSize={imageSize}
+						onImageSizeChange={setImageSize}
 						onGenerate={runBank}
 						onResetResult={() => setResult(null)}
 						onBack={() => {
