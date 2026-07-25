@@ -78,6 +78,32 @@ function ReferenceDrop({
 			if (previewUrl) URL.revokeObjectURL(previewUrl);
 		};
 	}, [previewUrl]);
+
+	// Resolução real do arquivo escolhido (lida do próprio bitmap, não do EXIF).
+	const [dimensions, setDimensions] = useState<{
+		width: number;
+		height: number;
+	} | null>(null);
+	useEffect(() => {
+		if (!file) {
+			setDimensions(null);
+			return;
+		}
+		let cancelled = false;
+		const url = URL.createObjectURL(file);
+		const img = new Image();
+		img.onload = () => {
+			if (!cancelled) {
+				setDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+			}
+			URL.revokeObjectURL(url);
+		};
+		img.onerror = () => URL.revokeObjectURL(url);
+		img.src = url;
+		return () => {
+			cancelled = true;
+		};
+	}, [file]);
 	return (
 		<div className="space-y-3">
 			<span className="block text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -147,9 +173,16 @@ function ReferenceDrop({
 							</div>
 						)}
 					</div>
-					<p className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900 dark:text-white">
-						{file.name}
-					</p>
+					<div className="min-w-0 flex-1">
+						<p className="truncate text-sm font-medium text-slate-900 dark:text-white">
+							{file.name}
+						</p>
+						<p className="text-xs text-slate-400 dark:text-slate-500">
+							{dimensions
+								? `${dimensions.width}×${dimensions.height}px`
+								: 'lendo resolução…'}
+						</p>
+					</div>
 					<button
 						type="button"
 						onClick={() => onChange(null)}
