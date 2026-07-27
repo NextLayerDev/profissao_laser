@@ -14,6 +14,8 @@ export const planLinkSchema = z.object({
 	kind: planLinkKindSchema,
 	plan_id: z.string().nullable().optional().default(null),
 	vox_grant: z.coerce.number(),
+	/** D4 — o link concede os voxxys mensais do plano? (default true na API antiga) */
+	grants_plan_voxes: z.boolean().optional().default(true),
 	status: z.enum(['active', 'disabled']),
 	max_redemptions: z.number().int().nullable(),
 	current_redemptions: z.number().int(),
@@ -37,6 +39,8 @@ export interface CreatePlanLinkPayload {
 	/** Obrigatório quando kind = annual_fixed (plano travado do link). */
 	plan_key?: string;
 	vox_grant: number;
+	/** D4 — false: quem comprar por este link NÃO recebe os voxxys do plano. */
+	grants_plan_voxes?: boolean;
 	max_redemptions?: number;
 	expires_at?: string;
 }
@@ -62,6 +66,7 @@ export type PublicPlanLinkPlan = z.infer<typeof publicPlanLinkPlanSchema>;
 export const publicPlanLinkSchema = z.object({
 	kind: planLinkKindSchema,
 	vox_grant: z.coerce.number(),
+	grants_plan_voxes: z.boolean().optional().default(true),
 	status: z.enum(['ok', 'disabled', 'expired', 'exhausted']),
 	plans: z.array(publicPlanLinkPlanSchema),
 });
@@ -80,6 +85,7 @@ export const planLinkRedemptionSchema = z.object({
 	amount_off_cents: z.number().int(),
 	vox_grant: z.coerce.number(),
 	vox_grant_remaining: z.coerce.number(),
+	grants_plan_voxes: z.boolean().optional().default(true),
 	completed_at: z.string().nullable(),
 	created_at: z.string(),
 	customer_email: z.string().nullable(),
@@ -172,7 +178,7 @@ export const voxxyLastroCustomerSchema = z.object({
 	upvox_share_cents: z.number().int(),
 	company_share_cents: z.number().int(),
 	lastro_cents: z.number().int(),
-	// Voxxys do plano (R$1,20/vox): usado divide 50/50; não usado = custo empresa.
+	// Voxxys do plano: cobrados só no USO; concedido e não usado = R$0,00.
 	plan_used_voxes: z.coerce.number().optional().default(0),
 	plan_used_value_cents: z.number().int().optional().default(0),
 	plan_upvox_share_cents: z.number().int().optional().default(0),
@@ -188,6 +194,8 @@ export const voxxyLastroSchema = z.object({
 	upvox_share_cents: z.number().int().optional().default(0),
 	company_share_cents: z.number().int().optional().default(0),
 	lastro_cents: z.number().int().optional().default(0),
+	plan_used_voxes: z.coerce.number().optional().default(0),
+	plan_granted_voxes: z.coerce.number().optional().default(0),
 	plan_used_value_cents: z.number().int().optional().default(0),
 	plan_upvox_share_cents: z.number().int().optional().default(0),
 	plan_company_share_cents: z.number().int().optional().default(0),
@@ -218,6 +226,7 @@ export const companyInvoiceSchema = z.object({
 		open_cents: z.number().int(),
 		/** Quebra por origem (optional p/ retrocompat com API antiga). */
 		tools_cents: z.number().int().optional().default(0),
+		/** Registro das concessões de voxxys do plano — 0 desde jul/2026. */
 		plan_grants_cents: z.number().int().optional().default(0),
 		subscription_fees_cents: z.number().int().optional().default(0),
 		link_purchases_cents: z.number().int().optional().default(0),
@@ -227,11 +236,17 @@ export const companyInvoiceSchema = z.object({
 		company_net_cents: z.number().int().optional().default(0),
 		/** 50% da upvox sobre voxxys comprados usados (entra no repasse). */
 		vox_purchase_use_cents: z.number().int().optional().default(0),
-		/** 50% que volta pra empresa nos voxxys de PLANO usados (sai do repasse). */
+		/** Cobrança dos voxxys de PLANO efetivamente USADOS (entra no repasse). */
+		plan_use_upvox_share_cents: z.number().int().optional().default(0),
+		/** LEGADO: o crédito de 50% deixou de existir. Sempre 0. */
 		plan_use_company_share_cents: z.number().int().optional().default(0),
+		/** Repasse TOTAL da janela (entries gravadas + cobrança por uso). */
+		repasse_total_cents: z.number().int().optional().default(0),
 		vox_granted: z.coerce.number(),
-		/** Voxxys doados via planos (cobrados a R$1,20 no ato). */
+		/** Voxxys de plano CONCEDIDOS na janela (registro, custo zero). */
 		vox_granted_plans: z.coerce.number().optional().default(0),
+		/** Voxxys de plano efetivamente USADOS na janela (base da cobrança). */
+		vox_used_plans: z.coerce.number().optional().default(0),
 		vox_rate_cents: z.number().int(),
 	}),
 	/** Levantamento mês a mês (optional p/ retrocompat com API antiga). */

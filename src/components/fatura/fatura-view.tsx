@@ -113,7 +113,7 @@ const SOURCE_META: Record<CompanyInvoiceSource, SourceMeta> = {
 			'bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/25',
 	},
 	plan_grant: {
-		label: 'Voxxys do plano',
+		label: 'Voxxys do plano (registro)',
 		Icon: Gem,
 		badge:
 			'bg-violet-500/10 text-violet-600 dark:text-violet-300 border-violet-500/25',
@@ -130,7 +130,7 @@ const SOURCE_OPTIONS: { value: CompanyInvoiceSource; label: string }[] = [
 	{ value: 'subscription_fee', label: 'Taxa de assinatura (9,9% + R$1)' },
 	{ value: 'link_purchase', label: 'Compra via link (100%)' },
 	{ value: 'link_tool_use', label: 'Uso de ferramenta' },
-	{ value: 'plan_grant', label: 'Voxxys do plano' },
+	{ value: 'plan_grant', label: 'Voxxys do plano (registro, R$ 0,00)' },
 ];
 
 /* ── cards do topo (financeiro) ─────────────────────────────────────────── */
@@ -324,8 +324,7 @@ function LastroVoxxysSection({ voxxy }: { voxxy: VoxxyLastro | undefined }) {
 	const company = voxxy?.company_share_cents ?? 0;
 	const perCustomer = voxxy?.per_customer ?? [];
 
-	// Voxxys do plano (R$1,20/vox doado): 50/50 no uso; não usado = custo empresa.
-	const planCompany = voxxy?.plan_company_share_cents ?? 0;
+	// Voxxys do plano: cobrados só no USO (R$1,20/vox); não usado = R$0,00.
 	const planUsedValue = voxxy?.plan_used_value_cents ?? 0;
 	const planUpvox = voxxy?.plan_upvox_share_cents ?? 0;
 	const planUnused = voxxy?.plan_unused_value_cents ?? 0;
@@ -336,8 +335,7 @@ function LastroVoxxysSection({ voxxy }: { voxxy: VoxxyLastro | undefined }) {
 				(c.plan_used_value_cents ?? 0) + (c.plan_unused_value_cents ?? 0) > 0,
 		)
 		.sort(
-			(a, b) =>
-				(b.plan_company_share_cents ?? 0) - (a.plan_company_share_cents ?? 0),
+			(a, b) => (b.plan_used_value_cents ?? 0) - (a.plan_used_value_cents ?? 0),
 		);
 
 	return (
@@ -375,8 +373,9 @@ function LastroVoxxysSection({ voxxy }: { voxxy: VoxxyLastro | undefined }) {
 			</div>
 
 			<p className="text-xs text-slate-500 dark:text-gray-500">
-				Só voxxys <strong>comprados</strong> em pacote. Não inclui voxxys doados
-				por plano (cobrados R$1,20 no ato) nem por link (custo na Fatura upvox).
+				Só voxxys <strong>comprados</strong> em pacote. Não inclui voxxys do
+				plano (cobrados só quando usados) nem presente de link (cobrado por uso
+				na Fatura upvox).
 			</p>
 
 			{/* Por cliente */}
@@ -434,44 +433,45 @@ function LastroVoxxysSection({ voxxy }: { voxxy: VoxxyLastro | undefined }) {
 			<div className="pt-2">
 				<h3 className="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-3 flex items-center gap-2">
 					<Gem className="w-4 h-4 text-violet-500 dark:text-violet-400" />
-					Voxxys do plano (doados)
+					Voxxys do plano (cobrados só no uso)
 				</h3>
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 					<HeroStat
-						tone="emerald"
-						Icon={PiggyBank}
-						label="Ganho da empresa"
-						value={fmtBRL(planCompany)}
-						hint="50% dos voxxys de plano que já foram usados."
+						tone="primary"
+						Icon={Coins}
+						label="Cobrado da empresa"
+						value={fmtBRL(planUpvox)}
+						hint="Só os voxxys de plano que o aluno realmente usou."
 					/>
 					<HeroStat
 						tone="primary"
 						Icon={Coins}
 						label="Usados (valor)"
 						value={fmtBRL(planUsedValue)}
-						hint={`Split: upvox ${fmtBRL(planUpvox)} · empresa ${fmtBRL(planCompany)}.`}
+						hint="Valor de mercado do que foi consumido."
 					/>
 					<HeroStat
-						tone="sky"
-						Icon={Boxes}
-						label="Não usados (custo)"
+						tone="emerald"
+						Icon={PiggyBank}
+						label="Não usados (sem custo)"
 						value={fmtBRL(planUnused)}
-						hint="Doados no plano e não usados (100% custo da empresa)."
+						hint="Concedidos e ainda não usados — não entram na fatura."
 					/>
 					<HeroStat
 						tone="sky"
 						Icon={Gem}
 						label="Total concedido"
 						value={fmtBRL(planGranted)}
-						hint="Tudo que a empresa doou no plano (R$1,20/vox)."
+						hint="Valor de mercado de tudo que a empresa doou no plano."
 					/>
 				</div>
 			</div>
 
 			<p className="text-xs text-slate-500 dark:text-gray-500">
-				Voxxys que a empresa <strong>doa no plano</strong> (R$1,20/vox). No uso,
-				a upvox devolve <strong>50%</strong> pra empresa (sai da Fatura upvox);
-				o que não é usado fica 100% como custo dela.
+				Voxxys que a empresa <strong>doa no plano</strong>. A empresa só paga o
+				que o aluno <strong>realmente usa</strong> (R$1,20/vox usado); o que é
+				concedido e não usado <strong>não custa nada</strong>. Doar mais não
+				aumenta a fatura.
 			</p>
 
 			{/* Plano por cliente */}
@@ -493,7 +493,7 @@ function LastroVoxxysSection({ voxxy }: { voxxy: VoxxyLastro | undefined }) {
 									<th className="font-medium pb-2 text-right">Concedido</th>
 									<th className="font-medium pb-2 text-right">Usou</th>
 									<th className="font-medium pb-2 text-right">Não usou</th>
-									<th className="font-medium pb-2 text-right">Ganho</th>
+									<th className="font-medium pb-2 text-right">Cobrado</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -514,11 +514,11 @@ function LastroVoxxysSection({ voxxy }: { voxxy: VoxxyLastro | undefined }) {
 										<td className="py-2 text-right tabular-nums text-slate-600 dark:text-gray-400">
 											{fmtBRL(c.plan_used_value_cents ?? 0)}
 										</td>
-										<td className="py-2 text-right tabular-nums text-sky-600 dark:text-sky-400">
+										<td className="py-2 text-right tabular-nums text-emerald-600 dark:text-emerald-400">
 											{fmtBRL(c.plan_unused_value_cents ?? 0)}
 										</td>
-										<td className="py-2 text-right tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
-											{fmtBRL(c.plan_company_share_cents ?? 0)}
+										<td className="py-2 text-right tabular-nums font-semibold text-violet-600 dark:text-violet-400">
+											{fmtBRL(c.plan_upvox_share_cents ?? 0)}
 										</td>
 									</tr>
 								))}
@@ -658,13 +658,14 @@ export function FaturaView() {
 	const grossCents = totals?.gross_revenue_cents ?? 0;
 	const netCents = totals?.company_net_cents ?? 0;
 	const repasseCents =
-		grossCents > 0 ? grossCents - netCents : (totals?.open_cents ?? 0);
+		totals?.repasse_total_cents ??
+		(grossCents > 0 ? grossCents - netCents : (totals?.open_cents ?? 0));
 	const marginPct = grossCents > 0 ? (netCents / grossCents) * 100 : 0;
 
 	const barSegments: BarSeg[] = [
 		{
-			label: 'Voxxys do plano',
-			cents: totals?.plan_grants_cents ?? 0,
+			label: 'Voxxys do plano (uso)',
+			cents: totals?.plan_use_upvox_share_cents ?? 0,
 			color: 'bg-violet-500',
 		},
 		{
@@ -699,8 +700,8 @@ export function FaturaView() {
 	}));
 	const chartComposition: Slice[] = [
 		{
-			name: 'Voxxys do plano',
-			value: (totals?.plan_grants_cents ?? 0) / 100,
+			name: 'Voxxys do plano (uso)',
+			value: (totals?.plan_use_upvox_share_cents ?? 0) / 100,
 			color: '#7c3aed',
 		},
 		{
@@ -899,9 +900,9 @@ export function FaturaView() {
 							<SummaryCard
 								tone="violet"
 								Icon={Gem}
-								label="Voxxys do plano"
-								value={fmtBRL(totals?.plan_grants_cents ?? 0)}
-								hint={`${(totals?.vox_granted_plans ?? 0).toLocaleString('pt-BR')} voxxys × ${fmtBRL(totals?.vox_rate_cents ?? 120)}`}
+								label="Voxxys do plano (uso)"
+								value={fmtBRL(totals?.plan_use_upvox_share_cents ?? 0)}
+								hint={`${(totals?.vox_used_plans ?? 0).toLocaleString('pt-BR')} usados × ${fmtBRL(totals?.vox_rate_cents ?? 120)} · ${(totals?.vox_granted_plans ?? 0).toLocaleString('pt-BR')} concedidos`}
 							/>
 							<SummaryCard
 								tone="amber"
@@ -935,9 +936,9 @@ export function FaturaView() {
 								tone="emerald"
 								accent
 								Icon={VoxxysIcon}
-								label="Voxxys de plano ganhos"
-								value={fmtBRL(totals?.plan_use_company_share_cents ?? 0)}
-								hint="50% que volta pra empresa nos voxxys de plano usados."
+								label="Voxxys de plano não usados"
+								value={fmtBRL(voxxy?.plan_unused_value_cents ?? 0)}
+								hint="Concedidos e ainda não usados — não são cobrados."
 							/>
 						</div>
 					</div>

@@ -115,17 +115,20 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white"
 					/>
 					<p className="text-xs text-slate-500 mt-1">
-						Creditados ao assinante na compra e em cada renovação paga.
+						Creditados ao assinante na compra e em cada renovação paga. Cobrados
+						da empresa só quando usados.
 					</p>
 				</Field>
 
 				{voxGrantNum > 0 && (
-					<div className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-3.5 py-2.5 text-xs text-amber-700 dark:text-amber-300 leading-snug">
+					<div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-3.5 py-2.5 text-xs text-emerald-700 dark:text-emerald-300 leading-snug">
 						<span className="font-semibold">
-							Cada voxxy doado entra na fatura aberta a R$ 1,20
-						</span>
-						, cobrado da empresa no ato de cada concessão (compra e renovações).
-						Este plano gera{' '}
+							A empresa só paga o voxxy que o aluno USAR (R$ 1,20/voxxy usado).
+						</span>{' '}
+						Voxxy concedido e não usado <strong>não custa nada</strong> — dá pra
+						ser generoso aqui. No{' '}
+						<span className="font-semibold">pior caso</span> (100% usado) este
+						plano gera{' '}
 						<span className="font-semibold">
 							R$ {((voxGrantNum * 120) / 100).toFixed(2).replace('.', ',')}
 							/assinante/mês
