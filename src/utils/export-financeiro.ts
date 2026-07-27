@@ -42,7 +42,8 @@ function derive(inv: CompanyInvoice) {
 	const t = inv.totals;
 	const gross = t.gross_revenue_cents ?? 0;
 	const net = t.company_net_cents ?? 0;
-	const repasse = gross > 0 ? gross - net : (t.open_cents ?? 0);
+	const repasse =
+		t.repasse_total_cents ?? (gross > 0 ? gross - net : (t.open_cents ?? 0));
 	const margin = gross > 0 ? (net / gross) * 100 : 0;
 	const vx = inv.voxxy_lastro;
 	return { t, gross, net, repasse, margin, vx };
@@ -105,15 +106,11 @@ export async function exportFinanceiroExcel(
 				['Margem (%)', Number(margin.toFixed(1))],
 				[],
 				['Composição do repasse', 'Valor (R$)'],
-				['Voxxys do plano', reais(t.plan_grants_cents ?? 0)],
+				['Voxxys do plano (uso)', reais(t.plan_use_upvox_share_cents ?? 0)],
 				['Compras via link (100%)', reais(t.link_purchases_cents ?? 0)],
 				['Assinaturas (9,9% + R$1)', reais(t.subscription_fees_cents ?? 0)],
 				['Ferramentas', reais(t.tools_cents ?? 0)],
 				['Voxxy comprado (50%)', reais(t.vox_purchase_use_cents ?? 0)],
-				[
-					'Voxxys do plano (crédito −50%)',
-					-reais(t.plan_use_company_share_cents ?? 0),
-				],
 			],
 		},
 		{
@@ -161,7 +158,7 @@ export async function exportFinanceiroExcel(
 					reais(c.company_share_cents),
 				]),
 				[],
-				['Voxxys do plano (R$1,20/vox)', 'Valor (R$)'],
+				['Voxxys do plano (R$1,20/vox USADO)', 'Valor (R$)'],
 				[
 					'Concedido',
 					reais(
@@ -170,11 +167,17 @@ export async function exportFinanceiroExcel(
 					),
 				],
 				['Usado (valor)', reais(vx?.plan_used_value_cents ?? 0)],
-				['upvox (50%)', reais(vx?.plan_upvox_share_cents ?? 0)],
-				['Empresa (50%)', reais(vx?.plan_company_share_cents ?? 0)],
-				['Não usados (custo)', reais(vx?.plan_unused_value_cents ?? 0)],
+				['Cobrado da empresa', reais(vx?.plan_upvox_share_cents ?? 0)],
+				['Não usados (SEM custo)', reais(vx?.plan_unused_value_cents ?? 0)],
 				[],
-				['Cliente (plano)', 'Email', 'Concedido', 'Usou', 'Não usou', 'Ganho'],
+				[
+					'Cliente (plano)',
+					'Email',
+					'Concedido',
+					'Usou',
+					'Não usou',
+					'Cobrado',
+				],
 				...(vx?.per_customer ?? [])
 					.filter(
 						(c) =>
@@ -190,7 +193,7 @@ export async function exportFinanceiroExcel(
 						),
 						reais(c.plan_used_value_cents ?? 0),
 						reais(c.plan_unused_value_cents ?? 0),
-						reais(c.plan_company_share_cents ?? 0),
+						reais(c.plan_upvox_share_cents ?? 0),
 					]),
 			],
 		},
@@ -242,15 +245,11 @@ export async function exportFinanceiroPdf(
 		`<h2>Composição do repasse à upvox</h2>${htmlTable(
 			['Origem', 'Valor'],
 			[
-				['Voxxys do plano', fmtBRL(t.plan_grants_cents ?? 0)],
+				['Voxxys do plano (uso)', fmtBRL(t.plan_use_upvox_share_cents ?? 0)],
 				['Compras via link (100%)', fmtBRL(t.link_purchases_cents ?? 0)],
 				['Assinaturas (9,9% + R$1)', fmtBRL(t.subscription_fees_cents ?? 0)],
 				['Ferramentas', fmtBRL(t.tools_cents ?? 0)],
 				['Voxxy comprado (50%)', fmtBRL(t.vox_purchase_use_cents ?? 0)],
-				[
-					'Voxxys do plano (crédito −50%)',
-					`− ${fmtBRL(t.plan_use_company_share_cents ?? 0)}`,
-				],
 			],
 		)}`,
 	];
@@ -307,7 +306,7 @@ export async function exportFinanceiroPdf(
 		);
 	}
 	sections.push(
-		`<h2>Voxxys do plano (doados, R$1,20/vox)</h2>${htmlTable(
+		`<h2>Voxxys do plano (cobrados só no uso, R$1,20/vox usado)</h2>${htmlTable(
 			['Indicador', 'Valor'],
 			[
 				[
@@ -318,10 +317,9 @@ export async function exportFinanceiroPdf(
 					),
 				],
 				['Usado (valor)', fmtBRL(vx?.plan_used_value_cents ?? 0)],
-				['upvox (50%)', fmtBRL(vx?.plan_upvox_share_cents ?? 0)],
-				['Empresa (50%)', fmtBRL(vx?.plan_company_share_cents ?? 0)],
+				['Cobrado da empresa', fmtBRL(vx?.plan_upvox_share_cents ?? 0)],
 				[
-					'Não usados (custo da empresa)',
+					'Não usados (SEM custo pra empresa)',
 					fmtBRL(vx?.plan_unused_value_cents ?? 0),
 				],
 			],
@@ -334,7 +332,7 @@ export async function exportFinanceiroPdf(
 	if (planRows.length > 0) {
 		sections.push(
 			`<h2>Plano por cliente</h2>${htmlTable(
-				['Cliente', 'Concedido', 'Usou', 'Não usou', 'Ganho'],
+				['Cliente', 'Concedido', 'Usou', 'Não usou', 'Cobrado'],
 				planRows.map((c) => [
 					c.customer_name ?? c.customer_email ?? '—',
 					fmtBRL(
@@ -342,7 +340,7 @@ export async function exportFinanceiroPdf(
 					),
 					fmtBRL(c.plan_used_value_cents ?? 0),
 					fmtBRL(c.plan_unused_value_cents ?? 0),
-					fmtBRL(c.plan_company_share_cents ?? 0),
+					fmtBRL(c.plan_upvox_share_cents ?? 0),
 				]),
 			)}`,
 		);
