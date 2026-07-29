@@ -26,7 +26,7 @@ const inputClass =
 	'w-full bg-ink-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-violet-500/60 transition-colors';
 const labelClass = 'block text-sm font-medium text-gray-300 mb-1.5';
 
-/** Form de criar conta / login na upvox. Ao concluir, salva o token e chama onAuthenticated. */
+/** Form de criar conta / login na upvox. Ao concluir, salva o token e avisa o pai via onAuthenticated — o pai decide o próximo passo (ex.: recarregar a sessão antes de seguir). */
 export function PlanAuthForm({
 	onAuthenticated,
 }: {
@@ -190,7 +190,7 @@ export function PlanAuthForm({
 								Processando...
 							</>
 						) : (
-							'Criar conta e ir para o pagamento'
+							'Criar conta'
 						)}
 					</button>
 				</form>
@@ -236,7 +236,7 @@ export function PlanAuthForm({
 								Entrando...
 							</>
 						) : (
-							'Entrar e ir para o pagamento'
+							'Entrar'
 						)}
 					</button>
 				</form>
