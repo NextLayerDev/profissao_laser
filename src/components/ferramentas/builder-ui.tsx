@@ -3,6 +3,7 @@
 import {
 	Check,
 	ChevronDown,
+	FileUp,
 	Hash,
 	Image as ImageIcon,
 	List,
@@ -262,6 +263,7 @@ const TYPE_META: Record<FieldType, { label: string; Icon: LucideIcon }> = {
 	bool: { label: 'Sim/Não', Icon: ToggleLeft },
 	enum: { label: 'Opções', Icon: List },
 	string: { label: 'Texto', Icon: TypeIcon },
+	file: { label: 'Arquivo', Icon: FileUp },
 };
 
 function MiniNumber({

@@ -12,12 +12,20 @@ import { apiCourses } from '@/shared/lib/api-courses';
 
 export const toolInputSpecSchema = z
 	.object({
-		type: z.enum(['image', 'enum', 'number', 'int', 'bool', 'string']),
+		/**
+		 * `file` = arquivo NÃO-imagem (DXF, SVG, …). Trafega como Buffer igual a
+		 * `image`, mas é validado por extensão (`accept`) em vez de mimetype.
+		 *
+		 * ATENÇÃO AO DEPLOY: este enum é fechado nos DOIS lados. Publicar uma tool
+		 * com `type:'file'` antes do back de produção subir dá 500 no publish/run.
+		 */
+		type: z.enum(['image', 'enum', 'number', 'int', 'bool', 'string', 'file']),
 		required: z.boolean().optional(),
 		default: z.unknown().optional(),
 		options: z.array(z.unknown()).optional(),
 		min: z.number().optional(),
 		max: z.number().optional(),
+		/** Extensões aceitas por um input `type:'file'` (`['dxf','svg']`). */
 		accept: z.array(z.string()).optional(),
 	})
 	.passthrough();
@@ -171,14 +179,49 @@ export const toolDefinitionDocSchema = z
 		// System prompt opcional enviado ao `ai.generate_image`. SUBSTITUI o
 		// prompt laser padrão (decisão 2026-07-10: replace total).
 		system_prompt: z.string().optional(),
+		/** Modelo de TEXTO dos nós `ai.text` (espelho de `model`, que é de imagem). */
+		text_model: z.string().optional(),
+		text_system_prompt: z.string().optional(),
+		/** Datasets declarados pela tool (ver Coleções). Forma livre — o back valida. */
+		collections: z.record(z.string(), z.unknown()).optional(),
 		// Dimensões EXATAS de saída (px) — arte de gravação a laser precisa do
 		// tamanho exato. O motor injeta a proporção no prompt e redimensiona a
 		// saída pra image_width×image_height.
 		image_width: z.number().optional(),
 		image_height: z.number().optional(),
+		/**
+		 * "Tipos de Criação" do Passo 1 (Prompts Mágicos). Cards visuais (ícone +
+		 * nome amigável) que o cliente escolhe; a resolução (width×height) é
+		 * HIDDEN e injetada no run via `creation_id`. Vazio → cai em
+		 * `image_width/height` legado. `active:false` oculta o card.
+		 */
+		creations: z
+			.array(
+				z.object({
+					id: z.string(),
+					label: z.string(),
+					icon: z.string().optional(),
+					width: z.number(),
+					height: z.number(),
+					active: z.boolean().optional(),
+				}),
+			)
+			.optional(),
+		/**
+		 * Quantidades de variações do Passo 3 (ex.: [1,2,4]). O 1º elemento é o
+		 * default. Vazio/ausente = [1] (sem escolha). 1 run = 1 billing.
+		 */
+		return_variations: z.array(z.number()).optional(),
+		/**
+		 * TRUE = o motor manda SÓ a user message ao modelo (sem system prompt,
+		 * sem TEXT_LEAD, sem sufixo FORMATO). Dimensão via sharp. Escopado por
+		 * tool (Prompts Mágicos) — ai-extra mantém o comportamento atual.
+		 */
+		raw_prompt: z.boolean().optional(),
 	})
 	.passthrough();
 export type ToolDefinitionDoc = z.infer<typeof toolDefinitionDocSchema>;
+export type Creation = NonNullable<ToolDefinitionDoc['creations']>[number];
 
 export const aiToolDefinitionSchema = z
 	.object({
@@ -302,6 +345,28 @@ export async function setToolColor(
  * o motor passar a usar o override na próxima invocação (cache de 60s no
  * `loadPublishedToolDefinition` na main API torna a publicação obrigatória).
  */
+/**
+ * Modelo de TEXTO da tool (`ai.text`). Espelha `setToolModel`, inclusive o
+ * ponto crítico: espalha `...def.definition` e reescreve UMA chave. Mandar o
+ * doc cru apagaria `bank`/`pipeline`/`collections` — é o bug que já custou o
+ * `bank.inject` uma vez.
+ */
+export async function setToolTextModel(
+	def: AiToolDefinition,
+	modelId: string | null,
+): Promise<PublishResult> {
+	const next: ToolDefinitionDoc = { ...def.definition };
+	if (modelId) next.text_model = modelId;
+	else delete (next as { text_model?: string }).text_model;
+	await updateToolDefinition(def.id, {
+		title: def.title,
+		description: def.description,
+		engine_runtime: def.engine_runtime,
+		definition: next,
+	});
+	return publishToolDefinition(def.id);
+}
+
 export async function setToolModel(
 	def: AiToolDefinition,
 	modelId: string | null,
@@ -367,6 +432,47 @@ export async function setToolImageSize(
 	return publishToolDefinition(def.id);
 }
 
+/**
+ * Define os "Tipos de Criação" (Passo 1), as "Variações de retorno" (Passo 3)
+ * e o flag `raw_prompt` (sem intermediação) de uma tool de imagem. Mesmo
+ * padrão anti-wipe do `setToolImageSize` — só os 3 campos são tocados; o resto
+ * da definition é preservado por spread. Encadeia publish.
+ *
+ * Qualquer campo `undefined` no patch é ignorado (não apaga). Pra APAGAR, mande
+ * `[]` (creations/return_variations) ou `false` (raw_prompt).
+ */
+export async function setToolImageAdvanced(
+	def: AiToolDefinition,
+	patch: {
+		creations?: Creation[] | null;
+		return_variations?: number[] | null;
+		raw_prompt?: boolean | null;
+	},
+): Promise<PublishResult> {
+	const next: ToolDefinitionDoc = { ...def.definition };
+	if (patch.creations !== undefined) {
+		if (patch.creations && patch.creations.length > 0)
+			next.creations = patch.creations;
+		else delete (next as { creations?: Creation[] }).creations;
+	}
+	if (patch.return_variations !== undefined) {
+		if (patch.return_variations && patch.return_variations.length > 0)
+			next.return_variations = patch.return_variations;
+		else delete (next as { return_variations?: number[] }).return_variations;
+	}
+	if (patch.raw_prompt !== undefined) {
+		if (patch.raw_prompt) next.raw_prompt = true;
+		else delete (next as { raw_prompt?: boolean }).raw_prompt;
+	}
+	await updateToolDefinition(def.id, {
+		title: def.title,
+		description: def.description,
+		engine_runtime: def.engine_runtime,
+		definition: next,
+	});
+	return publishToolDefinition(def.id);
+}
+
 export const publishResultSchema = z.object({
 	tool_key: z.string(),
 	version: z.number(),
@@ -422,7 +528,10 @@ export async function runToolEngine(
 	const fd = new FormData();
 	for (const [name, spec] of Object.entries(opts.inputSpec)) {
 		const v = opts.values[name];
-		if (spec.type === 'image') {
+		// `file` (DXF/SVG) trafega igual a `image`. Sem este ramo o `File` era
+		// descartado EM SILÊNCIO: o form ia sem o arquivo, o motor rodava e
+		// devolvia lixo, sem nenhum erro visível.
+		if (spec.type === 'image' || spec.type === 'file') {
 			if (v instanceof File) fd.append(name, v);
 		} else if (v !== undefined && v !== null && v !== '') {
 			fd.append(name, typeof v === 'boolean' ? String(v) : String(v));
@@ -458,17 +567,22 @@ export interface RunToolPreviewOpts {
 
 /**
  * Preview AO VIVO NÃO COBRADO (estúdio): manda a imagem + params pro endpoint
- * `/preview`, que reduz a foto, tira os nós de saída/IA e devolve só `{ preview }`
- * (base64). Sem billing, sem storage — é o feedback dos sliders.
+ * `/preview`, que reduz a foto, tira os nós de saída/IA e devolve `{ preview }`
+ * (base64) e, nas tools de CAD, `{ assembly }` — a montagem 3D não é imagem e
+ * por isso viaja num campo próprio. Sem billing, sem storage — é o feedback dos
+ * sliders.
  */
 export async function runToolPreview(
 	key: string,
 	opts: RunToolPreviewOpts,
-): Promise<{ preview: string | null }> {
+): Promise<{ preview: string | null; assembly?: unknown }> {
 	const fd = new FormData();
 	for (const [name, spec] of Object.entries(opts.inputSpec)) {
 		const v = opts.values[name];
-		if (spec.type === 'image') {
+		// `file` (DXF/SVG) trafega igual a `image`. Sem este ramo o `File` era
+		// descartado EM SILÊNCIO: o form ia sem o arquivo, o motor rodava e
+		// devolvia lixo, sem nenhum erro visível.
+		if (spec.type === 'image' || spec.type === 'file') {
 			if (v instanceof File) fd.append(name, v);
 		} else if (v !== undefined && v !== null && v !== '') {
 			fd.append(name, typeof v === 'boolean' ? String(v) : String(v));
@@ -478,5 +592,8 @@ export async function runToolPreview(
 		fd.append('definition', JSON.stringify(opts.draftDefinition));
 	}
 	const { data } = await api.post(`/api/tool-run/${key}/preview`, fd);
-	return (data ?? { preview: null }) as { preview: string | null };
+	return (data ?? { preview: null }) as {
+		preview: string | null;
+		assembly?: unknown;
+	};
 }

@@ -54,19 +54,37 @@ export function modeUsesImage(mode: string): boolean {
 
 /** Uma etapa do fluxo de geração (stepper). */
 export interface PromptStep {
-	key: 'tema' | 'referencias' | 'gerar';
+	key: 'criacao' | 'tema' | 'referencias' | 'variacoes' | 'gerar';
 	label: string;
 }
 
 /**
- * Deriva as etapas do stepper a partir do modo:
- * - `texto_imagem` → [Tema, Referências, Gerar]
- * - `texto`        → [Tema, Gerar]
- * - `imagem`       → [Referências, Gerar]
+ * Opções do stepper: `creations` (cards do Passo 1) e `returnVariations`
+ * (toggles do Passo 3) vêm da definition da tool — quando ausentes/vazios,
+ * a etapa correspondente é omitida (tool legada segue só tema/referências/gerar).
  */
-export function stepsForMode(mode: string): PromptStep[] {
+export interface StepsOptions {
+	creations?: unknown[];
+	returnVariations?: number[];
+}
+
+/**
+ * Deriva as etapas do stepper a partir do modo + campos avançados da tool:
+ * - `criacao`     → só se a tool tem `creations` (Passo 1: Tipo de Criação)
+ * - `variacoes`   → só se a tool tem `returnVariations` (Passo 2: 1×/2×/4×)
+ * - `tema`        → modos com texto (Passo "Detalhes", linha própria)
+ * - `referencias` → modos com imagem
+ * - `gerar`       → sempre (última)
+ *
+ * Ordem visual = ordem do stepper: Tipo → Variações → Detalhes (tema/refs) → Gerar.
+ * O card "Detalhes" ocupa sua própria linha full-width abaixo dos cards compactos.
+ */
+export function stepsForMode(mode: string, opts?: StepsOptions): PromptStep[] {
 	const steps: PromptStep[] = [];
-	if (modeUsesText(mode)) steps.push({ key: 'tema', label: 'Tema' });
+	if (opts?.creations?.length) steps.push({ key: 'criacao', label: 'Tipo' });
+	if (opts?.returnVariations?.length)
+		steps.push({ key: 'variacoes', label: 'Variações' });
+	if (modeUsesText(mode)) steps.push({ key: 'tema', label: 'Detalhes' });
 	if (modeUsesImage(mode))
 		steps.push({ key: 'referencias', label: 'Referências' });
 	steps.push({ key: 'gerar', label: 'Gerar' });

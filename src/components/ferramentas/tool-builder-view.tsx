@@ -37,13 +37,16 @@ import {
 	type AiToolDefinition,
 	type BankConfig,
 	bankConfigSchema,
+	type Creation,
 	createToolDefinition,
 	listToolDefinitions,
 	publishToolDefinition,
 	type ScreenUi,
+	setToolImageAdvanced,
 	setToolImageSize,
 	setToolModel,
 	setToolSystemPrompt,
+	setToolTextModel,
 	type ToolDefinitionDoc,
 	toolDefinitionDocSchema,
 	updateToolDefinition,
@@ -84,13 +87,17 @@ import {
 } from './builder-ui';
 import { RoomFlowCanvas } from './canvas/room-flow-canvas';
 import { ToolCanvas } from './canvas/tool-canvas';
+import { CreationsEditor } from './creations-editor';
 import { IconPicker } from './icon-picker';
 import { ImageModelSelector } from './image-model-selector';
 import { ImageSizeEditor } from './image-size-editor';
+import { RawPromptToggle } from './raw-prompt-toggle';
+import { ReturnVariationsControl } from './return-variations-control';
 import { RoomAppearanceSection } from './room-appearance-section';
 import { RoomBuilderSections } from './room-builder-sections';
 import { type PreviewDevice, RoomLivePreview } from './room-live-preview';
 import { SystemPromptOverrideEditor } from './system-prompt-override-editor';
+import { TextModelSelector } from './text-model-selector';
 import {
 	ToolAppearanceSection,
 	type ToolScreensUi,
@@ -1062,6 +1069,30 @@ export function ToolBuilderView() {
 	const hasAiImageBlock = (state?.nodes ?? []).some(
 		(n) => n.block === 'ai.generate_image',
 	);
+	// Espelho para TEXTO: só aparece quando a tool tem um bloco `ai.text`.
+	const hasAiTextBlock = (state?.nodes ?? []).some(
+		(n) => n.block === 'ai.text',
+	);
+	const setToolTextModelMut = useMutation({
+		mutationFn: async (modelId: string | null) => {
+			if (!openDef) throw new Error('salve a ferramenta antes');
+			return setToolTextModel(openDef, modelId);
+		},
+		onSuccess: (_data, modelId) => {
+			toast.success(
+				modelId
+					? 'Modelo de texto atualizado e publicado 🚀'
+					: 'Modelo de texto removido (voltou ao default) e publicado 🚀',
+			);
+			qc.invalidateQueries({ queryKey: ['tool-definitions'] });
+			qc.invalidateQueries({ queryKey: ['tools'] });
+		},
+		onError: (err) =>
+			toast.error(
+				getApiErrorMessage(err, 'Falha ao salvar o modelo de texto.'),
+			),
+	});
+
 	const setToolModelMut = useMutation({
 		mutationFn: async (modelId: string | null) => {
 			if (!openDef) throw new Error('salve a ferramenta antes');
@@ -1112,6 +1143,28 @@ export function ToolBuilderView() {
 		},
 		onError: (err) =>
 			toast.error(getApiErrorMessage(err, 'Falha ao salvar as dimensões.')),
+	});
+	const setToolImageAdvancedMut = useMutation({
+		mutationFn: async (patch: {
+			creations?: Creation[] | null;
+			return_variations?: number[] | null;
+			raw_prompt?: boolean | null;
+		}) => {
+			if (!openDef) throw new Error('salve a ferramenta antes');
+			return setToolImageAdvanced(openDef, patch);
+		},
+		onSuccess: (_d, patch) => {
+			toast.success('Tipos de criação / variações salvos e publicados 🚀');
+			qc.invalidateQueries({ queryKey: ['tool-definitions'] });
+			qc.invalidateQueries({ queryKey: ['tools'] });
+		},
+		onError: (err) =>
+			toast.error(
+				getApiErrorMessage(
+					err,
+					'Falha ao salvar tipos de criação / variações.',
+				),
+			),
 	});
 
 	const addField = (type: FieldType) => {
@@ -1596,14 +1649,43 @@ export function ToolBuilderView() {
 													setToolSystemPromptMut.isPending
 												}
 											/>
-											<SystemPromptOverrideEditor
-												value={openDef.definition.system_prompt ?? null}
-												onChange={(p) => setToolSystemPromptMut.mutate(p)}
-												disabled={
-													setToolModelMut.isPending ||
-													setToolSystemPromptMut.isPending
-												}
-											/>
+											{hasAiTextBlock ? (
+												<TextModelSelector
+													value={openDef.definition.text_model ?? null}
+													onChange={(m) => setToolTextModelMut.mutate(m)}
+													disabled={setToolTextModelMut.isPending}
+												/>
+											) : null}
+											{openDef.definition.raw_prompt ? (
+												// raw_prompt = sem intermediação: o motor manda SÓ a user
+												// message ao modelo (sem system, sem LEAD, sem sufixo). Um
+												// system_prompt guardado aqui seria IGNORADO — então o campo
+												// nem aparece (evita override fantasma + confusão).
+												<Field
+													label="System prompt"
+													hint="Desativado: esta tool usa prompt cru ao modelo."
+												>
+													<p className="text-[12px] text-slate-400">
+														Com{' '}
+														<span className="font-mono text-slate-300">
+															raw_prompt
+														</span>{' '}
+														ligado, o motor envia <strong>somente</strong> o
+														prompt definido pelo admin — sem system prompt, sem
+														prefixo de referência e sem sufixo de formato.
+														Nenhum system prompt é injetado.
+													</p>
+												</Field>
+											) : (
+												<SystemPromptOverrideEditor
+													value={openDef.definition.system_prompt ?? null}
+													onChange={(p) => setToolSystemPromptMut.mutate(p)}
+													disabled={
+														setToolModelMut.isPending ||
+														setToolSystemPromptMut.isPending
+													}
+												/>
+											)}
 											<ImageSizeEditor
 												value={{
 													width: openDef.definition.image_width,
@@ -1615,6 +1697,29 @@ export function ToolBuilderView() {
 													setToolModelMut.isPending ||
 													setToolSystemPromptMut.isPending
 												}
+											/>
+											<CreationsEditor
+												value={openDef.definition.creations ?? []}
+												onChange={(c) =>
+													setToolImageAdvancedMut.mutate({ creations: c })
+												}
+												disabled={setToolImageAdvancedMut.isPending}
+											/>
+											<ReturnVariationsControl
+												value={openDef.definition.return_variations ?? [1]}
+												onChange={(v) =>
+													setToolImageAdvancedMut.mutate({
+														return_variations: v,
+													})
+												}
+												disabled={setToolImageAdvancedMut.isPending}
+											/>
+											<RawPromptToggle
+												value={openDef.definition.raw_prompt ?? false}
+												onChange={(b) =>
+													setToolImageAdvancedMut.mutate({ raw_prompt: b })
+												}
+												disabled={setToolImageAdvancedMut.isPending}
 											/>
 										</div>
 									</FormSection>
