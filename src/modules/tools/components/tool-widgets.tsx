@@ -6,6 +6,7 @@ import type {
 	ToolControl,
 	ToolInputSpec,
 } from '../services/tool-definitions.service';
+import { EXTRA_WIDGETS, TextWidget } from './tool-widgets-extra';
 
 /** Nome do input que um control liga (`bind: "input.material"` → `material`). */
 export function bindName(bind: string): string {
@@ -235,7 +236,11 @@ function ColorWidget({ control, spec, value, onChange }: WidgetProps) {
 	);
 }
 
-/** Registry de widgets — desenha `definition.ui.controls`. */
+/**
+ * Registry de widgets — desenha `definition.ui.controls`.
+ * Os 6 originais vivem aqui; os demais em `tool-widgets-extra.tsx` (mesclados
+ * abaixo) para nenhum dos dois arquivos virar um módulo gigante.
+ */
 const WIDGETS: Record<string, (props: WidgetProps) => ReactNode> = {
 	'file-drop': FileDropWidget,
 	select: SelectWidget,
@@ -243,13 +248,17 @@ const WIDGETS: Record<string, (props: WidgetProps) => ReactNode> = {
 	toggle: ToggleWidget,
 	number: NumberWidget,
 	color: ColorWidget,
+	...EXTRA_WIDGETS,
 };
 
 export function WidgetField(props: WidgetProps) {
 	const Widget = WIDGETS[props.control.widget];
 	if (!Widget) {
-		// Widget desconhecido: cai num número/texto genérico (não quebra a tela).
-		return <NumberWidget {...props} />;
+		// Widget desconhecido cai em TEXTO, não em número: texto aceita qualquer
+		// valor sem destruí-lo, enquanto o `NumberWidget` transformava o conteúdo
+		// em `NaN`/vazio. Era por aqui que o widget `text` — autorável no builder,
+		// mas ausente do registry — virava um campo numérico.
+		return <TextWidget {...props} />;
 	}
 	return <Widget {...props} />;
 }

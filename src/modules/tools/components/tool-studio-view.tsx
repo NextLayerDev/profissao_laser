@@ -28,7 +28,7 @@ import type {
 	ToolRunResult,
 } from '../services/tool-definitions.service';
 import { StudioDropzone } from './studio-dropzone';
-import { StudioPreview } from './studio-preview';
+import { type ResultKind, StudioViewport } from './studio-viewport';
 import { StudioGroup, StudioWidgetField } from './tool-studio-controls';
 import { bindName } from './tool-widgets';
 
@@ -216,6 +216,22 @@ export function ToolStudioView({
 		(def.definition.ui as { icon?: string } | undefined)?.icon,
 	);
 
+	// `ui.result` decide qual viewport desenhar e de onde tirar camadas/frames.
+	// A chave existe no schema desde o começo; até agora ninguém a lia.
+	const resultUi = (
+		def.definition.ui as
+			| {
+					result?: {
+						kind?: string;
+						layersFrom?: string;
+						framesFrom?: string;
+						modelFrom?: string;
+						quoteFrom?: string;
+					};
+			  }
+			| undefined
+	)?.result;
+
 	/** Renderiza um control de parâmetro (com tratamento especial da IA). */
 	function renderControl(c: ToolControl): ReactNode {
 		const name = bindName(c.bind);
@@ -397,7 +413,13 @@ export function ToolStudioView({
 
 				{/* ───────── Preview + ação ───────── */}
 				<div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-					<StudioPreview
+					{/* `ui.result.kind` escolhe o viewport. Ausente (ou 'image') cai no
+					    preview de sempre — as tools já publicadas não mudam em nada. */}
+					<StudioViewport
+						kind={resultUi?.kind as ResultKind | undefined}
+						output={result?.output}
+						sources={resultUi}
+						liveAssembly={preview.data?.assembly}
 						originalUrl={originalUrl}
 						liveSrc={liveSrc}
 						resultPreview={resultPreview ?? null}

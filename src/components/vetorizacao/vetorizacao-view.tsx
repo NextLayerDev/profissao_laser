@@ -51,7 +51,7 @@ import type {
 	VectorizePreset,
 	VectorizeResult,
 } from '@/services/vectorize';
-import { chargeVectorFormat } from '@/services/vectorize';
+import { chargeVectorFormat, openExistingVector } from '@/services/vectorize';
 import { VectorList } from './vector-list';
 import { VectorSupportPanel } from './vector-support-panel';
 
@@ -1722,6 +1722,35 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 		setInverted(null);
 		setPolarity('normal');
 	}, [result?.id]);
+	/**
+	 * PONTE COM O ESTÚDIO DE IMAGENS: `/course/vetorizacao?v=<id>` abre um vetor
+	 * que JÁ FOI GERADO (e já foi pago) direto no passo do resultado.
+	 *
+	 * Lê `window.location.search` em vez de `useSearchParams()` de propósito: o
+	 * hook do Next obriga a página inteira a ficar sob um `<Suspense>` para
+	 * continuar pré-renderizável, e isto aqui é uma leitura única no mount. Um
+	 * `ref` garante que uma geração nova nunca seja sobrescrita pelo import.
+	 */
+	const importedVector = useRef<string | null>(null);
+	const [importing, setImporting] = useState(false);
+	useEffect(() => {
+		const id = new URLSearchParams(window.location.search).get('v');
+		if (!id || importedVector.current === id) return;
+		importedVector.current = id;
+		setImporting(true);
+		openExistingVector(id)
+			.then((res) => {
+				setResult(res);
+				setStep(3);
+			})
+			.catch(() => {
+				toast.error(
+					'Não consegui abrir esse vetor. Ele ainda está em "Meus vetores".',
+				);
+			})
+			.finally(() => setImporting(false));
+	}, []);
+
 	// Análise automática (router + image analytics) — não cobrada.
 	const { data: analysis, isFetching: analyzing } = useAnalyzeVectorize(file);
 	// Garante aplicar a recomendação uma vez por imagem (não clobbera tweaks).
@@ -2053,6 +2082,13 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 				ref={wizardRef}
 				className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl p-6 mb-8"
 			>
+				{importing && (
+					<div className="mb-4 flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-sm text-violet-700 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300">
+						<Loader2 className="h-4 w-4 animate-spin" />
+						Abrindo o vetor que veio do Estúdio de Imagens…
+					</div>
+				)}
+
 				<StepIndicator current={step} />
 
 				{step === 1 && (

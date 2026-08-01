@@ -5,6 +5,7 @@
  * por tipo. Curado: expõe os params úteis; o resto fica no default (ou JSON).
  */
 
+import { EXTRA_BLOCKS } from './extra-block-catalog';
 import { IMAGR_BLOCKS } from './imagr-block-catalog';
 
 export type RefType = 'buffer' | 'string';
@@ -478,6 +479,10 @@ export const BLOCK_CATALOG: BlockSpec[] = [
 			{ name: 'json', type: 'string', label: 'json' },
 		],
 	},
+	// Blocos extras do motor (CAD / Cotação / Estúdio / Export) — usados pelas
+	// tools-mãe publicadas (central_custos, estudio_*). Sem o spec, o builder
+	// forçava modo CÓDIGO (loadFabrica não resolvia o id).
+	...EXTRA_BLOCKS,
 	// Biblioteca ImagR (97 blocos de imagem/laser/IA) — gerada do registry do back.
 	...IMAGR_BLOCKS,
 ];

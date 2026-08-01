@@ -53,7 +53,8 @@ export default function PlanCheckoutPage() {
 		staleTime: 60_000,
 	});
 	const authed = meQuery.isSuccess;
-	const checkingAuth = !mounted || meQuery.isLoading;
+	const [authTransition, setAuthTransition] = useState(false);
+	const checkingAuth = !mounted || meQuery.isLoading || authTransition;
 
 	const plan = data?.find((p) => p.key === planKey);
 	const price =
@@ -69,6 +70,15 @@ export default function PlanCheckoutPage() {
 					toast.error('Erro ao iniciar o pagamento. Tente novamente.'),
 			},
 		);
+	}
+
+	async function handleAuthenticated() {
+		setAuthTransition(true);
+		try {
+			await meQuery.refetch();
+		} finally {
+			setAuthTransition(false);
+		}
 	}
 
 	return (
@@ -264,7 +274,7 @@ export default function PlanCheckoutPage() {
 									</button>
 								</div>
 							) : (
-								<PlanAuthForm onAuthenticated={startSubscription} />
+								<PlanAuthForm onAuthenticated={handleAuthenticated} />
 							)}
 
 							{/* Selos de confiança */}

@@ -45,6 +45,7 @@ export function useRunTool(toolKey: string, courseSlug: string | undefined) {
 	const run = useCallback(
 		async <T>(
 			engine: (invocationId: string) => Promise<T>,
+			variationCount?: number,
 		): Promise<T | null> => {
 			if (!courseSlug) {
 				toast.error('Nenhum curso ativo encontrado para esta ferramenta.');
@@ -53,10 +54,10 @@ export function useRunTool(toolKey: string, courseSlug: string | undefined) {
 			setPending(true);
 			setBlock(null);
 
-			// 1) authorize + bill on upvox
+			// 1) authorize + bill on upvox (variation_count escala o custo: vox_cost × N)
 			let invocationId: string;
 			try {
-				const res = await invokeTool(toolKey, courseSlug);
+				const res = await invokeTool(toolKey, courseSlug, variationCount);
 				invocationId = res.invocation_id;
 				// Debita no header + anima "−custo" na hora (o invoke já cobrou).
 				applyVoxCharge(qc, res);

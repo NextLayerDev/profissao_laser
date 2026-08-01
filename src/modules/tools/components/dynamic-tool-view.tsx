@@ -11,6 +11,7 @@ import {
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/page-header';
 import { useEntitlements } from '@/hooks/use-entitlements';
+import { usePermissions } from '@/modules/access';
 import { useToolBank } from '../hooks/use-tool-bank';
 import { useToolBilling } from '../hooks/use-tool-billing';
 import { useToolDefinition } from '../hooks/use-tool-definition';
@@ -26,6 +27,8 @@ import {
 import { PromptGallery } from './prompt-gallery';
 import { PromptGenerateView } from './prompt-generate-view';
 import { ScreenNotice } from './screen-notice';
+import { type CanvasSpec, ToolCanvasView } from './tool-canvas-view';
+import { type CatalogSpec, ToolCatalogView } from './tool-catalog-view';
 import { ToolStudioView } from './tool-studio-view';
 import { bindName, WidgetField } from './tool-widgets';
 
@@ -108,8 +111,13 @@ export function DynamicToolView({
 	const isDraft = !!definitionOverride;
 
 	const { courses } = useEntitlements();
+	// Moderar registro de coleção é capacidade de quem administra ferramentas.
+	// O back reforça de qualquer jeito (403 no /review); isto só decide se o
+	// botão aparece.
+	const { can } = usePermissions();
+	const canModerate = can('ferramentas.view');
+
 	const courseSlug = courses[0]?.slug;
-	const billing = useToolBilling(toolKey, courseSlug);
 
 	const [values, setValues] = useState<Record<string, unknown>>({});
 	const [result, setResult] = useState<ToolRunResult | null>(null);
@@ -135,6 +143,15 @@ export function DynamicToolView({
 		null,
 		null,
 	]);
+	// Passo 1/3 (Prompts Mágicos redesign): tipo de criação + variações. Vêm da
+	// definition da tool; ausentes → o cliente não vê essas etapas (tool legada).
+	const [creationId, setCreationId] = useState<string | null>(null);
+	const [variationCount, setVariationCount] = useState<number | null>(null);
+	const creations = def?.definition.creations;
+	const returnVariations = def?.definition.return_variations;
+	// Billing scale por variação (vox_cost × N): precisa ser lido DEPOIS do estado
+	// `variationCount`. Default 1 quando nenhuma selecionada (tool legada/sem passo 3).
+	const billing = useToolBilling(toolKey, courseSlug, variationCount ?? 1);
 
 	const inputSpec = useMemo(() => def?.definition.input ?? {}, [def]);
 	const ui = def?.definition.ui;
@@ -154,7 +171,14 @@ export function DynamicToolView({
 		setSelectedEntry(null);
 		setTema('');
 		setReferencias([null, null, null]);
-	}, [def?.id, def?.tool_key]);
+		setCreationId(null);
+		// Default do Passo 3 = 1º elemento do allowlist (se houver).
+		setVariationCount(
+			def?.definition.return_variations?.length
+				? def.definition.return_variations[0]
+				: null,
+		);
+	}, [def?.id, def?.tool_key, def?.definition.return_variations]);
 
 	const setValue = useCallback((name: string, v: unknown) => {
 		setValues((prev) => ({ ...prev, [name]: v }));
@@ -231,6 +255,9 @@ export function DynamicToolView({
 				bankInputs[fieldNames[i]] = file;
 			});
 		}
+		// Passo 1/3: tipo de criação (resolução oculta) + variações.
+		if (creationId) bankInputs.creation_id = creationId;
+		if (variationCount) bankInputs.variation_count = String(variationCount);
 
 		await billing.runEngine((invocationId) =>
 			runToolEngine(toolKey, {
@@ -244,7 +271,18 @@ export function DynamicToolView({
 				return r;
 			}),
 		);
-	}, [selectedEntry, tema, referencias, toolKey, billing]);
+		// `creationId`/`variationCount` PRECISAM estar aqui: são lidos dentro do
+		// callback e definem a resolução e a quantidade cobrada. Sem eles, trocar o
+		// Passo 1 ou o Passo 3 e clicar em gerar mandava a escolha ANTERIOR.
+	}, [
+		selectedEntry,
+		tema,
+		referencias,
+		toolKey,
+		billing,
+		creationId,
+		variationCount,
+	]);
 
 	if (!definitionOverride && query.isLoading) {
 		return (
@@ -306,8 +344,49 @@ export function DynamicToolView({
 				layout?: string;
 				livePreview?: boolean;
 				presets?: { label: string; values: Record<string, unknown> }[];
+				catalog?: CatalogSpec;
+				canvas?: CanvasSpec;
 		  }
 		| undefined;
+
+	/* ── Canvas (Estúdio de Imagens): composer + galeria pessoal ──
+	   Vem ANTES do catálogo e do estúdio: esta tela tem formulário PRÓPRIO
+	   (modos, lote, máscara) e histórico próprio, então nenhum dos outros
+	   ramos serviria. */
+	if (studioUi?.layout === 'canvas') {
+		return (
+			<div style={{ '--screen-accent': accentForTool(def) } as CSSProperties}>
+				<ToolCanvasView
+					def={def}
+					toolKey={toolKey}
+					spec={studioUi.canvas ?? {}}
+					isStaff={canModerate}
+					isDraft={isDraft}
+					title={screenUi.title ?? def.title}
+					subtitle={screenUi.subtitle ?? def.description ?? undefined}
+					notice={screenUi.notice}
+				/>
+			</div>
+		);
+	}
+
+	/* ── Catálogo: navegação de uma COLEÇÃO da tool (Metallic e afins) ──
+	   Vem ANTES do estúdio e do banco: uma tool de catálogo não tem formulário
+	   de run, então nenhum dos outros ramos faz sentido para ela. */
+	if (studioUi?.layout === 'catalog') {
+		return (
+			<div style={{ '--screen-accent': accentForTool(def) } as CSSProperties}>
+				<ToolCatalogView
+					toolKey={toolKey}
+					spec={studioUi.catalog ?? {}}
+					isStaff={canModerate}
+					title={screenUi.title ?? def?.title}
+					subtitle={screenUi.subtitle ?? def?.description ?? undefined}
+				/>
+			</div>
+		);
+	}
+
 	if (studioUi?.layout === 'studio') {
 		// Acento de identidade por tool (laser=vermelho / editor=rosa / IA=violeta),
 		// herdado por todos os componentes do estúdio via `--screen-accent`.
@@ -376,9 +455,16 @@ export function DynamicToolView({
 			.slice(0, maxImages)
 			.filter((f): f is File => f instanceof File);
 		// Imagem-só exige ≥1 referência; modos com texto exigem o tema preenchido.
+		// Passo 1 exige creationId (se a tool tem creations); Passo 3 exige
+		// variationCount (se a tool tem return_variations) — validação local espelha
+		// a da API (que rejeita 400 antes de cobrar).
+		const hasCreations = !!creations && creations.length > 0;
+		const hasVariations = !!returnVariations && returnVariations.length > 0;
 		const canGenerate =
 			(!needsTema || !!tema.trim()) &&
-			(mode !== 'imagem' || chosenImages.length > 0);
+			(mode !== 'imagem' || chosenImages.length > 0) &&
+			(!hasCreations || !!creationId) &&
+			(!hasVariations || !!variationCount);
 
 		return (
 			<div className={`p-4 md:p-8 ${screenUi.themeClass}`} style={screenStyle}>
@@ -410,6 +496,12 @@ export function DynamicToolView({
 							setResult(null);
 						}}
 						billingNotice={showCostNotice ? billing.notice : null}
+						creations={creations}
+						creationId={creationId}
+						onCreationIdChange={setCreationId}
+						returnVariations={returnVariations}
+						variationCount={variationCount}
+						onVariationCountChange={setVariationCount}
 					/>
 				</div>
 			</div>

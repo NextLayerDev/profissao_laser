@@ -30,6 +30,10 @@ const PUBLIC_PAGE_PREFIXES = [
 	'/promo-link',
 	'/global-promo-link',
 	'/link-plano',
+	// Link público de orçamento: quem abre não tem conta. Um 401 aqui NÃO pode
+	// derrubar a sessão de quem estiver logado noutra aba — e o mesmo prefixo
+	// tem de estar em `lib/fetch.ts` e no `AuthGuard`.
+	'/orcamento',
 ];
 
 apiCourses.interceptors.response.use(
