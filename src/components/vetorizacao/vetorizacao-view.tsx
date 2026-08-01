@@ -1753,15 +1753,11 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 	const courseSlug = courses[0]?.slug;
 	const billing = useToolBilling('vectorize', courseSlug);
 
-	// FOTO/colorida (o analyzer às vezes marca foto/render como "color_flat") nos
-	// modos Automático ou Laser (P&B) → GRAVURA P&B com IA (cobrada na geração).
-	// O modo Laser + UV (cor) é SEM IA: motor de cor melhorado (grátis, cobra por
-	// formato no download). Logo/texto/linha simples → vetorização normal.
-	const isAi =
-		colorChoice !== 'color' &&
-		(analysis?.class === 'photo' ||
-			analysis?.class === 'grayscale_tonal' ||
-			analysis?.class === 'color_flat');
+	// Automático e Laser (P&B) sempre passam pela IA antes de vetorizar —
+	// nunca só pelo motor gráfico, mesmo pra logo colorido/texto/line art
+	// (cobrada na geração). O modo Laser + UV (cor) é SEM IA de propósito:
+	// motor de cor melhorado (grátis, cobra por formato no download).
+	const isAi = colorChoice !== 'color';
 
 	const set = useCallback(
 		<K extends keyof VectorizeParams>(key: K, value: VectorizeParams[K]) => {
@@ -1808,12 +1804,16 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 		// na geração (invoke→motor→settle). Resultado já vem com todos os formatos
 		// pagos → download não recobra.
 		if (isAi) {
+			// 'color' preserva as cores do logo/ilustração (redrawAsColorVector);
+			// 'lineart' é o redesenho P&B de gravura (redrawAsNanquim) — mesma
+			// escolha que o motor não-IA já fazia via params.mode.
+			const variant = params.mode === 'color' ? 'color' : 'lineart';
 			await billing.runEngine((invocationId) =>
 				aiLineartMutation
 					.mutateAsync({
 						file,
 						invocationId,
-						variant: 'lineart',
+						variant,
 						params: { ...params, preset },
 					})
 					.then((res) => {
@@ -1825,8 +1825,8 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 			);
 			return;
 		}
-		// Não-IA: geração NÃO cobrada — o cliente vê o resultado de graça e só paga
-		// ao baixar cada formato (handleDownloadFormat).
+		// Não-IA (só Laser + UV/Cores): geração NÃO cobrada — o cliente vê o
+		// resultado de graça e só paga ao baixar cada formato (handleDownloadFormat).
 		try {
 			const res = await vectorizeMutation.mutateAsync({
 				file,
