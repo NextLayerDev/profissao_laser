@@ -30,6 +30,9 @@ import { useRunTool } from './use-run-tool';
 export function useToolBilling(
 	featureKey: string,
 	courseSlug: string | undefined,
+	/** Variações selecionadas (Passo 3 dos Prompts Mágicos). Escala o custo
+	 *  exibido e o gate de saldo: `vox_cost × variationCount`. Default 1. */
+	variationCount = 1,
 ) {
 	const qc = useQueryClient();
 	const ent = useEntitlements(courseSlug);
@@ -40,6 +43,9 @@ export function useToolBilling(
 	// Só cobra quem realmente tem direito de usar (entitled). View-only não cobra.
 	const billed = !!tool && tool.entitled;
 	const cost = tool?.vox_cost ?? 0;
+	// Custo efetivo escala por variação (1× = vox_cost, 2× = 2×, 4× = 4×). O
+	// upvox debita esse valor no invoke; aqui só espelha p/ gate de saldo + aviso.
+	const effectiveCost = Math.round(cost * variationCount * 100) / 100;
 	const remainingFree = ent.remainingFree(featureKey);
 	const voxBalance = ent.voxBalance;
 	const runTool = useRunTool(featureKey, courseSlug);
@@ -59,8 +65,8 @@ export function useToolBilling(
 	});
 
 	// Precisa pagar (sem cota grátis e com custo) e não tem saldo → bloqueia + avisa.
-	const mustPay = billed && remainingFree === 0 && cost > 0;
-	const insufficient = mustPay && !ent.isLoading && voxBalance < cost;
+	const mustPay = billed && remainingFree === 0 && effectiveCost > 0;
+	const insufficient = mustPay && !ent.isLoading && voxBalance < effectiveCost;
 
 	const runEngine = useCallback(
 		async <T,>(engineFn: (invocationId?: string) => Promise<T>) => {
@@ -71,10 +77,10 @@ export function useToolBilling(
 			}
 			if (insufficient) return; // o aviso inline mostra "comprar voxxys"
 			return billed
-				? runTool.run((invocationId) => engineFn(invocationId))
+				? runTool.run((invocationId) => engineFn(invocationId), variationCount)
 				: Promise.resolve(engineFn(undefined));
 		},
-		[billed, viewOnly, insufficient, runTool],
+		[billed, viewOnly, insufficient, runTool, variationCount],
 	);
 
 	const consume = useCallback(
@@ -97,7 +103,7 @@ export function useToolBilling(
 	const notice: ReactNode =
 		billed && cost > 0 ? (
 			<ToolCostNotice
-				cost={cost}
+				cost={effectiveCost}
 				remainingFree={remainingFree}
 				balance={voxBalance}
 				insufficient={insufficient}
@@ -108,6 +114,8 @@ export function useToolBilling(
 		billed,
 		viewOnly,
 		cost,
+		/** Custo efetivo já escalado por `variationCount` (vox_cost × N). */
+		effectiveCost,
 		remainingFree,
 		voxBalance,
 		insufficient,

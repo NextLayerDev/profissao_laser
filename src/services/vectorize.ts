@@ -268,3 +268,47 @@ export async function analyzeVectorize(file: File): Promise<ImageProfile> {
 	);
 	return data;
 }
+
+/**
+ * Abre um vetor JÁ EXISTENTE no fluxo da tela — é o outro lado da ponte com o
+ * Estúdio de Imagens (`/course/vetorizacao?v=<id>`).
+ *
+ * O registro guarda o SVG e o PNG como URL; o DXF é derivado do SVG no
+ * servidor, então ele vem pelo endpoint de export. Cada peça é best-effort: um
+ * DXF que não veio esconde só o botão de DXF, em vez de impedir a pessoa de ver
+ * o vetor pelo qual ela acabou de pagar.
+ */
+export async function openExistingVector(
+	vectorId: string,
+): Promise<VectorizeResult> {
+	const { getVectorById } = await import('./vectors');
+	const vector = await getVectorById(vectorId);
+
+	const svgRes = await fetch(vector.svg_url);
+	if (!svgRes.ok) throw new Error('Não consegui carregar o SVG deste vetor.');
+	const svgContent = await svgRes.text();
+
+	let dxfContent: string | undefined;
+	try {
+		const { data } = await api.get<string>('/api/vectorize/export/dxf', {
+			params: { id: vectorId },
+			responseType: 'text',
+		});
+		dxfContent = typeof data === 'string' ? data : undefined;
+	} catch {
+		dxfContent = undefined;
+	}
+
+	return {
+		id: vector.id,
+		svgContent,
+		originalName: vector.original_name,
+		// O modo fica no `params` da linha; sem ele, tratamos como P&B — que é o
+		// que o Estúdio manda (trace) e o que libera a opção de inverter.
+		isColor: !!vector.params?.mode && vector.params.mode !== 'trace',
+		svgUrl: vector.svg_url,
+		pngUrl: vector.png_url ?? undefined,
+		dxfContent,
+		paidFormats: vector.paid_formats ?? [],
+	};
+}

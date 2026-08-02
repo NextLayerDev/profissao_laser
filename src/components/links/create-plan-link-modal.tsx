@@ -12,6 +12,7 @@ interface CreatePlanLinkModalProps {
 
 export function CreatePlanLinkModal({ onClose }: CreatePlanLinkModalProps) {
 	const [voxGrant, setVoxGrant] = useState('');
+	const [grantsPlanVoxes, setGrantsPlanVoxes] = useState(true);
 	const [maxRedemptions, setMaxRedemptions] = useState('');
 	const [expiresAt, setExpiresAt] = useState('');
 	const [result, setResult] = useState<PlanLink | null>(null);
@@ -42,6 +43,7 @@ export function CreatePlanLinkModal({ onClose }: CreatePlanLinkModalProps) {
 		try {
 			const link = await mutation.mutateAsync({
 				vox_grant: grant,
+				grants_plan_voxes: grantsPlanVoxes,
 				max_redemptions: maxR,
 				expires_at: expiresAt ? new Date(expiresAt).toISOString() : undefined,
 			});
@@ -105,11 +107,11 @@ export function CreatePlanLinkModal({ onClose }: CreatePlanLinkModalProps) {
 								</p>
 								<p className="mt-1 text-amber-200/70 text-xs">
 									O comprador paga só o custo de plataforma + R$ 1,50 no 1º mês
-									— a empresa não retém lucro nesse mês. O uso dos voxxys de
-									presente gera custo na{' '}
-									<span className="font-medium">fatura aberta</span> (R$
-									1,20/voxxy como referência, cobrado pelo custo real de cada
-									ferramenta usada).
+									— a empresa não retém lucro nesse mês. Voxxys só geram custo
+									na <span className="font-medium">fatura aberta</span> quando
+									são <span className="font-medium">usados</span>: presente de
+									link pelo custo real da ferramenta, voxxy do plano a R$
+									1,20/voxxy usado.
 								</p>
 							</div>
 						</div>
@@ -134,6 +136,32 @@ export function CreatePlanLinkModal({ onClose }: CreatePlanLinkModalProps) {
 								<p className="text-xs text-gray-500 mt-1.5">
 									Todos que assinarem por este link ganham essa quantidade.
 								</p>
+							</div>
+
+							<div className="rounded-xl border border-gray-700 bg-[#0d0d0f] p-3.5">
+								<label
+									htmlFor="plan-link-grants-plan-voxes"
+									className="flex items-start gap-3 cursor-pointer"
+								>
+									<input
+										id="plan-link-grants-plan-voxes"
+										type="checkbox"
+										checked={grantsPlanVoxes}
+										onChange={(e) => setGrantsPlanVoxes(e.target.checked)}
+										className="mt-0.5 w-4 h-4 accent-violet-500"
+									/>
+									<span className="text-sm text-gray-300">
+										Este link concede os{' '}
+										<strong className="text-white">
+											voxxys mensais do plano
+										</strong>
+										<span className="block text-xs text-gray-500 mt-1">
+											Diferente do presente acima: são os voxxys que o próprio
+											plano já entrega a cada renovação paga. Desmarque para
+											vender o plano sem eles.
+										</span>
+									</span>
+								</label>
 							</div>
 
 							<div className="grid grid-cols-2 gap-4">

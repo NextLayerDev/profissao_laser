@@ -15,6 +15,7 @@ interface CreateAnnualLinkModalProps {
 export function CreateAnnualLinkModal({ onClose }: CreateAnnualLinkModalProps) {
 	const [planKey, setPlanKey] = useState('');
 	const [voxGrant, setVoxGrant] = useState('');
+	const [grantsPlanVoxes, setGrantsPlanVoxes] = useState(true);
 	const [maxRedemptions, setMaxRedemptions] = useState('');
 	const [expiresAt, setExpiresAt] = useState('');
 	const [result, setResult] = useState<PlanLink | null>(null);
@@ -52,6 +53,7 @@ export function CreateAnnualLinkModal({ onClose }: CreateAnnualLinkModalProps) {
 				kind: 'annual_fixed',
 				plan_key: planKey,
 				vox_grant: grant,
+				grants_plan_voxes: grantsPlanVoxes,
 				max_redemptions: maxR,
 				expires_at: expiresAt ? new Date(expiresAt).toISOString() : undefined,
 			});
@@ -188,6 +190,33 @@ export function CreateAnnualLinkModal({ onClose }: CreateAnnualLinkModalProps) {
 								<p className="text-xs text-gray-500 mt-1.5">
 									Todos que assinarem por este link ganham essa quantidade.
 								</p>
+							</div>
+
+							<div className="rounded-xl border border-gray-700 bg-[#0d0d0f] p-3.5">
+								<label
+									htmlFor="annual-link-grants-plan-voxes"
+									className="flex items-start gap-3 cursor-pointer"
+								>
+									<input
+										id="annual-link-grants-plan-voxes"
+										type="checkbox"
+										checked={grantsPlanVoxes}
+										onChange={(e) => setGrantsPlanVoxes(e.target.checked)}
+										className="mt-0.5 w-4 h-4 accent-violet-500"
+									/>
+									<span className="text-sm text-gray-300">
+										Este link concede os{' '}
+										<strong className="text-white">
+											voxxys mensais do plano
+										</strong>
+										<span className="block text-xs text-gray-500 mt-1">
+											Diferente do presente acima: são os voxxys que o próprio
+											plano entrega a cada cobrança paga — no anual, isso é{' '}
+											<strong>1× por ano</strong>. Desmarque para vender o plano
+											sem eles.
+										</span>
+									</span>
+								</label>
 							</div>
 
 							<div className="grid grid-cols-2 gap-4">

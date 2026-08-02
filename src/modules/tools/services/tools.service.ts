@@ -30,13 +30,21 @@ export async function deleteTool(id: string): Promise<void> {
 	await api.delete(`/v1/tool/${id}`);
 }
 
-/** Executa a tool no contexto de um curso, consumindo cota/voxes. */
+/**
+ * Executa a tool no contexto de um curso, consumindo cota/voxes.
+ * `variationCount` (1–4) escala o custo: o upvox debita `vox_cost × N`
+ * (ex.: 0,5/vox × 2 = 1 vox). Default/omitido = cobrança única (tools legadas).
+ */
 export async function invokeTool(
 	toolKey: string,
 	courseSlug: string,
+	variationCount?: number,
 ): Promise<InvokeToolResult> {
 	const { data } = await api.post(`/v1/tool/${toolKey}/invoke`, {
 		course_slug: courseSlug,
+		...(variationCount && variationCount > 1
+			? { variation_count: variationCount }
+			: {}),
 	});
 	return invokeToolResultSchema.parse(data);
 }

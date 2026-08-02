@@ -460,6 +460,11 @@ export default function PlanLinkPage() {
 									assinar
 								</div>
 							)}
+							{data?.grants_plan_voxes === false && (
+								<p className="mt-3 text-xs text-gray-500">
+									Este link não inclui os voxxys mensais do plano.
+								</p>
+							)}
 						</div>
 
 						{/* Planos — grid adaptativo (mensal) ou card hero único (anual) */}

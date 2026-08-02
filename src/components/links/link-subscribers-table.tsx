@@ -133,6 +133,7 @@ export function LinkSubscribersTable() {
 								'Pagou 1º período',
 								'Desconto',
 								'Voxxys',
+								'Voxxys do plano',
 								'Status',
 								'Data',
 							].map((h) => (
@@ -196,6 +197,17 @@ export function LinkSubscribersTable() {
 										</>
 									) : (
 										'—'
+									)}
+								</td>
+								<td className="py-3 px-4">
+									{r.grants_plan_voxes === false ? (
+										<span className="inline-flex items-center rounded-full border border-slate-300 dark:border-gray-700 px-2 py-0.5 text-[11px] font-medium text-slate-500 dark:text-gray-400">
+											Não inclui
+										</span>
+									) : (
+										<span className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+											Inclui
+										</span>
 									)}
 								</td>
 								<td className="py-3 px-4">

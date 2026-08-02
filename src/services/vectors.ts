@@ -6,6 +6,8 @@ export interface CustomerVector {
 	original_name: string;
 	original_url?: string | null;
 	svg_url: string;
+	/** PNG rasterizado do SVG, gravado na geração. */
+	png_url?: string | null;
 	params?: {
 		mode?: string;
 		detailLevel?: number;

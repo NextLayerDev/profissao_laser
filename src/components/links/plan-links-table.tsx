@@ -103,6 +103,7 @@ export function PlanLinksTable() {
 						{[
 							'Link',
 							'Voxxys de presente',
+							'Voxxys do plano',
 							'Usos',
 							'Status',
 							'Criado por',
@@ -136,6 +137,17 @@ export function PlanLinksTable() {
 									<span className="inline-flex items-center gap-1 text-violet-500 dark:text-violet-400 font-semibold">
 										{link.vox_grant > 0 ? `+${link.vox_grant}` : '—'}
 									</span>
+								</td>
+								<td className="py-3 px-4">
+									{link.grants_plan_voxes === false ? (
+										<span className="inline-flex items-center rounded-full border border-slate-300 dark:border-gray-700 px-2 py-0.5 text-[11px] font-medium text-slate-500 dark:text-gray-400">
+											Não inclui
+										</span>
+									) : (
+										<span className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+											Inclui
+										</span>
+									)}
 								</td>
 								<td className="py-3 px-4 text-slate-600 dark:text-gray-300">
 									<span className="font-medium text-slate-900 dark:text-white">
