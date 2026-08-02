@@ -1833,16 +1833,18 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 		// na geração (invoke→motor→settle). Resultado já vem com todos os formatos
 		// pagos → download não recobra.
 		if (isAi) {
-			// 'color' preserva as cores do logo/ilustração (redrawAsColorVector);
-			// 'lineart' é o redesenho P&B de gravura (redrawAsNanquim) — mesma
-			// escolha que o motor não-IA já fazia via params.mode.
-			const variant = params.mode === 'color' ? 'color' : 'lineart';
+			// Automático e Laser (P&B) sempre em P&B via IA (redrawAsNanquim) —
+			// nunca caem no motor gráfico puro. Colorido só existe hoje no botão
+			// explícito "Laser + UV (Cores)" (colorChoice==='color'), que é não-IA
+			// e fica de fora do isAi. A variant 'color' da IA (redrawAsColorVector)
+			// tem um bug conhecido de colapso de detalhe/fundo opaco em logos
+			// complexos — não expor até o motor ser corrigido.
 			await billing.runEngine((invocationId) =>
 				aiLineartMutation
 					.mutateAsync({
 						file,
 						invocationId,
-						variant,
+						variant: 'lineart',
 						params: { ...params, preset },
 					})
 					.then((res) => {
