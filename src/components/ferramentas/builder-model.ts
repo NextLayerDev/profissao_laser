@@ -1,5 +1,6 @@
 import type {
 	BankConfig,
+	Creation,
 	ScreenUi,
 	ToolControl,
 	ToolDefinitionDoc,
@@ -20,7 +21,15 @@ import {
  * fixo (literal) ou ligação (ref) igual o motor faz.
  */
 
-export type FieldType = 'image' | 'enum' | 'number' | 'int' | 'bool' | 'string';
+export type FieldType =
+	| 'image'
+	| 'enum'
+	| 'number'
+	| 'int'
+	| 'bool'
+	| 'string'
+	/** Arquivo não-imagem (DXF, SVG, …) — validado por extensão via `accept`. */
+	| 'file';
 export type FieldWidget =
 	| 'file-drop'
 	| 'select'
@@ -28,7 +37,12 @@ export type FieldWidget =
 	| 'toggle'
 	| 'number'
 	| 'text'
-	| 'color';
+	| 'color'
+	| 'textarea'
+	| 'dimension'
+	| 'file'
+	| 'money'
+	| 'segmented';
 
 export interface BuilderField {
 	name: string;
@@ -43,7 +57,55 @@ export interface BuilderField {
 	step?: number;
 	options?: (string | number)[];
 	visible: boolean;
+	/** Seção do Estúdio onde o controle aparece (ex.: "Medidas", "Material"). */
+	group?: string;
+	/** Unidade de exibição do widget `dimension` (o valor é sempre em mm). */
+	unit?: 'mm' | 'cm' | 'in';
+	/** Extensões aceitas pelo widget `file` (`['dxf','svg']`). */
+	accept?: string[];
+	placeholder?: string;
+	rows?: number;
 }
+
+/**
+ * Config de TELA da tool. Existe para dar round-trip ao `ui.layout` e ao
+ * `ui.result`, que antes eram HARDCODED em `buildDoc`.
+ *
+ * O bug que isso corrige: `buildDoc` emitia sempre `layout:'image-tool'`, e o
+ * save faz `{...openDef.definition.ui, ...built.ui}` — ou seja, abrir uma
+ * tool-mãe publicada com `layout:'studio'` no builder e clicar Salvar a
+ * REBAIXAVA para o grid de 2 colunas. Com o round-trip, o layout publicado
+ * sobrevive mesmo sem nenhuma UI para editá-lo.
+ */
+export interface BuilderScreenState {
+	layout: string;
+	result?: {
+		kind?: string;
+		downloadFrom?: string;
+		showMeta?: boolean;
+		[k: string]: unknown;
+	};
+	/** Chaves de `ui` preservadas verbatim (presets, livePreview, steps, …). */
+	extra?: Record<string, unknown>;
+}
+
+/**
+ * Chaves de `ui` que o builder NÃO conhece mas precisa preservar no round-trip.
+ * Sem isto, salvar pelo builder apagaria configurações escritas em JSON.
+ */
+const PRESERVED_UI_KEYS = [
+	'presets',
+	'livePreview',
+	'steps',
+	'aside',
+	'progress',
+	'history',
+	'catalog',
+	'public',
+	'parent',
+	'hidden',
+	'analyze',
+] as const;
 
 /** Valor de um parâmetro de bloco: fixo (literal) ou ligado a uma fonte (ref). */
 export type ParamValue =
@@ -183,6 +245,22 @@ export interface BuilderState {
 	bank?: BankConfig;
 	/** Aparência personalizável das telas Admin/Cliente (ui.admin/ui.customer). */
 	screens?: BuilderScreensUi;
+	/**
+	 * Layout/resultado da tela (ui.layout, ui.result) + chaves de `ui` que o
+	 * builder não conhece. Round-trip fiel — ver `BuilderScreenState`.
+	 */
+	screen?: BuilderScreenState;
+	/**
+	 * Cards do Passo 1 (Prompts Mágicos): o cliente escolhe um "Tipo de Criação"
+	 * (ícone + nome); a resolução W×H fica oculta e é injetada no run via
+	 * `creation_id`. Vazio → cai em image_width/height legado. Round-trip fiel
+	 * (anti-wipe no save pelo builder).
+	 */
+	creations?: Creation[];
+	/** Quantidades de variação oferecidas no Passo 3 (ex.: [1,2,4]); 1º = default. */
+	return_variations?: number[];
+	/** true → prompt curado vai cru ao modelo (sem system/lead/sufixo). */
+	raw_prompt?: boolean;
 }
 
 /** Aparência de cada tela de uma tool de pipeline (admin e/ou cliente). */
@@ -260,6 +338,13 @@ function fieldToControl(f: BuilderField): ToolControl {
 	if (f.max !== undefined) c.max = f.max;
 	if (f.step !== undefined) c.step = f.step;
 	if (f.options) c.options = f.options;
+	// `group` é o que faz o Estúdio agrupar controles em seções. Sem emiti-lo,
+	// grupos só existiam em tools escritas à mão no modo JSON.
+	if (f.group) (c as Record<string, unknown>).group = f.group;
+	if (f.unit) (c as Record<string, unknown>).unit = f.unit;
+	if (f.accept?.length) (c as Record<string, unknown>).accept = f.accept;
+	if (f.placeholder) (c as Record<string, unknown>).placeholder = f.placeholder;
+	if (f.rows !== undefined) (c as Record<string, unknown>).rows = f.rows;
 	return c;
 }
 
@@ -288,6 +373,31 @@ function catalogUi(state: BuilderState): Partial<{
 }
 
 /** Lê `category`/`order`/`audience`/`color` de volta do `ui` do doc (round-trip). */
+/**
+ * Lê `ui.layout`, `ui.result` e as chaves que o builder não conhece, para o
+ * `buildDoc` devolvê-las intactas. É a metade da leitura do round-trip que
+ * impede o Salvar do builder de rebaixar/limpar uma tool publicada.
+ */
+function readScreenUi(ui: unknown): BuilderScreenState | undefined {
+	if (!ui || typeof ui !== 'object') return undefined;
+	const u = ui as Record<string, unknown>;
+	const extra: Record<string, unknown> = {};
+	for (const k of PRESERVED_UI_KEYS) {
+		if (u[k] !== undefined) extra[k] = u[k];
+	}
+	const layout = typeof u.layout === 'string' ? u.layout : undefined;
+	const result =
+		u.result && typeof u.result === 'object'
+			? (u.result as BuilderScreenState['result'])
+			: undefined;
+	if (!layout && !result && Object.keys(extra).length === 0) return undefined;
+	return {
+		layout: layout ?? 'image-tool',
+		...(result ? { result } : {}),
+		...(Object.keys(extra).length ? { extra } : {}),
+	};
+}
+
 function readCatalogUi(ui: unknown): {
 	category?: string;
 	order?: number;
@@ -414,12 +524,18 @@ export function buildDoc(state: BuilderState): ToolDefinitionDoc {
 		pipeline,
 		output,
 		ui: {
-			layout: 'image-tool',
+			// NÃO hardcodar: o layout vem do estado (round-trip) e só cai em
+			// 'image-tool' quando a tool nunca teve um. Hardcodar aqui rebaixava
+			// toda tool-mãe publicada com `layout:'studio'` ao clicar Salvar.
+			layout: state.screen?.layout ?? 'image-tool',
 			icon: state.icon,
 			...catalogUi(state),
+			// Chaves de `ui` que o builder não edita (presets, livePreview, steps…)
+			// voltam verbatim — senão salvar pelo builder as apagaria.
+			...(state.screen?.extra ?? {}),
 			controls: state.fields.filter((f) => f.visible).map(fieldToControl),
 			action: { label: state.actionLabel || 'Gerar', showCostNotice: true },
-			result: {
+			result: state.screen?.result ?? {
 				kind: 'image',
 				downloadFrom: 'output.primary',
 				showMeta: state.output.meta.length > 0,
@@ -437,6 +553,11 @@ export function buildDoc(state: BuilderState): ToolDefinitionDoc {
 		},
 		billing: { vox_cost: state.voxCost, free_quota: state.freeQuota },
 		...(state.bank ? { bank: state.bank } : {}),
+		...(state.creations?.length ? { creations: state.creations } : {}),
+		...(state.return_variations?.length
+			? { return_variations: state.return_variations }
+			: {}),
+		...(state.raw_prompt ? { raw_prompt: true } : {}),
 	} as unknown as ToolDefinitionDoc;
 }
 
@@ -498,6 +619,17 @@ export function docToState(def: {
 	const fields: BuilderField[] = Object.entries(inputSpec).map(
 		([name, spec]) => {
 			const ctl = controlByName.get(name);
+			// `group`/`unit`/`accept`/… vivem em `control` (que é .passthrough()) e
+			// precisam voltar para o estado, senão o próximo `buildDoc` os perde —
+			// o round-trip só fecha se a leitura e a escrita cobrirem as MESMAS
+			// chaves.
+			const c = (ctl ?? {}) as ToolControl & {
+				group?: string;
+				unit?: 'mm' | 'cm' | 'in';
+				accept?: string[];
+				placeholder?: string;
+				rows?: number;
+			};
 			return {
 				name,
 				type: (spec.type ?? 'string') as FieldType,
@@ -510,6 +642,14 @@ export function docToState(def: {
 				step: ctl?.step as number | undefined,
 				options: spec.options as (string | number)[] | undefined,
 				visible: controlByName.has(name),
+				...(c.group ? { group: c.group } : {}),
+				...(c.unit ? { unit: c.unit } : {}),
+				// SÓ do control. O `accept` do SPEC pertence ao input (e para imagem
+				// já vem preenchido por padrão) — copiá-lo para cá faria o control
+				// ganhar uma chave a cada save, quebrando a idempotência.
+				...(c.accept?.length ? { accept: c.accept } : {}),
+				...(c.placeholder ? { placeholder: c.placeholder } : {}),
+				...(c.rows !== undefined ? { rows: c.rows } : {}),
 			};
 		},
 	);
@@ -562,6 +702,13 @@ export function docToState(def: {
 	// emite, pra o state refletir a definition real (e o próximo save não wipar
 	// o `bank.inject` por depender de um `openDef` fresco).
 	const bankRaw = (doc as { bank?: BankConfig }).bank;
+	// Round-trip dos campos avançados de imagem (Prompts Mágicos): creations,
+	// return_variations e raw_prompt vivem no topo da definition e o builder
+	// não os edita diretamente — só preserva verbatim pra o save não wipar.
+	const creationsRaw = (doc as { creations?: Creation[] }).creations;
+	const returnVariationsRaw = (doc as { return_variations?: number[] })
+		.return_variations;
+	const rawPromptRaw = (doc as { raw_prompt?: boolean }).raw_prompt;
 	const screensUi = (doc.ui ?? {}) as {
 		admin?: ScreenUi;
 		customer?: ScreenUi;
@@ -570,6 +717,7 @@ export function docToState(def: {
 		screensUi.admin || screensUi.customer
 			? { admin: screensUi.admin, customer: screensUi.customer }
 			: undefined;
+	const screen = readScreenUi(doc.ui);
 
 	return {
 		templateId: 'custom',
@@ -595,6 +743,12 @@ export function docToState(def: {
 		freeQuota,
 		...(bankRaw ? { bank: bankRaw } : {}),
 		...(screens ? { screens } : {}),
+		...(screen ? { screen } : {}),
+		...(creationsRaw?.length ? { creations: creationsRaw } : {}),
+		...(returnVariationsRaw?.length
+			? { return_variations: returnVariationsRaw }
+			: {}),
+		...(rawPromptRaw ? { raw_prompt: true } : {}),
 	};
 }
 

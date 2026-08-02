@@ -14,6 +14,11 @@ const PUBLIC_PATHS = [
 	'/promo-link',
 	'/global-promo-link',
 	'/link-plano',
+	// TERCEIRO LUGAR OBRIGATÓRIO do `/orcamento` (os outros dois são os clients
+	// axios). Aqui a falha não é sutil: sem o prefixo, o `AuthGuard` manda o
+	// cliente final do profissional — que não tem e nunca vai ter conta — direto
+	// para `/login`, e a página pública simplesmente não existe.
+	'/orcamento',
 ];
 
 const ADMIN_PATHS = [

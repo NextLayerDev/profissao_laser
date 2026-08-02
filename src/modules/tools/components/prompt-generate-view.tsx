@@ -33,8 +33,10 @@ import {
 	stepsForMode,
 } from '../lib/prompt-bank';
 import { screenAccentBg } from '../lib/screen-ui';
+import { resolveToolIcon } from '../lib/tool-icons';
 import type { ToolBankEntry } from '../services/tool-bank.service';
 import type {
+	Creation,
 	RunToolEngineImageSize,
 	ToolRunResult,
 } from '../services/tool-definitions.service';
@@ -305,6 +307,84 @@ function BankResultImage({
 					Baixar imagem
 				</button>
 			)}
+		</div>
+	);
+}
+
+/* ─────────────────── Result gallery (N variações) ─────────────────── */
+
+/** Item de imagem vindo do bloco `ai.generate_image` (`output.images`). */
+type ResultImage = { pngBase64?: string; png?: string };
+
+function isResultImageArray(v: unknown): v is ResultImage[] {
+	return (
+		Array.isArray(v) &&
+		v.length > 0 &&
+		v.every(
+			(it) =>
+				typeof it === 'object' &&
+				it !== null &&
+				typeof (it as ResultImage).pngBase64 === 'string',
+		)
+	);
+}
+
+/**
+ * Grade de N variações (Passo 3 → `variation_count`). Cada tile mostra a
+ * imagem (`pngBase64` é data URL → serve pra preview e download) + botão
+ * baixar. Fallback pra `BankResultImage` quando `output.images` não é array
+ * (tool legada sem `images` no output).
+ */
+function BankResultGallery({
+	result,
+	downloadKey,
+}: {
+	result: ToolRunResult;
+	downloadKey: string;
+}) {
+	const images = result.output.images;
+	if (!isResultImageArray(images)) {
+		return <BankResultImage result={result} downloadKey={downloadKey} />;
+	}
+	return (
+		<div className="space-y-4">
+			<div
+				className={
+					images.length > 1 ? 'grid gap-3 sm:grid-cols-2' : 'space-y-3'
+				}
+			>
+				{images.map((img, i) => (
+					<div
+						key={i}
+						className="space-y-2 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-[#111]"
+					>
+						<div className="flex max-h-[55vh] items-center justify-center overflow-hidden bg-slate-100 dark:bg-black/30">
+							{/* <img> intencional: preview de data URL */}
+							<img
+								src={img.pngBase64}
+								alt={`Variação ${i + 1}`}
+								className="max-h-[55vh] w-full object-contain"
+							/>
+						</div>
+						<div className="flex items-center justify-between gap-2 px-3 py-2">
+							<span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+								Variação {i + 1} de {images.length}
+							</span>
+							<button
+								type="button"
+								onClick={() =>
+									downloadUrl(img.pngBase64 as string, `variacao-${i + 1}`)
+								}
+								className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+								style={ACCENT_BG}
+							>
+								<Download className="h-3.5 w-3.5" />
+								Baixar
+							</button>
+						</div>
+					</div>
+				))}
+			</div>
 		</div>
 	);
 }
@@ -597,6 +677,37 @@ function GeneratingState() {
 	);
 }
 
+/* ─────────────────── Section header numerado (Passo 1/2/3) ─────────────────── */
+
+function SectionHeader({
+	no,
+	title,
+	hint,
+}: {
+	no: number;
+	title: string;
+	hint?: string;
+}) {
+	return (
+		<div className="flex items-start gap-2.5">
+			<span
+				className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+				style={ACCENT_BG}
+			>
+				{no}
+			</span>
+			<div className="min-w-0">
+				<h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+					{title}
+				</h3>
+				{hint && (
+					<p className="text-xs text-slate-500 dark:text-slate-400">{hint}</p>
+				)}
+			</div>
+		</div>
+	);
+}
+
 export interface PromptGenerateViewProps {
 	entry: ToolBankEntry;
 	/** Valor do tema (controlado pelo DynamicToolView). */
@@ -628,6 +739,16 @@ export interface PromptGenerateViewProps {
 	onBack: () => void;
 	/** Aviso inline de billing (ReactNode) — renderizado abaixo da ação. */
 	billingNotice?: ReactNode;
+	/** Cards do Passo 1 (Tipos de Criação) — da definition da tool. Vazio = sem Passo 1. */
+	creations?: Creation[];
+	/** Id do card selecionado no Passo 1 (controlado pelo DynamicToolView). */
+	creationId?: string | null;
+	onCreationIdChange?: (id: string | null) => void;
+	/** Variações oferecidas no Passo 3 (ex.: [1,2,4]) — da definition. Vazio = sem Passo 3. */
+	returnVariations?: number[];
+	/** Quantidade selecionada no Passo 3 (controlado pelo DynamicToolView). */
+	variationCount?: number | null;
+	onVariationCountChange?: (n: number | null) => void;
 }
 
 export function PromptGenerateView({
@@ -648,28 +769,71 @@ export function PromptGenerateView({
 	onResetResult,
 	onBack,
 	billingNotice,
+	creations,
+	creationId,
+	onCreationIdChange,
+	returnVariations,
+	variationCount,
+	onVariationCountChange,
 }: PromptGenerateViewProps) {
 	const mode = modeOf(entry);
 	const needsTema = modeUsesText(mode);
 	const needsImage = modeUsesImage(mode);
 	const maxImages = maxImagesOf(entry);
+	const hasCreations = !!creations && creations.length > 0;
+	const hasVariations = !!returnVariations && returnVariations.length > 0;
 
-	const steps = useMemo(() => stepsForMode(mode), [mode]);
+	const steps = useMemo(
+		() =>
+			stepsForMode(mode, {
+				creations: creations ?? [],
+				returnVariations: returnVariations ?? [],
+			}),
+		[mode, creations, returnVariations],
+	);
 
 	// Etapas concluídas + ativa, derivadas do estado do form (NÃO bloqueia clique).
 	const { completed, active } = useMemo(() => {
 		const done = new Set<PromptStep['key']>();
+		if (hasCreations && creationId) done.add('criacao');
 		const hasImage = referencias
 			.slice(0, maxImages)
 			.some((f) => f instanceof File);
 		if (needsTema && tema.trim()) done.add('tema');
 		if (needsImage && hasImage) done.add('referencias');
+		if (hasVariations && variationCount) done.add('variacoes');
 		if (result) done.add('gerar');
 		// A etapa ativa é a primeira ainda não concluída.
 		const activeStep =
 			steps.find((s) => !done.has(s.key))?.key ?? steps[steps.length - 1].key;
 		return { completed: done, active: activeStep };
-	}, [needsTema, needsImage, tema, referencias, maxImages, result, steps]);
+	}, [
+		hasCreations,
+		creationId,
+		needsTema,
+		needsImage,
+		tema,
+		referencias,
+		maxImages,
+		hasVariations,
+		variationCount,
+		result,
+		steps,
+	]);
+
+	// Numeração das seções visíveis (1, 2, 3…) — só conta as que aparecem. Ordem
+	// visual: ① Tipo → ② Variações → ③ Detalhes (este último em linha própria).
+	const sectionNo = {
+		criacao: 1,
+		variacoes: hasCreations ? 2 : 1,
+		detalhes: (hasCreations ? 1 : 0) + (hasVariations ? 1 : 0) + 1,
+	};
+	// Cards compactos lado a lado (Tipo | Variações); Detalhes vai numa linha
+	// própria full-width abaixo. Sem os dois compactos → nada nesta linha.
+	const compactColsClass =
+		hasCreations && hasVariations ? 'md:grid-cols-2' : 'grid-cols-1';
+	const stepCardCls =
+		'rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-[#1a1a1d]';
 
 	return (
 		<div className="space-y-6">
@@ -688,110 +852,204 @@ export function PromptGenerateView({
 				<PromptStepper steps={steps} completed={completed} active={active} />
 			</div>
 
-			{/* Form | Result */}
-			<div className="grid gap-6 lg:grid-cols-2">
-				{/* Form panel */}
-				<div className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 dark:border-white/10 dark:bg-[#1a1a1d]">
-					{needsTema && (
-						<div className="space-y-1.5">
-							<label
-								htmlFor="bank-tema"
-								className="block text-sm font-medium text-slate-700 dark:text-slate-300"
-							>
-								Tema
-							</label>
-							<input
-								id="bank-tema"
-								value={tema}
-								onChange={(e) => onTemaChange(e.target.value)}
-								placeholder="Ex.: cachorro astronauta no espaço"
-								className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-[color-mix(in_srgb,var(--screen-accent)_50%,transparent)] focus:outline-none focus:ring-2 focus:ring-[color-mix(in_srgb,var(--screen-accent)_30%,transparent)] dark:border-white/10 dark:bg-[#111] dark:text-slate-200"
+			{/* Linha 1 — cards compactos lado a lado (① Tipo | ② Variações).
+			    Detalhes vira uma linha própria full-width abaixo (não espremido). */}
+			{(hasCreations || hasVariations) && (
+				<div className={`grid items-stretch gap-4 ${compactColsClass}`}>
+					{/* ① Tipo de Criação (cards; resolução OCULTA) */}
+					{hasCreations && (
+						<section className={`${stepCardCls} space-y-3`}>
+							<SectionHeader
+								no={sectionNo.criacao}
+								title="Tipo de criação"
+								hint="Escolha o formato"
 							/>
-						</div>
+							<div className="grid grid-cols-2 gap-2.5">
+								{creations!
+									.filter((c) => c.active !== false)
+									.map((c) => {
+										const selected = creationId === c.id;
+										const Icon = resolveToolIcon(c.icon);
+										return (
+											<button
+												key={c.id}
+												type="button"
+												onClick={() =>
+													onCreationIdChange?.(selected ? null : c.id)
+												}
+												className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-colors ${
+													selected
+														? 'border-transparent text-white'
+														: 'border-slate-200 bg-slate-50 text-slate-700 hover:border-[color-mix(in_srgb,var(--screen-accent)_50%,transparent)] dark:border-white/10 dark:bg-white/5 dark:text-slate-200'
+												}`}
+												style={
+													selected
+														? {
+																backgroundColor: 'var(--screen-accent)',
+																boxShadow:
+																	'0 0 0 2px color-mix(in srgb, var(--screen-accent) 40%, transparent)',
+															}
+														: undefined
+												}
+											>
+												<Icon className="h-6 w-6" />
+												<span className="text-xs font-semibold leading-tight">
+													{c.label}
+												</span>
+											</button>
+										);
+									})}
+							</div>
+						</section>
 					)}
 
-					{needsImage && (
-						<div
-							className={
-								maxImages > 1 ? 'grid gap-4 sm:grid-cols-2' : 'space-y-4'
-							}
+					{/* ② Variações (1×/2×/4×) — pills horizontais compactos */}
+					{hasVariations && (
+						<section className={`${stepCardCls} space-y-3`}>
+							<SectionHeader
+								no={sectionNo.variacoes}
+								title="Variações"
+								hint="Quantas versões gerar"
+							/>
+							<div className="flex flex-wrap gap-2">
+								{returnVariations!.map((n) => {
+									const selected = variationCount === n;
+									return (
+										<button
+											key={n}
+											type="button"
+											onClick={() =>
+												onVariationCountChange?.(selected ? null : n)
+											}
+											className={`flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
+												selected
+													? 'border-transparent text-white'
+													: 'border-slate-200 bg-slate-50 text-slate-700 hover:border-[color-mix(in_srgb,var(--screen-accent)_50%,transparent)] dark:border-white/10 dark:bg-white/5 dark:text-slate-200'
+											}`}
+											style={selected ? ACCENT_BG : undefined}
+										>
+											<span className="text-base leading-none">{n}×</span>
+											{n === 1 ? '1 imagem' : `${n} imagens`}
+										</button>
+									);
+								})}
+							</div>
+						</section>
+					)}
+				</div>
+			)}
+
+			{/* Linha 2 — ③ Detalhes (linha própria, full-width). Sem nome de
+			    projeto: só o textarea do prompt + referências quando o modo pede. */}
+			<section className={`${stepCardCls} space-y-3.5`}>
+				<SectionHeader
+					no={sectionNo.detalhes}
+					title="Detalhes"
+					hint="Quanto mais específico, melhor"
+				/>
+				{needsTema && (
+					<div className="space-y-1.5">
+						<label
+							htmlFor="bank-tema"
+							className="block text-xs font-medium text-slate-500 dark:text-slate-400"
 						>
-							{Array.from({ length: maxImages }).map((_, i) => (
-								<ReferenceDrop
-									key={`ref-${i}`}
-									label={
-										maxImages > 1
-											? `Imagem de referência ${i + 1}`
-											: 'Imagem de referência'
-									}
-									file={referencias[i] ?? null}
-									onChange={(f) => onReferenciaChange(i, f)}
-								/>
-							))}
-						</div>
-					)}
+							Detalhes do prompt
+						</label>
+						<textarea
+							id="bank-tema"
+							value={tema}
+							onChange={(e) => onTemaChange(e.target.value)}
+							rows={5}
+							placeholder="Ex.: cachorro astronauta no espaço, estilo traço preto, hachura"
+							className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-[color-mix(in_srgb,var(--screen-accent)_50%,transparent)] focus:outline-none focus:ring-2 focus:ring-[color-mix(in_srgb,var(--screen-accent)_30%,transparent)] dark:border-white/10 dark:bg-[#111] dark:text-slate-200"
+						/>
+					</div>
+				)}
+				{needsImage && (
+					<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+						{Array.from({ length: maxImages }).map((_, i) => (
+							<ReferenceDrop
+								key={`ref-${i}`}
+								label={
+									maxImages > 1 ? `Referência ${i + 1}` : 'Imagem de referência'
+								}
+								file={referencias[i] ?? null}
+								onChange={(f) => onReferenciaChange(i, f)}
+							/>
+						))}
+					</div>
+				)}
+				{!needsTema && !needsImage && (
+					<p className="text-sm text-slate-400 dark:text-slate-500">
+						Nenhum detalhe necessário — é só gerar.
+					</p>
+				)}
+			</section>
 
-					<ImageSizePicker value={imageSize} onChange={onImageSizeChange} />
+			{/* Resolução de saída (opcional, largura total) */}
+			<section className={`${stepCardCls} space-y-3`}>
+				<ImageSizePicker value={imageSize} onChange={onImageSizeChange} />
+			</section>
 
-					<button
-						type="button"
-						onClick={onGenerate}
-						disabled={pending || insufficient || !canGenerate}
-						style={screenAccentBg}
-						className="flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-					>
-						{pending ? (
-							<>
-								<Loader2 className="h-5 w-5 animate-spin" />
-								Gerando...
-							</>
-						) : (
-							<>
-								<Wand2 className="h-5 w-5" />
-								{actionLabel}
-							</>
-						)}
-					</button>
-
-					{billingNotice}
-				</div>
-
-				{/* Result panel */}
-				<div>
-					{result ? (
-						<div className="space-y-4">
-							<div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-[#1a1a1d]">
-								<BankResultImage result={result} downloadKey={downloadKey} />
-							</div>
-							<button
-								type="button"
-								onClick={onResetResult}
-								className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
-							>
-								<RotateCcw className="h-4 w-4" /> Gerar outra
-							</button>
-						</div>
-					) : pending ? (
-						<GeneratingState />
+			{/* Gerar (largura total) */}
+			<div className="space-y-3">
+				<button
+					type="button"
+					onClick={onGenerate}
+					disabled={pending || insufficient || !canGenerate}
+					style={screenAccentBg}
+					className="flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+				>
+					{pending ? (
+						<>
+							<Loader2 className="h-5 w-5 animate-spin" />
+							Gerando...
+						</>
 					) : (
-						<div className="flex h-full min-h-[280px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 px-6 text-center dark:border-white/10">
-							<div
-								className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
-								style={ACCENT_TINT}
-							>
-								<Sparkles className="h-7 w-7" style={ACCENT_TEXT} />
-							</div>
-							<p className="text-sm font-medium text-slate-500 dark:text-gray-400">
-								O resultado da IA aparece aqui
-							</p>
-							<p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-								Preencha {needsTema ? 'o tema' : ''}
-								{needsTema && needsImage ? ' e ' : ''}
-								{needsImage ? 'as referências' : ''} e gere.
-							</p>
-						</div>
+						<>
+							<Wand2 className="h-5 w-5" />
+							{actionLabel}
+						</>
 					)}
-				</div>
+				</button>
+				{billingNotice}
+			</div>
+
+			{/* Resultado (largura total) */}
+			<div>
+				{result ? (
+					<div className="space-y-4">
+						<div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-[#1a1a1d]">
+							<BankResultGallery result={result} downloadKey={downloadKey} />
+						</div>
+						<button
+							type="button"
+							onClick={onResetResult}
+							className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+						>
+							<RotateCcw className="h-4 w-4" /> Gerar outra
+						</button>
+					</div>
+				) : pending ? (
+					<GeneratingState />
+				) : (
+					<div className="flex min-h-[260px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 px-6 py-10 text-center dark:border-white/10">
+						<div
+							className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
+							style={ACCENT_TINT}
+						>
+							<Sparkles className="h-7 w-7" style={ACCENT_TEXT} />
+						</div>
+						<p className="text-sm font-medium text-slate-500 dark:text-gray-400">
+							O resultado da IA aparece aqui
+						</p>
+						<p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+							Preencha {needsTema ? 'o tema' : ''}
+							{needsTema && needsImage ? ' e ' : ''}
+							{needsImage ? 'as referências' : ''} e gere.
+						</p>
+					</div>
+				)}
 			</div>
 		</div>
 	);
