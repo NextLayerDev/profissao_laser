@@ -1,6 +1,14 @@
 'use client';
 
-import { BookOpen, EyeOff, Plus, Trash2, Wrench, Zap } from 'lucide-react';
+import {
+	BookOpen,
+	EyeOff,
+	Link2,
+	Plus,
+	Trash2,
+	Wrench,
+	Zap,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { formatCurrency } from '@/utils/format-currency';
@@ -18,6 +26,7 @@ import type {
 	CreateCoursePayload,
 	UpdateCoursePayload,
 } from '../types/courses';
+import { CourseBuyLinkModal } from './course-buy-link-modal';
 import { CourseFormModal } from './course-form-modal';
 
 export function CoursesAdminSection() {
@@ -31,6 +40,7 @@ export function CoursesAdminSection() {
 	const [editing, setEditing] = useState<Course | null>(null);
 	const [open, setOpen] = useState(false);
 	const [tab, setTab] = useState<'active' | 'inactive'>('active');
+	const [linkCourse, setLinkCourse] = useState<CourseDetail | null>(null);
 
 	// Usa adminCourses como fonte de todos os cursos (incluindo despublicados),
 	// enriquece com planos do catálogo quando disponível.
@@ -133,6 +143,7 @@ export function CoursesAdminSection() {
 							<CourseCard
 								key={c.id}
 								course={c}
+								onLink={() => setLinkCourse(c)}
 								onEdit={() => {
 									if (adminCourse) {
 										setEditing(adminCourse);
@@ -153,6 +164,13 @@ export function CoursesAdminSection() {
 						);
 					})}
 				</div>
+			)}
+
+			{linkCourse && (
+				<CourseBuyLinkModal
+					course={linkCourse}
+					onClose={() => setLinkCourse(null)}
+				/>
 			)}
 
 			{open && (
@@ -193,10 +211,12 @@ export function CoursesAdminSection() {
 
 function CourseCard({
 	course,
+	onLink,
 	onEdit,
 	onDelete,
 }: {
 	course: CourseDetail;
+	onLink: () => void;
 	onEdit: () => void;
 	onDelete: () => void;
 }) {
@@ -329,6 +349,14 @@ function CourseCard({
 						<BookOpen className="w-4 h-4" />
 						Conteúdo
 					</Link>
+					<button
+						type="button"
+						title="Link de compra"
+						onClick={onLink}
+						className="text-sm px-3 py-2 rounded-lg border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+					>
+						<Link2 className="w-4 h-4" />
+					</button>
 					<button
 						type="button"
 						onClick={onEdit}
