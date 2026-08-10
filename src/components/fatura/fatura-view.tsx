@@ -1,6 +1,7 @@
 'use client';
 
 import {
+	AlertTriangle,
 	Boxes,
 	CalendarDays,
 	ChevronLeft,
@@ -642,7 +643,17 @@ export function FaturaView() {
 		setPage(0);
 	}, [filters]);
 
-	const { data, isLoading, isFetching } = useCompanyInvoice(page, filters);
+	const { data, isLoading, isFetching, error, refetch } = useCompanyInvoice(
+		page,
+		filters,
+	);
+
+	// Sem isso, uma falha na query (401/403/500/parse) cai silenciosamente pra
+	// "tudo zerado" — os cards abaixo usam `?? 0` em todo lugar. O toast + banner
+	// deixam claro que é um erro, não que o financeiro está zerado de verdade.
+	useEffect(() => {
+		if (error) toast.error('Não foi possível carregar o financeiro.');
+	}, [error]);
 
 	const totals = data?.totals;
 	const entries = data?.entries ?? [];
@@ -851,6 +862,29 @@ export function FaturaView() {
 					</button>
 				</div>
 			</div>
+
+			{error && !data && (
+				<div className="flex items-center justify-between gap-3 rounded-2xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-3">
+					<div className="flex items-center gap-3">
+						<AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0" />
+						<div>
+							<p className="text-sm font-medium text-red-700 dark:text-red-300">
+								Não foi possível carregar o financeiro.
+							</p>
+							<p className="text-xs text-red-600/80 dark:text-red-400/80 mt-0.5">
+								Os valores abaixo não refletem os dados reais.
+							</p>
+						</div>
+					</div>
+					<button
+						type="button"
+						onClick={() => refetch()}
+						className="h-9 shrink-0 inline-flex items-center gap-1.5 px-3 rounded-xl border border-red-300 dark:border-red-500/40 bg-white dark:bg-transparent text-sm font-medium text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-500/20"
+					>
+						Tentar novamente
+					</button>
+				</div>
+			)}
 
 			{tab === 'lastro' ? (
 				<LastroVoxxysSection voxxy={voxxy} />
