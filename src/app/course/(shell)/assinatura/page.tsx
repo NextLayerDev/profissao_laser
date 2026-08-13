@@ -1,11 +1,14 @@
 'use client';
 
+import { isAxiosError } from 'axios';
 import {
 	AlertTriangle,
 	ArrowDown,
 	ArrowUp,
 	BookOpen,
 	CreditCard,
+	Loader2,
+	Wallet,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -13,18 +16,45 @@ import { toast } from 'sonner';
 import { AddonsSection } from '@/components/assinatura/addons-section';
 import { CancelSubscriptionModal } from '@/components/assinatura/cancel-subscription-modal';
 import { ChangePlanModal } from '@/components/assinatura/change-plan-modal';
+import { RefundSubscriptionModal } from '@/components/assinatura/refund-subscription-modal';
 import { PageHeader } from '@/components/ui/page-header';
 import { SubscriptionSkeleton } from '@/components/ui/skeletons/subscription-skeleton';
 import {
+	useBillingPortal,
 	useCancelMySubscription,
 	useDowngradeMySubscription,
 	useMySubscription,
+	useRefundMySubscription,
 	useUpgradeMySubscription,
 } from '@/hooks/use-my-subscription';
 import { useProducts } from '@/hooks/use-products';
 import { getCurrentUser } from '@/lib/auth';
 import type { MySubscription } from '@/types/my-subscription';
 import type { Product } from '@/types/products';
+
+const REFUND_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+function refundErrorMessage(err: unknown): string {
+	if (!isAxiosError(err))
+		return 'Erro ao processar reembolso. Tente novamente.';
+	const status = err.response?.status;
+	const apiMessage = (err.response?.data as { message?: string } | undefined)
+		?.message;
+
+	if (status === 403) return 'Essa assinatura nao pertence a sua conta.';
+	if (status === 404) return 'Assinatura nao encontrada.';
+	if (status === 400 || status === 422) {
+		if (apiMessage?.includes('garantia'))
+			return 'Fora do prazo de 7 dias para reembolso.';
+		if (
+			apiMessage?.includes('estornavel') ||
+			apiMessage?.includes('estornável')
+		)
+			return 'Nenhum pagamento estornavel encontrado.';
+		return apiMessage ?? 'Assinatura nao pode ser reembolsada.';
+	}
+	return 'Erro ao processar reembolso. Tente novamente.';
+}
 
 function formatDate(iso: string) {
 	return new Date(iso).toLocaleDateString('pt-BR', {
@@ -76,9 +106,17 @@ function StatusBadge({
 function SubscriptionCard({
 	subscription,
 	onCancelClick,
+	onRefundClick,
+	showRefundButton,
+	onPaymentMethodClick,
+	isPaymentMethodPending,
 }: {
 	subscription: MySubscription;
 	onCancelClick: () => void;
+	onRefundClick: () => void;
+	showRefundButton: boolean;
+	onPaymentMethodClick: () => void;
+	isPaymentMethodPending: boolean;
 }) {
 	return (
 		<div className="bg-white dark:bg-[#1a1a1d] border border-violet-500/30 rounded-lg p-6 space-y-5">
@@ -134,8 +172,32 @@ function SubscriptionCard({
 				</div>
 			)}
 
-			{!subscription.cancelAtPeriodEnd && (
-				<div className="pl-13">
+			<div className="pl-13 flex flex-wrap gap-3">
+				<button
+					type="button"
+					onClick={onPaymentMethodClick}
+					disabled={isPaymentMethodPending}
+					className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:border-violet-500/50 hover:text-violet-700 dark:hover:text-violet-400 transition-colors disabled:opacity-50"
+				>
+					{isPaymentMethodPending ? (
+						<Loader2 size={14} className="animate-spin" />
+					) : (
+						<Wallet size={14} />
+					)}
+					Alterar forma de pagamento
+				</button>
+
+				{showRefundButton && (
+					<button
+						type="button"
+						onClick={onRefundClick}
+						className="px-4 py-2 text-sm rounded-lg border border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors"
+					>
+						Solicitar reembolso
+					</button>
+				)}
+
+				{!subscription.cancelAtPeriodEnd && (
 					<button
 						type="button"
 						onClick={onCancelClick}
@@ -143,8 +205,8 @@ function SubscriptionCard({
 					>
 						Cancelar assinatura
 					</button>
-				</div>
-			)}
+				)}
+			</div>
 		</div>
 	);
 }
@@ -202,6 +264,7 @@ export default function CourseAssinaturaPage() {
 	const [name, setName] = useState('');
 	const [planTab, setPlanTab] = useState<'upgrade' | 'downgrade'>('upgrade');
 	const [cancelModalOpen, setCancelModalOpen] = useState(false);
+	const [refundModalOpen, setRefundModalOpen] = useState(false);
 	const [changePlanModal, setChangePlanModal] = useState<{
 		open: boolean;
 		product: Product | null;
@@ -216,6 +279,10 @@ export default function CourseAssinaturaPage() {
 		useUpgradeMySubscription();
 	const { mutate: downgradePlan, isPending: isDowngrading } =
 		useDowngradeMySubscription();
+	const { mutate: refundSubscription, isPending: isRefunding } =
+		useRefundMySubscription();
+	const { mutate: openBillingPortal, isPending: isOpeningBillingPortal } =
+		useBillingPortal();
 
 	useEffect(() => {
 		const user = getCurrentUser();
@@ -268,6 +335,29 @@ export default function CourseAssinaturaPage() {
 		});
 	}
 
+	function handleConfirmRefund() {
+		refundSubscription(undefined, {
+			onSuccess: () => {
+				setRefundModalOpen(false);
+				toast.success('Reembolso processado. Sua assinatura foi cancelada.');
+			},
+			onError: (error: unknown) => {
+				toast.error(refundErrorMessage(error));
+			},
+		});
+	}
+
+	function handlePaymentMethodClick() {
+		openBillingPortal(undefined, {
+			onSuccess: (result) => {
+				window.location.href = result.portal_url;
+			},
+			onError: () => {
+				toast.error('Erro ao abrir a area de pagamento. Tente novamente.');
+			},
+		});
+	}
+
 	function handleSelectPlan(product: Product, type: 'upgrade' | 'downgrade') {
 		setChangePlanModal({ open: true, product, type });
 	}
@@ -308,6 +398,11 @@ export default function CourseAssinaturaPage() {
 		: '';
 
 	const isChangingPlan = isUpgrading || isDowngrading;
+
+	const withinRefundWindow = data?.currentPeriodStart
+		? Date.now() - new Date(data.currentPeriodStart).getTime() <=
+			REFUND_WINDOW_MS
+		: false;
 
 	return (
 		<>
@@ -358,6 +453,10 @@ export default function CourseAssinaturaPage() {
 						<SubscriptionCard
 							subscription={data}
 							onCancelClick={() => setCancelModalOpen(true)}
+							onRefundClick={() => setRefundModalOpen(true)}
+							showRefundButton={withinRefundWindow}
+							onPaymentMethodClick={handlePaymentMethodClick}
+							isPaymentMethodPending={isOpeningBillingPortal}
 						/>
 
 						{(upgradePlans.length > 0 || downgradePlans.length > 0) && (
@@ -459,6 +558,13 @@ export default function CourseAssinaturaPage() {
 				periodEnd={periodEndFormatted}
 				onConfirm={handleConfirmCancel}
 				isPending={isCanceling}
+			/>
+
+			<RefundSubscriptionModal
+				isOpen={refundModalOpen}
+				onClose={() => setRefundModalOpen(false)}
+				onConfirm={handleConfirmRefund}
+				isPending={isRefunding}
 			/>
 
 			<ChangePlanModal

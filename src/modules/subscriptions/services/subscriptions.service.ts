@@ -1,10 +1,14 @@
 import { apiCourses as api } from '@/shared/lib/api-courses';
 import {
+	type BillingPortalResponse,
+	billingPortalResponseSchema,
 	type ChangeSubscriptionPayload,
 	type CheckoutResponse,
 	type CreateSubscriptionPayload,
 	checkoutResponseSchema,
 	type Subscription,
+	type SubscriptionRefundResult,
+	subscriptionRefundResultSchema,
 	subscriptionSchema,
 } from '../types/subscriptions';
 
@@ -40,4 +44,18 @@ export async function cancelSubscription(id: string): Promise<Subscription> {
 export async function listMySubscriptions(): Promise<Subscription[]> {
 	const { data } = await api.get('/v1/me/subscriptions');
 	return subscriptionSchema.array().parse(data);
+}
+
+/** Estorna integralmente (dentro da garantia de 7 dias) e cancela na hora. */
+export async function refundSubscription(
+	id: string,
+): Promise<SubscriptionRefundResult> {
+	const { data } = await api.post(`/v1/subscription/${id}/refund`);
+	return subscriptionRefundResultSchema.parse(data);
+}
+
+/** Cria uma sessão do Stripe Customer Portal p/ trocar a forma de pagamento. */
+export async function getBillingPortalUrl(): Promise<BillingPortalResponse> {
+	const { data } = await api.post('/v1/me/billing-portal');
+	return billingPortalResponseSchema.parse(data);
 }

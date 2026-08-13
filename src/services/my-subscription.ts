@@ -1,8 +1,12 @@
 import {
 	cancelSubscription,
 	listMySubscriptions,
+	refundSubscription,
 } from '@/modules/subscriptions/services/subscriptions.service';
-import type { Subscription } from '@/modules/subscriptions/types/subscriptions';
+import type {
+	Subscription,
+	SubscriptionRefundResult,
+} from '@/modules/subscriptions/types/subscriptions';
 import { getEntitlements } from '@/services/entitlements';
 import type { MySubscription } from '@/types/my-subscription';
 
@@ -35,6 +39,7 @@ export async function getMySubscription(): Promise<MySubscription | null> {
 		amount: active.price_cents / 100,
 		currency: 'BRL',
 		interval: active.interval === 'yearly' ? 'year' : 'month',
+		currentPeriodStart: active.current_period_start,
 		currentPeriodEnd: active.current_period_end,
 		cancelAtPeriodEnd: active.cancel_at_period_end,
 	};
@@ -43,4 +48,11 @@ export async function getMySubscription(): Promise<MySubscription | null> {
 export async function cancelMySubscription(): Promise<void> {
 	const active = pickActive(await listMySubscriptions());
 	if (active) await cancelSubscription(active.id);
+}
+
+/** Reembolsa (garantia de 7 dias) e cancela a assinatura ativa do customer. */
+export async function refundMySubscription(): Promise<SubscriptionRefundResult> {
+	const active = pickActive(await listMySubscriptions());
+	if (!active) throw new Error('Nenhuma assinatura ativa encontrada.');
+	return refundSubscription(active.id);
 }
