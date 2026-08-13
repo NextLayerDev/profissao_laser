@@ -7,7 +7,9 @@ import {
 	cancelSubscription,
 	createSubscription,
 	downgradeSubscription,
+	getBillingPortalUrl,
 	listMySubscriptions,
+	refundSubscription,
 	upgradeSubscription,
 } from '../services/subscriptions.service';
 import type {
@@ -81,5 +83,23 @@ export function useCancelSubscription() {
 		},
 		onError: (err) =>
 			toast.error(getApiErrorMessage(err, 'Erro ao cancelar assinatura')),
+	});
+}
+
+export function useRefundSubscription() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (id: string) => refundSubscription(id),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: mySubscriptionsQueryKey });
+		},
+	});
+}
+
+export function useBillingPortal() {
+	return useMutation({
+		mutationFn: () => getBillingPortalUrl(),
+		onError: (err) =>
+			toast.error(getApiErrorMessage(err, 'Erro ao abrir a área de pagamento')),
 	});
 }
