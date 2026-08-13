@@ -1,6 +1,7 @@
 'use client';
 
 import {
+	AlertTriangle,
 	Boxes,
 	CalendarDays,
 	ChevronLeft,
@@ -607,6 +608,16 @@ function FinanceAnalysisPanel({ analysis }: { analysis: FinanceAnalysis }) {
 	);
 }
 
+/** `yyyy-mm-dd` do 1º e do último dia do mês atual (formato do <input type="date">). */
+function currentMonthRange() {
+	const now = new Date();
+	const pad = (n: number) => String(n).padStart(2, '0');
+	const y = now.getFullYear();
+	const m = pad(now.getMonth() + 1);
+	const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
+	return { from: `${y}-${m}-01`, to: `${y}-${m}-${pad(lastDay)}` };
+}
+
 export function FaturaView() {
 	const [tab, setTab] = useState<'financeiro' | 'lastro'>('financeiro');
 	const [exporting, setExporting] = useState<'pdf' | 'excel' | null>(null);
@@ -614,8 +625,12 @@ export function FaturaView() {
 	const [analysis, setAnalysis] = useState<FinanceAnalysis | null>(null);
 	const [page, setPage] = useState(0);
 	const [source, setSource] = useState<CompanyInvoiceSource | ''>('');
-	const [from, setFrom] = useState('');
-	const [to, setTo] = useState('');
+	// Abre sempre no mês atual — sem isso a 1ª tela é o acumulado desde o
+	// início da plataforma, que não é o que se quer ver no dia a dia. "De"/
+	// "Até" continuam editáveis pra trocar o período.
+	const [defaultRange] = useState(currentMonthRange);
+	const [from, setFrom] = useState(defaultRange.from);
+	const [to, setTo] = useState(defaultRange.to);
 	const [qInput, setQInput] = useState('');
 	const [q, setQ] = useState('');
 
@@ -642,7 +657,17 @@ export function FaturaView() {
 		setPage(0);
 	}, [filters]);
 
-	const { data, isLoading, isFetching } = useCompanyInvoice(page, filters);
+	const { data, isLoading, isFetching, error, refetch } = useCompanyInvoice(
+		page,
+		filters,
+	);
+
+	// Sem isso, uma falha na query (401/403/500/parse) cai silenciosamente pra
+	// "tudo zerado" — os cards abaixo usam `?? 0` em todo lugar. O toast + banner
+	// deixam claro que é um erro, não que o financeiro está zerado de verdade.
+	useEffect(() => {
+		if (error) toast.error('Não foi possível carregar o financeiro.');
+	}, [error]);
 
 	const totals = data?.totals;
 	const entries = data?.entries ?? [];
@@ -651,7 +676,12 @@ export function FaturaView() {
 	const voxxy = data?.voxxy_lastro;
 	const total = data?.total ?? 0;
 	const pageCount = Math.max(1, Math.ceil(total / INVOICE_PAGE_SIZE));
-	const hasFilters = !!(source || from || to || q);
+	const hasFilters = !!(
+		source ||
+		q ||
+		from !== defaultRange.from ||
+		to !== defaultRange.to
+	);
 
 	// Financeiro: bruta (alunos) − líquido (empresa) = repasse (upvox). O repasse
 	// aqui é o TOTAL (reconcilia bruta = repasse + líquido), independe da origem.
@@ -727,10 +757,11 @@ export function FaturaView() {
 		{ name: 'Líquido da empresa', value: netCents / 100, color: '#10b981' },
 	];
 
+	// "Limpar" volta pro mês atual (o padrão da tela), não pro acumulado total.
 	const clearFilters = () => {
 		setSource('');
-		setFrom('');
-		setTo('');
+		setFrom(defaultRange.from);
+		setTo(defaultRange.to);
 		setQInput('');
 		setQ('');
 	};
@@ -851,6 +882,29 @@ export function FaturaView() {
 					</button>
 				</div>
 			</div>
+
+			{error && !data && (
+				<div className="flex items-center justify-between gap-3 rounded-2xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-3">
+					<div className="flex items-center gap-3">
+						<AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0" />
+						<div>
+							<p className="text-sm font-medium text-red-700 dark:text-red-300">
+								Não foi possível carregar o financeiro.
+							</p>
+							<p className="text-xs text-red-600/80 dark:text-red-400/80 mt-0.5">
+								Os valores abaixo não refletem os dados reais.
+							</p>
+						</div>
+					</div>
+					<button
+						type="button"
+						onClick={() => refetch()}
+						className="h-9 shrink-0 inline-flex items-center gap-1.5 px-3 rounded-xl border border-red-300 dark:border-red-500/40 bg-white dark:bg-transparent text-sm font-medium text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-500/20"
+					>
+						Tentar novamente
+					</button>
+				</div>
+			)}
 
 			{tab === 'lastro' ? (
 				<LastroVoxxysSection voxxy={voxxy} />

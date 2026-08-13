@@ -34,6 +34,21 @@ export const checkoutResponseSchema = z.object({
 });
 export type CheckoutResponse = z.infer<typeof checkoutResponseSchema>;
 
+export const billingPortalResponseSchema = z.object({
+	portal_url: z.string(),
+});
+export type BillingPortalResponse = z.infer<typeof billingPortalResponseSchema>;
+
+export const subscriptionRefundResultSchema = z.object({
+	stripe_refund_id: z.string(),
+	amount_cents: z.number().int(),
+	status: z.string(),
+	subscription_canceled: z.boolean(),
+});
+export type SubscriptionRefundResult = z.infer<
+	typeof subscriptionRefundResultSchema
+>;
+
 export interface CreateSubscriptionPayload {
 	plan_key: string;
 	interval: SubscriptionInterval;

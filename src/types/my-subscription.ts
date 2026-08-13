@@ -7,6 +7,7 @@ export const mySubscriptionSchema = z.object({
 	amount: z.number(),
 	currency: z.string(),
 	interval: z.enum(['month', 'year']),
+	currentPeriodStart: z.string().nullable(),
 	currentPeriodEnd: z.string().nullable(),
 	cancelAtPeriodEnd: z.boolean(),
 });
