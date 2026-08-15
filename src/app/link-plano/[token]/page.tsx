@@ -358,6 +358,10 @@ export default function PlanLinkPage() {
 
 	// Link anual: plano único travado pelo admin; redeem dispensa plan_key.
 	const isAnnual = data?.kind === 'annual_fixed';
+	// Link Avançado GRÁTIS: não há preço, checkout nem CPF — só ativar o acesso.
+	const isFree = data?.kind === 'custom' && data.access_mode === 'free';
+	// Grátis SEM plano: acesso só de ferramentas, pago com os voxxys do presente.
+	const isFreeNoPlan = isFree && (data?.plans.length ?? 0) === 0;
 
 	const eligiblePlans = data?.plans.filter((p) => p.eligible) ?? [];
 	const selected =
@@ -365,7 +369,8 @@ export default function PlanLinkPage() {
 		eligiblePlans.find((p) => p.key === FEATURED_KEY) ??
 		eligiblePlans[0] ??
 		null;
-	const cpfOk = isValidCpf(cpf);
+	// No modo grátis não existe desconto por CPF a travar — a trava é por link.
+	const cpfOk = isFree || isValidCpf(cpf);
 
 	function selectPlan(key: string) {
 		setSelectedKey(key);
@@ -379,15 +384,33 @@ export default function PlanLinkPage() {
 	}
 
 	function startRedeem() {
-		if (!selected) return;
+		if (!isFree && !selected) return;
 		if (!cpfOk) {
 			setCpfTouched(true);
 			toast.error('Informe um CPF válido para continuar.');
 			return;
 		}
-		redeem.mutate(isAnnual ? { cpf } : { cpf, plan_key: selected.key }, {
-			onSuccess: ({ checkout_url }) => {
-				window.location.href = checkout_url;
+		const payload = isFree
+			? { cpf: '' }
+			: isAnnual
+				? { cpf }
+				: { cpf, plan_key: (selected as PublicPlanLinkPlan).key };
+		redeem.mutate(payload, {
+			onSuccess: (res) => {
+				// Modo grátis: o acesso já está concedido, não há pra onde pagar.
+				if (res.mode === 'granted' || !res.checkout_url) {
+					toast.success(
+						res.vox_granted > 0
+							? `Acesso liberado! Você ganhou ${res.vox_granted.toLocaleString('pt-BR')} voxxys.`
+							: 'Acesso liberado!',
+					);
+					// Sem plano não há curso liberado — cai direto nas ferramentas.
+					window.location.href = res.plan_key
+						? '/course'
+						: '/course/ferramentas';
+					return;
+				}
+				window.location.href = res.checkout_url;
 			},
 			onError: (err) => toast.error(redeemErrorMessage(err)),
 		});
@@ -441,33 +464,51 @@ export default function PlanLinkPage() {
 					<>
 						<div className="text-center mb-8">
 							<h2 className="font-display text-3xl md:text-[2.5rem] font-black text-white tracking-tight">
-								Seu{' '}
-								<span className="grad-brand">
-									{isAnnual
-										? '1º ano a preço de custo'
-										: '1º mês a preço de custo'}
-								</span>
+								{isFree ? (
+									<>
+										Seu <span className="grad-brand">acesso liberado</span>
+									</>
+								) : (
+									<>
+										Seu{' '}
+										<span className="grad-brand">
+											{isAnnual
+												? '1º ano a preço de custo'
+												: '1º mês a preço de custo'}
+										</span>
+									</>
+								)}
 							</h2>
 							<p className="text-gray-400 text-sm mt-3 max-w-xl mx-auto">
-								{isAnnual
-									? 'Você recebeu um link especial: assine o plano anual pagando quase nada no primeiro ano e depois siga no valor normal.'
-									: 'Você recebeu um link especial: escolha o plano ideal pra você, pague quase nada no primeiro mês e depois siga no valor normal.'}
+								{isFree
+									? isFreeNoPlan
+										? 'Você recebeu um convite: crie sua conta e comece a usar as ferramentas na hora, sem pagar nada.'
+										: 'Você recebeu um convite: ative seu acesso e comece agora, sem pagar nada.'
+									: isAnnual
+										? 'Você recebeu um link especial: assine o plano anual pagando quase nada no primeiro ano e depois siga no valor normal.'
+										: 'Você recebeu um link especial: escolha o plano ideal pra você, pague quase nada no primeiro mês e depois siga no valor normal.'}
 							</p>
 							{data && data.vox_grant > 0 && (
 								<div className="mt-5 inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-sm font-semibold text-violet-300">
 									<Gift className="w-4 h-4" />
-									Você ganha {data.vox_grant.toLocaleString('pt-BR')} voxxys ao
-									assinar
+									Você ganha {data.vox_grant.toLocaleString('pt-BR')} voxxys
+									{isFree ? ' ao ativar' : ' ao assinar'}
 								</div>
 							)}
-							{data?.grants_plan_voxes === false && (
+							{isFree && data?.access_days != null && (
+								<p className="mt-3 text-xs text-gray-500">
+									Acesso válido por {data.access_days} dias.
+								</p>
+							)}
+							{!isFree && data?.grants_plan_voxes === false && (
 								<p className="mt-3 text-xs text-gray-500">
 									Este link não inclui os voxxys mensais do plano.
 								</p>
 							)}
 						</div>
 
-						{/* Planos — grid adaptativo (mensal) ou card hero único (anual) */}
+						{/* Planos — grid adaptativo (mensal) ou card hero único (anual).
+						    No modo grátis sem plano não há vitrine nenhuma. */}
 						<div className="flex flex-wrap justify-center gap-5 mb-12">
 							{(data?.plans ?? []).map((plan) => (
 								<div
@@ -494,7 +535,9 @@ export default function PlanLinkPage() {
 								<div className="card-dark rounded-2xl border border-white/10 p-6 flex flex-col items-center justify-center min-h-[260px]">
 									<Loader2 className="w-8 h-8 text-violet-400 animate-spin mb-3" />
 									<p className="text-gray-300 text-sm font-medium">
-										Redirecionando para o pagamento seguro...
+										{isFree
+											? 'Liberando seu acesso...'
+											: 'Redirecionando para o pagamento seguro...'}
 									</p>
 								</div>
 							) : checkingAuth ? (
@@ -522,70 +565,109 @@ export default function PlanLinkPage() {
 									>
 										Não é você? Trocar conta
 									</button>
-									<p className="text-sm text-gray-400 mb-5">
-										Plano{' '}
-										<span className="text-white font-semibold">
-											{selected?.name ?? '—'}
-										</span>
-										{selected && (
-											<>
-												{' '}
-												· {isAnnual ? '1º ano' : '1º mês'} por{' '}
-												<span className="text-emerald-400 font-semibold">
-													R${' '}
-													{fmt(
-														selected.first_period_cents ??
-															selected.first_month_cents ??
-															0,
-													)}
-												</span>{' '}
-												· depois R${' '}
-												{fmt(
-													selected.price_cents ??
-														selected.price_monthly_cents ??
-														0,
+									{isFree ? (
+										<div className="text-sm text-gray-400 mb-5 space-y-1.5">
+											<p>
+												{selected ? (
+													<>
+														Plano{' '}
+														<span className="text-white font-semibold">
+															{selected.name}
+														</span>{' '}
+														·{' '}
+														<span className="text-emerald-400 font-semibold">
+															sem cobrança
+														</span>
+													</>
+												) : (
+													<>
+														Acesso às ferramentas ·{' '}
+														<span className="text-emerald-400 font-semibold">
+															sem cobrança
+														</span>
+													</>
 												)}
-												{isAnnual ? '/ano' : '/mês'}
-											</>
-										)}
-									</p>
+											</p>
+											{data?.access_days != null && (
+												<p className="text-xs text-gray-500">
+													Válido por {data.access_days} dias.
+												</p>
+											)}
+											{data && data.vox_grant > 0 && (
+												<p className="text-xs text-gray-500">
+													{data.vox_grant.toLocaleString('pt-BR')} voxxys
+													creditados na hora.
+												</p>
+											)}
+										</div>
+									) : (
+										<>
+											<p className="text-sm text-gray-400 mb-5">
+												Plano{' '}
+												<span className="text-white font-semibold">
+													{selected?.name ?? '—'}
+												</span>
+												{selected && (
+													<>
+														{' '}
+														· {isAnnual ? '1º ano' : '1º mês'} por{' '}
+														<span className="text-emerald-400 font-semibold">
+															R${' '}
+															{fmt(
+																selected.first_period_cents ??
+																	selected.first_month_cents ??
+																	0,
+															)}
+														</span>{' '}
+														· depois R${' '}
+														{fmt(
+															selected.price_cents ??
+																selected.price_monthly_cents ??
+																0,
+														)}
+														{isAnnual ? '/ano' : '/mês'}
+													</>
+												)}
+											</p>
 
-									<label
-										htmlFor="plan-link-cpf"
-										className="block text-sm font-medium text-gray-300 mb-1.5"
-									>
-										Seu CPF
-									</label>
-									<input
-										id="plan-link-cpf"
-										inputMode="numeric"
-										autoComplete="off"
-										value={cpf}
-										onChange={(e) => setCpf(maskCpf(e.target.value))}
-										onBlur={() => setCpfTouched(true)}
-										placeholder="000.000.000-00"
-										className={`w-full bg-ink-950 border rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-500 focus:outline-none transition-colors ${
-											cpfTouched && !cpfOk
-												? 'border-red-500/60'
-												: 'border-white/10 focus:border-violet-500/60'
-										}`}
-									/>
-									{cpfTouched && !cpfOk && (
-										<p className="text-xs text-red-400 mt-1.5">
-											CPF inválido. Confira os números.
-										</p>
+											<label
+												htmlFor="plan-link-cpf"
+												className="block text-sm font-medium text-gray-300 mb-1.5"
+											>
+												Seu CPF
+											</label>
+											<input
+												id="plan-link-cpf"
+												inputMode="numeric"
+												autoComplete="off"
+												value={cpf}
+												onChange={(e) => setCpf(maskCpf(e.target.value))}
+												onBlur={() => setCpfTouched(true)}
+												placeholder="000.000.000-00"
+												className={`w-full bg-ink-950 border rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-500 focus:outline-none transition-colors ${
+													cpfTouched && !cpfOk
+														? 'border-red-500/60'
+														: 'border-white/10 focus:border-violet-500/60'
+												}`}
+											/>
+											{cpfTouched && !cpfOk && (
+												<p className="text-xs text-red-400 mt-1.5">
+													CPF inválido. Confira os números.
+												</p>
+											)}
+											<p className="text-xs text-gray-500 mt-1.5">
+												O desconto é limitado a um uso por CPF.
+											</p>
+										</>
 									)}
-									<p className="text-xs text-gray-500 mt-1.5">
-										O desconto é limitado a um uso por CPF.
-									</p>
 
 									<button
 										type="button"
 										onClick={startRedeem}
-										disabled={!selected || !cpfOk}
+										disabled={(!isFree && !selected) || !cpfOk}
 										className="btn-accent w-full flex items-center justify-center gap-2 text-white font-bold py-3.5 rounded-xl shadow-brand cursor-pointer mt-5 disabled:opacity-50 disabled:cursor-not-allowed"
 									>
-										Assinar com desconto
+										{isFree ? 'Ativar acesso' : 'Assinar com desconto'}
 									</button>
 								</div>
 							)}
