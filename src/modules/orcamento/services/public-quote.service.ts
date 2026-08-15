@@ -40,6 +40,20 @@ export const quoteLinkInfoSchema = z.object({
 	titulo: z.string(),
 	logo_url: z.string(),
 	cor: z.string(),
+	/**
+	 * Nome da empresa, vindo da MARCA do profissional (`usar_marca` ligado no
+	 * link). É o que faz a página deixar de ser um formulário anônimo e virar a
+	 * proposta de uma empresa. Vazio quando ele não cadastrou marca — e aí a
+	 * página fica NEUTRA, com o título do link, exatamente como sempre foi.
+	 *
+	 * `.default('')` nos dois campos novos não é preguiça: esta tela é servida
+	 * separada da API e pode estar à frente dela num deploy. Sem default, um
+	 * back mais antigo quebraria o `parse` e a página pública sairia DO AR —
+	 * troca péssima por um nome de empresa.
+	 */
+	empresa: z.string().default(''),
+	/** Só dígitos (o back higieniza). Vazio = o link não oferece contato. */
+	whatsapp: z.string().default(''),
 	materiais: z.array(materialPublicoSchema),
 	qtd_max: z.number().int(),
 	campos_lead: z.array(campoLeadSchema),
@@ -63,6 +77,21 @@ export const estimateResultSchema = z.object({
 	pecas: z.number().int().optional(),
 	resumo: z.string().optional(),
 	avisos: z.array(z.string()).optional(),
+	/**
+	 * `true` = a velocidade de corte saiu de um modelo, não de uma medição na
+	 * máquina. O motor sempre soube disso; a página nunca contou, e o cliente
+	 * recebia um preço estimado com cara de preço fechado. Uma proposta que
+	 * esconde isso quebra na hora de entregar.
+	 */
+	estimativa: z.boolean().optional(),
+	/**
+	 * Desconto por quantidade já embutido no total (0–100).
+	 *
+	 * Sem ele a proposta não fechava: "10 peças · R$ 13,00 cada" em cima de
+	 * "R$ 123,50". O cliente multiplica, dá R$ 130,00, e a conta que ele acabou
+	 * de receber não bate — o que lê como erro de quem mandou o orçamento.
+	 */
+	desconto_pct: z.number().optional(),
 });
 export type EstimateResult = z.infer<typeof estimateResultSchema>;
 
@@ -112,6 +141,25 @@ export function logoSegura(url: string): string {
 	// `data:image/svg+xml` fica de FORA de propósito: SVG carrega script.
 	if (/^data:image\/(png|jpe?g|gif|webp|avif);/i.test(limpa)) return limpa;
 	return '';
+}
+
+/**
+ * O link de "fechar pedido" no WhatsApp.
+ *
+ * O número já estava cadastrado no link e a página NUNCA o mostrou: o cliente
+ * recebia o preço e o único botão da tela era "Recalcular". Orçamento sem
+ * caminho para fechar o pedido é orçamento que morre na tela.
+ *
+ * Só dígitos entram (o back já filtra, aqui é a segunda barreira — este valor
+ * vai dentro de um `href`), e o DDI 55 é assumido quando o número tem cara de
+ * telefone brasileiro sem ele: quem cadastra "11 98888-7777" não está pensando
+ * em código de país, e um wa.me sem DDI abre em branco.
+ */
+export function linkWhatsapp(numero: string, mensagem: string): string | null {
+	const d = numero.replace(/\D+/g, '');
+	if (d.length < 8) return null;
+	const comDdi = d.length <= 11 ? `55${d}` : d;
+	return `https://wa.me/${comDdi}?text=${encodeURIComponent(mensagem)}`;
 }
 
 /* ──────────────────────────────── chamadas ──────────────────────────────── */
