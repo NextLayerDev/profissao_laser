@@ -11,6 +11,7 @@ const PREVIEW_COUNT = 4;
 const KIND_LABEL: Record<PlanLinkListItem['kind'], string> = {
 	monthly_choice: 'Mensal',
 	annual_fixed: 'Anual',
+	custom: 'Avançado',
 };
 
 const STATUS_STYLES: Record<PlanLinkListItem['status'], string> = {
