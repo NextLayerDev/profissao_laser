@@ -125,9 +125,21 @@ function PlanCard({
 				<Link href={`/planos/${plan.id}`} className="block">
 					<div className="flex items-start justify-between gap-2">
 						<div className="flex-1 min-w-0">
-							<p className="font-bold text-slate-900 dark:text-white truncate">
-								{plan.name}
-							</p>
+							<div className="flex items-center gap-2 min-w-0">
+								<p className="font-bold text-slate-900 dark:text-white truncate">
+									{plan.name}
+								</p>
+								{plan.type === 'package' && (
+									<span className="shrink-0 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-600 dark:text-sky-400">
+										Pacote
+									</span>
+								)}
+								{plan.billing_mode === 'lifetime' && (
+									<span className="shrink-0 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400">
+										Único
+									</span>
+								)}
+							</div>
 							<p className="text-xs text-slate-500 font-mono mt-0.5 truncate">
 								{plan.key}
 							</p>

@@ -104,6 +104,11 @@ export async function getPlanRefunds(): Promise<RefundRow[]> {
 	return refundRowSchema.array().parse(data);
 }
 
+export async function getPackageRefunds(): Promise<RefundRow[]> {
+	const { data } = await api.get('/v1/refunds/packages');
+	return refundRowSchema.array().parse(data);
+}
+
 export async function getVoxRefunds(): Promise<RefundRow[]> {
 	const { data } = await api.get('/v1/refunds/vox');
 	return refundRowSchema.array().parse(data);
