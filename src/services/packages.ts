@@ -5,9 +5,9 @@ import {
 import { apiCourses } from '@/shared/lib/api-courses';
 
 /**
- * Pacote = plano de UM curso só, com link de compra próprio. O backend devolve
- * o mesmo shape de `GET /v1/plan/:id/details` (plan + tools + courses), então
- * reusamos `planDetailsSchema`; o curso do pacote é `courses[0]`.
+ * Pacote = plano vendido fora da régua da landing, por link próprio. O backend
+ * devolve o mesmo shape de `GET /v1/plan/:id/details` (plan + tools + courses),
+ * então reusamos `planDetailsSchema`.
  */
 export async function getPublicPackages(): Promise<PlanDetails[]> {
 	const { data } = await apiCourses.get('/v1/packages');

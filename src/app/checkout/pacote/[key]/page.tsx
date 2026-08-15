@@ -35,7 +35,8 @@ export default function PackageCheckoutPage() {
 	const [couponCode, setCouponCode] = useState<string | null>(null);
 
 	const plan = data?.plan;
-	const course = data?.courses[0]?.course;
+	const courses = data?.courses ?? [];
+	const cover = courses[0]?.course;
 	const isLifetime = plan?.billing_mode === 'lifetime';
 
 	// Pacote vitalício ignora o intervalo; o recorrente respeita a query string.
@@ -134,7 +135,7 @@ export default function PackageCheckoutPage() {
 					<div className="flex items-center justify-center min-h-[40vh]">
 						<Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
 					</div>
-				) : !plan || !course ? (
+				) : !plan || !cover ? (
 					<div className="text-center min-h-[40vh] flex flex-col items-center justify-center">
 						<p className="text-gray-300 text-lg font-semibold mb-2">
 							Pacote não encontrado
@@ -152,15 +153,15 @@ export default function PackageCheckoutPage() {
 					</div>
 				) : (
 					<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-						{/* Resumo: um pacote mostra UM curso */}
+						{/* Resumo: capa do primeiro curso, títulos de todos */}
 						<div className="relative card-dark rounded-2xl border border-white/10 p-7 overflow-hidden">
 							<div className="pointer-events-none absolute inset-x-0 top-0 h-24 rounded-t-2xl bg-gradient-to-b from-violet-500/25 to-transparent" />
 							<div className="relative">
 								<div className="relative h-36 rounded-xl overflow-hidden mb-5 border border-white/10 bg-ink-900">
-									{course.image_url ? (
+									{cover.image_url ? (
 										<Image
-											src={course.image_url}
-											alt={course.title}
+											src={cover.image_url}
+											alt={cover.title}
 											fill
 											sizes="(max-width: 1024px) 100vw, 520px"
 											className="object-cover"
@@ -171,16 +172,24 @@ export default function PackageCheckoutPage() {
 									<div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/60 to-transparent" />
 									<div className="absolute bottom-3 left-4 right-4">
 										<p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-200/90">
-											Curso
+											{courses.length > 1
+												? `${courses.length} cursos`
+												: 'Curso'}
 										</p>
 										<p className="font-display text-white font-extrabold leading-tight">
-											{course.title}
+											{courses.length > 1
+												? courses.map((c) => c.course.title).join(' · ')
+												: cover.title}
 										</p>
 									</div>
 								</div>
 
 								<span className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-300">
-									{isLifetime ? 'Acesso vitalício' : 'Acesso ao curso'}
+									{isLifetime
+										? 'Acesso vitalício'
+										: courses.length > 1
+											? 'Acesso aos cursos'
+											: 'Acesso ao curso'}
 								</span>
 								<h2 className="font-display text-3xl font-black mt-1.5">
 									{plan.name}
@@ -225,7 +234,7 @@ export default function PackageCheckoutPage() {
 									</div>
 									<p className="text-xs text-gray-500 mt-2">
 										{isLifetime
-											? 'Pagamento único · acesso ao curso para sempre'
+											? `Pagamento único · acesso ${courses.length > 1 ? 'aos cursos' : 'ao curso'} para sempre`
 											: interval === 'yearly'
 												? `Cobrado uma vez por ano · ou 12x de R$ ${fmt((priceCents ?? 0) / 12)}`
 												: 'Cobrado todo mês'}

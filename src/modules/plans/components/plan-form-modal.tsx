@@ -93,7 +93,7 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 							className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white"
 						>
 							<option value="plan">Plano (vários cursos)</option>
-							<option value="package">Pacote (um curso só)</option>
+							<option value="package">Pacote (cursos avulsos)</option>
 						</select>
 					</Field>
 					<Field label="Cobrança">
@@ -110,10 +110,10 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 
 				{type === 'package' && (
 					<p className="text-xs text-slate-500">
-						Pacote vende <strong>um curso só</strong> e ganha link de compra
+						Pacote vende <strong>cursos avulsos</strong> e ganha link de compra
 						próprio em{' '}
 						<span className="font-mono">/checkout/pacote/{key || 'key'}</span>.
-						Vincule o curso na aba Cursos do plano depois de salvar.
+						Vincule os cursos na aba Cursos do plano depois de salvar.
 					</p>
 				)}
 
