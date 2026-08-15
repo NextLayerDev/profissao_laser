@@ -216,6 +216,16 @@ export function ToolStudioView({
 		(def.definition.ui as { icon?: string } | undefined)?.icon,
 	);
 
+	/**
+	 * Grupos que abrem FECHADOS (`ui.collapsedGroups`). Opt-in: sem a chave, o
+	 * comportamento é o de sempre e nenhuma tool publicada muda. É o que permite
+	 * uma ferramenta de leigo mostrar "Arquivo" e "Material" abertos e enfiar os
+	 * overrides opcionais atrás de um "Ajustes avançados" recolhido.
+	 */
+	const collapsedGroups = ((
+		def.definition.ui as { collapsedGroups?: unknown } | undefined
+	)?.collapsedGroups ?? []) as string[];
+
 	// `ui.result` decide qual viewport desenhar e de onde tirar camadas/frames.
 	// A chave existe no schema desde o começo; até agora ninguém a lia.
 	const resultUi = (
@@ -227,6 +237,8 @@ export function ToolStudioView({
 						framesFrom?: string;
 						modelFrom?: string;
 						quoteFrom?: string;
+						previewFrom?: string;
+						publicFrom?: string;
 					};
 			  }
 			| undefined
@@ -394,6 +406,7 @@ export function ToolStudioView({
 							key={groupName}
 							title={groupName}
 							icon={GROUP_ICONS[groupName]}
+							collapsed={collapsedGroups.includes(groupName)}
 						>
 							{groupControls.map(renderControl)}
 						</StudioGroup>
