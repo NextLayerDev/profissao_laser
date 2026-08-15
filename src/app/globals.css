@@ -897,3 +897,39 @@
 		box-shadow: 0 0 30px 8px oklch(0.62 0.24 300 / 0);
 	}
 }
+
+/**
+ * IMPRESSÃO DO DOSSIÊ.
+ *
+ * A tela é branca sobre preto, e navegador não imprime fundo por padrão: sem
+ * isto o dossiê saía branco no branco — a folha vinha com o veredito invisível
+ * e o resumo apagado. Aqui o texto volta a ser escuro, os cartões viram
+ * contorno, e as listas que rolam na tela deixam de ser cortadas no papel
+ * (é justamente a lista de anúncios que torna o dossiê verificável).
+ */
+/*
+ * Os `!important` são obrigatórios e não são preguiça: cada cor aqui precisa
+ * vencer uma utilitária do Tailwind aplicada ELEMENTO A ELEMENTO (`text-slate-50`
+ * no herói, `bg-white/[0.02]` nos cartões). Mesma especificidade, e quem vem
+ * depois ganha — sem `!important` a folha volta a sair branca no branco, que é
+ * exatamente o defeito que este bloco existe para corrigir.
+ */
+@media print {
+	/* biome-ignore-start lint/complexity/noImportantStyles: precisa vencer as utilitárias do Tailwind por elemento — ver comentário acima */
+	.dossie-impressao,
+	.dossie-impressao * {
+		background: transparent !important;
+		box-shadow: none !important;
+		color: #111827 !important;
+		border-color: #d1d5db !important;
+	}
+	.dossie-impressao [class*="overflow-y-auto"],
+	.dossie-impressao [class*="max-h-"] {
+		max-height: none !important;
+		overflow: visible !important;
+	}
+	/* biome-ignore-end lint/complexity/noImportantStyles: fim do bloco de impressão */
+	.dossie-impressao section {
+		break-inside: avoid;
+	}
+}

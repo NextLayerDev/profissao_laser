@@ -138,7 +138,17 @@ function SelectWidget({ control, spec, value, onChange }: WidgetProps) {
 			>
 				{options.map((opt) => (
 					<option key={String(opt)} value={String(opt)}>
-						{String(opt)}
+						{/* Opção VAZIA é "não escolhi nada" — um campo opcional declara
+						    uma para não mostrar a primeira opção como se estivesse
+						    selecionada. Sem este rótulo ela virava uma linha em branco,
+						    indistinguível de bug. Nenhuma tool publicada declara opção
+						    vazia, então o resto continua idêntico. */}
+						{String(opt) === ''
+							? ((control as { placeholder?: string }).placeholder ??
+								'— não definir —')
+							: // `optionLabels` quando a coleção declara: o valor gravado
+								// continua sendo o id, e o que a pessoa lê é português.
+								(control.optionLabels?.[String(opt)] ?? String(opt))}
 					</option>
 				))}
 			</select>

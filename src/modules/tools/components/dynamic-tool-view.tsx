@@ -25,6 +25,9 @@ import {
 	runToolEngine,
 	type ToolRunResult,
 } from '../services/tool-definitions.service';
+import { ToolAtelieView } from './atelie';
+import { ToolIntelView } from './intel/tool-intel-view';
+import { ToolOrcamentoView } from './orcamento';
 import { PromptGallery } from './prompt-gallery';
 import { PromptGenerateView } from './prompt-generate-view';
 import { ScreenNotice } from './screen-notice';
@@ -32,6 +35,7 @@ import { type CanvasSpec, ToolCanvasView } from './tool-canvas-view';
 import { type CatalogSpec, ToolCatalogView } from './tool-catalog-view';
 import { ToolStudioView } from './tool-studio-view';
 import { bindName, WidgetField } from './tool-widgets';
+import { ToolVideoView } from './video';
 
 function ResultPanel({
 	result,
@@ -357,6 +361,70 @@ export function DynamicToolView({
 		  }
 		| undefined;
 
+	/* ── Ateliê (Estúdio de Imagens): três passos → mesa de criação → arte ──
+	   Vem ANTES do canvas, e a ordem é a correção de uma armadilha real: esta
+	   MESMA tool (`estudio_imagens`) declarava `canvas` até a F2, e a tela do
+	   canvas pergunta modo, máscara e fator de ampliação — inputs que o pipeline
+	   do Ateliê não tem mais. Uma definition antiga em cache (ou um rollback do
+	   seed) faria a ferramenta cair no ramo velho e mandar campos que ninguém lê,
+	   sem mandar a foto do produto. Como os dois nunca coexistem numa definition,
+	   testar o novo primeiro é o que garante que o velho não vença por acidente.
+
+	   Como o ramo `intel`, recebe só `def` e `toolKey`: cuida do próprio billing
+	   e do próprio stream (SSE), e não tem formulário genérico nenhum. */
+	if (studioUi?.layout === 'atelie') {
+		/*
+		 * O PREVIEW DO BUILDER NÃO RODA AQUI, e é melhor dizer isso do que deixar
+		 * o admin descobrir por um 404.
+		 *
+		 * `ToolAtelieView` cobra e abre o próprio stream (`POST
+		 * /api/tool-run/:key/stream`), então ele precisa de uma tool SALVA: com a
+		 * key placeholder de uma tool que ainda não existe, o POST volta 404 e o
+		 * Ateliê desenha "A arte não saiu desta vez" — como se fosse falha do
+		 * time. E mesmo com a tool salva o run usaria a definition do BANCO, não a
+		 * que está sendo editada: o caminho não cobrado (`draftDefinition`) é do
+		 * renderizador genérico e não passa por este ramo.
+		 *
+		 * (O ramo `intel` tem o mesmo furo e é anterior; ele fica registrado aqui
+		 * porque o Ateliê copiou o contrato dele de propósito.)
+		 */
+		if (toolKey === 'preview') {
+			return (
+				<div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5 text-sm leading-relaxed text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/5 dark:text-amber-300">
+					O Ateliê só roda depois que a ferramenta é salva — ele cobra e abre o
+					acompanhamento ao vivo pela chave dela. Salve o rascunho e abra a
+					ferramenta para testar.
+				</div>
+			);
+		}
+		return <ToolAtelieView def={def} toolKey={toolKey} />;
+	}
+
+	/* ── Vídeo do Anúncio: arte pronta → movimento → vídeo gerado por IA ──
+	   Fica junto do Ateliê e logo depois dele porque é a mesma família de tela:
+	   cobra sozinha, abre o próprio stream (`POST /api/tool-run/:key/stream`) e
+	   não tem formulário genérico nenhum. A definition NÃO declara `controls`,
+	   então cair no renderizador comum abriria uma ferramenta PAGA sem nenhum
+	   campo — daí este ramo vir antes de todos os outros que sobraram. */
+	if (studioUi?.layout === 'video') {
+		/*
+		 * Mesmo portão do Ateliê, e pelo mesmo motivo: `ToolVideoView` COBRA (12
+		 * voxxys) pela chave da tool. Com a key placeholder de um rascunho que
+		 * ainda não existe, o `/invoke` volta 404 e a tela desenharia "não foi
+		 * possível gerar" — como se o gerador tivesse falhado.
+		 */
+		if (toolKey === 'preview') {
+			return (
+				<div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5 text-sm leading-relaxed text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/5 dark:text-amber-300">
+					O Vídeo do Anúncio só roda depois que a ferramenta é salva — ele cobra
+					e abre o acompanhamento ao vivo pela chave dela. Salve o rascunho e
+					abra a ferramenta para testar.
+				</div>
+			);
+		}
+		return <ToolVideoView def={def} toolKey={toolKey} />;
+	}
+
 	/* ── Canvas (Estúdio de Imagens): composer + galeria pessoal ──
 	   Vem ANTES do catálogo e do estúdio: esta tela tem formulário PRÓPRIO
 	   (modos, lote, máscara) e histórico próprio, então nenhum dos outros
@@ -376,6 +444,44 @@ export function DynamicToolView({
 				/>
 			</div>
 		);
+	}
+
+	/* ── Intel (Central de Inteligência): entrada → sala de guerra → dossiê ──
+	   Vem PRIMEIRO porque é a tela que menos se parece com as outras: não tem
+	   coluna de controles, não tem card, e cada uma das três fases toma a tela
+	   inteira. Nenhum dos outros ramos daria conta. */
+	if (studioUi?.layout === 'intel') {
+		return <ToolIntelView def={def} toolKey={toolKey} />;
+	}
+
+	/* ── Orçamento: desenho → material e quantidade → preço, sobra e curva ──
+	   Mesma família do Ateliê e do Intel: recebe só `def` e `toolKey`, cobra
+	   sozinho e não usa o formulário genérico.
+
+	   Vem ANTES do ramo `studio`, e a ordem é a correção de um defeito medido:
+	   esta MESMA tool declarava `layout:'studio'` até agora, e o estúdio abre
+	   com o viewport de IMAGEM — meia tela de xadrez de transparência pedindo
+	   "envie uma foto para ver a prévia ao vivo" numa ferramenta que lê DXF. Uma
+	   definition antiga em cache (ou um rollback do seed) faria a ferramenta
+	   cair no ramo velho; testar o novo primeiro é o que garante que o genérico
+	   não vença por acidente. */
+	if (studioUi?.layout === 'orcamento') {
+		/*
+		 * Mesmo portão do Ateliê e do Vídeo, e pelo mesmo motivo: `ToolOrcamentoView`
+		 * COBRA pela chave da tool. Com a key placeholder de um rascunho que ainda
+		 * não existe, o `/invoke` volta 404 e a tela desenharia uma falha de
+		 * orçamento — como se a conta não tivesse fechado.
+		 */
+		if (toolKey === 'preview') {
+			return (
+				<div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5 text-sm leading-relaxed text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/5 dark:text-amber-300">
+					O Orçamento só roda depois que a ferramenta é salva — ele cobra pela
+					chave dela e lê as coleções de materiais e perfis. Salve o rascunho e
+					abra a ferramenta para testar.
+				</div>
+			);
+		}
+		return <ToolOrcamentoView def={def} toolKey={toolKey} />;
 	}
 
 	/* ── Catálogo: navegação de uma COLEÇÃO da tool (Metallic e afins) ──

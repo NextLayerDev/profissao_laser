@@ -1,11 +1,34 @@
 'use client';
 
-import { Check, FileUp, Minus, Plus, X } from 'lucide-react';
-import { type ReactNode, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Check, FileUp, Minus, Pencil, Plus, X } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { type ReactNode, useMemo, useRef, useState } from 'react';
+import { useToolDefinition } from '../hooks/use-tool-definition';
+import {
+	aceitaAluno,
+	permiteEdicaoDoDono,
+	resolveCollectionConfig,
+} from '../lib/collection-form';
+import {
+	type CollectionEntry,
+	listCollection,
+} from '../services/collections.service';
 import type {
 	ToolControl,
 	ToolInputSpec,
 } from '../services/tool-definitions.service';
+
+/**
+ * O formulário entra por import DINÂMICO por dois motivos, nessa ordem: ele
+ * importa `WidgetField` (que importa este arquivo), e um import estático
+ * fecharia um ciclo entre os três módulos; e é um modal que a maioria dos runs
+ * nunca abre, então não tem por que viajar no bundle de toda tela de tool.
+ */
+const CollectionEntryForm = dynamic(
+	() => import('./collection-entry-form').then((m) => m.CollectionEntryForm),
+	{ ssr: false },
+);
 
 /**
  * Widgets adicionais da Fábrica de Tools. Ficam num arquivo irmão de
@@ -504,6 +527,188 @@ export function SegmentedWidget({
 	);
 }
 
+/* ─────────────────────────── coleção ─────────────────────────── */
+
+/**
+ * `collection` — dropdown alimentado por uma COLEÇÃO, não por um enum estático.
+ *
+ * É o que faz "Material" listar os materiais que o admin cadastrou e "Perfil de
+ * preço" listar os perfis do próprio aluno, em vez de uma lista chumbada na
+ * definition que envelhece no dia seguinte. Era declarado nas definitions e não
+ * existia em registry nenhum — caía no `TextWidget` e virava campo livre.
+ *
+ * Parâmetros no `control` (que é `.passthrough()`, então nada muda no schema):
+ *   tool         key da tool DONA da coleção. Obrigatório — o widget não tem
+ *                como descobrir sozinho em que tela está sendo renderizado.
+ *   collection   nome da coleção (default `'default'`)
+ *   labelField   campo de `data` a exibir; ausente → usa o `title` do registro
+ *   valueField   campo a emitir; ausente → o `id` do registro
+ *   mine         só os registros do próprio aluno (perfis de preço)
+ *   allowEmpty   permite não escolher nada, com `placeholder`
+ *
+ * Falha com dignidade: enquanto carrega vira um select desabilitado; se a
+ * coleção estiver vazia ou a busca falhar, diz isso em vez de mostrar um
+ * dropdown vazio e mudo — que é indistinguível de bug para quem está usando.
+ *
+ * CADASTRAR SAI DAQUI. Quando a coleção declara `submissions.who:'student'`, o
+ * widget ganha "Criar" (e "Editar", se `ownerEditable`) ao lado do rótulo. Era
+ * o buraco do Orçamento: o aluno via "Meu perfil de custo" e não tinha, em
+ * lugar nenhum do produto, como criar um perfil — `createCollectionEntry`
+ * estava escrito no serviço e nunca era chamado. Coleção de catálogo (materiais,
+ * velocidades: `who:'admin'`) não ganha botão nenhum, então as tools que já usam
+ * este widget continuam idênticas.
+ */
+export function CollectionWidget({
+	control,
+	spec,
+	value,
+	onChange,
+}: WidgetProps) {
+	const c = control as ToolControl & {
+		tool?: string;
+		collection?: string;
+		labelField?: string;
+		valueField?: string;
+		mine?: boolean;
+		allowEmpty?: boolean;
+		placeholder?: string;
+	};
+	const id = `w-${bindName(control.bind)}`;
+	const toolKey = c.tool ?? '';
+	const collection = c.collection ?? 'default';
+
+	/** `'novo'` abre o formulário vazio; um registro abre em edição. */
+	const [formulario, setFormulario] = useState<'novo' | CollectionEntry | null>(
+		null,
+	);
+
+	const { data, isLoading, isError } = useQuery({
+		queryKey: ['collection-options', toolKey, collection, c.mine ?? false],
+		queryFn: () =>
+			listCollection(toolKey, collection, {
+				pageSize: 100,
+				mine: c.mine,
+				sort: 'recent',
+			}),
+		enabled: toolKey.length > 0,
+		staleTime: 60_000,
+	});
+
+	/**
+	 * Quem responde "o aluno pode cadastrar aqui?" é a DEFINITION da tool dona da
+	 * coleção, não este componente. Na tela do Orçamento é a mesma query que já
+	 * desenhou a tela (mesma chave no react-query), então não custa requisição
+	 * nenhuma; só numa coleção emprestada de outra tool é que vira uma busca a
+	 * mais — e ela é cacheada por 60 s.
+	 */
+	const def = useToolDefinition(toolKey, { enabled: toolKey.length > 0 });
+	const config = useMemo(
+		() => resolveCollectionConfig(def.data?.definition, collection),
+		[def.data?.definition, collection],
+	);
+	const podeCriar = aceitaAluno(config);
+
+	const items = data?.items ?? [];
+	const options = items.map((e) => ({
+		value: String(
+			c.valueField ? ((e.data[c.valueField] as unknown) ?? e.id) : e.id,
+		),
+		label: String(
+			(c.labelField ? e.data[c.labelField] : undefined) ?? e.title ?? e.id,
+		),
+	}));
+
+	const current = String(value ?? spec?.default ?? '');
+	const vazio = !isLoading && !isError && options.length === 0;
+
+	// Editar exige saber QUAL registro está selecionado. Com `valueField` o campo
+	// emite outro valor (um código, um nome) e o id se perde — aí só resta criar.
+	const selecionado = c.valueField
+		? undefined
+		: items.find((e) => e.id === current);
+	const podeEditar = !!selecionado?.is_mine && permiteEdicaoDoDono(config);
+
+	let aviso: string | null = null;
+	if (!toolKey) aviso = 'Este campo não declarou de qual ferramenta ler.';
+	else if (isError) aviso = 'Não consegui carregar as opções agora.';
+	else if (vazio) {
+		aviso = podeCriar
+			? 'Você ainda não cadastrou nenhum. Clique em “Criar”.'
+			: 'Nenhum registro cadastrado ainda.';
+	}
+
+	/** O valor que o campo passa a emitir depois de salvar. */
+	const valorDe = (e: CollectionEntry) =>
+		String(c.valueField ? ((e.data[c.valueField] as unknown) ?? e.id) : e.id);
+
+	return (
+		<div className="space-y-1.5">
+			<div className="flex items-center justify-between gap-2">
+				<Label htmlFor={id}>{labelOf(control)}</Label>
+				{podeCriar ? (
+					<div className="flex items-center gap-1">
+						{podeEditar && selecionado ? (
+							<button
+								type="button"
+								onClick={() => setFormulario(selecionado)}
+								className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200"
+							>
+								<Pencil className="h-3 w-3" />
+								Editar
+							</button>
+						) : null}
+						<button
+							type="button"
+							onClick={() => setFormulario('novo')}
+							className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-[var(--screen-accent,#7c3aed)] transition-colors hover:bg-[color-mix(in_srgb,var(--screen-accent,#7c3aed)_12%,transparent)]"
+						>
+							<Plus className="h-3 w-3" />
+							Criar
+						</button>
+					</div>
+				) : null}
+			</div>
+			<select
+				id={id}
+				className={fieldClass}
+				value={current}
+				disabled={isLoading || !!aviso}
+				onChange={(e) => onChange(e.target.value)}
+			>
+				{isLoading ? <option value="">Carregando…</option> : null}
+				{!isLoading && (c.allowEmpty || !current) ? (
+					<option value="">{c.placeholder ?? '— selecione —'}</option>
+				) : null}
+				{options.map((o) => (
+					<option key={o.value} value={o.value}>
+						{o.label}
+					</option>
+				))}
+			</select>
+			{aviso ? (
+				<p className="text-[11px] text-amber-600 dark:text-amber-400">
+					{aviso}
+				</p>
+			) : null}
+
+			{formulario ? (
+				<CollectionEntryForm
+					toolKey={toolKey}
+					collection={collection}
+					entry={formulario === 'novo' ? null : formulario}
+					onClose={() => setFormulario(null)}
+					// Recém-criado já entra selecionado: o aluno abriu o formulário
+					// porque queria USAR este registro agora.
+					onSaved={(e) => onChange(valorDe(e))}
+					onDeleted={(idApagado) => {
+						if (selecionado?.id === idApagado) onChange('');
+					}}
+				/>
+			) : null}
+		</div>
+	);
+}
+
 /** Widgets adicionais, mesclados no registry de `tool-widgets.tsx`. */
 export const EXTRA_WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
 	text: TextWidget,
@@ -512,4 +717,5 @@ export const EXTRA_WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
 	file: FileWidget,
 	money: MoneyWidget,
 	segmented: SegmentedWidget,
+	collection: CollectionWidget,
 };

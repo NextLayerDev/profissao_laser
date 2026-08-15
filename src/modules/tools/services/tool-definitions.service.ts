@@ -42,6 +42,15 @@ export const toolControlSchema = z
 		max: z.number().optional(),
 		step: z.number().optional(),
 		options: z.array(z.unknown()).optional(),
+		/**
+		 * Rótulo humano de cada opção: `{ co2_100: 'CO2 100 W (1300×900)' }`.
+		 *
+		 * O VALOR gravado continua sendo o id — é ele que o motor lê. Sem isto, a
+		 * pergunta mais importante do perfil de custo ("Que máquina você tem?")
+		 * chegava ao dono da marcenaria como `fibra_20 · co2_100 · psico_9`: id de
+		 * banco de dados oferecido como resposta.
+		 */
+		optionLabels: z.record(z.string(), z.string()).optional(),
 	})
 	.passthrough();
 export type ToolControl = z.infer<typeof toolControlSchema>;
@@ -563,6 +572,17 @@ export interface RunToolPreviewOpts {
 	inputSpec: Record<string, ToolInputSpec>;
 	/** Definition inline p/ preview de rascunho (staff). */
 	draftDefinition?: ToolDefinitionDoc;
+	/**
+	 * Fluxo nomeado (`definition.pipelines`). Ausente = o pipeline padrão.
+	 *
+	 * É o que permite ao Ajuste "Ampliar" do Ateliê rodar por aqui: ele é sharp
+	 * na nossa CPU, não chama fornecedor nenhum, e cobrar por isso seria cobrar
+	 * por nada. O servidor confere — `skipInPreview` só deixa o `ai.image_studio`
+	 * passar nos modos que o catálogo declara como locais.
+	 */
+	flow?: string;
+	/** Aborta a espera (o aluno saiu da tela ou clicou outro ajuste). */
+	signal?: AbortSignal;
 }
 
 /**
@@ -591,7 +611,10 @@ export async function runToolPreview(
 	if (opts.draftDefinition) {
 		fd.append('definition', JSON.stringify(opts.draftDefinition));
 	}
-	const { data } = await api.post(`/api/tool-run/${key}/preview`, fd);
+	if (opts.flow) fd.append('flow', opts.flow);
+	const { data } = await api.post(`/api/tool-run/${key}/preview`, fd, {
+		signal: opts.signal,
+	});
 	return (data ?? { preview: null }) as {
 		preview: string | null;
 		assembly?: unknown;

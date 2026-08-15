@@ -90,22 +90,37 @@ export interface BuilderScreenState {
 }
 
 /**
- * Chaves de `ui` que o builder NÃO conhece mas precisa preservar no round-trip.
- * Sem isto, salvar pelo builder apagaria configurações escritas em JSON.
+ * As chaves de `ui` que o BUILDER EDITA — e, por isso, as únicas que ele tem
+ * direito de reescrever. Todo o resto volta verbatim no round-trip.
+ *
+ * ┌─ POR QUE UMA LISTA DO QUE ELE CONHECE, E NÃO DO QUE PRESERVAR ──────────┐
+ * │ Isto era uma allow-list das chaves A PRESERVAR (`presets`, `steps`,      │
+ * │ `catalog`…), e uma lista dessas só está certa enquanto alguém lembra de  │
+ * │ estendê-la. Ninguém lembrou: `atelie` e `intel` ficaram de fora, e como  │
+ * │ os blocos das duas tools têm BlockSpec no catálogo, elas ABREM EM MODO   │
+ * │ VISUAL — ou seja, o Salvar é alcançável com um clique.                   │
+ * │                                                                          │
+ * │ O estrago era mudo e total: `ui.atelie` sumia, `entregasDaDefinition`    │
+ * │ devolvia `[]` (o passo 1 ficava sem um cartão sequer) e                  │
+ * │ `ajustesDaDefinition` devolvia `[]` (a seção de Ajustes desaparecia      │
+ * │ inteira). A F4 se desfazia num clique, sem erro nenhum na tela.          │
+ * │                                                                          │
+ * │ Invertida, a lista é FECHADA e verdadeira por construção: o builder      │
+ * │ escreve estas nove chaves e não sabe o que são as outras, então          │
+ * │ qualquer layout futuro (`ui.<novo>`) sobrevive sem ninguém editar isto.  │
+ * └──────────────────────────────────────────────────────────────────────────┘
  */
-const PRESERVED_UI_KEYS = [
-	'presets',
-	'livePreview',
-	'steps',
-	'aside',
-	'progress',
-	'history',
-	'catalog',
-	'public',
-	'parent',
-	'hidden',
-	'analyze',
-] as const;
+const UI_KEYS_DO_BUILDER: ReadonlySet<string> = new Set([
+	'layout',
+	'icon',
+	'category',
+	'order',
+	'audience',
+	'color',
+	'controls',
+	'action',
+	'result',
+]);
 
 /** Valor de um parâmetro de bloco: fixo (literal) ou ligado a uma fonte (ref). */
 export type ParamValue =
@@ -230,8 +245,34 @@ export interface BuilderState {
 	nodes: BuilderNode[];
 	/** nós personalizados criados nesta tool (preset sobre um bloco base). */
 	customNodes: CustomNodeSpec[];
-	/** fontes (ex.: 'store.url', 'prep.pngBase64', ['prep.width_mm', …]). */
-	output: { primary: string; preview: string; meta: string[] };
+	/**
+	 * fontes (ex.: 'store.url', 'prep.pngBase64', ['prep.width_mm', …]).
+	 *
+	 * `extra` são as chaves de `output` que o builder NÃO edita, guardadas
+	 * verbatim para o round-trip. Sem isso, salvar pelo builder reduzia o
+	 * `output` a `primary`/`preview`/`meta`/`savable` — e `output` é ALLOW-LIST
+	 * no motor: as outras chaves passariam a ser calculadas, pagas e jogadas
+	 * fora, em silêncio. O Ateliê tem VINTE E CINCO delas.
+	 */
+	output: {
+		primary: string;
+		preview: string;
+		meta: string[];
+		extra?: Record<string, unknown>;
+	};
+	/**
+	 * ┌─ AS CHAVES DE TOPO QUE O BUILDER NÃO CONHECE ───────────────────────────┐
+	 * │ `collections`, `pipelines`, `model`, `system_prompt`… O builder monta o  │
+	 * │ doc do zero a cada save, então tudo que ele não conhece SUMIA — e sumia  │
+	 * │ calado, num banco compartilhado dev/prod.                                │
+	 * │                                                                          │
+	 * │ Isto é o mesmo remédio de `screen.extra` (que já protegia as chaves de   │
+	 * │ `ui`), um nível acima. Para o Ateliê é o que separa "o admin abriu a     │
+	 * │ Fábrica e clicou Salvar" de "as quatro coleções e o fluxo `ajustar`      │
+	 * │ desapareceram da ferramenta".                                            │
+	 * └──────────────────────────────────────────────────────────────────────────┘
+	 */
+	docExtra?: Record<string, unknown>;
 	voxCost: number;
 	freeQuota: Record<string, number | null>;
 	/** Presente só quando toolType='room'. */
@@ -382,8 +423,8 @@ function readScreenUi(ui: unknown): BuilderScreenState | undefined {
 	if (!ui || typeof ui !== 'object') return undefined;
 	const u = ui as Record<string, unknown>;
 	const extra: Record<string, unknown> = {};
-	for (const k of PRESERVED_UI_KEYS) {
-		if (u[k] !== undefined) extra[k] = u[k];
+	for (const k of Object.keys(u)) {
+		if (!UI_KEYS_DO_BUILDER.has(k) && u[k] !== undefined) extra[k] = u[k];
 	}
 	const layout = typeof u.layout === 'string' ? u.layout : undefined;
 	const result =
@@ -512,13 +553,18 @@ export function buildDoc(state: BuilderState): ToolDefinitionDoc {
 		return { id: n.id, block, params };
 	});
 
-	const output: Record<string, unknown> = {};
+	// As chaves que o builder não edita voltam PRIMEIRO, para os campos que ele
+	// edita vencerem em caso de colisão.
+	const output: Record<string, unknown> = { ...(state.output.extra ?? {}) };
 	if (state.output.primary) output.primary = state.output.primary;
 	if (state.output.preview) output.preview = state.output.preview;
 	if (state.output.meta.length) output.meta = state.output.meta;
 	output.savable = true;
 
 	return {
+		// Mesma regra do `output` acima e do `screen.extra` lá embaixo: o que o
+		// builder não conhece entra primeiro e é sobrescrito pelo que ele edita.
+		...(state.docExtra ?? {}),
 		schemaVersion: 1,
 		input,
 		pipeline,
@@ -690,6 +736,38 @@ export function docToState(def: {
 		preview?: string;
 		meta?: string[];
 	};
+	/**
+	 * O RESTO DO `output`, verbatim. `output` é ALLOW-LIST no motor: uma chave
+	 * que o bloco emite e ela não lista é calculada, PAGA e jogada fora sem erro
+	 * nenhum. Reconstruir o `output` só com os três campos que o builder edita
+	 * apagaria as outras — 25 delas, no Ateliê — e o sintoma seria seções
+	 * inteiras da tela sumindo depois de alguém abrir a Fábrica.
+	 */
+	const outExtra: Record<string, unknown> = {};
+	for (const [k, v] of Object.entries(doc.output ?? {})) {
+		if (k === 'primary' || k === 'preview' || k === 'meta' || k === 'savable') {
+			continue;
+		}
+		outExtra[k] = v;
+	}
+	/** Ver `BuilderState.docExtra`: as chaves de TOPO que o builder não conhece. */
+	const CONHECIDAS = new Set([
+		'schemaVersion',
+		'input',
+		'pipeline',
+		'output',
+		'ui',
+		'billing',
+		'bank',
+		'creations',
+		'return_variations',
+		'raw_prompt',
+		'room',
+	]);
+	const docExtra: Record<string, unknown> = {};
+	for (const [k, v] of Object.entries(doc as Record<string, unknown>)) {
+		if (!CONHECIDAS.has(k)) docExtra[k] = v;
+	}
 	const billing = doc.billing ?? {};
 	const freeQuota: Record<string, number | null> = {};
 	for (const [k, v] of Object.entries(billing.free_quota ?? {})) {
@@ -738,9 +816,11 @@ export function docToState(def: {
 			primary: out.primary ?? '',
 			preview: out.preview ?? '',
 			meta: Array.isArray(out.meta) ? out.meta : [],
+			...(Object.keys(outExtra).length ? { extra: outExtra } : {}),
 		},
 		voxCost: typeof billing.vox_cost === 'number' ? billing.vox_cost : 0,
 		freeQuota,
+		...(Object.keys(docExtra).length ? { docExtra } : {}),
 		...(bankRaw ? { bank: bankRaw } : {}),
 		...(screens ? { screens } : {}),
 		...(screen ? { screen } : {}),

@@ -5,6 +5,7 @@ import {
 	customToSpec,
 } from '@/components/ferramentas/builder-model';
 import { getActiveToken } from '@/lib/auth';
+import { lerFramesSse, type SseFrame } from '@/lib/sse';
 import type { ToolDefinitionDoc } from './tool-definitions.service';
 
 /**
@@ -65,21 +66,8 @@ function buildCatalog(
 	};
 }
 
-/** Converte um frame SSE cru (`event: x\ndata: {...}`) num AgentEvent tipado. */
-function parseFrame(frame: string): AgentEvent | null {
-	let event = '';
-	const dataLines: string[] = [];
-	for (const line of frame.split('\n')) {
-		if (line.startsWith('event:')) event = line.slice(6).trim();
-		else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
-	}
-	if (!event) return null;
-	let data: Record<string, unknown> = {};
-	try {
-		data = dataLines.length ? JSON.parse(dataLines.join('\n')) : {};
-	} catch {
-		return null;
-	}
+/** Frame SSE já parseado → `AgentEvent` tipado deste agente. */
+function paraAgentEvent({ event, data }: SseFrame): AgentEvent | null {
 	switch (event) {
 		case 'text':
 			return { type: 'text', delta: String(data.delta ?? '') };
@@ -159,25 +147,11 @@ export async function* streamAgentTurn(
 		return;
 	}
 
-	const reader = res.body.getReader();
-	const decoder = new TextDecoder();
-	let buf = '';
-	try {
-		while (true) {
-			const { done, value } = await reader.read();
-			if (done) break;
-			buf += decoder.decode(value, { stream: true });
-			let sep = buf.indexOf('\n\n');
-			while (sep >= 0) {
-				const frame = buf.slice(0, sep);
-				buf = buf.slice(sep + 2);
-				const ev = parseFrame(frame);
-				if (ev) yield ev;
-				sep = buf.indexOf('\n\n');
-			}
-		}
-	} finally {
-		// libera o lock do reader (abort/stop ou retorno antecipado do consumidor).
-		reader.cancel().catch(() => {});
+	// A leitura de frames mora em `lib/sse.ts` desde que passou a ter dois
+	// consumidores (este agente e o time de pesquisa). O que continua aqui é só
+	// a TRADUÇÃO de frame → `AgentEvent`, que é específica deste agente.
+	for await (const frame of lerFramesSse(res, signal)) {
+		const ev = paraAgentEvent(frame);
+		if (ev) yield ev;
 	}
 }
