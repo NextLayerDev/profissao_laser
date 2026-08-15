@@ -3,7 +3,10 @@
 import { ArrowLeft, Layers } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { Header } from '@/components/dashboard/header';
+import { LinkRow } from '@/modules/courses/components/course-buy-link-modal';
 import {
 	PlanCoursesSection,
 	PlanToolsSection,
@@ -64,15 +67,28 @@ export default function PlanoDetalhe() {
 								</p>
 							)}
 							<div className="mt-4 flex flex-wrap gap-2">
-								<PriceBadge
-									label="Mensal"
-									cents={data.plan.price_monthly_cents ?? null}
-								/>
-								<PriceBadge
-									label="Anual"
-									cents={data.plan.price_yearly_cents ?? null}
-								/>
+								{data.plan.billing_mode === 'lifetime' ? (
+									<PriceBadge
+										label="Pagamento único"
+										cents={data.plan.price_lifetime_cents ?? null}
+									/>
+								) : (
+									<>
+										<PriceBadge
+											label="Mensal"
+											cents={data.plan.price_monthly_cents ?? null}
+										/>
+										<PriceBadge
+											label="Anual"
+											cents={data.plan.price_yearly_cents ?? null}
+										/>
+									</>
+								)}
 							</div>
+
+							{data.plan.type === 'package' && (
+								<CheckoutLink planKey={data.plan.key} />
+							)}
 						</div>
 
 						<div className="space-y-10">
@@ -89,6 +105,28 @@ export default function PlanoDetalhe() {
 					</>
 				)}
 			</main>
+		</div>
+	);
+}
+
+/** Pacote não aparece na landing: o link direto é a única porta de venda. */
+function CheckoutLink({ planKey }: { planKey: string }) {
+	const [copied, setCopied] = useState(false);
+	const url = `${typeof window === 'undefined' ? '' : window.location.origin}/checkout/pacote/${planKey}`;
+
+	return (
+		<div className="mt-4">
+			<LinkRow
+				title="Link de compra do pacote"
+				subtitle="Divulgue este link — o pacote não aparece na régua de planos"
+				url={url}
+				copied={copied}
+				onCopy={async () => {
+					await navigator.clipboard.writeText(url);
+					setCopied(true);
+					toast.success('Link copiado', { description: url });
+				}}
+			/>
 		</div>
 	);
 }
