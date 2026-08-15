@@ -41,6 +41,12 @@ const TYPE_CONFIG: Record<
 		text: 'text-emerald-500',
 		dot: 'bg-emerald-500',
 	},
+	package: {
+		label: 'Pacote',
+		bg: 'bg-sky-500/10',
+		text: 'text-sky-400',
+		dot: 'bg-sky-400',
+	},
 	vox: {
 		label: 'Voxxys',
 		bg: 'bg-violet-500/10',
@@ -59,9 +65,10 @@ const BILLING_REASON_LABEL: Record<BillingReason, string> = {
 	refund: 'Reembolso',
 };
 
-const INTERVAL_LABEL: Record<'monthly' | 'yearly', string> = {
+const INTERVAL_LABEL: Record<'monthly' | 'yearly' | 'lifetime', string> = {
 	monthly: 'Mensal',
 	yearly: 'Anual',
+	lifetime: 'Pagamento único',
 };
 
 const SUBSCRIPTION_STATUS_CONFIG: Record<
@@ -102,9 +109,12 @@ function formatCents(cents: number) {
 
 const REFUND_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
-/** Assinatura reembolsável: paga, dentro da janela de 7 dias desde a entrada. */
+/**
+ * Reembolsável: assinatura OU pacote pago, dentro da janela de 7 dias desde a
+ * entrada. Os dois saem da mesma fatura, então carregam subscription_id.
+ */
 function isRefundable(row: EntryRow): boolean {
-	if (row.entry_type !== 'subscription' || !row.subscription?.subscription_id)
+	if (row.entry_type === 'vox' || !row.subscription?.subscription_id)
 		return false;
 	if (row.subscription.status && row.subscription.status !== 'paid')
 		return false;
@@ -429,7 +439,7 @@ function EntryRowItem({
 				</span>
 			</td>
 			<td className="px-4 py-3">
-				{row.entry_type === 'subscription' && row.subscription ? (
+				{row.entry_type !== 'vox' && row.subscription ? (
 					<>
 						<div className="flex items-center gap-2">
 							<p className="text-slate-900 dark:text-white font-medium">

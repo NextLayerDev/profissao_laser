@@ -4,8 +4,10 @@ import { apiCourses } from '@/shared/lib/api-courses';
 export type PlanInterval = 'monthly' | 'yearly';
 
 function sortPublished(plans: Plan[]): Plan[] {
+	// Pacotes ficam de fora: eles têm vitrine e link de compra próprios
+	// (/v1/packages → /checkout/pacote/:key), não entram na régua de planos.
 	return plans
-		.filter((p) => p.published)
+		.filter((p) => p.published && p.type !== 'package')
 		.sort(
 			(a, b) => (a.price_monthly_cents ?? 0) - (b.price_monthly_cents ?? 0),
 		);
