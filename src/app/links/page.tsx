@@ -1,19 +1,28 @@
 'use client';
 
-import { CalendarRange, Link2, Plus, Users } from 'lucide-react';
+import {
+	CalendarRange,
+	Link2,
+	Plus,
+	SlidersHorizontal,
+	Users,
+} from 'lucide-react';
 import { useState } from 'react';
 import { Header } from '@/components/dashboard/header';
 import { AnnualLinksTable } from '@/components/links/annual-links-table';
 import { CreateAnnualLinkModal } from '@/components/links/create-annual-link-modal';
+import { CreateCustomLinkModal } from '@/components/links/create-custom-link-modal';
 import { CreatePlanLinkModal } from '@/components/links/create-plan-link-modal';
+import { CustomLinksTable } from '@/components/links/custom-links-table';
 import { LinkSubscribersTable } from '@/components/links/link-subscribers-table';
 import { PlanLinksTable } from '@/components/links/plan-links-table';
 
-type Tab = 'links' | 'annual' | 'subscribers';
+type Tab = 'links' | 'annual' | 'custom' | 'subscribers';
 
 const TABS: { id: Tab; label: string; Icon: typeof Link2 }[] = [
 	{ id: 'links', label: 'Links de Plano', Icon: Link2 },
 	{ id: 'annual', label: 'Links Anuais', Icon: CalendarRange },
+	{ id: 'custom', label: 'Links Avançados', Icon: SlidersHorizontal },
 	{ id: 'subscribers', label: 'Assinantes', Icon: Users },
 ];
 
@@ -21,6 +30,7 @@ export default function LinksPage() {
 	const [activeTab, setActiveTab] = useState<Tab>('links');
 	const [showCreate, setShowCreate] = useState(false);
 	const [showCreateAnnual, setShowCreateAnnual] = useState(false);
+	const [showCreateCustom, setShowCreateCustom] = useState(false);
 
 	return (
 		<div className="min-h-screen text-slate-900 dark:text-white">
@@ -34,8 +44,9 @@ export default function LinksPage() {
 					<p className="text-slate-600 dark:text-gray-400 mt-1">
 						Links especiais: nos mensais quem abre escolhe o plano e paga o 1º
 						mês a preço de custo; nos anuais o plano é fixo e o 1º ano sai pelo
-						piso mensal × 12. O custo dos voxxys usados acumula na fatura
-						aberta.
+						piso mensal × 12. Nos avançados você define tudo — entrada grátis ou
+						paga, plano, preço, voxxys e duração. O que é dado só entra na
+						fatura aberta quando for usado.
 					</p>
 				</div>
 
@@ -78,18 +89,32 @@ export default function LinksPage() {
 							Gerar Link Anual
 						</button>
 					)}
+					{activeTab === 'custom' && (
+						<button
+							type="button"
+							onClick={() => setShowCreateCustom(true)}
+							className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-violet-600 hover:bg-violet-700 text-white transition-colors"
+						>
+							<Plus className="w-4 h-4" />
+							Gerar Link Avançado
+						</button>
+					)}
 				</div>
 
 				{/* Content */}
 				<div className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-sm rounded-2xl border border-slate-200 dark:border-white/8 shadow-sm dark:shadow-none">
 					{activeTab === 'links' && <PlanLinksTable />}
 					{activeTab === 'annual' && <AnnualLinksTable />}
+					{activeTab === 'custom' && <CustomLinksTable />}
 					{activeTab === 'subscribers' && <LinkSubscribersTable />}
 				</div>
 			</main>
 
 			{showCreate && (
 				<CreatePlanLinkModal onClose={() => setShowCreate(false)} />
+			)}
+			{showCreateCustom && (
+				<CreateCustomLinkModal onClose={() => setShowCreateCustom(false)} />
 			)}
 			{showCreateAnnual && (
 				<CreateAnnualLinkModal onClose={() => setShowCreateAnnual(false)} />
