@@ -240,6 +240,10 @@ export const BLOCK_CATALOG: BlockSpec[] = [
 		outputs: [
 			{ name: 'png', type: 'buffer', label: 'PNG' },
 			{ name: 'pngBase64', type: 'string', label: 'PNG inline' },
+			// Array de N variações ({png,pngBase64}[]) quando `variation_count`/Passo 3
+			// > 1 (`ai.ts` no backend). Sem mapear isso em Resultado → "Imagens
+			// (variações)", só a 1ª imagem chega no cliente mesmo gerando N.
+			{ name: 'images', type: 'string', label: 'Imagens (variações)' },
 		],
 	},
 	{
