@@ -497,9 +497,25 @@ export async function publishToolDefinition(
 }
 
 /* ── Run no motor genérico (main API) ── */
+/**
+ * Código de autenticidade da arte licenciada.
+ *
+ * Só vem quando o prompt escolhido carrega uma marca (`feature_key`). O motor
+ * NUNCA entrega arte licenciada sem isto: se a emissão falha, ele estorna e
+ * responde erro, em vez de devolver a imagem sem código.
+ */
+export const artLicenseSchema = z.object({
+	code: z.string(),
+	featureKey: z.string(),
+	licensorName: z.string().nullable(),
+	issuedAt: z.string(),
+});
+export type ArtLicense = z.infer<typeof artLicenseSchema>;
+
 export const toolRunResultSchema = z.object({
 	id: z.string(),
 	output: z.record(z.string(), z.unknown()),
+	license: artLicenseSchema.optional(),
 });
 export type ToolRunResult = z.infer<typeof toolRunResultSchema>;
 

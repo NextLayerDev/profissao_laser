@@ -35,6 +35,11 @@ const PUBLIC_PAGE_PREFIXES = [
 	// derrubar a sessão de quem estiver logado noutra aba — e o mesmo prefixo
 	// tem de estar em `shared/lib/api-courses.ts` e no `AuthGuard`.
 	'/orcamento',
+	// Verificação pública da arte licenciada gerada na ferramenta. Quem escaneia
+	// o QR gravado na peça é o consumidor final: não tem conta e não vai criar
+	// uma para conferir se o escudo é oficial. Um 401 daqui também não pode
+	// derrubar a sessão de quem estiver logado noutra aba.
+	'/a',
 ];
 
 api.interceptors.response.use(

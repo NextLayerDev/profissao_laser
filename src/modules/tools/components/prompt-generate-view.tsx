@@ -42,6 +42,7 @@ import type {
 	RunToolEngineImageSize,
 	ToolRunResult,
 } from '../services/tool-definitions.service';
+import { ArtLicensePanel } from './art-license-panel';
 
 /**
  * Tela de detalhe + geração de um "Prompt Mágico" (registro do Banco do Admin
@@ -284,6 +285,7 @@ function BankResultImage({
 
 	return (
 		<div className="space-y-4">
+			{result.license ? <ArtLicensePanel license={result.license} /> : null}
 			{shown ? (
 				<div className="flex max-h-[70vh] w-full items-center justify-center overflow-hidden rounded-lg bg-slate-100 dark:bg-[#111]">
 					{/* <img> intencional: preview de data URL / CDN dinâmico */}
@@ -350,6 +352,9 @@ function BankResultGallery({
 	}
 	return (
 		<div className="space-y-4">
+			{/* Um código por RODADA, não por variação: as N imagens saíram do mesmo
+			    pedido e compartilham a licença. */}
+			{result.license ? <ArtLicensePanel license={result.license} /> : null}
 			<div
 				className={
 					images.length > 1 ? 'grid gap-3 sm:grid-cols-2' : 'space-y-3'
