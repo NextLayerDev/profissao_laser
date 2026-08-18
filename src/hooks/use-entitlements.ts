@@ -35,6 +35,8 @@ export function useEntitlements(
 		...query,
 		entitlements: ent,
 		isTestUnlimited: ent?.is_test_unlimited ?? false,
+		/** Visão Aluno da staff (null = aluno de verdade). */
+		studentPreview: ent?.student_preview ?? null,
 		hasActiveSubscription:
 			!!ent?.subscription && (status === 'active' || status === 'trialing'),
 		voxBalance: ent?.vox_balance ?? 0,

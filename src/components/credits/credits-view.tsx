@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/skeletons/voxes-skeleton';
 import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 import { useIsTestUnlimited } from '@/hooks/use-is-test-unlimited';
+import { useStudentPreview } from '@/hooks/use-student-preview';
 import {
 	useMyVoxes,
 	useVoxPackages,
@@ -33,6 +34,9 @@ export function CreditsView() {
 	const { data: voxes, isLoading: voxesLoading, refetch } = useMyVoxes();
 	const { data: packages, isLoading: pkgLoading } = useVoxPackages();
 	const unlimited = useIsTestUnlimited();
+	// Em Visão Aluno o `unlimited` é da STAFF, não de uma conta teste — o
+	// rótulo tem de dizer a verdade.
+	const { active: previewActive } = useStudentPreview();
 	const [buyingPkg, setBuyingPkg] = useState<VoxPackage | null>(null);
 
 	const balance = voxes?.balance ?? null;
@@ -99,7 +103,7 @@ export function CreditsView() {
 								<>
 									Ilimitado{' '}
 									<span className="text-base font-medium text-slate-500">
-										(conta teste)
+										{previewActive ? '(visão aluno)' : '(conta teste)'}
 									</span>
 								</>
 							) : (

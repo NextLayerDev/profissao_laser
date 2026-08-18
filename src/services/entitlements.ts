@@ -37,6 +37,17 @@ export const entitlementsSchema = z.object({
 		z.object({ id: z.string(), slug: z.string(), title: z.string() }),
 	),
 	tools: z.array(entitlementToolSchema),
+	/**
+	 * Visão Aluno da staff: `null` quando é um aluno de verdade.
+	 *
+	 * Em prévia, `is_test_unlimited` e `subscription` vêm SINTÉTICOS — este
+	 * campo é o único jeito de distinguir "plano real" de "staff olhando".
+	 * `.nullish()` p/ não quebrar contra um backend ainda sem o campo.
+	 */
+	student_preview: z
+		.object({ active: z.boolean(), until: z.string().nullable() })
+		.nullish()
+		.transform((v) => v ?? null),
 });
 export type Entitlements = z.infer<typeof entitlementsSchema>;
 
