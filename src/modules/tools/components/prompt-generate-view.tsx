@@ -24,12 +24,14 @@ import { useImageSizePresets } from '../hooks/use-image-size-presets';
 import {
 	coverOf,
 	downloadUrl,
+	hasTextInput,
 	maxImagesOf,
 	modeLabel,
 	modeOf,
 	modeUsesImage,
 	modeUsesText,
 	type PromptStep,
+	type SpecDef,
 	stepsForMode,
 } from '../lib/prompt-bank';
 import { screenAccentBg } from '../lib/screen-ui';
@@ -713,6 +715,10 @@ export interface PromptGenerateViewProps {
 	/** Valor do tema (controlado pelo DynamicToolView). */
 	tema: string;
 	onTemaChange: (v: string) => void;
+	/** Especificações do registro (nome aberto, no lugar do tema genérico) — vazio = comportamento legado. */
+	specs: SpecDef[];
+	specValues: Record<string, string>;
+	onSpecValueChange: (name: string, v: string) => void;
 	/** Slots de referência (até 3) — controlados pelo DynamicToolView. */
 	referencias: (File | null)[];
 	onReferenciaChange: (index: number, file: File | null) => void;
@@ -755,6 +761,9 @@ export function PromptGenerateView({
 	entry,
 	tema,
 	onTemaChange,
+	specs,
+	specValues,
+	onSpecValueChange,
 	referencias,
 	onReferenciaChange,
 	result,
@@ -799,7 +808,7 @@ export function PromptGenerateView({
 		const hasImage = referencias
 			.slice(0, maxImages)
 			.some((f) => f instanceof File);
-		if (needsTema && tema.trim()) done.add('tema');
+		if (needsTema && hasTextInput(specs, specValues, tema)) done.add('tema');
 		if (needsImage && hasImage) done.add('referencias');
 		if (hasVariations && variationCount) done.add('variacoes');
 		if (result) done.add('gerar');
@@ -812,6 +821,8 @@ export function PromptGenerateView({
 		creationId,
 		needsTema,
 		needsImage,
+		specs,
+		specValues,
 		tema,
 		referencias,
 		maxImages,
@@ -947,7 +958,29 @@ export function PromptGenerateView({
 					title="Detalhes"
 					hint="Quanto mais específico, melhor"
 				/>
-				{needsTema && (
+				{needsTema && specs.length > 0 && (
+					<div className="space-y-3">
+						{specs.map((s) => (
+							<div key={s.name} className="space-y-1.5">
+								<label
+									htmlFor={`bank-spec-${s.name}`}
+									className="block text-xs font-medium text-slate-500 dark:text-slate-400"
+								>
+									{s.label}
+									{s.required && <span className="text-rose-400"> *</span>}
+								</label>
+								<input
+									id={`bank-spec-${s.name}`}
+									value={specValues[s.name] ?? ''}
+									onChange={(e) => onSpecValueChange(s.name, e.target.value)}
+									placeholder={s.placeholder}
+									className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-[color-mix(in_srgb,var(--screen-accent)_50%,transparent)] focus:outline-none focus:ring-2 focus:ring-[color-mix(in_srgb,var(--screen-accent)_30%,transparent)] dark:border-white/10 dark:bg-[#111] dark:text-slate-200"
+								/>
+							</div>
+						))}
+					</div>
+				)}
+				{needsTema && specs.length === 0 && (
 					<div className="space-y-1.5">
 						<label
 							htmlFor="bank-tema"
@@ -1044,7 +1077,8 @@ export function PromptGenerateView({
 							O resultado da IA aparece aqui
 						</p>
 						<p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-							Preencha {needsTema ? 'o tema' : ''}
+							Preencha{' '}
+							{needsTema ? (specs.length > 0 ? 'os campos' : 'o tema') : ''}
 							{needsTema && needsImage ? ' e ' : ''}
 							{needsImage ? 'as referências' : ''} e gere.
 						</p>
