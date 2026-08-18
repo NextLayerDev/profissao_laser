@@ -231,7 +231,17 @@ export interface BuilderState {
 	/** nós personalizados criados nesta tool (preset sobre um bloco base). */
 	customNodes: CustomNodeSpec[];
 	/** fontes (ex.: 'store.url', 'prep.pngBase64', ['prep.width_mm', …]). */
-	output: { primary: string; preview: string; meta: string[] };
+	output: {
+		primary: string;
+		preview: string;
+		meta: string[];
+		/**
+		 * Fonte do array de variações (ex.: 'gen.images'), pra `BankResultGallery`
+		 * mostrar TODAS as imagens do Passo 3 (1×/2×/4×) — sem isso só a 1ª
+		 * imagem aparece mesmo gerando N. Ver `ai.generate_image` no backend.
+		 */
+		images: string;
+	};
 	voxCost: number;
 	freeQuota: Record<string, number | null>;
 	/** Presente só quando toolType='room'. */
@@ -515,6 +525,7 @@ export function buildDoc(state: BuilderState): ToolDefinitionDoc {
 	const output: Record<string, unknown> = {};
 	if (state.output.primary) output.primary = state.output.primary;
 	if (state.output.preview) output.preview = state.output.preview;
+	if (state.output.images) output.images = state.output.images;
 	if (state.output.meta.length) output.meta = state.output.meta;
 	output.savable = true;
 
@@ -689,6 +700,7 @@ export function docToState(def: {
 		primary?: string;
 		preview?: string;
 		meta?: string[];
+		images?: string;
 	};
 	const billing = doc.billing ?? {};
 	const freeQuota: Record<string, number | null> = {};
@@ -738,6 +750,7 @@ export function docToState(def: {
 			primary: out.primary ?? '',
 			preview: out.preview ?? '',
 			meta: Array.isArray(out.meta) ? out.meta : [],
+			images: out.images ?? '',
 		},
 		voxCost: typeof billing.vox_cost === 'number' ? billing.vox_cost : 0,
 		freeQuota,
@@ -801,7 +814,7 @@ function roomDocToState(
 		fields: [],
 		nodes: [],
 		customNodes: [],
-		output: { primary: '', preview: '', meta: [] },
+		output: { primary: '', preview: '', meta: [], images: '' },
 		voxCost: room.voxCost,
 		freeQuota: {},
 		room,
@@ -841,7 +854,7 @@ function nativeDocToState(
 		fields: [],
 		nodes: [],
 		customNodes: [],
-		output: { primary: '', preview: '', meta: [] },
+		output: { primary: '', preview: '', meta: [], images: '' },
 		voxCost: 0,
 		freeQuota: {},
 	};
@@ -1049,7 +1062,7 @@ const blank: Template = {
 		fields: [imageField()],
 		nodes: [mkNode('src', 'image.input', { from: ref('input.image') })],
 		customNodes: [],
-		output: { primary: '', preview: '', meta: [] },
+		output: { primary: '', preview: '', meta: [], images: '' },
 		voxCost: 0,
 		freeQuota: { basic: 0, avan: 0, pro: 0, max: 0 },
 	}),
@@ -1149,6 +1162,7 @@ const laser: Template = {
 		output: {
 			primary: 'store.url',
 			preview: 'prep.pngBase64',
+			images: '',
 			meta: [
 				'prep.width_mm',
 				'prep.height_mm',
@@ -1202,7 +1216,7 @@ const vectorize: Template = {
 				folder: lit('tool-output'),
 			}),
 		],
-		output: { primary: 'store.url', preview: '', meta: [] },
+		output: { primary: 'store.url', preview: '', meta: [], images: '' },
 	}),
 };
 
@@ -1223,7 +1237,7 @@ const mentoria: Template = {
 		fields: [],
 		nodes: [],
 		customNodes: [],
-		output: { primary: '', preview: '', meta: [] },
+		output: { primary: '', preview: '', meta: [], images: '' },
 		voxCost: 0,
 		freeQuota: {},
 		room: defaultRoom(),

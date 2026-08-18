@@ -2157,6 +2157,29 @@ export function ToolBuilderView() {
 															))}
 														</SelectInput>
 													</Field>
+													<Field
+														label="Imagens (variações)"
+														hint="necessário se o Passo 3 (1×/2×/4×) estiver ativo — sem isso só a 1ª imagem aparece pro aluno"
+														htmlFor="out-images"
+													>
+														<SelectInput
+															id="out-images"
+															value={state.output.images}
+															onChange={(v) =>
+																patch({
+																	output: { ...state.output, images: v },
+																})
+															}
+															muted={!state.output.images}
+														>
+															<option value="">— nenhuma —</option>
+															{outputs.map((o) => (
+																<option key={o.value} value={o.value}>
+																	{o.label}
+																</option>
+															))}
+														</SelectInput>
+													</Field>
 													{numberOutputs.length > 0 && (
 														<Field
 															label="Detalhes"

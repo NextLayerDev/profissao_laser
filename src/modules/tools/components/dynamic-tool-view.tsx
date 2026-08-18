@@ -15,7 +15,13 @@ import { usePermissions } from '@/modules/access';
 import { useToolBank } from '../hooks/use-tool-bank';
 import { useToolBilling } from '../hooks/use-tool-billing';
 import { useToolDefinition } from '../hooks/use-tool-definition';
-import { downloadUrl, maxImagesOf, modeOf } from '../lib/prompt-bank';
+import {
+	downloadUrl,
+	hasTextInput,
+	maxImagesOf,
+	modeOf,
+	specsOf,
+} from '../lib/prompt-bank';
 import { accentForTool, resolveScreenUi } from '../lib/screen-ui';
 import { resolveToolIcon } from '../lib/tool-icons';
 import type { ToolBankEntry } from '../services/tool-bank.service';
@@ -137,6 +143,10 @@ export function DynamicToolView({
 		null,
 	);
 	const [tema, setTema] = useState('');
+	// Valores das "especificações" do registro (campos com nome aberto que o
+	// staff define no lugar da caixa genérica de tema — ver `specsOf`). Chave =
+	// `SpecDef.name`. Vazio quando o registro não tem especificações.
+	const [specValues, setSpecValues] = useState<Record<string, string>>({});
 	// Até 3 slots de imagem de referência; o registro escolhido define quantos
 	// aparecem (`data.max_images`, clamp 1–3).
 	const [referencias, setReferencias] = useState<(File | null)[]>([
@@ -175,6 +185,7 @@ export function DynamicToolView({
 		setResult(null);
 		setSelectedEntry(null);
 		setTema('');
+		setSpecValues({});
 		setReferencias([null, null, null]);
 		setImageSize(null);
 		setCreationId(null);
@@ -241,20 +252,40 @@ export function DynamicToolView({
 	const runBank = useCallback(async () => {
 		if (!selectedEntry) return;
 		const mode = modeOf(selectedEntry);
+		const specs = specsOf(selectedEntry);
 		const max = maxImagesOf(selectedEntry);
 		const chosen = referencias
 			.slice(0, max)
 			.filter((f): f is File => f instanceof File);
-		if (mode.includes('texto') && !tema.trim()) {
-			toast.error('Digite o tema.');
+		const hasText = hasTextInput(specs, specValues, tema);
+		// `texto_imagem`: texto (ou especificações) OU imagem — não exige os dois.
+		// `texto`/`imagem` puros continuam exigindo seu único campo.
+		if (mode === 'texto_imagem') {
+			if (!hasText && chosen.length === 0) {
+				toast.error('Escreva algo ou envie uma imagem.');
+				return;
+			}
+		} else if (mode.includes('texto') && !hasText) {
+			const missing = specs.find(
+				(s) => s.required && !specValues[s.name]?.trim(),
+			);
+			toast.error(missing ? `Preencha "${missing.label}".` : 'Digite o tema.');
 			return;
-		}
-		if (mode === 'imagem' && chosen.length === 0) {
+		} else if (mode === 'imagem' && chosen.length === 0) {
 			toast.error('Envie ao menos 1 imagem de referência.');
 			return;
 		}
 		const bankInputs: Record<string, unknown> = {};
-		if (mode.includes('texto')) bankInputs.tema = tema.trim();
+		if (mode.includes('texto')) {
+			if (specs.length > 0) {
+				for (const s of specs) {
+					const v = specValues[s.name]?.trim();
+					if (v) bankInputs[s.name] = v;
+				}
+			} else {
+				bankInputs.tema = tema.trim();
+			}
+		}
 		if (mode.includes('imagem')) {
 			const fieldNames = ['referencia', 'referencia2', 'referencia3'];
 			chosen.forEach((file, i) => {
@@ -284,6 +315,7 @@ export function DynamicToolView({
 	}, [
 		selectedEntry,
 		tema,
+		specValues,
 		referencias,
 		imageSize,
 		toolKey,
@@ -448,6 +480,7 @@ export function DynamicToolView({
 								setSelectedEntry(entry);
 								setResult(null);
 								setTema('');
+								setSpecValues({});
 								setReferencias([null, null, null]);
 								setImageSize(null);
 							}}
@@ -459,19 +492,27 @@ export function DynamicToolView({
 
 		const mode = modeOf(selectedEntry);
 		const needsTema = mode.includes('texto');
+		const specs = specsOf(selectedEntry);
 		const maxImages = maxImagesOf(selectedEntry);
 		const chosenImages = referencias
 			.slice(0, maxImages)
 			.filter((f): f is File => f instanceof File);
-		// Imagem-só exige ≥1 referência; modos com texto exigem o tema preenchido.
-		// Passo 1 exige creationId (se a tool tem creations); Passo 3 exige
-		// variationCount (se a tool tem return_variations) — validação local espelha
-		// a da API (que rejeita 400 antes de cobrar).
+		const hasText = hasTextInput(specs, specValues, tema);
+		// `texto_imagem`: tema/especificações OU imagem — não exige os dois (o
+		// aluno pode gerar só com uma referência, sem escrever nada, ou só com
+		// texto, sem subir imagem). `texto`/`imagem` puros continuam exigindo seu
+		// único campo. Passo 1 exige creationId (se a tool tem creations); Passo 3
+		// exige variationCount (se a tool tem return_variations) — validação local
+		// espelha a da API (que rejeita 400 antes de cobrar).
 		const hasCreations = !!creations && creations.length > 0;
 		const hasVariations = !!returnVariations && returnVariations.length > 0;
+		const meetsInputRequirement =
+			mode === 'texto_imagem'
+				? hasText || chosenImages.length > 0
+				: (!needsTema || hasText) &&
+					(mode !== 'imagem' || chosenImages.length > 0);
 		const canGenerate =
-			(!needsTema || !!tema.trim()) &&
-			(mode !== 'imagem' || chosenImages.length > 0) &&
+			meetsInputRequirement &&
 			(!hasCreations || !!creationId) &&
 			(!hasVariations || !!variationCount);
 
@@ -484,6 +525,11 @@ export function DynamicToolView({
 						entry={selectedEntry}
 						tema={tema}
 						onTemaChange={setTema}
+						specs={specs}
+						specValues={specValues}
+						onSpecValueChange={(name, v) =>
+							setSpecValues((prev) => ({ ...prev, [name]: v }))
+						}
 						referencias={referencias}
 						onReferenciaChange={(index, file) =>
 							setReferencias((prev) => {
