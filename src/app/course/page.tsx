@@ -15,9 +15,11 @@ import { OnlineMembers } from '@/components/course/home/online-members';
 import { QuickAccessGrid } from '@/components/course/home/quick-access-grid';
 import { WeeklyChallenge } from '@/components/course/home/weekly-challenge';
 import { SavedLessonsModal } from '@/components/course/saved-lessons-modal';
+import { StudentPreviewBanner } from '@/components/course/student-preview-banner';
 import { SubscriptionGate } from '@/components/course/subscription-gate';
 import { DashboardSkeleton } from '@/components/ui/skeletons/dashboard-skeleton';
 import { usePrefetchCommunityTabs } from '@/hooks/use-community';
+import { useStudentPreview } from '@/hooks/use-student-preview';
 import { getCurrentUser, getToken } from '@/lib/auth';
 
 const SIDEBAR_KEY = 'course-sidebar-collapsed';
@@ -29,6 +31,8 @@ export default function CoursePage() {
 	const [savedLessonsModalOpen, setSavedLessonsModalOpen] = useState(false);
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const prefetchCommunityTabs = usePrefetchCommunityTabs();
+	// Visão Aluno: a faixa (h-10) empurra header e conteúdo p/ baixo.
+	const { active: previewActive } = useStudentPreview();
 
 	useEffect(() => {
 		const user = getCurrentUser();
@@ -93,13 +97,19 @@ export default function CoursePage() {
 					sidebarCollapsed ? 'md:ml-16' : 'md:ml-60'
 				}`}
 			>
+				<StudentPreviewBanner />
 				<CourseTopHeader
 					isAdmin={isAdmin}
 					sidebarCollapsed={sidebarCollapsed}
 					userName={displayName}
+					offsetTop={previewActive}
 				/>
 
-				<main className="flex-1 mt-16 p-4 md:p-8 overflow-x-hidden">
+				<main
+					className={`flex-1 p-4 md:p-8 overflow-x-hidden ${
+						previewActive ? 'mt-[6.5rem]' : 'mt-16'
+					}`}
+				>
 					<SubscriptionGate>
 						{/* Greeting enxuto (substitui o banner antigo) */}
 						<HomeGreeting name={name} email={email} isAdmin={isAdmin} />

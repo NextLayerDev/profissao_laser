@@ -5,9 +5,11 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { CourseSidebar } from '@/components/course/home/course-sidebar';
 import { CourseTopHeader } from '@/components/course/home/course-top-header';
+import { StudentPreviewBanner } from '@/components/course/student-preview-banner';
 import { CommandPalette } from '@/components/tools/command-palette';
 import { CommandPaletteProvider } from '@/components/tools/use-command-palette';
 import { usePresenceHeartbeat } from '@/hooks/use-presence';
+import { useStudentPreview } from '@/hooks/use-student-preview';
 import { getToken } from '@/lib/auth';
 
 const STORAGE_KEY = 'course-sidebar-collapsed';
@@ -24,6 +26,8 @@ export default function CourseShellLayout({
 
 	// Presença online: ping a cada 60s enquanto o aluno usa a plataforma.
 	usePresenceHeartbeat();
+	// Visão Aluno: a faixa (h-10) empurra header e conteúdo p/ baixo.
+	const { active: previewActive } = useStudentPreview();
 
 	useEffect(() => {
 		setIsAdmin(!!getToken('user'));
@@ -84,12 +88,18 @@ export default function CourseShellLayout({
 						sidebarCollapsed ? 'md:ml-16' : 'md:ml-60'
 					}`}
 				>
+					<StudentPreviewBanner />
 					<CourseTopHeader
 						isAdmin={isAdmin}
 						sidebarCollapsed={sidebarCollapsed}
 						onMobileMenuToggle={() => setMobileOpen(true)}
+						offsetTop={previewActive}
 					/>
-					<main className="flex-1 mt-16 overflow-x-hidden animate-[fade-in-up_0.4s_ease-out_both]">
+					<main
+						className={`flex-1 overflow-x-hidden animate-[fade-in-up_0.4s_ease-out_both] ${
+							previewActive ? 'mt-[6.5rem]' : 'mt-16'
+						}`}
+					>
 						{children}
 					</main>
 				</div>

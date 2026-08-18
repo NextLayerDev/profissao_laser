@@ -16,6 +16,7 @@ import { useCommandPalette } from '@/components/tools/use-command-palette';
 import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 import { useEntitlements } from '@/hooks/use-entitlements';
 import { useIsTestUnlimited } from '@/hooks/use-is-test-unlimited';
+import { useStudentPreview } from '@/hooks/use-student-preview';
 import { formatVox } from '@/lib/format';
 import { VoxSpendFx } from './vox-spend-fx';
 
@@ -24,6 +25,8 @@ interface CourseTopHeaderProps {
 	sidebarCollapsed: boolean;
 	userName?: string;
 	onMobileMenuToggle?: () => void;
+	/** Desce o header p/ caber a faixa da Visão Aluno (h-10) acima dele. */
+	offsetTop?: boolean;
 }
 
 export function CourseTopHeader({
@@ -31,13 +34,15 @@ export function CourseTopHeader({
 	sidebarCollapsed,
 	userName,
 	onMobileMenuToggle,
+	offsetTop = false,
 }: CourseTopHeaderProps) {
 	const { voxBalance, isLoading: balanceLoading } = useEntitlements();
 	const unlimited = useIsTestUnlimited();
+	const preview = useStudentPreview();
 	const { open: openPalette } = useCommandPalette();
 	return (
 		<header
-			className={`fixed top-0 right-0 h-16 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.03)] z-30 bg-white/80 dark:bg-[#0d0d0f]/90 backdrop-blur-lg flex items-center justify-between px-4 md:px-6 lg:px-8 transition-all duration-300 ${
+			className={`fixed ${offsetTop ? 'top-10' : 'top-0'} right-0 h-16 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.03)] z-30 bg-white/80 dark:bg-[#0d0d0f]/90 backdrop-blur-lg flex items-center justify-between px-4 md:px-6 lg:px-8 transition-all duration-300 ${
 				sidebarCollapsed ? 'left-0 md:left-16' : 'left-0 md:left-60'
 			}`}
 		>
@@ -59,7 +64,7 @@ export function CourseTopHeader({
 						</span>
 					</span>
 				)}
-				{unlimited && (
+				{unlimited && !preview.active && (
 					<span className="hidden md:inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400 whitespace-nowrap">
 						Conta teste — tudo desbloqueado
 					</span>
@@ -130,6 +135,11 @@ export function CourseTopHeader({
 				{isAdmin && (
 					<Link
 						href="/dashboard"
+						title={
+							preview.active
+								? 'Ir para o painel (a Visão Aluno continua ligada)'
+								: 'Painel do admin'
+						}
 						className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
 					>
 						<Settings className="w-[18px] h-[18px]" />
