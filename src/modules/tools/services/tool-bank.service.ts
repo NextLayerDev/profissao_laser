@@ -116,3 +116,31 @@ export async function smartInjectTema(
 	});
 	return smartTemaResultSchema.parse(data);
 }
+
+/**
+ * "Resumir prompt" — a IA (gemini-2.5-flash) encurta o `prompt_script` do admin
+ * quando ele se aproxima do limite de `ai.generate_image` (8.000 caracteres),
+ * preservando todo `{placeholder}` (tema e especificações custom) intacto.
+ * Admin-only; não depende da tool.
+ */
+export const summarizePromptResultSchema = z.object({
+	result: z.string(),
+	unchanged: z.boolean().optional(),
+	shortened: z.boolean().optional(),
+	fallback: z.boolean().optional(),
+	error: z.string().optional(),
+});
+export type SummarizePromptResult = z.infer<typeof summarizePromptResultSchema>;
+
+export async function summarizePrompt(
+	promptScript: string,
+	mode?: string,
+	targetChars?: number,
+): Promise<SummarizePromptResult> {
+	const { data } = await api.post('/api/tools/summarize-prompt', {
+		prompt_script: promptScript,
+		mode,
+		target_chars: targetChars,
+	});
+	return summarizePromptResultSchema.parse(data);
+}
