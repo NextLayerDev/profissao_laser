@@ -4,6 +4,8 @@ import {
 	Archive,
 	ArchiveRestore,
 	Check,
+	ChevronDown,
+	ChevronUp,
 	Copy,
 	CopyPlus,
 	Download,
@@ -63,11 +65,9 @@ const TIRAGENS_EXTRA = [5, 10, 25];
  */
 function AmpliarLote({
 	batchId,
-	total,
 	courseSlug,
 }: {
 	batchId: string;
-	total: number;
 	courseSlug: string | undefined;
 }) {
 	const [aberto, setAberto] = useState(false);
@@ -113,10 +113,68 @@ function AmpliarLote({
 			>
 				Cancelar
 			</button>
-			<span className={`${MONO} text-[var(--al-mute)]`}>
-				{total} peça{total === 1 ? '' : 's'} hoje
-			</span>
 		</div>
+	);
+}
+
+/**
+ * UM LOTE FECHADO. Dez miniaturas iguais empilhadas não informam nada — a arte
+ * é a mesma, o que muda é o código de cada peça. Então o lote se apresenta
+ * como uma coisa só, e abre quando o aluno quer os códigos.
+ *
+ * Lote de uma peça não fecha: não há o que agrupar, e um clique a mais para
+ * ver a única peça seria só atrito.
+ */
+function LoteFechado({
+	lote,
+	onAbrir,
+	courseSlug,
+}: {
+	lote: Lote;
+	onAbrir: () => void;
+	courseSlug: string | undefined;
+}) {
+	const primeira = lote.pecas[0];
+	const ultima = lote.pecas[lote.pecas.length - 1];
+	return (
+		<article className="overflow-hidden rounded-lg border border-[var(--al-rule)] bg-[var(--al-card)]">
+			<div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
+				<button
+					type="button"
+					onClick={onAbrir}
+					aria-label={`Ver os códigos de ${primeira?.promptTitle ?? 'lote'}`}
+					className="h-28 w-full shrink-0 overflow-hidden rounded-md bg-white sm:w-44"
+				>
+					{primeira?.previewUrl ? (
+						/* <img> intencional: a peça vem de CDN dinâmico. */
+						<img
+							src={primeira.previewUrl}
+							alt=""
+							className="h-full w-full object-cover"
+						/>
+					) : null}
+				</button>
+
+				<div className="min-w-0 flex-1">
+					<p className="font-display truncate text-sm font-bold tracking-[-0.01em] text-[var(--al-ink)]">
+						{primeira?.promptTitle ?? 'Lote'}
+					</p>
+					<p className={`${MONO} mt-2 text-[var(--al-mute)]`}>
+						{contarPecas(lote.pecas.length)} · peças {primeira?.pieceIndex}–
+						{ultima?.pieceIndex}
+					</p>
+					<div className="mt-3 flex flex-wrap items-center gap-1.5">
+						<button type="button" onClick={onAbrir} className={BOTAO}>
+							<ChevronDown className="h-3 w-3" />
+							Ver os códigos
+						</button>
+						{lote.canGrow && lote.batchId && (
+							<AmpliarLote batchId={lote.batchId} courseSlug={courseSlug} />
+						)}
+					</div>
+				</div>
+			</div>
+		</article>
 	);
 }
 
@@ -278,6 +336,17 @@ interface Grupo {
 
 export function MyLicensedArtLibrary() {
 	const [verArquivadas, setVerArquivadas] = useState(false);
+	/**
+	 * Lotes abertos. Fechado é o padrão: dez miniaturas iguais empilhadas não
+	 * informam nada — a arte é a mesma, o que muda é o código de cada peça.
+	 */
+	const [abertos, setAbertos] = useState<Set<string>>(new Set());
+	const alternar = (key: string) =>
+		setAbertos((prev) => {
+			const next = new Set(prev);
+			if (!next.delete(key)) next.add(key);
+			return next;
+		});
 	const { data: artes, isLoading, error } = useMyLicensedArt(verArquivadas);
 	const { data: marcas } = useLicensedBrands();
 	// A ampliação cobra, e cobrança é sempre no contexto de um curso.
@@ -427,28 +496,57 @@ export function MyLicensedArtLibrary() {
 						</span>
 					</div>
 
-					{g.lotes.map((l) => (
-						<div key={l.key} className="mt-4">
-							{l.canGrow && l.batchId && (
-								<div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
-									<span className={`${MONO} text-[var(--al-mute)]`}>
-										{l.pecas[0]?.promptTitle ?? 'Lote'} ·{' '}
-										{contarPecas(l.pecas.length)}
-									</span>
-									<AmpliarLote
-										batchId={l.batchId}
-										total={l.pecas.length}
+					{g.lotes.map((l) => {
+						// Lote de uma peça nunca fecha: não há o que agrupar.
+						const emLote = l.pecas.length > 1;
+						const aberto = !emLote || abertos.has(l.key);
+						if (!aberto) {
+							return (
+								<div key={l.key} className="mt-4">
+									<LoteFechado
+										lote={l}
 										courseSlug={courseSlug}
+										onAbrir={() => alternar(l.key)}
 									/>
 								</div>
-							)}
-							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-								{l.pecas.map((a) => (
-									<Peca key={a.id} arte={a} />
-								))}
+							);
+						}
+						return (
+							<div key={l.key} className="mt-4">
+								{(emLote || (l.canGrow && l.batchId)) && (
+									<div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+										<span className={`${MONO} text-[var(--al-mute)]`}>
+											{l.pecas[0]?.promptTitle ?? 'Lote'} ·{' '}
+											{contarPecas(l.pecas.length)}
+										</span>
+										<div className="flex flex-wrap items-center gap-1.5">
+											{emLote && (
+												<button
+													type="button"
+													onClick={() => alternar(l.key)}
+													className={BOTAO}
+												>
+													<ChevronUp className="h-3 w-3" />
+													Fechar o lote
+												</button>
+											)}
+											{l.canGrow && l.batchId && (
+												<AmpliarLote
+													batchId={l.batchId}
+													courseSlug={courseSlug}
+												/>
+											)}
+										</div>
+									</div>
+								)}
+								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+									{l.pecas.map((a) => (
+										<Peca key={a.id} arte={a} />
+									))}
+								</div>
 							</div>
-						</div>
-					))}
+						);
+					})}
 				</section>
 			))}
 		</div>
