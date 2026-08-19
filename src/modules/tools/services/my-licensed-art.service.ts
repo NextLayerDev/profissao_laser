@@ -1,5 +1,10 @@
 import { z } from 'zod';
 import { api } from '@/lib/fetch';
+import {
+	MOCK_LICENCIADA,
+	mockArchiveMyArt,
+	mockListMyArt,
+} from '../mocks/licensed-art.mock';
 
 /**
  * As artes licenciadas que o aluno gerou — a biblioteca dele.
@@ -25,6 +30,7 @@ export type MyLicensedArt = z.infer<typeof myLicensedArtSchema>;
 export async function listMyLicensedArt(
 	opts: { archived?: boolean } = {},
 ): Promise<MyLicensedArt[]> {
+	if (MOCK_LICENCIADA) return mockListMyArt(opts.archived ?? false);
 	const { data } = await api.get('/api/me/licensed-art', {
 		params: opts.archived ? { archived: 'true' } : undefined,
 	});
@@ -40,6 +46,7 @@ export async function archiveMyLicensedArt(
 	id: string,
 	archived: boolean,
 ): Promise<MyLicensedArt> {
+	if (MOCK_LICENCIADA) return mockArchiveMyArt(id, archived);
 	const url = `/api/me/licensed-art/${id}/archive`;
 	const { data } = archived ? await api.post(url) : await api.delete(url);
 	return myLicensedArtSchema.parse(data);

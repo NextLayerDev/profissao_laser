@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { api } from '@/lib/fetch';
 import { apiCourses } from '@/shared/lib/api-courses';
+import {
+	isMockTool,
+	mockRun,
+	mockToolDefinition,
+} from '../mocks/licensed-art.mock';
 
 /**
  * Fábrica de Tools (front) — uma tool é DADO: o upvox guarda/serve a
@@ -257,6 +262,7 @@ export type AiToolDefinition = z.infer<typeof aiToolDefinitionSchema>;
 export async function getToolDefinition(
 	key: string,
 ): Promise<AiToolDefinition> {
+	if (isMockTool(key)) return mockToolDefinition();
 	const { data } = await apiCourses.get(`/v1/tool-definition/${key}`);
 	return aiToolDefinitionSchema.parse(data);
 }
@@ -557,6 +563,7 @@ export async function runToolEngine(
 	key: string,
 	opts: RunToolEngineOpts,
 ): Promise<ToolRunResult> {
+	if (isMockTool(key)) return mockRun(opts.bankEntryId);
 	const fd = new FormData();
 	for (const [name, spec] of Object.entries(opts.inputSpec)) {
 		const v = opts.values[name];

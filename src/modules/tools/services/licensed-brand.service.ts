@@ -1,5 +1,12 @@
 import { z } from 'zod';
 import { api } from '@/lib/fetch';
+import {
+	MOCK_LICENCIADA,
+	mockCreateBrand,
+	mockDeleteBrand,
+	mockListBrands,
+	mockUpdateBrand,
+} from '../mocks/licensed-art.mock';
 
 /**
  * Marcas licenciadas — o cadastro do escudo, do mascote e do nome público de
@@ -37,6 +44,7 @@ export type LicensedBrand = z.infer<typeof licensedBrandSchema>;
 export const FEATURE_KEY_RE = /^[a-z0-9]+:[a-z0-9-]+$/;
 
 export async function listLicensedBrands(): Promise<LicensedBrand[]> {
+	if (MOCK_LICENCIADA) return mockListBrands();
 	const { data } = await api.get('/api/licensed-brands');
 	return z.array(licensedBrandSchema).parse(data);
 }
@@ -73,6 +81,7 @@ function toFormData(input: SalvarMarcaInput): FormData {
 export async function createLicensedBrand(
 	input: SalvarMarcaInput,
 ): Promise<LicensedBrand> {
+	if (MOCK_LICENCIADA) return mockCreateBrand(input);
 	const { data } = await api.post('/api/licensed-brands', toFormData(input));
 	return licensedBrandSchema.parse(data);
 }
@@ -81,6 +90,7 @@ export async function updateLicensedBrand(
 	id: string,
 	input: SalvarMarcaInput,
 ): Promise<LicensedBrand> {
+	if (MOCK_LICENCIADA) return mockUpdateBrand(id, input);
 	const { data } = await api.patch(
 		`/api/licensed-brands/${id}`,
 		toFormData(input),
@@ -89,5 +99,6 @@ export async function updateLicensedBrand(
 }
 
 export async function deleteLicensedBrand(id: string): Promise<void> {
+	if (MOCK_LICENCIADA) return mockDeleteBrand(id);
 	await api.delete(`/api/licensed-brands/${id}`);
 }
