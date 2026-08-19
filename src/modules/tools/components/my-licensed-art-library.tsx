@@ -1,6 +1,8 @@
 'use client';
 
 import {
+	Archive,
+	ArchiveRestore,
 	Check,
 	Copy,
 	Download,
@@ -9,9 +11,12 @@ import {
 	Loader2,
 	ShieldX,
 } from 'lucide-react';
-import { type CSSProperties, useMemo } from 'react';
+import { type CSSProperties, useMemo, useState } from 'react';
 import { useLicensedBrands } from '../hooks/use-licensed-brands';
-import { useMyLicensedArt } from '../hooks/use-my-licensed-art';
+import {
+	useArchiveMyLicensedArt,
+	useMyLicensedArt,
+} from '../hooks/use-my-licensed-art';
 import type { LicensedBrand } from '../services/licensed-brand.service';
 import type { MyLicensedArt } from '../services/my-licensed-art.service';
 import { artLicenseUrl, useArtQrCode } from './art-license-panel';
@@ -52,10 +57,17 @@ function contarPecas(n: number): string {
 
 function Peca({ arte }: { arte: MyLicensedArt }) {
 	const { dataUrl, copiado, copiar, baixarQr } = useArtQrCode(arte.code);
+	const arquivar = useArchiveMyLicensedArt();
 	const emitida = new Date(arte.issuedAt).toLocaleDateString('pt-BR');
+	const mover = () =>
+		arquivar.mutate({ id: arte.id, archived: !arte.archived });
 
 	return (
-		<article className="overflow-hidden rounded-lg border border-[var(--al-rule)] bg-[var(--al-card)]">
+		<article
+			className={`overflow-hidden rounded-lg border border-[var(--al-rule)] bg-[var(--al-card)] ${
+				arte.archived ? 'opacity-70' : ''
+			}`}
+		>
 			<div className="aspect-[4/3] overflow-hidden bg-[#101216]">
 				{arte.previewUrl ? (
 					/* <img> intencional: a arte vem de CDN dinâmico. */
@@ -141,7 +153,7 @@ function Peca({ arte }: { arte: MyLicensedArt }) {
 					</div>
 				)}
 
-				<div className="flex flex-wrap gap-1.5">
+				<div className="flex flex-wrap items-center gap-1.5">
 					{arte.previewUrl && (
 						<a href={arte.previewUrl} download className={BOTAO}>
 							<Download className="h-3 w-3" />
@@ -157,6 +169,27 @@ function Peca({ arte }: { arte: MyLicensedArt }) {
 						<ExternalLink className="h-3 w-3" />
 						Página do QR
 					</a>
+					{/* Arquivar não pede confirmação porque não destrói nada: a peça
+					    vai para "Arquivadas" e volta de lá com um clique. Um diálogo
+					    aqui só ensinaria que a ação é perigosa quando ela não é. */}
+					<button
+						type="button"
+						onClick={mover}
+						disabled={arquivar.isPending}
+						className={`${BOTAO} ml-auto`}
+					>
+						{arte.archived ? (
+							<>
+								<ArchiveRestore className="h-3 w-3" />
+								Trazer de volta
+							</>
+						) : (
+							<>
+								<Archive className="h-3 w-3" />
+								Arquivar
+							</>
+						)}
+					</button>
 				</div>
 			</div>
 		</article>
@@ -174,8 +207,39 @@ interface Grupo {
 }
 
 export function MyLicensedArtLibrary() {
-	const { data: artes, isLoading, error } = useMyLicensedArt();
+	const [verArquivadas, setVerArquivadas] = useState(false);
+	const { data: artes, isLoading, error } = useMyLicensedArt(verArquivadas);
 	const { data: marcas } = useLicensedBrands();
+
+	/**
+	 * O filtro fica FORA dos estados de vazio e de carregando: sem ele, quem
+	 * abriu "Arquivadas" e não tem nenhuma peça lá ficaria preso — a única
+	 * saída visível some justo quando a lista está vazia.
+	 */
+	const filtro = (
+		<div className="flex gap-1.5">
+			{(
+				[
+					[false, 'Na biblioteca'],
+					[true, 'Arquivadas'],
+				] as const
+			).map(([valor, rotulo]) => (
+				<button
+					key={rotulo}
+					type="button"
+					onClick={() => setVerArquivadas(valor)}
+					aria-pressed={verArquivadas === valor}
+					className={`${MONO} rounded-md border px-2.5 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--al-ink)] ${
+						verArquivadas === valor
+							? 'border-[var(--al-mute)] text-[var(--al-ink)]'
+							: 'border-[var(--al-rule)] text-[var(--al-mute)] hover:text-[var(--al-ink)]'
+					}`}
+				>
+					{rotulo}
+				</button>
+			))}
+		</div>
+	);
 
 	const grupos = useMemo<Grupo[]>(() => {
 		const porChave = new Map<string, LicensedBrand>();
@@ -205,43 +269,51 @@ export function MyLicensedArtLibrary() {
 
 	if (isLoading) {
 		return (
-			<div style={PALETA} className="flex justify-center py-24">
-				<Loader2 className="h-5 w-5 animate-spin text-[var(--al-mute)]" />
+			<div style={PALETA} className="text-[var(--al-ink)]">
+				{filtro}
+				<div className="flex justify-center py-24">
+					<Loader2 className="h-5 w-5 animate-spin text-[var(--al-mute)]" />
+				</div>
 			</div>
 		);
 	}
 
 	if (error) {
 		return (
-			<p
-				style={PALETA}
-				className="rounded-lg border border-red-500/30 bg-red-500/5 p-4 text-sm text-red-400"
-			>
-				Não foi possível carregar suas peças. Tente de novo em instantes.
-			</p>
-		);
-	}
-
-	if (grupos.length === 0) {
-		return (
-			<div
-				style={PALETA}
-				className="rounded-lg border border-dashed border-[var(--al-rule)] px-6 py-20 text-center text-[var(--al-ink)]"
-			>
-				<p className="font-display text-lg font-bold">
-					Você ainda não gerou nenhuma peça.
-				</p>
-				<p className="mt-1 text-sm text-[var(--al-mute)]">
-					Cada peça que você gerar fica aqui, com o código para gravar.
+			<div style={PALETA} className="space-y-4 text-[var(--al-ink)]">
+				{filtro}
+				<p className="rounded-lg border border-red-500/30 bg-red-500/5 p-4 text-sm text-red-400">
+					Não foi possível carregar suas peças. Tente de novo em instantes.
 				</p>
 			</div>
 		);
 	}
 
+	if (grupos.length === 0) {
+		return (
+			<div style={PALETA} className="space-y-4 text-[var(--al-ink)]">
+				{filtro}
+				<div className="rounded-lg border border-dashed border-[var(--al-rule)] px-6 py-20 text-center">
+					<p className="font-display text-lg font-bold">
+						{verArquivadas
+							? 'Nenhuma peça arquivada.'
+							: 'Você ainda não gerou nenhuma peça.'}
+					</p>
+					<p className="mt-1 text-sm text-[var(--al-mute)]">
+						{verArquivadas
+							? 'O que você arquivar fica guardado aqui, e volta quando quiser.'
+							: 'Cada peça que você gerar fica aqui, com o código para gravar.'}
+					</p>
+				</div>
+			</div>
+		);
+	}
+
 	return (
-		<div style={PALETA} className="space-y-10 text-[var(--al-ink)]">
+		<div style={PALETA} className="space-y-6 text-[var(--al-ink)]">
+			{filtro}
 			{grupos.map((g) => (
-				<section key={g.key}>
+				<section key={g.key} className="pt-4">
 					<div className="flex items-center gap-3 border-b border-[var(--al-rule)] pb-3">
 						<div
 							className="flex h-9 w-9 shrink-0 items-center justify-center rounded p-1.5"

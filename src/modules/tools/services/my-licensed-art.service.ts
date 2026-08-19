@@ -17,11 +17,30 @@ export const myLicensedArtSchema = z.object({
 	previewUrl: z.string().nullable(),
 	promptTitle: z.string().nullable(),
 	revoked: z.boolean(),
+	archived: z.boolean(),
 	issuedAt: z.string(),
 });
 export type MyLicensedArt = z.infer<typeof myLicensedArtSchema>;
 
-export async function listMyLicensedArt(): Promise<MyLicensedArt[]> {
-	const { data } = await api.get('/api/me/licensed-art');
+export async function listMyLicensedArt(
+	opts: { archived?: boolean } = {},
+): Promise<MyLicensedArt[]> {
+	const { data } = await api.get('/api/me/licensed-art', {
+		params: opts.archived ? { archived: 'true' } : undefined,
+	});
 	return z.array(myLicensedArtSchema).parse(data);
+}
+
+/**
+ * Arquivar guarda a peça; desarquivar traz de volta. Nenhum dos dois apaga
+ * nada: o QR pode já estar gravado numa peça física, e um código que deixa de
+ * responder é lido como falsificação por quem escaneia.
+ */
+export async function archiveMyLicensedArt(
+	id: string,
+	archived: boolean,
+): Promise<MyLicensedArt> {
+	const url = `/api/me/licensed-art/${id}/archive`;
+	const { data } = archived ? await api.post(url) : await api.delete(url);
+	return myLicensedArtSchema.parse(data);
 }
