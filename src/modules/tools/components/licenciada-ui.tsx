@@ -14,7 +14,7 @@ import type { ReactNode } from 'react';
  *
  * O que NÃO entra aqui: a página pública `/a/[code]`. Ela é outro sistema de
  * propósito — documento transacional da UpVox (violeta sobre lavanda) para um
- * estranho que escaneou um chaveiro, não a bancada escura do aluno. Ela repete
+ * estranho que escaneou um chaveiro, não a bancada do aluno. Ela repete
  * a mesma string de versalete, e é para continuar repetindo: acoplar uma rota
  * pública ao módulo de ferramentas para poupar uma linha seria a dependência
  * errada.
@@ -116,8 +116,8 @@ export function entrada(animar: boolean, y = 8) {
 /**
  * `RÓTULO ····· VALOR` — o bloco de dados de um certificado.
  *
- * Lê as cores de `PALETA_LICENCIADA`, então só funciona dentro de uma árvore
- * que a aplique. É o caso das duas telas que a usam.
+ * Lê as cores de `TEMA_LICENCIADA`, então só funciona dentro de uma árvore que
+ * a aplique.
  */
 export function LinhaDeRegistro({
 	rotulo,
@@ -158,9 +158,10 @@ export function SeloAtivo() {
 /**
  * Bloco de espera na paleta da ferramenta.
  *
- * Não reaproveita o `Skeleton` de `components/ui`: aquele é `bg-slate-200` e
- * pressupõe o tema do app, enquanto estas telas são escuras SEMPRE, com paleta
- * própria. Um bloco claro aqui piscaria branco sobre a bancada.
+ * Não reaproveita o `Skeleton` de `components/ui`: aquele traz o cinza do app
+ * cravado no componente, e aqui o bloco tem de sair de `--al-rule` para
+ * acompanhar a superfície em que caiu — que muda com o tema e com a moldura de
+ * quem hospeda a biblioteca.
  */
 export function Esqueleto({ className = '' }: { className?: string }) {
 	return (
