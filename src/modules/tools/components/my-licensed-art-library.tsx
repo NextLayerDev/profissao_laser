@@ -5,6 +5,7 @@ import {
 	ArchiveRestore,
 	Check,
 	Copy,
+	CopyPlus,
 	Download,
 	ExternalLink,
 	ImageOff,
@@ -12,8 +13,10 @@ import {
 	ShieldX,
 } from 'lucide-react';
 import { type CSSProperties, useMemo, useState } from 'react';
+import { useEntitlements } from '@/hooks/use-entitlements';
 import { useLicensedBrands } from '../hooks/use-licensed-brands';
 import {
+	useAmpliarTiragem,
 	useArchiveMyLicensedArt,
 	useMyLicensedArt,
 } from '../hooks/use-my-licensed-art';
@@ -53,6 +56,76 @@ function contarPecas(n: number): string {
 	return n === 1 ? '1 peça' : `${n} peças`;
 }
 
+/* ─────────────────────────── Ampliar a tiragem ─────────────────────────── */
+
+const TIRAGENS_EXTRA = [5, 10, 25];
+
+/**
+ * "Gerei 10, vendi bem, quero mais 40."
+ *
+ * A tiragem é escolhida ANTES de a arte existir, então ninguém encomenda 50
+ * peças no escuro. Aqui o aluno já viu o resultado — e as peças novas saem da
+ * MESMA arte, sem rodar o modelo de novo. Custa só a licença.
+ */
+function AmpliarLote({
+	batchId,
+	total,
+	courseSlug,
+}: {
+	batchId: string;
+	total: number;
+	courseSlug: string | undefined;
+}) {
+	const [aberto, setAberto] = useState(false);
+	const ampliar = useAmpliarTiragem(courseSlug);
+
+	if (!aberto) {
+		return (
+			<button
+				type="button"
+				onClick={() => setAberto(true)}
+				className={BOTAO}
+				disabled={ampliar.isPending}
+			>
+				<CopyPlus className="h-3 w-3" />
+				Ampliar tiragem
+			</button>
+		);
+	}
+
+	return (
+		<div className="flex flex-wrap items-center gap-1.5">
+			<span className={`${MONO} text-[var(--al-mute)]`}>Mais</span>
+			{TIRAGENS_EXTRA.map((n) => (
+				<button
+					key={n}
+					type="button"
+					disabled={ampliar.isPending}
+					onClick={() =>
+						ampliar.mutate(
+							{ batchId, pecas: n },
+							{ onSuccess: () => setAberto(false) },
+						)
+					}
+					className={BOTAO}
+				>
+					{n}
+				</button>
+			))}
+			<button
+				type="button"
+				onClick={() => setAberto(false)}
+				className={`${MONO} px-1.5 text-[var(--al-mute)] hover:text-[var(--al-ink)]`}
+			>
+				Cancelar
+			</button>
+			<span className={`${MONO} text-[var(--al-mute)]`}>
+				{total} peça{total === 1 ? '' : 's'} hoje
+			</span>
+		</div>
+	);
+}
+
 /* ────────────────────────────── Uma peça ────────────────────────────── */
 
 function Peca({ arte }: { arte: MyLicensedArt }) {
@@ -87,6 +160,11 @@ function Peca({ arte }: { arte: MyLicensedArt }) {
 				<p className="font-display truncate text-sm font-bold tracking-[-0.01em] text-[var(--al-ink)]">
 					{arte.promptTitle ?? arte.licensorName ?? arte.featureKey}
 				</p>
+				{arte.batchSize > 1 && (
+					<p className={`${MONO} text-[var(--al-mute)]`}>
+						Peça {arte.pieceIndex} de {arte.batchSize}
+					</p>
+				)}
 
 				<div className="flex items-baseline gap-2">
 					<span className={`${MONO} shrink-0 text-[var(--al-mute)]`}>
@@ -198,18 +276,30 @@ function Peca({ arte }: { arte: MyLicensedArt }) {
 
 /* ──────────────────────────── A biblioteca ──────────────────────────── */
 
+/** Um lote dentro da marca: as peças que saíram da mesma arte. */
+interface Lote {
+	key: string;
+	batchId: string | null;
+	canGrow: boolean;
+	pecas: MyLicensedArt[];
+}
+
 interface Grupo {
 	key: string;
 	nome: string;
 	crest: string | null;
 	cor: string | null;
-	pecas: MyLicensedArt[];
+	total: number;
+	lotes: Lote[];
 }
 
 export function MyLicensedArtLibrary() {
 	const [verArquivadas, setVerArquivadas] = useState(false);
 	const { data: artes, isLoading, error } = useMyLicensedArt(verArquivadas);
 	const { data: marcas } = useLicensedBrands();
+	// A ampliação cobra, e cobrança é sempre no contexto de um curso.
+	const { courses } = useEntitlements();
+	const courseSlug = courses[0]?.slug;
 
 	/**
 	 * O filtro fica FORA dos estados de vazio e de carregando: sem ele, quem
@@ -258,11 +348,30 @@ export function MyLicensedArtLibrary() {
 					nome: marca?.display_name ?? a.licensorName ?? a.featureKey,
 					crest: marca?.crest_url ?? null,
 					cor: marca?.accent_color ?? null,
-					pecas: [],
+					total: 0,
+					lotes: [],
 				};
 				mapa.set(a.featureKey, g);
 			}
-			g.pecas.push(a);
+			// Dentro da marca, as peças se agrupam pelo LOTE: elas saíram da mesma
+			// arte, e é o lote — não a peça — que pode crescer.
+			const chaveLote = a.batchId ?? `avulsa:${a.id}`;
+			let l = g.lotes.find((x) => x.key === chaveLote);
+			if (!l) {
+				l = {
+					key: chaveLote,
+					batchId: a.batchId,
+					canGrow: a.canGrow,
+					pecas: [],
+				};
+				g.lotes.push(l);
+			}
+			l.pecas.push(a);
+			g.total += 1;
+		}
+		for (const g of mapa.values()) {
+			for (const l of g.lotes)
+				l.pecas.sort((x, y) => x.pieceIndex - y.pieceIndex);
 		}
 		return [...mapa.values()].sort((a, b) => a.nome.localeCompare(b.nome));
 	}, [artes, marcas]);
@@ -332,15 +441,32 @@ export function MyLicensedArtLibrary() {
 							{g.nome}
 						</h3>
 						<span className={`${MONO} shrink-0 text-[var(--al-mute)]`}>
-							{contarPecas(g.pecas.length)}
+							{contarPecas(g.total)}
 						</span>
 					</div>
 
-					<div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-						{g.pecas.map((a) => (
-							<Peca key={a.id} arte={a} />
-						))}
-					</div>
+					{g.lotes.map((l) => (
+						<div key={l.key} className="mt-4">
+							{l.canGrow && l.batchId && (
+								<div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+									<span className={`${MONO} text-[var(--al-mute)]`}>
+										{l.pecas[0]?.promptTitle ?? 'Lote'} ·{' '}
+										{contarPecas(l.pecas.length)}
+									</span>
+									<AmpliarLote
+										batchId={l.batchId}
+										total={l.pecas.length}
+										courseSlug={courseSlug}
+									/>
+								</div>
+							)}
+							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+								{l.pecas.map((a) => (
+									<Peca key={a.id} arte={a} />
+								))}
+							</div>
+						</div>
+					))}
 				</section>
 			))}
 		</div>
