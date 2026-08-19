@@ -17,6 +17,7 @@ interface Form {
 	feature_key: string;
 	display_name: string;
 	active: boolean;
+	accent_color: string;
 	notes: string;
 	crest: File | null;
 	mascot: File | null;
@@ -26,6 +27,7 @@ const VAZIO: Form = {
 	feature_key: '',
 	display_name: '',
 	active: true,
+	accent_color: '',
 	notes: '',
 	crest: null,
 	mascot: null,
@@ -51,6 +53,7 @@ export function LicensedBrandsView() {
 			feature_key: m.feature_key,
 			display_name: m.display_name,
 			active: m.active,
+			accent_color: m.accent_color ?? '',
 			notes: m.notes ?? '',
 			crest: null,
 			mascot: null,
@@ -75,6 +78,7 @@ export function LicensedBrandsView() {
 			feature_key: form.feature_key,
 			display_name: form.display_name,
 			active: form.active,
+			accent_color: form.accent_color,
 			notes: form.notes,
 			crest: form.crest,
 			mascot: form.mascot,
@@ -264,6 +268,40 @@ export function LicensedBrandsView() {
 									onPick={(f) => setForm({ ...form, mascot: f })}
 								/>
 							</div>
+
+							<Campo
+								label="Cor oficial"
+								hint="Fica atrás do escudo na tela de quem gera. Vazio usa o cinza neutro."
+							>
+								<div className="flex items-center gap-3">
+									<input
+										type="color"
+										value={form.accent_color || '#1b1e24'}
+										onChange={(e) =>
+											setForm({ ...form, accent_color: e.target.value })
+										}
+										aria-label="Cor oficial da marca"
+										className="h-9 w-12 shrink-0 cursor-pointer rounded-lg border border-slate-200 bg-transparent dark:border-white/10"
+									/>
+									<input
+										value={form.accent_color}
+										onChange={(e) =>
+											setForm({ ...form, accent_color: e.target.value })
+										}
+										placeholder="#000000"
+										className="font-mono w-32 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-[#111114] dark:text-white"
+									/>
+									{form.accent_color && (
+										<button
+											type="button"
+											onClick={() => setForm({ ...form, accent_color: '' })}
+											className="text-xs text-slate-500 underline underline-offset-2 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white"
+										>
+											Limpar
+										</button>
+									)}
+								</div>
+							</Campo>
 
 							<Campo label="Observações">
 								<textarea

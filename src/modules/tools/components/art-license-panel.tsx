@@ -18,11 +18,19 @@ export function artLicenseUrl(code: string): string {
  * compra a peça escaneia e vê o que foi licenciado, por quem, e se continua
  * válido — sem precisar acreditar em ninguém.
  */
-export function ArtLicensePanel({ license }: { license: ArtLicense }) {
+/**
+ * Gera o PNG do QR de um código e entrega as ações de copiar e baixar.
+ *
+ * Vive aqui, e não em cada tela, porque a POLÍTICA do QR é uma só: o mesmo
+ * nível de correção e o mesmo contraste, seja no painel logo depois de gerar
+ * ou na biblioteca meses depois. Duas gerações diferentes do mesmo código
+ * dariam duas peças que escaneiam diferente.
+ */
+export function useArtQrCode(code: string) {
 	const [dataUrl, setDataUrl] = useState<string | null>(null);
 	const [copiado, setCopiado] = useState(false);
 	const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const url = artLicenseUrl(license.code);
+	const url = artLicenseUrl(code);
 
 	useEffect(() => {
 		QRCode.toDataURL(url, {
@@ -45,7 +53,7 @@ export function ArtLicensePanel({ license }: { license: ArtLicense }) {
 	}, []);
 
 	const copiar = async () => {
-		await navigator.clipboard.writeText(license.code);
+		await navigator.clipboard.writeText(code);
 		setCopiado(true);
 		if (timer.current) clearTimeout(timer.current);
 		timer.current = setTimeout(() => setCopiado(false), 2500);
@@ -55,9 +63,15 @@ export function ArtLicensePanel({ license }: { license: ArtLicense }) {
 		if (!dataUrl) return;
 		const a = document.createElement('a');
 		a.href = dataUrl;
-		a.download = `qr-${license.code}.png`;
+		a.download = `qr-${code}.png`;
 		a.click();
 	};
+
+	return { url, dataUrl, copiado, copiar, baixarQr };
+}
+
+export function ArtLicensePanel({ license }: { license: ArtLicense }) {
+	const { dataUrl, copiado, copiar, baixarQr } = useArtQrCode(license.code);
 
 	return (
 		<div className="rounded-xl border border-emerald-500/40 bg-emerald-500/5 p-4">

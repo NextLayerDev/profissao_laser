@@ -33,6 +33,7 @@ import {
 } from '../services/tool-definitions.service';
 import { ToolAtelieView } from './atelie';
 import { ToolIntelView } from './intel/tool-intel-view';
+import { LicensedToolHome } from './licensed-tool-home';
 import { MyLicensedArtLibrary } from './my-licensed-art-library';
 import { ToolOrcamentoView } from './orcamento';
 import { PromptGallery } from './prompt-gallery';
@@ -152,6 +153,18 @@ export function DynamicToolView({
 	const [selectedEntry, setSelectedEntry] = useState<ToolBankEntry | null>(
 		null,
 	);
+	/**
+	 * Arte Licenciada: a marca escolhida sobrevive ao ir e voltar da geração.
+	 * Sem isto, "voltar" jogaria o aluno na lista de escudos toda vez — e quem
+	 * está produzindo peça do mesmo clube faz esse caminho várias vezes seguidas.
+	 */
+	const [licensedBrand, setLicensedBrand] = useState<string | null>(null);
+	/**
+	 * A cor oficial da marca escolhida. Enquanto ela está em uso, a tela de
+	 * geração veste a licença em vez do fúcsia genérico dos Prompts Mágicos —
+	 * é a mesma ideia da tela de abertura, levada até o fim do fluxo.
+	 */
+	const [licensedAccent, setLicensedAccent] = useState<string | null>(null);
 	const [tema, setTema] = useState('');
 	// Valores das "especificações" do registro (campos com nome aberto que o
 	// staff define no lugar da caixa genérica de tema — ver `specsOf`). Chave =
@@ -194,6 +207,8 @@ export function DynamicToolView({
 		setValues(init);
 		setResult(null);
 		setSelectedEntry(null);
+		setLicensedBrand(null);
+		setLicensedAccent(null);
 		setTema('');
 		setSpecValues({});
 		setReferencias([null, null, null]);
@@ -386,7 +401,9 @@ export function DynamicToolView({
 	const themedShell = screenUi.themeClass
 		? `rounded-2xl p-4 sm:p-6 ${screenUi.themeClass === 'dark' ? 'bg-[#0d0d0f]' : 'bg-slate-50'}`
 		: '';
-	const screenStyle = { '--screen-accent': screenUi.accent } as CSSProperties;
+	const screenStyle = {
+		'--screen-accent': licensedAccent ?? screenUi.accent,
+	} as CSSProperties;
 
 	/* ── Estúdio (tools-mãe): controles agrupados + preview ao vivo ── */
 	const studioUi = ui as
@@ -584,6 +601,47 @@ export function DynamicToolView({
 
 	/* ── Banco do Admin: galeria → detalhe + geração por registro ── */
 	if (bankEnabled) {
+		/*
+		 * Arte Licenciada: a ABERTURA é outra, o resto é o mesmo.
+		 *
+		 * Quem abre esta ferramenta não escolhe um prompt — escolhe uma MARCA, e
+		 * só depois o que vai produzir com ela. Por isso a tela inicial é própria
+		 * (`ui.layout: 'licenciada'`), enquanto a geração continua sendo o
+		 * `PromptGenerateView` de sempre: o passo a passo de gerar é idêntico ao
+		 * dos Prompts Mágicos e duplicá-lo só criaria duas telas para divergir.
+		 *
+		 * A troca fica DENTRO deste ramo, e não num ramo próprio lá em cima, por
+		 * um motivo prático: `runBank`, o billing e o estado do formulário vivem
+		 * aqui. Um ramo separado teria de recriar tudo isso — inclusive a aba de
+		 * "Minhas peças" — para desenhar a mesma coisa.
+		 *
+		 * A chave é o `layout`, nunca a presença de marca nos registros: os
+		 * Prompts Mágicos não podem virar esta tela por acidente no dia em que
+		 * alguém marcar um prompt de lá com uma marca.
+		 */
+		if (studioUi?.layout === 'licenciada' && !selectedEntry) {
+			return (
+				<LicensedToolHome
+					title={screenUi.title ?? def.title}
+					subtitle={screenUi.subtitle ?? def.description ?? undefined}
+					notice={screenUi.notice}
+					entries={bankQuery.data ?? []}
+					loading={bankQuery.isLoading}
+					initialBrandKey={licensedBrand}
+					onSelect={(entry, marca) => {
+						setLicensedBrand(marca.feature_key);
+						setLicensedAccent(marca.accent_color ?? null);
+						setSelectedEntry(entry);
+						setResult(null);
+						setTema('');
+						setSpecValues({});
+						setReferencias([null, null, null]);
+						setImageSize(null);
+					}}
+				/>
+			);
+		}
+
 		// Sem registro escolhido → galeria premium (stats + busca + cards + sidebar).
 		if (!selectedEntry) {
 			return (
@@ -705,6 +763,11 @@ export function DynamicToolView({
 							setSelectedEntry(null);
 							setResult(null);
 						}}
+						backLabel={
+							studioUi?.layout === 'licenciada'
+								? 'Voltar aos modelos'
+								: undefined
+						}
 						billingNotice={showCostNotice ? billing.notice : null}
 						creations={creations}
 						creationId={creationId}

@@ -748,6 +748,8 @@ export interface PromptGenerateViewProps {
 	onResetResult: () => void;
 	/** Volta pra galeria. */
 	onBack: () => void;
+	/** Rótulo do voltar. A tela anterior nem sempre é uma "galeria". */
+	backLabel?: string;
 	/** Aviso inline de billing (ReactNode) — renderizado abaixo da ação. */
 	billingNotice?: ReactNode;
 	/** Cards do Passo 1 (Tipos de Criação) — da definition da tool. Vazio = sem Passo 1. */
@@ -782,6 +784,7 @@ export function PromptGenerateView({
 	onGenerate,
 	onResetResult,
 	onBack,
+	backLabel = 'Voltar à galeria',
 	billingNotice,
 	creations,
 	creationId,
@@ -858,7 +861,7 @@ export function PromptGenerateView({
 				onClick={onBack}
 				className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
 			>
-				<ArrowLeft className="h-4 w-4" /> Voltar à galeria
+				<ArrowLeft className="h-4 w-4" /> {backLabel}
 			</button>
 
 			<PromptHero entry={entry} />

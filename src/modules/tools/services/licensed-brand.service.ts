@@ -19,6 +19,8 @@ export const licensedBrandSchema = z.object({
 	display_name: z.string(),
 	crest_url: z.string().nullable(),
 	mascot_url: z.string().nullable(),
+	// Opcional: a coluna é nova e a API pode responder sem ela.
+	accent_color: z.string().nullable().optional(),
 	active: z.boolean(),
 	notes: z.string().nullable(),
 	created_at: z.string(),
@@ -43,6 +45,8 @@ export interface SalvarMarcaInput {
 	feature_key: string;
 	display_name: string;
 	active: boolean;
+	/** Hex `#rrggbb` da cor oficial da marca. Vazio = cinza neutro. */
+	accent_color?: string;
 	notes?: string;
 	crest?: File | null;
 	mascot?: File | null;
@@ -54,6 +58,8 @@ function toFormData(input: SalvarMarcaInput): FormData {
 	fd.append('feature_key', input.feature_key.trim().toLowerCase());
 	fd.append('display_name', input.display_name.trim());
 	fd.append('active', String(input.active));
+	if (input.accent_color !== undefined)
+		fd.append('accent_color', input.accent_color);
 	if (input.notes !== undefined) fd.append('notes', input.notes);
 	// Arquivo só vai quando o staff escolheu um novo. O backend preserva o
 	// anterior quando o campo não vem — salvar para trocar o nome não pode
