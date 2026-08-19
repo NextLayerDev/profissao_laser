@@ -3,6 +3,7 @@
 import { ArrowLeft, ImageOff } from 'lucide-react';
 import { type CSSProperties, useMemo, useState } from 'react';
 import { useLicensedBrands } from '../hooks/use-licensed-brands';
+import { useDeclaracao } from '../hooks/use-licensed-seller';
 import {
 	coverOf,
 	maxImagesOf,
@@ -22,6 +23,7 @@ import {
 	SeloAtivo,
 	TEMA_LICENCIADA,
 } from './licenciada-ui';
+import { LicensedSellerGate } from './licensed-seller-gate';
 import { MyLicensedArtLibrary } from './my-licensed-art-library';
 import { ScreenNotice } from './screen-notice';
 
@@ -232,6 +234,13 @@ export function LicensedToolHome({
 	onSelect,
 }: LicensedToolHomeProps) {
 	const [aba, setAba] = useState<'criar' | 'minhas'>('criar');
+	/**
+	 * O portão do vendedor. Falha de rede aqui NÃO bloqueia: o motor tem a
+	 * palavra final e recusa de qualquer jeito, então travar a tela por não
+	 * conseguir ler o estado seria punir o aluno por um problema nosso.
+	 */
+	const declaracaoQuery = useDeclaracao();
+	const declaracao = declaracaoQuery.data;
 	const [marcaKey, setMarcaKey] = useState<string | null>(initialBrandKey);
 	const marcasQuery = useLicensedBrands();
 
@@ -322,9 +331,15 @@ export function LicensedToolHome({
 				<hr className="my-6 border-[var(--al-rule)]" />
 
 				{aba === 'minhas' ? (
+					/* A biblioteca NÃO passa pelo portão: quem já gerou precisa
+					   continuar alcançando as próprias peças, porque o QR delas pode
+					   estar gravado num chaveiro que já saiu daqui. */
 					<MyLicensedArtLibrary />
-				) : carregando ? (
+				) : carregando || declaracaoQuery.isLoading ? (
 					<GradeDeEsqueletos />
+				) : declaracao && !declaracao.ok ? (
+					/* ── O PORTÃO: quem gera arte de marca declara onde vende ── */
+					<LicensedSellerGate declaracao={declaracao} />
 				) : falhou ? (
 					<FalhaAoCarregar titulo="Não foi possível carregar as marcas.">
 						Isto é um problema nosso, não falta de licença. Recarregue a página
