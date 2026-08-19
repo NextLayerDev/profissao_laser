@@ -7,6 +7,20 @@ import * as service from '../services/licensed-brand.service';
 
 export const licensedBrandsQueryKey = ['licensed-brands'] as const;
 
+/**
+ * A volumetria por marca. Fica no mesmo hook das marcas de propósito: o número
+ * pertence ao lado do escudo, não a um silo de analytics — quem pergunta
+ * "quantas peças do Corinthians este mês" está olhando para o Corinthians.
+ */
+export function useBrandVolume(enabled = true) {
+	return useQuery({
+		queryKey: ['licensed-brands', 'volume'],
+		queryFn: service.listBrandVolume,
+		enabled,
+		staleTime: 60_000,
+	});
+}
+
 export function useLicensedBrands() {
 	return useQuery({
 		queryKey: licensedBrandsQueryKey,

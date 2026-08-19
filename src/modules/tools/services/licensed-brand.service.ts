@@ -102,3 +102,29 @@ export async function deleteLicensedBrand(id: string): Promise<void> {
 	if (MOCK_LICENCIADA) return mockDeleteBrand(id);
 	await api.delete(`/api/licensed-brands/${id}`);
 }
+
+/** Uma linha do relatório de volumetria: uma marca, um mês. */
+export const volumeDaMarcaSchema = z.object({
+	feature_key: z.string(),
+	display_name: z.string().nullable(),
+	marca_ativa: z.boolean().nullable(),
+	mes: z.string(),
+	pecas: z.number(),
+	pecas_validas: z.number(),
+	pecas_revogadas: z.number(),
+	rodadas: z.number(),
+	lotes: z.number(),
+	alunos: z.number(),
+	primeira: z.string(),
+	ultima: z.string(),
+});
+export type VolumeDaMarca = z.infer<typeof volumeDaMarcaSchema>;
+
+/**
+ * Quantas peças cada marca gerou, por mês. É o número que vai para a mesa do
+ * licenciante — e é staff-only, porque é o consumo de todos os alunos junto.
+ */
+export async function listBrandVolume(): Promise<VolumeDaMarca[]> {
+	const { data } = await api.get('/api/licensed-brands/volume');
+	return z.array(volumeDaMarcaSchema).parse(data);
+}

@@ -3,6 +3,7 @@
 import { BadgeCheck, ImageUp, Loader2, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import {
+	useBrandVolume,
 	useDeleteLicensedBrand,
 	useLicensedBrands,
 	useSaveLicensedBrand,
@@ -10,6 +11,7 @@ import {
 import {
 	FEATURE_KEY_RE,
 	type LicensedBrand,
+	type VolumeDaMarca as VolumeLinha,
 } from '@/modules/tools/services/licensed-brand.service';
 
 interface Form {
@@ -34,6 +36,46 @@ const VAZIO: Form = {
 };
 
 /**
+ * Quantas peças este escudo gerou — o número que vai para a mesa do
+ * licenciante. Mora no cartão da marca, e não numa tela de relatório: quem
+ * pergunta "quantas peças do Corinthians este mês" está olhando para o
+ * Corinthians.
+ *
+ * O mês corrente em destaque e o acumulado ao lado. Peça REVOGADA aparece
+ * separada — ela aconteceu, e somar ao total esconderia justamente o caso que
+ * o clube mais quer ver.
+ */
+function VolumeDaMarca({ linhas }: { linhas: VolumeLinha[] }) {
+	if (linhas.length === 0) {
+		return (
+			<p className="mt-1.5 text-xs text-slate-400 dark:text-gray-500">
+				Nenhuma peça gerada ainda.
+			</p>
+		);
+	}
+	const mesAtual = new Date().toISOString().slice(0, 7);
+	const doMes = linhas.find((l) => l.mes.startsWith(mesAtual));
+	const total = linhas.reduce((s, l) => s + l.pecas, 0);
+	const revogadas = linhas.reduce((s, l) => s + l.pecas_revogadas, 0);
+
+	return (
+		<p className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs">
+			<span className="font-semibold text-slate-900 dark:text-white">
+				{doMes?.pecas ?? 0} {doMes?.pecas === 1 ? 'peça' : 'peças'} este mês
+			</span>
+			<span className="text-slate-500 dark:text-gray-400">
+				· {total} no total
+			</span>
+			{revogadas > 0 && (
+				<span className="text-red-600 dark:text-red-400">
+					· {revogadas} revogada{revogadas === 1 ? '' : 's'}
+				</span>
+			)}
+		</p>
+	);
+}
+
+/**
  * Cadastro das marcas licenciadas.
  *
  * O escudo pertence à MARCA, não ao prompt: cadastrar aqui uma vez serve todos
@@ -42,6 +84,7 @@ const VAZIO: Form = {
  */
 export function LicensedBrandsView() {
 	const { data: marcas, isLoading, error } = useLicensedBrands();
+	const { data: volume } = useBrandVolume();
 	const salvar = useSaveLicensedBrand();
 	const remover = useDeleteLicensedBrand();
 	const [form, setForm] = useState<Form | null>(null);
@@ -168,6 +211,11 @@ export function LicensedBrandsView() {
 										Inativa — não gera peça nova
 									</p>
 								)}
+								<VolumeDaMarca
+									linhas={(volume ?? []).filter(
+										(v) => v.feature_key === m.feature_key,
+									)}
+								/>
 							</div>
 
 							<div className="flex shrink-0 gap-1">
