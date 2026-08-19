@@ -136,6 +136,11 @@ function LoteFechado({
 }) {
 	const primeira = lote.pecas[0];
 	const ultima = lote.pecas[lote.pecas.length - 1];
+	const rotulos = lote.pecas.map((p) => p.pieceLabel).filter(Boolean);
+	const nomes = rotulos.length
+		? rotulos.slice(0, 4).join(', ') +
+			(rotulos.length > 4 ? ` +${rotulos.length - 4}` : '')
+		: null;
 	return (
 		<article className="overflow-hidden rounded-lg border border-[var(--al-rule)] bg-[var(--al-card)]">
 			<div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
@@ -159,10 +164,17 @@ function LoteFechado({
 					<p className="font-display truncate text-sm font-bold tracking-[-0.01em] text-[var(--al-ink)]">
 						{primeira?.promptTitle ?? 'Lote'}
 					</p>
-					<p className={`${MONO} mt-2 text-[var(--al-mute)]`}>
+					<p className={`${MONO} mt-2 truncate text-[var(--al-mute)]`}>
 						{contarPecas(lote.pecas.length)} · peças {primeira?.pieceIndex}–
 						{ultima?.pieceIndex}
 					</p>
+					{/* Os nomes do lote personalizado, no cartão fechado: é o que
+					    diferencia "o pedido da firma" do "pedido do time". */}
+					{nomes && (
+						<p className={`${MONO} mt-1 truncate text-[var(--al-mute)]`}>
+							{nomes}
+						</p>
+					)}
 					<div className="mt-3 flex flex-wrap items-center gap-1.5">
 						<button type="button" onClick={onAbrir} className={BOTAO}>
 							<ChevronDown className="h-3 w-3" />
@@ -210,11 +222,19 @@ function Peca({ arte }: { arte: MyLicensedArt }) {
 
 			<div className="space-y-3 p-4">
 				<p className="font-display truncate text-sm font-bold tracking-[-0.01em] text-[var(--al-ink)]">
-					{arte.promptTitle ?? arte.licensorName ?? arte.featureKey}
+					{/* O NOME DA PEÇA VEM PRIMEIRO quando existe. Numa tiragem
+					    personalizada, "a caneca da Marina" é como o dono procura —
+					    o título do modelo é o mesmo nas trinta e não distingue nada. */}
+					{arte.pieceLabel ??
+						arte.promptTitle ??
+						arte.licensorName ??
+						arte.featureKey}
 				</p>
-				{arte.batchSize > 1 && (
-					<p className={`${MONO} text-[var(--al-mute)]`}>
-						Peça {arte.pieceIndex} de {arte.batchSize}
+				{(arte.batchSize > 1 || arte.pieceLabel) && (
+					<p className={`${MONO} truncate text-[var(--al-mute)]`}>
+						{arte.pieceLabel && arte.promptTitle
+							? `${arte.promptTitle} · peça ${arte.pieceIndex} de ${arte.batchSize}`
+							: `Peça ${arte.pieceIndex} de ${arte.batchSize}`}
 					</p>
 				)}
 

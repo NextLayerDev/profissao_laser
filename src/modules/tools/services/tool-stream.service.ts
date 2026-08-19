@@ -26,7 +26,18 @@ export interface EventoProgresso {
 
 export type ToolStreamEvent =
 	| { type: 'progresso'; ev: EventoProgresso }
-	| { type: 'done'; output: Record<string, unknown> }
+	| {
+			type: 'done';
+			output: Record<string, unknown>;
+			/**
+			 * O código de autenticidade da rodada licenciada.
+			 *
+			 * Vinha no payload do motor e era DESCARTADO aqui — o mesmo esquecimento
+			 * que já aconteceu no schema do Fastify: a arte chegava, o código sumia
+			 * no caminho, e a tela mostrava a peça sem QR sem erro nenhum.
+			 */
+			license?: unknown;
+	  }
 	| { type: 'erro'; status: number; message: string };
 
 export interface ToolStreamInput {
@@ -105,6 +116,7 @@ export async function* runToolStream(
 			yield {
 				type: 'done',
 				output: (frame.data.output ?? {}) as Record<string, unknown>,
+				license: frame.data.license,
 			};
 		} else if (frame.event === 'erro') {
 			yield {

@@ -54,6 +54,11 @@ import {
 	TEMA_LICENCIADA,
 	useAnimar,
 } from './licenciada-ui';
+import {
+	LicensedPiecesEditor,
+	type PecaDaLista,
+	pecaVazia,
+} from './licensed-pieces-editor';
 
 /**
  * Tela de detalhe + geração de um "Prompt Mágico" (registro do Banco do Admin
@@ -982,6 +987,13 @@ export interface PromptGenerateViewProps {
 	actionLabel: string;
 	/** Geração em andamento. */
 	pending: boolean;
+	/**
+	 * O que o botão diz ENQUANTO roda. "Gerando…" serve para um trabalho de 40
+	 * segundos; para um lote de 30 peças, que leva minutos, ele é indistinguível
+	 * de tela travada — e o aluno já pagou, então recarregar é o pior que ele
+	 * pode fazer. Ausente = "Gerando…".
+	 */
+	pendingLabel?: string;
 	/** Sem saldo de voxxys → bloqueia ação. */
 	insufficient: boolean;
 	/** Validação local satisfeita (tema/imagens conforme o modo). */
@@ -1031,6 +1043,14 @@ export interface PromptGenerateViewProps {
 	printRunOptions?: number[];
 	printRun?: number;
 	onPrintRunChange?: (n: number) => void;
+	/** Teto da tiragem (env do motor, espelhado pela definition). */
+	printRunMax?: number;
+	/**
+	 * DADOS VARIÁVEIS: uma linha por peça, cada uma com seu nome e/ou sua foto.
+	 * `null` é o lote uniforme — N cópias da mesma arte, que é o padrão.
+	 */
+	pecas?: PecaDaLista[] | null;
+	onPecasChange?: (p: PecaDaLista[] | null) => void;
 	/** Quantidade selecionada no Passo 3 (controlado pelo DynamicToolView). */
 	variationCount?: number | null;
 	onVariationCountChange?: (n: number | null) => void;
@@ -1049,6 +1069,7 @@ export function PromptGenerateView({
 	downloadKey,
 	actionLabel,
 	pending,
+	pendingLabel,
 	insufficient,
 	canGenerate,
 	imageSize,
@@ -1069,6 +1090,9 @@ export function PromptGenerateView({
 	printRunOptions,
 	printRun = 1,
 	onPrintRunChange,
+	printRunMax = 50,
+	pecas = null,
+	onPecasChange,
 }: PromptGenerateViewProps) {
 	const mode = modeOf(entry);
 	const needsTema = modeUsesText(mode);
@@ -1123,15 +1147,15 @@ export function PromptGenerateView({
 
 	// Numeração das seções visíveis (1, 2, 3…) — só conta as que aparecem. Ordem
 	// visual: ① Tipo → ② Variações → ③ Detalhes (este último em linha própria).
+	const antesDaLista =
+		(hasCreations ? 1 : 0) + (hasVariations ? 1 : 0) + (hasTiragem ? 1 : 0);
+	const temLista = hasTiragem && !!pecas && !!onPecasChange;
 	const sectionNo = {
 		criacao: 1,
 		variacoes: hasCreations ? 2 : 1,
 		tiragem: (hasCreations ? 1 : 0) + (hasVariations ? 1 : 0) + 1,
-		detalhes:
-			(hasCreations ? 1 : 0) +
-			(hasVariations ? 1 : 0) +
-			(hasTiragem ? 1 : 0) +
-			1,
+		lista: antesDaLista + 1,
+		detalhes: antesDaLista + (temLista ? 1 : 0) + 1,
 	};
 	// Cards compactos lado a lado (Tipo | Variações); Detalhes vai numa linha
 	// própria full-width abaixo. Sem os dois compactos → nada nesta linha.
@@ -1151,6 +1175,18 @@ export function PromptGenerateView({
 	// clara entre duas telas de certificado.
 	const licenciada = variante === 'licenciada';
 	const animar = useAnimar();
+	/**
+	 * O campo de número exato está aberto? Os atalhos cobrem o pedido redondo; a
+	 * encomenda real é "23 canecas", e sem isto ela obrigava a pagar 25.
+	 */
+	const [pediuNumero, setNumeroLivre] = useState(false);
+	/**
+	 * Nenhum atalho casa com o número atual — então o campo aparece com ele
+	 * dentro, em vez de a tela mostrar quatro botões apagados e nenhum valor. É
+	 * o caso normal quando a LISTA manda na tiragem: 23 linhas, 23 peças.
+	 */
+	const numeroLivre =
+		pediuNumero || (!!printRunOptions && !printRunOptions.includes(printRun));
 
 	const stepCardCls = licenciada
 		? 'rounded-lg border border-[var(--al-rule)] bg-[var(--al-card)] p-5'
@@ -1288,18 +1324,22 @@ export function PromptGenerateView({
 					{hasTiragem && (
 						<section className={`${stepCardCls} space-y-3`}>
 							<SectionHeader
+								licenciada={licenciada}
 								no={sectionNo.tiragem}
 								title="Tiragem"
 								hint="Quantas peças você vai gravar"
 							/>
-							<div className="flex flex-wrap gap-2">
+							<div className="flex flex-wrap items-center gap-2">
 								{printRunOptions!.map((n) => {
-									const selected = printRun === n;
+									const selected = printRun === n && !numeroLivre;
 									return (
 										<button
 											key={n}
 											type="button"
-											onClick={() => onPrintRunChange?.(n)}
+											onClick={() => {
+												setNumeroLivre(false);
+												onPrintRunChange?.(n);
+											}}
 											className={`flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
 												selected
 													? 'border-transparent text-white'
@@ -1311,15 +1351,104 @@ export function PromptGenerateView({
 										</button>
 									);
 								})}
+								{/* O NÚMERO EXATO. Os atalhos cobrem o pedido redondo; a
+								    encomenda real é "23 canecas", e sem este campo ela
+								    obrigava a pagar 25 ou gerar 10 e ampliar. */}
+								{numeroLivre ? (
+									<input
+										type="number"
+										min={1}
+										max={printRunMax}
+										// Foco por ref, e não `autoFocus`: o campo só existe
+										// depois de o aluno pedir "outro número", então o foco
+										// aqui é a continuação do gesto dele, não um sequestro
+										// do teclado na carga da página.
+										ref={(el) => el?.focus()}
+										value={printRun}
+										onChange={(e) => {
+											const n = Number.parseInt(e.target.value, 10);
+											if (Number.isFinite(n)) {
+												onPrintRunChange?.(
+													Math.max(1, Math.min(printRunMax, n)),
+												);
+											}
+										}}
+										className="w-24 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
+									/>
+								) : (
+									<button
+										type="button"
+										onClick={() => setNumeroLivre(true)}
+										className="rounded-xl border border-dashed border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-500 transition-colors hover:border-[color-mix(in_srgb,var(--screen-accent)_50%,transparent)] dark:border-white/15 dark:text-slate-300"
+									>
+										Outro número
+									</button>
+								)}
 							</div>
+
+							{/* Uniforme ou personalizado — a escolha que muda a natureza
+							    (e o preço) do lote. */}
+							{onPecasChange && (
+								<div className="flex flex-wrap gap-2 border-t border-[var(--al-rule)] pt-3">
+									{(
+										[
+											['iguais', 'Todas iguais'],
+											['variaveis', 'Cada peça diferente'],
+										] as const
+									).map(([modo, rotulo]) => {
+										const ativo = (modo === 'variaveis') === !!pecas;
+										return (
+											<button
+												key={modo}
+												type="button"
+												onClick={() => {
+													if (modo === 'iguais') return onPecasChange(null);
+													onPecasChange(
+														Array.from({ length: Math.max(2, printRun) }, () =>
+															pecaVazia(),
+														),
+													);
+												}}
+												className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
+													ativo
+														? 'border-transparent text-white'
+														: 'border-slate-200 bg-slate-50 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300'
+												}`}
+												style={ativo ? ACCENT_BG : undefined}
+											>
+												{rotulo}
+											</button>
+										);
+									})}
+								</div>
+							)}
+
 							<p className="text-xs leading-relaxed text-slate-500 dark:text-gray-400">
-								Cada peça sai num arquivo próprio, com um código de
-								autenticidade diferente gravado nela. É esse código que prova
-								que a peça é oficial — e é por peça que a marca é remunerada.
+								{pecas
+									? 'Cada linha vira uma peça gerada só para ela, com seu próprio código de autenticidade. Por isso o lote personalizado custa por linha, e não por cópia.'
+									: 'Cada peça sai num arquivo próprio, com um código de autenticidade diferente gravado nela. É esse código que prova que a peça é oficial — e é por peça que a marca é remunerada.'}
 							</p>
 						</section>
 					)}
 				</div>
+			)}
+
+			{/* A LISTA, em linha própria: ela cresce até 50 linhas e não cabe num
+			    cartão de um terço de largura. */}
+			{hasTiragem && pecas && onPecasChange && (
+				<section className={`${stepCardCls} space-y-3.5`}>
+					<SectionHeader
+						licenciada={licenciada}
+						no={sectionNo.lista}
+						title="O que muda em cada peça"
+						hint="Um nome, uma foto, ou os dois"
+					/>
+					<LicensedPiecesEditor
+						pecas={pecas}
+						onChange={onPecasChange}
+						max={printRunMax}
+					/>
+				</section>
 			)}
 
 			{/* Linha 2 — ③ Detalhes (linha própria, full-width). Sem nome de
@@ -1412,7 +1541,7 @@ export function PromptGenerateView({
 					{pending ? (
 						<>
 							<Loader2 className="h-5 w-5 animate-spin" />
-							Gerando...
+							{pendingLabel ?? 'Gerando...'}
 						</>
 					) : (
 						<>

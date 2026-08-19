@@ -238,6 +238,7 @@ function semear(): Estado {
 			batchId: 'mk-lote-1',
 			pieceIndex: 1,
 			batchSize: 3,
+			pieceLabel: null,
 			canGrow: true,
 			issuedAt: '2026-08-18T14:20:00.000Z',
 		},
@@ -255,6 +256,7 @@ function semear(): Estado {
 			batchId: 'mk-lote-2',
 			pieceIndex: 1,
 			batchSize: 1,
+			pieceLabel: null,
 			// Lote antigo, sem arte-mãe guardada: não pode crescer.
 			canGrow: false,
 			issuedAt: '2026-08-17T09:05:00.000Z',
@@ -272,6 +274,7 @@ function semear(): Estado {
 			batchId: 'mk-lote-3',
 			pieceIndex: 1,
 			batchSize: 1,
+			pieceLabel: null,
 			canGrow: false,
 			issuedAt: '2026-08-15T18:40:00.000Z',
 		},
@@ -682,6 +685,7 @@ export async function mockRun(bankEntryId?: string): Promise<ToolRunResult> {
 		batchId: `mk-lote-${Date.now()}`,
 		pieceIndex: 1,
 		batchSize: 1,
+		pieceLabel: null,
 		canGrow: true,
 		issuedAt,
 	});

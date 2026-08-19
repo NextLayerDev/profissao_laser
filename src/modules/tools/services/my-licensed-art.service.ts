@@ -27,6 +27,12 @@ export const myLicensedArtSchema = z.object({
 	batchId: z.string().nullable().default(null),
 	pieceIndex: z.number().default(1),
 	batchSize: z.number().default(1),
+	/**
+	 * O dado variável desta peça — o nome, a frase — quando o lote é
+	 * personalizado. É o que deixa o aluno achar "a caneca da Marina" sem abrir
+	 * trinta arquivos. Nulo (ou ausente, nas peças antigas) em lote uniforme.
+	 */
+	pieceLabel: z.string().nullable().default(null),
 	/** A tiragem deste lote ainda pode crescer? */
 	canGrow: z.boolean().default(false),
 	issuedAt: z.string(),
