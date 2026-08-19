@@ -64,7 +64,14 @@ export type ToolControl = z.infer<typeof toolControlSchema>;
 export const bankFieldSchema = z.object({
 	name: z.string(),
 	label: z.string().optional(),
-	type: z.enum(['text', 'textarea', 'enum', 'image']),
+	/**
+	 * `brand` é um select alimentado pelo cadastro de Marcas licenciadas, e não
+	 * uma lista estática como `enum`. Existe porque a chave da marca é a única
+	 * coisa do registro que NÃO pode ser renomeada depois de emitida — um typo
+	 * em campo de texto cria uma marca fantasma que nunca resolve, e o erro só
+	 * aparece na hora de gerar.
+	 */
+	type: z.enum(['text', 'textarea', 'enum', 'image', 'brand']),
 	options: z.array(z.string()).optional(),
 	required: z.boolean().optional(),
 	placeholder: z.string().optional(),
