@@ -33,6 +33,7 @@ import {
 } from '../services/tool-definitions.service';
 import { ToolAtelieView } from './atelie';
 import { ToolIntelView } from './intel/tool-intel-view';
+import { MyLicensedArtLibrary } from './my-licensed-art-library';
 import { ToolOrcamentoView } from './orcamento';
 import { PromptGallery } from './prompt-gallery';
 import { PromptGenerateView } from './prompt-generate-view';
@@ -143,6 +144,11 @@ export function DynamicToolView({
 	const bankQuery = useToolBank(toolKey, {
 		enabled: bankEnabled && toolKey !== 'preview',
 	});
+	/**
+	 * Aba da galeria. A biblioteca só existe em tool licenciada — em tool comum
+	 * não há licença para listar, e uma aba vazia seria ruído.
+	 */
+	const [abaGaleria, setAbaGaleria] = useState<'prompts' | 'minhas'>('prompts');
 	const [selectedEntry, setSelectedEntry] = useState<ToolBankEntry | null>(
 		null,
 	);
@@ -567,6 +573,15 @@ export function DynamicToolView({
 		);
 	}
 
+	/**
+	 * Tool licenciada é a que tem algum registro com marca. Detectar pelo DADO e
+	 * não por uma flag na definition mantém a aba aparecendo sozinha em qualquer
+	 * tool que passe a usar prompts licenciados.
+	 */
+	const ehLicenciada = (bankQuery.data ?? []).some(
+		(e) => typeof (e.data as Record<string, unknown>)?.feature_key === 'string',
+	);
+
 	/* ── Banco do Admin: galeria → detalhe + geração por registro ── */
 	if (bankEnabled) {
 		// Sem registro escolhido → galeria premium (stats + busca + cards + sidebar).
@@ -579,18 +594,50 @@ export function DynamicToolView({
 					<div className={themedShell}>
 						{screenUi.notice && <ScreenNotice notice={screenUi.notice} />}
 						{header}
-						<PromptGallery
-							entries={bankQuery.data ?? []}
-							loading={bankQuery.isLoading}
-							onSelect={(entry) => {
-								setSelectedEntry(entry);
-								setResult(null);
-								setTema('');
-								setSpecValues({});
-								setReferencias([null, null, null]);
-								setImageSize(null);
-							}}
-						/>
+						{ehLicenciada && (
+							<div className="mb-6 flex gap-1 border-b border-slate-200 dark:border-white/10">
+								<button
+									type="button"
+									onClick={() => setAbaGaleria('prompts')}
+									aria-current={abaGaleria === 'prompts' ? 'page' : undefined}
+									className={`-mb-px border-b-2 px-4 py-2.5 text-sm transition-colors ${
+										abaGaleria === 'prompts'
+											? 'border-violet-500 font-semibold text-violet-600 dark:text-violet-400'
+											: 'border-transparent text-slate-500 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white'
+									}`}
+								>
+									Criar
+								</button>
+								<button
+									type="button"
+									onClick={() => setAbaGaleria('minhas')}
+									aria-current={abaGaleria === 'minhas' ? 'page' : undefined}
+									className={`-mb-px border-b-2 px-4 py-2.5 text-sm transition-colors ${
+										abaGaleria === 'minhas'
+											? 'border-violet-500 font-semibold text-violet-600 dark:text-violet-400'
+											: 'border-transparent text-slate-500 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white'
+									}`}
+								>
+									Minhas artes licenciadas
+								</button>
+							</div>
+						)}
+						{abaGaleria === 'minhas' ? (
+							<MyLicensedArtLibrary />
+						) : (
+							<PromptGallery
+								entries={bankQuery.data ?? []}
+								loading={bankQuery.isLoading}
+								onSelect={(entry) => {
+									setSelectedEntry(entry);
+									setResult(null);
+									setTema('');
+									setSpecValues({});
+									setReferencias([null, null, null]);
+									setImageSize(null);
+								}}
+							/>
+						)}
 					</div>
 				</div>
 			);
