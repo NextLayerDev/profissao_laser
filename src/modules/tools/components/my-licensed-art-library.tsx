@@ -8,10 +8,9 @@ import {
 	Download,
 	ExternalLink,
 	ImageOff,
-	Loader2,
 	ShieldX,
 } from 'lucide-react';
-import { type CSSProperties, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useLicensedBrands } from '../hooks/use-licensed-brands';
 import {
 	useArchiveMyLicensedArt,
@@ -20,6 +19,14 @@ import {
 import type { LicensedBrand } from '../services/licensed-brand.service';
 import type { MyLicensedArt } from '../services/my-licensed-art.service';
 import { artLicenseUrl, useArtQrCode } from './art-license-panel';
+import {
+	CAMPO_NEUTRO,
+	FalhaAoCarregar,
+	GradeDeEsqueletos,
+	LinhaDeRegistro,
+	MONO,
+	TEMA_LICENCIADA,
+} from './licenciada-ui';
 
 /**
  * As peças licenciadas do aluno, agrupadas pelo clube.
@@ -32,19 +39,6 @@ import { artLicenseUrl, useArtQrCode } from './art-license-panel';
  * trabalha com três clubes procura "a caneca do Corinthians", não "a nona peça
  * que eu gerei".
  */
-
-/** A mesma paleta da tela da ferramenta, repetida para a aba funcionar sozinha. */
-const PALETA = {
-	'--al-ground': '#14161a',
-	'--al-card': '#1b1e24',
-	'--al-rule': '#2a2f38',
-	'--al-ink': '#e8eaed',
-	'--al-mute': '#8c94a1',
-	'--al-seal': '#1f9d5b',
-} as CSSProperties;
-
-const CAMPO_NEUTRO = '#22262e';
-const MONO = 'font-mono text-[11px] uppercase tracking-[0.16em] leading-none';
 
 const BOTAO =
 	'inline-flex items-center gap-1.5 rounded-md border border-[var(--al-rule)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--al-ink)] transition-colors hover:border-[var(--al-mute)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--al-ink)] disabled:opacity-50';
@@ -68,7 +62,7 @@ function Peca({ arte }: { arte: MyLicensedArt }) {
 				arte.archived ? 'opacity-70' : ''
 			}`}
 		>
-			<div className="aspect-[4/3] overflow-hidden bg-[#101216]">
+			<div className="aspect-[4/3] overflow-hidden bg-[var(--al-poco)]">
 				{arte.previewUrl ? (
 					/* <img> intencional: a arte vem de CDN dinâmico. */
 					<img
@@ -88,26 +82,15 @@ function Peca({ arte }: { arte: MyLicensedArt }) {
 					{arte.promptTitle ?? arte.licensorName ?? arte.featureKey}
 				</p>
 
-				<div className="flex items-baseline gap-2">
-					<span className={`${MONO} shrink-0 text-[var(--al-mute)]`}>
-						Emitida
-					</span>
-					<span
-						aria-hidden
-						className="min-w-3 flex-1 -translate-y-[3px] border-b border-dotted border-[var(--al-rule)]"
-					/>
-					<span className={`${MONO} shrink-0 text-[var(--al-ink)]`}>
-						{emitida}
-					</span>
-				</div>
+				<LinhaDeRegistro rotulo="Emitida">{emitida}</LinhaDeRegistro>
 
 				{arte.revoked ? (
-					<p className="flex items-start gap-1.5 rounded-md border border-red-500/30 bg-red-500/5 p-2.5 text-xs leading-relaxed text-red-400">
+					<p className="flex items-start gap-1.5 rounded-md border border-red-500/30 bg-red-500/5 p-2.5 text-xs leading-relaxed text-red-700 dark:text-red-400">
 						<ShieldX className="mt-0.5 h-3.5 w-3.5 shrink-0" />
 						Licença revogada. Esta peça não é mais verificável como oficial.
 					</p>
 				) : (
-					<div className="space-y-3 rounded-md border border-[var(--al-rule)] bg-[#101216] p-3">
+					<div className="space-y-3 rounded-md border border-[var(--al-rule)] bg-[var(--al-poco)] p-3">
 						{/* O código ocupa a linha inteira porque ele é COPIADO À MÃO com
 						    frequência (o aluno digita no arquivo de gravação). Espremido
 						    ao lado do QR ele quebrava no meio e virava dois pedaços. */}
@@ -128,7 +111,7 @@ function Peca({ arte }: { arte: MyLicensedArt }) {
 									className="h-16 w-16 shrink-0 rounded bg-white p-1"
 								/>
 							) : (
-								<div className="h-16 w-16 shrink-0 animate-pulse rounded bg-white/5" />
+								<div className="h-16 w-16 shrink-0 animate-pulse rounded bg-[var(--al-rule)]" />
 							)}
 							<div className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
 								<button type="button" onClick={copiar} className={BOTAO}>
@@ -269,29 +252,28 @@ export function MyLicensedArtLibrary() {
 
 	if (isLoading) {
 		return (
-			<div style={PALETA} className="text-[var(--al-ink)]">
+			<div className={`${TEMA_LICENCIADA} text-[var(--al-ink)]`}>
 				{filtro}
-				<div className="flex justify-center py-24">
-					<Loader2 className="h-5 w-5 animate-spin text-[var(--al-mute)]" />
-				</div>
+				<GradeDeEsqueletos />
 			</div>
 		);
 	}
 
 	if (error) {
 		return (
-			<div style={PALETA} className="space-y-4 text-[var(--al-ink)]">
+			<div className={`${TEMA_LICENCIADA} space-y-4 text-[var(--al-ink)]`}>
 				{filtro}
-				<p className="rounded-lg border border-red-500/30 bg-red-500/5 p-4 text-sm text-red-400">
-					Não foi possível carregar suas peças. Tente de novo em instantes.
-				</p>
+				<FalhaAoCarregar titulo="Não foi possível carregar suas peças.">
+					Elas continuam emitidas e os QR já gravados seguem respondendo.
+					Recarregue a página em instantes.
+				</FalhaAoCarregar>
 			</div>
 		);
 	}
 
 	if (grupos.length === 0) {
 		return (
-			<div style={PALETA} className="space-y-4 text-[var(--al-ink)]">
+			<div className={`${TEMA_LICENCIADA} space-y-4 text-[var(--al-ink)]`}>
 				{filtro}
 				<div className="rounded-lg border border-dashed border-[var(--al-rule)] px-6 py-20 text-center">
 					<p className="font-display text-lg font-bold">
@@ -310,7 +292,7 @@ export function MyLicensedArtLibrary() {
 	}
 
 	return (
-		<div style={PALETA} className="space-y-6 text-[var(--al-ink)]">
+		<div className={`${TEMA_LICENCIADA} space-y-6 text-[var(--al-ink)]`}>
 			{filtro}
 			{grupos.map((g) => (
 				<section key={g.key} className="pt-4">

@@ -24,6 +24,7 @@ import {
 } from '../lib/prompt-bank';
 import { accentForTool, resolveScreenUi } from '../lib/screen-ui';
 import { resolveToolIcon } from '../lib/tool-icons';
+import type { LicensedBrand } from '../services/licensed-brand.service';
 import type { ToolBankEntry } from '../services/tool-bank.service';
 import {
 	type AiToolDefinition,
@@ -33,6 +34,7 @@ import {
 } from '../services/tool-definitions.service';
 import { ToolAtelieView } from './atelie';
 import { ToolIntelView } from './intel/tool-intel-view';
+import { TEMA_LICENCIADA } from './licenciada-ui';
 import { LicensedToolHome } from './licensed-tool-home';
 import { MyLicensedArtLibrary } from './my-licensed-art-library';
 import { ToolOrcamentoView } from './orcamento';
@@ -154,17 +156,20 @@ export function DynamicToolView({
 		null,
 	);
 	/**
-	 * Arte Licenciada: a marca escolhida sobrevive ao ir e voltar da geração.
-	 * Sem isto, "voltar" jogaria o aluno na lista de escudos toda vez — e quem
-	 * está produzindo peça do mesmo clube faz esse caminho várias vezes seguidas.
+	 * Arte Licenciada: a MARCA INTEIRA escolhida no balcão.
+	 *
+	 * Sobrevive ao ir e voltar da geração — sem isto, "voltar" jogaria o aluno na
+	 * lista de escudos toda vez, e quem produz peça do mesmo clube faz esse
+	 * caminho várias vezes seguidas.
+	 *
+	 * Guarda o objeto e não só a chave + a cor porque a tela de geração passou a
+	 * mostrar o escudo e o nome. O `onSelect` do balcão já entrega a marca
+	 * completa, então isto não custa nenhuma chamada — só deixa de jogar fora o
+	 * que já estava em mãos.
 	 */
-	const [licensedBrand, setLicensedBrand] = useState<string | null>(null);
-	/**
-	 * A cor oficial da marca escolhida. Enquanto ela está em uso, a tela de
-	 * geração veste a licença em vez do fúcsia genérico dos Prompts Mágicos —
-	 * é a mesma ideia da tela de abertura, levada até o fim do fluxo.
-	 */
-	const [licensedAccent, setLicensedAccent] = useState<string | null>(null);
+	const [licensedMarca, setLicensedMarca] = useState<LicensedBrand | null>(
+		null,
+	);
 	const [tema, setTema] = useState('');
 	// Valores das "especificações" do registro (campos com nome aberto que o
 	// staff define no lugar da caixa genérica de tema — ver `specsOf`). Chave =
@@ -207,8 +212,7 @@ export function DynamicToolView({
 		setValues(init);
 		setResult(null);
 		setSelectedEntry(null);
-		setLicensedBrand(null);
-		setLicensedAccent(null);
+		setLicensedMarca(null);
 		setTema('');
 		setSpecValues({});
 		setReferencias([null, null, null]);
@@ -402,7 +406,7 @@ export function DynamicToolView({
 		? `rounded-2xl p-4 sm:p-6 ${screenUi.themeClass === 'dark' ? 'bg-[#0d0d0f]' : 'bg-slate-50'}`
 		: '';
 	const screenStyle = {
-		'--screen-accent': licensedAccent ?? screenUi.accent,
+		'--screen-accent': licensedMarca?.accent_color ?? screenUi.accent,
 	} as CSSProperties;
 
 	/* ── Estúdio (tools-mãe): controles agrupados + preview ao vivo ── */
@@ -627,10 +631,10 @@ export function DynamicToolView({
 					notice={screenUi.notice}
 					entries={bankQuery.data ?? []}
 					loading={bankQuery.isLoading}
-					initialBrandKey={licensedBrand}
+					entriesError={bankQuery.isError}
+					initialBrandKey={licensedMarca?.feature_key ?? null}
 					onSelect={(entry, marca) => {
-						setLicensedBrand(marca.feature_key);
-						setLicensedAccent(marca.accent_color ?? null);
+						setLicensedMarca(marca);
 						setSelectedEntry(entry);
 						setResult(null);
 						setTema('');
@@ -681,7 +685,21 @@ export function DynamicToolView({
 							</div>
 						)}
 						{abaGaleria === 'minhas' ? (
-							<MyLicensedArtLibrary />
+							/*
+							 * A biblioteca é uma superfície ESCURA de paleta própria — a
+							 * bancada da Arte Licenciada, que não segue o tema do aparelho.
+							 * Aqui ela cai dentro da galeria genérica, que SEGUE: em tema
+							 * claro os cartões escuros ficavam boiando sobre fundo branco.
+							 *
+							 * A moldura é do HOSPEDEIRO, e não da biblioteca: quem escolhe
+							 * onde ela aparece é que sabe o que tem atrás. No balcão o chão
+							 * já é este, e lá a moldura não muda nada.
+							 */
+							<div
+								className={`${TEMA_LICENCIADA} rounded-xl bg-[var(--al-ground)] p-4 sm:p-6`}
+							>
+								<MyLicensedArtLibrary />
+							</div>
 						) : (
 							<PromptGallery
 								entries={bankQuery.data ?? []}
@@ -768,6 +786,12 @@ export function DynamicToolView({
 								? 'Voltar aos modelos'
 								: undefined
 						}
+						// A variante NUNCA sai do `layout`: um prompt dos Prompts Mágicos
+						// marcado com marca por engano não pode virar esta tela.
+						variante={
+							studioUi?.layout === 'licenciada' ? 'licenciada' : undefined
+						}
+						marca={licensedMarca}
 						billingNotice={showCostNotice ? billing.notice : null}
 						creations={creations}
 						creationId={creationId}

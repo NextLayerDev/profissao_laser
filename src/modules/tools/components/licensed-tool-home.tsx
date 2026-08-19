@@ -1,7 +1,7 @@
 'use client';
 
-import { ArrowLeft, ImageOff, Loader2 } from 'lucide-react';
-import { type CSSProperties, type ReactNode, useMemo, useState } from 'react';
+import { ArrowLeft, ImageOff } from 'lucide-react';
+import { type CSSProperties, useMemo, useState } from 'react';
 import { useLicensedBrands } from '../hooks/use-licensed-brands';
 import {
 	coverOf,
@@ -13,6 +13,15 @@ import {
 import type { ResolvedScreenUi } from '../lib/screen-ui';
 import type { LicensedBrand } from '../services/licensed-brand.service';
 import type { ToolBankEntry } from '../services/tool-bank.service';
+import {
+	CAMPO_NEUTRO,
+	FalhaAoCarregar,
+	GradeDeEsqueletos,
+	LinhaDeRegistro,
+	MONO,
+	SeloAtivo,
+	TEMA_LICENCIADA,
+} from './licenciada-ui';
 import { MyLicensedArtLibrary } from './my-licensed-art-library';
 import { ScreenNotice } from './screen-notice';
 
@@ -34,59 +43,9 @@ import { ScreenNotice } from './screen-notice';
    modelo = o prompt que o staff cadastrou · peça = o que o aluno gerou.
    Cada palavra tem um significado só, do começo ao fim do fluxo. */
 
-/** Paleta da tela. Definida aqui, e não no globals, porque só esta tela usa. */
-const PALETA = {
-	'--al-ground': '#14161a',
-	'--al-card': '#1b1e24',
-	'--al-rule': '#2a2f38',
-	'--al-ink': '#e8eaed',
-	'--al-mute': '#8c94a1',
-	'--al-seal': '#1f9d5b',
-} as CSSProperties;
-
-/** Cor de fundo do campo do escudo quando a marca não tem cor cadastrada. */
-const CAMPO_NEUTRO = '#22262e';
-
-const MONO = 'font-mono text-[11px] uppercase tracking-[0.16em] leading-none';
-
 function chaveDaEntrada(entry: ToolBankEntry): string | null {
 	const k = (entry.data as Record<string, unknown>)?.feature_key;
 	return typeof k === 'string' && k.trim() ? k.trim() : null;
-}
-
-/** `RÓTULO ····· VALOR` — o bloco de dados de um certificado. */
-function LinhaDeRegistro({
-	rotulo,
-	children,
-}: {
-	rotulo: string;
-	children: ReactNode;
-}) {
-	return (
-		<div className="flex items-baseline gap-2">
-			<span className={`${MONO} shrink-0 text-[var(--al-mute)]`}>{rotulo}</span>
-			<span
-				aria-hidden
-				className="min-w-3 flex-1 -translate-y-[3px] border-b border-dotted border-[var(--al-rule)]"
-			/>
-			<span className={`${MONO} shrink-0 text-[var(--al-ink)]`}>
-				{children}
-			</span>
-		</div>
-	);
-}
-
-/** "LICENÇA ATIVA" — palavra primeiro, cor depois (não dá para ler só a cor). */
-function SeloAtivo() {
-	return (
-		<span className={`${MONO} inline-flex items-center gap-1.5`}>
-			<span
-				aria-hidden
-				className="h-1.5 w-1.5 rounded-full bg-[var(--al-seal)]"
-			/>
-			<span className="text-[var(--al-seal)]">Licença ativa</span>
-		</span>
-	);
 }
 
 function contarModelos(n: number): string {
@@ -127,7 +86,7 @@ function CampoDaMarca({
 						className="max-h-full max-w-full object-contain drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)]"
 					/>
 				) : (
-					<ImageOff className="h-8 w-8 text-white/25" />
+					<ImageOff className="h-8 w-8 text-[var(--al-mute)]" />
 				)}
 			</div>
 
@@ -151,16 +110,33 @@ function CampoDaMarca({
 
 /* ───────────────────────── Um modelo daquela marca ───────────────────────── */
 
+/**
+ * Um modelo daquela marca.
+ *
+ * O cartão tem DUAS formas, e quem decide é a grade inteira, não o cartão:
+ *
+ * - `comPreviaNaGrade` — pelo menos um modelo da marca tem exemplo cadastrado.
+ *   Todos ganham o painel 4:3, e quem não tem exemplo recebe o escudo apagado
+ *   como marca d'água. A moldura é a mesma para os vizinhos não desalinharem.
+ *
+ * - compacto — NENHUM modelo tem exemplo. Aí o painel some. Repetir cinco
+ *   retângulos com o mesmo escudo desbotado não informa nada e ainda promete
+ *   uma foto que não existe: o fallback tinha sido pensado como exceção e virou
+ *   a regra, porque nenhum modelo tem imagem cadastrada até hoje. Sem prévia, o
+ *   que ajuda a escolher é o nome da peça e o que ela exige de entrada.
+ */
 function CartaoDoModelo({
 	entry,
 	marca,
 	onSelect,
 	delay,
+	comPreviaNaGrade,
 }: {
 	entry: ToolBankEntry;
 	marca: LicensedBrand;
 	onSelect: () => void;
 	delay: number;
+	comPreviaNaGrade: boolean;
 }) {
 	const capa = coverOf(entry);
 	const mode = modeOf(entry);
@@ -171,36 +147,47 @@ function CartaoDoModelo({
 			type="button"
 			onClick={onSelect}
 			style={{ animationDelay: `${delay}ms` }}
-			className="group animate-fade-in-up overflow-hidden rounded-lg border border-[var(--al-rule)] bg-[var(--al-card)] text-left transition-colors duration-150 hover:border-[var(--screen-accent,var(--al-mute))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--al-ink)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--al-ground)]"
+			className="group relative animate-fade-in-up overflow-hidden rounded-lg border border-[var(--al-rule)] bg-[var(--al-card)] text-left transition-colors duration-150 hover:border-[var(--screen-accent,var(--al-mute))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--al-ink)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--al-ground)]"
 		>
-			<div className="aspect-[4/3] overflow-hidden bg-[#101216]">
-				{capa ? (
-					/* <img> intencional: a arte vem de CDN dinâmico. */
-					<img
-						src={capa}
-						alt=""
-						className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-					/>
-				) : marca.crest_url ? (
-					/* Sem exemplo cadastrado, o lugar da prévia recebe o escudo apagado
-					   — marca de água, não amostra. Um retângulo vazio do tamanho de
-					   uma foto promete uma imagem que não existe. */
-					<div className="flex h-full items-center justify-center p-10">
-						{/* <img> intencional: a arte vem de CDN dinâmico. */}
+			{comPreviaNaGrade ? (
+				<div className="aspect-[4/3] overflow-hidden bg-[var(--al-poco)]">
+					{capa ? (
+						/* <img> intencional: a arte vem de CDN dinâmico. */
 						<img
-							src={marca.crest_url}
+							src={capa}
 							alt=""
-							className="max-h-full max-w-full object-contain opacity-[0.14] grayscale"
+							className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
 						/>
-					</div>
-				) : (
-					<div className="flex h-full items-center justify-center">
-						<ImageOff className="h-6 w-6 text-[var(--al-rule)]" />
-					</div>
-				)}
-			</div>
+					) : marca.crest_url ? (
+						/* Escudo apagado: marca d'água, não amostra. */
+						<div className="flex h-full items-center justify-center p-10">
+							{/* <img> intencional: a arte vem de CDN dinâmico. */}
+							<img
+								src={marca.crest_url}
+								alt=""
+								className="max-h-full max-w-full object-contain opacity-20 grayscale dark:opacity-[0.14]"
+							/>
+						</div>
+					) : (
+						<div className="flex h-full items-center justify-center">
+							<ImageOff className="h-6 w-6 text-[var(--al-rule)]" />
+						</div>
+					)}
+				</div>
+			) : (
+				/* O fio da marca no lugar do painel: sem prévia, é o que ancora o
+				   cartão à licença em uso — a mesma ideia do fio no painel do
+				   código. */
+				<span
+					aria-hidden
+					className="absolute inset-y-0 left-0 w-[3px]"
+					style={{ backgroundColor: marca.accent_color || CAMPO_NEUTRO }}
+				/>
+			)}
 
-			<div className="space-y-2.5 px-4 py-3">
+			<div
+				className={`space-y-2.5 py-3 pr-4 ${comPreviaNaGrade ? 'pl-4' : 'pl-5'}`}
+			>
 				<p className="font-display truncate text-sm font-bold tracking-[-0.01em] text-[var(--al-ink)]">
 					{entry.title}
 				</p>
@@ -223,6 +210,12 @@ interface LicensedToolHomeProps {
 	notice: ResolvedScreenUi['notice'];
 	entries: ToolBankEntry[];
 	loading: boolean;
+	/**
+	 * Os modelos não vieram. Precisa ser DISTINTO de `entries: []`: sem marca com
+	 * modelo a tela desenha "nenhuma marca liberada", que numa falha de rede
+	 * seria a plataforma dizendo ao aluno que ele não tem licença.
+	 */
+	entriesError?: boolean;
 	/** Marca já escolhida antes de ir gerar — devolve o aluno onde ele estava. */
 	initialBrandKey?: string | null;
 	onSelect: (entry: ToolBankEntry, marca: LicensedBrand) => void;
@@ -234,6 +227,7 @@ export function LicensedToolHome({
 	notice,
 	entries,
 	loading,
+	entriesError = false,
 	initialBrandKey = null,
 	onSelect,
 }: LicensedToolHomeProps) {
@@ -267,21 +261,25 @@ export function LicensedToolHome({
 
 	const marca = marcas.find((m) => m.feature_key === marcaKey) ?? null;
 	const modelos = marca ? (porMarca.get(marca.feature_key) ?? []) : [];
+	// A forma dos cartões é decidida pela GRADE: ou todos têm painel de prévia,
+	// ou nenhum tem. Misturar alto e compacto na mesma linha desalinha tudo.
+	const algumaPrevia = modelos.some((e) => coverOf(e) !== null);
 
 	const carregando = loading || marcasQuery.isLoading;
+	// Qualquer uma das duas listas faltando produz a MESMA tela vazia enganosa,
+	// então as duas falhas caem no mesmo aviso.
+	const falhou = marcasQuery.isError || entriesError;
 
-	// Enquanto a marca está escolhida, a interface veste a licença em uso.
-	const estilo = {
-		...PALETA,
-		...(marca?.accent_color
-			? ({ '--screen-accent': marca.accent_color } as CSSProperties)
-			: {}),
-	} as CSSProperties;
+	// Enquanto a marca está escolhida, a interface veste a licença em uso. Só o
+	// acento vai por `style` — ele é DADO (a cor do clube), não tema.
+	const estilo = (
+		marca?.accent_color ? { '--screen-accent': marca.accent_color } : {}
+	) as CSSProperties;
 
 	return (
 		<div
 			style={estilo}
-			className="min-h-full bg-[var(--al-ground)] px-4 py-6 text-[var(--al-ink)] sm:px-8 sm:py-10"
+			className={`${TEMA_LICENCIADA} min-h-full bg-[var(--al-ground)] px-4 py-6 text-[var(--al-ink)] sm:px-8 sm:py-10`}
 		>
 			<div className="mx-auto max-w-5xl">
 				{notice && <ScreenNotice notice={notice} />}
@@ -326,9 +324,12 @@ export function LicensedToolHome({
 				{aba === 'minhas' ? (
 					<MyLicensedArtLibrary />
 				) : carregando ? (
-					<div className="flex justify-center py-24">
-						<Loader2 className="h-5 w-5 animate-spin text-[var(--al-mute)]" />
-					</div>
+					<GradeDeEsqueletos />
+				) : falhou ? (
+					<FalhaAoCarregar titulo="Não foi possível carregar as marcas.">
+						Isto é um problema nosso, não falta de licença. Recarregue a página
+						em instantes.
+					</FalhaAoCarregar>
 				) : marca ? (
 					/* ── Passo 2: os modelos daquela marca ── */
 					<section>
@@ -384,6 +385,7 @@ export function LicensedToolHome({
 									entry={e}
 									marca={marca}
 									delay={i * 40}
+									comPreviaNaGrade={algumaPrevia}
 									onSelect={() => onSelect(e, marca)}
 								/>
 							))}

@@ -12,6 +12,7 @@ import {
 	Upload,
 	Wand2,
 } from 'lucide-react';
+import { motion } from 'motion/react';
 import {
 	type CSSProperties,
 	type ReactNode,
@@ -36,6 +37,7 @@ import {
 } from '../lib/prompt-bank';
 import { screenAccentBg } from '../lib/screen-ui';
 import { resolveToolIcon } from '../lib/tool-icons';
+import type { LicensedBrand } from '../services/licensed-brand.service';
 import type { ToolBankEntry } from '../services/tool-bank.service';
 import type {
 	Creation,
@@ -43,6 +45,15 @@ import type {
 	ToolRunResult,
 } from '../services/tool-definitions.service';
 import { ArtLicensePanel } from './art-license-panel';
+import {
+	CAMPO_NEUTRO,
+	CARIMBO,
+	LinhaDeRegistro,
+	MONO,
+	SeloAtivo,
+	TEMA_LICENCIADA,
+	useAnimar,
+} from './licenciada-ui';
 
 /**
  * Tela de detalhe + geração de um "Prompt Mágico" (registro do Banco do Admin
@@ -207,11 +218,55 @@ function PromptStepper({
 	steps,
 	completed,
 	active,
+	licenciada,
+	animar,
 }: {
 	steps: PromptStep[];
 	completed: Set<PromptStep['key']>;
 	active: PromptStep['key'];
+	licenciada?: boolean;
+	animar?: boolean;
 }) {
+	if (licenciada) {
+		return (
+			<div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+				{steps.map((step, i) => {
+					const isDone = completed.has(step.key);
+					const isActive = step.key === active;
+					return (
+						<span
+							key={step.key}
+							className={`${MONO} inline-flex items-center gap-1.5 ${
+								isActive
+									? 'text-[var(--al-ink)]'
+									: isDone
+										? 'text-[var(--al-seal)]'
+										: 'text-[var(--al-mute)]'
+							}`}
+						>
+							{/* O check CARIMBA quando o passo fecha — é o gesto de quem
+							    atesta, o mesmo do selo de licença. Passo pendente é só um
+							    número, sem cor: nada a atestar ainda. */}
+							{isDone ? (
+								<motion.span
+									initial={animar ? { scale: 0 } : false}
+									animate={{ scale: 1 }}
+									transition={CARIMBO}
+									className="inline-flex"
+								>
+									<Check className="h-3.5 w-3.5" />
+								</motion.span>
+							) : (
+								<span className="tabular-nums">{i + 1}</span>
+							)}
+							{step.label}
+						</span>
+					);
+				})}
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex items-center">
 			{steps.map((step, i) => {
@@ -398,11 +453,93 @@ function BankResultGallery({
 
 /* ─────────────────── Hero ─────────────────── */
 
-function PromptHero({ entry }: { entry: ToolBankEntry }) {
+function PromptHero({
+	entry,
+	licenciada,
+	marca,
+}: {
+	entry: ToolBankEntry;
+	licenciada?: boolean;
+	marca?: LicensedBrand | null;
+}) {
 	const cover = coverOf(entry);
 	const mode = modeOf(entry);
 	const maxImages = maxImagesOf(entry);
 	const showsImage = modeUsesImage(mode);
+
+	if (licenciada) {
+		return (
+			<div className="overflow-hidden rounded-lg border border-[var(--al-rule)] bg-[var(--al-card)]">
+				{/* A TARJA DA MARCA. É o conserto da quebra do fluxo: quem entrou por
+				    "Corinthians → Caneca 360°" via só "Caneca 360°" na tela seguinte,
+				    e a marca — que é o produto inteiro — sumia bem onde ele vai
+				    gastar voxxy. */}
+				{marca && (
+					<div className="flex items-center gap-3 border-b border-[var(--al-rule)] px-4 py-3">
+						<div
+							className="flex h-10 w-10 shrink-0 items-center justify-center rounded p-1.5"
+							style={{ backgroundColor: marca.accent_color || CAMPO_NEUTRO }}
+						>
+							{marca.crest_url ? (
+								/* <img> intencional: a arte vem de CDN dinâmico. */
+								<img
+									src={marca.crest_url}
+									alt=""
+									className="max-h-full max-w-full object-contain"
+								/>
+							) : null}
+						</div>
+						<div className="min-w-0 flex-1">
+							<p className="font-display truncate text-sm font-bold tracking-[-0.01em] text-[var(--al-ink)]">
+								{marca.display_name}
+							</p>
+							<p className="mt-1.5">
+								<SeloAtivo />
+							</p>
+						</div>
+					</div>
+				)}
+
+				<div className="flex flex-col gap-4 p-4 sm:flex-row">
+					<div className="h-24 w-24 shrink-0 overflow-hidden rounded bg-[var(--al-poco)] sm:h-28 sm:w-28">
+						{cover ? (
+							/* <img> intencional: data URL / CDN dinâmico */
+							<img
+								src={cover}
+								alt={entry.title}
+								className="h-full w-full object-cover"
+							/>
+						) : marca?.crest_url ? (
+							/* Sem exemplo, o escudo apagado — marca d'água, não amostra. */
+							<div className="flex h-full items-center justify-center p-6">
+								{/* <img> intencional: a arte vem de CDN dinâmico. */}
+								<img
+									src={marca.crest_url}
+									alt=""
+									className="max-h-full max-w-full object-contain opacity-20 grayscale dark:opacity-[0.14]"
+								/>
+							</div>
+						) : null}
+					</div>
+
+					<div className="min-w-0 flex-1 space-y-2.5">
+						<p className={`${MONO} text-[var(--al-mute)]`}>Modelo</p>
+						<h2 className="font-display text-lg font-bold tracking-[-0.01em] text-[var(--al-ink)]">
+							{entry.title}
+						</h2>
+						<LinhaDeRegistro rotulo="Entrada">
+							{modeLabel(mode)}
+						</LinhaDeRegistro>
+						{showsImage && (
+							<LinhaDeRegistro rotulo="Fotos">
+								{maxImages > 1 ? `até ${maxImages}` : 'até 1'}
+							</LinhaDeRegistro>
+						)}
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#1a1a1d]">
@@ -690,11 +827,25 @@ function SectionHeader({
 	no,
 	title,
 	hint,
+	licenciada,
 }: {
 	no: number;
 	title: string;
 	hint?: string;
+	licenciada?: boolean;
 }) {
+	if (licenciada) {
+		return (
+			<div>
+				<p className={`${MONO} text-[var(--al-mute)]`}>{`Passo ${no}`}</p>
+				<h3 className="font-display mt-1.5 text-sm font-bold tracking-[-0.01em] text-[var(--al-ink)]">
+					{title}
+				</h3>
+				{hint && <p className="mt-0.5 text-xs text-[var(--al-mute)]">{hint}</p>}
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex items-start gap-2.5">
 			<span
@@ -750,6 +901,23 @@ export interface PromptGenerateViewProps {
 	onBack: () => void;
 	/** Rótulo do voltar. A tela anterior nem sempre é uma "galeria". */
 	backLabel?: string;
+	/**
+	 * Veste a tela na linguagem da Arte Licenciada — versalete, linha pontilhada
+	 * e a moldura escura do balcão, no lugar do cromo genérico.
+	 *
+	 * OPCIONAL E AUSENTE POR PADRÃO, e isto não é detalhe: esta tela é a MESMA
+	 * dos Prompts Mágicos. Todo ramo aqui dentro é
+	 * `licenciada ? <novo/> : <o de sempre/>`, nunca uma edição da marcação
+	 * compartilhada — quem não passa a prop recebe exatamente o que recebia.
+	 */
+	variante?: 'licenciada';
+	/**
+	 * A marca em uso. Sem ela o aluno entrava por "Corinthians → Caneca 360°" e
+	 * a tela seguinte não dizia Corinthians em lugar nenhum: a marca sumia
+	 * justamente onde ele gasta voxxy. Vem do `onSelect` do balcão, que já a
+	 * entrega inteira — nenhuma chamada nova.
+	 */
+	marca?: LicensedBrand | null;
 	/** Aviso inline de billing (ReactNode) — renderizado abaixo da ação. */
 	billingNotice?: ReactNode;
 	/** Cards do Passo 1 (Tipos de Criação) — da definition da tool. Vazio = sem Passo 1. */
@@ -785,6 +953,8 @@ export function PromptGenerateView({
 	onResetResult,
 	onBack,
 	backLabel = 'Voltar à galeria',
+	variante,
+	marca,
 	billingNotice,
 	creations,
 	creationId,
@@ -851,24 +1021,54 @@ export function PromptGenerateView({
 	// própria full-width abaixo. Sem os dois compactos → nada nesta linha.
 	const compactColsClass =
 		hasCreations && hasVariations ? 'md:grid-cols-2' : 'grid-cols-1';
-	const stepCardCls =
-		'rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-[#1a1a1d]';
+	// A identidade da tela cabe em poucos lugares; este é um deles. O ramo
+	// licenciado veste a moldura do balcão para a tela deixar de ser uma ilha
+	// clara entre duas telas de certificado.
+	const licenciada = variante === 'licenciada';
+	const animar = useAnimar();
+
+	const stepCardCls = licenciada
+		? 'rounded-lg border border-[var(--al-rule)] bg-[var(--al-card)] p-5'
+		: 'rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-[#1a1a1d]';
 
 	return (
-		<div className="space-y-6">
+		<div
+			className={
+				licenciada
+					? `${TEMA_LICENCIADA} space-y-5 text-[var(--al-ink)]`
+					: 'space-y-6'
+			}
+		>
 			<button
 				type="button"
 				onClick={onBack}
-				className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+				className={
+					licenciada
+						? `${MONO} inline-flex items-center gap-1.5 text-[var(--al-mute)] transition-colors hover:text-[var(--al-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--al-ink)]`
+						: 'inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10'
+				}
 			>
-				<ArrowLeft className="h-4 w-4" /> {backLabel}
+				<ArrowLeft className={licenciada ? 'h-3.5 w-3.5' : 'h-4 w-4'} />{' '}
+				{backLabel}
 			</button>
 
-			<PromptHero entry={entry} />
+			<PromptHero entry={entry} licenciada={licenciada} marca={marca} />
 
 			{/* Stepper */}
-			<div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 dark:border-white/10 dark:bg-[#1a1a1d]">
-				<PromptStepper steps={steps} completed={completed} active={active} />
+			<div
+				className={
+					licenciada
+						? 'rounded-lg border border-[var(--al-rule)] bg-[var(--al-card)] px-4 py-3'
+						: 'rounded-2xl border border-slate-200 bg-white px-5 py-4 dark:border-white/10 dark:bg-[#1a1a1d]'
+				}
+			>
+				<PromptStepper
+					steps={steps}
+					completed={completed}
+					active={active}
+					licenciada={licenciada}
+					animar={animar}
+				/>
 			</div>
 
 			{/* Linha 1 — cards compactos lado a lado (① Tipo | ② Variações).
@@ -879,6 +1079,7 @@ export function PromptGenerateView({
 					{hasCreations && (
 						<section className={`${stepCardCls} space-y-3`}>
 							<SectionHeader
+								licenciada={licenciada}
 								no={sectionNo.criacao}
 								title="Tipo de criação"
 								hint="Escolha o formato"
@@ -926,6 +1127,7 @@ export function PromptGenerateView({
 					{hasVariations && (
 						<section className={`${stepCardCls} space-y-3`}>
 							<SectionHeader
+								licenciada={licenciada}
 								no={sectionNo.variacoes}
 								title="Variações"
 								hint="Quantas versões gerar"
@@ -962,6 +1164,7 @@ export function PromptGenerateView({
 			    projeto: só o textarea do prompt + referências quando o modo pede. */}
 			<section className={`${stepCardCls} space-y-3.5`}>
 				<SectionHeader
+					licenciada={licenciada}
 					no={sectionNo.detalhes}
 					title="Detalhes"
 					hint="Quanto mais específico, melhor"
@@ -1039,7 +1242,10 @@ export function PromptGenerateView({
 					onClick={onGenerate}
 					disabled={pending || insufficient || !canGenerate}
 					style={screenAccentBg}
-					className="flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+					className={`flex w-full items-center justify-center gap-2 px-6 py-3.5 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60 ${
+						// O carimbo no clique: o mesmo gesto do campo da marca no balcão.
+						licenciada ? 'rounded-lg active:scale-[0.985]' : 'rounded-xl'
+					}`}
 				>
 					{pending ? (
 						<>

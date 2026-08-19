@@ -1,9 +1,19 @@
 'use client';
 
 import { BadgeCheck, ShieldAlert, ShieldX } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useParams } from 'next/navigation';
 import { type CSSProperties, type ReactNode, useEffect, useState } from 'react';
 import { api } from '@/lib/fetch';
+import {
+	CARIMBO,
+	DURACAO,
+	useAnimar,
+} from '@/modules/tools/components/licenciada-ui';
+import {
+	MOCK_LICENCIADA,
+	mockVerify,
+} from '@/modules/tools/mocks/licensed-art.mock';
 
 interface Verificacao {
 	code: string;
@@ -51,9 +61,106 @@ const MARCA = {
 	'--ux-border': '#e9e3fb',
 	'--ux-soft': '#f7f4ff',
 	'--ux-muted': '#6b7280',
+	// A tarja drenada, para quando o veredito sobre a peça é negativo. É o mesmo
+	// papel timbrado com a cor retirada — não outro documento.
+	'--ux-graphite-dark': '#2a2733',
+	'--ux-graphite': '#3d3949',
+	'--ux-graphite-light': '#575167',
+	// O verde é o MESMO da ferramenta: significa "licença ativa" nos dois lados.
+	'--ux-seal': '#1f9d5b',
+	'--ux-alert': '#dc2626',
+	'--ux-warn': '#d97706',
 } as CSSProperties;
 
 const MONO = 'font-mono text-[11px] uppercase tracking-[0.16em] leading-none';
+
+const FAIXA_VIOLETA =
+	'bg-[linear-gradient(120deg,var(--ux-violet-dark),var(--ux-violet),var(--ux-violet-light))]';
+const FAIXA_GRAFITE =
+	'bg-[linear-gradient(120deg,var(--ux-graphite-dark),var(--ux-graphite),var(--ux-graphite-light))]';
+
+/**
+ * O tom de cada um dos quatro estados.
+ *
+ * Eles precisam ser distinguíveis DE RELANCE, não por leitura: quem está no
+ * meio de uma feira com o chaveiro na mão olha a tela por dois segundos. Antes,
+ * os quatro dividiam o mesmo corpo centralizado e só a frase mudava.
+ *
+ * A regra que decide a cor da tarja: ela só drena para grafite quando o
+ * veredito é SOBRE A PEÇA e é negativo. Em "não deu para verificar" ela
+ * continua violeta de propósito — um documento acinzentado e alarmado ali seria
+ * a plataforma insinuando que a peça é irregular, quando a falha é nossa e não
+ * diz absolutamente nada sobre quem vendeu.
+ */
+interface Tom {
+	faixa: string;
+	anel: string;
+	etiquetaFundo: string;
+	etiquetaTexto: string;
+	rotulo: string;
+	titulo: string;
+	texto: string;
+	/** Escudo sem cor: a marca ainda é aquela, mas a licença não vale mais. */
+	escudoApagado?: boolean;
+}
+
+function tomDe(estado: Estado): Tom | null {
+	if (estado.fase === 'carregando') return null;
+
+	if (estado.fase === 'inexistente') {
+		return {
+			faixa: FAIXA_GRAFITE,
+			anel: 'var(--ux-alert)',
+			etiquetaFundo: 'rgba(220,38,38,0.1)',
+			etiquetaTexto: 'var(--ux-alert)',
+			rotulo: 'Código não emitido',
+			titulo: 'Código não encontrado.',
+			texto: 'Se ele veio gravado num produto, desconfie.',
+		};
+	}
+
+	if (estado.fase === 'erro') {
+		return {
+			// Violeta: a falha é do nosso lado, e a tarja não acusa ninguém.
+			faixa: FAIXA_VIOLETA,
+			anel: 'var(--ux-warn)',
+			etiquetaFundo: 'rgba(217,119,6,0.12)',
+			etiquetaTexto: 'var(--ux-warn)',
+			rotulo: 'Sem resposta agora',
+			titulo: 'Não deu para verificar.',
+			texto:
+				'Isto não significa que a peça seja irregular — o problema é nosso. Tente de novo em instantes.',
+		};
+	}
+
+	if (estado.dados.valid) {
+		return {
+			faixa: FAIXA_VIOLETA,
+			// Verde, e não o violeta do emissor: o anel é o CANAL DO VEREDITO nos
+			// quatro estados (vermelho, âmbar, verde). Com o violeta aqui, o único
+			// estado bom era também o único que não respondia pela cor do anel.
+			anel: 'var(--ux-seal)',
+			etiquetaFundo: 'rgba(31,157,91,0.12)',
+			etiquetaTexto: 'var(--ux-seal)',
+			rotulo: 'Licença ativa',
+			titulo: 'Peça licenciada.',
+			texto: 'Esta arte foi gerada sob licença oficial da marca.',
+		};
+	}
+
+	return {
+		faixa: FAIXA_GRAFITE,
+		anel: 'var(--ux-alert)',
+		etiquetaFundo: 'rgba(220,38,38,0.1)',
+		etiquetaTexto: 'var(--ux-alert)',
+		rotulo: 'Licença revogada',
+		titulo: 'Licença sem validade.',
+		texto: 'Esta arte foi licenciada um dia, mas a licença foi revogada.',
+		// Sem isto, uma peça REVOGADA exibia o escudo do clube em cores no alto do
+		// documento e passava por válida para quem só bate o olho.
+		escudoApagado: true,
+	};
+}
 
 export default function VerificacaoArteLicenciada() {
 	const params = useParams<{ code: string }>();
@@ -62,11 +169,18 @@ export default function VerificacaoArteLicenciada() {
 	// congelado no cache de 60s da CDN, então exibi-lo como "consultado agora"
 	// seria mentira dentro dessa janela.
 	const [consultadoEm, setConsultadoEm] = useState<Date | null>(null);
+	const animar = useAnimar();
 
 	useEffect(() => {
 		let vivo = true;
-		api
-			.get<Verificacao>(`/api/licensed-art/${encodeURIComponent(params.code)}`)
+		// Com o mock ligado, o código sai da biblioteca falsa do navegador em vez
+		// da main-api — inclusive o de peça arquivada, que TEM de responder.
+		const buscar = MOCK_LICENCIADA
+			? mockVerify(params.code).then((data) => ({ data }))
+			: api.get<Verificacao>(
+					`/api/licensed-art/${encodeURIComponent(params.code)}`,
+				);
+		buscar
 			.then(({ data }) => {
 				if (!vivo) return;
 				setEstado({ fase: 'ok', dados: data });
@@ -87,6 +201,7 @@ export default function VerificacaoArteLicenciada() {
 	}, [params.code]);
 
 	const dados = estado.fase === 'ok' ? estado.dados : null;
+	const tom = tomDe(estado);
 
 	return (
 		<main
@@ -96,8 +211,14 @@ export default function VerificacaoArteLicenciada() {
 			<div className="mx-auto max-w-md">
 				<article className="overflow-hidden rounded-2xl border border-[var(--ux-border)] bg-[var(--ux-card)] shadow-[0_18px_50px_-24px_rgba(76,29,149,0.45)]">
 					{/* A tarja do emissor. O logo é branco e monocromático — depende do
-					    violeta atrás dele, por isso a faixa e não um cabeçalho claro. */}
-					<header className="relative bg-[linear-gradient(120deg,var(--ux-violet-dark),var(--ux-violet),var(--ux-violet-light))] px-6 pb-12 pt-6">
+					    fundo escuro atrás dele, por isso a faixa e não um cabeçalho
+					    claro. A cor dela é o primeiro sinal do veredito, antes de
+					    qualquer palavra. */}
+					<header
+						className={`relative px-6 pb-12 pt-6 transition-colors duration-300 ${
+							tom?.faixa ?? FAIXA_VIOLETA
+						}`}
+					>
 						{/* <img> intencional: PNG da marca servido de /public. */}
 						<img
 							src="/img/upvox-logo-white.png"
@@ -112,7 +233,12 @@ export default function VerificacaoArteLicenciada() {
 						    onde acaba o papel timbrado de quem emitiu: o escudo é de quem
 						    licenciou, a tarja é de quem atesta. */}
 						<div className="-bottom-10 absolute left-1/2 -translate-x-1/2">
-							<Selo dados={dados} fase={estado.fase} />
+							<Selo
+								dados={dados}
+								fase={estado.fase}
+								tom={tom}
+								animar={animar}
+							/>
 						</div>
 					</header>
 
@@ -124,45 +250,39 @@ export default function VerificacaoArteLicenciada() {
 							</div>
 						)}
 
-						{estado.fase === 'inexistente' && (
+						{tom && (
 							<Veredito
-								titulo="Código não encontrado."
-								texto="Se ele veio gravado num produto, desconfie."
-							/>
-						)}
-
-						{estado.fase === 'erro' && (
-							<Veredito
-								titulo="Não deu para verificar agora."
-								texto="Isto não significa que a peça seja irregular. Tente de novo em instantes."
+								tom={tom}
+								animar={animar}
+								// A sobrancelha nomeia o licenciante ANTES do veredito: quem
+								// escaneia quer saber de quem é a marca tanto quanto se a
+								// peça é oficial, e é a informação que o escudo logo acima
+								// já começou a dar.
+								licenciante={dados?.brandName ?? dados?.licensorName ?? null}
 							/>
 						)}
 
 						{dados && (
-							<>
-								<Veredito
-									// A sobrancelha nomeia o licenciante ANTES do veredito: quem
-									// escaneia quer saber de quem é a marca tanto quanto se a
-									// peça é oficial, e é a informação que o escudo logo acima
-									// já começou a dar.
-									licenciante={dados.brandName ?? dados.licensorName}
-									titulo={
-										dados.valid ? 'Peça licenciada.' : 'Licença sem validade.'
-									}
-									texto={
-										dados.valid
-											? 'Esta arte foi gerada sob licença oficial da marca.'
-											: 'Esta arte foi licenciada um dia, mas a licença foi revogada.'
-									}
-								/>
-
+							<motion.div
+								initial={animar ? { opacity: 0, y: 8 } : false}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{
+									duration: DURACAO.media,
+									delay: 0.18,
+									ease: 'easeOut',
+								}}
+							>
 								{dados.previewUrl && (
 									<div className="mt-6 overflow-hidden rounded-xl border border-[var(--ux-border)] bg-[var(--ux-soft)]">
 										{/* <img> intencional: a arte vem de CDN dinâmico. */}
 										<img
 											src={dados.previewUrl}
 											alt="A arte licenciada"
-											className="w-full object-contain"
+											className={`w-full object-contain ${
+												// A arte de uma peça revogada também perde a cor: ela
+												// não deve ser reaproveitada como prova de nada.
+												dados.valid ? '' : 'opacity-70 grayscale'
+											}`}
 										/>
 									</div>
 								)}
@@ -181,7 +301,7 @@ export default function VerificacaoArteLicenciada() {
 									/>
 									<Linha rotulo="Código" valor={dados.code} mono />
 								</dl>
-							</>
+							</motion.div>
 						)}
 					</div>
 
@@ -205,73 +325,109 @@ export default function VerificacaoArteLicenciada() {
 }
 
 /**
- * O escudo de quem licenciou, num medalhão branco sobre a cor oficial do clube.
- * Sem escudo cadastrado (ou fora do estado "ok"), vira o ícone do veredito — a
- * pergunta continua respondida mesmo quando a marca não tem arte no cadastro.
+ * O escudo de quem licenciou, num medalhão sobre a cor oficial do clube, com um
+ * anel que carrega o veredito. Sem escudo cadastrado (ou fora do estado "ok"),
+ * vira o ícone do estado — a pergunta continua respondida mesmo quando a marca
+ * não tem arte no cadastro.
+ *
+ * Ele entra como um lacre sendo prensado: escala com um overshoot curto, sem
+ * atraso. O veredito nunca espera a coreografia.
  */
 function Selo({
 	dados,
 	fase,
+	tom,
+	animar,
 }: {
 	dados: Verificacao | null;
 	fase: Estado['fase'];
+	tom: Tom | null;
+	animar: boolean;
 }) {
 	const base =
-		'flex h-20 w-20 items-center justify-center rounded-full border-4 border-[var(--ux-card)] shadow-[0_8px_24px_-8px_rgba(27,22,48,0.4)]';
+		'flex h-20 w-20 items-center justify-center rounded-full border-4 shadow-[0_8px_24px_-8px_rgba(27,22,48,0.4)]';
+	const anel = { borderColor: tom?.anel ?? 'var(--ux-card)' };
 
-	if (dados?.crestUrl) {
-		return (
+	const conteudo =
+		dados?.crestUrl != null ? (
 			<div
-				className={`${base} animate-fade-in-up overflow-hidden p-3`}
+				className="flex h-full w-full items-center justify-center rounded-full p-3"
 				style={{ backgroundColor: dados.accentColor || '#ffffff' }}
 			>
 				{/* <img> intencional: a arte vem de CDN dinâmico. */}
 				<img
 					src={dados.crestUrl}
 					alt={dados.brandName ?? 'Marca licenciada'}
-					className="max-h-full max-w-full object-contain"
+					className={`max-h-full max-w-full object-contain ${
+						tom?.escudoApagado ? 'opacity-60 grayscale' : ''
+					}`}
 				/>
 			</div>
-		);
-	}
-
-	const icone =
-		fase === 'carregando' ? (
+		) : fase === 'carregando' ? (
 			<div className="h-8 w-8 animate-pulse rounded-full bg-[var(--ux-border)]" />
 		) : fase === 'erro' ? (
-			<ShieldAlert className="h-9 w-9 text-amber-500" />
+			<ShieldAlert className="h-9 w-9 text-[var(--ux-warn)]" />
 		) : dados?.valid ? (
-			<BadgeCheck className="h-9 w-9 text-[var(--ux-violet)]" />
+			<BadgeCheck className="h-9 w-9 text-[var(--ux-seal)]" />
 		) : (
-			<ShieldX className="h-9 w-9 text-red-500" />
+			<ShieldX className="h-9 w-9 text-[var(--ux-alert)]" />
 		);
 
-	return <div className={`${base} bg-[var(--ux-card)]`}>{icone}</div>;
+	return (
+		<motion.div
+			initial={animar ? { scale: 0.6, opacity: 0 } : false}
+			animate={{ scale: 1, opacity: 1 }}
+			transition={CARIMBO}
+			style={anel}
+			className={`${base} overflow-hidden bg-[var(--ux-card)]`}
+		>
+			{conteudo}
+		</motion.div>
+	);
 }
 
 function Veredito({
+	tom,
 	licenciante,
-	titulo,
-	texto,
+	animar,
 }: {
-	licenciante?: string | null;
-	titulo: string;
-	texto: string;
+	tom: Tom;
+	licenciante: string | null;
+	animar: boolean;
 }) {
 	return (
-		<div className="text-center">
+		<motion.div
+			// Sem atraso: a resposta é a razão de a página existir.
+			initial={animar ? { opacity: 0, y: 8 } : false}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: DURACAO.rapida, ease: 'easeOut' }}
+			className="text-center"
+		>
 			{licenciante && (
 				<p className={`${MONO} mb-3 text-[var(--ux-violet)]`}>
 					Licenciado por {licenciante}
 				</p>
 			)}
 			<h1 className="font-display text-2xl font-bold tracking-[-0.02em]">
-				{titulo}
+				{tom.titulo}
 			</h1>
-			<p className="mt-2 text-sm leading-relaxed text-[var(--ux-muted)]">
-				{texto}
+
+			{/* A etiqueta diz o estado em UMA expressão, com cor própria. É o que
+			    sobra quando a pessoa não lê a frase inteira. */}
+			<motion.p
+				initial={animar ? { opacity: 0 } : false}
+				animate={{ opacity: 1 }}
+				transition={{ duration: DURACAO.rapida, delay: 0.12 }}
+				style={{ backgroundColor: tom.etiquetaFundo, color: tom.etiquetaTexto }}
+				className={`${MONO} mt-3 inline-flex items-center rounded-full px-3 py-1.5`}
+			>
+				{tom.rotulo}
+			</motion.p>
+
+			<p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-[var(--ux-muted)]">
+				{tom.texto}
 			</p>
-		</div>
+		</motion.div>
 	);
 }
 
