@@ -50,14 +50,24 @@ export function useToolBilling(
 	// Só cobra quem realmente tem direito de usar (entitled). View-only não cobra.
 	const billed = !!tool && tool.entitled;
 	const cost = tool?.vox_cost ?? 0;
-	// Custo efetivo escala por variação (1× = vox_cost, 2× = 2×, 4× = 4×). O
-	// upvox debita esse valor no invoke; aqui só espelha p/ gate de saldo + aviso.
 	const licenseUnitCost = tool?.license_unit_cost ?? 0;
 	const licenseUnits = Math.max(0, printRun - 1);
 	const custoTiragem = Math.round(licenseUnitCost * licenseUnits * 100) / 100;
-	const effectiveCost =
-		Math.round((cost * variationCount + custoTiragem) * 100) / 100;
 	const remainingFree = ent.remainingFree(featureKey);
+	/** Há cota para esta rodada? `null` = ilimitada pelo plano. */
+	const temCota = remainingFree === null || remainingFree > 0;
+	/**
+	 * A COTA COBRE UMA GERAÇÃO — A PRIMEIRA. As demais são sempre voxxy.
+	 *
+	 * Espelha `authorizeAndCharge` no upvox, que é quem manda. Errar aqui não
+	 * cobra errado (o débito é lá), mas mostra um preço que não é o da conta —
+	 * e preço na tela que não bate com o extrato é pior que preço alto.
+	 */
+	const geracoesPagas = temCota
+		? Math.max(0, variationCount - 1)
+		: variationCount;
+	const custoGeracao = Math.round(cost * geracoesPagas * 100) / 100;
+	const effectiveCost = Math.round((custoGeracao + custoTiragem) * 100) / 100;
 	const voxBalance = ent.voxBalance;
 	const runTool = useRunTool(featureKey, courseSlug);
 
@@ -76,7 +86,17 @@ export function useToolBilling(
 	});
 
 	// Precisa pagar (sem cota grátis e com custo) e não tem saldo → bloqueia + avisa.
-	const mustPay = billed && remainingFree === 0 && effectiveCost > 0;
+	/**
+	 * Precisa pagar = a rodada TEM custo, tenha cota ou não.
+	 *
+	 * Era `remainingFree === 0 && ...`, o que valia enquanto cota e cobrança
+	 * fossem exclusivas. Deixaram de ser: a cota cobre a primeira geração e a
+	 * tiragem nunca é coberta, então uma rodada com cota disponível pode debitar
+	 * voxxy. Com a condição antiga, quem tinha cota e não tinha saldo passava
+	 * pelo gate, clicava, e levava um erro genérico do backend em vez do aviso
+	 * com "comprar voxxys".
+	 */
+	const mustPay = billed && effectiveCost > 0;
 	const insufficient = mustPay && !ent.isLoading && voxBalance < effectiveCost;
 
 	const runEngine = useCallback(
@@ -119,9 +139,13 @@ export function useToolBilling(
 		billed && cost > 0 ? (
 			<ToolCostNotice
 				cost={effectiveCost}
+				unitCost={cost}
 				remainingFree={remainingFree}
 				balance={voxBalance}
 				insufficient={insufficient}
+				/* A cota vai absorver uma geração desta rodada? É o que separa
+				   "grátis" de "quase grátis" — e o aviso tem de dizer qual. */
+				cotaCobreUma={temCota && variationCount > 0}
 			/>
 		) : null;
 
