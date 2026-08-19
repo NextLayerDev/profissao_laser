@@ -3,6 +3,7 @@
 import {
 	ArrowDown,
 	ArrowUp,
+	BadgeCheck,
 	Check,
 	Copy,
 	Database,
@@ -17,6 +18,7 @@ import {
 	Upload,
 	X,
 } from 'lucide-react';
+import Link from 'next/link';
 import { type ReactNode, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useImageSizePresets } from '@/modules/tools/hooks/use-image-size-presets';
@@ -950,6 +952,14 @@ export function ToolBankManager({
 	const editingEntry = entries.find((e) => e.id === editingId) ?? null;
 	const showForm = creating || !!editingId;
 
+	/**
+	 * Banco de tool licenciada é o que declara o campo `feature_key`: a arte da
+	 * marca vive no cadastro de Marcas licenciadas, não no registro do prompt.
+	 * Sem esta sinalização o admin abre a tela, não acha onde subir o brasão, e
+	 * conclui que faltou campo.
+	 */
+	const ehBancoLicenciado = fields.some((f) => f.name === 'feature_key');
+
 	return (
 		<div className="space-y-5">
 			{/* Cabeçalho */}
@@ -966,6 +976,14 @@ export function ToolBankManager({
 					</div>
 				</div>
 				<div className="flex items-center gap-2">
+					{ehBancoLicenciado && (
+						<Link
+							href="/ferramentas/marcas"
+							className="flex items-center gap-1.5 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-xs font-medium text-emerald-300 transition-colors hover:bg-emerald-400/20"
+						>
+							<BadgeCheck className="h-4 w-4" /> Marcas licenciadas
+						</Link>
+					)}
 					{onConfigure && (
 						<button
 							type="button"
@@ -986,6 +1004,23 @@ export function ToolBankManager({
 					)}
 				</div>
 			</div>
+
+			{ehBancoLicenciado && (
+				<p className="rounded-xl border border-emerald-400/20 bg-emerald-400/5 px-3.5 py-2.5 text-xs text-emerald-200/90">
+					O <strong>brasão e o mascote não ficam no prompt</strong> — eles são
+					da marca. Cadastre a arte uma vez em{' '}
+					<Link
+						href="/ferramentas/marcas"
+						className="underline underline-offset-2"
+					>
+						Marcas licenciadas
+					</Link>{' '}
+					e aqui basta escrever a chave dela (ex.:{' '}
+					<code>clube:corinthians</code>). Assim um clube com caneca, capinha e
+					chaveiro usa um upload só, e trocar a arte oficial atualiza todos de
+					uma vez.
+				</p>
+			)}
 
 			{!bank?.enabled && (
 				<div className="flex items-start gap-3 rounded-xl border border-amber-400/30 bg-amber-500/5 p-4">
