@@ -315,6 +315,89 @@ function BankResultImage({
 	);
 }
 
+/* ─────────────────── Peças do lote (arte licenciada) ─────────────────── */
+
+/** Uma peça de um lote licenciado: arquivo próprio, código próprio. */
+type Peca = { index: number; code: string; url: string };
+
+function ehLoteDePecas(v: unknown): v is Peca[] {
+	return (
+		Array.isArray(v) &&
+		v.length > 0 &&
+		v.every(
+			(p) =>
+				typeof p === 'object' &&
+				p !== null &&
+				typeof (p as Peca).url === 'string' &&
+				typeof (p as Peca).code === 'string',
+		)
+	);
+}
+
+/**
+ * O LOTE. Cada peça é um arquivo com o SEU código gravado dentro — é isso que
+ * transforma tiragem em algo contável: não existe "a arte" para gravar quantas
+ * vezes quiser, existem N peças numeradas.
+ *
+ * O nome do arquivo é o código, de propósito: no chão de fábrica é assim que se
+ * acha a peça 23 e se confere o que está gravado nela sem abrir o arquivo.
+ */
+function BankResultBatch({ pecas }: { pecas: Peca[] }) {
+	const uma = pecas.length === 1;
+	return (
+		<div className="space-y-4">
+			{!uma && (
+				<p className="text-sm text-slate-600 dark:text-gray-300">
+					<span className="font-semibold">{pecas.length} peças</span> — cada uma
+					com o próprio código gravado. Baixe uma a uma e grave na ordem.
+				</p>
+			)}
+			<div
+				className={
+					uma ? 'space-y-3' : 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3'
+				}
+			>
+				{pecas.map((p) => (
+					<div
+						key={p.code}
+						className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-[#111]"
+					>
+						{/* Fundo CLARO mesmo no tema escuro: a peça é um PNG com fundo
+						    transparente e tinta preta — sobre escuro, o carimbo sumiria. */}
+						<div className="flex max-h-[55vh] items-center justify-center overflow-hidden bg-white">
+							{/* <img> intencional: a peça vem de CDN dinâmico. */}
+							<img
+								src={p.url}
+								alt={`Peça ${p.index}`}
+								className="max-h-[55vh] w-full object-contain"
+							/>
+						</div>
+						<div className="space-y-1.5 px-3 py-2">
+							<div className="flex items-center justify-between gap-2">
+								<span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+									{uma ? 'Peça' : `Peça ${p.index} de ${pecas.length}`}
+								</span>
+								<a
+									href={p.url}
+									download
+									className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+									style={ACCENT_BG}
+								>
+									<Download className="h-3.5 w-3.5" />
+									Baixar
+								</a>
+							</div>
+							<p className="font-mono truncate text-[11px] text-slate-500 dark:text-gray-400">
+								{p.code}
+							</p>
+						</div>
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
+
 /* ─────────────────── Result gallery (N variações) ─────────────────── */
 
 /** Item de imagem vindo do bloco `ai.generate_image` (`output.images`). */
@@ -346,6 +429,19 @@ function BankResultGallery({
 	result: ToolRunResult;
 	downloadKey: string;
 }) {
+	// Arte licenciada: o lote vem em `pieces`, uma peça por código. Vem ANTES
+	// das variações porque são coisas diferentes — variação é a mesma peça
+	// desenhada de outro jeito; peça é uma unidade licenciada a mais.
+	const pecas = result.output.pieces;
+	if (ehLoteDePecas(pecas)) {
+		return (
+			<div className="space-y-4">
+				{result.license ? <ArtLicensePanel license={result.license} /> : null}
+				<BankResultBatch pecas={pecas} />
+			</div>
+		);
+	}
+
 	const images = result.output.images;
 	if (!isResultImageArray(images)) {
 		return <BankResultImage result={result} downloadKey={downloadKey} />;
@@ -759,6 +855,14 @@ export interface PromptGenerateViewProps {
 	onCreationIdChange?: (id: string | null) => void;
 	/** Variações oferecidas no Passo 3 (ex.: [1,2,4]) — da definition. Vazio = sem Passo 3. */
 	returnVariations?: number[];
+	/**
+	 * TIRAGEM: quantas peças licenciadas a rodada produz. Só as tools que
+	 * declaram `print_run` na definition mostram esta etapa — nas outras, nada
+	 * muda.
+	 */
+	printRunOptions?: number[];
+	printRun?: number;
+	onPrintRunChange?: (n: number) => void;
 	/** Quantidade selecionada no Passo 3 (controlado pelo DynamicToolView). */
 	variationCount?: number | null;
 	onVariationCountChange?: (n: number | null) => void;
@@ -792,6 +896,9 @@ export function PromptGenerateView({
 	returnVariations,
 	variationCount,
 	onVariationCountChange,
+	printRunOptions,
+	printRun = 1,
+	onPrintRunChange,
 }: PromptGenerateViewProps) {
 	const mode = modeOf(entry);
 	const needsTema = modeUsesText(mode);
@@ -799,6 +906,10 @@ export function PromptGenerateView({
 	const maxImages = maxImagesOf(entry);
 	const hasCreations = !!creations && creations.length > 0;
 	const hasVariations = !!returnVariations && returnVariations.length > 0;
+	const hasTiragem = !!printRunOptions && printRunOptions.length > 1;
+	// Tiragem > 1 desliga variações: 4 versões × 50 peças são 200 arquivos, e
+	// não é fluxo real — quem encomenda tiragem já escolheu a arte.
+	const variacoesTravadas = hasTiragem && printRun > 1;
 
 	const steps = useMemo(
 		() =>
@@ -845,12 +956,24 @@ export function PromptGenerateView({
 	const sectionNo = {
 		criacao: 1,
 		variacoes: hasCreations ? 2 : 1,
-		detalhes: (hasCreations ? 1 : 0) + (hasVariations ? 1 : 0) + 1,
+		tiragem: (hasCreations ? 1 : 0) + (hasVariations ? 1 : 0) + 1,
+		detalhes:
+			(hasCreations ? 1 : 0) +
+			(hasVariations ? 1 : 0) +
+			(hasTiragem ? 1 : 0) +
+			1,
 	};
 	// Cards compactos lado a lado (Tipo | Variações); Detalhes vai numa linha
 	// própria full-width abaixo. Sem os dois compactos → nada nesta linha.
+	const compactos = [hasCreations, hasVariations, hasTiragem].filter(
+		Boolean,
+	).length;
 	const compactColsClass =
-		hasCreations && hasVariations ? 'md:grid-cols-2' : 'grid-cols-1';
+		compactos >= 3
+			? 'md:grid-cols-3'
+			: compactos === 2
+				? 'md:grid-cols-2'
+				: 'grid-cols-1';
 	const stepCardCls =
 		'rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-[#1a1a1d]';
 
@@ -873,7 +996,7 @@ export function PromptGenerateView({
 
 			{/* Linha 1 — cards compactos lado a lado (① Tipo | ② Variações).
 			    Detalhes vira uma linha própria full-width abaixo (não espremido). */}
-			{(hasCreations || hasVariations) && (
+			{(hasCreations || hasVariations || hasTiragem) && (
 				<div className={`grid items-stretch gap-4 ${compactColsClass}`}>
 					{/* ① Tipo de Criação (cards; resolução OCULTA) */}
 					{hasCreations && (
@@ -937,6 +1060,7 @@ export function PromptGenerateView({
 										<button
 											key={n}
 											type="button"
+											disabled={variacoesTravadas && n !== 1}
 											onClick={() =>
 												onVariationCountChange?.(selected ? null : n)
 											}
@@ -953,6 +1077,42 @@ export function PromptGenerateView({
 									);
 								})}
 							</div>
+						</section>
+					)}
+
+					{/* ③ Tiragem — quantas PEÇAS licenciadas a rodada produz */}
+					{hasTiragem && (
+						<section className={`${stepCardCls} space-y-3`}>
+							<SectionHeader
+								no={sectionNo.tiragem}
+								title="Tiragem"
+								hint="Quantas peças você vai gravar"
+							/>
+							<div className="flex flex-wrap gap-2">
+								{printRunOptions!.map((n) => {
+									const selected = printRun === n;
+									return (
+										<button
+											key={n}
+											type="button"
+											onClick={() => onPrintRunChange?.(n)}
+											className={`flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
+												selected
+													? 'border-transparent text-white'
+													: 'border-slate-200 bg-slate-50 text-slate-700 hover:border-[color-mix(in_srgb,var(--screen-accent)_50%,transparent)] dark:border-white/10 dark:bg-white/5 dark:text-slate-200'
+											}`}
+											style={selected ? ACCENT_BG : undefined}
+										>
+											{n === 1 ? '1 peça' : `${n} peças`}
+										</button>
+									);
+								})}
+							</div>
+							<p className="text-xs leading-relaxed text-slate-500 dark:text-gray-400">
+								Cada peça sai num arquivo próprio, com um código de
+								autenticidade diferente gravado nela. É esse código que prova
+								que a peça é oficial — e é por peça que a marca é remunerada.
+							</p>
 						</section>
 					)}
 				</div>

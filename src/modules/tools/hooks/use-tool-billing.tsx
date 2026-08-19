@@ -33,6 +33,13 @@ export function useToolBilling(
 	/** Variações selecionadas (Passo 3 dos Prompts Mágicos). Escala o custo
 	 *  exibido e o gate de saldo: `vox_cost × variationCount`. Default 1. */
 	variationCount = 1,
+	/**
+	 * TIRAGEM: quantas peças licenciadas a rodada vai produzir. A primeira já
+	 * vem no `vox_cost` da geração; a partir da segunda cada peça custa
+	 * `license_unit_cost` — e essa parte NUNCA é coberta por cota grátis, porque
+	 * cada peça remunera o licenciante.
+	 */
+	printRun = 1,
 ) {
 	const qc = useQueryClient();
 	const ent = useEntitlements(courseSlug);
@@ -45,7 +52,11 @@ export function useToolBilling(
 	const cost = tool?.vox_cost ?? 0;
 	// Custo efetivo escala por variação (1× = vox_cost, 2× = 2×, 4× = 4×). O
 	// upvox debita esse valor no invoke; aqui só espelha p/ gate de saldo + aviso.
-	const effectiveCost = Math.round(cost * variationCount * 100) / 100;
+	const licenseUnitCost = tool?.license_unit_cost ?? 0;
+	const licenseUnits = Math.max(0, printRun - 1);
+	const custoTiragem = Math.round(licenseUnitCost * licenseUnits * 100) / 100;
+	const effectiveCost =
+		Math.round((cost * variationCount + custoTiragem) * 100) / 100;
 	const remainingFree = ent.remainingFree(featureKey);
 	const voxBalance = ent.voxBalance;
 	const runTool = useRunTool(featureKey, courseSlug);
@@ -77,10 +88,14 @@ export function useToolBilling(
 			}
 			if (insufficient) return; // o aviso inline mostra "comprar voxxys"
 			return billed
-				? runTool.run((invocationId) => engineFn(invocationId), variationCount)
+				? runTool.run(
+						(invocationId) => engineFn(invocationId),
+						variationCount,
+						licenseUnits,
+					)
 				: Promise.resolve(engineFn(undefined));
 		},
-		[billed, viewOnly, insufficient, runTool, variationCount],
+		[billed, viewOnly, insufficient, runTool, variationCount, licenseUnits],
 	);
 
 	const consume = useCallback(

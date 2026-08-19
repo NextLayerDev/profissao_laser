@@ -229,6 +229,12 @@ export const toolDefinitionDocSchema = z
 		 */
 		return_variations: z.array(z.number()).optional(),
 		/**
+		 * TIRAGEM: quantas PEÇAS licenciadas a rodada pode produzir (ex.:
+		 * [1,10,25,50]). Cada peça é um arquivo com o seu próprio código gravado
+		 * dentro. Ausente = a ferramenta não tem tiragem e produz uma peça.
+		 */
+		print_run: z.array(z.number()).optional(),
+		/**
 		 * TRUE = o motor manda SÓ a user message ao modelo (sem system prompt,
 		 * sem TEXT_LEAD, sem sufixo FORMATO). Dimensão via sharp. Escopado por
 		 * tool (Prompts Mágicos) — ai-extra mantém o comportamento atual.

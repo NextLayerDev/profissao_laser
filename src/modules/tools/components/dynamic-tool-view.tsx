@@ -185,11 +185,22 @@ export function DynamicToolView({
 	// definition da tool; ausentes → o cliente não vê essas etapas (tool legada).
 	const [creationId, setCreationId] = useState<string | null>(null);
 	const [variationCount, setVariationCount] = useState<number | null>(null);
+	/**
+	 * TIRAGEM: quantas peças licenciadas esta rodada vai produzir. Uma por
+	 * padrão — a ferramenta que não declara `print_run` nunca sai daí.
+	 */
+	const [printRun, setPrintRun] = useState(1);
 	const creations = def?.definition.creations;
 	const returnVariations = def?.definition.return_variations;
+	const printRunOptions = def?.definition.print_run;
 	// Billing scale por variação (vox_cost × N): precisa ser lido DEPOIS do estado
 	// `variationCount`. Default 1 quando nenhuma selecionada (tool legada/sem passo 3).
-	const billing = useToolBilling(toolKey, courseSlug, variationCount ?? 1);
+	const billing = useToolBilling(
+		toolKey,
+		courseSlug,
+		variationCount ?? 1,
+		printRun,
+	);
 
 	const inputSpec = useMemo(() => def?.definition.input ?? {}, [def]);
 	const ui = def?.definition.ui;
@@ -214,6 +225,7 @@ export function DynamicToolView({
 		setReferencias([null, null, null]);
 		setImageSize(null);
 		setCreationId(null);
+		setPrintRun(1);
 		// Default do Passo 3 = 1º elemento do allowlist (se houver).
 		setVariationCount(
 			def?.definition.return_variations?.length
@@ -629,6 +641,7 @@ export function DynamicToolView({
 					loading={bankQuery.isLoading}
 					initialBrandKey={licensedBrand}
 					onSelect={(entry, marca) => {
+						setPrintRun(1);
 						setLicensedBrand(marca.feature_key);
 						setLicensedAccent(marca.accent_color ?? null);
 						setSelectedEntry(entry);
@@ -774,6 +787,14 @@ export function DynamicToolView({
 						onCreationIdChange={setCreationId}
 						returnVariations={returnVariations}
 						variationCount={variationCount}
+						printRunOptions={printRunOptions}
+						printRun={printRun}
+						onPrintRunChange={(n) => {
+							setPrintRun(n);
+							// Tiragem > 1 volta as variações para 1: quem encomenda peças
+							// já escolheu a arte, e 4 versões × 50 peças não é fluxo real.
+							if (n > 1 && (variationCount ?? 1) > 1) setVariationCount(1);
+						}}
 						onVariationCountChange={setVariationCount}
 					/>
 				</div>
