@@ -12,6 +12,7 @@ import {
 	Upload,
 	Wand2,
 } from 'lucide-react';
+import { motion } from 'motion/react';
 import {
 	type CSSProperties,
 	type ReactNode,
@@ -36,12 +37,28 @@ import {
 } from '../lib/prompt-bank';
 import { screenAccentBg } from '../lib/screen-ui';
 import { resolveToolIcon } from '../lib/tool-icons';
+import type { LicensedBrand } from '../services/licensed-brand.service';
 import type { ToolBankEntry } from '../services/tool-bank.service';
 import type {
 	Creation,
 	RunToolEngineImageSize,
 	ToolRunResult,
 } from '../services/tool-definitions.service';
+import { ArtLicensePanel } from './art-license-panel';
+import {
+	CAMPO_NEUTRO,
+	CARIMBO,
+	LinhaDeRegistro,
+	MONO,
+	SeloAtivo,
+	TEMA_LICENCIADA,
+	useAnimar,
+} from './licenciada-ui';
+import {
+	LicensedPiecesEditor,
+	type PecaDaLista,
+	pecaVazia,
+} from './licensed-pieces-editor';
 
 /**
  * Tela de detalhe + geração de um "Prompt Mágico" (registro do Banco do Admin
@@ -206,11 +223,55 @@ function PromptStepper({
 	steps,
 	completed,
 	active,
+	licenciada,
+	animar,
 }: {
 	steps: PromptStep[];
 	completed: Set<PromptStep['key']>;
 	active: PromptStep['key'];
+	licenciada?: boolean;
+	animar?: boolean;
 }) {
+	if (licenciada) {
+		return (
+			<div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+				{steps.map((step, i) => {
+					const isDone = completed.has(step.key);
+					const isActive = step.key === active;
+					return (
+						<span
+							key={step.key}
+							className={`${MONO} inline-flex items-center gap-1.5 ${
+								isActive
+									? 'text-[var(--al-ink)]'
+									: isDone
+										? 'text-[var(--al-seal)]'
+										: 'text-[var(--al-mute)]'
+							}`}
+						>
+							{/* O check CARIMBA quando o passo fecha — é o gesto de quem
+							    atesta, o mesmo do selo de licença. Passo pendente é só um
+							    número, sem cor: nada a atestar ainda. */}
+							{isDone ? (
+								<motion.span
+									initial={animar ? { scale: 0 } : false}
+									animate={{ scale: 1 }}
+									transition={CARIMBO}
+									className="inline-flex"
+								>
+									<Check className="h-3.5 w-3.5" />
+								</motion.span>
+							) : (
+								<span className="tabular-nums">{i + 1}</span>
+							)}
+							{step.label}
+						</span>
+					);
+				})}
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex items-center">
 			{steps.map((step, i) => {
@@ -284,6 +345,7 @@ function BankResultImage({
 
 	return (
 		<div className="space-y-4">
+			{result.license ? <ArtLicensePanel license={result.license} /> : null}
 			{shown ? (
 				<div className="flex max-h-[70vh] w-full items-center justify-center overflow-hidden rounded-lg bg-slate-100 dark:bg-[#111]">
 					{/* <img> intencional: preview de data URL / CDN dinâmico */}
@@ -309,6 +371,89 @@ function BankResultImage({
 					Baixar imagem
 				</button>
 			)}
+		</div>
+	);
+}
+
+/* ─────────────────── Peças do lote (arte licenciada) ─────────────────── */
+
+/** Uma peça de um lote licenciado: arquivo próprio, código próprio. */
+type Peca = { index: number; code: string; url: string };
+
+function ehLoteDePecas(v: unknown): v is Peca[] {
+	return (
+		Array.isArray(v) &&
+		v.length > 0 &&
+		v.every(
+			(p) =>
+				typeof p === 'object' &&
+				p !== null &&
+				typeof (p as Peca).url === 'string' &&
+				typeof (p as Peca).code === 'string',
+		)
+	);
+}
+
+/**
+ * O LOTE. Cada peça é um arquivo com o SEU código gravado dentro — é isso que
+ * transforma tiragem em algo contável: não existe "a arte" para gravar quantas
+ * vezes quiser, existem N peças numeradas.
+ *
+ * O nome do arquivo é o código, de propósito: no chão de fábrica é assim que se
+ * acha a peça 23 e se confere o que está gravado nela sem abrir o arquivo.
+ */
+function BankResultBatch({ pecas }: { pecas: Peca[] }) {
+	const uma = pecas.length === 1;
+	return (
+		<div className="space-y-4">
+			{!uma && (
+				<p className="text-sm text-slate-600 dark:text-gray-300">
+					<span className="font-semibold">{pecas.length} peças</span> — cada uma
+					com o próprio código gravado. Baixe uma a uma e grave na ordem.
+				</p>
+			)}
+			<div
+				className={
+					uma ? 'space-y-3' : 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3'
+				}
+			>
+				{pecas.map((p) => (
+					<div
+						key={p.code}
+						className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-[#111]"
+					>
+						{/* Fundo CLARO mesmo no tema escuro: a peça é um PNG com fundo
+						    transparente e tinta preta — sobre escuro, o carimbo sumiria. */}
+						<div className="flex max-h-[55vh] items-center justify-center overflow-hidden bg-white">
+							{/* <img> intencional: a peça vem de CDN dinâmico. */}
+							<img
+								src={p.url}
+								alt={`Peça ${p.index}`}
+								className="max-h-[55vh] w-full object-contain"
+							/>
+						</div>
+						<div className="space-y-1.5 px-3 py-2">
+							<div className="flex items-center justify-between gap-2">
+								<span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+									{uma ? 'Peça' : `Peça ${p.index} de ${pecas.length}`}
+								</span>
+								<a
+									href={p.url}
+									download
+									className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+									style={ACCENT_BG}
+								>
+									<Download className="h-3.5 w-3.5" />
+									Baixar
+								</a>
+							</div>
+							<p className="font-mono truncate text-[11px] text-slate-500 dark:text-gray-400">
+								{p.code}
+							</p>
+						</div>
+					</div>
+				))}
+			</div>
 		</div>
 	);
 }
@@ -344,12 +489,28 @@ function BankResultGallery({
 	result: ToolRunResult;
 	downloadKey: string;
 }) {
+	// Arte licenciada: o lote vem em `pieces`, uma peça por código. Vem ANTES
+	// das variações porque são coisas diferentes — variação é a mesma peça
+	// desenhada de outro jeito; peça é uma unidade licenciada a mais.
+	const pecas = result.output.pieces;
+	if (ehLoteDePecas(pecas)) {
+		return (
+			<div className="space-y-4">
+				{result.license ? <ArtLicensePanel license={result.license} /> : null}
+				<BankResultBatch pecas={pecas} />
+			</div>
+		);
+	}
+
 	const images = result.output.images;
 	if (!isResultImageArray(images)) {
 		return <BankResultImage result={result} downloadKey={downloadKey} />;
 	}
 	return (
 		<div className="space-y-4">
+			{/* Um código por RODADA, não por variação: as N imagens saíram do mesmo
+			    pedido e compartilham a licença. */}
+			{result.license ? <ArtLicensePanel license={result.license} /> : null}
 			<div
 				className={
 					images.length > 1 ? 'grid gap-3 sm:grid-cols-2' : 'space-y-3'
@@ -393,11 +554,93 @@ function BankResultGallery({
 
 /* ─────────────────── Hero ─────────────────── */
 
-function PromptHero({ entry }: { entry: ToolBankEntry }) {
+function PromptHero({
+	entry,
+	licenciada,
+	marca,
+}: {
+	entry: ToolBankEntry;
+	licenciada?: boolean;
+	marca?: LicensedBrand | null;
+}) {
 	const cover = coverOf(entry);
 	const mode = modeOf(entry);
 	const maxImages = maxImagesOf(entry);
 	const showsImage = modeUsesImage(mode);
+
+	if (licenciada) {
+		return (
+			<div className="overflow-hidden rounded-lg border border-[var(--al-rule)] bg-[var(--al-card)]">
+				{/* A TARJA DA MARCA. É o conserto da quebra do fluxo: quem entrou por
+				    "Corinthians → Caneca 360°" via só "Caneca 360°" na tela seguinte,
+				    e a marca — que é o produto inteiro — sumia bem onde ele vai
+				    gastar voxxy. */}
+				{marca && (
+					<div className="flex items-center gap-3 border-b border-[var(--al-rule)] px-4 py-3">
+						<div
+							className="flex h-10 w-10 shrink-0 items-center justify-center rounded p-1.5"
+							style={{ backgroundColor: marca.accent_color || CAMPO_NEUTRO }}
+						>
+							{marca.crest_url ? (
+								/* <img> intencional: a arte vem de CDN dinâmico. */
+								<img
+									src={marca.crest_url}
+									alt=""
+									className="max-h-full max-w-full object-contain"
+								/>
+							) : null}
+						</div>
+						<div className="min-w-0 flex-1">
+							<p className="font-display truncate text-sm font-bold tracking-[-0.01em] text-[var(--al-ink)]">
+								{marca.display_name}
+							</p>
+							<p className="mt-1.5">
+								<SeloAtivo />
+							</p>
+						</div>
+					</div>
+				)}
+
+				<div className="flex flex-col gap-4 p-4 sm:flex-row">
+					<div className="h-24 w-24 shrink-0 overflow-hidden rounded bg-[var(--al-poco)] sm:h-28 sm:w-28">
+						{cover ? (
+							/* <img> intencional: data URL / CDN dinâmico */
+							<img
+								src={cover}
+								alt={entry.title}
+								className="h-full w-full object-cover"
+							/>
+						) : marca?.crest_url ? (
+							/* Sem exemplo, o escudo apagado — marca d'água, não amostra. */
+							<div className="flex h-full items-center justify-center p-6">
+								{/* <img> intencional: a arte vem de CDN dinâmico. */}
+								<img
+									src={marca.crest_url}
+									alt=""
+									className="max-h-full max-w-full object-contain opacity-20 grayscale dark:opacity-[0.14]"
+								/>
+							</div>
+						) : null}
+					</div>
+
+					<div className="min-w-0 flex-1 space-y-2.5">
+						<p className={`${MONO} text-[var(--al-mute)]`}>Modelo</p>
+						<h2 className="font-display text-lg font-bold tracking-[-0.01em] text-[var(--al-ink)]">
+							{entry.title}
+						</h2>
+						<LinhaDeRegistro rotulo="Entrada">
+							{modeLabel(mode)}
+						</LinhaDeRegistro>
+						{showsImage && (
+							<LinhaDeRegistro rotulo="Fotos">
+								{maxImages > 1 ? `até ${maxImages}` : 'até 1'}
+							</LinhaDeRegistro>
+						)}
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#1a1a1d]">
@@ -685,11 +928,25 @@ function SectionHeader({
 	no,
 	title,
 	hint,
+	licenciada,
 }: {
 	no: number;
 	title: string;
 	hint?: string;
+	licenciada?: boolean;
 }) {
+	if (licenciada) {
+		return (
+			<div>
+				<p className={`${MONO} text-[var(--al-mute)]`}>{`Passo ${no}`}</p>
+				<h3 className="font-display mt-1.5 text-sm font-bold tracking-[-0.01em] text-[var(--al-ink)]">
+					{title}
+				</h3>
+				{hint && <p className="mt-0.5 text-xs text-[var(--al-mute)]">{hint}</p>}
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex items-start gap-2.5">
 			<span
@@ -730,6 +987,13 @@ export interface PromptGenerateViewProps {
 	actionLabel: string;
 	/** Geração em andamento. */
 	pending: boolean;
+	/**
+	 * O que o botão diz ENQUANTO roda. "Gerando…" serve para um trabalho de 40
+	 * segundos; para um lote de 30 peças, que leva minutos, ele é indistinguível
+	 * de tela travada — e o aluno já pagou, então recarregar é o pior que ele
+	 * pode fazer. Ausente = "Gerando…".
+	 */
+	pendingLabel?: string;
 	/** Sem saldo de voxxys → bloqueia ação. */
 	insufficient: boolean;
 	/** Validação local satisfeita (tema/imagens conforme o modo). */
@@ -743,6 +1007,25 @@ export interface PromptGenerateViewProps {
 	onResetResult: () => void;
 	/** Volta pra galeria. */
 	onBack: () => void;
+	/** Rótulo do voltar. A tela anterior nem sempre é uma "galeria". */
+	backLabel?: string;
+	/**
+	 * Veste a tela na linguagem da Arte Licenciada — versalete, linha pontilhada
+	 * e a moldura escura do balcão, no lugar do cromo genérico.
+	 *
+	 * OPCIONAL E AUSENTE POR PADRÃO, e isto não é detalhe: esta tela é a MESMA
+	 * dos Prompts Mágicos. Todo ramo aqui dentro é
+	 * `licenciada ? <novo/> : <o de sempre/>`, nunca uma edição da marcação
+	 * compartilhada — quem não passa a prop recebe exatamente o que recebia.
+	 */
+	variante?: 'licenciada';
+	/**
+	 * A marca em uso. Sem ela o aluno entrava por "Corinthians → Caneca 360°" e
+	 * a tela seguinte não dizia Corinthians em lugar nenhum: a marca sumia
+	 * justamente onde ele gasta voxxy. Vem do `onSelect` do balcão, que já a
+	 * entrega inteira — nenhuma chamada nova.
+	 */
+	marca?: LicensedBrand | null;
 	/** Aviso inline de billing (ReactNode) — renderizado abaixo da ação. */
 	billingNotice?: ReactNode;
 	/** Cards do Passo 1 (Tipos de Criação) — da definition da tool. Vazio = sem Passo 1. */
@@ -752,6 +1035,22 @@ export interface PromptGenerateViewProps {
 	onCreationIdChange?: (id: string | null) => void;
 	/** Variações oferecidas no Passo 3 (ex.: [1,2,4]) — da definition. Vazio = sem Passo 3. */
 	returnVariations?: number[];
+	/**
+	 * TIRAGEM: quantas peças licenciadas a rodada produz. Só as tools que
+	 * declaram `print_run` na definition mostram esta etapa — nas outras, nada
+	 * muda.
+	 */
+	printRunOptions?: number[];
+	printRun?: number;
+	onPrintRunChange?: (n: number) => void;
+	/** Teto da tiragem (env do motor, espelhado pela definition). */
+	printRunMax?: number;
+	/**
+	 * DADOS VARIÁVEIS: uma linha por peça, cada uma com seu nome e/ou sua foto.
+	 * `null` é o lote uniforme — N cópias da mesma arte, que é o padrão.
+	 */
+	pecas?: PecaDaLista[] | null;
+	onPecasChange?: (p: PecaDaLista[] | null) => void;
 	/** Quantidade selecionada no Passo 3 (controlado pelo DynamicToolView). */
 	variationCount?: number | null;
 	onVariationCountChange?: (n: number | null) => void;
@@ -770,6 +1069,7 @@ export function PromptGenerateView({
 	downloadKey,
 	actionLabel,
 	pending,
+	pendingLabel,
 	insufficient,
 	canGenerate,
 	imageSize,
@@ -777,6 +1077,9 @@ export function PromptGenerateView({
 	onGenerate,
 	onResetResult,
 	onBack,
+	backLabel = 'Voltar à galeria',
+	variante,
+	marca,
 	billingNotice,
 	creations,
 	creationId,
@@ -784,6 +1087,12 @@ export function PromptGenerateView({
 	returnVariations,
 	variationCount,
 	onVariationCountChange,
+	printRunOptions,
+	printRun = 1,
+	onPrintRunChange,
+	printRunMax = 50,
+	pecas = null,
+	onPecasChange,
 }: PromptGenerateViewProps) {
 	const mode = modeOf(entry);
 	const needsTema = modeUsesText(mode);
@@ -791,6 +1100,10 @@ export function PromptGenerateView({
 	const maxImages = maxImagesOf(entry);
 	const hasCreations = !!creations && creations.length > 0;
 	const hasVariations = !!returnVariations && returnVariations.length > 0;
+	const hasTiragem = !!printRunOptions && printRunOptions.length > 1;
+	// Tiragem > 1 desliga variações: 4 versões × 50 peças são 200 arquivos, e
+	// não é fluxo real — quem encomenda tiragem já escolheu a arte.
+	const variacoesTravadas = hasTiragem && printRun > 1;
 
 	const steps = useMemo(
 		() =>
@@ -834,43 +1147,100 @@ export function PromptGenerateView({
 
 	// Numeração das seções visíveis (1, 2, 3…) — só conta as que aparecem. Ordem
 	// visual: ① Tipo → ② Variações → ③ Detalhes (este último em linha própria).
+	const antesDaLista =
+		(hasCreations ? 1 : 0) + (hasVariations ? 1 : 0) + (hasTiragem ? 1 : 0);
+	const temLista = hasTiragem && !!pecas && !!onPecasChange;
 	const sectionNo = {
 		criacao: 1,
 		variacoes: hasCreations ? 2 : 1,
-		detalhes: (hasCreations ? 1 : 0) + (hasVariations ? 1 : 0) + 1,
+		tiragem: (hasCreations ? 1 : 0) + (hasVariations ? 1 : 0) + 1,
+		lista: antesDaLista + 1,
+		detalhes: antesDaLista + (temLista ? 1 : 0) + 1,
 	};
 	// Cards compactos lado a lado (Tipo | Variações); Detalhes vai numa linha
 	// própria full-width abaixo. Sem os dois compactos → nada nesta linha.
+	const compactos = [hasCreations, hasVariations, hasTiragem].filter(
+		Boolean,
+	).length;
 	const compactColsClass =
-		hasCreations && hasVariations ? 'md:grid-cols-2' : 'grid-cols-1';
-	const stepCardCls =
-		'rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-[#1a1a1d]';
+		// Três cards compactos quando a tool tem tiragem (Tipo | Variações |
+		// Tiragem); dois quando não tem.
+		compactos >= 3
+			? 'md:grid-cols-3'
+			: compactos === 2
+				? 'md:grid-cols-2'
+				: 'grid-cols-1';
+	// A identidade da tela cabe em poucos lugares; este é um deles. O ramo
+	// licenciado veste a moldura do balcão para a tela deixar de ser uma ilha
+	// clara entre duas telas de certificado.
+	const licenciada = variante === 'licenciada';
+	const animar = useAnimar();
+	/**
+	 * O campo de número exato está aberto? Os atalhos cobrem o pedido redondo; a
+	 * encomenda real é "23 canecas", e sem isto ela obrigava a pagar 25.
+	 */
+	const [pediuNumero, setNumeroLivre] = useState(false);
+	/**
+	 * Nenhum atalho casa com o número atual — então o campo aparece com ele
+	 * dentro, em vez de a tela mostrar quatro botões apagados e nenhum valor. É
+	 * o caso normal quando a LISTA manda na tiragem: 23 linhas, 23 peças.
+	 */
+	const numeroLivre =
+		pediuNumero || (!!printRunOptions && !printRunOptions.includes(printRun));
+
+	const stepCardCls = licenciada
+		? 'rounded-lg border border-[var(--al-rule)] bg-[var(--al-card)] p-5'
+		: 'rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-[#1a1a1d]';
 
 	return (
-		<div className="space-y-6">
+		<div
+			className={
+				licenciada
+					? `${TEMA_LICENCIADA} space-y-5 text-[var(--al-ink)]`
+					: 'space-y-6'
+			}
+		>
 			<button
 				type="button"
 				onClick={onBack}
-				className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+				className={
+					licenciada
+						? `${MONO} inline-flex items-center gap-1.5 text-[var(--al-mute)] transition-colors hover:text-[var(--al-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--al-ink)]`
+						: 'inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10'
+				}
 			>
-				<ArrowLeft className="h-4 w-4" /> Voltar à galeria
+				<ArrowLeft className={licenciada ? 'h-3.5 w-3.5' : 'h-4 w-4'} />{' '}
+				{backLabel}
 			</button>
 
-			<PromptHero entry={entry} />
+			<PromptHero entry={entry} licenciada={licenciada} marca={marca} />
 
 			{/* Stepper */}
-			<div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 dark:border-white/10 dark:bg-[#1a1a1d]">
-				<PromptStepper steps={steps} completed={completed} active={active} />
+			<div
+				className={
+					licenciada
+						? 'rounded-lg border border-[var(--al-rule)] bg-[var(--al-card)] px-4 py-3'
+						: 'rounded-2xl border border-slate-200 bg-white px-5 py-4 dark:border-white/10 dark:bg-[#1a1a1d]'
+				}
+			>
+				<PromptStepper
+					steps={steps}
+					completed={completed}
+					active={active}
+					licenciada={licenciada}
+					animar={animar}
+				/>
 			</div>
 
 			{/* Linha 1 — cards compactos lado a lado (① Tipo | ② Variações).
 			    Detalhes vira uma linha própria full-width abaixo (não espremido). */}
-			{(hasCreations || hasVariations) && (
+			{(hasCreations || hasVariations || hasTiragem) && (
 				<div className={`grid items-stretch gap-4 ${compactColsClass}`}>
 					{/* ① Tipo de Criação (cards; resolução OCULTA) */}
 					{hasCreations && (
 						<section className={`${stepCardCls} space-y-3`}>
 							<SectionHeader
+								licenciada={licenciada}
 								no={sectionNo.criacao}
 								title="Tipo de criação"
 								hint="Escolha o formato"
@@ -918,6 +1288,7 @@ export function PromptGenerateView({
 					{hasVariations && (
 						<section className={`${stepCardCls} space-y-3`}>
 							<SectionHeader
+								licenciada={licenciada}
 								no={sectionNo.variacoes}
 								title="Variações"
 								hint="Quantas versões gerar"
@@ -929,6 +1300,7 @@ export function PromptGenerateView({
 										<button
 											key={n}
 											type="button"
+											disabled={variacoesTravadas && n !== 1}
 											onClick={() =>
 												onVariationCountChange?.(selected ? null : n)
 											}
@@ -947,13 +1319,143 @@ export function PromptGenerateView({
 							</div>
 						</section>
 					)}
+
+					{/* ③ Tiragem — quantas PEÇAS licenciadas a rodada produz */}
+					{hasTiragem && (
+						<section className={`${stepCardCls} space-y-3`}>
+							<SectionHeader
+								licenciada={licenciada}
+								no={sectionNo.tiragem}
+								title="Tiragem"
+								hint="Quantas peças você vai gravar"
+							/>
+							<div className="flex flex-wrap items-center gap-2">
+								{printRunOptions!.map((n) => {
+									const selected = printRun === n && !numeroLivre;
+									return (
+										<button
+											key={n}
+											type="button"
+											onClick={() => {
+												setNumeroLivre(false);
+												onPrintRunChange?.(n);
+											}}
+											className={`flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
+												selected
+													? 'border-transparent text-white'
+													: 'border-slate-200 bg-slate-50 text-slate-700 hover:border-[color-mix(in_srgb,var(--screen-accent)_50%,transparent)] dark:border-white/10 dark:bg-white/5 dark:text-slate-200'
+											}`}
+											style={selected ? ACCENT_BG : undefined}
+										>
+											{n === 1 ? '1 peça' : `${n} peças`}
+										</button>
+									);
+								})}
+								{/* O NÚMERO EXATO. Os atalhos cobrem o pedido redondo; a
+								    encomenda real é "23 canecas", e sem este campo ela
+								    obrigava a pagar 25 ou gerar 10 e ampliar. */}
+								{numeroLivre ? (
+									<input
+										type="number"
+										min={1}
+										max={printRunMax}
+										// Foco por ref, e não `autoFocus`: o campo só existe
+										// depois de o aluno pedir "outro número", então o foco
+										// aqui é a continuação do gesto dele, não um sequestro
+										// do teclado na carga da página.
+										ref={(el) => el?.focus()}
+										value={printRun}
+										onChange={(e) => {
+											const n = Number.parseInt(e.target.value, 10);
+											if (Number.isFinite(n)) {
+												onPrintRunChange?.(
+													Math.max(1, Math.min(printRunMax, n)),
+												);
+											}
+										}}
+										className="w-24 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
+									/>
+								) : (
+									<button
+										type="button"
+										onClick={() => setNumeroLivre(true)}
+										className="rounded-xl border border-dashed border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-500 transition-colors hover:border-[color-mix(in_srgb,var(--screen-accent)_50%,transparent)] dark:border-white/15 dark:text-slate-300"
+									>
+										Outro número
+									</button>
+								)}
+							</div>
+
+							{/* Uniforme ou personalizado — a escolha que muda a natureza
+							    (e o preço) do lote. */}
+							{onPecasChange && (
+								<div className="flex flex-wrap gap-2 border-t border-[var(--al-rule)] pt-3">
+									{(
+										[
+											['iguais', 'Todas iguais'],
+											['variaveis', 'Cada peça diferente'],
+										] as const
+									).map(([modo, rotulo]) => {
+										const ativo = (modo === 'variaveis') === !!pecas;
+										return (
+											<button
+												key={modo}
+												type="button"
+												onClick={() => {
+													if (modo === 'iguais') return onPecasChange(null);
+													onPecasChange(
+														Array.from({ length: Math.max(2, printRun) }, () =>
+															pecaVazia(),
+														),
+													);
+												}}
+												className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
+													ativo
+														? 'border-transparent text-white'
+														: 'border-slate-200 bg-slate-50 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300'
+												}`}
+												style={ativo ? ACCENT_BG : undefined}
+											>
+												{rotulo}
+											</button>
+										);
+									})}
+								</div>
+							)}
+
+							<p className="text-xs leading-relaxed text-slate-500 dark:text-gray-400">
+								{pecas
+									? 'Cada linha vira uma peça gerada só para ela, com seu próprio código de autenticidade. Por isso o lote personalizado custa por linha, e não por cópia.'
+									: 'Cada peça sai num arquivo próprio, com um código de autenticidade diferente gravado nela. É esse código que prova que a peça é oficial — e é por peça que a marca é remunerada.'}
+							</p>
+						</section>
+					)}
 				</div>
+			)}
+
+			{/* A LISTA, em linha própria: ela cresce até 50 linhas e não cabe num
+			    cartão de um terço de largura. */}
+			{hasTiragem && pecas && onPecasChange && (
+				<section className={`${stepCardCls} space-y-3.5`}>
+					<SectionHeader
+						licenciada={licenciada}
+						no={sectionNo.lista}
+						title="O que muda em cada peça"
+						hint="Um nome, uma foto, ou os dois"
+					/>
+					<LicensedPiecesEditor
+						pecas={pecas}
+						onChange={onPecasChange}
+						max={printRunMax}
+					/>
+				</section>
 			)}
 
 			{/* Linha 2 — ③ Detalhes (linha própria, full-width). Sem nome de
 			    projeto: só o textarea do prompt + referências quando o modo pede. */}
 			<section className={`${stepCardCls} space-y-3.5`}>
 				<SectionHeader
+					licenciada={licenciada}
 					no={sectionNo.detalhes}
 					title="Detalhes"
 					hint="Quanto mais específico, melhor"
@@ -1031,12 +1533,15 @@ export function PromptGenerateView({
 					onClick={onGenerate}
 					disabled={pending || insufficient || !canGenerate}
 					style={screenAccentBg}
-					className="flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+					className={`flex w-full items-center justify-center gap-2 px-6 py-3.5 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60 ${
+						// O carimbo no clique: o mesmo gesto do campo da marca no balcão.
+						licenciada ? 'rounded-lg active:scale-[0.985]' : 'rounded-xl'
+					}`}
 				>
 					{pending ? (
 						<>
 							<Loader2 className="h-5 w-5 animate-spin" />
-							Gerando...
+							{pendingLabel ?? 'Gerando...'}
 						</>
 					) : (
 						<>

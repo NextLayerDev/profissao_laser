@@ -24,6 +24,7 @@ import {
 } from '../lib/prompt-bank';
 import { accentForTool, resolveScreenUi } from '../lib/screen-ui';
 import { resolveToolIcon } from '../lib/tool-icons';
+import type { LicensedBrand } from '../services/licensed-brand.service';
 import type { ToolBankEntry } from '../services/tool-bank.service';
 import {
 	type AiToolDefinition,
@@ -31,8 +32,13 @@ import {
 	runToolEngine,
 	type ToolRunResult,
 } from '../services/tool-definitions.service';
+import { runToolStream } from '../services/tool-stream.service';
 import { ToolAtelieView } from './atelie';
 import { ToolIntelView } from './intel/tool-intel-view';
+import { TEMA_LICENCIADA } from './licenciada-ui';
+import { type PecaDaLista, pecaVazia } from './licensed-pieces-editor';
+import { LicensedToolHome } from './licensed-tool-home';
+import { MyLicensedArtLibrary } from './my-licensed-art-library';
 import { ToolOrcamentoView } from './orcamento';
 import { PromptGallery } from './prompt-gallery';
 import { PromptGenerateView } from './prompt-generate-view';
@@ -143,7 +149,27 @@ export function DynamicToolView({
 	const bankQuery = useToolBank(toolKey, {
 		enabled: bankEnabled && toolKey !== 'preview',
 	});
+	/**
+	 * Aba da galeria. A biblioteca só existe em tool licenciada — em tool comum
+	 * não há licença para listar, e uma aba vazia seria ruído.
+	 */
+	const [abaGaleria, setAbaGaleria] = useState<'prompts' | 'minhas'>('prompts');
 	const [selectedEntry, setSelectedEntry] = useState<ToolBankEntry | null>(
+		null,
+	);
+	/**
+	 * Arte Licenciada: a MARCA INTEIRA escolhida no balcão.
+	 *
+	 * Sobrevive ao ir e voltar da geração — sem isto, "voltar" jogaria o aluno na
+	 * lista de escudos toda vez, e quem produz peça do mesmo clube faz esse
+	 * caminho várias vezes seguidas.
+	 *
+	 * Guarda o objeto e não só a chave + a cor porque a tela de geração passou a
+	 * mostrar o escudo e o nome. O `onSelect` do balcão já entrega a marca
+	 * completa, então isto não custa nenhuma chamada — só deixa de jogar fora o
+	 * que já estava em mãos.
+	 */
+	const [licensedMarca, setLicensedMarca] = useState<LicensedBrand | null>(
 		null,
 	);
 	const [tema, setTema] = useState('');
@@ -166,11 +192,45 @@ export function DynamicToolView({
 	// definition da tool; ausentes → o cliente não vê essas etapas (tool legada).
 	const [creationId, setCreationId] = useState<string | null>(null);
 	const [variationCount, setVariationCount] = useState<number | null>(null);
+	/**
+	 * TIRAGEM: quantas peças licenciadas esta rodada vai produzir. Uma por
+	 * padrão — a ferramenta que não declara `print_run` nunca sai daí.
+	 */
+	const [printRun, setPrintRun] = useState(1);
+	/**
+	 * DADOS VARIÁVEIS: uma linha por peça, cada uma com seu nome e/ou sua foto.
+	 * `null` é o lote uniforme — N cópias da mesma arte, que continua o padrão.
+	 *
+	 * Quando a lista existe, ela É a tiragem: o número de linhas manda, porque
+	 * cada linha é uma geração própria e é isso que a rodada vai cobrar.
+	 */
+	const [pecas, setPecas] = useState<PecaDaLista[] | null>(null);
+	/** "Gerando a peça 7 de 20" — o lote personalizado leva minutos. */
+	const [pecaEmCurso, setPecaEmCurso] = useState<{
+		atual: number;
+		total: number;
+	} | null>(null);
 	const creations = def?.definition.creations;
 	const returnVariations = def?.definition.return_variations;
+	const printRunOptions = def?.definition.print_run;
 	// Billing scale por variação (vox_cost × N): precisa ser lido DEPOIS do estado
 	// `variationCount`. Default 1 quando nenhuma selecionada (tool legada/sem passo 3).
-	const billing = useToolBilling(toolKey, courseSlug, variationCount ?? 1);
+	/**
+	 * A TIRAGEM QUE VALE. Com lista, é o número de linhas — quem edita a lista
+	 * não devia precisar lembrar de acertar o número em outro lugar.
+	 */
+	const tiragem = pecas ? pecas.length : printRun;
+	/**
+	 * GERAÇÕES COBRADAS. No lote uniforme é a variação escolhida (a arte é uma
+	 * só, copiada N vezes). No personalizado é uma por linha: 30 nomes são 30
+	 * chamadas ao modelo, e cobrar por uma seria dar 29 de graça.
+	 */
+	const billing = useToolBilling(
+		toolKey,
+		courseSlug,
+		pecas ? pecas.length : (variationCount ?? 1),
+		tiragem,
+	);
 
 	const inputSpec = useMemo(() => def?.definition.input ?? {}, [def]);
 	const ui = def?.definition.ui;
@@ -188,11 +248,15 @@ export function DynamicToolView({
 		setValues(init);
 		setResult(null);
 		setSelectedEntry(null);
+		setLicensedMarca(null);
 		setTema('');
 		setSpecValues({});
 		setReferencias([null, null, null]);
 		setImageSize(null);
 		setCreationId(null);
+		setPrintRun(1);
+		setPecas(null);
+		setPecaEmCurso(null);
 		// Default do Passo 3 = 1º elemento do allowlist (se houver).
 		setVariationCount(
 			def?.definition.return_variations?.length
@@ -262,9 +326,17 @@ export function DynamicToolView({
 			.slice(0, max)
 			.filter((f): f is File => f instanceof File);
 		const hasText = hasTextInput(specs, specValues, tema);
-		// `texto_imagem`: texto (ou especificações) OU imagem — não exige os dois.
-		// `texto`/`imagem` puros continuam exigindo seu único campo.
-		if (mode === 'texto_imagem') {
+		// Com lista, a entrada mora nela: cada linha precisa de nome OU foto, e o
+		// campo "tema" do formulário vira só o que é comum a todas as peças.
+		if (pecas) {
+			const vazia = pecas.findIndex(
+				(p) => p.tema.trim() === '' && p.imagem === null,
+			);
+			if (vazia >= 0) {
+				toast.error(`Preencha o nome ou a foto da peça ${vazia + 1}.`);
+				return;
+			}
+		} else if (mode === 'texto_imagem') {
 			if (!hasText && chosen.length === 0) {
 				toast.error('Escreva algo ou envie uma imagem.');
 				return;
@@ -298,7 +370,73 @@ export function DynamicToolView({
 		}
 		// Passo 1/3: tipo de criação (resolução oculta) + variações.
 		if (creationId) bankInputs.creation_id = creationId;
-		if (variationCount) bankInputs.variation_count = String(variationCount);
+		/**
+		 * `variation_count` NÃO acompanha a lista de peças.
+		 *
+		 * Ele é o allowlist do que a tool pode entregar por rodada, e a Arte
+		 * Licenciada não oferece variações — mandar N aqui seria recusado com 400.
+		 * A multiplicidade do lote personalizado viaja em `pieces`, e o motor a
+		 * reconcilia contra as gerações que a invocação de fato pagou.
+		 */
+		if (variationCount && !pecas) {
+			bankInputs.variation_count = String(variationCount);
+		}
+		if (pecas) {
+			bankInputs.pieces = JSON.stringify(
+				pecas.map((p) => ({ tema: p.tema.trim() })),
+			);
+			pecas.forEach((p, i) => {
+				if (p.imagem) bankInputs[`piece_image_${i}`] = p.imagem;
+			});
+		}
+
+		if (pecas) {
+			/**
+			 * O LOTE PERSONALIZADO VAI PELO STREAM, e não é preferência de
+			 * interface: são N chamadas ao modelo em série, minutos de relógio. Na
+			 * rota normal o proxy corta a requisição muda muito antes do fim — e o
+			 * aluno já pagou. Os eventos de progresso mantêm o socket vivo e dizem
+			 * em qual peça o lote está.
+			 */
+			setPecaEmCurso({ atual: 0, total: pecas.length });
+			try {
+				await billing.runEngine(async (invocationId) => {
+					let entregue: ToolRunResult | null = null;
+					for await (const ev of runToolStream({
+						key: toolKey,
+						runId: crypto.randomUUID(),
+						invocationId,
+						values: { ...bankInputs, bank_entry_id: selectedEntry.id },
+					})) {
+						if (ev.type === 'progresso' && ev.ev.etapa === 'peca') {
+							setPecaEmCurso({
+								atual: Number(ev.ev.atual) || 0,
+								total: Number(ev.ev.total) || pecas.length,
+							});
+						} else if (ev.type === 'erro') {
+							throw new Error(ev.message);
+						} else if (ev.type === 'done') {
+							entregue = {
+								output: ev.output,
+								license: ev.license,
+							} as ToolRunResult;
+						}
+					}
+					if (!entregue) throw new Error('O lote não chegou ao fim.');
+					setResult(entregue);
+					return entregue;
+				});
+			} catch (err) {
+				toast.error(
+					err instanceof Error
+						? err.message
+						: 'Não foi possível gerar o lote. Nada foi cobrado.',
+				);
+			} finally {
+				setPecaEmCurso(null);
+			}
+			return;
+		}
 
 		await billing.runEngine((invocationId) =>
 			runToolEngine(toolKey, {
@@ -324,6 +462,7 @@ export function DynamicToolView({
 		imageSize,
 		toolKey,
 		billing,
+		pecas,
 		creationId,
 		variationCount,
 	]);
@@ -356,6 +495,14 @@ export function DynamicToolView({
 
 	const pending = isDraft ? draftRunning : billing.pending;
 	const actionLabel = ui?.action?.label ?? 'Executar';
+	/**
+	 * O lote personalizado leva minutos e é gerado peça a peça. Sem dizer em qual
+	 * peça ele está, a espera é indistinguível de tela travada — e o aluno já
+	 * pagou, então recarregar a página é o pior que ele pode fazer.
+	 */
+	const pendingLabel = pecaEmCurso
+		? `Gerando a peça ${Math.max(1, pecaEmCurso.atual)} de ${pecaEmCurso.total}…`
+		: undefined;
 	const showCostNotice = !isDraft && (ui?.action?.showCostNotice ?? true);
 	const resultUi = ui?.result;
 	const downloadKey = (resultUi?.downloadFrom ?? 'output.primary').replace(
@@ -380,7 +527,9 @@ export function DynamicToolView({
 	const themedShell = screenUi.themeClass
 		? `rounded-2xl p-4 sm:p-6 ${screenUi.themeClass === 'dark' ? 'bg-[#0d0d0f]' : 'bg-slate-50'}`
 		: '';
-	const screenStyle = { '--screen-accent': screenUi.accent } as CSSProperties;
+	const screenStyle = {
+		'--screen-accent': licensedMarca?.accent_color ?? screenUi.accent,
+	} as CSSProperties;
 
 	/* ── Estúdio (tools-mãe): controles agrupados + preview ao vivo ── */
 	const studioUi = ui as
@@ -567,8 +716,62 @@ export function DynamicToolView({
 		);
 	}
 
+	/**
+	 * Tool licenciada é a que tem algum registro com marca. Detectar pelo DADO e
+	 * não por uma flag na definition mantém a aba aparecendo sozinha em qualquer
+	 * tool que passe a usar prompts licenciados.
+	 */
+	const ehLicenciada = (bankQuery.data ?? []).some(
+		(e) => typeof (e.data as Record<string, unknown>)?.feature_key === 'string',
+	);
+
 	/* ── Banco do Admin: galeria → detalhe + geração por registro ── */
 	if (bankEnabled) {
+		/*
+		 * Arte Licenciada: a ABERTURA é outra, o resto é o mesmo.
+		 *
+		 * Quem abre esta ferramenta não escolhe um prompt — escolhe uma MARCA, e
+		 * só depois o que vai produzir com ela. Por isso a tela inicial é própria
+		 * (`ui.layout: 'licenciada'`), enquanto a geração continua sendo o
+		 * `PromptGenerateView` de sempre: o passo a passo de gerar é idêntico ao
+		 * dos Prompts Mágicos e duplicá-lo só criaria duas telas para divergir.
+		 *
+		 * A troca fica DENTRO deste ramo, e não num ramo próprio lá em cima, por
+		 * um motivo prático: `runBank`, o billing e o estado do formulário vivem
+		 * aqui. Um ramo separado teria de recriar tudo isso — inclusive a aba de
+		 * "Minhas peças" — para desenhar a mesma coisa.
+		 *
+		 * A chave é o `layout`, nunca a presença de marca nos registros: os
+		 * Prompts Mágicos não podem virar esta tela por acidente no dia em que
+		 * alguém marcar um prompt de lá com uma marca.
+		 */
+		if (studioUi?.layout === 'licenciada' && !selectedEntry) {
+			return (
+				<LicensedToolHome
+					title={screenUi.title ?? def.title}
+					subtitle={screenUi.subtitle ?? def.description ?? undefined}
+					notice={screenUi.notice}
+					entries={bankQuery.data ?? []}
+					loading={bankQuery.isLoading}
+					entriesError={bankQuery.isError}
+					initialBrandKey={licensedMarca?.feature_key ?? null}
+					onSelect={(entry, marca) => {
+						// A marca inteira, e não só a chave: o Igor precisa dela na tela
+						// de geração, e ela já estava em mãos.
+						setLicensedMarca(marca);
+						// Trocar de modelo recomeça a tiragem no padrão.
+						setPrintRun(1);
+						setSelectedEntry(entry);
+						setResult(null);
+						setTema('');
+						setSpecValues({});
+						setReferencias([null, null, null]);
+						setImageSize(null);
+					}}
+				/>
+			);
+		}
+
 		// Sem registro escolhido → galeria premium (stats + busca + cards + sidebar).
 		if (!selectedEntry) {
 			return (
@@ -579,18 +782,64 @@ export function DynamicToolView({
 					<div className={themedShell}>
 						{screenUi.notice && <ScreenNotice notice={screenUi.notice} />}
 						{header}
-						<PromptGallery
-							entries={bankQuery.data ?? []}
-							loading={bankQuery.isLoading}
-							onSelect={(entry) => {
-								setSelectedEntry(entry);
-								setResult(null);
-								setTema('');
-								setSpecValues({});
-								setReferencias([null, null, null]);
-								setImageSize(null);
-							}}
-						/>
+						{ehLicenciada && (
+							<div className="mb-6 flex gap-1 border-b border-slate-200 dark:border-white/10">
+								<button
+									type="button"
+									onClick={() => setAbaGaleria('prompts')}
+									aria-current={abaGaleria === 'prompts' ? 'page' : undefined}
+									className={`-mb-px border-b-2 px-4 py-2.5 text-sm transition-colors ${
+										abaGaleria === 'prompts'
+											? 'border-violet-500 font-semibold text-violet-600 dark:text-violet-400'
+											: 'border-transparent text-slate-500 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white'
+									}`}
+								>
+									Criar
+								</button>
+								<button
+									type="button"
+									onClick={() => setAbaGaleria('minhas')}
+									aria-current={abaGaleria === 'minhas' ? 'page' : undefined}
+									className={`-mb-px border-b-2 px-4 py-2.5 text-sm transition-colors ${
+										abaGaleria === 'minhas'
+											? 'border-violet-500 font-semibold text-violet-600 dark:text-violet-400'
+											: 'border-transparent text-slate-500 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white'
+									}`}
+								>
+									Minhas artes licenciadas
+								</button>
+							</div>
+						)}
+						{abaGaleria === 'minhas' ? (
+							/*
+							 * A biblioteca é uma superfície ESCURA de paleta própria — a
+							 * bancada da Arte Licenciada, que não segue o tema do aparelho.
+							 * Aqui ela cai dentro da galeria genérica, que SEGUE: em tema
+							 * claro os cartões escuros ficavam boiando sobre fundo branco.
+							 *
+							 * A moldura é do HOSPEDEIRO, e não da biblioteca: quem escolhe
+							 * onde ela aparece é que sabe o que tem atrás. No balcão o chão
+							 * já é este, e lá a moldura não muda nada.
+							 */
+							<div
+								className={`${TEMA_LICENCIADA} rounded-xl bg-[var(--al-ground)] p-4 sm:p-6`}
+							>
+								<MyLicensedArtLibrary />
+							</div>
+						) : (
+							<PromptGallery
+								entries={bankQuery.data ?? []}
+								loading={bankQuery.isLoading}
+								onSelect={(entry) => {
+									setSelectedEntry(entry);
+									setResult(null);
+									setTema('');
+									setSpecValues({});
+									setReferencias([null, null, null]);
+									setImageSize(null);
+								}}
+							/>
+						)}
 					</div>
 				</div>
 			);
@@ -612,8 +861,21 @@ export function DynamicToolView({
 		// espelha a da API (que rejeita 400 antes de cobrar).
 		const hasCreations = !!creations && creations.length > 0;
 		const hasVariations = !!returnVariations && returnVariations.length > 0;
-		const meetsInputRequirement =
-			mode === 'texto_imagem'
+		/**
+		 * COM LISTA, A LISTA É A ENTRADA.
+		 *
+		 * O nome de cada peça mora nela, não no campo "tema" — exigir os dois
+		 * deixava o botão apagado com 30 nomes já digitados na tela, sem dizer o
+		 * que faltava. Cada linha precisa ter nome OU foto: linha vazia viraria
+		 * uma peça sem nada de próprio, cobrada como geração.
+		 */
+		const listaCompleta =
+			!!pecas &&
+			pecas.length > 0 &&
+			pecas.every((p) => p.tema.trim() !== '' || p.imagem !== null);
+		const meetsInputRequirement = pecas
+			? listaCompleta
+			: mode === 'texto_imagem'
 				? hasText || chosenImages.length > 0
 				: (!needsTema || hasText) &&
 					(mode !== 'imagem' || chosenImages.length > 0);
@@ -648,6 +910,7 @@ export function DynamicToolView({
 						downloadKey={downloadKey}
 						actionLabel={actionLabel}
 						pending={pending}
+						pendingLabel={pendingLabel}
 						insufficient={billing.insufficient}
 						canGenerate={canGenerate}
 						imageSize={imageSize}
@@ -658,13 +921,51 @@ export function DynamicToolView({
 							setSelectedEntry(null);
 							setResult(null);
 						}}
+						backLabel={
+							studioUi?.layout === 'licenciada'
+								? 'Voltar aos modelos'
+								: undefined
+						}
+						// A variante NUNCA sai do `layout`: um prompt dos Prompts Mágicos
+						// marcado com marca por engano não pode virar esta tela.
+						variante={
+							studioUi?.layout === 'licenciada' ? 'licenciada' : undefined
+						}
+						marca={licensedMarca}
 						billingNotice={showCostNotice ? billing.notice : null}
 						creations={creations}
 						creationId={creationId}
 						onCreationIdChange={setCreationId}
 						returnVariations={returnVariations}
 						variationCount={variationCount}
+						printRunOptions={printRunOptions}
+						printRun={tiragem}
+						onPrintRunChange={(n) => {
+							setPrintRun(n);
+							// Tiragem > 1 volta as variações para 1: quem encomenda peças
+							// já escolheu a arte, e 4 versões × 50 peças não é fluxo real.
+							if (n > 1 && (variationCount ?? 1) > 1) setVariationCount(1);
+							// Com lista, mexer no número é mexer na lista — senão a tela
+							// mostraria "20 peças" ao lado de 5 linhas.
+							setPecas((atual) => {
+								if (!atual) return atual;
+								if (n <= atual.length) return atual.slice(0, n);
+								return [
+									...atual,
+									...Array.from({ length: n - atual.length }, pecaVazia),
+								];
+							});
+						}}
 						onVariationCountChange={setVariationCount}
+						pecas={studioUi?.layout === 'licenciada' ? pecas : undefined}
+						onPecasChange={
+							studioUi?.layout === 'licenciada'
+								? (p) => {
+										setPecas(p);
+										if (p) setPrintRun(p.length);
+									}
+								: undefined
+						}
 					/>
 				</div>
 			</div>

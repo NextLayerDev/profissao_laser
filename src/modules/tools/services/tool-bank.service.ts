@@ -1,5 +1,13 @@
 import { z } from 'zod';
 import { api } from '@/lib/fetch';
+import {
+	isMockTool,
+	mockCreateBankEntry,
+	mockDeleteBankEntry,
+	mockListBank,
+	mockReorderBank,
+	mockUpdateBankEntry,
+} from '../mocks/licensed-art.mock';
 
 /**
  * "Banco do Admin" — capacidade genérica da Fábrica de Tools. Cada tool com
@@ -33,6 +41,7 @@ export async function listToolBank(
 	toolKey: string,
 	category?: string,
 ): Promise<ToolBankEntry[]> {
+	if (isMockTool(toolKey)) return mockListBank();
 	const { data } = await api.get(`/api/tools/${toolKey}/bank`, {
 		params: category ? { category } : undefined,
 	});
@@ -44,6 +53,7 @@ export async function createToolBankEntry(
 	toolKey: string,
 	body: FormData,
 ): Promise<ToolBankEntry> {
+	if (isMockTool(toolKey)) return mockCreateBankEntry(body);
 	const { data } = await api.post(`/api/tools/${toolKey}/bank`, body);
 	return toolBankEntrySchema.parse(data);
 }
@@ -54,6 +64,7 @@ export async function updateToolBankEntry(
 	id: string,
 	body: FormData,
 ): Promise<ToolBankEntry> {
+	if (isMockTool(toolKey)) return mockUpdateBankEntry(id, body);
 	const { data } = await api.patch(`/api/tools/${toolKey}/bank/${id}`, body);
 	return toolBankEntrySchema.parse(data);
 }
@@ -63,6 +74,7 @@ export async function deleteToolBankEntry(
 	toolKey: string,
 	id: string,
 ): Promise<void> {
+	if (isMockTool(toolKey)) return mockDeleteBankEntry(id);
 	await api.delete(`/api/tools/${toolKey}/bank/${id}`);
 }
 
@@ -71,6 +83,7 @@ export async function reorderToolBank(
 	toolKey: string,
 	ids: string[],
 ): Promise<void> {
+	if (isMockTool(toolKey)) return mockReorderBank(ids);
 	await api.post(`/api/tools/${toolKey}/bank/reorder`, { ids });
 }
 

@@ -3,6 +3,7 @@
 import {
 	ArrowDown,
 	ArrowUp,
+	BadgeCheck,
 	Check,
 	Copy,
 	Database,
@@ -17,9 +18,11 @@ import {
 	Upload,
 	X,
 } from 'lucide-react';
+import Link from 'next/link';
 import { type ReactNode, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useImageSizePresets } from '@/modules/tools/hooks/use-image-size-presets';
+import { useLicensedBrands } from '@/modules/tools/hooks/use-licensed-brands';
 import {
 	useCreateBankEntry,
 	useDeleteBankEntry,
@@ -402,7 +405,74 @@ function ImagePick({
 	);
 }
 
-/** Renderiza UM campo do banco (text/textarea/enum/image). */
+/**
+ * Select das marcas licenciadas cadastradas.
+ *
+ * Guarda a `feature_key` como valor (é ela que o pipeline resolve), mas mostra
+ * o nome de gente — ninguém escolhe "clube:corinthians" numa lista, escolhe
+ * "Corinthians".
+ *
+ * Marca inativa aparece marcada em vez de sumir: um prompt pode ter sido criado
+ * quando ela ainda valia, e esconder faria o campo abrir vazio sem explicação.
+ */
+function BrandPick({
+	field,
+	value,
+	onPick,
+}: {
+	field: BankFieldDef;
+	value: string;
+	onPick: (v: string) => void;
+}) {
+	const { data: marcas, isLoading } = useLicensedBrands();
+	const label = field.label ?? field.name;
+	const orfa =
+		!!value && !!marcas && !marcas.some((m) => m.feature_key === value);
+
+	return (
+		<div>
+			<span className={labelCls}>
+				{label}
+				{field.required && <span className="text-rose-400"> *</span>}
+			</span>
+			<select
+				value={value}
+				onChange={(e) => onPick(e.target.value)}
+				disabled={isLoading}
+				className={inputCls}
+			>
+				<option value="">— escolha a marca —</option>
+				{(marcas ?? []).map((m) => (
+					<option key={m.id} value={m.feature_key}>
+						{m.display_name}
+						{m.active ? '' : ' (inativa)'} — {m.feature_key}
+					</option>
+				))}
+				{/* A chave gravada some da lista se a marca for removida. Mantê-la
+				    como opção evita o campo abrir vazio e o admin salvar por cima
+				    sem perceber que perdeu o vínculo. */}
+				{orfa && <option value={value}>{value} — marca removida</option>}
+			</select>
+			{marcas && marcas.length === 0 && (
+				<p className="mt-1 text-[11px] text-amber-400">
+					Nenhuma marca cadastrada.{' '}
+					<Link href="/ferramentas/marcas" className="underline">
+						Cadastre a primeira
+					</Link>{' '}
+					para os prompts licenciados funcionarem.
+				</p>
+			)}
+			{orfa && (
+				<p className="mt-1 text-[11px] text-amber-400">
+					A marca “{value}” não está mais cadastrada — este prompt não gera até
+					ser recadastrada ou trocada.
+				</p>
+			)}
+		</div>
+	);
+}
+
+/** Renderiza UM campo do banco (text/textarea/enum/image/brand). */
 function BankFieldControl({
 	field,
 	value,
@@ -455,6 +525,9 @@ function BankFieldControl({
 				</select>
 			</div>
 		);
+	}
+	if (field.type === 'brand') {
+		return <BrandPick field={field} value={value} onPick={onText} />;
 	}
 	if (field.type === 'image') {
 		return (
@@ -950,6 +1023,14 @@ export function ToolBankManager({
 	const editingEntry = entries.find((e) => e.id === editingId) ?? null;
 	const showForm = creating || !!editingId;
 
+	/**
+	 * Banco de tool licenciada é o que declara o campo `feature_key`: a arte da
+	 * marca vive no cadastro de Marcas licenciadas, não no registro do prompt.
+	 * Sem esta sinalização o admin abre a tela, não acha onde subir o brasão, e
+	 * conclui que faltou campo.
+	 */
+	const ehBancoLicenciado = fields.some((f) => f.name === 'feature_key');
+
 	return (
 		<div className="space-y-5">
 			{/* Cabeçalho */}
@@ -966,6 +1047,14 @@ export function ToolBankManager({
 					</div>
 				</div>
 				<div className="flex items-center gap-2">
+					{ehBancoLicenciado && (
+						<Link
+							href="/ferramentas/marcas"
+							className="flex items-center gap-1.5 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-xs font-medium text-emerald-300 transition-colors hover:bg-emerald-400/20"
+						>
+							<BadgeCheck className="h-4 w-4" /> Marcas licenciadas
+						</Link>
+					)}
 					{onConfigure && (
 						<button
 							type="button"
@@ -986,6 +1075,23 @@ export function ToolBankManager({
 					)}
 				</div>
 			</div>
+
+			{ehBancoLicenciado && (
+				<p className="rounded-xl border border-emerald-400/20 bg-emerald-400/5 px-3.5 py-2.5 text-xs text-emerald-200/90">
+					O <strong>brasão e o mascote não ficam no prompt</strong> — eles são
+					da marca. Cadastre a arte uma vez em{' '}
+					<Link
+						href="/ferramentas/marcas"
+						className="underline underline-offset-2"
+					>
+						Marcas licenciadas
+					</Link>{' '}
+					e aqui basta escrever a chave dela (ex.:{' '}
+					<code>clube:corinthians</code>). Assim um clube com caneca, capinha e
+					chaveiro usa um upload só, e trocar a arte oficial atualiza todos de
+					uma vez.
+				</p>
+			)}
 
 			{!bank?.enabled && (
 				<div className="flex items-start gap-3 rounded-xl border border-amber-400/30 bg-amber-500/5 p-4">

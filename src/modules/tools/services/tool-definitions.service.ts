@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { api } from '@/lib/fetch';
 import { apiCourses } from '@/shared/lib/api-courses';
+import {
+	isMockTool,
+	mockRun,
+	mockToolDefinition,
+} from '../mocks/licensed-art.mock';
 
 /**
  * Fábrica de Tools (front) — uma tool é DADO: o upvox guarda/serve a
@@ -64,7 +69,14 @@ export type ToolControl = z.infer<typeof toolControlSchema>;
 export const bankFieldSchema = z.object({
 	name: z.string(),
 	label: z.string().optional(),
-	type: z.enum(['text', 'textarea', 'enum', 'image']),
+	/**
+	 * `brand` é um select alimentado pelo cadastro de Marcas licenciadas, e não
+	 * uma lista estática como `enum`. Existe porque a chave da marca é a única
+	 * coisa do registro que NÃO pode ser renomeada depois de emitida — um typo
+	 * em campo de texto cria uma marca fantasma que nunca resolve, e o erro só
+	 * aparece na hora de gerar.
+	 */
+	type: z.enum(['text', 'textarea', 'enum', 'image', 'brand']),
 	options: z.array(z.string()).optional(),
 	required: z.boolean().optional(),
 	placeholder: z.string().optional(),
@@ -222,6 +234,12 @@ export const toolDefinitionDocSchema = z
 		 */
 		return_variations: z.array(z.number()).optional(),
 		/**
+		 * TIRAGEM: quantas PEÇAS licenciadas a rodada pode produzir (ex.:
+		 * [1,10,25,50]). Cada peça é um arquivo com o seu próprio código gravado
+		 * dentro. Ausente = a ferramenta não tem tiragem e produz uma peça.
+		 */
+		print_run: z.array(z.number()).optional(),
+		/**
 		 * TRUE = o motor manda SÓ a user message ao modelo (sem system prompt,
 		 * sem TEXT_LEAD, sem sufixo FORMATO). Dimensão via sharp. Escopado por
 		 * tool (Prompts Mágicos) — ai-extra mantém o comportamento atual.
@@ -250,6 +268,7 @@ export type AiToolDefinition = z.infer<typeof aiToolDefinitionSchema>;
 export async function getToolDefinition(
 	key: string,
 ): Promise<AiToolDefinition> {
+	if (isMockTool(key)) return mockToolDefinition();
 	const { data } = await apiCourses.get(`/v1/tool-definition/${key}`);
 	return aiToolDefinitionSchema.parse(data);
 }
@@ -497,9 +516,25 @@ export async function publishToolDefinition(
 }
 
 /* ── Run no motor genérico (main API) ── */
+/**
+ * Código de autenticidade da arte licenciada.
+ *
+ * Só vem quando o prompt escolhido carrega uma marca (`feature_key`). O motor
+ * NUNCA entrega arte licenciada sem isto: se a emissão falha, ele estorna e
+ * responde erro, em vez de devolver a imagem sem código.
+ */
+export const artLicenseSchema = z.object({
+	code: z.string(),
+	featureKey: z.string(),
+	licensorName: z.string().nullable(),
+	issuedAt: z.string(),
+});
+export type ArtLicense = z.infer<typeof artLicenseSchema>;
+
 export const toolRunResultSchema = z.object({
 	id: z.string(),
 	output: z.record(z.string(), z.unknown()),
+	license: artLicenseSchema.optional(),
 });
 export type ToolRunResult = z.infer<typeof toolRunResultSchema>;
 
@@ -534,6 +569,7 @@ export async function runToolEngine(
 	key: string,
 	opts: RunToolEngineOpts,
 ): Promise<ToolRunResult> {
+	if (isMockTool(key)) return mockRun(opts.bankEntryId);
 	const fd = new FormData();
 	for (const [name, spec] of Object.entries(opts.inputSpec)) {
 		const v = opts.values[name];
