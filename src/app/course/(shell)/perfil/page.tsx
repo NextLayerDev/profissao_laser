@@ -25,6 +25,7 @@ import {
 	useUploadMyBanner,
 } from '@/hooks/use-profile';
 import { PerfilMarcaSection } from '@/modules/tools/components/marca/perfil-marca-section';
+import { PerfilEcommercesSection } from '@/modules/tools/components/perfil-ecommerces-section';
 import {
 	AVATAR_PRESETS,
 	avatarPresetUrl,
@@ -517,6 +518,8 @@ export default function PerfilPage() {
 					 * o perfil fica exatamente como era. Ver `perfil-marca-section.tsx`.
 					 */}
 					<PerfilMarcaSection />
+
+					<PerfilEcommercesSection />
 
 					{/* Trocar senha */}
 					<form onSubmit={handleChangePassword} className={cardClass}>
