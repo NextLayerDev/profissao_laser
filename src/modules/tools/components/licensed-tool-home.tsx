@@ -14,6 +14,7 @@ import {
 import type { ResolvedScreenUi } from '../lib/screen-ui';
 import type { LicensedBrand } from '../services/licensed-brand.service';
 import type { ToolBankEntry } from '../services/tool-bank.service';
+import { EcommercesEditor } from './ecommerces-editor';
 import {
 	CAMPO_NEUTRO,
 	FalhaAoCarregar,
@@ -233,7 +234,7 @@ export function LicensedToolHome({
 	initialBrandKey = null,
 	onSelect,
 }: LicensedToolHomeProps) {
-	const [aba, setAba] = useState<'criar' | 'minhas'>('criar');
+	const [aba, setAba] = useState<'criar' | 'minhas' | 'declaracao'>('criar');
 	/**
 	 * O portão do vendedor. Falha de rede aqui NÃO bloqueia: o motor tem a
 	 * palavra final e recusa de qualquer jeito, então travar a tela por não
@@ -309,6 +310,10 @@ export function LicensedToolHome({
 							[
 								['criar', 'Criar'],
 								['minhas', 'Minhas peças'],
+								/* "Onde eu vendo", e não "Declaração": primeira pessoa como
+								   "Minhas peças", e o MESMO nome da seção no perfil — a
+								   coisa é uma só, o nome também tem de ser. */
+								['declaracao', 'Onde eu vendo'],
 							] as const
 						).map(([id, rotulo]) => (
 							<button
@@ -323,6 +328,15 @@ export function LicensedToolHome({
 								}`}
 							>
 								{rotulo}
+								{/* O ponto só aparece na Declaração e só quando falta algo:
+								    é o único jeito de a pendência ser visível sem abrir a
+								    aba, e some sozinho quando ela é resolvida. */}
+								{id === 'declaracao' && declaracao && !declaracao.ok && (
+									<span
+										aria-label="pendente"
+										className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-500 align-middle"
+									/>
+								)}
 							</button>
 						))}
 					</nav>
@@ -330,7 +344,39 @@ export function LicensedToolHome({
 
 				<hr className="my-6 border-[var(--al-rule)]" />
 
-				{aba === 'minhas' ? (
+				{aba === 'declaracao' ? (
+					/* A MESMA declaração do portão, alcançável a qualquer momento —
+					   inclusive quando já está em dia, para rever ou acrescentar uma
+					   loja sem precisar sair da ferramenta. */
+					declaracaoQuery.isLoading ? (
+						<GradeDeEsqueletos quantidade={1} />
+					) : declaracao ? (
+						<div className="mx-auto max-w-2xl space-y-6 py-4">
+							<header className="space-y-2">
+								<p className={`${MONO} text-[var(--al-mute)]`}>
+									Cadastro do vendedor
+								</p>
+								<h2 className="font-display text-xl font-bold tracking-[-0.01em] text-[var(--al-ink)]">
+									Onde você vende
+								</h2>
+								<p className="text-sm leading-relaxed text-[var(--al-mute)]">
+									Os canais que você informou e o termo do licenciamento. Fica
+									salvo no seu perfil e vale em qualquer aparelho.
+								</p>
+							</header>
+							<section className="rounded-lg border border-[var(--al-rule)] bg-[var(--al-card)] p-4">
+								<EcommercesEditor
+									declaracao={declaracao}
+									variante="licenciada"
+								/>
+							</section>
+						</div>
+					) : (
+						<FalhaAoCarregar titulo="Não foi possível carregar a sua declaração.">
+							Isto é um problema nosso. Recarregue a página em instantes.
+						</FalhaAoCarregar>
+					)
+				) : aba === 'minhas' ? (
 					/* A biblioteca NÃO passa pelo portão: quem já gerou precisa
 					   continuar alcançando as próprias peças, porque o QR delas pode
 					   estar gravado num chaveiro que já saiu daqui. */
