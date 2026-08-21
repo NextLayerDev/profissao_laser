@@ -1,7 +1,6 @@
 'use client';
 
 import { ExternalLink, Store } from 'lucide-react';
-import { SubscriptionGate } from '@/components/course/subscription-gate';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/ui/page-header';
 import { useFornecedores } from '@/hooks/use-fornecedores';
@@ -33,7 +32,7 @@ export default function FornecedoresCoursePage() {
 	const fornecedores = (data ?? []).filter((f) => f.isActive);
 
 	return (
-		<SubscriptionGate toolKey="fornecedores">
+		<>
 			<div className="p-4 md:p-8">
 				<PageHeader
 					title="Fornecedores"
@@ -136,6 +135,6 @@ export default function FornecedoresCoursePage() {
 					</div>
 				)}
 			</div>
-		</SubscriptionGate>
+		</>
 	);
 }

@@ -38,8 +38,8 @@ export type QuickAccessItem = {
 	hideWhenSubscribed?: boolean;
 	/**
 	 * Key da tool no registry (`tools.key`) que gateia esta página — o mesmo
-	 * passado ao `SubscriptionGate`. Item COM toolKey some do menu pra quem não
-	 * tem assinatura, a menos que a tool esteja `is_free` (entitled sem plano).
+	 * passado ao `SubscriptionGate`. O item NUNCA some do menu — o clique leva à
+	 * página, que libera (ferramentas) ou pede plano (áreas de conteúdo).
 	 */
 	toolKey?: string;
 };

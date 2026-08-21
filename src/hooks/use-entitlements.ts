@@ -46,10 +46,10 @@ export function useEntitlements(
 			ent?.tools.find((t) => t.key === key),
 		remainingFree: (key: string): number | null =>
 			ent?.tools.find((t) => t.key === key)?.remaining_free ?? null,
-		/** Pode VER a página da tool: assinante (entitled) ou tool grátis (só leitura). */
-		canView: (key: string): boolean => {
-			const t = ent?.tools.find((x) => x.key === key);
-			return !!t && (t.entitled || t.is_free);
-		},
+		/** Área gateada liberada sem plano (`is_free`) — comunidade, dúvidas etc.
+		 *  Assinante já entra antes, pelo `hasActiveSubscription`. As FERRAMENTAS
+		 *  não passam mais por aqui: abrem pra todos e travam no saldo de voxxys. */
+		canView: (key: string): boolean =>
+			!!ent?.tools.find((x) => x.key === key)?.is_free,
 	};
 }
