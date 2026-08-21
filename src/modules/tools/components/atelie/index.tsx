@@ -659,7 +659,6 @@ export function ToolAtelieView({ def, toolKey }: ToolAtelieViewProps) {
 	const bloqueado =
 		!podeAvancar ||
 		billing.insufficient ||
-		billing.viewOnly ||
 		billing.pending ||
 		gravandoMarca ||
 		semCaminhos ||
@@ -1144,13 +1143,6 @@ export function ToolAtelieView({ def, toolKey }: ToolAtelieViewProps) {
 							<p className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-xs leading-relaxed text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/5 dark:text-amber-300">
 								<AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0" />
 								<span>{estado.entrega.aviso}</span>
-							</p>
-						) : null}
-
-						{billing.viewOnly ? (
-							<p className="rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-xs leading-relaxed text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/5 dark:text-amber-300">
-								Esta ferramenta está aberta para você conhecer. Para criar a
-								arte de verdade é preciso um plano ativo.
 							</p>
 						) : null}
 					</section>
