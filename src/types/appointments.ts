@@ -36,8 +36,39 @@ export const createAppointmentPayloadSchema = z.object({
 	machine: z.string().min(1),
 	notes: z.string().optional(),
 	technicianId: z.string().uuid().optional(),
+	/** Só a equipe pode furar o intervalo mínimo; o back ignora vindo de cliente. */
+	overrideCooldown: z.boolean().optional(),
 });
 
 export type CreateAppointmentPayload = z.infer<
 	typeof createAppointmentPayloadSchema
 >;
+
+/**
+ * Situação do intervalo mínimo entre atendimentos de um cliente.
+ * Serve só pra avisar antes: quem decide é o POST /appointment.
+ */
+export interface ClientCooldown {
+	enabled: boolean;
+	hours: number;
+	matchPhone: boolean;
+	/** O dia inicial da consulta (hoje) está bloqueado? */
+	blocked: boolean;
+	/**
+	 * Primeira data da janela com ALGUM horário livre — serve de piso pro
+	 * `min` do input de data.
+	 *
+	 * NÃO use em texto: o dia do próprio atendimento é isento, então isto
+	 * costuma ser hoje ou o próprio dia já marcado. A data exata de liberação
+	 * vem do `reason` do available-slots e da mensagem do 409.
+	 */
+	nextAllowedDate: string | null;
+	/** Dias 100% bloqueados na janela consultada (YYYY-MM-DD). */
+	blockedDates: string[];
+	lastAppointment: {
+		id: string;
+		date: string;
+		time: string;
+		service: string | null;
+	} | null;
+}
