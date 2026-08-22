@@ -2,6 +2,7 @@ import { api } from '@/lib/fetch';
 import {
 	type Appointment,
 	appointmentSchema,
+	type ClientCooldown,
 	type CreateAppointmentPayload,
 } from '@/types/appointments';
 
@@ -35,6 +36,33 @@ export async function getAvailableSlots(
 		slots: Array.isArray(obj.slots) ? obj.slots : [],
 		blocked: !!obj.blocked,
 		reason: obj.reason ?? null,
+	};
+}
+
+/**
+ * Intervalo mínimo entre atendimentos do cliente. Sem `email`, o back responde
+ * sobre o dono do token (é o caso do cliente marcando pra si).
+ */
+export async function getClientCooldown(params?: {
+	email?: string;
+	phone?: string;
+	from?: string;
+	days?: number;
+}): Promise<ClientCooldown> {
+	const { data } = await api.get<Partial<ClientCooldown>>(
+		'/appointments/cooldown',
+		{ params: params ?? undefined },
+	);
+	// Defensivo (mesmo espírito do getAvailableSlots): API sem a rota ou payload
+	// parcial não pode quebrar o form — quem barra de verdade é o POST.
+	return {
+		enabled: !!data?.enabled,
+		hours: data?.hours ?? 48,
+		matchPhone: !!data?.matchPhone,
+		blocked: !!data?.blocked,
+		nextAllowedDate: data?.nextAllowedDate ?? null,
+		blockedDates: Array.isArray(data?.blockedDates) ? data.blockedDates : [],
+		lastAppointment: data?.lastAppointment ?? null,
 	};
 }
 
