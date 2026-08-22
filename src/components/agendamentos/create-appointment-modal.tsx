@@ -6,14 +6,20 @@ import { toast } from 'sonner';
 import {
 	useAvailableSlots,
 	useAvailableSlotsForAnyTechnician,
+	useClientCooldown,
 	useCreateAppointment,
 } from '@/hooks/use-appointments';
 import { useStudents } from '@/hooks/use-students';
 import { useUsers } from '@/hooks/use-users';
+import { getApiErrorMessage } from '@/shared/lib/api-error';
 import type { CreateAppointmentPayload } from '@/types/appointments';
 import { APPOINTMENT_MACHINES } from '@/utils/constants/appointment-machines';
 import { APPOINTMENT_SERVICES } from '@/utils/constants/appointment-services';
+import { formatAppointmentDate } from '@/utils/formatDate';
 import { TimeSlotPicker } from './time-slot-picker';
+
+const shortDate = (d: string) =>
+	formatAppointmentDate(d, { day: '2-digit', month: '2-digit' });
 
 /**
  * Busca um aluno/cliente já cadastrado (server-side, por nome/email) e devolve
@@ -152,6 +158,32 @@ export function CreateAppointmentModal({
 	const [notes, setNotes] = useState('');
 	const [machine, setMachine] = useState<string>(APPOINTMENT_MACHINES[0]);
 	const [selectedTechnicianId, setSelectedTechnicianId] = useState('');
+	const [overrideCooldown, setOverrideCooldown] = useState(false);
+
+	// Debounce: e-mail e telefone são digitados à mão em walk-in, e os dois
+	// entram na query key — sem isto seria uma consulta por tecla.
+	const [debouncedClient, setDebouncedClient] = useState({
+		email: '',
+		phone: '',
+	});
+	useEffect(() => {
+		const id = setTimeout(
+			() =>
+				setDebouncedClient({
+					email: customerEmail.trim(),
+					phone: customerPhone.trim(),
+				}),
+			400,
+		);
+		return () => clearTimeout(id);
+	}, [customerEmail, customerPhone]);
+
+	const { cooldown } = useClientCooldown(
+		debouncedClient.email,
+		debouncedClient.phone,
+	);
+	const cooldownHitsDate =
+		!!date && !!cooldown?.enabled && cooldown.blockedDates.includes(date);
 
 	const technicianIds = technicians.map((t) => t.id);
 
@@ -178,6 +210,7 @@ export function CreateAppointmentModal({
 			setTimes([]);
 			setNotes('');
 			setSelectedTechnicianId('');
+			setOverrideCooldown(false);
 		}
 	}, [isOpen]);
 
@@ -245,6 +278,7 @@ export function CreateAppointmentModal({
 					...basePayload,
 					time: slotTime,
 					...(technicianId && { technicianId }),
+					...(overrideCooldown && { overrideCooldown: true }),
 				});
 			}
 			toast.success(
@@ -253,8 +287,15 @@ export function CreateAppointmentModal({
 					: 'Agendamento criado com sucesso.',
 			);
 			onClose();
-		} catch {
-			toast.error('Erro ao criar agendamento(s). Tente novamente.');
+		} catch (err) {
+			// A API explica o motivo (horário ocupado, intervalo mínimo do
+			// cliente) — descartar isso deixava a recepção sem saber o que fazer.
+			toast.error(
+				getApiErrorMessage(
+					err,
+					'Erro ao criar agendamento(s). Tente novamente.',
+				),
+			);
 		}
 	}
 
@@ -425,6 +466,27 @@ export function CreateAppointmentModal({
 								))}
 							</select>
 						</div>
+						{cooldownHitsDate && (
+							<div className="sm:col-span-2 rounded-xl border border-amber-200 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-950/20 p-3 text-sm text-amber-700 dark:text-amber-300 space-y-2">
+								<p>
+									Este cliente já tem um atendimento
+									{cooldown?.lastAppointment
+										? ` em ${shortDate(cooldown.lastAppointment.date)} às ${cooldown.lastAppointment.time}`
+										: ''}
+									, e esta data cai dentro do intervalo mínimo de{' '}
+									{cooldown?.hours}h.
+								</p>
+								<label className="flex items-center gap-2 font-medium cursor-pointer">
+									<input
+										type="checkbox"
+										checked={overrideCooldown}
+										onChange={(e) => setOverrideCooldown(e.target.checked)}
+										className="w-4 h-4 accent-amber-600"
+									/>
+									Ignorar o intervalo e marcar assim mesmo
+								</label>
+							</div>
+						)}
 						<div className="sm:col-span-2">
 							<TimeSlotPicker
 								value={times[0] ?? time}
@@ -463,8 +525,11 @@ export function CreateAppointmentModal({
 						</button>
 						<button
 							type="submit"
-							disabled={createMutation.isPending}
-							className="flex items-center gap-2 px-6 py-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-medium rounded-xl"
+							disabled={
+								createMutation.isPending ||
+								(cooldownHitsDate && !overrideCooldown)
+							}
+							className="flex items-center gap-2 px-6 py-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl"
 						>
 							{createMutation.isPending ? (
 								<>
