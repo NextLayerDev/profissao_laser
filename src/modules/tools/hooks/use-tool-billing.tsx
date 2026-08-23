@@ -49,7 +49,7 @@ export function useToolBilling(
 	const runTool = useRunTool(featureKey, courseSlug);
 
 	const consumeMut = useMutation({
-		mutationFn: () => consumeTool(featureKey, courseSlug ?? ''),
+		mutationFn: () => consumeTool(featureKey, courseSlug),
 		onSuccess: (res) => {
 			applyVoxCharge(qc, res); // saldo cai no header + anima "−custo" na hora
 			qc.invalidateQueries({ queryKey: ['entitlements'] });
@@ -79,7 +79,7 @@ export function useToolBilling(
 	const consume = useCallback(
 		async (onProceed: () => void) => {
 			if (insufficient) return;
-			if (billed && courseSlug) {
+			if (billed) {
 				try {
 					await consumeMut.mutateAsync();
 				} catch {
@@ -88,7 +88,7 @@ export function useToolBilling(
 			}
 			onProceed();
 		},
-		[billed, courseSlug, insufficient, consumeMut],
+		[billed, insufficient, consumeMut],
 	);
 
 	const pending = runTool.pending || consumeMut.isPending;

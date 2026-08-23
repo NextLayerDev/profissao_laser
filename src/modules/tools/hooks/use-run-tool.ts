@@ -47,10 +47,6 @@ export function useRunTool(toolKey: string, courseSlug: string | undefined) {
 			engine: (invocationId: string) => Promise<T>,
 			variationCount?: number,
 		): Promise<T | null> => {
-			if (!courseSlug) {
-				toast.error('Nenhum curso ativo encontrado para esta ferramenta.');
-				return null;
-			}
 			setPending(true);
 			setBlock(null);
 
