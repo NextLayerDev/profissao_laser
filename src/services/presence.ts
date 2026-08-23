@@ -19,13 +19,16 @@ export async function getPresenceSummary(): Promise<PresenceSummary> {
 	return data;
 }
 
-/** Assinantes pagantes (active + trialing) via analytics do upvox. */
+/**
+ * Assinantes pagantes (active + trialing) via contagem dedicada do upvox.
+ *
+ * Não usa `/v1/admin/analytics/sales/summary`: aquele endpoint agrega
+ * assinatura a assinatura (e, sem filtro de data, a base inteira), o que é caro
+ * demais pra um card de topo de tela. `/v1/admin/students/stats` é só count.
+ */
 export async function getPayingMembersCount(): Promise<number> {
-	const { data } = await apiCourses.get<{
-		totals_by_status: { active: number; trialing: number };
-	}>('/v1/admin/analytics/sales/summary');
-	return (
-		(data.totals_by_status?.active ?? 0) +
-		(data.totals_by_status?.trialing ?? 0)
+	const { data } = await apiCourses.get<{ paying: number }>(
+		'/v1/admin/students/stats',
 	);
+	return data.paying ?? 0;
 }
