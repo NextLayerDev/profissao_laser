@@ -37,11 +37,12 @@ export async function deleteTool(id: string): Promise<void> {
  */
 export async function invokeTool(
 	toolKey: string,
-	courseSlug: string,
+	courseSlug: string | undefined,
 	variationCount?: number,
 ): Promise<InvokeToolResult> {
 	const { data } = await api.post(`/v1/tool/${toolKey}/invoke`, {
-		course_slug: courseSlug,
+		// Sem plano não há curso — o upvox cobra em voxxys sem escopo de curso.
+		...(courseSlug ? { course_slug: courseSlug } : {}),
 		...(variationCount && variationCount > 1
 			? { variation_count: variationCount }
 			: {}),
@@ -52,10 +53,10 @@ export async function invokeTool(
 /** Cobrança atômica (debita + liquida) p/ ferramentas sem motor (ex.: "abrir item"). */
 export async function consumeTool(
 	toolKey: string,
-	courseSlug: string,
+	courseSlug: string | undefined,
 ): Promise<InvokeToolResult> {
 	const { data } = await api.post(`/v1/tool/${toolKey}/use`, {
-		course_slug: courseSlug,
+		...(courseSlug ? { course_slug: courseSlug } : {}),
 	});
 	return invokeToolResultSchema.parse(data);
 }
