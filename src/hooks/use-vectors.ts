@@ -85,7 +85,7 @@ export function useAiLineartVectorize() {
 }
 
 /**
- * Vetor invertido (fundo preto). SEM `useToolBilling`: inverter é transformação
+ * Vetor invertido (delimitado pela silhueta). SEM `useToolBilling`: inverter é transformação
  * pura de um vetor já gerado e não cobra — o crédito de formato já pago cobre o
  * arquivo invertido.
  */

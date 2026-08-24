@@ -880,7 +880,7 @@ function StepParams({
 				    reversível lá) — aqui só poupa um clique. */}
 				<div className="mt-3 rounded-xl border border-slate-200 dark:border-white/10 p-3">
 					<ToggleRow
-						label="Vetor invertido (fundo preto)"
+						label="Vetor invertido (fundo na silhueta)"
 						checked={wantInverted}
 						onChange={onWantInverted}
 						disabled={colorChoice === 'color'}
@@ -888,7 +888,7 @@ function StepParams({
 					<p className="text-[11px] text-slate-500 dark:text-gray-400 leading-snug mt-1">
 						{colorChoice === 'color'
 							? 'Indisponível no modo Cores: vetor colorido não tem negativo geométrico. Use Laser (P&B) ou Automático.'
-							: 'O resultado já vem com a polaridade trocada — fundo sólido e a arte vazada. No resultado dá pra alternar entre normal e invertido, sem custo.'}
+							: 'O resultado já vem com a polaridade trocada — o fundo preenchido fica delimitado pela silhueta do desenho, com um contorno fino (nunca um retângulo). No resultado dá pra alternar entre normal e invertido, sem custo.'}
 					</p>
 				</div>
 			</div>
@@ -964,7 +964,8 @@ function StepParams({
 							/>
 							{/* NÃO confundir com "Polaridade: Invertido" do resultado: este
 						    negativa o RASTER antes do limiar (muda o que vira traço);
-						    aquele inverte o VETOR pronto (fundo preto de verdade). */}
+						    aquele inverte o VETOR pronto (negativo real, delimitado
+						    pela silhueta com contorno fino). */}
 							<ToggleRow
 								label="Inverter cores (antes do limiar)"
 								checked={params.invert ?? false}
@@ -1381,7 +1382,7 @@ function StepResult({
 				</span>
 				{[
 					{ key: 'normal' as const, label: 'Normal' },
-					{ key: 'inverted' as const, label: 'Invertido (fundo preto)' },
+					{ key: 'inverted' as const, label: 'Invertido (silhueta)' },
 				].map((p) => {
 					// Multi-cor não tem negativo geométrico — o backend também recusa.
 					const blocked = p.key === 'inverted' && result.isColor;
@@ -1416,12 +1417,12 @@ function StepResult({
 				<div className="rounded-lg bg-slate-100 dark:bg-white/5 px-3 py-2 space-y-1">
 					<p className="text-xs text-slate-600 dark:text-gray-400">
 						Negativo real: o Corel/LightBurn e o laser leem a polaridade
-						trocada.{' '}
+						trocada, delimitada pela silhueta do desenho.{' '}
 						<strong>
 							No DXF a inversão não altera o preenchimento (DXF não tem
 							preenchimento)
 						</strong>{' '}
-						— o arquivo ganha apenas o retângulo da moldura.
+						— o arquivo ganha o contorno da silhueta.
 					</p>
 					<button
 						type="button"
@@ -1704,7 +1705,7 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 	const [chargingFormat, setChargingFormat] = useState<VectorFormat | null>(
 		null,
 	);
-	// Vetor invertido (fundo preto). Gerado sob demanda e GRÁTIS; depois de
+	// Vetor invertido (delimitado pela silhueta). Gerado sob demanda e GRÁTIS; depois de
 	// pronto, alternar polaridade é só troca local. Mora aqui (e não no
 	// StepResult) porque o handler de download precisa do conteúdo ativo.
 	const [inverted, setInverted] = useState<InvertedVector | null>(null);
