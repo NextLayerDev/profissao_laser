@@ -1,9 +1,14 @@
 'use client';
 
 import { BibliotecaVetoresView } from '@/components/biblioteca/biblioteca-vetores-view';
+import { SubscriptionGate } from '@/components/course/subscription-gate';
 
 export default function BibliotecaCoursePage() {
-	// Ferramenta abre pra todo aluno, com ou sem plano. A trava é o USO:
-	// `useToolBilling` cobra voxxys e barra por saldo insuficiente.
-	return <BibliotecaVetoresView />;
+	// Acervo de vetores é conteúdo de plano: sem assinatura ativa não entra
+	// (antes abria pra todos e o download saía direto do CDN, de graça).
+	return (
+		<SubscriptionGate>
+			<BibliotecaVetoresView />
+		</SubscriptionGate>
+	);
 }

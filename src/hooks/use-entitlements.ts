@@ -30,6 +30,9 @@ export function useEntitlements(
 
 	const ent = query.data;
 	const status = ent?.subscription?.status;
+	const isStaff = typeof window !== 'undefined' && !!getToken('user');
+	const hasActiveSubscription =
+		!!ent?.subscription && (status === 'active' || status === 'trialing');
 
 	return {
 		...query,
@@ -37,8 +40,10 @@ export function useEntitlements(
 		isTestUnlimited: ent?.is_test_unlimited ?? false,
 		/** Visão Aluno da staff (null = aluno de verdade). */
 		studentPreview: ent?.student_preview ?? null,
-		hasActiveSubscription:
-			!!ent?.subscription && (status === 'active' || status === 'trialing'),
+		hasActiveSubscription,
+		/** Staff, teste ilimitado ou plano ativo — o "pode tudo" da área do aluno. */
+		hasFullAccess:
+			isStaff || (ent?.is_test_unlimited ?? false) || hasActiveSubscription,
 		voxBalance: ent?.vox_balance ?? 0,
 		tools: ent?.tools ?? [],
 		courses: ent?.courses ?? [],

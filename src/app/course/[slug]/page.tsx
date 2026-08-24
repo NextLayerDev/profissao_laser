@@ -41,6 +41,7 @@ import { ClassroomSkeleton } from '@/components/ui/skeletons/classroom-skeleton'
 import { useCourse } from '@/hooks/use-course';
 import { useCustomerFeaturesForCourse } from '@/hooks/use-customer-features';
 import { useCustomerPlans } from '@/hooks/use-customer-plans';
+import { useEntitlements } from '@/hooks/use-entitlements';
 import { useLessonProgress } from '@/hooks/use-lesson-progress';
 import { useMaterials } from '@/hooks/use-materials';
 import { useQuiz } from '@/hooks/use-quiz';
@@ -367,6 +368,17 @@ export default function CourseSlugPage() {
 		? null
 		: (customerFeatures?.upgradeTiers ?? null);
 
+	// Acesso ao conteúdo: staff/teste/plano ativo liberam tudo; sem isso, só as
+	// aulas marcadas como grátis (antes o cadeado era só enfeite — clicar tocava).
+	const {
+		hasFullAccess,
+		courses: entitledCourses,
+		isLoading: accessLoading,
+	} = useEntitlements(slug);
+	const courseUnlocked =
+		hasFullAccess || entitledCourses.some((c) => c.slug === slug);
+	const canPlay = (lesson: CourseLesson) => courseUnlocked || lesson.isFree;
+
 	const { data: course, isLoading, isError } = useCourse(slug);
 	const [activeLesson, setActiveLesson] = useState<CourseLesson | null>(null);
 	const {
@@ -422,7 +434,7 @@ export default function CourseSlugPage() {
 	const watchedRef = useRef(watchedLessonIds);
 	watchedRef.current = watchedLessonIds;
 	useEffect(() => {
-		if (!course) return;
+		if (!course || accessLoading) return;
 		const modules = course.modules
 			.slice()
 			.sort((a, b) => a.order - b.order)
@@ -430,13 +442,19 @@ export default function CourseSlugPage() {
 				...m,
 				lessons: m.lessons.slice().sort((a, b) => a.order - b.order),
 			}));
-		const lessons = modules.flatMap((m) => m.lessons);
+		// Só entram aulas que este aluno pode assistir — deep-link pra aula
+		// bloqueada cai na primeira liberada.
+		const lessons = modules
+			.flatMap((m) => m.lessons)
+			.filter((l) => courseUnlocked || l.isFree);
 
 		if (lessonIdFromUrl) {
-			hasSetInitialLesson.current = true;
 			const lesson = lessons.find((l) => l.id === lessonIdFromUrl);
-			if (lesson) setActiveLesson(lesson);
-			return;
+			if (lesson) {
+				hasSetInitialLesson.current = true;
+				setActiveLesson(lesson);
+				return;
+			}
 		}
 
 		// Sem ?lesson= na URL: abrir na próxima aula após a última concluída (1×)
@@ -444,7 +462,7 @@ export default function CourseSlugPage() {
 		hasSetInitialLesson.current = true;
 		const nextLesson = lessons.find((l) => !watchedRef.current.has(l.id));
 		setActiveLesson(nextLesson ?? lessons[0] ?? null);
-	}, [course, lessonIdFromUrl, progressLoading]);
+	}, [course, lessonIdFromUrl, progressLoading, accessLoading, courseUnlocked]);
 
 	// Ao entrar na sala de aula, colapsar módulos com todas as aulas completas
 	useEffect(() => {
@@ -523,6 +541,15 @@ export default function CourseSlugPage() {
 	}));
 
 	const handleSelectLesson = (lesson: CourseLesson) => {
+		if (!canPlay(lesson)) {
+			toast.error('Esta aula faz parte do conteúdo dos assinantes.', {
+				action: {
+					label: 'Ver planos',
+					onClick: () => router.push('/course/store'),
+				},
+			});
+			return;
+		}
 		setActiveLesson(lesson);
 		setShowEndScreen(false);
 		// Persiste a aula atual na URL: mantém a posição em reload/deep-link e
@@ -898,7 +925,7 @@ export default function CourseSlugPage() {
 															<div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-600/20 flex items-center justify-center">
 																<Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
 															</div>
-														) : lesson.isFree ? (
+														) : canPlay(lesson) ? (
 															<div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-600/20 flex items-center justify-center">
 																<Play className="w-3 h-3 text-emerald-600 dark:text-emerald-400 fill-current" />
 															</div>
@@ -917,7 +944,7 @@ export default function CourseSlugPage() {
 														</p>
 													</div>
 
-													{lesson.isFree && !isActive && (
+													{lesson.isFree && !courseUnlocked && !isActive && (
 														<span className="shrink-0 text-xs px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded">
 															Grátis
 														</span>

@@ -5,7 +5,11 @@ import Link from 'next/link';
 import { ForumPostClassic } from '@/components/forum/forum-post-classic';
 import { ForumReplyForm } from '@/components/forum/forum-reply-form';
 import { ForumThreadDetailSkeleton } from '@/components/ui/skeletons/forum-skeleton';
-import { useForumPost, useUpvoteForumPost } from '@/hooks/use-forum';
+import {
+	useForumPost,
+	useUpvoteForumPost,
+	useUpvoteForumReply,
+} from '@/hooks/use-forum';
 
 interface ForumThreadDetailProps {
 	postId: string;
@@ -18,6 +22,7 @@ export function ForumThreadDetail({
 }: ForumThreadDetailProps) {
 	const { data: post, isLoading } = useForumPost(postId);
 	const upvoteMut = useUpvoteForumPost();
+	const upvoteReplyMut = useUpvoteForumReply(postId);
 
 	if (isLoading) {
 		return <ForumThreadDetailSkeleton />;
@@ -83,6 +88,7 @@ export function ForumThreadDetail({
 					post={r}
 					postNumber={idx + 2}
 					isOp={false}
+					onUpvote={() => upvoteReplyMut.mutate(r.id)}
 				/>
 			))}
 

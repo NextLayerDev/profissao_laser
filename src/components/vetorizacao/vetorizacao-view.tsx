@@ -2139,6 +2139,10 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 					/>
 				)}
 
+				{/* Aviso de custo/saldo — sem ele, clicar "Gerar com IA" sem saldo
+				    não dava sinal nenhum na tela. */}
+				{step === 2 && billing.notice}
+
 				{step === 2 && billing.billed && billing.cost > 0 && (
 					<p className="mt-3 text-xs text-slate-500 dark:text-gray-400">
 						{isAi

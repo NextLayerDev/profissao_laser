@@ -66,19 +66,42 @@ export function useToolBilling(
 	const mustPay = billed && remainingFree === 0 && effectiveCost > 0;
 	const insufficient = mustPay && !ent.isLoading && voxBalance < effectiveCost;
 
+	// Bloqueio por saldo precisa ser AUDÍVEL: antes os dois fluxos abaixo só
+	// davam `return`, e o clique em "Gerar" não fazia nada visível (o aviso
+	// inline nem sempre está na tela).
+	const warnInsufficient = useCallback(() => {
+		toast.error(
+			`Saldo insuficiente: esta ação custa ${effectiveCost} voxxys e você tem ${voxBalance}.`,
+			{
+				action: {
+					label: 'Comprar voxxys',
+					onClick: () => {
+						window.location.href = '/course/voxes';
+					},
+				},
+			},
+		);
+	}, [effectiveCost, voxBalance]);
+
 	const runEngine = useCallback(
 		async <T,>(engineFn: (invocationId?: string) => Promise<T>) => {
-			if (insufficient) return; // o aviso inline mostra "comprar voxxys"
+			if (insufficient) {
+				warnInsufficient(); // + aviso inline "comprar voxxys"
+				return;
+			}
 			return billed
 				? runTool.run((invocationId) => engineFn(invocationId), variationCount)
 				: Promise.resolve(engineFn(undefined));
 		},
-		[billed, insufficient, runTool, variationCount],
+		[billed, insufficient, runTool, variationCount, warnInsufficient],
 	);
 
 	const consume = useCallback(
 		async (onProceed: () => void) => {
-			if (insufficient) return;
+			if (insufficient) {
+				warnInsufficient();
+				return;
+			}
 			if (billed) {
 				try {
 					await consumeMut.mutateAsync();
@@ -88,7 +111,7 @@ export function useToolBilling(
 			}
 			onProceed();
 		},
-		[billed, insufficient, consumeMut],
+		[billed, insufficient, consumeMut, warnInsufficient],
 	);
 
 	const pending = runTool.pending || consumeMut.isPending;
