@@ -51,6 +51,7 @@ import {
 	useSaveLesson,
 } from '@/hooks/use-saved-lessons';
 import { getCurrentUser, getToken } from '@/lib/auth';
+import { savedLessonErrorMessage } from '@/services/saved-lessons';
 import type { CourseLesson } from '@/types/course';
 import type { MaterialType } from '@/types/materials';
 import type { Quiz } from '@/types/quiz';
@@ -703,7 +704,8 @@ export default function CourseSlugPage() {
 											saveLessonMutation.mutate(activeLesson.id, {
 												onSuccess: () =>
 													toast.success('Aula guardada nas suas salvas'),
-												onError: () => toast.error('Erro ao guardar aula'),
+												onError: (err) =>
+													toast.error(savedLessonErrorMessage(err)),
 											})
 									: undefined
 							}
