@@ -96,6 +96,27 @@ function StatusBadge({
 			</span>
 		);
 	}
+	if (status === 'past_due') {
+		return (
+			<span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
+				Pagamento pendente
+			</span>
+		);
+	}
+	if (status === 'canceled') {
+		return (
+			<span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300 border border-slate-200 dark:border-white/10">
+				Cancelada
+			</span>
+		);
+	}
+	if (status === 'paused') {
+		return (
+			<span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300 border border-slate-200 dark:border-white/10">
+				Pausada
+			</span>
+		);
+	}
 	return (
 		<span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
 			Ativo
@@ -148,13 +169,29 @@ function SubscriptionCard({
 					<p className="text-sm text-slate-500 dark:text-gray-400">
 						{subscription.cancelAtPeriodEnd
 							? 'Encerra em'
-							: 'Proxima cobranca em'}{' '}
+							: subscription.status === 'past_due'
+								? 'Periodo atual ate'
+								: 'Proxima cobranca em'}{' '}
 						<span className="font-mono font-semibold text-slate-700 dark:text-slate-200">
 							{formatDate(subscription.currentPeriodEnd)}
 						</span>
 					</p>
 				)}
 			</div>
+
+			{subscription.status === 'past_due' && (
+				<div className="flex items-start gap-3 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-4 py-3">
+					<AlertTriangle
+						size={15}
+						className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5"
+					/>
+					<p className="text-sm text-amber-700 dark:text-amber-300">
+						Nao conseguimos cobrar a ultima fatura. Atualize sua forma de
+						pagamento para manter o acesso — vamos tentar cobrar novamente nos
+						proximos dias.
+					</p>
+				</div>
+			)}
 
 			{subscription.cancelAtPeriodEnd && subscription.currentPeriodEnd && (
 				<div className="flex items-start gap-3 rounded-lg border border-violet-200 dark:border-violet-500/30 bg-violet-50 dark:bg-violet-500/10 px-4 py-3">
