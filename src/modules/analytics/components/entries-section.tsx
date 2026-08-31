@@ -65,6 +65,20 @@ const BILLING_REASON_LABEL: Record<BillingReason, string> = {
 	refund: 'Reembolso',
 };
 
+// Tipos do Stripe (payment_method_details.type). Fora da lista, mostra o valor
+// cru — método novo aparece sem precisar de deploy.
+const PAYMENT_METHOD_LABEL: Record<string, string> = {
+	card: 'Cartão',
+	pix: 'Pix',
+	boleto: 'Boleto',
+	link: 'Link',
+};
+
+function paymentMethodLabel(method: string | null | undefined) {
+	if (!method) return null;
+	return PAYMENT_METHOD_LABEL[method] ?? method;
+}
+
 const INTERVAL_LABEL: Record<'monthly' | 'yearly' | 'lifetime', string> = {
 	monthly: 'Mensal',
 	yearly: 'Anual',
@@ -420,6 +434,7 @@ function EntryRowItem({
 }) {
 	const cfg = TYPE_CONFIG[row.entry_type];
 	const refundable = isRefundable(row);
+	const payment = paymentMethodLabel(row.payment_method);
 	return (
 		<tr className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
 			<td className="px-4 py-3">
@@ -461,6 +476,7 @@ function EntryRowItem({
 						<p className="text-xs text-slate-500 dark:text-gray-500">
 							{BILLING_REASON_LABEL[row.subscription.billing_reason]} ·{' '}
 							{INTERVAL_LABEL[row.subscription.interval]}
+							{payment && ` · ${payment}`}
 						</p>
 					</>
 				) : row.entry_type === 'vox' && row.vox ? (
@@ -472,6 +488,7 @@ function EntryRowItem({
 							</p>
 							<p className="text-xs text-slate-500 dark:text-gray-500">
 								{row.vox.vox_amount} voxxys
+								{payment && ` · ${payment}`}
 							</p>
 						</div>
 					</div>
