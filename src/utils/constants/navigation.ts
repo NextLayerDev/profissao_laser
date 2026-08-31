@@ -1,5 +1,6 @@
 import {
 	BarChart3,
+	GraduationCap,
 	BrainCircuit,
 	CalendarClock,
 	Headphones,
@@ -66,6 +67,13 @@ export const navItems: NavItem[] = [
 		href: '/reports',
 		hasDropdown: false,
 		section: 'PRINCIPAL',
+	},
+	{
+		name: 'Mentoria',
+		icon: GraduationCap,
+		href: '/mentoria-admin',
+		hasDropdown: false,
+		section: 'CONTEUDO',
 	},
 	{
 		name: 'Comunidade',

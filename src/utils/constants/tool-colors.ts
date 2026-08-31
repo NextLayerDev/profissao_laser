@@ -12,6 +12,10 @@ export interface ToolColor {
 }
 
 export const TOOL_COLORS = {
+	mentoria: {
+		gradient: 'from-teal-500 to-cyan-700',
+		iconBg: 'bg-teal-500/15 text-teal-600 dark:text-teal-400',
+	},
 	aulas: {
 		gradient: 'from-blue-500 to-blue-800',
 		iconBg: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
