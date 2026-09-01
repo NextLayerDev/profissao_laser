@@ -7,17 +7,18 @@ import type { ReactNode } from 'react';
 import { useMentoriaBootstrap } from '@/modules/mentoria/hooks';
 import type { MentoriaBootstrap } from '@/modules/mentoria/types';
 
-// Classes base do visual da Mentoria 360° (acento teal).
+// Classes base do visual da Mentoria 360° — migrado para tokens upvox-ui.
+// Cores: brand (púrpura #7c3aed), surface, subtle border.
 export const CARD =
-	'rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.03]';
+	'rounded-2xl border border-subtle bg-surface dark:border-white/10 dark:bg-white/[0.03]';
 export const INPUT =
-	'w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/40 disabled:opacity-60';
+	'w-full rounded-xl border border-subtle bg-surface dark:border-white/10 dark:bg-white/5 px-3 py-2 text-sm text-primary dark:text-slate-100 placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-brand/40 disabled:opacity-60';
 export const BTN_PRIMARY =
-	'inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 hover:bg-teal-500 disabled:opacity-40 text-white text-sm font-medium px-4 py-2 transition';
+	'inline-flex items-center justify-center gap-2 rounded-xl bg-brand hover:bg-brand-hover disabled:opacity-40 text-white text-sm font-medium px-4 py-2 transition';
 export const BTN_GHOST =
-	'inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 text-sm font-medium px-4 py-2 transition disabled:opacity-40';
+	'inline-flex items-center justify-center gap-2 rounded-xl border border-subtle dark:border-white/10 text-primary dark:text-slate-300 hover:bg-surface-sunken dark:hover:bg-white/5 text-sm font-medium px-4 py-2 transition disabled:opacity-40';
 export const LABEL =
-	'text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block';
+	'text-sm font-medium text-primary dark:text-slate-300 mb-1.5 block';
 
 export function fmtDate(iso: string | null | undefined): string {
 	if (!iso) return '—';
@@ -61,19 +62,19 @@ export function MntHeader({
 			{backHref && (
 				<Link
 					href={backHref}
-					className="w-9 h-9 rounded-xl border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 transition"
+					className="w-9 h-9 rounded-xl border border-subtle dark:border-white/10 flex items-center justify-center text-secondary dark:text-gray-400 hover:bg-surface-sunken dark:hover:bg-white/5 transition"
 				>
 					<ArrowLeft className="w-4 h-4" />
 				</Link>
 			)}
-			<div className="w-1 h-10 rounded-full bg-teal-600" />
+			<div className="w-1 h-10 rounded-full bg-brand" />
 			{Icon && (
-				<div className="w-10 h-10 rounded-lg bg-teal-500/10 dark:bg-teal-500/20 flex items-center justify-center">
-					<Icon className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+				<div className="w-10 h-10 rounded-lg bg-brand-wash dark:bg-brand/20 flex items-center justify-center">
+					<Icon className="w-5 h-5 text-brand dark:text-violet-400" />
 				</div>
 			)}
 			<div className="min-w-0 flex-1">
-				<h1 className="font-display text-xl font-bold text-slate-900 dark:text-slate-100">
+				<h1 className="font-display text-xl font-bold text-primary dark:text-slate-100">
 					{title}
 				</h1>
 				{subtitle && (

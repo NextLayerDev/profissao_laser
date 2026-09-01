@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@upvox-dev/ui';
 import {
 	Activity,
 	ArrowRight,
@@ -185,7 +186,7 @@ function Dashboard({
 				</div>
 				<div className="h-2.5 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
 					<div
-						className="h-full rounded-full bg-teal-500 transition-all"
+						className="h-full rounded-full bg-brand transition-all"
 						style={{ width: `${Math.min(100, progress.progress_pct)}%` }}
 					/>
 				</div>
@@ -204,10 +205,10 @@ function Dashboard({
 								title={`${m.position}. ${m.template?.title ?? 'Encontro'} — ${meetingStatusLabel(m.status)}`}
 								className={`w-8 h-8 rounded-full border flex items-center justify-center text-xs font-semibold transition ${
 									m.status === 'done'
-										? 'bg-teal-500 border-teal-500 text-white'
+										? 'bg-brand border-brand text-white'
 										: m.status === 'locked'
 											? 'border-slate-200 dark:border-white/10 text-slate-300 dark:text-gray-600'
-											: 'border-teal-500/60 text-teal-600 dark:text-teal-400 hover:bg-teal-500/10'
+											: 'border-brand/60 text-brand dark:text-violet-400 hover:bg-brand/10'
 								}`}
 							>
 								{m.status === 'done' ? (
@@ -221,7 +222,7 @@ function Dashboard({
 						))}
 					<Link
 						href="/course/mentoria/jornada"
-						className="ml-1 inline-flex items-center gap-1 text-sm text-teal-600 dark:text-teal-400 hover:underline"
+						className="ml-1 inline-flex items-center gap-1 text-sm text-brand dark:text-violet-400 hover:underline"
 					>
 						Ver jornada <ArrowRight className="w-3.5 h-3.5" />
 					</Link>
@@ -271,7 +272,7 @@ function Dashboard({
 					)}
 					<Link
 						href="/course/mentoria/ferramentas"
-						className="inline-flex items-center gap-1 text-sm text-teal-600 dark:text-teal-400 hover:underline"
+						className="inline-flex items-center gap-1 text-sm text-brand dark:text-violet-400 hover:underline"
 					>
 						Ver ferramentas <ArrowRight className="w-3.5 h-3.5" />
 					</Link>
@@ -280,7 +281,7 @@ function Dashboard({
 				{/* Materiais */}
 				<section className={`${CARD} p-5`}>
 					<div className="flex items-center gap-2 mb-3">
-						<BookOpen className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+						<BookOpen className="w-4 h-4 text-brand dark:text-violet-400" />
 						<h2 className="font-semibold text-slate-900 dark:text-slate-100">
 							Materiais da mentoria
 						</h2>
@@ -300,9 +301,9 @@ function Dashboard({
 										className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-white/10 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-white/5 transition"
 									>
 										{mat.kind === 'link' ? (
-											<Link2 className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+											<Link2 className="w-4 h-4 text-brand dark:text-violet-400 shrink-0" />
 										) : (
-											<FileText className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+											<FileText className="w-4 h-4 text-brand dark:text-violet-400 shrink-0" />
 										)}
 										<div className="min-w-0">
 											<p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
@@ -325,26 +326,14 @@ function Dashboard({
 			{/* Atalhos */}
 			<section>
 				<div className="flex items-center gap-2 mb-3">
-					<Sparkles className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+					<Sparkles className="w-4 h-4 text-brand dark:text-violet-400" />
 					<h2 className="font-semibold text-slate-900 dark:text-slate-100">
 						Acesso rápido
 					</h2>
 				</div>
 				<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 					{shortcuts.map((s) => (
-						<Link
-							key={s.href}
-							href={s.href}
-							className={`${CARD} p-4 hover:border-teal-500/50 transition group`}
-						>
-							<s.icon className="w-5 h-5 text-teal-600 dark:text-teal-400 mb-2" />
-							<p className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition">
-								{s.label}
-							</p>
-							<p className="text-xs text-slate-500 dark:text-gray-400">
-								{s.desc}
-							</p>
-						</Link>
+						<ShortcutCard key={s.href} shortcut={s} />
 					))}
 				</div>
 			</section>
@@ -352,6 +341,35 @@ function Dashboard({
 			{/* Empresa */}
 			<CompanyForm company={company} />
 		</div>
+	);
+}
+
+function ShortcutCard({
+	shortcut,
+}: {
+	shortcut: {
+		href: string;
+		label: string;
+		desc: string;
+		icon: typeof Compass;
+	};
+}) {
+	const Icon = shortcut.icon;
+
+	return (
+		<Link href={shortcut.href}>
+			<Card className="cursor-pointer hover:border-violet-500/50 transition h-full">
+				<div className="flex flex-col gap-2">
+					<Icon className="w-5 h-5 text-brand dark:text-violet-400" />
+					<p className="text-sm font-semibold text-primary dark:text-slate-100 group-hover:text-brand dark:group-hover:text-violet-400 transition">
+						{shortcut.label}
+					</p>
+					<p className="text-xs text-secondary dark:text-gray-400">
+						{shortcut.desc}
+					</p>
+				</div>
+			</Card>
+		</Link>
 	);
 }
 
@@ -371,10 +389,10 @@ function QuickStat({
 	return (
 		<Link
 			href={href}
-			className={`${CARD} p-4 hover:border-teal-500/50 transition block`}
+			className={`${CARD} p-4 hover:border-brand/50 transition block`}
 		>
 			<div className="flex items-center gap-2 mb-2">
-				<Icon className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+				<Icon className="w-4 h-4 text-brand dark:text-violet-400" />
 				<span className="text-xs uppercase tracking-wide text-slate-500 dark:text-gray-400">
 					{label}
 				</span>

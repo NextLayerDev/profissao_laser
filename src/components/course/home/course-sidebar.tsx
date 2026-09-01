@@ -11,6 +11,7 @@ import {
 	type QuickAccessItem,
 	quickAccessItems,
 } from '@/utils/constants/quick-access';
+import { MentoriaSidebar } from './mentoria-sidebar';
 
 interface CourseSidebarProps {
 	isCollapsed: boolean;
@@ -131,6 +132,16 @@ export function CourseSidebar({
 												</>
 											)}
 										</button>
+									);
+								}
+
+								// Mentoria 360° gets a sub-menu instead of a simple link
+								if (item.label === 'Mentoria 360°') {
+									return (
+										<MentoriaSidebar
+											key={item.label}
+											isCollapsed={isCollapsed}
+										/>
 									);
 								}
 
