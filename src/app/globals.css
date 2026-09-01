@@ -19,6 +19,55 @@
 @import "@upvox-dev/ui/theme.css";
 
 /*
+ * Modo escuro dos tokens do design system.
+ *
+ * O @upvox-dev/ui só tem o modo claro — o escuro nunca foi desenhado no Figma.
+ * Como este app abre em dark por padrão (contexts/theme-context.tsx), sem este
+ * bloco todo componente e toda classe do DS ficaria branca sobre a página
+ * preta.
+ *
+ * Os valores NÃO são inventados: são os que a Mentoria já usa hoje no escuro
+ * (bg-white/[0.03] nos cards, border-white/10, #080809 no fundo do admin,
+ * text-gray-400 no texto secundário). O objetivo é que o dark continue
+ * idêntico ao de hoje e só o light vire o visual do Figma.
+ *
+ * Funciona porque as utilities do Tailwind v4 leem `var(--color-*)` em runtime
+ * — redefinir a variável repinta `bg-surface`, `border-subtle` e companhia sem
+ * tocar na lib. É a mesma técnica do playground do @upvox-dev/ui.
+ *
+ * Ressalvas conhecidas:
+ * - `brand-wash` precisa continuar TRANSLÚCIDO. Sólido, a zebra do <Table> do
+ *   DS vira uma faixa roxa ilegível.
+ * - Cores lidas via JS (`colors.muted` no placeholderTextColor, cor dos ícones,
+ *   spinner do <Button>) são congeladas do tokens.json no import e continuam
+ *   claras aqui. Só passa a importar quando adotarmos os componentes React do
+ *   DS — hoje usamos só as classes.
+ * - `.room-light` (que força tema claro numa subárvore) não é tratado: a
+ *   Mentoria não usa. Se algum dia usar, replicar os valores claros aqui.
+ */
+.dark {
+	--color-primary: #f1f5f9;
+	--color-secondary: #cbd5e1;
+	--color-muted: #9ca3af;
+
+	/*
+	 * Opaco de propósito, e não o `rgb(255 255 255 / 0.03)` literal dos cards.
+	 * #0f0f10 é esse 3% de branco já composto sobre o #080809 da página, então
+	 * o card fica igual — mas `bg-surface` passa a servir também no painel do
+	 * modal, que precisa ser opaco (translúcido, a página apareceria através).
+	 * É o que aposenta o #111318 solto que estava no Modal.
+	 */
+	--color-surface: #0f0f10;
+	--color-surface-sunken: #080809;
+
+	--color-subtle: rgb(255 255 255 / 0.1);
+	--color-strong: rgb(255 255 255 / 0.2);
+
+	--color-brand-wash: rgb(124 58 237 / 0.12);
+	--color-overlay: rgb(0 0 0 / 0.5);
+}
+
+/*
  * Conserta a colisão entre a escala de espaçamento do design system e os
  * containers do Tailwind.
  *
