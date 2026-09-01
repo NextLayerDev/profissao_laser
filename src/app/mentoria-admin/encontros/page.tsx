@@ -1,14 +1,9 @@
 'use client';
 
-import {
-	CheckCircle2,
-	Info,
-	Loader2,
-	Pencil,
-	Plus,
-	Upload,
-} from 'lucide-react';
+import { Button, buttonLabel, Checkbox, Input } from '@upvox-dev/ui';
+import { CheckCircle2, Info, Pencil, Plus, Upload } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { Text } from 'react-native-css/components/Text';
 import { toast } from 'sonner';
 import { Header } from '@/components/dashboard/header';
 import type { MntMeetingTemplate } from '@/modules/mentoria/types';
@@ -25,9 +20,7 @@ import {
 	inputClass,
 	Modal,
 	PageTitle,
-	primaryBtn,
 	Spinner,
-	secondaryBtn,
 } from '../_components/ui';
 
 type Editing = { template: MntMeetingTemplate | null } | null;
@@ -69,14 +62,14 @@ export default function EncontrosPage() {
 					description="Templates dos encontros da metodologia, agrupados por posição (1 a 10)."
 					backHref="/mentoria-admin"
 					actions={
-						<button
-							type="button"
-							className={primaryBtn}
-							onClick={() => setEditing({ template: null })}
-						>
+						<Button onPress={() => setEditing({ template: null })}>
 							<Plus className="w-4 h-4" />
-							Novo encontro
-						</button>
+							{/* Ícone + texto vira array; Button só embrulha em <Text>
+							    quando `children` é string pura. */}
+							<Text className={buttonLabel({ variant: 'primary' })}>
+								Novo encontro
+							</Text>
+						</Button>
 					}
 				/>
 
@@ -137,24 +130,31 @@ export default function EncontrosPage() {
 										</div>
 										<div className="flex gap-2">
 											{!latest.published && (
-												<button
-													type="button"
-													className={secondaryBtn}
-													onClick={() => doPublish(latest)}
+												<Button
+													variant="secondary"
+													onPress={() => doPublish(latest)}
 													disabled={publish.isPending}
 												>
 													<Upload className="w-3.5 h-3.5" />
-													Publicar v{latest.version}
-												</button>
+													{/* O número da versão fica DENTRO do mesmo <Text> —
+													    <Text> aceita string+number misturados por dentro,
+													    só o <View> ao redor do Button é que não aceita. */}
+													<Text
+														className={buttonLabel({ variant: 'secondary' })}
+													>
+														Publicar v{latest.version}
+													</Text>
+												</Button>
 											)}
-											<button
-												type="button"
-												className={secondaryBtn}
-												onClick={() => setEditing({ template: latest })}
+											<Button
+												variant="secondary"
+												onPress={() => setEditing({ template: latest })}
 											>
 												<Pencil className="w-3.5 h-3.5" />
-												Editar (nova versão)
-											</button>
+												<Text className={buttonLabel({ variant: 'secondary' })}>
+													Editar (nova versão)
+												</Text>
+											</Button>
 										</div>
 									</div>
 								</Card>
@@ -241,10 +241,9 @@ function MeetingTemplateModal({
 			<div className="space-y-4">
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
 					<Field label="Programa">
-						<input
-							className={inputClass}
+						<Input
 							value={form.program_key}
-							onChange={(e) => set('program_key', e.target.value)}
+							onChangeText={(v) => set('program_key', v)}
 						/>
 					</Field>
 					<Field label="Posição (1–10)" required>
@@ -258,29 +257,23 @@ function MeetingTemplateModal({
 						/>
 					</Field>
 					<Field label="Encontro final?">
-						<label className="flex items-center gap-2 h-9 text-sm text-slate-700 dark:text-slate-300">
-							<input
-								type="checkbox"
+						<div className="h-9 flex items-center">
+							<Checkbox
 								checked={form.is_final}
-								onChange={(e) => set('is_final', e.target.checked)}
-								className="w-4 h-4 accent-violet-600"
-							/>
-							Marca o encerramento da jornada
-						</label>
+								onChange={(checked) => set('is_final', checked)}
+							>
+								Marca o encerramento da jornada
+							</Checkbox>
+						</div>
 					</Field>
 				</div>
 				<Field label="Título" required>
-					<input
-						className={inputClass}
-						value={form.title}
-						onChange={(e) => set('title', e.target.value)}
-					/>
+					<Input value={form.title} onChangeText={(v) => set('title', v)} />
 				</Field>
 				<Field label="Subtítulo">
-					<input
-						className={inputClass}
+					<Input
 						value={form.subtitle}
-						onChange={(e) => set('subtitle', e.target.value)}
+						onChangeText={(v) => set('subtitle', v)}
 					/>
 				</Field>
 				<Field label="Descrição">
@@ -312,22 +305,15 @@ function MeetingTemplateModal({
 					/>
 				</Field>
 				<div className="flex justify-end gap-2 pt-2">
-					<button type="button" className={secondaryBtn} onClick={onClose}>
+					<Button variant="secondary" onPress={onClose}>
 						Cancelar
-					</button>
-					<button
-						type="button"
-						className={primaryBtn}
-						onClick={save}
-						disabled={create.isPending}
-					>
-						{create.isPending ? (
-							<Loader2 className="w-4 h-4 animate-spin" />
-						) : (
-							<CheckCircle2 className="w-4 h-4" />
-						)}
-						{template ? 'Salvar nova versão' : 'Criar encontro'}
-					</button>
+					</Button>
+					<Button onPress={save} loading={create.isPending}>
+						<CheckCircle2 className="w-4 h-4" />
+						<Text className={buttonLabel({ variant: 'primary' })}>
+							{template ? 'Salvar nova versão' : 'Criar encontro'}
+						</Text>
+					</Button>
 				</div>
 			</div>
 		</Modal>
