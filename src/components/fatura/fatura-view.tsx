@@ -4,8 +4,10 @@ import {
 	AlertTriangle,
 	Boxes,
 	CalendarDays,
+	ChevronDown,
 	ChevronLeft,
 	ChevronRight,
+	ChevronUp,
 	Coins,
 	FileSpreadsheet,
 	FileText,
@@ -38,6 +40,7 @@ import {
 	INVOICE_PAGE_SIZE,
 	type InvoiceFilters,
 	useCompanyInvoice,
+	useCompanyInvoiceAllMonths,
 } from '@/hooks/use-plan-links';
 import { getCompanyInvoice, getFinanceAnalysis } from '@/services/plan-links';
 import type {
@@ -615,14 +618,40 @@ function FinanceAnalysisPanel({ analysis }: { analysis: FinanceAnalysis }) {
 	);
 }
 
-/** `yyyy-mm-dd` do 1º e do último dia do mês atual (formato do <input type="date">). */
-function currentMonthRange() {
-	const now = new Date();
+/** Presets do filtro de período (topo da tela). */
+type FaturaPeriod = 'today' | 'week' | 'month' | 'custom';
+
+/** `yyyy-mm-dd` local (formato do <input type="date">). */
+function ymd(d: Date): string {
 	const pad = (n: number) => String(n).padStart(2, '0');
-	const y = now.getFullYear();
-	const m = pad(now.getMonth() + 1);
-	const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
-	return { from: `${y}-${m}-01`, to: `${y}-${m}-${pad(lastDay)}` };
+	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/** Janela `{from,to}` em `yyyy-mm-dd` para cada preset (custom é tratado à parte). */
+function rangeForPreset(preset: Exclude<FaturaPeriod, 'custom'>): {
+	from: string;
+	to: string;
+} {
+	const now = new Date();
+	const today = ymd(now);
+	switch (preset) {
+		case 'today':
+			return { from: today, to: today };
+		case 'week': {
+			// Semana começa na segunda-feira.
+			const day = now.getDay();
+			const diff = day === 0 ? 6 : day - 1;
+			const monday = new Date(now);
+			monday.setDate(monday.getDate() - diff);
+			return { from: ymd(monday), to: today };
+		}
+		default:
+			// month: 1º dia do mês → hoje.
+			return {
+				from: ymd(new Date(now.getFullYear(), now.getMonth(), 1)),
+				to: today,
+			};
+	}
 }
 
 export function FaturaView() {
@@ -632,14 +661,25 @@ export function FaturaView() {
 	const [analysis, setAnalysis] = useState<FinanceAnalysis | null>(null);
 	const [page, setPage] = useState(0);
 	const [source, setSource] = useState<CompanyInvoiceSource | ''>('');
-	// Abre sempre no mês atual — sem isso a 1ª tela é o acumulado desde o
-	// início da plataforma, que não é o que se quer ver no dia a dia. "De"/
-	// "Até" continuam editáveis pra trocar o período.
-	const [defaultRange] = useState(currentMonthRange);
-	const [from, setFrom] = useState(defaultRange.from);
-	const [to, setTo] = useState(defaultRange.to);
+	// Filtro de período no topo — controla a página inteira. Abre no mês atual
+	// (o acumulado desde o início da plataforma não é o que se quer ver no dia
+	// a dia). Em "custom" os inputs de data controlam `from`/`to` diretamente.
+	const [periodPreset, setPeriodPreset] = useState<FaturaPeriod>('month');
+	const [{ from: monthFrom, to: monthTo }] = useState(() =>
+		rangeForPreset('month'),
+	);
+	const [from, setFrom] = useState(monthFrom);
+	const [to, setTo] = useState(monthTo);
 	const [qInput, setQInput] = useState('');
 	const [q, setQ] = useState('');
+
+	// Ao trocar o preset (menos "custom"), recalcula a janela from/to.
+	useEffect(() => {
+		if (periodPreset === 'custom') return;
+		const r = rangeForPreset(periodPreset);
+		setFrom(r.from);
+		setTo(r.to);
+	}, [periodPreset]);
 
 	// Debounce da busca por cliente (não refaz a request a cada tecla).
 	useEffect(() => {
@@ -683,12 +723,13 @@ export function FaturaView() {
 	const voxxy = data?.voxxy_lastro;
 	const total = data?.total ?? 0;
 	const pageCount = Math.max(1, Math.ceil(total / INVOICE_PAGE_SIZE));
-	const hasFilters = !!(
-		source ||
-		q ||
-		from !== defaultRange.from ||
-		to !== defaultRange.to
-	);
+	const hasFilters = !!(source || q || periodPreset !== 'month');
+
+	// "Mostrar anteriores" na Resumo por mês: só busca o histórico completo
+	// (janela ampla, ignorando o filtro de período do topo) quando expandido.
+	const [showPrevMonths, setShowPrevMonths] = useState(false);
+	const { data: allMonthsData, isFetching: isFetchingAllMonths } =
+		useCompanyInvoiceAllMonths(showPrevMonths);
 
 	// Financeiro: bruta (alunos) − líquido (empresa) = repasse (upvox). O repasse
 	// aqui é o TOTAL (reconcilia bruta = repasse + líquido), independe da origem.
@@ -777,8 +818,10 @@ export function FaturaView() {
 	// "Limpar" volta pro mês atual (o padrão da tela), não pro acumulado total.
 	const clearFilters = () => {
 		setSource('');
-		setFrom(defaultRange.from);
-		setTo(defaultRange.to);
+		setPeriodPreset('month');
+		const r = rangeForPreset('month');
+		setFrom(r.from);
+		setTo(r.to);
 		setQInput('');
 		setQ('');
 	};
@@ -929,6 +972,51 @@ export function FaturaView() {
 				<div className="space-y-6">
 					{analysis && <FinanceAnalysisPanel analysis={analysis} />}
 
+					{/* Filtro de período — controla a página inteira */}
+					<div className="flex flex-wrap items-center gap-3">
+						<div className="flex items-center gap-2">
+							<CalendarDays className="w-4 h-4 text-slate-400 dark:text-gray-500" />
+							<span className="text-sm font-medium text-slate-600 dark:text-gray-400">
+								Período
+							</span>
+						</div>
+						<select
+							aria-label="Período"
+							value={periodPreset}
+							onChange={(e) => setPeriodPreset(e.target.value as FaturaPeriod)}
+							className="h-10 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] px-3 text-sm text-slate-900 dark:text-white cursor-pointer"
+						>
+							<option value="today">Hoje</option>
+							<option value="week">Esta semana</option>
+							<option value="month">Este mês</option>
+							<option value="custom">Personalizado</option>
+						</select>
+						{periodPreset === 'custom' && (
+							<>
+								<input
+									type="date"
+									aria-label="De"
+									value={from}
+									onChange={(e) => setFrom(e.target.value)}
+									className="h-10 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] px-3 text-sm text-slate-900 dark:text-white"
+								/>
+								<span className="text-sm text-slate-400 dark:text-gray-500">
+									até
+								</span>
+								<input
+									type="date"
+									aria-label="Até"
+									value={to}
+									onChange={(e) => setTo(e.target.value)}
+									className="h-10 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] px-3 text-sm text-slate-900 dark:text-white"
+								/>
+							</>
+						)}
+						{isFetching && (
+							<Loader2 className="w-4 h-4 text-violet-500 animate-spin" />
+						)}
+					</div>
+
 					{/* Topo financeiro: bruta → fatura upvox → líquido */}
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 						<HeroStat
@@ -1015,15 +1103,20 @@ export function FaturaView() {
 					</div>
 
 					{/* Levantamentos: por mês + top clientes */}
-					{(monthly.length > 0 || topCustomers.length > 0) && (
-						<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-							{/* Resumo por mês */}
-							<div className="rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-5">
-								<div className="flex items-center gap-2 mb-3 text-sm font-semibold text-slate-700 dark:text-gray-300">
-									<CalendarDays className="w-4 h-4 text-slate-400 dark:text-gray-500" />
-									Resumo por mês
-								</div>
-								{monthly.length === 0 ? (
+					<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+						{/* Resumo por mês */}
+						<div className="rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-5">
+							<div className="flex items-center gap-2 mb-3 text-sm font-semibold text-slate-700 dark:text-gray-300">
+								<CalendarDays className="w-4 h-4 text-slate-400 dark:text-gray-500" />
+								Resumo por mês
+							</div>
+							{(() => {
+								// Expandido mostra o histórico completo (janela ampla); enquanto
+								// carrega, mantém os meses do período pra tabela não piscar vazia.
+								const rows = showPrevMonths
+									? (allMonthsData?.monthly ?? monthly)
+									: monthly;
+								return rows.length === 0 ? (
 									<p className="text-sm text-slate-500 dark:text-gray-600">
 										Sem dados no período.
 									</p>
@@ -1038,7 +1131,7 @@ export function FaturaView() {
 											</tr>
 										</thead>
 										<tbody>
-											{monthly.map((m) => (
+											{rows.map((m) => (
 												<tr
 													key={m.month}
 													className="border-t border-slate-100 dark:border-gray-800/50"
@@ -1059,48 +1152,63 @@ export function FaturaView() {
 											))}
 										</tbody>
 									</table>
-								)}
-							</div>
-
-							{/* Top clientes */}
-							<div className="rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-5">
-								<div className="flex items-center gap-2 mb-3 text-sm font-semibold text-slate-700 dark:text-gray-300">
-									<Users className="w-4 h-4 text-slate-400 dark:text-gray-500" />
-									Top clientes por receita
-								</div>
-								{topCustomers.length === 0 ? (
-									<p className="text-sm text-slate-500 dark:text-gray-600">
-										Sem dados no período.
-									</p>
+								);
+							})()}
+							<button
+								type="button"
+								onClick={() => setShowPrevMonths((v) => !v)}
+								className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+							>
+								{showPrevMonths ? (
+									<ChevronUp className="w-4 h-4" />
 								) : (
-									<ul className="space-y-2">
-										{topCustomers.map((c, i) => (
-											<li
-												key={c.customer_id}
-												className="flex items-center gap-3 py-1"
-											>
-												<span className="w-5 text-xs font-bold text-slate-400 dark:text-gray-600 tabular-nums">
-													{i + 1}
-												</span>
-												<div className="min-w-0 flex-1">
-													<p className="text-sm text-slate-800 dark:text-gray-200 truncate">
-														{c.customer_name ?? c.customer_email ?? '—'}
-													</p>
-													<p className="text-xs text-slate-400 dark:text-gray-600">
-														repasse {fmtBRL(c.repasse_cents)} · líquido{' '}
-														{fmtBRL(c.net_cents)}
-													</p>
-												</div>
-												<span className="text-sm font-semibold tabular-nums text-slate-900 dark:text-white whitespace-nowrap">
-													{fmtBRL(c.gross_cents)}
-												</span>
-											</li>
-										))}
-									</ul>
+									<ChevronDown className="w-4 h-4" />
 								)}
-							</div>
+								{showPrevMonths ? 'Mostrar menos' : 'Mostrar anteriores'}
+								{showPrevMonths && isFetchingAllMonths && (
+									<Loader2 className="w-3.5 h-3.5 animate-spin" />
+								)}
+							</button>
 						</div>
-					)}
+
+						{/* Top clientes */}
+						<div className="rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-5">
+							<div className="flex items-center gap-2 mb-3 text-sm font-semibold text-slate-700 dark:text-gray-300">
+								<Users className="w-4 h-4 text-slate-400 dark:text-gray-500" />
+								Top clientes por receita
+							</div>
+							{topCustomers.length === 0 ? (
+								<p className="text-sm text-slate-500 dark:text-gray-600">
+									Sem dados no período.
+								</p>
+							) : (
+								<ul className="space-y-2">
+									{topCustomers.map((c, i) => (
+										<li
+											key={c.customer_id}
+											className="flex items-center gap-3 py-1"
+										>
+											<span className="w-5 text-xs font-bold text-slate-400 dark:text-gray-600 tabular-nums">
+												{i + 1}
+											</span>
+											<div className="min-w-0 flex-1">
+												<p className="text-sm text-slate-800 dark:text-gray-200 truncate">
+													{c.customer_name ?? c.customer_email ?? '—'}
+												</p>
+												<p className="text-xs text-slate-400 dark:text-gray-600">
+													repasse {fmtBRL(c.repasse_cents)} · líquido{' '}
+													{fmtBRL(c.net_cents)}
+												</p>
+											</div>
+											<span className="text-sm font-semibold tabular-nums text-slate-900 dark:text-white whitespace-nowrap">
+												{fmtBRL(c.gross_cents)}
+											</span>
+										</li>
+									))}
+								</ul>
+							)}
+						</div>
+					</div>
 
 					{/* Extrato detalhado */}
 					<div>
@@ -1132,36 +1240,6 @@ export function FaturaView() {
 										</option>
 									))}
 								</select>
-							</div>
-							<div className="flex flex-col gap-1">
-								<label
-									htmlFor="fatura-from"
-									className="text-xs font-medium text-slate-500 dark:text-gray-500"
-								>
-									De
-								</label>
-								<input
-									id="fatura-from"
-									type="date"
-									value={from}
-									onChange={(e) => setFrom(e.target.value)}
-									className="h-10 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] px-3 text-sm text-slate-900 dark:text-white"
-								/>
-							</div>
-							<div className="flex flex-col gap-1">
-								<label
-									htmlFor="fatura-to"
-									className="text-xs font-medium text-slate-500 dark:text-gray-500"
-								>
-									Até
-								</label>
-								<input
-									id="fatura-to"
-									type="date"
-									value={to}
-									onChange={(e) => setTo(e.target.value)}
-									className="h-10 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] px-3 text-sm text-slate-900 dark:text-white"
-								/>
 							</div>
 							<div className="flex flex-col gap-1 flex-1 min-w-[200px]">
 								<label
