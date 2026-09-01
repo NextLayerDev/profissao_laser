@@ -35,7 +35,10 @@ export function CompanyMapRadar({ map }: { map: CompanyMap }) {
 	return (
 		<ResponsiveContainer width="100%" height={300}>
 			<RadarChart data={data} outerRadius="70%">
-				<PolarGrid stroke="currentColor" className="text-slate-200 dark:text-white/10" />
+				<PolarGrid
+					stroke="currentColor"
+					className="text-slate-200 dark:text-white/10"
+				/>
 				<PolarAngleAxis
 					dataKey="area"
 					tick={{ fontSize: 11, fill: 'currentColor' }}

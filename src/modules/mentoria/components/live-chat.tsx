@@ -1,10 +1,10 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { Send } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { db } from '@/lib/db';
 import { getActiveToken } from '@/lib/auth';
+import { db } from '@/lib/db';
 import { useLiveChat, usePostLiveChat } from '../hooks';
 
 /**
@@ -21,7 +21,7 @@ export function LiveChat({ liveId }: { liveId: string }) {
 
 	useEffect(() => {
 		bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-	}, [messages.length]);
+	}, []);
 
 	// Realtime como aprimoramento: invalida a query quando chega mensagem nova.
 	useEffect(() => {

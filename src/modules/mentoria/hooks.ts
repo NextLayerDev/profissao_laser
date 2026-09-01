@@ -2,11 +2,7 @@
 
 // Hooks TanStack Query da aba Mentoria. Convenção de keys:
 // ['mentoria', <recurso>, ...ids] — invalidação por prefixo.
-import {
-	useMutation,
-	useQuery,
-	useQueryClient,
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as svc from './service';
 
 const ROOT = ['mentoria'] as const;
@@ -209,8 +205,7 @@ export function useGoodNews(journeyId: string | undefined) {
 export function usePostGoodNews(journeyId: string | undefined) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (news: string[]) =>
-			svc.postGoodNews(journeyId as string, news),
+		mutationFn: (news: string[]) => svc.postGoodNews(journeyId as string, news),
 		onSuccess: () =>
 			qc.invalidateQueries({ queryKey: [...ROOT, 'good-news', journeyId] }),
 	});
@@ -326,10 +321,7 @@ export function useLive(liveId: string | undefined) {
 	});
 }
 
-export function useLivePlayback(
-	liveId: string | undefined,
-	enabled: boolean,
-) {
+export function useLivePlayback(liveId: string | undefined, enabled: boolean) {
 	return useQuery({
 		queryKey: [...ROOT, 'live-playback', liveId],
 		queryFn: () => svc.getLivePlayback(liveId as string),

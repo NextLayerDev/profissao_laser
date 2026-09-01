@@ -155,9 +155,7 @@ export type MntFormTemplate = {
 export const UNKNOWN_ANSWER = { $unknown: true } as const;
 export function isUnknownAnswer(value: unknown): boolean {
 	return (
-		typeof value === 'object' &&
-		value !== null &&
-		($unknownOf(value) === true)
+		typeof value === 'object' && value !== null && $unknownOf(value) === true
 	);
 }
 function $unknownOf(value: object): unknown {
@@ -380,7 +378,13 @@ export type MntTask = {
 	journey_id: string;
 	title: string;
 	description: string | null;
-	origin_type: 'meeting' | 'tool' | 'goal' | 'improvement' | 'manual' | 'mentor';
+	origin_type:
+		| 'meeting'
+		| 'tool'
+		| 'goal'
+		| 'improvement'
+		| 'manual'
+		| 'mentor';
 	origin_id: string | null;
 	due_date: string | null;
 	priority: 'low' | 'medium' | 'high';
