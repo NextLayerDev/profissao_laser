@@ -8,8 +8,8 @@
 // dois com URL própria. Aqui ele tem rota, e os dois pontos viraram um link.
 //
 // É a única entrada da navegação que não está em MENTORIA_SECTIONS: aquela
-// lista é a jornada do aluno, e configuração não é etapa de jornada. O link
-// mora solto no fim de `mentoria-nav-card.tsx`, fora do <ul>.
+// lista é a jornada do aluno, e configuração não é etapa de jornada. A rota
+// mora em `nav.ts` como MENTORIA_SETTINGS.
 
 import { Settings } from 'lucide-react';
 import { SubscriptionGate } from '@/components/course/subscription-gate';

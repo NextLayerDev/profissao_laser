@@ -13,7 +13,22 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Text } from 'react-native-css/components/Text';
 import { FLOATING_COLUMN } from '@/modules/mentoria/components/ui';
-import { isSectionActive, MENTORIA_SECTIONS } from '@/modules/mentoria/nav';
+import {
+	isSectionActive,
+	MENTORIA_SECTIONS,
+	MENTORIA_SETTINGS,
+} from '@/modules/mentoria/nav';
+
+/** Pílula da navegação — mesma forma para seções e para Configurações. */
+function navItem(active: boolean) {
+	return `flex items-center gap-3 rounded-control border px-3 py-2.5 text-label transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
+		active
+			? // `text-brand` não tem versão escura no DS e sumiria no fundo preto —
+				// daí o par `dark:` (ver ui.tsx do admin).
+				'border-brand-border bg-brand-wash text-brand dark:text-violet-400'
+			: 'border-subtle text-secondary hover:text-primary hover:bg-surface-sunken'
+	}`;
+}
 
 export function MentoriaNavCard({
 	assistantOpen,
@@ -43,13 +58,7 @@ export function MentoriaNavCard({
 							<Link
 								href={section.href}
 								aria-current={active ? 'page' : undefined}
-								className={`flex items-center gap-3 rounded-control border px-3 py-2.5 text-label transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
-									active
-										? // `text-brand` não tem versão escura no DS e sumiria no
-											// fundo preto — daí o par `dark:` (ver ui.tsx do admin).
-											'border-brand-border bg-brand-wash text-brand dark:text-violet-400'
-										: 'border-subtle text-secondary hover:text-primary hover:bg-surface-sunken'
-								}`}
+								className={navItem(active)}
 							>
 								<Icon className="w-4 h-4 shrink-0" aria-hidden />
 								<span className="truncate">{section.label}</span>
@@ -57,21 +66,23 @@ export function MentoriaNavCard({
 						</li>
 					);
 				})}
-			</ul>
 
-			<div className="mt-2 shrink-0">
-				<Link
-					href="/course/mentoria/configuracoes"
-					className={`flex items-center gap-3 rounded-control border px-3 py-2.5 text-label transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
-						pathname === '/course/mentoria/configuracoes'
-							? 'border-brand-border bg-brand-wash text-brand dark:text-violet-400'
-							: 'border-subtle text-secondary hover:text-primary hover:bg-surface-sunken'
-					}`}
-				>
-					<Settings className="w-4 h-4 shrink-0" aria-hidden />
-					<span className="truncate">Configurações</span>
-				</Link>
-			</div>
+				{/* Configurações fecha a lista em vez de morar fora dela: o <ul> é
+				    `flex-1` e estica até o rodapé, então um irmão abaixo dele ficava
+				    separado por toda a sobra da coluna, e não pelo `space-y-2` dos
+				    demais. Continua fora de MENTORIA_SECTIONS — aquela lista é a
+				    jornada do aluno, e configuração não é etapa de jornada. */}
+				<li>
+					<Link
+						href={MENTORIA_SETTINGS}
+						aria-current={pathname === MENTORIA_SETTINGS ? 'page' : undefined}
+						className={navItem(pathname === MENTORIA_SETTINGS)}
+					>
+						<Settings className="w-4 h-4 shrink-0" aria-hidden />
+						<span className="truncate">Configurações</span>
+					</Link>
+				</li>
+			</ul>
 
 			{/* Abre e fecha a coluna do Assistente, que mora no `MentoriaShell` — o
 			    painel é irmão desta navegação na grade, não um overlay. A conversa em

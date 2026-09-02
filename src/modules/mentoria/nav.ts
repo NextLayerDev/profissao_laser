@@ -5,9 +5,13 @@
 // precise enumerar as telas. Antes o array vivia dentro do componente da
 // sidebar global, o que impedia reuso.
 //
-// Só entram rotas que existem. O desenho do time também previa "Metas",
-// "Relatórios" e "Configuração"; elas ainda não têm página, e um link morto é
-// pior que uma ausência — estão registradas em docs/mentoria-360-design-system.md.
+// Só entram rotas que existem. O desenho do time também previa "Metas" e
+// "Relatórios"; elas ainda não têm página, e um link morto é pior que uma
+// ausência — estão registradas em docs/mentoria-360-design-system.md.
+//
+// "Configurações" existe (MENTORIA_SETTINGS, abaixo) mas fica FORA de
+// MENTORIA_SECTIONS de propósito: esta lista é a jornada do aluno, e
+// configuração não é etapa de jornada.
 
 import {
 	BarChart3,
@@ -29,6 +33,9 @@ export type MentoriaSection = {
 };
 
 export const MENTORIA_ROOT = '/course/mentoria';
+
+/** Cadastro da empresa. Fora de MENTORIA_SECTIONS — ver nota no topo. */
+export const MENTORIA_SETTINGS = `${MENTORIA_ROOT}/configuracoes`;
 
 export const MENTORIA_SECTIONS: MentoriaSection[] = [
 	{ href: MENTORIA_ROOT, label: 'Minha Empresa', icon: Home },

@@ -56,6 +56,7 @@ import {
 	useMyMaterials,
 	useTasks,
 } from '@/modules/mentoria/hooks';
+import { MENTORIA_SETTINGS } from '@/modules/mentoria/nav';
 import type {
 	MentoriaBootstrap,
 	MntKpi,
@@ -99,7 +100,7 @@ function HomeContent() {
 					    Configurações, então o bloqueio virou o que já era: um convite
 					    com um destino. O rótulo distingue criar de editar — não é a
 					    mesma promessa para quem lê. */}
-					<Link href="/course/mentoria/configuracoes" className={BTN_PRIMARY}>
+					<Link href={MENTORIA_SETTINGS} className={BTN_PRIMARY}>
 						{data?.company ? 'Editar dados da empresa' : 'Cadastrar empresa'}
 					</Link>
 				</EmptyState>

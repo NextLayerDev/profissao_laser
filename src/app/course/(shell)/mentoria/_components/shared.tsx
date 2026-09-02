@@ -5,6 +5,7 @@ import { ArrowLeft, Compass } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { useMentoriaBootstrap } from '@/modules/mentoria/hooks';
+import { MENTORIA_SETTINGS } from '@/modules/mentoria/nav';
 import type { MentoriaBootstrap } from '@/modules/mentoria/types';
 
 // Classes base do visual da Mentoria 360° — migrado para tokens upvox-ui.
@@ -160,7 +161,7 @@ export function JourneyGate({
 					title="Você ainda não está matriculado em uma turma de mentoria"
 					description="Assim que sua matrícula for feita pela equipe, sua jornada aparece aqui. Enquanto isso, você pode cadastrar os dados da sua empresa."
 				>
-					<Link href="/course/mentoria/configuracoes" className={BTN_PRIMARY}>
+					<Link href={MENTORIA_SETTINGS} className={BTN_PRIMARY}>
 						Cadastrar empresa
 					</Link>
 				</EmptyState>
