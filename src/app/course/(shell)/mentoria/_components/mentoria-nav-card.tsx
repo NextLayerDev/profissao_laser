@@ -12,22 +12,28 @@ import { Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Text } from 'react-native-css/components/Text';
-import { toast } from 'sonner';
+import { FLOATING_COLUMN } from '@/modules/mentoria/components/ui';
 import { isSectionActive, MENTORIA_SECTIONS } from '@/modules/mentoria/nav';
 
-export function MentoriaNavCard() {
+export function MentoriaNavCard({
+	assistantOpen,
+	onToggleAssistant,
+}: {
+	assistantOpen: boolean;
+	onToggleAssistant: () => void;
+}) {
 	const pathname = usePathname();
 
 	return (
 		<nav
 			aria-label="Seções da Mentoria 360°"
-			className="rounded-card border border-subtle bg-surface p-4 lg:sticky lg:top-6"
+			className={`${FLOATING_COLUMN.surface} ${FLOATING_COLUMN.stickyLg} flex flex-col p-4`}
 		>
 			<p className="text-caption text-secondary px-1 mb-3">
 				Profissão Laser 360°
 			</p>
 
-			<ul className="space-y-2">
+			<ul className="min-h-0 flex-1 space-y-2 overflow-y-auto">
 				{MENTORIA_SECTIONS.map((section) => {
 					const active = isSectionActive(section, pathname);
 					const Icon = section.icon;
@@ -53,28 +59,28 @@ export function MentoriaNavCard() {
 				})}
 			</ul>
 
-			{/* O desenho prevê um assistente aqui, mas o destino ainda não existe —
-			    nem rota, nem contrato. Fica visível e anunciado como indisponível em
-			    vez de virar um link morto. Ver docs/mentoria-360-design-system.md. */}
-			<div className="mt-4">
+			{/* Abre e fecha a coluna do Assistente, que mora no `MentoriaShell` — o
+			    painel é irmão desta navegação na grade, não um overlay. A conversa em
+			    si ainda não tem backend; o gap está em
+			    docs/mentoria-360-design-system.md. */}
+			<div className="mt-4 shrink-0">
 				<Button
 					variant="primary"
 					fullWidth
-					onPress={() =>
-						toast('Em breve', {
-							description:
-								'O Assistente da Mentoria estará disponível em breve!',
-						})
+					onPress={onToggleAssistant}
+					accessibilityLabel={
+						assistantOpen
+							? 'Fechar o Assistente da Mentoria'
+							: 'Abrir o Assistente da Mentoria'
 					}
-					accessibilityLabel="Assistente da Mentoria (em breve)"
 				>
 					{/* Ícone + texto é um ARRAY de children, e array bypassa o wrap
 					    automático do Button em <Text> — o texto cru quebraria em
 					    runtime ("A text node cannot be a child of a <View>"). Por isso
 					    o <Text> explícito, como nas telas do admin. */}
-					<Sparkles className="w-4 h-4" aria-hidden />
+					<Sparkles className="w-4 h-4 text-white" aria-hidden />
 					<Text className={buttonLabel({ variant: 'primary' })}>
-						Assistente
+						Assistente de IA
 					</Text>
 				</Button>
 			</div>

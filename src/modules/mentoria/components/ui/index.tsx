@@ -22,6 +22,38 @@
 import { ArrowDownRight, ArrowUpRight, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+// ── Coluna flutuante ─────────────────────────────────────────────────────────
+
+/**
+ * Coluna presa na tela: a navegação da Mentoria e o painel do Assistente usam
+ * exatamente a mesma superfície, o mesmo deslocamento e a MESMA altura — é o
+ * que faz as duas baterem lado a lado.
+ *
+ * Os prefixos de breakpoint diferem porque o Assistente só vira coluna no `xl`
+ * (entre `lg` e `xl` não cabem três colunas e ele desce para uma linha própria),
+ * enquanto a navegação já é coluna no `lg`. Fora isso os valores são idênticos e
+ * precisam continuar assim: mexeu num, mexe no outro.
+ *
+ * `top-20` = 80px limpa o header do curso, que é `fixed h-16` (64px), com 16px
+ * de respiro. A altura desconta topo E rodapé: 64px de header + 16px de
+ * respiro em cima + 24px de respiro embaixo (mesma folga de `gap-6` do grid) =
+ * 104px = 6.5rem — senão o card bate exatamente no fim da viewport.
+ *
+ * `sticky` e não `fixed`: o shell do curso anima o `<main>` com `transform`, e
+ * transform cria containing block — `fixed` ancoraria no `<main>` em vez do
+ * viewport. É a mesma armadilha documentada em components/ui/modal-portal.tsx.
+ */
+export const FLOATING_COLUMN = {
+	/** Superfície do cartão. Sombra deliberadamente discreta: estas colunas ficam
+	 *  paradas na tela o tempo todo, e `shadow-overlay` (de modal) pesa demais
+	 *  para algo permanente. */
+	surface: 'rounded-card border border-subtle bg-surface shadow-sm',
+	/** Navegação — vira coluna a partir do `lg`. */
+	stickyLg: 'lg:sticky lg:top-20 lg:h-[calc(100vh-6.5rem)]',
+	/** Assistente — vira coluna só a partir do `xl`. */
+	stickyXl: 'xl:sticky xl:top-20 xl:h-[calc(100vh-6.5rem)]',
+} as const;
+
 // ── Card de seção ────────────────────────────────────────────────────────────
 
 export function SectionCard({
@@ -321,6 +353,7 @@ export function ListRow({
 	description,
 	trailing,
 	href,
+	onSelect,
 	boxed = false,
 }: {
 	leading?: ReactNode;
@@ -328,12 +361,21 @@ export function ListRow({
 	description?: string;
 	trailing?: ReactNode;
 	href?: string;
+	/**
+	 * Ação em vez de navegação — os atalhos do Assistente preenchem o composer,
+	 * não levam a lugar nenhum. Ignorado quando `href` está presente: uma linha
+	 * é link OU botão, nunca os dois.
+	 */
+	onSelect?: () => void;
 	/** Envolve a linha numa caixa própria, como no bloco de prioridades. */
 	boxed?: boolean;
 }) {
+	const interactive = Boolean(href || onSelect);
 	const shell = `flex items-center gap-3 ${
 		boxed ? 'rounded-control border border-subtle px-4 py-3' : 'py-2.5'
-	} ${href ? 'transition-colors hover:border-brand-border hover:bg-surface-sunken' : ''}`;
+	} ${interactive ? 'transition-colors hover:border-brand-border hover:bg-surface-sunken' : ''}`;
+	const focusRing =
+		'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus';
 
 	const body = (
 		<>
@@ -350,16 +392,27 @@ export function ListRow({
 		</>
 	);
 
-	if (!href) return <div className={shell}>{body}</div>;
+	if (href) {
+		return (
+			<a href={href} className={`${shell} ${focusRing}`}>
+				{body}
+			</a>
+		);
+	}
 
-	return (
-		<a
-			href={href}
-			className={`${shell} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus`}
-		>
-			{body}
-		</a>
-	);
+	if (onSelect) {
+		return (
+			<button
+				type="button"
+				onClick={onSelect}
+				className={`${shell} ${focusRing} w-full text-left`}
+			>
+				{body}
+			</button>
+		);
+	}
+
+	return <div className={shell}>{body}</div>;
 }
 
 /** Marcador numérico das prioridades. */

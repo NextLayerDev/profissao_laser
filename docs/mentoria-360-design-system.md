@@ -2,8 +2,9 @@
 
 Registro da passagem da Mentoria 360° pelo design system `@upvox-dev/ui`
 (v0.3.0). Esta rodada cobriu **o dashboard "Minha Empresa" do aluno**
-(`/course/mentoria`) e a navegação da área. O restante das telas está listado
-em "Próximas rodadas".
+(`/course/mentoria`), a navegação da área e a **coluna do Assistente
+Empresarial** (casca de UI; a conversa ainda não tem backend — ver B). O
+restante das telas está listado em "Próximas rodadas".
 
 ---
 
@@ -27,7 +28,8 @@ de biblioteca sem biblioteca.
 | `SegmentedControl` | Alternador 3m / 6m / 12m | Canto do "Resumo do período" |
 | `DonutProgress` | Anel SVG com percentual no centro | "Progresso da Jornada" |
 | `StatLine` | Linha rótulo → valor | Breakdown do donut |
-| `ListRow` + `RowIndex` | Linha com índice/data, título e badge | "Prioridades Atuais" e "Próximas Ações" |
+| `ListRow` + `RowIndex` | Linha com índice/data, título e badge | "Prioridades Atuais", "Próximas Ações" e os atalhos do Assistente |
+| `AssistantPanel` | Coluna de chat: cabeçalho, card de boas-vindas, atalhos e composer que cresce com o texto | Coluna do Assistente |
 
 ### A.2 Outros vãos do catálogo
 
@@ -35,6 +37,12 @@ Sem uso nesta rodada, mas já sentidos nas telas seguintes: **Tabs**,
 **Sidebar/Nav**, **PageHeader/Shell**, **Progress bar**, **Tooltip**,
 **Toast**, **Dropdown/Menu**, **Skeleton**, **Pagination**, **charts**.
 Localmente supridos por `recharts` (gráficos) e `sonner` (toasts).
+
+O Assistente somou outro vão: **nada de chat**. Não há composer que cresça com o
+conteúdo, bolha de mensagem, estado de "digitando" nem painel lateral. O app já
+tem quatro superfícies de chat (`live-chat`, `tool-agent-chat`,
+`support-chat-widget`, `doubt-chat-view`), cada uma com o seu — é candidato
+forte a virar componente do DS.
 
 ### A.3 Tokens de modo escuro ausentes
 
@@ -76,6 +84,22 @@ resolvidos por tema em JS, essa duplicação sumiria.
   em vez de modal.
 - **`Table` não faz scroll horizontal sozinho** — precisa de wrapper
   `overflow-x-auto`.
+- **`Input` e `Textarea` não servem um composer de chat.** O `Input` é de uma
+  linha e não expõe `onSubmitEditing` no topo (só por dentro de `inputProps`); o
+  `Textarea` tem altura fixa por `size`, com `multiline` embutido e *excluído* de
+  `inputProps`. Nenhum dos dois cresce com o conteúdo, que é o mínimo de um
+  campo de mensagem — daí o `<textarea>` cru vestido de tokens no
+  `assistant-panel.tsx`.
+- **`Button` não tem variante circular.** `rounded-control` é fixo no
+  `buttonContainer`. Como o `cn` do DS é `tailwind-merge`, dá para sobrescrever
+  por `className` (`h-9 w-9 rounded-full px-0`), mas é contorno, não API.
+- **`Button` não encaminha `ref` nem props ARIA arbitrárias.** Não dá para pôr
+  `aria-expanded`/`aria-haspopup` num gatilho de painel, nem devolver foco a ele
+  programaticamente — a única saída é embrulhar num elemento próprio e procurar
+  o `[role="button"]` que o react-native-web imprime.
+- **Ícone dentro de `Button` não herda a cor do rótulo.** O `buttonLabel` veste
+  só o `<Text>`; um `lucide` ao lado fica com a cor herdada do pai. A cor tem de
+  ir explícita em cada ícone.
 
 ---
 
@@ -92,7 +116,25 @@ Onde faltou, a tela foi alimentada com o dado real equivalente — nada de mock.
 | Bloco "Prioridades Atuais" | Não existe. `MntGoal` **não tem** `priority` | Derivado das **tarefas abertas** ordenadas por `priority` + vencimento | `priority` em `MntGoal`, ou um conceito próprio de prioridade da jornada |
 | Breakdown do donut (Encontros/Ferramentas/Tarefas/Indicadores) | Não vem agregado | Contado no cliente a partir de 4 queries já existentes | Contadores agregados no `bootstrap` — hoje o dashboard dispara 6 requisições |
 | Rotas "Metas", "Relatórios", "Configuração" na barra lateral | **Não existem** | Omitidas da navegação — link morto é pior que ausência | Definir se viram rotas próprias ou seções de `desenvolvimento`/`evolucao` |
-| CTA "Assistente" | Sem destino, sem contrato | Renderizado, mas anuncia "em breve" via toast | Definir produto, rota e contrato |
+| Assistente Empresarial | **UI pronta, backend inexistente.** Não há endpoint conversacional para a Mentoria | Coluna com boas-vindas, atalhos e composer; enviar anuncia "em breve" via toast. Nenhuma resposta simulada | Endpoint multi-turno com streaming, e persistência de conversa. Ver nota abaixo |
+| "Sujeito aos Termos" no aviso do Assistente | **Não existe rota de termos** no app (`find`/`grep` vazios) | Renderizado como texto puro, sem link | Criar a página de termos e ligar o link |
+
+### Nota — o que já existe para o backend do Assistente
+
+Nada disso foi usado nesta rodada (que é só front), mas evita começar do zero:
+
+- **Aterramento já pronto**: `POST /v1/ai-knowledge/search` na `upvox-api` é
+  `requireAuth` e o próprio comentário da rota diz que foi feito para a IA do
+  chat chamar repassando o Bearer do aluno.
+- **Precedente de streaming**: `POST /api/tool-agent/turn` (no gateway) já
+  responde em SSE, e o front já sabe consumir — `streamAgentTurn` em
+  `src/modules/tools/services/tool-agent.service.ts` (async generator sobre
+  `res.body.getReader()`, porque `EventSource` é GET-only) mais
+  `use-tool-agent.ts`, que tem sessão, histórico, `AbortController` e trava de
+  reentrância. É o molde das bolhas quando a hora chegar.
+- **O que falta mesmo**: `openrouterChat` (`upvox-api/src/lib/openrouter.ts`) é
+  single-turn (um system + um user, sem `messages[]`) e **não streama**; e não há
+  nenhuma tabela de conversa/mensagem para a IA. Os dois são trabalho novo.
 
 ---
 
@@ -128,6 +170,28 @@ Onde faltou, a tela foi alimentada com o dado real equivalente — nada de mock.
    mas é o único lugar onde o aluno edita a empresa. Virou seção sob demanda,
    aberta pelo botão "Dados da empresa" do cabeçalho — não modal, porque o
    `Modal` do DS não rola (A.5).
+
+7. **O Assistente é coluna, não overlay.** Ele entra como terceira coluna da
+   grade (`mentoria-shell.tsx`), empurrando o conteúdo em vez de cobri-lo — por
+   isso não tem backdrop, portal nem trava de scroll. Entre `lg` e `xl` não
+   cabem três colunas, então o painel desce para uma linha própria
+   (`lg:col-span-2 xl:col-span-1`). O estado mora no shell porque o gatilho está
+   na coluna 1 e o painel na coluna 3.
+
+   Visualmente os dois são **cards flutuantes presos na tela**: superfície única
+   com `shadow-overlay` e `sticky top-6`, com o conteúdo do meio rolando por
+   baixo. `sticky` e não `fixed` de propósito — o course shell anima o `<main>`
+   com `transform`, e transform cria containing block, então `fixed` ancoraria no
+   `<main>` em vez do viewport (a mesma armadilha que obriga os modais do app a
+   usar `ModalPortal`). Ambos ganham `max-h-[calc(100vh-3rem)]` com scroll
+   próprio, senão numa viewport baixa o fim da coluna fica inalcançável.
+
+8. **Entrou `motion` + `AnimatePresence`** (`motion/react`, já era dependência).
+   É o **primeiro `AnimatePresence` do repositório**: a convenção até aqui eram
+   `@keyframes` em `globals.css` com desmonte seco, e um painel que some de
+   estalo parece quebrado. Custo assumido: `motion` passa a entrar no bundle do
+   course shell, onde antes só aparecia em landing. `useReducedMotion()` colapsa
+   o deslize para um fade curto.
 
 ### Pendência de design, fora do escopo
 
