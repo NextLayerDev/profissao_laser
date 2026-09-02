@@ -2,7 +2,12 @@
 
 // Hooks TanStack Query da aba Mentoria. Convenção de keys:
 // ['mentoria', <recurso>, ...ids] — invalidação por prefixo.
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+	useMutation,
+	useQueries,
+	useQuery,
+	useQueryClient,
+} from '@tanstack/react-query';
 import * as svc from './service';
 
 const ROOT = ['mentoria'] as const;
@@ -183,6 +188,22 @@ export function useKpiMutations(journeyId: string | undefined) {
 		onSuccess: invalidate,
 	});
 	return { create, addMeasurement };
+}
+
+/**
+ * Histórico de vários KPIs de uma vez — o gráfico de evolução do dashboard
+ * precisa de N séries, e `useKpiHistory` num laço quebraria a regra dos hooks.
+ * Reusa a MESMA queryKey de `useKpiHistory`, então o cache é compartilhado:
+ * abrir a tela de um KPI depois do dashboard não refaz a chamada.
+ */
+export function useKpiHistories(kpiIds: string[]) {
+	return useQueries({
+		queries: kpiIds.map((kpiId) => ({
+			queryKey: [...ROOT, 'kpi-history', kpiId],
+			queryFn: () => svc.getKpiHistory(kpiId),
+			staleTime: 60_000,
+		})),
+	});
 }
 
 export function useKpiHistory(kpiId: string | undefined) {

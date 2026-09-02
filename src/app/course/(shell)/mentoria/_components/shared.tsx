@@ -9,8 +9,16 @@ import type { MentoriaBootstrap } from '@/modules/mentoria/types';
 
 // Classes base do visual da Mentoria 360° — migrado para tokens upvox-ui.
 // Cores: brand (púrpura #7c3aed), surface, subtle border.
-export const CARD =
-	'rounded-2xl border border-subtle bg-surface dark:border-white/10 dark:bg-white/[0.03]';
+//
+// `CARD` já não carrega par `dark:`: os tokens `surface`/`subtle` resolvem os
+// dois temas sozinhos (o `.dark` deles mora em app/globals.css), e o raio saiu
+// de `rounded-2xl` para `rounded-card`, que é o valor do DS. Preferir
+// `SectionCard` de `@/modules/mentoria/components/ui` em telas novas.
+//
+// `INPUT`/`BTN_PRIMARY`/`BTN_GHOST` continuam aqui porque as demais telas da
+// Mentoria ainda dependem deles; a troca por `Input`/`Button` do DS é a próxima
+// rodada da migração.
+export const CARD = 'rounded-card border border-subtle bg-surface';
 export const INPUT =
 	'w-full rounded-xl border border-subtle bg-surface dark:border-white/10 dark:bg-white/5 px-3 py-2 text-sm text-primary dark:text-slate-100 placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-brand/40 disabled:opacity-60';
 export const BTN_PRIMARY =
@@ -62,26 +70,20 @@ export function MntHeader({
 			{backHref && (
 				<Link
 					href={backHref}
-					className="w-9 h-9 rounded-xl border border-subtle dark:border-white/10 flex items-center justify-center text-secondary dark:text-gray-400 hover:bg-surface-sunken dark:hover:bg-white/5 transition"
+					className="w-9 h-9 rounded-control border border-subtle flex items-center justify-center text-secondary hover:bg-surface-sunken transition"
 				>
 					<ArrowLeft className="w-4 h-4" />
 				</Link>
 			)}
 			<div className="w-1 h-10 rounded-full bg-brand" />
 			{Icon && (
-				<div className="w-10 h-10 rounded-lg bg-brand-wash dark:bg-brand/20 flex items-center justify-center">
+				<div className="w-10 h-10 rounded-control bg-brand-wash flex items-center justify-center">
 					<Icon className="w-5 h-5 text-brand dark:text-violet-400" />
 				</div>
 			)}
 			<div className="min-w-0 flex-1">
-				<h1 className="font-display text-xl font-bold text-primary dark:text-slate-100">
-					{title}
-				</h1>
-				{subtitle && (
-					<p className="text-slate-500 dark:text-gray-400 text-sm">
-						{subtitle}
-					</p>
-				)}
+				<h1 className="font-display text-page text-primary">{title}</h1>
+				{subtitle && <p className="text-body text-muted">{subtitle}</p>}
 			</div>
 			{actions && <div className="flex items-center gap-2">{actions}</div>}
 		</div>
@@ -90,17 +92,14 @@ export function MntHeader({
 
 export function MntSkeleton() {
 	return (
-		<div className="p-4 md:p-8 space-y-4 animate-pulse">
-			<div className="h-10 w-64 rounded-xl bg-slate-200 dark:bg-white/10" />
+		<div className="space-y-4 animate-pulse">
+			<div className="h-10 w-64 rounded-control bg-subtle" />
 			<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 				{['a', 'b', 'c'].map((k) => (
-					<div
-						key={k}
-						className="h-32 rounded-2xl bg-slate-100 dark:bg-white/5"
-					/>
+					<div key={k} className="h-32 rounded-card bg-surface-sunken" />
 				))}
 			</div>
-			<div className="h-64 rounded-2xl bg-slate-100 dark:bg-white/5" />
+			<div className="h-64 rounded-card bg-surface-sunken" />
 		</div>
 	);
 }
@@ -121,16 +120,16 @@ export function EmptyState({
 		<div
 			className={`${CARD} flex flex-col items-center justify-center py-16 px-6 text-center`}
 		>
-			<div className="w-14 h-14 rounded-2xl bg-teal-500/10 dark:bg-teal-500/15 flex items-center justify-center mb-4">
-				<I className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+			<div className="w-14 h-14 rounded-card bg-brand-wash flex items-center justify-center mb-4">
+				{/* `text-brand` e `text-success`/`text-danger` sao valores de modo
+				    claro e o DS nao publica versao escura de nenhum — o mesmo token
+				    e FUNDO no botao primario, onde precisa continuar #7c3aed. Ate o
+				    DS ter tons semanticos de texto para o escuro, o par `dark:` fica. */}
+				<I className="w-6 h-6 text-brand dark:text-violet-400" />
 			</div>
-			<p className="font-semibold text-slate-900 dark:text-slate-100 mb-1">
-				{title}
-			</p>
+			<p className="text-title text-primary mb-1">{title}</p>
 			{description && (
-				<p className="text-sm text-slate-500 dark:text-gray-400 max-w-md mb-4">
-					{description}
-				</p>
+				<p className="text-body text-muted max-w-md mb-4">{description}</p>
 			)}
 			{children}
 		</div>
@@ -156,7 +155,7 @@ export function JourneyGate({
 
 	if (isError || !data?.journey) {
 		return (
-			<div className="p-4 md:p-8">
+			<div>
 				<EmptyState
 					title="Você ainda não está matriculado em uma turma de mentoria"
 					description="Assim que sua matrícula for feita pela equipe, sua jornada aparece aqui. Enquanto isso, você pode cadastrar os dados da sua empresa na página inicial da Mentoria 360°."
