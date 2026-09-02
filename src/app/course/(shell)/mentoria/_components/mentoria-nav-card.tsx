@@ -8,7 +8,7 @@
 // simples e a lista canônica passou a morar em `src/modules/mentoria/nav.ts`.
 
 import { Button, buttonLabel } from '@upvox-dev/ui';
-import { Sparkles } from 'lucide-react';
+import { Settings, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Text } from 'react-native-css/components/Text';
@@ -58,6 +58,20 @@ export function MentoriaNavCard({
 					);
 				})}
 			</ul>
+
+			<div className="mt-2 shrink-0 border-subtle border-t pt-2">
+				<Link
+					href="/course/mentoria/configuracoes"
+					className={`flex items-center gap-3 rounded-control border px-3 py-2.5 text-label transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
+						pathname === '/course/mentoria/configuracoes'
+							? 'border-brand-border bg-brand-wash text-brand dark:text-violet-400'
+							: 'border-subtle text-secondary hover:text-primary hover:bg-surface-sunken'
+					}`}
+				>
+					<Settings className="w-4 h-4 shrink-0" aria-hidden />
+					<span className="truncate">Configurações</span>
+				</Link>
+			</div>
 
 			{/* Abre e fecha a coluna do Assistente, que mora no `MentoriaShell` — o
 			    painel é irmão desta navegação na grade, não um overlay. A conversa em

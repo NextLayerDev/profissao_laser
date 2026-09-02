@@ -12,7 +12,7 @@
 // prioridades saem das tarefas (que TÊM `priority`). O que falta na API para
 // fechar 100% com o desenho está em docs/mentoria-360-design-system.md.
 
-import { Badge, Button } from '@upvox-dev/ui';
+import { Badge } from '@upvox-dev/ui';
 import {
 	Activity,
 	ArrowRight,
@@ -62,8 +62,8 @@ import type {
 	MntKpiMeasurement,
 	MntTask,
 } from '@/modules/mentoria/types';
-import { CompanyForm } from './_components/company-form';
 import {
+	BTN_PRIMARY,
 	EmptyState,
 	fmtDate,
 	MntHeader,
@@ -93,11 +93,16 @@ function HomeContent() {
 				/>
 				<EmptyState
 					title="Você ainda não está matriculado em uma turma de mentoria"
-					description="Assim que sua matrícula for confirmada pela equipe, sua jornada de 10 encontros aparece aqui. Enquanto isso, adiante o cadastro da sua empresa abaixo."
-				/>
-				<div className="mt-6">
-					<CompanyForm company={data?.company ?? null} />
-				</div>
+					description="Assim que sua matrícula for confirmada pela equipe, sua jornada de 10 encontros aparece aqui. Enquanto isso, adiante o cadastro da sua empresa."
+				>
+					{/* O formulário ficava aqui embaixo. Passou a ter rota própria em
+					    Configurações, então o bloqueio virou o que já era: um convite
+					    com um destino. O rótulo distingue criar de editar — não é a
+					    mesma promessa para quem lê. */}
+					<Link href="/course/mentoria/configuracoes" className={BTN_PRIMARY}>
+						{data?.company ? 'Editar dados da empresa' : 'Cadastrar empresa'}
+					</Link>
+				</EmptyState>
 			</div>
 		);
 	}
@@ -128,7 +133,6 @@ function Dashboard({
 }) {
 	const { company, cohort, progress } = bootstrap;
 	const [period, setPeriod] = useState<Period>('12m');
-	const [showCompanyForm, setShowCompanyForm] = useState(false);
 
 	const { data: tasks } = useTasks(journeyId);
 	const { data: kpis } = useKpis(journeyId);
@@ -188,15 +192,6 @@ function Dashboard({
 						: 'Visão geral de faturamento, clientes e margem'
 				}
 				icon={Building2}
-				actions={
-					<Button
-						variant="secondary"
-						size="sm"
-						onPress={() => setShowCompanyForm((v) => !v)}
-					>
-						{showCompanyForm ? 'Ocultar dados da empresa' : 'Dados da empresa'}
-					</Button>
-				}
 			/>
 
 			{/* Resumo do período */}
@@ -427,11 +422,6 @@ function Dashboard({
 					)}
 				</SectionCard>
 			</div>
-
-			{/* O desenho não tem formulário na home, mas ele é o único lugar onde o
-			    aluno edita a empresa — então virou uma seção sob demanda, aberta
-			    pelo botão do cabeçalho, em vez de ficar sempre aberta no fim. */}
-			{showCompanyForm && <CompanyForm company={company} />}
 		</div>
 	);
 }

@@ -138,8 +138,8 @@ export function EmptyState({
 
 /**
  * Garante que o aluno tem uma jornada ativa antes de renderizar a tela.
- * Sem jornada → instrui a voltar à home da Mentoria (que tem o formulário de
- * empresa e o estado "sem turma").
+ * Sem jornada → manda para Configurações, onde mora o cadastro da empresa: é a
+ * única coisa que o aluno consegue adiantar antes de a matrícula sair.
  */
 export function JourneyGate({
 	children,
@@ -158,10 +158,10 @@ export function JourneyGate({
 			<div>
 				<EmptyState
 					title="Você ainda não está matriculado em uma turma de mentoria"
-					description="Assim que sua matrícula for feita pela equipe, sua jornada aparece aqui. Enquanto isso, você pode cadastrar os dados da sua empresa na página inicial da Mentoria 360°."
+					description="Assim que sua matrícula for feita pela equipe, sua jornada aparece aqui. Enquanto isso, você pode cadastrar os dados da sua empresa."
 				>
-					<Link href="/course/mentoria" className={BTN_PRIMARY}>
-						Ir para a Mentoria 360°
+					<Link href="/course/mentoria/configuracoes" className={BTN_PRIMARY}>
+						Cadastrar empresa
 					</Link>
 				</EmptyState>
 			</div>
