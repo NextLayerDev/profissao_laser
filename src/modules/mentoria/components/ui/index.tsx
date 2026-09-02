@@ -44,10 +44,10 @@ import type { ReactNode } from 'react';
  * viewport. É a mesma armadilha documentada em components/ui/modal-portal.tsx.
  */
 export const FLOATING_COLUMN = {
-	/** Superfície do cartão. Sombra deliberadamente discreta: estas colunas ficam
-	 *  paradas na tela o tempo todo, e `shadow-overlay` (de modal) pesa demais
-	 *  para algo permanente. */
-	surface: 'rounded-card border border-subtle bg-surface shadow-sm',
+	/** Superfície do cartão. Sem sombra: a borda já separa a coluna do fundo, e
+	 *  estas colunas ficam paradas na tela o tempo todo — sombra permanente
+	 *  pesa. */
+	surface: 'rounded-card border border-subtle bg-surface',
 	/** Navegação — vira coluna a partir do `lg`. */
 	stickyLg: 'lg:sticky lg:top-20 lg:h-[calc(100vh-6.5rem)]',
 	/** Assistente — vira coluna só a partir do `xl`. */

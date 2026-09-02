@@ -24,6 +24,11 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { FLOATING_COLUMN, ListRow } from '../ui';
+import {
+	ASSISTANT_DURATION,
+	ASSISTANT_DURATION_REDUCED,
+	ASSISTANT_EASE,
+} from './motion';
 
 /** Atalhos do desenho. Preenchem o composer em vez de enviar direto — sem
  *  backend, enviar não levaria a lugar nenhum, mas escrever já mostra a ideia. */
@@ -34,6 +39,23 @@ const SUGGESTIONS = [
 
 /** Teto do auto-grow do composer, em px. Acima disso ele rola. */
 const COMPOSER_MAX_HEIGHT = 160;
+
+/**
+ * Escalonamento do miolo. O card chega inteiro num piscar; escalonar as partes
+ * dá a leitura de "montando" em vez de "colado", e é o que sobra de vida num
+ * painel que ainda não conversa.
+ *
+ * Os atrasos entram DEPOIS do meio do percurso do card (0.42s): antes disso a
+ * coluna ainda está abrindo, e conteúdo entrando dentro de uma faixa que se
+ * mexe só faz confusão.
+ */
+const STAGGER: Record<'welcome' | 'suggestion', number> = {
+	welcome: 0.18,
+	suggestion: 0.26,
+};
+
+/** Passo entre um atalho e o próximo, em segundos. */
+const STAGGER_STEP = 0.06;
 
 export function AssistantPanel({
 	open,
@@ -102,26 +124,34 @@ export function AssistantPanel({
 					// Esta div é a CÉLULA da grade: estica com a linha e não gruda.
 					// Quem gruda é o <aside> dentro dela — `sticky` na própria célula
 					// não teria por onde correr, porque a célula tem a altura do card.
-					className="min-w-0 lg:col-span-2 xl:col-span-1"
-					initial={
-						reduceMotion ? { opacity: 0 } : { opacity: 0, x: 32, scale: 0.96 }
-					}
-					animate={{ opacity: 1, x: 0, scale: 1 }}
-					exit={
-						reduceMotion ? { opacity: 0 } : { opacity: 0, x: 32, scale: 0.96 }
-					}
+					//
+					// `xl:pl-6` é o respiro até o conteúdo. Ele mora aqui, e não no `gap`
+					// da grade, porque a faixa da coluna anima até `0px` — com `gap`
+					// sobraria um vão morto de 24px com o painel fechado
+					// (ver mentoria-shell.tsx).
+					className="min-w-0 lg:col-span-2 xl:col-span-1 xl:pl-6"
+					initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 24 }}
+					animate={{ opacity: 1, x: 0 }}
+					exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 24 }}
 					transition={{
-						duration: reduceMotion ? 0.15 : 0.42,
-						ease: [0.22, 1, 0.36, 1] as const,
+						duration: reduceMotion
+							? ASSISTANT_DURATION_REDUCED
+							: ASSISTANT_DURATION,
+						ease: ASSISTANT_EASE,
 					}}
 				>
 					{/* Card flutuante: uma superfície só. Mesma altura e mesma sombra da
 					    navegação — as duas saem de FLOATING_COLUMN justamente para não
 					    divergirem. `overflow-hidden` faz o conteúdo respeitar o
 					    arredondamento nas bordas. */}
+					{/* `xl:w-90` em vez de largura fluida: no fechamento a faixa da
+					    coluna encolhe até zero, e um card elástico reflowaria o texto
+					    todo durante a saída — palavra quebrando de linha enquanto some.
+					    Com a largura travada ele só desliza, e o excesso é recortado
+					    pelo `overflow-x-clip` do <main> do curso. */}
 					<aside
 						aria-label="Assistente Empresarial"
-						className={`${FLOATING_COLUMN.surface} ${FLOATING_COLUMN.stickyXl} flex flex-col overflow-hidden`}
+						className={`${FLOATING_COLUMN.surface} ${FLOATING_COLUMN.stickyXl} flex flex-col overflow-hidden xl:w-90`}
 					>
 						<Header onClose={onClose} />
 
@@ -182,26 +212,46 @@ function Header({ onClose }: { onClose: () => void }) {
 // ── Boas-vindas ──────────────────────────────────────────────────────────────
 
 function Welcome({ onSuggestion }: { onSuggestion: (label: string) => void }) {
+	const reduceMotion = useReducedMotion();
+
+	// Sem `exit`: na saída o card inteiro já esvanece de uma vez, e escalonar a
+	// despedida só atrasaria o fechamento. O escalonamento é de chegada.
+	const rise = (delay: number) => ({
+		initial: reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 },
+		animate: { opacity: 1, y: 0 },
+		transition: {
+			duration: reduceMotion ? ASSISTANT_DURATION_REDUCED : 0.32,
+			delay: reduceMotion ? 0 : delay,
+			ease: ASSISTANT_EASE,
+		},
+	});
+
 	return (
 		<Card>
-			<h2 className="text-page text-primary">Assistente Empresarial</h2>
-			<p className="text-body text-secondary">
-				Nosso Assistente de IA pode cometer erros. Verifique se as informações
-				estão corretas.{' '}
-				{/* O desenho traz "Sujeito aos Termos" como link, mas o app não tem
-				    rota de termos — link morto é pior que ausência, então fica texto. */}
-				Sujeito aos Termos.
-			</p>
+			<motion.div {...rise(STAGGER.welcome)}>
+				<h2 className="text-page text-primary">Assistente Empresarial</h2>
+				<p className="text-body text-secondary">
+					Nosso Assistente de IA pode cometer erros. Verifique se as informações
+					estão corretas.{' '}
+					{/* O desenho traz "Sujeito aos Termos" como link, mas o app não tem
+					    rota de termos — link morto é pior que ausência, então fica texto. */}
+					Sujeito aos Termos.
+				</p>
+			</motion.div>
 
 			<div className="mt-2 space-y-2">
-				{SUGGESTIONS.map(({ icon: Icon, label }) => (
-					<ListRow
+				{SUGGESTIONS.map(({ icon: Icon, label }, i) => (
+					<motion.div
 						key={label}
-						boxed
-						leading={<Icon className="h-4 w-4 text-secondary" />}
-						title={label}
-						onSelect={() => onSuggestion(label)}
-					/>
+						{...rise(STAGGER.suggestion + i * STAGGER_STEP)}
+					>
+						<ListRow
+							boxed
+							leading={<Icon className="h-4 w-4 text-secondary" />}
+							title={label}
+							onSelect={() => onSuggestion(label)}
+						/>
+					</motion.div>
 				))}
 			</div>
 		</Card>
