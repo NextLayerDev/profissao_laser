@@ -101,6 +101,32 @@ resolvidos por tema em JS, essa duplicação sumiria.
   só o `<Text>`; um `lucide` ao lado fica com a cor herdada do pai. A cor tem de
   ir explícita em cada ícone.
 
+**Levantados na rodada do Diagnóstico** — todos vieram do mesmo lugar: um
+formulário *data-driven* precisa de um componente por tipo de campo, e é aí que
+o catálogo mostra o fundo. O `dynamic-form.tsx` acabou quase todo em elemento
+nativo tokenizado, com o motivo comentado em cada ramo.
+
+- **`Input type="currency"` mascara e devolve `string`.** O valor sai
+  `"1.234,56"`, mas o formulário grava `Number` e o `metric_key` do snapshot
+  depende disso — adotar mudaria o payload da API. E `type="numeric"` só aceita
+  dígitos (`onlyDigits`), o que quebraria decimais e negativos. Falta um modo
+  numérico cru, e falta `step`.
+- **`Input type="date"` força o calendário próprio.** Não é um
+  `<input type="date">`: é um `Pressable` que abre o `Modal` do DS (o mesmo que
+  não rola). Sem fallback para o seletor nativo do browser, adotar seria trocar
+  a interação, não a pintura.
+- **`Textarea` não expõe `id`.** Só `accessibilityLabel`. Sem `id` não há
+  `htmlFor`, então o rótulo não foca o campo no clique — e ligar rótulo e
+  controle era justamente o defeito que a rodada foi corrigir. Ficou
+  `<textarea>` nativo; bônus, o `dynamic-form` seguiu sem carregar a camada
+  React Native, que ele injetaria no preview do form-builder do admin.
+- **`FormField` não tem slot de ação no rótulo.** Ele renderiza `<View>`/`<Text>`
+  do RN (não um `<label>` de verdade) e empilha rótulo em cima do campo. Aqui o
+  rótulo divide a linha com a pílula "A LEVANTAR", que ficaria sem lugar.
+- **Sem toggle binário e sem escala.** Não há Sim/Não nem 0–10. O `Radio` do DS
+  não se desmarca, e o `SegmentedControl` local foi desenhado para 2–4 opções —
+  11 segmentos numa coluna estreita ficariam menores que os quadrados atuais.
+
 ---
 
 ## B. Lacunas de API / rotas
@@ -135,6 +161,43 @@ Nada disso foi usado nesta rodada (que é só front), mas evita começar do zero
 - **O que falta mesmo**: `openrouterChat` (`upvox-api/src/lib/openrouter.ts`) é
   single-turn (um system + um user, sem `messages[]`) e **não streama**; e não há
   nenhuma tabela de conversa/mensagem para a IA. Os dois são trabalho novo.
+
+### Nota — revisão de conteúdo do Diagnóstico (levantada, adiada)
+
+A rodada do Diagnóstico foi **só de design system, por decisão explícita**:
+nenhuma mudança de conteúdo, de obrigatoriedade ou de backend. O levantamento
+abaixo ficou pronto e não foi aplicado — é a pauta de uma rodada própria.
+
+O template vive num seed SQL versionado
+(`upvox-api/supabase/migrations/20260831121000_mentoria_forms.sql`, chave
+`diagnostico_raiox` — não `diagnostico_inicial`), com 5 blocos e 45 campos.
+Mudar conteúdo é criar a v2 por migration, ou editar pelo builder do admin
+(que gera versão nova a cada salvamento). Cuidado com o builder: ele deriva a
+`key` do campo a partir do label, então **renomear um rótulo troca a key** e
+desconecta respostas antigas e `metric_key` — que, aliás, não é editável por lá.
+
+- **O Bloco A duplica o cadastro da empresa.** O `CompanyForm` de Configurações
+  já coleta nome, cidade, telefone, Instagram e site; o diagnóstico pede os
+  cinco de novo, guardando noutro lugar (JSON de respostas vs. registro
+  `company`). O aluno digita duas vezes e os dois podem divergir.
+  *Decidido: manter duplicado — a Foto Zero deve ser autocontida e imutável, e
+  depender do cadastro (que muda) descaracterizaria o "antes".*
+- **Foto Zero irreversível com só 3 obrigatórios em 45.** A validação de
+  obrigatórios é só no backend (`assertRequiredAnswered`), sem destaque no
+  campo: dá para congelar um diagnóstico quase vazio, e não há como refazer.
+  *Decidido: não mexer nesta rodada.*
+- **Seis `metric_key` órfãos.** `vendas`, `ticket`, `recorrencia`,
+  `funcionarios`, `equipamentos` e `gargalo` prometem comparação que o
+  relatório não entrega — o lado "Agora" (`currentMetrics`) só produz
+  `faturamento`, `custos_fixos`, `margem`, `maturidade_*` e `kpis`.
+  *Decidido: deixar como está; ou se cria a contraparte, ou se tira o
+  `metric_key`.*
+- Menores: os títulos "Bloco A —"… vazam a nomenclatura interna da spec para o
+  aluno; `scale` renderiza 0–10 mas o builder o rotula "Escala (1–5)";
+  `multiselect` e `file` existem no tipo e caem no `<input type="text">`;
+  `allow_unknown` é inconsistente entre blocos (o Bloco C inteiro tem, A e E
+  nenhum) apesar do princípio declarado de que não saber também é diagnóstico;
+  `email`/`telefone`/`site` são `text` sem validação de formato.
 
 ---
 
@@ -193,6 +256,26 @@ Nada disso foi usado nesta rodada (que é só front), mas evita começar do zero
    course shell, onde antes só aparecia em landing. `useReducedMotion()` colapsa
    o deslize para um fade curto.
 
+9. **Container queries no lugar de breakpoint de viewport.** Onde o conteúdo
+   divide espaço com o Assistente, os grids passaram a `@container` +
+   `@2xl:`/`@4xl:`. O motivo é direto: abrir o painel tira 384px da coluna do
+   meio sem mudar a largura da janela, então `md:`/`xl:` continuariam achando
+   que há espaço e espremeriam duas colunas de formulário (ou quatro cartões de
+   KPI) num vão que não comporta. Se esquecer o `@container` no ancestral, a
+   variante nunca ativa e fica **uma coluna só, silenciosamente** — é o modo de
+   falhar a vigiar.
+
+10. **Rotas `(dev)` como banco de prova de estado.** `dynamic-form` e a tela do
+    Diagnóstico ganharam `app/(dev)/mentoria-diagnostico-check`, que monta os
+    quatro casos com fixtures de `modules/mentoria/__fixtures__/`. Não é
+    capricho: o estado "Foto Zero congelada" é **irreversível** (o backend
+    recusa o segundo envio e o snapshot é imutável por trigger), então conferir
+    o modo leitura no ambiente real custaria uma jornada queimada por ajuste. O
+    template das fixtures também tem um campo de **cada** tipo — o de produção
+    não usa `select` nem `scale`, e esses ramos passariam despercebidos.
+    Isso exigiu partir a tela em container (`page.tsx`) e apresentação
+    (`_components/diagnostico-view.tsx`).
+
 ### Pendência de design, fora do escopo
 
 `src/utils/constants/tool-colors.ts` ainda define a Mentoria como
@@ -205,14 +288,29 @@ mexer.
 
 ## Próximas rodadas
 
-- Restante da área do aluno: `diagnostico/`, `jornada/` (timeline dos 10
-  encontros), `ferramentas/` (+ os 6 tipos), `desenvolvimento/` (maior
-  concentração de teal restante), `tarefas/`, `indicadores/`, `evolucao/`
-  (+ CSS de impressão do Raio-X 360°: hoje `window.print()` sai com o shell
-  inteiro), `lives/` (player + chat empilhados no mobile).
+- Restante da área do aluno: `jornada/` (timeline dos 10 encontros),
+  `ferramentas/` (+ os 6 tipos), `desenvolvimento/` (maior concentração de teal
+  restante), `tarefas/`, `indicadores/`, `evolucao/` (+ CSS de impressão do
+  Raio-X 360°: hoje `window.print()` sai com o shell inteiro), `lives/` (player
+  + chat empilhados no mobile).
 - `src/app/mentoria-admin/**` inteiro.
-- Componentes compartilhados: `dynamic-form`, `company-map-radar`,
-  `semaphore-badge` (reescrever sobre o `Badge` do DS, mantendo rótulo textual —
-  cor sozinha não é acessível), `live-player`, `live-chat`.
+- Componentes compartilhados: `company-map-radar`, `semaphore-badge` (reescrever
+  sobre o `Badge` do DS, mantendo rótulo textual — cor sozinha não é acessível),
+  `live-player`, `live-chat`.
 - Deprecar `INPUT` / `BTN_PRIMARY` / `BTN_GHOST` de
   `mentoria/_components/shared.tsx` em favor de `Input` / `Button` do DS.
+
+**Dívidas específicas deixadas pela rodada do Diagnóstico:**
+
+- **Padding em dobro em 10 páginas.** O `mentoria/layout.tsx` aplica
+  `p-4 md:p-8` e as páginas aplicam de novo — `desenvolvimento`, `evolucao`,
+  `ferramentas` (×2), `indicadores`, `jornada` (×2), `lives` (×2) e `tarefas`.
+  Sobra do refactor que criou o layout da área; `diagnostico/` e o dashboard já
+  estão limpos. Correção mecânica, cabe num commit próprio.
+- **O `dynamic-form` migrado aparece em 3 telas ainda não migradas.**
+  `desenvolvimento/` (×2), `tools/tool-form.tsx` (×2) e o preview do
+  form-builder do admin herdaram o formulário tokenizado dentro de molduras
+  `teal`/`slate`. É inconsistência esperada e temporária, não regressão.
+- **Container queries do dashboard.** `mentoria/page.tsx` ainda usa `sm:`/`lg:`/
+  `xl:` nos grids, então com o Assistente aberto ele espreme 4 cartões de KPI
+  numa coluna que comporta 2. Mesmo tratamento do item 9 de C resolve.
