@@ -59,7 +59,7 @@ export function MentoriaNavCard({
 				})}
 			</ul>
 
-			<div className="mt-2 shrink-0 border-subtle border-t pt-2">
+			<div className="mt-2 shrink-0">
 				<Link
 					href="/course/mentoria/configuracoes"
 					className={`flex items-center gap-3 rounded-control border px-3 py-2.5 text-label transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
