@@ -43,7 +43,11 @@ import { SectionCard } from './ui';
 // Cópia da string de `app/mentoria-admin/_components/ui.tsx` — `src/modules/`
 // não deve importar de uma rota. Sem altura fixa (`h-control-md`) de propósito:
 // veste `<textarea>` e `<select>` também, e altura travada achataria os dois.
-const inputClass =
+//
+// Exportado porque o caminho inverso é permitido: `desenvolvimento-view.tsx`
+// está DENTRO de uma rota e importa daqui, em vez de clonar a string uma
+// terceira vez.
+export const inputClass =
 	'w-full rounded-control border border-subtle bg-surface px-3 py-2 text-body text-primary placeholder:text-muted focus:outline-none focus:border-focus disabled:bg-surface-sunken disabled:opacity-60';
 
 export function DynamicForm({
