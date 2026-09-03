@@ -156,7 +156,12 @@ export function useTaskMutations(journeyId: string | undefined) {
 			svc.uploadTaskEvidence(taskId, file),
 		onSuccess: invalidate,
 	});
-	return { create, update, uploadEvidence };
+	const addLink = useMutation({
+		mutationFn: ({ taskId, url }: { taskId: string; url: string }) =>
+			svc.addTaskEvidenceLink(taskId, { kind: 'link', url }),
+		onSuccess: invalidate,
+	});
+	return { create, update, uploadEvidence, addLink };
 }
 
 // ── KPIs ─────────────────────────────────────────────────────────────────────
