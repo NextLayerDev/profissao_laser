@@ -30,6 +30,19 @@ de biblioteca sem biblioteca.
 | `StatLine` | Linha rótulo → valor | Breakdown do donut |
 | `ListRow` + `RowIndex` | Linha com índice/data, título e badge | "Prioridades Atuais", "Próximas Ações" e os atalhos do Assistente |
 | `AssistantPanel` | Coluna de chat: cabeçalho, card de boas-vindas, atalhos e composer que cresce com o texto | Coluna do Assistente |
+| `LiveChatView` | Chat de transmissão: cabeçalho, linha de mensagem com avatar + autor + corpo, empty state e composer de uma linha | Coluna do detalhe da live |
+| `LivePlayer` | Moldura de vídeo `aspect-video` com badge sobreposto | Detalhe da live |
+
+**Aviso de versão** (levantado na rodada das Lives): o `@upvox-dev/ui`
+**instalado** publica 14 componentes, mas o fonte em `upvox-ui`
+(`packages/ui/src/components`) já tem **32** — e os dois dizem `0.3.0`. Já
+existem lá `EmptyState`, `ListRow`, `SectionCard`, `StatCard`,
+`SegmentedControl`, `DonutProgress`, `StatLine`, `Skeleton`, `ProgressBar`,
+`Timeline`, `Callout`, `PageHeader`, `SemaphoreBadge`, `ScaleRating`,
+`LineChart`, `RadarChart`, `ActionCheckButton`. Ou seja: metade da tabela acima
+**não precisa mais ser construída, precisa ser publicada**. Antes de planejar
+qualquer peça nova, conferir `node_modules/@upvox-dev/ui/src/components` — a
+versão do `package.json` não distingue as duas.
 
 ### A.2 Outros vãos do catálogo
 
@@ -42,7 +55,14 @@ O Assistente somou outro vão: **nada de chat**. Não há composer que cresça c
 conteúdo, bolha de mensagem, estado de "digitando" nem painel lateral. O app já
 tem quatro superfícies de chat (`live-chat`, `tool-agent-chat`,
 `support-chat-widget`, `doubt-chat-view`), cada uma com o seu — é candidato
-forte a virar componente do DS.
+forte a virar componente do DS. A rodada das Lives reforçou: o `LiveChatView`
+saiu praticamente idêntico ao `AssistantPanel` da cintura para baixo, e as duas
+implementações agora divergem só no composer (uma linha × cresce com o texto).
+
+As Lives somaram outros dois: **moldura de vídeo** (`aspect-video` + borda +
+badge sobreposto, hoje replicada entre `live-player` e o player de aulas) e
+**cabeçalho de grupo de lista** (ícone + rótulo em caixa alta + nota),
+reescrito à mão em toda tela que agrupa itens por status.
 
 ### A.3 Tokens de modo escuro ausentes
 
@@ -85,7 +105,10 @@ resolvidos por tema em JS, essa duplicação sumiria.
 - **`Table` não faz scroll horizontal sozinho** — precisa de wrapper
   `overflow-x-auto`.
 - **`Input` e `Textarea` não servem um composer de chat.** O `Input` é de uma
-  linha e não expõe `onSubmitEditing` no topo (só por dentro de `inputProps`); o
+  linha e não expõe `onSubmitEditing` no topo (só por dentro de `inputProps`,
+  junto com `maxLength` — foi o caminho usado no `live-chat-view.tsx`, e
+  funciona, mas o envio pelo Enter ficar enterrado num objeto de props é
+  exatamente o tipo de coisa que se descobre lendo o `.types.ts`); o
   `Textarea` tem altura fixa por `size`, com `multiline` embutido e *excluído* de
   `inputProps`. Nenhum dos dois cresce com o conteúdo, que é o mínimo de um
   campo de mensagem — daí o `<textarea>` cru vestido de tokens no
@@ -288,15 +311,14 @@ mexer.
 
 ## Próximas rodadas
 
-- Restante da área do aluno: `jornada/` (timeline dos 10 encontros),
-  `ferramentas/` (+ os 6 tipos), `desenvolvimento/` (maior concentração de teal
-  restante), `tarefas/`, `indicadores/`, `evolucao/` (+ CSS de impressão do
-  Raio-X 360°: hoje `window.print()` sai com o shell inteiro), `lives/` (player
-  + chat empilhados no mobile).
+- Restante da área do aluno: `ferramentas/` (+ os 6 tipos), `evolucao/` (+ CSS
+  de impressão do Raio-X 360°: hoje `window.print()` sai com o shell inteiro),
+  `configuracoes/` e o dashboard "Minha Empresa" (`mentoria/page.tsx`, que já usa
+  as primitivas novas mas continua num arquivo só, sem view separada nem rota de
+  conferência).
 - `src/app/mentoria-admin/**` inteiro.
 - Componentes compartilhados: `company-map-radar`, `semaphore-badge` (reescrever
-  sobre o `Badge` do DS, mantendo rótulo textual — cor sozinha não é acessível),
-  `live-player`, `live-chat`.
+  sobre o `Badge` do DS, mantendo rótulo textual — cor sozinha não é acessível).
 - Deprecar `INPUT` / `BTN_PRIMARY` / `BTN_GHOST` de
   `mentoria/_components/shared.tsx` em favor de `Input` / `Button` do DS.
 

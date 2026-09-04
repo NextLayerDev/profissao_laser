@@ -36,6 +36,22 @@ export function fmtDate(iso: string | null | undefined): string {
 	return d.toLocaleDateString('pt-BR');
 }
 
+/**
+ * Data + hora curtas. Separado de `fmtDate` porque o fallback é outro: numa
+ * live sem `scheduled_at` o vazio não é "—", é uma informação ("a definir").
+ */
+export function fmtDateTime(iso: string | null | undefined): string {
+	if (!iso) return 'Data a definir';
+	const d = new Date(iso);
+	if (Number.isNaN(d.getTime())) return 'Data a definir';
+	return d.toLocaleString('pt-BR', {
+		day: '2-digit',
+		month: '2-digit',
+		hour: '2-digit',
+		minute: '2-digit',
+	});
+}
+
 export function fmtMoney(value: number | null | undefined): string {
 	if (value === null || value === undefined) return '—';
 	return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
