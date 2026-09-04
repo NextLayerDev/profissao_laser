@@ -1042,3 +1042,60 @@
 		box-shadow: 0 0 30px 8px oklch(0.62 0.24 300 / 0);
 	}
 }
+
+/* ── Impressão ───────────────────────────────────────────────────────────────
+   O app não tinha nenhuma regra de impressão: `window.print()` saía com o
+   documento inteiro — menu lateral, nav da mentoria, coluna do Assistente,
+   rodapé e toasts junto com o conteúdo. Quem imprime é o Raio-X 360° da
+   Evolução, que o aluno leva no papel para a mentoria.
+
+   A abordagem é esconder tudo e revelar só a subárvore marcada com
+   `print-root`, em vez de listar shell/nav/rodapé um a um: a lista quebraria
+   em silêncio no dia em que alguém somasse um elemento novo ao shell.
+
+   O `:has()` é o que mantém a regra inofensiva para o resto do app — sem um
+   `.print-root` na página, nada é escondido e a impressão segue como era.
+   Onde `:has()` não existir, o seletor simplesmente não casa: volta ao
+   comportamento de hoje, nunca a uma folha em branco. */
+@media print {
+	@page {
+		margin: 1.5cm;
+	}
+
+	body:has(.print-root) * {
+		visibility: hidden;
+	}
+
+	body:has(.print-root) .print-root,
+	body:has(.print-root) .print-root * {
+		visibility: visible;
+	}
+
+	/* `visibility: hidden` continua ocupando espaço, então sem tirar o
+	   `print-root` do fluxo o relatório começaria páginas abaixo. */
+	.print-root {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		/* biome-ignore lint/complexity/noImportantStyles: sobrepor utilitário do
+		   Tailwind aplicado no próprio elemento (`bg-surface`) é o caso em que o
+		   !important existe — sem ele, a folha de impressão perde da cascata. */
+		background: #fff !important;
+	}
+
+	/* Quem está no tema escuro tem `text-primary` claro — no papel branco isso
+	   sai invisível. A cor é forçada aqui em vez de desfazer o `.dark`, que é
+	   variante compilada e não dá para reverter por cascata. O fundo dos badges
+	   fica de fora de propósito: o rótulo já diz o status por escrito. */
+	.print-root,
+	.print-root * {
+		/* biome-ignore lint/complexity/noImportantStyles: mesma razão do bloco
+		   acima — é utilitário do Tailwind em cada elemento do relatório. */
+		color: #111 !important;
+		/* biome-ignore lint/complexity/noImportantStyles: idem. */
+		border-color: #d4d4d8 !important;
+		/* biome-ignore lint/complexity/noImportantStyles: idem. */
+		box-shadow: none !important;
+	}
+}
