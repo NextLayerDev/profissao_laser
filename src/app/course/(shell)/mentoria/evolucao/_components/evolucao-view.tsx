@@ -246,36 +246,50 @@ function ComparisonBlock({
 	);
 
 	return (
-		<Table
-			rows={rows}
-			keyExtractor={(row) => row.key}
-			columns={[
-				{ header: 'Métrica', align: 'left', flex: 2, cell: (row) => row.label },
-				{
-					header: comparison.from.label,
-					cell: (row) => (row.from === null ? '—' : String(row.from)),
-				},
-				{
-					header: comparison.to.label,
-					cell: (row) => (row.to === null ? '—' : String(row.to)),
-				},
-				{
-					header: 'Variação',
-					cell: (row) =>
-						row.delta === null ? (
-							'—'
-						) : (
-							<DeltaPill
-								pct={row.delta}
-								unit=""
-								upIsGood={!DOWN_IS_GOOD.has(row.key)}
-								caption={
-									row.deltaPct === null ? undefined : `(${row.deltaPct}%)`
-								}
-							/>
-						),
-				},
-			]}
-		/>
+		// A `Table` do DS é flex com `min-w-0` nas células e `overflow-hidden` no
+		// container: sem uma largura mínima ela não estoura, ELA ESPREME — em
+		// celular as quatro colunas viram quatro tiras de texto quebrado. A
+		// largura mínima é o que transforma isso em rolagem lateral. Está
+		// registrado como vão do DS em docs/mentoria-360-design-system.md.
+		<div className="overflow-x-auto">
+			<div className="min-w-136">
+				<Table
+					rows={rows}
+					keyExtractor={(row) => row.key}
+					columns={[
+						{
+							header: 'Métrica',
+							align: 'left',
+							flex: 2,
+							cell: (row) => row.label,
+						},
+						{
+							header: comparison.from.label,
+							cell: (row) => (row.from === null ? '—' : String(row.from)),
+						},
+						{
+							header: comparison.to.label,
+							cell: (row) => (row.to === null ? '—' : String(row.to)),
+						},
+						{
+							header: 'Variação',
+							cell: (row) =>
+								row.delta === null ? (
+									'—'
+								) : (
+									<DeltaPill
+										pct={row.delta}
+										unit=""
+										upIsGood={!DOWN_IS_GOOD.has(row.key)}
+										caption={
+											row.deltaPct === null ? undefined : `(${row.deltaPct}%)`
+										}
+									/>
+								),
+						},
+					]}
+				/>
+			</div>
+		</div>
 	);
 }

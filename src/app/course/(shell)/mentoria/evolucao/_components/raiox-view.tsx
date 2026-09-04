@@ -86,7 +86,9 @@ export function RaioxView({ report }: { report: MntReport }) {
 		<div
 			className={`${CARD} print-root p-6 mt-6 print:border-0 print:shadow-none`}
 		>
-			<div className="flex items-center justify-between mb-6 print:hidden">
+			{/* `flex-wrap`: o título é longo e o botão não pode ser espremido —
+			    em celular os dois viram duas linhas. */}
+			<div className="flex flex-wrap items-center justify-between gap-3 mb-6 print:hidden">
 				<h3 className="font-display text-lg font-bold text-primary">
 					RAIO-X EMPRESARIAL — Profissão Laser 360°
 				</h3>
@@ -192,7 +194,7 @@ export function RaioxView({ report }: { report: MntReport }) {
 				<ReportSection title="7. Evolução">
 					<div className="flex flex-wrap items-center gap-6">
 						<DonutProgress pct={score ?? 0} caption="maturidade" />
-						<p className="text-secondary flex-1 min-w-[220px]">
+						<p className="text-secondary flex-1 min-w-55">
 							{score === undefined
 								? 'Score de maturidade ainda não calculado.'
 								: `Score de maturidade: ${score}/100.`}{' '}
