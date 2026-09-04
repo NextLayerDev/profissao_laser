@@ -1,8 +1,14 @@
 'use client';
 
 // Modais da gestão de turmas: criar/editar turma, mentores e matrícula.
-import { Loader2, Search, Trash2, UserPlus } from 'lucide-react';
+//
+// `<select>` e `<input type="date">` continuam nativos — o Select do DS é só
+// o gatilho fechado (sem menu) e o Input é um TextInput genérico sem
+// datepicker. Ambos herdam a classe de token via `inputClass`.
+import { Button, buttonLabel, Input } from '@upvox-dev/ui';
+import { Search, Trash2, UserPlus } from 'lucide-react';
 import { useState } from 'react';
+import { Text } from 'react-native-css/components/Text';
 import { toast } from 'sonner';
 import type { MntCohort } from '@/modules/mentoria/types';
 import {
@@ -10,7 +16,7 @@ import {
 	useCohortMutations,
 	useStudentSearch,
 } from './admin-hooks';
-import { Field, inputClass, Modal, primaryBtn, secondaryBtn } from './ui';
+import { Field, inputClass, Modal } from './ui';
 
 // ── Criar / editar turma ─────────────────────────────────────────────────────
 export function CohortFormModal({
@@ -68,10 +74,9 @@ export function CohortFormModal({
 		<Modal title={cohort ? 'Editar turma' : 'Nova turma'} onClose={onClose}>
 			<div className="space-y-4">
 				<Field label="Nome" required>
-					<input
-						className={inputClass}
+					<Input
 						value={name}
-						onChange={(e) => setName(e.target.value)}
+						onChangeText={setName}
 						placeholder="Ex.: Turma 2026.1"
 					/>
 				</Field>
@@ -108,18 +113,12 @@ export function CohortFormModal({
 					</Field>
 				)}
 				<div className="flex justify-end gap-2 pt-2">
-					<button type="button" className={secondaryBtn} onClick={onClose}>
+					<Button variant="secondary" onPress={onClose}>
 						Cancelar
-					</button>
-					<button
-						type="button"
-						className={primaryBtn}
-						onClick={save}
-						disabled={pending}
-					>
-						{pending && <Loader2 className="w-4 h-4 animate-spin" />}
+					</Button>
+					<Button onPress={save} loading={pending}>
 						{cohort ? 'Salvar' : 'Criar turma'}
-					</button>
+					</Button>
 				</div>
 			</div>
 		</Modal>
@@ -182,10 +181,9 @@ export function CohortMentorsModal({
 						de Alunos/Acessos do admin.
 					</p>
 					<Field label="ID do usuário (UUID)" required>
-						<input
-							className={inputClass}
+						<Input
 							value={mentorId}
-							onChange={(e) => setMentorId(e.target.value)}
+							onChangeText={setMentorId}
 							placeholder="00000000-0000-0000-0000-000000000000"
 						/>
 					</Field>
@@ -199,46 +197,35 @@ export function CohortMentorsModal({
 							<option value="assistant">Mentor assistente</option>
 						</select>
 					</Field>
-					<button
-						type="button"
-						className={primaryBtn}
-						onClick={add}
-						disabled={addMentor.isPending}
-					>
-						{addMentor.isPending ? (
-							<Loader2 className="w-4 h-4 animate-spin" />
-						) : (
-							<UserPlus className="w-4 h-4" />
-						)}
-						Adicionar mentor
-					</button>
+					<Button onPress={add} loading={addMentor.isPending}>
+						<UserPlus className="w-4 h-4" />
+						<Text className={buttonLabel({ variant: 'primary' })}>
+							Adicionar mentor
+						</Text>
+					</Button>
 				</div>
 
-				<div className="border-t border-slate-200 dark:border-white/10 pt-4 space-y-3">
+				<div className="border-t border-subtle pt-4 space-y-3">
 					<Field
 						label="Remover mentor (user_id)"
 						hint="A API não expõe a listagem de mentores da turma; a remoção é feita pelo mesmo ID usado na adição."
 					>
-						<input
-							className={inputClass}
+						<Input
 							value={removeId}
-							onChange={(e) => setRemoveId(e.target.value)}
+							onChangeText={setRemoveId}
 							placeholder="user_id do mentor"
 						/>
 					</Field>
-					<button
-						type="button"
-						className={secondaryBtn}
-						onClick={remove}
-						disabled={removeMentor.isPending}
+					<Button
+						variant="secondary"
+						onPress={remove}
+						loading={removeMentor.isPending}
 					>
-						{removeMentor.isPending ? (
-							<Loader2 className="w-4 h-4 animate-spin" />
-						) : (
-							<Trash2 className="w-4 h-4" />
-						)}
-						Remover da turma
-					</button>
+						<Trash2 className="w-4 h-4" />
+						<Text className={buttonLabel({ variant: 'secondary' })}>
+							Remover da turma
+						</Text>
+					</Button>
 				</div>
 			</div>
 		</Modal>
@@ -287,15 +274,14 @@ export function EnrollStudentModal({
 					label="Buscar aluno"
 					hint="Busque por nome ou email (mín. 2 caracteres)."
 				>
-					<div className="relative">
-						<Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-						<input
-							className={`${inputClass} pl-9`}
-							value={query}
-							onChange={(e) => setQuery(e.target.value)}
-							placeholder="nome ou email"
-						/>
-					</div>
+					{/* leadingIcon é a prop do Input pra isto — aposenta o `Search`
+					    absoluto + o hack `pl-9` que existia só por causa dele. */}
+					<Input
+						leadingIcon={<Search className="w-4 h-4 text-muted" />}
+						value={query}
+						onChangeText={setQuery}
+						placeholder="nome ou email"
+					/>
 				</Field>
 
 				{query.trim().length >= 2 && (
@@ -342,10 +328,9 @@ export function EnrollStudentModal({
 							: 'Preenchido pela busca acima, ou cole o UUID manualmente.'
 					}
 				>
-					<input
-						className={inputClass}
+					<Input
 						value={userId}
-						onChange={(e) => setUserId(e.target.value)}
+						onChangeText={setUserId}
 						placeholder="00000000-0000-0000-0000-000000000000"
 					/>
 				</Field>
@@ -354,27 +339,20 @@ export function EnrollStudentModal({
 					label="Nome da empresa"
 					hint="Cria/atualiza a empresa do aluno no programa (opcional se ele já tiver empresa cadastrada)."
 				>
-					<input
-						className={inputClass}
+					<Input
 						value={companyName}
-						onChange={(e) => setCompanyName(e.target.value)}
+						onChangeText={setCompanyName}
 						placeholder="Ex.: Laser Art Studio"
 					/>
 				</Field>
 
 				<div className="flex justify-end gap-2 pt-2">
-					<button type="button" className={secondaryBtn} onClick={onClose}>
+					<Button variant="secondary" onPress={onClose}>
 						Cancelar
-					</button>
-					<button
-						type="button"
-						className={primaryBtn}
-						onClick={submit}
-						disabled={enroll.isPending}
-					>
-						{enroll.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+					</Button>
+					<Button onPress={submit} loading={enroll.isPending}>
 						Matricular
-					</button>
+					</Button>
 				</div>
 			</div>
 		</Modal>

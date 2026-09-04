@@ -62,19 +62,25 @@ export async function listMyJourneys(): Promise<MntJourney[]> {
 export async function listJourneyMeetings(
 	journeyId: string,
 ): Promise<MntJourneyMeeting[]> {
-	const { data } = await api.get(`/v1/me/mentoria/journey/${journeyId}/meetings`);
+	const { data } = await api.get(
+		`/v1/me/mentoria/journey/${journeyId}/meetings`,
+	);
 	return data;
 }
 
 export async function completeMeeting(
 	meetingId: string,
 ): Promise<MntJourneyMeeting> {
-	const { data } = await api.post(`/v1/me/mentoria/meeting/${meetingId}/complete`);
+	const { data } = await api.post(
+		`/v1/me/mentoria/meeting/${meetingId}/complete`,
+	);
 	return data;
 }
 
 // ── Diagnóstico / Formulários ────────────────────────────────────────────────
-export async function getDiagnostic(journeyId: string): Promise<DiagnosticState> {
+export async function getDiagnostic(
+	journeyId: string,
+): Promise<DiagnosticState> {
 	const { data } = await api.get(
 		`/v1/me/mentoria/journey/${journeyId}/diagnostic`,
 	);
@@ -611,7 +617,9 @@ export async function generateRaiox(journeyId: string): Promise<MntReport> {
 }
 
 export async function listReports(journeyId: string): Promise<MntReport[]> {
-	const { data } = await api.get(`/v1/me/mentoria/journey/${journeyId}/reports`);
+	const { data } = await api.get(
+		`/v1/me/mentoria/journey/${journeyId}/reports`,
+	);
 	return data;
 }
 
@@ -677,9 +685,12 @@ export async function setMeetingFeedback(
 	meetingId: string,
 	feedback: string,
 ): Promise<MntJourneyMeeting> {
-	const { data } = await api.post(`/v1/mentoria/meeting/${meetingId}/feedback`, {
-		feedback,
-	});
+	const { data } = await api.post(
+		`/v1/mentoria/meeting/${meetingId}/feedback`,
+		{
+			feedback,
+		},
+	);
 	return data;
 }
 
@@ -784,7 +795,9 @@ export async function enrollStudent(
 	return data;
 }
 
-export async function listMeetingTemplatesAdmin(): Promise<MntMeetingTemplate[]> {
+export async function listMeetingTemplatesAdmin(): Promise<
+	MntMeetingTemplate[]
+> {
 	const { data } = await api.get('/v1/admin/mentoria/meeting-templates');
 	return data;
 }
@@ -817,7 +830,9 @@ export async function createFormTemplate(
 	return data;
 }
 
-export async function publishFormTemplate(id: string): Promise<MntFormTemplate> {
+export async function publishFormTemplate(
+	id: string,
+): Promise<MntFormTemplate> {
 	const { data } = await api.post(
 		`/v1/admin/mentoria/form-template/${id}/publish`,
 	);

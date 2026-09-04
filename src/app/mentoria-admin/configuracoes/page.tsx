@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@upvox-dev/ui';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Header } from '@/components/dashboard/header';
@@ -15,7 +16,6 @@ import {
 	formatDate,
 	inputClass,
 	PageTitle,
-	primaryBtn,
 	Spinner,
 } from '../_components/ui';
 
@@ -85,7 +85,7 @@ export default function ConfiguracoesMentoriaPage() {
 					<Spinner label="Carregando metodologia..." />
 				) : (
 					<div className="space-y-6">
-						<Card>
+						<Card className="p-5">
 							<div className="flex items-center justify-between mb-4">
 								<h3 className="font-semibold text-slate-900 dark:text-slate-100">
 									Pesos por área
@@ -117,18 +117,20 @@ export default function ConfiguracoesMentoriaPage() {
 									</Field>
 								))}
 							</div>
-							<button
-								type="button"
-								onClick={save}
+							{/* Sem `loading=`: o botão original só ficava desabilitado durante
+							    o save, sem spinner — `loading` trocaria o texto por um
+							    ícone giratório, que é comportamento novo, não design. */}
+							<Button
+								onPress={save}
 								disabled={create.isPending}
-								className={`${primaryBtn} mt-5`}
+								className="mt-5"
 							>
 								Salvar como nova versão ativa
-							</button>
+							</Button>
 						</Card>
 
 						{(configs ?? []).length > 0 && (
-							<Card>
+							<Card className="p-5">
 								<h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-3">
 									Histórico de versões
 								</h3>

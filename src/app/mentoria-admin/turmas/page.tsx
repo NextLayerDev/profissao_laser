@@ -1,8 +1,10 @@
 'use client';
 
+import { Button, buttonLabel } from '@upvox-dev/ui';
 import { Pencil, Plus, UserPlus, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import { Text } from 'react-native-css/components/Text';
 import { Header } from '@/components/dashboard/header';
 import type { MntCohort } from '@/modules/mentoria/types';
 import { useCohortsAdmin } from '../_components/admin-hooks';
@@ -17,9 +19,7 @@ import {
 	EmptyState,
 	formatDate,
 	PageTitle,
-	primaryBtn,
 	Spinner,
-	secondaryBtn,
 } from '../_components/ui';
 
 type ModalState =
@@ -42,14 +42,16 @@ export default function TurmasPage() {
 					description="Turmas do programa de mentoria: crie, defina datas e status, gerencie mentores e matricule alunos."
 					backHref="/mentoria-admin"
 					actions={
-						<button
-							type="button"
-							className={primaryBtn}
-							onClick={() => setModal({ kind: 'create' })}
-						>
+						<Button onPress={() => setModal({ kind: 'create' })}>
 							<Plus className="w-4 h-4" />
-							Nova turma
-						</button>
+							{/* O <Button> só embrulha em <Text> quando `children` é uma
+							    string pura. Ícone + texto vira um ARRAY, e um array de
+							    children bypassa o wrap — o texto cru quebra em runtime
+							    ("A text node cannot be a child of a <View>"). */}
+							<Text className={buttonLabel({ variant: 'primary' })}>
+								Nova turma
+							</Text>
+						</Button>
 					}
 				/>
 
@@ -96,36 +98,45 @@ export default function TurmasPage() {
 											</td>
 											<td className="px-5 py-3.5">
 												<div className="flex justify-end gap-2 flex-wrap">
-													<button
-														type="button"
-														className={secondaryBtn}
-														onClick={() =>
+													<Button
+														variant="secondary"
+														onPress={() =>
 															setModal({ kind: 'edit', cohort: c })
 														}
 													>
 														<Pencil className="w-3.5 h-3.5" />
-														Editar
-													</button>
-													<button
-														type="button"
-														className={secondaryBtn}
-														onClick={() =>
+														<Text
+															className={buttonLabel({ variant: 'secondary' })}
+														>
+															Editar
+														</Text>
+													</Button>
+													<Button
+														variant="secondary"
+														onPress={() =>
 															setModal({ kind: 'mentors', cohort: c })
 														}
 													>
 														<Users className="w-3.5 h-3.5" />
-														Mentores
-													</button>
-													<button
-														type="button"
-														className={secondaryBtn}
-														onClick={() =>
+														<Text
+															className={buttonLabel({ variant: 'secondary' })}
+														>
+															Mentores
+														</Text>
+													</Button>
+													<Button
+														variant="secondary"
+														onPress={() =>
 															setModal({ kind: 'enroll', cohort: c })
 														}
 													>
 														<UserPlus className="w-3.5 h-3.5" />
-														Matricular
-													</button>
+														<Text
+															className={buttonLabel({ variant: 'secondary' })}
+														>
+															Matricular
+														</Text>
+													</Button>
 												</div>
 											</td>
 										</tr>

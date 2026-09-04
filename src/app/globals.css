@@ -1,4 +1,149 @@
-@import "tailwindcss";
+/*
+ * Em três partes, e não com o `@import "tailwindcss"` de uma linha.
+ *
+ * O import curto joga todas as utilities em `@layer utilities`, e CSS fora de
+ * layer ganha de CSS dentro de layer — sempre, independente de especificidade
+ * e ordem. O react-native-web (que o @upvox-dev/ui usa) injeta o reset dele em
+ * runtime e fora de layer, então venceria `bg-brand` e companhia: a página
+ * renderiza inteira, com as classes certas e zero estilo.
+ */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css";
+
+/*
+ * Tokens do design system (@upvox-dev/ui). O `@source` que mora dentro dele já
+ * manda o Tailwind escanear o `src` da lib em node_modules — o app não precisa
+ * listar nada.
+ */
+@import "@upvox-dev/ui/theme.css";
+
+/*
+ * Modo escuro dos tokens do design system.
+ *
+ * O @upvox-dev/ui só tem o modo claro — o escuro nunca foi desenhado no Figma.
+ * Como este app abre em dark por padrão (contexts/theme-context.tsx), sem este
+ * bloco todo componente e toda classe do DS ficaria branca sobre a página
+ * preta.
+ *
+ * Os valores NÃO são inventados: são os que a Mentoria já usa hoje no escuro
+ * (bg-white/[0.03] nos cards, border-white/10, #080809 no fundo do admin,
+ * text-gray-400 no texto secundário). O objetivo é que o dark continue
+ * idêntico ao de hoje e só o light vire o visual do Figma.
+ *
+ * Funciona porque as utilities do Tailwind v4 leem `var(--color-*)` em runtime
+ * — redefinir a variável repinta `bg-surface`, `border-subtle` e companhia sem
+ * tocar na lib. É a mesma técnica do playground do @upvox-dev/ui.
+ *
+ * Ressalvas conhecidas:
+ * - `brand-wash` precisa continuar TRANSLÚCIDO. Sólido, a zebra do <Table> do
+ *   DS vira uma faixa roxa ilegível.
+ * - Cores lidas via JS (`colors.muted` no placeholderTextColor, cor dos ícones,
+ *   spinner do <Button>) são congeladas do tokens.json no import e continuam
+ *   claras aqui. Só passa a importar quando adotarmos os componentes React do
+ *   DS — hoje usamos só as classes.
+ * - `.room-light` (que força tema claro numa subárvore) não é tratado: a
+ *   Mentoria não usa. Se algum dia usar, replicar os valores claros aqui.
+ */
+.dark {
+	--color-primary: #f1f5f9;
+	--color-secondary: #cbd5e1;
+	--color-muted: #9ca3af;
+
+	/*
+	 * Opaco de propósito, e não o `rgb(255 255 255 / 0.03)` literal dos cards.
+	 * #0f0f10 é esse 3% de branco já composto sobre o #080809 da página, então
+	 * o card fica igual — mas `bg-surface` passa a servir também no painel do
+	 * modal, que precisa ser opaco (translúcido, a página apareceria através).
+	 * É o que aposenta o #111318 solto que estava no Modal.
+	 */
+	--color-surface: #0f0f10;
+	--color-surface-sunken: #080809;
+
+	--color-subtle: rgb(255 255 255 / 0.1);
+	--color-strong: rgb(255 255 255 / 0.2);
+
+	--color-brand-wash: rgb(124 58 237 / 0.12);
+	--color-overlay: rgb(0 0 0 / 0.5);
+}
+
+/*
+ * Conserta a colisão entre a escala de espaçamento do design system e os
+ * containers do Tailwind.
+ *
+ * O @upvox-dev/ui define `--spacing-xs … --spacing-4xl` (4px … 40px), e no
+ * Tailwind v4 o namespace `--spacing-*` alimenta largura/altura E ganha do
+ * `--container-*`. Resultado: `max-w-md` deixa de ser 28rem e vira 12px —
+ * são 200 usos em 141 arquivos, e a tela de login colapsa para uma coluna de
+ * uma palavra por linha.
+ *
+ * `@utility` (e não uma regra crua) porque é o que preserva as variantes:
+ * `md:max-w-2xl` continua funcionando. Só os nomes que colidem entram aqui;
+ * `max-w-5xl/6xl/7xl` nunca quebraram e seguem vindo do Tailwind. O
+ * espaçamento do DS (`p-md`, `gap-sm`, `h-control-lg`) fica intacto.
+ */
+/*
+ * CSS cru, e não `@utility`: uma `@utility` de nome já existente é MESCLADA na
+ * mesma regra e a declaração built-in fica por último, então o `--spacing-*`
+ * continuaria ganhando. Regra crua, mesma especificidade e depois no arquivo,
+ * vence. Fica fora de `@layer` de propósito — dentro dele perderia para as
+ * utilities do Tailwind, que também são fora de layer.
+ */
+.max-w-xs {
+	max-width: var(--container-xs, 20rem);
+}
+.max-w-sm {
+	max-width: var(--container-sm, 24rem);
+}
+.max-w-md {
+	max-width: var(--container-md, 28rem);
+}
+.max-w-lg {
+	max-width: var(--container-lg, 32rem);
+}
+.max-w-xl {
+	max-width: var(--container-xl, 36rem);
+}
+.max-w-2xl {
+	max-width: var(--container-2xl, 42rem);
+}
+.max-w-3xl {
+	max-width: var(--container-3xl, 48rem);
+}
+.max-w-4xl {
+	max-width: var(--container-4xl, 56rem);
+}
+
+/* As variantes responsivas precisam ser repetidas à mão — CSS cru não gera
+   variante. Hoje o app só usa o breakpoint `sm:`; os oito nomes entram para
+   não quebrar de novo se alguém adicionar um. */
+@media (width >= 40rem) {
+	.sm\:max-w-xs {
+		max-width: var(--container-xs, 20rem);
+	}
+	.sm\:max-w-sm {
+		max-width: var(--container-sm, 24rem);
+	}
+	.sm\:max-w-md {
+		max-width: var(--container-md, 28rem);
+	}
+	.sm\:max-w-lg {
+		max-width: var(--container-lg, 32rem);
+	}
+	.sm\:max-w-xl {
+		max-width: var(--container-xl, 36rem);
+	}
+	.sm\:max-w-2xl {
+		max-width: var(--container-2xl, 42rem);
+	}
+	.sm\:max-w-3xl {
+		max-width: var(--container-3xl, 48rem);
+	}
+	.sm\:max-w-4xl {
+		max-width: var(--container-4xl, 56rem);
+	}
+}
+
 /* `dark:` aplica em qualquer descendente de `.dark`, MENOS subárvores marcadas
    `.room-light` — usado p/ forçar o tema CLARO numa sala (room_v1) mesmo com o
    app em dark. Aditivo: só afeta quem opta por `.room-light`. */
@@ -895,5 +1040,62 @@
 	}
 	50% {
 		box-shadow: 0 0 30px 8px oklch(0.62 0.24 300 / 0);
+	}
+}
+
+/* ── Impressão ───────────────────────────────────────────────────────────────
+   O app não tinha nenhuma regra de impressão: `window.print()` saía com o
+   documento inteiro — menu lateral, nav da mentoria, coluna do Assistente,
+   rodapé e toasts junto com o conteúdo. Quem imprime é o Raio-X 360° da
+   Evolução, que o aluno leva no papel para a mentoria.
+
+   A abordagem é esconder tudo e revelar só a subárvore marcada com
+   `print-root`, em vez de listar shell/nav/rodapé um a um: a lista quebraria
+   em silêncio no dia em que alguém somasse um elemento novo ao shell.
+
+   O `:has()` é o que mantém a regra inofensiva para o resto do app — sem um
+   `.print-root` na página, nada é escondido e a impressão segue como era.
+   Onde `:has()` não existir, o seletor simplesmente não casa: volta ao
+   comportamento de hoje, nunca a uma folha em branco. */
+@media print {
+	@page {
+		margin: 1.5cm;
+	}
+
+	body:has(.print-root) * {
+		visibility: hidden;
+	}
+
+	body:has(.print-root) .print-root,
+	body:has(.print-root) .print-root * {
+		visibility: visible;
+	}
+
+	/* `visibility: hidden` continua ocupando espaço, então sem tirar o
+	   `print-root` do fluxo o relatório começaria páginas abaixo. */
+	.print-root {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		/* biome-ignore lint/complexity/noImportantStyles: sobrepor utilitário do
+		   Tailwind aplicado no próprio elemento (`bg-surface`) é o caso em que o
+		   !important existe — sem ele, a folha de impressão perde da cascata. */
+		background: #fff !important;
+	}
+
+	/* Quem está no tema escuro tem `text-primary` claro — no papel branco isso
+	   sai invisível. A cor é forçada aqui em vez de desfazer o `.dark`, que é
+	   variante compilada e não dá para reverter por cascata. O fundo dos badges
+	   fica de fora de propósito: o rótulo já diz o status por escrito. */
+	.print-root,
+	.print-root * {
+		/* biome-ignore lint/complexity/noImportantStyles: mesma razão do bloco
+		   acima — é utilitário do Tailwind em cada elemento do relatório. */
+		color: #111 !important;
+		/* biome-ignore lint/complexity/noImportantStyles: idem. */
+		border-color: #d4d4d8 !important;
+		/* biome-ignore lint/complexity/noImportantStyles: idem. */
+		box-shadow: none !important;
 	}
 }

@@ -4,6 +4,7 @@
 // ['mentoria', <recurso>, ...ids] — invalidação por prefixo.
 import {
 	useMutation,
+	useQueries,
 	useQuery,
 	useQueryClient,
 } from '@tanstack/react-query';
@@ -155,7 +156,12 @@ export function useTaskMutations(journeyId: string | undefined) {
 			svc.uploadTaskEvidence(taskId, file),
 		onSuccess: invalidate,
 	});
-	return { create, update, uploadEvidence };
+	const addLink = useMutation({
+		mutationFn: ({ taskId, url }: { taskId: string; url: string }) =>
+			svc.addTaskEvidenceLink(taskId, { kind: 'link', url }),
+		onSuccess: invalidate,
+	});
+	return { create, update, uploadEvidence, addLink };
 }
 
 // ── KPIs ─────────────────────────────────────────────────────────────────────
@@ -189,6 +195,22 @@ export function useKpiMutations(journeyId: string | undefined) {
 	return { create, addMeasurement };
 }
 
+/**
+ * Histórico de vários KPIs de uma vez — o gráfico de evolução do dashboard
+ * precisa de N séries, e `useKpiHistory` num laço quebraria a regra dos hooks.
+ * Reusa a MESMA queryKey de `useKpiHistory`, então o cache é compartilhado:
+ * abrir a tela de um KPI depois do dashboard não refaz a chamada.
+ */
+export function useKpiHistories(kpiIds: string[]) {
+	return useQueries({
+		queries: kpiIds.map((kpiId) => ({
+			queryKey: [...ROOT, 'kpi-history', kpiId],
+			queryFn: () => svc.getKpiHistory(kpiId),
+			staleTime: 60_000,
+		})),
+	});
+}
+
 export function useKpiHistory(kpiId: string | undefined) {
 	return useQuery({
 		queryKey: [...ROOT, 'kpi-history', kpiId],
@@ -209,8 +231,7 @@ export function useGoodNews(journeyId: string | undefined) {
 export function usePostGoodNews(journeyId: string | undefined) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (news: string[]) =>
-			svc.postGoodNews(journeyId as string, news),
+		mutationFn: (news: string[]) => svc.postGoodNews(journeyId as string, news),
 		onSuccess: () =>
 			qc.invalidateQueries({ queryKey: [...ROOT, 'good-news', journeyId] }),
 	});
@@ -326,10 +347,7 @@ export function useLive(liveId: string | undefined) {
 	});
 }
 
-export function useLivePlayback(
-	liveId: string | undefined,
-	enabled: boolean,
-) {
+export function useLivePlayback(liveId: string | undefined, enabled: boolean) {
 	return useQuery({
 		queryKey: [...ROOT, 'live-playback', liveId],
 		queryFn: () => svc.getLivePlayback(liveId as string),

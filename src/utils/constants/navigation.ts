@@ -1,8 +1,8 @@
 import {
 	BarChart3,
-	GraduationCap,
 	BrainCircuit,
 	CalendarClock,
+	GraduationCap,
 	Headphones,
 	HelpCircle,
 	Home,
