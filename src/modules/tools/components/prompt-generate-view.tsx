@@ -437,15 +437,24 @@ function BankResultBatch({ pecas }: { pecas: Peca[] }) {
 								<span className="text-xs font-medium text-slate-500 dark:text-slate-400">
 									{uma ? 'Peça' : `Peça ${p.index} de ${pecas.length}`}
 								</span>
-								<a
-									href={p.url}
-									download
+								{/* Via fetch → blob, e não `<a download>`: a peça mora no CDN
+								    (outra origem), e o navegador IGNORA `download` em URL
+								    cross-origin — só abria a imagem na aba, e o aluno saía sem
+								    arquivo. O CDN manda CORS `*`, então o fetch passa. */}
+								<button
+									type="button"
+									onClick={() =>
+										downloadUrl(
+											p.url,
+											`${String(p.index).padStart(3, '0')}-${p.code}.png`,
+										)
+									}
 									className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
 									style={ACCENT_BG}
 								>
 									<Download className="h-3.5 w-3.5" />
 									Baixar
-								</a>
+								</button>
 							</div>
 							<p className="font-mono truncate text-[11px] text-slate-500 dark:text-gray-400">
 								{p.code}
