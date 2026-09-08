@@ -1,5 +1,6 @@
 import {
 	BookOpen,
+	Compass,
 	Eye,
 	Flame,
 	Gift,
@@ -45,6 +46,15 @@ export type QuickAccessItem = {
 };
 
 export const quickAccessItems: QuickAccessItem[] = [
+	{
+		label: 'Mentoria 360°',
+		toolKey: 'mentoria_360',
+		description: 'Raio-X, gestão e evolução da sua empresa',
+		Icon: Compass,
+		section: 'CONTEUDO',
+		href: '/course/mentoria',
+		...TOOL_COLORS.mentoria,
+	},
 	{
 		label: 'Aulas Gravadas',
 		description: 'Acesse todo o conteudo',

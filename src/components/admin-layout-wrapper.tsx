@@ -25,6 +25,7 @@ const ADMIN_PATHS = [
 	'/previas-admin',
 	'/vetorizacao-admin',
 	'/ferramentas',
+	'/mentoria-admin',
 ];
 
 export function AdminLayoutWrapper({

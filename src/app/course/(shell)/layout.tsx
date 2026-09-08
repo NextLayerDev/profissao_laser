@@ -89,7 +89,10 @@ export default function CourseShellLayout({
 						sidebarCollapsed={sidebarCollapsed}
 						onMobileMenuToggle={() => setMobileOpen(true)}
 					/>
-					<main className="flex-1 mt-16 overflow-x-hidden animate-[fade-in-up_0.4s_ease-out_both]">
+					{/* `overflow-x-clip` e não `-hidden`: `hidden` faria o <main> virar scroll
+					    container e quebraria `position: sticky` em toda página do curso.
+					    `clip` recorta o mesmo excesso sem criar container. */}
+					<main className="flex-1 mt-16 overflow-x-clip animate-[fade-in-up_0.4s_ease-out_both]">
 						{children}
 					</main>
 				</div>
