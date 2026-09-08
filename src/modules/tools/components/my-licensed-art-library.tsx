@@ -21,6 +21,7 @@ import {
 	useArchiveMyLicensedArt,
 	useMyLicensedArt,
 } from '../hooks/use-my-licensed-art';
+import { downloadUrl } from '../lib/prompt-bank';
 import type { LicensedBrand } from '../services/licensed-brand.service';
 import type { MyLicensedArt } from '../services/my-licensed-art.service';
 import { artLicenseUrl, useArtQrCode } from './art-license-panel';
@@ -194,6 +195,7 @@ function LoteFechado({
 
 function Peca({ arte }: { arte: MyLicensedArt }) {
 	const { dataUrl, copiado, copiar, baixarQr } = useArtQrCode(arte.code);
+	const arquivo = arte.previewUrl;
 	const arquivar = useArchiveMyLicensedArt();
 	const emitida = new Date(arte.issuedAt).toLocaleDateString('pt-BR');
 	const mover = () =>
@@ -293,11 +295,17 @@ function Peca({ arte }: { arte: MyLicensedArt }) {
 				)}
 
 				<div className="flex flex-wrap items-center gap-1.5">
-					{arte.previewUrl && (
-						<a href={arte.previewUrl} download className={BOTAO}>
+					{arquivo && (
+						/* fetch → blob, não `<a download>`: o navegador ignora `download`
+						   em URL de outra origem (o CDN) e só abria a imagem na aba. */
+						<button
+							type="button"
+							onClick={() => downloadUrl(arquivo, `${arte.code}.png`)}
+							className={BOTAO}
+						>
 							<Download className="h-3 w-3" />
 							Baixar a arte
-						</a>
+						</button>
 					)}
 					<a
 						href={artLicenseUrl(arte.code)}
