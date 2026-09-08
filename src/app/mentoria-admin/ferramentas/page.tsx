@@ -1,6 +1,8 @@
 'use client';
 
+import { Card, EmptyState, PageHeader } from '@upvox-dev/ui';
 import { CheckCircle2, Loader2, Pencil, Plus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Header } from '@/components/dashboard/header';
@@ -13,12 +15,9 @@ import {
 } from '../_components/admin-hooks';
 import {
 	Badge,
-	Card,
-	EmptyState,
 	Field,
 	inputClass,
 	Modal,
-	PageTitle,
 	primaryBtn,
 	Spinner,
 	secondaryBtn,
@@ -54,6 +53,7 @@ type Editing =
 	| null;
 
 export default function FerramentasPage() {
+	const router = useRouter();
 	const tools = useToolDefinitionsAdmin();
 	const [editing, setEditing] = useState<Editing>(null);
 
@@ -69,10 +69,10 @@ export default function FerramentasPage() {
 		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
 			<main className="px-4 md:px-8 py-6 max-w-6xl mx-auto">
-				<PageTitle
+				<PageHeader
 					title="Ferramentas"
-					description="Catálogo de ferramentas da metodologia, organizadas por área da empresa."
-					backHref="/mentoria-admin"
+					subtitle="Catálogo de ferramentas da metodologia, organizadas por área da empresa."
+					onBack={() => router.push('/mentoria-admin')}
 					actions={
 						<button
 							type="button"
@@ -89,7 +89,7 @@ export default function FerramentasPage() {
 					{tools.isLoading ? (
 						<Spinner />
 					) : !sorted.length ? (
-						<EmptyState message="Nenhuma ferramenta cadastrada." />
+						<EmptyState title="Nenhuma ferramenta cadastrada." />
 					) : (
 						<div className="overflow-x-auto">
 							<table className="w-full text-sm">

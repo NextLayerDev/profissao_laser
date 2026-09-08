@@ -1,5 +1,6 @@
 'use client';
 
+import { Card, EmptyState, PageHeader } from '@upvox-dev/ui';
 import {
 	CalendarDays,
 	ClipboardList,
@@ -13,14 +14,7 @@ import {
 import Link from 'next/link';
 import { Header } from '@/components/dashboard/header';
 import { useMentorCohorts } from '@/modules/mentoria/hooks';
-import {
-	Card,
-	cohortStatusBadge,
-	EmptyState,
-	formatDate,
-	PageTitle,
-	Spinner,
-} from './_components/ui';
+import { cohortStatusBadge, formatDate, Spinner } from './_components/ui';
 
 const SECTIONS = [
 	{
@@ -74,9 +68,9 @@ export default function MentoriaAdminHubPage() {
 		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
 			<main className="px-4 md:px-8 py-6 max-w-6xl mx-auto">
-				<PageTitle
+				<PageHeader
 					title="Mentoria 360°"
-					description="Administração do programa de mentoria: turmas, metodologia, materiais e acompanhamento das empresas."
+					subtitle="Administração do programa de mentoria: turmas, metodologia, materiais e acompanhamento das empresas."
 				/>
 
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -108,9 +102,9 @@ export default function MentoriaAdminHubPage() {
 						{cohorts.isLoading ? (
 							<Spinner />
 						) : cohorts.isError ? (
-							<EmptyState message="Não foi possível carregar suas turmas." />
+							<EmptyState title="Não foi possível carregar suas turmas." />
 						) : !cohorts.data?.length ? (
-							<EmptyState message="Você ainda não é mentor de nenhuma turma." />
+							<EmptyState title="Você ainda não é mentor de nenhuma turma." />
 						) : (
 							<ul className="divide-y divide-slate-100 dark:divide-white/5">
 								{cohorts.data.map((c) => (

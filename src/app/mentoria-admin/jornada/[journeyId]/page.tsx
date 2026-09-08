@@ -1,5 +1,6 @@
 'use client';
 
+import { SemaphoreBadge } from '@upvox-dev/ui';
 import {
 	Building2,
 	CheckCircle2,
@@ -15,13 +16,13 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { Header } from '@/components/dashboard/header';
 import { CompanyMapRadar } from '@/modules/mentoria/components/company-map-radar';
-import { SemaphoreBadge } from '@/modules/mentoria/components/semaphore-badge';
 import { useJourneyOverview } from '@/modules/mentoria/hooks';
 import type {
 	MntFormSubmission,
 	MntJourneyMeeting,
 	MntKpi,
 	MntTask,
+	Semaphore,
 } from '@/modules/mentoria/types';
 import { isUnknownAnswer } from '@/modules/mentoria/types';
 import {
@@ -48,6 +49,21 @@ import {
 	Spinner,
 	secondaryBtn,
 } from '../../_components/ui';
+
+/**
+ * O semáforo do indicador (`green`/`yellow`/`red`/`unmeasured`) é vocabulário
+ * da Mentoria — o `SemaphoreBadge` da lib fala `tone` (`success`/`warning`/
+ * `danger`/`neutral`). Mesmo mapeamento de `indicadores-view.tsx`.
+ */
+const SEMAPHORE_BADGE: Record<
+	Semaphore,
+	{ tone: 'success' | 'warning' | 'danger' | 'neutral'; label: string }
+> = {
+	green: { tone: 'success', label: 'Saudável' },
+	yellow: { tone: 'warning', label: 'Atenção' },
+	red: { tone: 'danger', label: 'Crítico' },
+	unmeasured: { tone: 'neutral', label: 'Não medido' },
+};
 
 const MEETING_STATUS: Record<
 	string,
@@ -402,9 +418,18 @@ export default function JourneyDrilldownPage() {
 																: '—'}
 														</td>
 														<td className="px-5 py-3">
-															<SemaphoreBadge
-																value={k.current_semaphore ?? 'unmeasured'}
-															/>
+															{(() => {
+																const badge =
+																	SEMAPHORE_BADGE[
+																		k.current_semaphore ?? 'unmeasured'
+																	];
+																return (
+																	<SemaphoreBadge
+																		tone={badge.tone}
+																		label={badge.label}
+																	/>
+																);
+															})()}
 														</td>
 													</tr>
 												))}
