@@ -16,6 +16,11 @@ export const entitlementToolSchema = z.object({
 	free_quota: z.number().nullable(), // null = ilimitado
 	remaining_free: z.number().nullable(),
 	vox_cost: z.number(),
+	/**
+	 * Custo de cada peça licenciada ALÉM da primeira. 0 = a tool não cobra
+	 * tiragem. Default para o front continuar de pé antes do deploy do upvox.
+	 */
+	license_unit_cost: z.number().default(0),
 	/** Visível/consultável sem assinatura (só leitura). */
 	is_free: z.boolean().default(false),
 });

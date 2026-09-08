@@ -63,18 +63,63 @@ function larguraDoViewBox(texto: string): number | null {
 	return partes.length === 4 && partes[2] > 0 ? partes[2] : null;
 }
 
-/** Envelope do DXF: markup NOSSO, gerado a partir de números do servidor. */
-function svgEnvelope(w: number, h: number, cor: string): string {
-	const pad = Math.max(w, h) * 0.08;
-	const vb = `${-pad} ${-pad} ${w + pad * 2} ${h + pad * 2}`;
-	const traco = Math.max(w, h) / 240;
-	return [
-		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="100%" height="100%">`,
-		`<rect x="0" y="0" width="${w}" height="${h}" fill="${cor}" fill-opacity="0.08" stroke="${cor}" stroke-width="${traco}" stroke-dasharray="${traco * 6} ${traco * 4}" />`,
-		`<line x1="0" y1="${h / 2}" x2="${w}" y2="${h / 2}" stroke="${cor}" stroke-width="${traco / 2}" stroke-opacity="0.35" />`,
-		`<line x1="${w / 2}" y1="0" x2="${w / 2}" y2="${h}" stroke="${cor}" stroke-width="${traco / 2}" stroke-opacity="0.35" />`,
-		'</svg>',
-	].join('');
+/**
+ * O ENVELOPE — a ficha da peça quando o arquivo é DXF.
+ *
+ * ┌─ POR QUE ISTO DEIXOU DE SER UM VIEWPORT ────────────────────────────────┐
+ * │ O envelope já foi desenhado dentro do `VectorViewport`, com pan, zoom e  │
+ * │ régua. Medido na página real: um retângulo tracejado minúsculo perdido   │
+ * │ no meio de ~450 px de área escura, com a legenda "não é o desenho em     │
+ * │ si". Para o cliente final — que abriu um link no celular e não sabe o    │
+ * │ que é DXF — aquilo lia como página quebrada, bem no meio da proposta.    │
+ * │                                                                          │
+ * │ Pan e zoom não servem para um retângulo: não há detalhe para aproximar.  │
+ * │ Então ele virou o que sempre foi de fato — uma FICHA: o retângulo na     │
+ * │ proporção certa, do tamanho de um cartão, com as medidas escritas ao     │
+ * │ lado. Continua sendo markup NOSSO, gerado dos números do SERVIDOR;       │
+ * │ nada do arquivo do visitante entra aqui.                                 │
+ * └──────────────────────────────────────────────────────────────────────────┘
+ */
+function EnvelopeDaPeca({
+	larguraMm,
+	alturaMm,
+	cor,
+}: {
+	larguraMm: number;
+	alturaMm: number;
+	cor: string;
+}) {
+	// A proporção é real; o tamanho na tela, não. Uma peça de 1310 × 150 mm
+	// desenhada "em escala" numa caixa quadrada vira um risco no vazio.
+	const razao = larguraMm / alturaMm;
+	const deitada = razao >= 1;
+	const larguraPct = deitada ? 100 : Math.max(14, razao * 100);
+	const alturaPct = deitada ? Math.max(14, (1 / razao) * 100) : 100;
+
+	return (
+		<div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/5">
+			<div className="flex h-24 w-28 shrink-0 items-center justify-center">
+				<div
+					className="rounded-[3px]"
+					style={{
+						width: `${larguraPct}%`,
+						height: `${alturaPct}%`,
+						border: `2px dashed ${cor}`,
+						background: `color-mix(in srgb, ${cor} 10%, transparent)`,
+					}}
+				/>
+			</div>
+			<div className="min-w-0">
+				<p className="font-mono text-lg font-semibold tabular-nums text-slate-900 dark:text-white">
+					{mm(larguraMm)} × {mm(alturaMm)} mm
+				</p>
+				<p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+					É o espaço que a sua peça ocupa, medido no arquivo que você enviou. O
+					desenho em si é lido no servidor.
+				</p>
+			</div>
+		</div>
+	);
 }
 
 export function QuotePreview({ arquivo, larguraMm, alturaMm, cor }: Props) {
@@ -140,20 +185,7 @@ export function QuotePreview({ arquivo, larguraMm, alturaMm, cor }: Props) {
 
 	if (temMedidas && larguraMm && alturaMm) {
 		return (
-			<figure className="space-y-2">
-				<VectorViewport
-					svg={svgEnvelope(larguraMm, alturaMm, cor)}
-					unitsPerMm={1}
-					widthMm={larguraMm}
-					heightMm={alturaMm}
-				/>
-				<figcaption className="text-xs text-slate-500 dark:text-slate-400">
-					Este é o <strong>espaço que o seu desenho ocupa</strong> —{' '}
-					{mm(larguraMm)} × {mm(alturaMm)} mm —, medido a partir do arquivo que
-					você enviou. Não é o desenho em si: arquivos DXF são lidos no
-					servidor, não no navegador.
-				</figcaption>
-			</figure>
+			<EnvelopeDaPeca larguraMm={larguraMm} alturaMm={alturaMm} cor={cor} />
 		);
 	}
 

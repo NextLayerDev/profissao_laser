@@ -12,6 +12,7 @@ import {
 	getAppointmentsByCustomer,
 	getAppointmentsByTechnician,
 	getAvailableSlots,
+	getClientCooldown,
 	updateAppointmentStatus,
 	updateAppointmentTechnician,
 } from '@/services/appointments';
@@ -91,6 +92,40 @@ export function useAvailableSlotsForAnyTechnician(
 	const error = results.find((r) => r.error)?.error;
 
 	return { slots, slotToTechnicianIds, isLoading, error };
+}
+
+/**
+ * Situação do intervalo mínimo entre atendimentos do cliente.
+ *
+ * A key começa com 'appointments', então toda mutação de agendamento
+ * (criar/cancelar/mudar status/apagar) já invalida isto de graça — o banner
+ * some sozinho quando o cliente cancela.
+ */
+export function useClientCooldown(
+	email?: string | null,
+	phone?: string | null,
+	opts?: { from?: string; days?: number },
+) {
+	const enabled = !!email && email.includes('@');
+	const { data, isLoading } = useQuery({
+		queryKey: [
+			'appointments',
+			'cooldown',
+			email ?? null,
+			phone ?? null,
+			opts?.from ?? null,
+		],
+		queryFn: () =>
+			getClientCooldown({
+				email: email ?? undefined,
+				phone: phone ?? undefined,
+				from: opts?.from,
+				days: opts?.days,
+			}),
+		enabled,
+		staleTime: 30_000,
+	});
+	return { cooldown: data ?? null, isLoading: enabled && isLoading };
 }
 
 export function useAppointmentsByTechnician(technicianId: string | null) {

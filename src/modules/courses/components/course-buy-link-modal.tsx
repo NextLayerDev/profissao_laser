@@ -89,7 +89,7 @@ export function CourseBuyLinkModal({
 	);
 }
 
-function LinkRow({
+export function LinkRow({
 	title,
 	subtitle,
 	url,

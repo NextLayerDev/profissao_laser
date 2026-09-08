@@ -5,15 +5,21 @@ import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
 	useAvailableSlots,
+	useClientCooldown,
 	useCreateAppointment,
 } from '@/hooks/use-appointments';
 import { useUsers } from '@/hooks/use-users';
 import { getCurrentUser } from '@/lib/auth';
+import { getApiErrorMessage } from '@/shared/lib/api-error';
 import type { CreateAppointmentPayload } from '@/types/appointments';
 import { getAvailableTechniciansAtSlot } from '@/utils/agendamentos/technician-availability';
 import { APPOINTMENT_MACHINES } from '@/utils/constants/appointment-machines';
 import { APPOINTMENT_SERVICES } from '@/utils/constants/appointment-services';
+import { formatAppointmentDate } from '@/utils/formatDate';
 import { TimeSlotPicker } from './time-slot-picker';
+
+const shortDate = (d: string) =>
+	formatAppointmentDate(d, { day: '2-digit', month: '2-digit' });
 
 interface AppointmentFormProps {
 	onSuccess?: (data: { date: string; time: string; service: string }) => void;
@@ -62,6 +68,17 @@ export function AppointmentForm({
 		blocked: slotsBlocked,
 		reason: slotsBlockedReason,
 	} = useAvailableSlots(!hasAvailabilityData && date ? date : null);
+
+	// Intervalo mínimo entre atendimentos do próprio cliente. NÃO é condicionado
+	// a `hasAvailabilityData` como a query de slots acima: quando o form é
+	// montado com `appointments` (caminho admin), aquela query fica desligada,
+	// mas o aviso do intervalo ainda precisa aparecer.
+	// Sem telefone de propósito: pra quem não é staff o back resolve a
+	// identidade pelo token e ignora os params — passar o telefone digitado só
+	// faria a query refazer a cada tecla.
+	const { cooldown } = useClientCooldown(user?.email ?? customerEmail);
+	const cooldownBlocksDate =
+		!!date && !!cooldown?.enabled && cooldown.blockedDates.includes(date);
 
 	useEffect(() => {
 		if (user?.name) setCustomerName(user.name);
@@ -131,18 +148,15 @@ export function AppointmentForm({
 				setNotes('');
 			},
 			onError: (err: unknown) => {
-				const status =
-					err &&
-					typeof err === 'object' &&
-					'response' in err &&
-					(err as { response?: { status?: number } }).response?.status;
-				if (status === 409 || status === 400) {
-					toast.error(
-						'Horário indisponível. Por favor, selecione outro horário.',
-					);
-				} else {
-					toast.error('Erro ao criar agendamento. Tente novamente.');
-				}
+				// A API manda mensagem em pt-BR já explicando o motivo (horário
+				// ocupado, intervalo mínimo entre atendimentos). Um texto genérico
+				// aqui esconderia justamente a parte que o cliente precisa ler.
+				toast.error(
+					getApiErrorMessage(
+						err,
+						'Erro ao criar agendamento. Tente novamente.',
+					),
+				);
 			},
 		});
 	}
@@ -157,6 +171,19 @@ export function AppointmentForm({
 			<h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
 				Novo agendamento
 			</h3>
+
+			{cooldown?.enabled && cooldown.lastAppointment && (
+				<div className="mb-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3 text-sm text-slate-600 dark:text-gray-400">
+					Você já tem um atendimento em{' '}
+					<strong className="font-medium text-slate-900 dark:text-white">
+						{shortDate(cooldown.lastAppointment.date)} às{' '}
+						{cooldown.lastAppointment.time}
+					</strong>
+					. Entre um atendimento e outro é preciso um intervalo de{' '}
+					{cooldown.hours}h — escolha a data abaixo pra ver os horários
+					disponíveis.
+				</div>
+			)}
 
 			<div className="grid gap-4 sm:grid-cols-2">
 				<div>
@@ -251,7 +278,11 @@ export function AppointmentForm({
 							setDate(e.target.value);
 							setTime('');
 						}}
-						min={today}
+						min={
+							cooldown?.nextAllowedDate && cooldown.nextAllowedDate > today
+								? cooldown.nextAllowedDate
+								: today
+						}
 						required
 						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500/50"
 					/>
@@ -282,6 +313,14 @@ export function AppointmentForm({
 					{slotsBlocked && slotsBlockedReason ? (
 						<div className="rounded-xl border border-amber-200 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-950/20 p-3 text-sm text-amber-700 dark:text-amber-300">
 							{slotsBlockedReason}
+						</div>
+					) : cooldownBlocksDate ? (
+						<div className="rounded-xl border border-amber-200 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-950/20 p-3 text-sm text-amber-700 dark:text-amber-300">
+							Esta data está dentro do intervalo mínimo de {cooldown?.hours}h
+							{cooldown?.lastAppointment
+								? ` do seu atendimento de ${shortDate(cooldown.lastAppointment.date)} às ${cooldown.lastAppointment.time}`
+								: ''}
+							. Escolha outra data.
 						</div>
 					) : (
 						<TimeSlotPicker
@@ -318,8 +357,8 @@ export function AppointmentForm({
 
 			<button
 				type="submit"
-				disabled={createMutation.isPending}
-				className="mt-6 flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-2.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white font-medium rounded-xl transition-colors"
+				disabled={createMutation.isPending || cooldownBlocksDate}
+				className="mt-6 flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-2.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-colors"
 			>
 				{createMutation.isPending ? (
 					<>

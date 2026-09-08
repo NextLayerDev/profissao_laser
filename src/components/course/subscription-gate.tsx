@@ -8,14 +8,15 @@ import { useEntitlements } from '@/hooks/use-entitlements';
 import { getToken } from '@/lib/auth';
 
 /**
- * Gates a tool area: only customers with an ACTIVE plan (or test-unlimited, or
- * staff) can enter. Access is 100% plan-driven — no active plan ⇒ "assine um
+ * Gates a CONTENT area: only customers with an ACTIVE plan (or test-unlimited,
+ * or staff) can enter. Access is 100% plan-driven — no active plan ⇒ "assine um
  * plano". Per-tool USAGE is gated separately (at invoke time). Replaces the old
  * all-or-nothing AccessGate + per-course feature model.
  *
- * `toolKey` opcionalmente libera a página quando essa tool está marcada como
- * grátis (`is_free`) — modo só leitura: a página abre, mas usar/rodar a tool
- * continua bloqueado pelo billing (use/invoke exigem plano).
+ * `toolKey` opcionalmente libera a página quando essa área está marcada como
+ * grátis (`is_free`). Só sobra nas áreas SOCIAIS (comunidade, dúvidas, membros,
+ * eventos, vitrine): as ferramentas não usam mais este gate — abrem pra todo
+ * aluno e travam no uso, pelo saldo de voxxys (`useToolBilling`).
  */
 export function SubscriptionGate({
 	children,

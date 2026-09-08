@@ -227,6 +227,126 @@ export const EXTRA_BLOCKS: BlockSpec[] = [
 		],
 	},
 	{
+		/**
+		 * Sem BlockSpec aqui, a tool inteira abre em MODO CÓDIGO na Fábrica — é
+		 * `resolveSpec` que decide, e um id fora do catálogo derruba a tela visual.
+		 */
+		id: 'quote.perfil_padrao',
+		label: 'Perfil de custo (6 perguntas)',
+		sub: 'Máquina, horas, ganho, lucro, nota e mínimo → os 31 campos do perfil',
+		icon: 'Wrench',
+		accent: 'emerald',
+		category: 'util',
+		params: [
+			{
+				name: 'tool',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Tool dona das coleções',
+				default: 'central_custos',
+			},
+			{
+				name: 'maquinas_collection',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Coleção de máquinas',
+				hint: 'Tabela de referência que o admin edita sem deploy. Vazia, vale o padrão que vem no código.',
+				default: 'maquinas',
+			},
+			{
+				name: 'maquina_classe',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Que máquina você tem?',
+				hint: 'Id da classe (ex.: co2_100, fibra_30) ou "outra".',
+				default: 'outra',
+			},
+			{
+				name: 'horas_uteis_dia',
+				kind: 'literal',
+				valueType: 'number',
+				label: 'Horas por dia na máquina',
+				hint: 'Define o prazo, a vida útil da máquina e o custo da sua hora.',
+				min: 0.5,
+				max: 24,
+			},
+			{
+				name: 'ganho_mensal',
+				kind: 'literal',
+				valueType: 'number',
+				label: 'Quanto quer ganhar por mês (R$)',
+				min: 0,
+				max: 1000000,
+			},
+			{
+				name: 'markup_pct',
+				kind: 'literal',
+				valueType: 'number',
+				label: 'Lucro sobre o custo (%)',
+				hint: '100% = o dobro do custo = 50% de margem. A margem é preenchida sozinha.',
+				min: 0,
+				max: 5000,
+			},
+			{
+				name: 'regime_fiscal',
+				kind: 'literal',
+				valueType: 'enum',
+				label: 'Você emite nota?',
+				default: 'simples_servicos',
+				options: ['sem_nota', 'mei', 'simples_comercio', 'simples_servicos'],
+			},
+			{
+				name: 'pedido_minimo',
+				kind: 'literal',
+				valueType: 'number',
+				label: 'Pedido mínimo (R$)',
+				hint: 'No trabalho de 1 peça é ESTE campo que decide o preço — nenhum outro.',
+				min: 0,
+				max: 1000000,
+			},
+			{
+				name: 'overrides',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Correções do aluno (JSON)',
+				hint: 'O que ele discordou, na escala da coleção: {"consumiveis_hora": 0.4}.',
+				default: '',
+				widget: 'textarea',
+			},
+		],
+		outputs: [
+			{ name: 'data', type: 'string', label: 'Registro do perfil (objeto)' },
+			{ name: 'json', type: 'string', label: 'Registro do perfil (JSON)' },
+			{
+				name: 'assumidos',
+				type: 'string',
+				label: 'O que foi assumido (lista)',
+			},
+			{
+				name: 'assumidos_json',
+				type: 'string',
+				label: 'O que foi assumido (JSON)',
+			},
+			{
+				name: 'assumidos_count',
+				type: 'number',
+				label: 'Quantos campos ele não precisou responder',
+			},
+			{ name: 'maquina', type: 'string', label: 'Máquina reconhecida' },
+			{ name: 'maquina_classe', type: 'string', label: 'Id da classe' },
+			{
+				name: 'taxa_hora',
+				type: 'number',
+				label: 'Taxa-hora da máquina (R$/h)',
+			},
+			{
+				name: 'custo_hora_operador',
+				type: 'number',
+				label: 'Custo da sua hora (R$/h)',
+			},
+		],
+	},
+	{
 		id: 'quote.price',
 		label: 'Orçamento',
 		sub: 'Custo e preço de venda — material, tempo, margem e desconto',
@@ -412,6 +532,14 @@ export const EXTRA_BLOCKS: BlockSpec[] = [
 				default: 'perfil',
 				options: ['perfil', 'markup', 'margem'],
 			},
+			{
+				name: 'curva_qtds',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Curva de escala (quantidades)',
+				hint: 'Ex.: 1|10|50|100. O preço é recalculado para cada uma, com rateio de setup e faixa de desconto. Custo zero: a conta é pura e não vai ao banco de novo. Vazio desliga.',
+				default: '',
+			},
 		],
 		outputs: [
 			{ name: 'breakdown', type: 'string', label: 'Detalhamento (objeto)' },
@@ -434,6 +562,23 @@ export const EXTRA_BLOCKS: BlockSpec[] = [
 			},
 			{ name: 'price_unit', type: 'string', label: 'Preço unitário (R$)' },
 			{ name: 'price_total', type: 'string', label: 'Preço total (R$)' },
+			{ name: 'lucro', type: 'string', label: 'Sobra do pedido (objeto)' },
+			{
+				name: 'profit_total_cents',
+				type: 'number',
+				label: 'Sobra no pedido (centavos)',
+			},
+			{
+				name: 'profit_unit_cents',
+				type: 'number',
+				label: 'Sobra por peça (centavos)',
+			},
+			{
+				name: 'floor_unit_cents',
+				type: 'number',
+				label: 'Piso: menor unitário sem prejuízo (centavos)',
+			},
+			{ name: 'curva', type: 'string', label: 'Curva de escala (lista)' },
 			{
 				name: 'cost_unit_cents',
 				type: 'number',
@@ -672,6 +817,58 @@ export const EXTRA_BLOCKS: BlockSpec[] = [
 		outputs: [
 			{ name: 'png', type: 'buffer', label: 'PNG' },
 			{ name: 'pngBase64', type: 'string', label: 'PNG (base64)' },
+		],
+	},
+	{
+		/**
+		 * A paleta do logo, para o cadastro de marca não pedir hexadecimal.
+		 *
+		 * O spec entra aqui pela armadilha que este arquivo inteiro existe para
+		 * evitar: bloco sem `BlockSpec` faz `resolveSpec` devolver nada, e o
+		 * builder força a tool para o MODO CÓDIGO (`tool-builder-view`), tirando
+		 * do admin a edição visual. Já custou uma rodada quando faltavam 23.
+		 */
+		id: 'image.palette',
+		label: 'Cores da imagem',
+		sub: 'As cores dominantes em hex — k-means local, sem IA',
+		icon: 'Palette',
+		accent: 'fuchsia',
+		category: 'image',
+		params: [
+			{
+				name: 'image',
+				kind: 'ref',
+				refType: 'buffer',
+				label: 'Imagem',
+				hint: 'O logo do aluno, ou a saída PNG de um nó anterior.',
+				required: true,
+			},
+			{
+				name: 'colors',
+				kind: 'literal',
+				valueType: 'number',
+				label: 'Quantas cores',
+				hint: 'Marca costuma caber em 3 a 5.',
+				default: 5,
+			},
+			{
+				name: 'remove_background',
+				kind: 'literal',
+				valueType: 'bool',
+				label: 'Descontar o fundo',
+				hint: 'Ligado: o branco de fundo do logo não conta como cor da marca.',
+				default: true,
+			},
+		],
+		// `output` da definition é ALLOW-LIST: chave que o bloco emite e não está
+		// mapeada lá é calculada e jogada fora sem erro.
+		outputs: [
+			// `PortType` só tem `buffer|string|number`: lista vai como `string`, que
+			// é como o motor a entrega para quem referencia o nó.
+			{ name: 'colors', type: 'string', label: 'Cores (hex)' },
+			{ name: 'palette', type: 'string', label: 'Paleta com a fatia de área' },
+			{ name: 'primary', type: 'string', label: 'Cor primária' },
+			{ name: 'secondary', type: 'string', label: 'Cor secundária' },
 		],
 	},
 	{
@@ -1884,6 +2081,1176 @@ export const EXTRA_BLOCKS: BlockSpec[] = [
 				label: 'Comprimento de gravação (mm)',
 			},
 			{ name: 'pierces', type: 'number', label: 'Furos/pierces' },
+		],
+	},
+
+	/* ── Blocos que faltavam e derrubavam tools para o MODO CÓDIGO ──
+	   `tool-builder-view` força `setMode('json')` quando UM nó do pipeline não
+	   resolve spec. Sem estes quatro, a Central de Inteligência e o Estúdio de
+	   Imagens — as duas tools mais novas — abriam sem edição visual. Spec
+	   PARCIAL é seguro: `buildDoc`/`docToState` preservam todo param verbatim;
+	   o spec só decide quem ganha campo na tela. */
+	{
+		id: 'ai.image_studio',
+		label: 'Estúdio de imagem',
+		sub: 'Gera, varia, edita com máscara, amplia, tira fundo, faz textura ou arte de corte',
+		icon: 'Sparkles',
+		accent: 'fuchsia',
+		category: 'image',
+		params: [
+			{
+				name: 'mode',
+				kind: 'literal',
+				valueType: 'enum',
+				label: 'O que fazer',
+				default: 'texto_imagem',
+				options: [
+					'texto_imagem',
+					'variacao',
+					'editar_mascara',
+					'ampliar',
+					'remover_fundo',
+					'textura',
+					'vetorizavel',
+				],
+			},
+			{
+				name: 'prompt',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Descrição da arte',
+				hint: 'Não usado em Ampliar e Remover fundo.',
+			},
+			{ name: 'image', kind: 'ref', refType: 'buffer', label: 'Imagem base' },
+			{ name: 'image2', kind: 'ref', refType: 'buffer', label: 'Referência 2' },
+			{ name: 'image3', kind: 'ref', refType: 'buffer', label: 'Referência 3' },
+			{
+				name: 'mask',
+				kind: 'ref',
+				refType: 'buffer',
+				label: 'Máscara',
+				hint: 'PNG: branco repinta, preto preserva.',
+			},
+			{
+				name: 'aspect',
+				kind: 'literal',
+				valueType: 'enum',
+				label: 'Formato',
+				default: '1:1',
+				options: ['1:1', '4:3', '3:4', '16:9', '9:16', '3:2', '2:3'],
+			},
+			{
+				name: 'factor',
+				kind: 'literal',
+				valueType: 'enum',
+				label: 'Ampliar em',
+				default: '2',
+				options: ['2', '4', '8', '16'],
+			},
+			{ name: 'model', kind: 'ref', refType: 'string', label: 'Modelo' },
+			{
+				name: 'style_suffix',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Sufixo de estilo',
+			},
+			{
+				name: 'style_system',
+				kind: 'ref',
+				refType: 'string',
+				label: 'System do estilo',
+				hint: 'Vence o `system_prompt` da Fábrica.',
+			},
+		],
+		outputs: [
+			{ name: 'png', type: 'buffer', label: 'PNG' },
+			{ name: 'pngBase64', type: 'string', label: 'PNG em base64' },
+			{ name: 'mode', type: 'string', label: 'Modo usado' },
+			{ name: 'aspect', type: 'string', label: 'Formato' },
+			{ name: 'width', type: 'number', label: 'Largura' },
+			{ name: 'height', type: 'number', label: 'Altura' },
+			{ name: 'model', type: 'string', label: 'Modelo que respondeu' },
+			{ name: 'prompt', type: 'string', label: 'Prompt final' },
+			{ name: 'cost_multiplier', type: 'number', label: 'Multiplicador' },
+			{ name: 'vectorReady', type: 'string', label: 'Pronto para vetor' },
+			{ name: 'tileable', type: 'string', label: 'Repetível' },
+		],
+	},
+	{
+		id: 'output.save_gallery',
+		label: 'Salvar na galeria',
+		sub: 'Sobe a imagem, gera miniatura e grava o registro do aluno',
+		icon: 'Images',
+		accent: 'emerald',
+		category: 'output',
+		params: [
+			{
+				name: 'from',
+				kind: 'ref',
+				refType: 'buffer',
+				label: 'Imagem',
+				required: true,
+			},
+			{
+				name: 'tool',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Tool dona da galeria',
+				required: true,
+			},
+			{
+				name: 'collection',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Coleção',
+				default: 'galeria',
+			},
+			{
+				name: 'folder',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Pasta na CDN',
+				default: 'estudio-imagens',
+			},
+			{ name: 'prompt', kind: 'ref', refType: 'string', label: 'Prompt' },
+			{ name: 'modo', kind: 'ref', refType: 'string', label: 'Modo' },
+			{ name: 'modelo', kind: 'ref', refType: 'string', label: 'Modelo' },
+			{ name: 'aspecto', kind: 'ref', refType: 'string', label: 'Formato' },
+			{
+				name: 'parent_id',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Veio de qual imagem',
+				hint: 'É o que forma a árvore de iterações da galeria.',
+			},
+			{
+				name: 'visibility',
+				kind: 'literal',
+				valueType: 'enum',
+				label: 'Quem enxerga',
+				default: 'owner',
+				options: ['owner', 'public'],
+			},
+		],
+		outputs: [
+			{ name: 'url', type: 'string', label: 'URL da imagem' },
+			{ name: 'thumb_url', type: 'string', label: 'URL da miniatura' },
+			{ name: 'entry_id', type: 'string', label: 'Id do registro' },
+			{ name: 'saved', type: 'string', label: 'Gravou?' },
+			{ name: 'save_error', type: 'string', label: 'Erro de gravação' },
+		],
+	},
+	{
+		id: 'ai.vision',
+		label: 'Olhar uma foto',
+		sub: 'Lê a imagem e devolve uma ficha em JSON — classes e faixas, nunca medida fina',
+		icon: 'Eye',
+		accent: 'sky',
+		category: 'ai',
+		params: [
+			{
+				name: 'image',
+				kind: 'ref',
+				refType: 'buffer',
+				label: 'Foto',
+				hint: 'Sem foto, o bloco usa o `fallback` e roda como texto.',
+			},
+			{
+				name: 'fallback',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Descrição digitada',
+			},
+			{
+				name: 'user',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'O que perguntar',
+				required: true,
+			},
+			{
+				name: 'system',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Papel',
+			},
+			{
+				name: 'contexto',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Contexto',
+				hint: 'Tipicamente a saída de um `collection.query` — é o que dá vocabulário fechado à classificação.',
+			},
+			{
+				name: 'contexto_label',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Rótulo do contexto',
+				default: 'Contexto',
+			},
+			{ name: 'model', kind: 'ref', refType: 'string', label: 'Modelo' },
+			{
+				name: 'max_tokens',
+				kind: 'literal',
+				valueType: 'int',
+				label: 'Teto de resposta',
+				default: 900,
+			},
+		],
+		outputs: [
+			{ name: 'json', type: 'string', label: 'Ficha em JSON' },
+			{ name: 'text', type: 'string', label: 'Texto cru' },
+			{ name: 'model', type: 'string', label: 'Modelo que respondeu' },
+			{ name: 'usou_imagem', type: 'string', label: 'Tinha foto?' },
+		],
+	},
+	{
+		id: 'ai.research_team',
+		label: 'Time de especialistas',
+		sub: 'Roda o time da coleção `agentes` em ondas e devolve o que cada um apurou',
+		icon: 'Users',
+		accent: 'amber',
+		category: 'ai',
+		params: [
+			{
+				name: 'tool',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Tool dona do time',
+				required: true,
+			},
+			{
+				name: 'agentes_collection',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Coleção do time',
+				default: 'agentes',
+			},
+			{
+				name: 'pesquisas_collection',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Coleção do cache',
+				default: 'pesquisas',
+			},
+			{
+				name: 'modo',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Modo',
+				hint: 'rapido = 5 especialistas · profundo = 22.',
+			},
+			{ name: 'escopo', kind: 'ref', refType: 'string', label: 'Escopo' },
+			{
+				name: 'vars',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Variáveis do template',
+				hint: 'JSON com `produto`, `categoria_slug`, `material`, `uf`.',
+			},
+			{
+				name: 'concorrencia',
+				kind: 'literal',
+				valueType: 'int',
+				label: 'Quantos em paralelo',
+				default: 10,
+			},
+			{
+				name: 'ttl_dias',
+				kind: 'literal',
+				valueType: 'int',
+				label: 'Validade do cache',
+				default: 7,
+			},
+			{
+				name: 'forcar',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Ignorar o cache',
+			},
+		],
+		outputs: [
+			{ name: 'agentes', type: 'string', label: 'O que cada um apurou' },
+			{ name: 'fontes', type: 'string', label: 'Páginas abertas' },
+			{ name: 'observacoes', type: 'string', label: 'Preços observados' },
+			{ name: 'price_stats', type: 'string', label: 'Estatística de preço' },
+			{ name: 'preco_confiavel', type: 'string', label: 'Amostra sustenta?' },
+			{ name: 'produtos_para_comecar', type: 'string', label: 'Produtos' },
+			{ name: 'cache_quente', type: 'string', label: 'Veio do cache?' },
+			{ name: 'cache_idade_dias', type: 'number', label: 'Idade do cache' },
+			{ name: 'falhas', type: 'string', label: 'Quem não entregou' },
+			{ name: 'avisos', type: 'string', label: 'Ressalvas' },
+			{ name: 'custo_usd', type: 'number', label: 'Custo em USD' },
+		],
+	},
+	{
+		/**
+		 * O time do Ateliê. Sem esta ficha o `estudio_imagens` abre em MODO
+		 * CÓDIGO — `loadFabrica` força o JSON quando um bloco do pipeline não
+		 * resolve no catálogo, e o admin perde a edição visual da tool inteira.
+		 */
+		id: 'ai.art_team',
+		label: 'Time do Ateliê',
+		sub: 'Lê a foto, a marca e as referências e escreve o PROMPT da arte (a imagem é do nó seguinte)',
+		icon: 'Palette',
+		accent: 'violet',
+		category: 'ai',
+		params: [
+			{
+				name: 'tool',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Tool dona do time',
+				hint: 'Onde mora a coleção `agentes` — normalmente a própria.',
+				required: true,
+			},
+			{
+				name: 'agentes_collection',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Coleção do time',
+				default: 'agentes',
+			},
+			{
+				name: 'foto_produto',
+				kind: 'ref',
+				refType: 'buffer',
+				label: 'Foto do produto',
+				hint: 'Quem declarou `entrada: foto_produto` no roster é quem a vê.',
+			},
+			{
+				name: 'referencia',
+				kind: 'ref',
+				refType: 'buffer',
+				label: 'Anúncio de referência 1',
+			},
+			{
+				name: 'referencia2',
+				kind: 'ref',
+				refType: 'buffer',
+				label: 'Anúncio de referência 2',
+			},
+			{
+				name: 'referencia3',
+				kind: 'ref',
+				refType: 'buffer',
+				label: 'Anúncio de referência 3',
+			},
+			{
+				name: 'marca',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Marca do aluno',
+				hint: 'Saída de um `collection.query` em estudio_imagens/marca. Sem marca o time roda igual.',
+			},
+			{
+				name: 'vars',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Variáveis do briefing',
+				hint: 'JSON com o que o aluno digitou — ex.: `{"sobre":"copo térmico para presente"}`.',
+			},
+			{
+				name: 'entrega',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Caminho escolhido',
+				hint: 'post · anuncio · cena · gravar. Filtra o roster e alimenta {entrega}.',
+			},
+			{
+				name: 'entrega_frase',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Frase do caminho',
+				hint: 'O que entra em {entrega} no pedido — ex.: "um post para redes".',
+			},
+			{
+				name: 'formato',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Formato',
+				hint: '1:1, 4:5, 9:16 — vira {formato} no pedido de cada especialista.',
+			},
+			{
+				name: 'paleta',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Paleta lida da imagem',
+				hint: 'Saída de um `image.palette` — cores que EXISTEM no material.',
+			},
+			{
+				name: 'concorrencia',
+				kind: 'literal',
+				valueType: 'int',
+				label: 'Quantos em paralelo',
+				default: 4,
+			},
+			{
+				name: 'busca',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Olhar o mercado',
+				hint: 'Desligado por padrão: o time trabalha com o que o aluno deu.',
+			},
+		],
+		outputs: [
+			{ name: 'prompt_final', type: 'string', label: 'O prompt da arte' },
+			{
+				name: 'prompt_negativo',
+				type: 'string',
+				label: 'O que não pode aparecer',
+			},
+			{
+				name: 'por_que_assim',
+				type: 'string',
+				label: 'Por que a arte é assim',
+			},
+			{ name: 'titulo', type: 'string', label: 'Título' },
+			{ name: 'chamada', type: 'string', label: 'Chamada' },
+			{ name: 'legenda', type: 'string', label: 'Legenda' },
+			{ name: 'hashtags', type: 'string', label: 'Hashtags' },
+			{ name: 'texto_na_arte', type: 'string', label: 'Frase dentro da arte' },
+			{ name: 'agentes', type: 'string', label: 'A mesa de criação' },
+			{ name: 'ficha_produto', type: 'string', label: 'Leitura do produto' },
+			{
+				name: 'regras_visuais',
+				type: 'string',
+				label: 'Regras visuais da marca',
+			},
+			{
+				name: 'referencias_lidas',
+				type: 'string',
+				label: 'Leitura das referências',
+			},
+			{ name: 'direcao_arte', type: 'string', label: 'Direção de arte' },
+			{ name: 'briefing', type: 'string', label: 'Material do time' },
+			{ name: 'marca_usada', type: 'string', label: 'Marca usada' },
+			{ name: 'ok_count', type: 'number', label: 'Quantos entregaram' },
+			{ name: 'falhas', type: 'string', label: 'Quem não entregou' },
+			{ name: 'avisos', type: 'string', label: 'Ressalvas' },
+			{ name: 'custo_usd', type: 'number', label: 'Custo em USD' },
+			{ name: 'ms', type: 'number', label: 'Tempo do time (ms)' },
+		],
+	},
+	{
+		id: 'image.kit_crops',
+		label: 'Kit de formatos',
+		sub: 'Recorta a mesma arte em feed, retrato, story e capa — e recusa o recorte que cortaria a peça ou o texto',
+		icon: 'LayoutGrid',
+		accent: 'violet',
+		category: 'image',
+		params: [
+			{
+				name: 'image',
+				kind: 'ref',
+				refType: 'buffer',
+				label: 'A arte pronta',
+				hint: 'Entra DEPOIS da geração: o kit não gera imagem nenhuma, só recorta a que já existe.',
+				required: true,
+			},
+			{
+				name: 'logo',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Logo da marca (URL)',
+				hint: 'O kit CARIMBA o logo em cada peça, depois de recortar. Use a URL que o time devolve (`<nó do time>.marca_logo_url`) — é o logo da marca que o time realmente usou.',
+			},
+			{
+				name: 'direcao_arte',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Direção de arte (objeto)',
+				hint: 'O objeto INTEIRO do Diretor de Arte. É dele que sai o canto da assinatura; o bloco cava o campo porque o motor não resolve referência aninhada.',
+			},
+			{
+				name: 'line_art',
+				kind: 'ref',
+				refType: 'string',
+				label: 'É arte de traço?',
+				hint: 'Ligado, o logo vira tinta preta pura — ou não entra, e a tela diz por quê. Aponte para o `vectorReady` do gerador: é medição, não palpite.',
+			},
+			{
+				name: 'estender',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Todos os tamanhos?',
+				hint: 'Ligado, o formato que o recorte recusaria sai por EXTENSÃO: as bordas chapadas viram faixa e nada da arte é cortado. Aponte para o input do cartão "Todos os tamanhos" (`input.todos_os_tamanhos`). Desligado, o kit só recorta — e entrega menos peças.',
+			},
+			// `formats` fica de fora de propósito: é uma LISTA, e o catálogo não
+			// tem editor de lista. O default são os quatro formatos, e quem quiser
+			// menos escreve no JSON — que é a regra do cabeçalho deste arquivo.
+		],
+		outputs: [
+			{ name: 'png', type: 'buffer', label: 'A arte assinada (bytes)' },
+			{ name: 'pngBase64', type: 'string', label: 'A arte assinada (base64)' },
+			{ name: 'logo_aplicado', type: 'string', label: 'O logo entrou?' },
+			{ name: 'logo_motivo', type: 'string', label: 'Por que entrou (ou não)' },
+			{ name: 'pecas', type: 'string', label: 'As peças do kit' },
+			{ name: 'recusados', type: 'string', label: 'Formatos que não saíram' },
+			{ name: 'total', type: 'number', label: 'Quantas peças saíram' },
+			{ name: 'resumo', type: 'string', label: 'Resumo para a tela' },
+			{ name: 'origem', type: 'string', label: 'Dimensão da arte de origem' },
+		],
+	},
+
+	/* ── o anúncio em vídeo (dois blocos: montar e subir) ── */
+	{
+		id: 'video.ad_clip',
+		label: 'Anúncio em vídeo',
+		sub: 'Monta um MP4 curto com a câmera andando sobre a arte já pronta — sharp + ffmpeg, sem chamar modelo nenhum',
+		icon: 'Clapperboard',
+		accent: 'violet',
+		/*
+		 * `image` e não uma categoria própria: `BlockSpec.category` é uma união
+		 * FECHADA de cinco valores no catálogo do front, e vídeo não é uma delas.
+		 * A categoria aqui só agrupa na paleta da Fábrica; no back o bloco é
+		 * `category: 'video'`.
+		 */
+		category: 'image',
+		params: [
+			{
+				name: 'image',
+				kind: 'ref',
+				refType: 'buffer',
+				label: 'A arte pronta',
+				hint: 'Aponte para a peça ASSINADA (a saída do kit, `arte.png`) e não para a arte crua do gerador: anúncio sem logo é peça de portfólio, não anúncio.',
+				required: true,
+			},
+			{
+				name: 'duracao_s',
+				kind: 'literal',
+				valueType: 'number',
+				label: 'Duração (segundos)',
+				hint: 'O Instagram aceita de 3 s a 60 s. Medido: 3 s não dá tempo de ler nada e 8 s de câmera lenta enjoa — 5 s é o ponto.',
+				default: 5,
+				min: 3,
+				max: 60,
+				step: 1,
+			},
+			{
+				name: 'titulo',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Título (do Redator)',
+				hint: 'Entra sobreposto, com tempo de leitura calculado (~17 caracteres/s) e dentro da zona segura do formato.',
+			},
+			{
+				name: 'chamada',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Chamada (do Redator)',
+			},
+			{
+				name: 'texto_na_arte',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Texto já assado na arte',
+				hint: 'NÃO aparece no vídeo: serve para o bloco não repetir por cima o que a imagem já mostra.',
+			},
+			{
+				name: 'com_texto',
+				kind: 'literal',
+				valueType: 'bool',
+				label: 'Escrever as frases no vídeo?',
+				hint: 'Desligado, o clipe sai limpo. Num servidor sem fontes instaladas ele já sai limpo sozinho, dizendo por quê.',
+				default: true,
+			},
+			// `formats` fica de fora pelo mesmo motivo do kit: é uma LISTA e o
+			// catálogo não tem editor de lista. O padrão é `story_9x16` (Reels), e
+			// quem quiser outro escreve no JSON.
+		],
+		outputs: [
+			{ name: 'mp4', type: 'buffer', label: 'O clipe (bytes)' },
+			{ name: 'mp4DataUrl', type: 'string', label: 'O clipe (data URL)' },
+			{ name: 'formato', type: 'string', label: 'Formato entregue' },
+			{ name: 'largura', type: 'number', label: 'Largura (px)' },
+			{ name: 'altura', type: 'number', label: 'Altura (px)' },
+			{ name: 'duracao_s', type: 'number', label: 'Duração (s)' },
+			{ name: 'videos', type: 'string', label: 'Todos os clipes' },
+			{ name: 'recusados', type: 'string', label: 'Formatos que não saíram' },
+			{ name: 'total', type: 'number', label: 'Quantos clipes saíram' },
+			{ name: 'ffmpeg_disponivel', type: 'string', label: 'O ffmpeg existe?' },
+			{ name: 'avisos', type: 'string', label: 'Ressalvas' },
+			{ name: 'resumo', type: 'string', label: 'Resumo para a tela' },
+			{ name: 'ms', type: 'number', label: 'Tempo de montagem (ms)' },
+		],
+	},
+	/**
+	 * ┌─ QUEM ESCREVE O PEDIDO DO VÍDEO ────────────────────────────────────────┐
+	 * │ Prompt de IMAGEM e prompt de VÍDEO são bichos diferentes: o primeiro     │
+	 * │ descreve composição, luz e enquadramento; o segundo descreve MOVIMENTO — │
+	 * │ o que se move, para onde, em quanto tempo. Medido nas quatro gerações    │
+	 * │ reais: mandar o prompt da imagem para o gerador de vídeo saiu PIOR que   │
+	 * │ não pedir nada (manchete duplicada, marca trocando de cor, e a peça      │
+	 * │ cortada no canto no último quadro).                                     │
+	 * │                                                                          │
+	 * │ Este bloco roda UM especialista do roster (`agentes`) da própria tool de │
+	 * │ vídeo — não do Ateliê. Ele VÊ a arte antes de escrever, que é o que um   │
+	 * │ movimento escrito às cegas nunca consegue: o primeiro quadro do Veo é a  │
+	 * │ arte que SAIU.                                                          │
+	 * └──────────────────────────────────────────────────────────────────────────┘
+	 *
+	 * ⚠ SEM ESTE SPEC A TOOL ABRE EM MODO CÓDIGO NA FÁBRICA — e foi exatamente o
+	 * que aconteceu: duas frentes fizeram metade cada uma, uma escreveu o spec do
+	 * bloco que gera e a outra criou o bloco que escreve, sem spec. `loadFabrica`
+	 * força o JSON quando UM nó do pipeline não resolve no catálogo, e o admin
+	 * perde o editor visual da tool paga inteira.
+	 */
+	{
+		id: 'ai.video_prompt',
+		label: 'Diretor de Movimento',
+		sub: 'Olha a arte pronta e escreve o PEDIDO do vídeo (o que se move, para onde, em quanto tempo). Não gera vídeo — quem gera é o nó seguinte.',
+		icon: 'Clapperboard',
+		accent: 'violet',
+		/* `ai` como o resto do time: a categoria só agrupa na paleta. */
+		category: 'ai',
+		params: [
+			{
+				name: 'tool',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Tool dona do roster',
+				hint: 'A ferramenta cuja coleção `agentes` guarda o papel do especialista. Normalmente a própria tool de vídeo.',
+				default: 'estudio_video',
+			},
+			{
+				name: 'agentes_collection',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Coleção do roster',
+				hint: 'Ela é `visibility: staff` — o papel escrito ali é o produto, e não vai para a tela do aluno.',
+				default: 'agentes',
+			},
+			{
+				name: 'chave',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Qual especialista roda',
+				hint: 'Existe para o dia em que houver um segundo jeito de filmar cadastrado ao lado deste.',
+				default: 'diretor_movimento',
+			},
+			{
+				name: 'arte',
+				kind: 'ref',
+				refType: 'buffer',
+				label: 'A arte pronta',
+				hint: '⚠ Ele precisa VER a peça. Movimento escrito às cegas contradiz o quadro — e o primeiro quadro do vídeo é justamente esta arte.',
+				required: true,
+			},
+			{
+				name: 'prompt_da_arte',
+				kind: 'ref',
+				refType: 'string',
+				label: 'O pedido com que a arte foi gerada',
+				hint: 'A galeria guarda este, e só este. Ausente é caminho normal — é o que acontece quando o aluno compra o vídeo no dia seguinte.',
+			},
+			{
+				name: 'titulo',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Nome da peça',
+			},
+			{
+				name: 'pedido_do_aluno',
+				kind: 'ref',
+				refType: 'string',
+				label: 'O que a pessoa pediu',
+				hint: 'É um LEME, não o volante: entra como desejo a atender, nunca como system. Teto de 600 caracteres — a tela ecoa esse limite no campo.',
+			},
+			{
+				name: 'formato',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Proporção do clipe',
+				hint: 'Não é enfeite: num 9:16 a peça sobe e desce no quadro, num 16:9 ela atravessa — movimento escrito para o formato errado sai da moldura.',
+			},
+			{
+				name: 'duracao_s',
+				kind: 'literal',
+				valueType: 'number',
+				label: 'Duração do plano (s)',
+				hint: 'Serve ao TEXTO ("plano único de 8 segundos"): é o que impede o especialista de escrever um roteiro de trinta. Quem manda no clipe é o nó seguinte.',
+				default: 8,
+				min: 4,
+				max: 8,
+				step: 2,
+			},
+			// `ficha_produto`, `direcao_arte` e `vars` ficam de fora: são objetos
+			// verbatim de outro nó (`resolveRefs` é PLANO) e o catálogo não tem
+			// editor para eles. Quem precisar amarra no JSON.
+		],
+		outputs: [
+			{
+				name: 'prompt_video',
+				type: 'string',
+				label: 'O pedido do vídeo (vai para o gerador)',
+			},
+			{
+				name: 'o_que_exibe',
+				type: 'string',
+				label: 'A frase que o aluno lê esperando',
+			},
+			{ name: 'movimento', type: 'string', label: 'O cartão do especialista' },
+			{ name: 'formato', type: 'string', label: 'Formato ecoado' },
+			{ name: 'duracao_s', type: 'number', label: 'Duração ecoada (s)' },
+			{ name: 'avisos', type: 'string', label: 'Ressalvas sobre o pedido' },
+			{ name: 'custo_usd', type: 'number', label: 'Custo da chamada (US$)' },
+			{ name: 'chars', type: 'number', label: 'Tamanho do pedido' },
+			{ name: 'limite_chars', type: 'number', label: 'Teto de caracteres' },
+			{ name: 'ms', type: 'number', label: 'Tempo (ms)' },
+		],
+	},
+	/**
+	 * ┌─ O DEGRAU DE CIMA: o vídeo GERADO, e não o vídeo MONTADO ───────────────┐
+	 * │ O `video.ad_clip` logo acima monta o clipe LOCALMENTE (sharp + ffmpeg):  │
+	 * │ a câmera anda, a arte fica parada, custo de fornecedor US$ 0,00 — é o    │
+	 * │ brinde que sai junto com toda arte. Aqui o modelo GERA movimento novo: a │
+	 * │ peça gira, a luz corre pela gravação. Custa dólar por clique, e por isso │
+	 * │ vive numa tool PRÓPRIA, com preço próprio (12 voxxys).                   │
+	 * │                                                                          │
+	 * │ Os dois convivem de propósito. Trocar um pelo outro seria tirar do aluno │
+	 * │ o vídeo que ele já ganhava.                                              │
+	 * └──────────────────────────────────────────────────────────────────────────┘
+	 *
+	 * ⚠ SEM ESTE SPEC A TOOL ABRE EM MODO CÓDIGO NA FÁBRICA. `loadFabrica` força
+	 * o JSON quando um bloco do pipeline não resolve no catálogo — e o admin
+	 * perde o editor visual de uma tool paga.
+	 */
+	{
+		id: 'video.ai_clip',
+		label: 'Vídeo gerado por IA',
+		sub: 'A arte pronta vira o PRIMEIRO QUADRO e o modelo gera o movimento — 8 s, com áudio. Custa dinheiro de fornecedor por clique.',
+		icon: 'Film',
+		accent: 'violet',
+		/* `image` e não uma categoria própria: `BlockSpec.category` é uma união
+		 * FECHADA de cinco valores, e vídeo não é uma delas — igual ao `ad_clip`.
+		 * A categoria só agrupa na paleta; no back o bloco é `category: 'video'`. */
+		category: 'image',
+		params: [
+			{
+				name: 'image',
+				kind: 'ref',
+				refType: 'buffer',
+				label: 'A arte pronta (primeiro quadro)',
+				hint: '⚠ Obrigatória de verdade: SEM primeiro quadro o modelo INVENTA outro produto. Texto-para-vídeo aqui é defeito, não simplificação.',
+				required: true,
+			},
+			{
+				name: 'movimento',
+				kind: 'ref',
+				refType: 'string',
+				label: 'O que se mexe',
+				hint: 'Descreva MOVIMENTO (o que gira, para onde a luz anda), não a arte. E termine sempre com "O produto não muda de forma, cor nem acabamento." — sem essa frase o modelo remodela a peça e o aluno recebe o vídeo de um produto que ele não fabrica.',
+				required: true,
+			},
+			{
+				name: 'modelo',
+				kind: 'literal',
+				valueType: 'enum',
+				label: 'Modelo',
+				hint: 'O Lite foi o escolhido depois de assistir aos três lado a lado: US$ 0,05/s em 720p contra US$ 0,40/s do 3.1 cheio — que sozinho custa MAIS do que os 12 voxxys da venda.',
+				default: 'google/veo-3.1-lite',
+				options: [
+					'google/veo-3.1-lite',
+					'google/veo-3.1-fast',
+					'google/veo-3.1',
+				],
+			},
+			{
+				name: 'aspecto',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Proporção',
+				hint: '`9:16` (Reels/Stories) ou `16:9`. A proporção decide a MOLDURA; o primeiro quadro decide a COMPOSIÇÃO — arte quadrada num 9:16 entra reenquadrada, com as sobras desfocadas.',
+			},
+			{
+				name: 'resolucao',
+				kind: 'literal',
+				valueType: 'enum',
+				label: 'Resolução',
+				hint: '⚠ NUNCA deixe em branco. Sem `resolution` explícito o fornecedor entrega 720p e fatura pela SKU cheia: 3,2× mais caro pelo MESMO arquivo.',
+				default: '720p',
+				options: ['720p', '1080p'],
+			},
+			{
+				name: 'duracao_s',
+				kind: 'literal',
+				valueType: 'number',
+				label: 'Duração (segundos)',
+				hint: 'O modelo aceita 4, 6 ou 8 — e só. O preço é POR SEGUNDO: 4 s custa metade de 8 s. Um valor fora do conjunto é encaixado no vizinho, com aviso, em vez de enfileirar às cegas.',
+				default: 8,
+				min: 4,
+				max: 8,
+				step: 2,
+			},
+			{
+				name: 'com_audio',
+				kind: 'literal',
+				valueType: 'bool',
+				label: 'Gerar áudio?',
+				hint: 'Ligado custa US$ 0,05/s em 720p; desligado, US$ 0,03/s. Desligue só se a tela também parar de prometer som.',
+				default: true,
+			},
+		],
+		outputs: [
+			{ name: 'mp4', type: 'buffer', label: 'O vídeo (bytes)' },
+			{
+				name: 'poster',
+				type: 'buffer',
+				label: 'A capa (quadro do próprio vídeo)',
+			},
+			{ name: 'formato', type: 'string', label: 'Formato entregue' },
+			{ name: 'largura', type: 'number', label: 'Largura (px)' },
+			{ name: 'altura', type: 'number', label: 'Altura (px)' },
+			{ name: 'duracao_s', type: 'number', label: 'Duração (s)' },
+			{ name: 'com_audio', type: 'string', label: 'Saiu com áudio?' },
+			{ name: 'modelo', type: 'string', label: 'Modelo usado' },
+			{ name: 'job_id', type: 'string', label: 'Job do fornecedor' },
+			{
+				name: 'custo_usd',
+				type: 'number',
+				label: 'Custo real da geração (US$)',
+			},
+			{
+				name: 'reenquadrado',
+				type: 'string',
+				label: 'A arte foi reenquadrada?',
+			},
+			{ name: 'avisos', type: 'string', label: 'Ressalvas' },
+			{ name: 'resumo', type: 'string', label: 'Resumo para a tela' },
+			{ name: 'ms', type: 'number', label: 'Tempo total (ms)' },
+		],
+	},
+	{
+		id: 'output.save_video',
+		label: 'Subir o vídeo',
+		sub: 'Sobe o MP4 (e um quadro de capa) e devolve a URL — em vez de mandar megabytes de base64 no JSON do run',
+		icon: 'CloudUpload',
+		accent: 'violet',
+		category: 'output',
+		params: [
+			{
+				name: 'mp4',
+				kind: 'ref',
+				refType: 'buffer',
+				label: 'O clipe (bytes)',
+				hint: 'Aponte para `<nó do clipe>.mp4`, NUNCA para `.mp4DataUrl`: decodificar base64 de volta só para subir é o dobro de memória por nada.',
+				required: true,
+			},
+			{
+				name: 'arte',
+				kind: 'ref',
+				refType: 'buffer',
+				label: 'A arte, para a capa',
+				hint: 'Vira o `poster` do player. Sem ela o vídeo abre como um retângulo preto, que se lê como coisa quebrada.',
+			},
+			{
+				name: 'tool',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Tool dona do arquivo',
+				hint: 'Só organiza a pasta no storage.',
+			},
+			{
+				name: 'folder',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Pasta no storage',
+				default: 'estudio-imagens',
+			},
+			{
+				name: 'formato',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Formato do clipe',
+			},
+			{ name: 'largura', kind: 'ref', refType: 'string', label: 'Largura' },
+			{ name: 'altura', kind: 'ref', refType: 'string', label: 'Altura' },
+			{ name: 'duracao_s', kind: 'ref', refType: 'string', label: 'Duração' },
+			{
+				name: 'motivo',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Frase para a tela',
+				hint: 'O `resumo` do bloco do clipe. Serve aos dois casos: "saiu com ressalva" e "não saiu, e por isto".',
+			},
+			{
+				name: 'obrigatorio',
+				kind: 'literal',
+				valueType: 'bool',
+				label: 'O vídeo é o produto?',
+				hint: 'Desligado (padrão), falha de upload NÃO derruba o run — é o certo quando o vídeo é extra de uma arte já paga. LIGUE numa tool em que o aluno pagou PELO vídeo: aí o bloco lança, e lançar é a única janela que existe para estornar (depois do settle não há estorno).',
+				default: false,
+			},
+		],
+		outputs: [
+			{ name: 'url', type: 'string', label: 'O MP4 (URL no CDN)' },
+			{ name: 'poster_url', type: 'string', label: 'Quadro de capa (URL)' },
+			{ name: 'formato', type: 'string', label: 'Formato entregue' },
+			{ name: 'rotulo', type: 'string', label: 'Nome do formato para a tela' },
+			{ name: 'largura', type: 'number', label: 'Largura (px)' },
+			{ name: 'altura', type: 'number', label: 'Altura (px)' },
+			{ name: 'duracao_s', type: 'number', label: 'Duração (s)' },
+			{ name: 'bytes', type: 'number', label: 'Tamanho do arquivo' },
+			{ name: 'ok', type: 'string', label: 'O vídeo ficou disponível?' },
+			{ name: 'motivo', type: 'string', label: 'Por que saiu (ou não)' },
+			{ name: 'ms', type: 'number', label: 'Tempo da subida (ms)' },
+		],
+	},
+
+	/* ── F4: a assinatura da marca e a volta da galeria ── */
+	{
+		/**
+		 * Existe como bloco AVULSO além de estar dentro do kit: uma tool que só
+		 * queira carimbar o logo numa imagem (sem recortar nada) usa este.
+		 */
+		id: 'image.brandmark',
+		label: 'Aplicar o logo da marca',
+		sub: 'Cola o logo do aluno na área reservada da arte — escolhe o canto pelo Diretor de Arte ou MEDINDO o quadro, e recusa quando o logo sumiria',
+		icon: 'Stamp',
+		accent: 'violet',
+		category: 'image',
+		params: [
+			{
+				name: 'image',
+				kind: 'ref',
+				refType: 'buffer',
+				label: 'A arte',
+				required: true,
+			},
+			{
+				name: 'logo',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Logo (URL ou bytes)',
+				hint: 'Ausente = a arte volta intacta, com o motivo em `motivo`. Este bloco NUNCA derruba um run já pago.',
+			},
+			{
+				name: 'direcao_arte',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Direção de arte (objeto)',
+				hint: 'De onde sai o canto da assinatura. Sem ela, o bloco MEDE os quatro cantos e usa o mais limpo.',
+			},
+			{
+				name: 'canto',
+				kind: 'literal',
+				valueType: 'enum',
+				label: 'Forçar o canto',
+				hint: 'Vence a direção de arte. Em branco = deixa o bloco decidir.',
+				options: [
+					'',
+					'superior_esquerdo',
+					'superior_direito',
+					'inferior_esquerdo',
+					'inferior_direito',
+					'nenhum',
+				],
+			},
+			{
+				name: 'line_art',
+				kind: 'ref',
+				refType: 'string',
+				label: 'É arte de traço?',
+				hint: 'Peça de corte: o logo vira preto puro ou não entra. PNG colorido numa arte de traço produz um arquivo que a máquina não corta.',
+			},
+			{
+				name: 'scale',
+				kind: 'literal',
+				valueType: 'number',
+				label: 'Tamanho do logo',
+				hint: 'Fração do lado MENOR da arte. 0,15 é o que foi medido nas artes reais.',
+				default: 0.15,
+				min: 0.05,
+				max: 0.4,
+				step: 0.01,
+			},
+			{
+				name: 'margin',
+				kind: 'literal',
+				valueType: 'number',
+				label: 'Folga da borda',
+				hint: 'Fração do lado menor.',
+				default: 0.04,
+				min: 0,
+				max: 0.2,
+				step: 0.01,
+			},
+			{
+				name: 'min_contrast',
+				kind: 'literal',
+				valueType: 'number',
+				label: 'Contraste mínimo',
+				hint: 'Abaixo disso o bloco inverte a tinta (logo de cor única) ou põe uma placa lisa atrás.',
+				default: 40,
+				min: 0,
+				max: 255,
+				step: 1,
+			},
+		],
+		outputs: [
+			{ name: 'png', type: 'buffer', label: 'A arte assinada' },
+			{ name: 'pngBase64', type: 'string', label: 'A arte assinada (base64)' },
+			{ name: 'logo_aplicado', type: 'string', label: 'O logo entrou?' },
+			{ name: 'motivo', type: 'string', label: 'Por que entrou (ou não)' },
+			{ name: 'canto', type: 'string', label: 'Canto usado' },
+			{ name: 'canto_origem', type: 'string', label: 'De onde veio o canto' },
+			{ name: 'tratamento', type: 'string', label: 'O que foi feito no logo' },
+			{ name: 'width', type: 'number', label: 'Largura' },
+			{ name: 'height', type: 'number', label: 'Altura' },
+		],
+	},
+	/**
+	 * ┌─ O BLOCO QUE DÁ DURABILIDADE — e que faltava no catálogo ───────────────┐
+	 * │ Ele grava o resultado do run na coleção ANTES de a resposta sair. É o    │
+	 * │ que responde "o socket caiu", "fechei a aba" e "voltei amanhã" sem uma   │
+	 * │ linha de fila nem uma tabela nova: o front reencontra o trabalho pelo    │
+	 * │ `run_id`.                                                               │
+	 * └──────────────────────────────────────────────────────────────────────────┘
+	 *
+	 * ⚠ ELE NÃO TINHA SPEC, e isso é maior do que parece: `collection.save` é o
+	 * ÚLTIMO nó de `estudio_video` E de `estudio_imagens`. Bloco sem spec faz
+	 * `resolveSpec` devolver nada e `loadFabrica` cair em MODO CÓDIGO — ou seja,
+	 * as duas tools mais caras do sistema abriam em JSON cru na Fábrica, e a
+	 * frente que consertou o modo código do vídeo achou que o culpado era só o
+	 * `ai.video_prompt`.
+	 *
+	 * ⚠ OS `set_<campo>` NÃO CABEM AQUI, e não é omissão. Eles são chaves
+	 * DINÂMICAS (`catchall` no back), uma por campo da coleção — o catálogo não
+	 * tem editor para nome de param variável. O editor visual mostra os params
+	 * fixos e PRESERVA os `set_*` no round-trip; quem quiser mexer neles abre o
+	 * JSON. Melhor visual com uma seção no JSON do que a tool inteira em código.
+	 */
+	{
+		id: 'collection.save',
+		label: 'Guardar na coleção',
+		sub: 'Grava o resultado do run (histórico, cache) ANTES de responder — é o que faz o trabalho sobreviver ao socket que cai',
+		icon: 'Save',
+		accent: 'emerald',
+		category: 'output',
+		params: [
+			{
+				name: 'tool',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Tool dona da coleção',
+				required: true,
+			},
+			{
+				name: 'collection',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Coleção',
+				hint: 'Precisa existir em `collections` da definition — campo não declarado lá é DESCARTADO EM SILÊNCIO na gravação.',
+				default: 'default',
+			},
+			{
+				name: 'title',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Título da linha',
+				hint: '⚠ Mínimo 1 caractere. Um título vindo direto de um campo que pode ser nulo derruba em 400 um run JÁ COBRADO — use `util.text_template` para garantir texto.',
+				required: true,
+			},
+			{
+				name: 'description',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Descrição',
+			},
+			{ name: 'category', kind: 'ref', refType: 'string', label: 'Categoria' },
+			{
+				name: 'visibility',
+				kind: 'literal',
+				valueType: 'enum',
+				label: 'Quem enxerga',
+				hint: '`owner` = só o aluno (histórico dele) · `public` = todo mundo (cache compartilhado) · `staff` = configuração interna, invisível para aluno.',
+				default: 'owner',
+				options: ['owner', 'public', 'staff'],
+			},
+			{
+				name: 'dedupe_key',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Campo que identifica a linha',
+				hint: 'Normalmente `run_id`. Recarregar a página no meio do run ATUALIZA a linha em vez de criar uma segunda.',
+			},
+			{
+				name: 'data',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Base do registro (JSON)',
+				hint: 'Opcional. O caminho normal é montar campo a campo com `set_<campo>` — o resolvedor do motor é RASO e não troca referência dentro de objeto aninhado.',
+			},
+		],
+		outputs: [
+			{ name: 'entry_id', type: 'string', label: 'Id da linha gravada' },
+			{ name: 'criado', type: 'string', label: 'Criou (ou atualizou)?' },
+		],
+	},
+	{
+		id: 'collection.image',
+		label: 'Imagem de um registro',
+		sub: 'Pega a imagem de um registro de coleção (por id) e devolve os bytes — é a VOLTA que faz "ajustar o resultado" existir',
+		icon: 'ImageDown',
+		accent: 'sky',
+		category: 'util',
+		params: [
+			{
+				name: 'tool',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Tool dona da coleção',
+				hint: 'Pode ser outra tool — é assim que uma ferramenta lê a galeria da outra.',
+				required: true,
+			},
+			{
+				name: 'collection',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Coleção',
+				default: 'galeria',
+				required: true,
+			},
+			{
+				name: 'entry_id',
+				kind: 'ref',
+				refType: 'string',
+				label: 'Id do registro',
+				hint: 'O bloco confere o DONO antes de baixar: registro de outro aluno devolve 404, antes de gerar, gravar ou gastar.',
+			},
+			{
+				name: 'campo',
+				kind: 'literal',
+				valueType: 'string',
+				label: 'Campo com a URL',
+				default: 'url',
+			},
+			{
+				name: 'imagem',
+				kind: 'ref',
+				refType: 'buffer',
+				label: 'Plano B: bytes do navegador',
+				hint: 'Para uma arte que nunca foi arquivada. NÃO produz linhagem — sem registro, não há de onde herdar `parent_id`.',
+			},
+		],
+		outputs: [
+			{ name: 'png', type: 'buffer', label: 'A imagem' },
+			{ name: 'width', type: 'number', label: 'Largura' },
+			{ name: 'height', type: 'number', label: 'Altura' },
+			{
+				name: 'entry_id',
+				type: 'string',
+				label: 'Id (vira o `parent_id` do filho)',
+			},
+			{ name: 'url', type: 'string', label: 'URL de origem' },
+			{ name: 'titulo', type: 'string', label: 'Título' },
+			{ name: 'prompt', type: 'string', label: 'Prompt' },
+			{ name: 'modo', type: 'string', label: 'Modo' },
+			{ name: 'aspecto', type: 'string', label: 'Formato' },
+			{ name: 'parent_id', type: 'string', label: 'O pai DESTA imagem' },
+			{ name: 'vector_ready', type: 'string', label: 'Pronta para vetorizar' },
+			{ name: 'origem', type: 'string', label: 'galeria | upload' },
 		],
 	},
 ];

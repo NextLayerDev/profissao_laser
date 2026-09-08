@@ -4,6 +4,7 @@ import {
 	CalendarOff,
 	CalendarPlus,
 	Clock,
+	Hourglass,
 	Loader2,
 	Plus,
 	Repeat,
@@ -236,6 +237,181 @@ function GlobalHoursCard() {
 						}
 						className="w-32 h-10 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white px-3 focus:outline-none focus:border-violet-500"
 					/>
+				</div>
+
+				<div className="flex justify-end">
+					<button
+						type="button"
+						onClick={onSubmit}
+						disabled={Object.keys(form).length === 0 || update.isPending}
+						className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors"
+					>
+						{update.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+						Salvar
+					</button>
+				</div>
+			</div>
+		</CardShell>
+	);
+}
+
+// ─── Intervalo mínimo entre atendimentos ─────────────────────────────────
+
+const COOLDOWN_PRESETS = [24, 48, 72];
+
+function CooldownSwitch({
+	checked,
+	onChange,
+	label,
+}: {
+	checked: boolean;
+	onChange: (v: boolean) => void;
+	label: string;
+}) {
+	return (
+		<button
+			type="button"
+			role="switch"
+			aria-checked={checked}
+			aria-label={label}
+			onClick={() => onChange(!checked)}
+			className={`relative shrink-0 w-11 h-6 rounded-full transition-colors ${
+				checked ? 'bg-violet-600' : 'bg-slate-200 dark:bg-white/10'
+			}`}
+		>
+			<span
+				className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+					checked ? 'translate-x-5' : 'translate-x-0'
+				}`}
+			/>
+		</button>
+	);
+}
+
+function ClientCooldownCard() {
+	const { data: cfg, isLoading } = useGlobalConfig();
+	const update = useUpdateGlobalConfig();
+
+	const [form, setForm] = useState<UpdateGlobalConfigPayload>({});
+
+	if (isLoading || !cfg) {
+		return (
+			<CardShell title="Intervalo entre atendimentos" icon={Hourglass}>
+				<Loader2 className="w-5 h-5 animate-spin text-violet-600" />
+			</CardShell>
+		);
+	}
+
+	const enabled = form.clientCooldownEnabled ?? cfg.clientCooldownEnabled;
+	const hours = form.clientCooldownHours ?? cfg.clientCooldownHours;
+	const matchPhone =
+		form.clientCooldownMatchPhone ?? cfg.clientCooldownMatchPhone;
+
+	const onSubmit = () => {
+		if (Object.keys(form).length === 0) return;
+		update.mutate(form, { onSuccess: () => setForm({}) });
+	};
+
+	return (
+		<CardShell title="Intervalo entre atendimentos" icon={Hourglass}>
+			<div className="space-y-4">
+				<div className="flex items-start justify-between gap-3">
+					<div>
+						<p className="text-sm font-medium text-slate-900 dark:text-white">
+							Limitar remarcação do mesmo cliente
+						</p>
+						<p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
+							Quem marcou segunda só consegue marcar de novo depois do intervalo
+							— evita o cliente que reserva seg, ter, qua e qui de uma vez só.
+						</p>
+					</div>
+					<CooldownSwitch
+						checked={enabled}
+						onChange={(v) =>
+							setForm((f) => ({ ...f, clientCooldownEnabled: v }))
+						}
+						label="Ativar intervalo mínimo entre atendimentos"
+					/>
+				</div>
+
+				<div
+					className={
+						enabled ? 'space-y-4' : 'space-y-4 opacity-50 pointer-events-none'
+					}
+				>
+					<div>
+						<span className="text-xs font-medium text-slate-500 dark:text-gray-400 block mb-2">
+							Intervalo mínimo
+						</span>
+						<div className="flex flex-wrap items-center gap-1.5">
+							{COOLDOWN_PRESETS.map((h) => (
+								<button
+									key={h}
+									type="button"
+									onClick={() =>
+										setForm((f) => ({ ...f, clientCooldownHours: h }))
+									}
+									className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+										hours === h
+											? 'bg-violet-600 text-white'
+											: 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-200 dark:hover:bg-white/10'
+									}`}
+								>
+									{h}h
+								</button>
+							))}
+							<input
+								id="cooldown-hours"
+								type="number"
+								min={1}
+								max={720}
+								value={hours}
+								onChange={(e) =>
+									setForm((f) => ({
+										...f,
+										clientCooldownHours: Math.min(
+											720,
+											Math.max(1, Number(e.target.value) || 1),
+										),
+									}))
+								}
+								aria-label="Intervalo mínimo em horas"
+								className="w-24 h-9 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white px-3 focus:outline-none focus:border-violet-500"
+							/>
+							<span className="text-xs text-slate-500 dark:text-gray-400">
+								horas
+							</span>
+						</div>
+					</div>
+
+					<div>
+						<label className="flex items-center gap-2 text-sm text-slate-700 dark:text-gray-300">
+							<input
+								type="checkbox"
+								checked={matchPhone}
+								onChange={(e) =>
+									setForm((f) => ({
+										...f,
+										clientCooldownMatchPhone: e.target.checked,
+									}))
+								}
+								className="w-4 h-4 accent-violet-600"
+							/>
+							Também identificar o cliente pelo telefone
+						</label>
+						<p className="text-xs text-slate-400 dark:text-gray-600 mt-1">
+							Impede que a mesma pessoa fure o intervalo criando um segundo
+							e-mail. Telefones com menos de 10 dígitos são ignorados.
+						</p>
+					</div>
+
+					<p className="text-xs text-slate-500 dark:text-gray-400 border-t border-slate-100 dark:border-white/5 pt-3">
+						Vale entre dias diferentes: vários horários no{' '}
+						<strong className="font-medium">mesmo dia</strong> continuam
+						liberados (sessão longa). Cancelar libera na hora. A equipe pode
+						furar a regra marcando &ldquo;ignorar o intervalo&rdquo; ao criar o
+						agendamento.
+					</p>
 				</div>
 
 				<div className="flex justify-end">
@@ -883,6 +1059,7 @@ export function AppointmentConfigBody() {
 			</div>
 			<div className="grid gap-4 lg:grid-cols-2">
 				<GlobalHoursCard />
+				<ClientCooldownCard />
 				<HolidaysCard />
 				<DaysOffCard />
 				<RecurringBlocksCard />

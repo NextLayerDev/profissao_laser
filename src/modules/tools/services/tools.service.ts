@@ -32,18 +32,26 @@ export async function deleteTool(id: string): Promise<void> {
 
 /**
  * Executa a tool no contexto de um curso, consumindo cota/voxes.
- * `variationCount` (1–4) escala o custo: o upvox debita `vox_cost × N`
- * (ex.: 0,5/vox × 2 = 1 vox). Default/omitido = cobrança única (tools legadas).
+ *
+ * `variationCount` escala o custo da GERAÇÃO: o upvox debita `vox_cost × N`
+ * (ex.: 0,5/vox × 2 = 1 vox). `licenseUnits` são as peças licenciadas ALÉM da
+ * primeira, cobradas por `license_unit_cost` e nunca cobertas por cota grátis.
+ * Omitidos = uma geração, uma peça.
  */
 export async function invokeTool(
 	toolKey: string,
 	courseSlug: string,
 	variationCount?: number,
+	licenseUnits?: number,
 ): Promise<InvokeToolResult> {
 	const { data } = await api.post(`/v1/tool/${toolKey}/invoke`, {
 		course_slug: courseSlug,
 		...(variationCount && variationCount > 1
 			? { variation_count: variationCount }
+			: {}),
+		// Peças ALÉM da primeira. Tiragem de 1 não manda nada — é o default.
+		...(licenseUnits && licenseUnits > 0
+			? { license_units: licenseUnits }
 			: {}),
 	});
 	return invokeToolResultSchema.parse(data);

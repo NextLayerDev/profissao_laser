@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { ModalOverlay } from '@/components/ui/modal-overlay';
 import type {
+	BillingMode,
 	CreatePlanPayload,
 	Plan,
 	PlanFeatureItem,
+	PlanType,
 	UpdatePlanPayload,
 } from '../types/plans';
 import { PlanFeaturesEditor } from './plan-features-editor';
@@ -22,11 +24,18 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 	const [name, setName] = useState(editing?.name ?? '');
 	const [description, setDescription] = useState(editing?.description ?? '');
 	const [published, setPublished] = useState(editing?.published ?? false);
+	const [type, setType] = useState<PlanType>(editing?.type ?? 'plan');
+	const [billingMode, setBillingMode] = useState<BillingMode>(
+		editing?.billing_mode ?? 'recurring',
+	);
 	const [monthly, setMonthly] = useState(
 		centsToReais(editing?.price_monthly_cents ?? null),
 	);
 	const [yearly, setYearly] = useState(
 		centsToReais(editing?.price_yearly_cents ?? null),
+	);
+	const [lifetime, setLifetime] = useState(
+		centsToReais(editing?.price_lifetime_cents ?? null),
 	);
 	const [voxGrant, setVoxGrant] = useState(
 		editing?.vox_monthly_grant ? String(editing.vox_monthly_grant) : '0',
@@ -36,6 +45,7 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 	);
 
 	const voxGrantNum = Math.max(0, Math.trunc(Number(voxGrant) || 0));
+	const isLifetime = billingMode === 'lifetime';
 
 	const canSubmit =
 		!pending && !!name.trim() && (editing !== null || !!key.trim());
@@ -76,33 +86,88 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 				</Field>
 
 				<div className="grid grid-cols-2 gap-3">
-					<Field label="Preço mensal (R$)">
-						<input
-							type="number"
-							min={0}
-							step="0.01"
-							value={monthly}
-							onChange={(e) => setMonthly(e.target.value)}
-							placeholder="opcional"
+					<Field label="Tipo de produto">
+						<select
+							value={type}
+							onChange={(e) => setType(e.target.value as PlanType)}
 							className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white"
-						/>
+						>
+							<option value="plan">Plano (vários cursos)</option>
+							<option value="package">Pacote (um curso só)</option>
+						</select>
 					</Field>
-					<Field label="Preço anual (R$)">
-						<input
-							type="number"
-							min={0}
-							step="0.01"
-							value={yearly}
-							onChange={(e) => setYearly(e.target.value)}
-							placeholder="opcional"
+					<Field label="Cobrança">
+						<select
+							value={billingMode}
+							onChange={(e) => setBillingMode(e.target.value as BillingMode)}
 							className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white"
-						/>
+						>
+							<option value="recurring">Mensal / anual</option>
+							<option value="lifetime">Pagamento único (pra sempre)</option>
+						</select>
 					</Field>
 				</div>
-				<p className="text-xs text-slate-500">
-					Pelo menos um dos preços precisa ser informado. Stripe Product/Prices
-					são criados automaticamente pelo backend.
-				</p>
+
+				{type === 'package' && (
+					<p className="text-xs text-slate-500">
+						Pacote vende <strong>um curso só</strong> e ganha link de compra
+						próprio em{' '}
+						<span className="font-mono">/checkout/pacote/{key || 'key'}</span>.
+						Vincule o curso na aba Cursos do plano depois de salvar.
+					</p>
+				)}
+
+				{isLifetime ? (
+					<>
+						<Field label="Preço único (R$)">
+							<input
+								type="number"
+								min={0}
+								step="0.01"
+								value={lifetime}
+								onChange={(e) => setLifetime(e.target.value)}
+								placeholder="497,00"
+								className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white"
+							/>
+						</Field>
+						<p className="text-xs text-slate-500">
+							Cobrado uma vez; o acesso não expira e não renova. A cota grátis
+							das ferramentas continua reciclando todo mês, contada a partir da
+							data da compra.
+						</p>
+					</>
+				) : (
+					<div className="grid grid-cols-2 gap-3">
+						<Field label="Preço mensal (R$)">
+							<input
+								type="number"
+								min={0}
+								step="0.01"
+								value={monthly}
+								onChange={(e) => setMonthly(e.target.value)}
+								placeholder="opcional"
+								className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white"
+							/>
+						</Field>
+						<Field label="Preço anual (R$)">
+							<input
+								type="number"
+								min={0}
+								step="0.01"
+								value={yearly}
+								onChange={(e) => setYearly(e.target.value)}
+								placeholder="opcional"
+								className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white"
+							/>
+						</Field>
+					</div>
+				)}
+				{!isLifetime && (
+					<p className="text-xs text-slate-500">
+						Pelo menos um dos preços precisa ser informado. Stripe
+						Product/Prices são criados automaticamente pelo backend.
+					</p>
+				)}
 
 				<Field label="Voxxys grátis por mês">
 					<input
@@ -166,8 +231,13 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 								name: name.trim(),
 								description: description?.trim() || undefined,
 								published,
-								price_monthly_cents: reaisToCents(monthly),
-								price_yearly_cents: reaisToCents(yearly),
+								type,
+								billing_mode: billingMode,
+								price_monthly_cents: isLifetime ? 0 : reaisToCents(monthly),
+								price_yearly_cents: isLifetime ? 0 : reaisToCents(yearly),
+								price_lifetime_cents: isLifetime
+									? reaisToCents(lifetime)
+									: undefined,
 								vox_monthly_grant: voxGrantNum,
 								features,
 							};

@@ -7,9 +7,23 @@ import { usePinnedTools } from './use-pinned-tools';
 import { useToolCatalog } from './use-tool-catalog';
 
 /**
- * Itens de nav do ALUNO para tools da Fábrica: SÓ as PINADAS. A fonte gateada é
- * `useToolCatalog('student')` (entitlements + def por key); aqui só intersecta
- * com os pins (`usePinnedTools('student')`). O catálogo inteiro fica no hub/⌘K.
+ * Itens de nav do ALUNO para tools da Fábrica: as PINADAS. A fonte gateada das
+ * tools é `useToolCatalog('student')` (entitlements + def por key); aqui só
+ * intersecta com os pins (`usePinnedTools('student')`). O catálogo inteiro fica
+ * no hub/⌘K.
+ *
+ * ┌─ "MINHA MARCA" SAIU DAQUI ──────────────────────────────────────────────┐
+ * │ Havia um item FIXO apontando para `/course/minha-marca`, gateado por     │
+ * │ `useMarcaDisponivel()`. Ele saiu porque o cadastro da marca virou uma    │
+ * │ SEÇÃO DO PERFIL — o pedido do dono foi literal: "não quero como          │
+ * │ ferramenta". Deixá-lo em FERRAMENTAS depois de mover a tela criaria dois │
+ * │ endereços para o mesmo cadastro (a rota antiga hoje só redireciona).     │
+ * │                                                                          │
+ * │ Efeito colateral bom, e medido: `useMarcaDisponivel()` rodava a CADA     │
+ * │ render de sidebar/home só para decidir esconder um item de menu — para   │
+ * │ quem está fora da allowlist isso era um 404 mais uma retentativa por     │
+ * │ page-load. Agora a pergunta só é feita onde ela importa: no perfil.      │
+ * └──────────────────────────────────────────────────────────────────────────┘
  *
  * O `section` vem da categoria da tool (não mais 'FERRAMENTAS' fixo) e a cor sai
  * da paleta única `TOOL_COLORS` pela chave que a categoria define — então cada

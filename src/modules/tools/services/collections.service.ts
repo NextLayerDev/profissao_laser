@@ -153,6 +153,38 @@ export async function findNearest(
 	return { items: z.array(collectionEntrySchema).parse(data?.items ?? []) };
 }
 
+/**
+ * A LINHAGEM de um registro: de onde ele veio e o que saiu dele.
+ *
+ * ┌─ POR QUE UM ENDPOINT, E NÃO UM FILTRO NA LISTAGEM ──────────────────────┐
+ * │ A listagem só filtra por campo declarado como FACETA, e `parent_id` não  │
+ * │ pode ser faceta: viraria um dicionário com uma entrada por arte da base.  │
+ * │ E a pergunta da tela é uma só — "abri esta arte, me mostre a corrente" —, │
+ * │ que respondida em três requisições faria a galeria piscar em três tempos. │
+ * └──────────────────────────────────────────────────────────────────────────┘
+ *
+ * UM NÍVEL para cada lado: é o que a tela desenha (uma seta para trás, uma
+ * fileira para a frente). A árvore inteira sai de navegar, um clique por vez.
+ *
+ * `parent` pode ser `null` com o registro tendo `parent_id`: o pai foi apagado.
+ * É estado normal, não erro — a tela diz "a origem não está mais na galeria".
+ */
+export const collectionLineageSchema = z.object({
+	item: collectionEntrySchema,
+	parent: collectionEntrySchema.nullable(),
+	children: z.array(collectionEntrySchema).default([]),
+});
+export type CollectionLineage = z.infer<typeof collectionLineageSchema>;
+
+export async function getCollectionLineage(
+	key: string,
+	collection: string,
+	id: string,
+): Promise<CollectionLineage> {
+	const { data } = await api.get(`${base(key, collection)}/${id}/lineage`);
+	return collectionLineageSchema.parse(data);
+}
+
 export async function createCollectionEntry(
 	key: string,
 	collection: string,
@@ -161,6 +193,12 @@ export async function createCollectionEntry(
 		description?: string;
 		category?: string;
 		data: Record<string, unknown>;
+		/**
+		 * A visibilidade PEDIDA. O back fica com a opção mais fechada entre ela e a
+		 * que a coleção declara — mas só onde há declaração; sem ela, o padrão do
+		 * back é `public`. `lib/collection-form.ts` → `visibilityOf()` escolhe.
+		 */
+		visibility?: 'public' | 'owner' | 'staff';
 	},
 ): Promise<CollectionEntry> {
 	const { data } = await api.post(base(key, collection), body);
@@ -183,6 +221,59 @@ export async function deleteCollectionEntry(
 	id: string,
 ): Promise<void> {
 	await api.delete(`${base(key, collection)}/${id}`);
+}
+
+/**
+ * Uma cor dominante do que foi enviado: hex + a FATIA DE ÁREA que ela ocupa
+ * (0–1). Espelha `PaletteColor` da main API (`lib/vectorize-color.ts`).
+ *
+ * `share` é opcional AQUI de propósito: a tela ordena por ela quando vem e
+ * continua funcionando quando não vem. Uma prévia de cor não vale um erro de
+ * schema em cima de um upload que deu certo.
+ */
+export const paletteColorSchema = z
+	.object({ hex: z.string(), share: z.number().optional() })
+	.passthrough();
+export type PaletteColor = z.infer<typeof paletteColorSchema>;
+
+/**
+ * Sobe uma imagem de um campo `type:'image'` e devolve a URL pública — e, junto,
+ * o que o servidor JÁ SABE sobre ela porque acabou de decodificá-la.
+ *
+ * O campo GUARDA URL, não bytes (`tool-collections.ts` valida com
+ * `z.string().url()`), e até a F0 o único endpoint de upload era o do Banco do
+ * Admin (`/api/tools/:key/bank/upload-image`, admin-only) — ou seja, um aluno
+ * não tinha como preencher campo de imagem nenhum.
+ *
+ * CONTRATO: multipart com o arquivo em `file`; resposta `{ url, width, height,
+ * palette }`. A `palette` é a razão de existir deste formato: o endpoint já tem
+ * os pixels na mão, então as cores dominantes saem no MESMO round-trip — a tela
+ * da marca pré-preenche as cores em vez de perguntar "qual é a sua cor
+ * primária?" em hexadecimal.
+ *
+ * TUDO ALÉM DA `url` É OPCIONAL no schema. Enquanto o back não devolver a
+ * paleta, quem consome mostra só o que tem; e enquanto a rota não existir, a
+ * chamada volta 404 e o campo de imagem oferece colar o endereço.
+ */
+export const uploadedImageSchema = z
+	.object({
+		url: z.string(),
+		width: z.number().optional(),
+		height: z.number().optional(),
+		palette: z.array(paletteColorSchema).optional(),
+	})
+	.passthrough();
+export type UploadedImage = z.infer<typeof uploadedImageSchema>;
+
+export async function uploadCollectionImage(
+	key: string,
+	collection: string,
+	file: File,
+): Promise<UploadedImage> {
+	const fd = new FormData();
+	fd.append('file', file);
+	const { data } = await api.post(`${base(key, collection)}/upload-image`, fd);
+	return uploadedImageSchema.parse(data);
 }
 
 export async function reviewCollectionEntry(
@@ -217,6 +308,41 @@ export async function sendCollectionFeedback(
 		body,
 	);
 	return collectionEntrySchema.parse(data);
+}
+
+/**
+ * Só `resposta` é exigida.
+ *
+ * O servidor conta a pergunta ANTES de responder — a cota é debitada lá,
+ * mesmo que a gravação do histórico falhe. Um schema estrito transformaria
+ * qualquer campo ausente numa exceção, e o aluno veria "não consegui
+ * responder" logo depois de perder a pergunta e ter a resposta pronta do
+ * outro lado. O saldo é enfeite; o texto é o que ele comprou.
+ */
+export const perguntaRespostaSchema = z
+	.object({
+		resposta: z.string(),
+		restantes: z.number().optional(),
+		total: z.number().optional(),
+	})
+	.passthrough();
+export type PerguntaResposta = z.infer<typeof perguntaRespostaSchema>;
+
+/**
+ * Pergunta em cima de um registro já salvo (o dossiê da Central de
+ * Inteligência, hoje). As perguntas são CONTADAS e vêm incluídas na análise que
+ * o aluno já pagou — por isso a resposta devolve o saldo, e não só o texto.
+ */
+export async function perguntarSobreEntry(
+	key: string,
+	collection: string,
+	id: string,
+	pergunta: string,
+): Promise<PerguntaResposta> {
+	const { data } = await api.post(`${base(key, collection)}/${id}/perguntar`, {
+		pergunta,
+	});
+	return perguntaRespostaSchema.parse(data);
 }
 
 export async function importCollection(

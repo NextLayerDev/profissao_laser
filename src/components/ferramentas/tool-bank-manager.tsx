@@ -3,29 +3,36 @@
 import {
 	ArrowDown,
 	ArrowUp,
+	BadgeCheck,
 	Check,
+	Copy,
 	Database,
 	ImageIcon,
 	Loader2,
 	Pencil,
 	Plus,
+	Scissors,
 	Settings2,
 	Sparkles,
 	Trash2,
 	Upload,
 	X,
 } from 'lucide-react';
+import Link from 'next/link';
 import { type ReactNode, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useImageSizePresets } from '@/modules/tools/hooks/use-image-size-presets';
+import { useLicensedBrands } from '@/modules/tools/hooks/use-licensed-brands';
 import {
 	useCreateBankEntry,
 	useDeleteBankEntry,
 	useReorderBank,
 	useSmartInjectTema,
+	useSummarizePrompt,
 	useToolBank,
 	useUpdateBankEntry,
 } from '@/modules/tools/hooks/use-tool-bank';
+import type { SpecDef } from '@/modules/tools/lib/prompt-bank';
 import type { ToolBankEntry } from '@/modules/tools/services/tool-bank.service';
 import type {
 	BankConfig,
@@ -34,6 +41,44 @@ import type {
 import { getApiErrorMessage } from '@/shared/lib/api-error';
 import { inputCls, SegmentedControl, Switch } from './builder-ui';
 import { ImageSizePresetModal } from './image-size-preset-modal';
+
+/**
+ * Limite real do `prompt` em `ai.generate_image`
+ * (`upvox-main-api/src/tool-blocks/blocks/ai.ts` — `z.string().max(8_000)`).
+ * Mantenha em sincronia se aquele limite mudar.
+ */
+const PROMPT_HARD_LIMIT = 8_000;
+/** A partir daqui o contador vira âmbar; a 100% vira vermelho. */
+const PROMPT_WARN_RATIO = 0.8;
+/** Alvo pedido ao "Resumir prompt" — sobra espaço pro tema/especificações do aluno. */
+const PROMPT_SUMMARIZE_TARGET = 6_000;
+
+function slug(s: string): string {
+	return s
+		.normalize('NFD')
+		.replace(/[̀-ͯ]/g, '')
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, '_')
+		.replace(/^_+|_+$/g, '');
+}
+
+/** Nomes já usados pelo motor — uma especificação não pode colidir com eles. */
+const RESERVED_SPEC_NAMES = new Set([
+	'tema',
+	'referencia',
+	'referencia2',
+	'referencia3',
+	'prompt',
+	'prompt_script',
+	'bank_entry_id',
+	'invocation_id',
+	'image_size',
+	'creation_id',
+	'variation_count',
+	'mode',
+	'max_images',
+	'specs',
+]);
 
 /**
  * Gerenciador do Banco de uma tool (admin). Renderiza o form de cada registro
@@ -68,6 +113,13 @@ interface BankFormValues {
 	dataImages: Record<string, File>;
 	/** `null` = herda o tamanho da tool. */
 	imageSize: ImageSizeValue | null;
+	/**
+	 * "Especificações" — campos com nome aberto que o staff define por
+	 * registro, no lugar da caixa genérica de tema pro aluno (ver `SpecDef`).
+	 * Slot PRÓPRIO (fora de `data`): `formFromEntry` só preserva string/number
+	 * em `data`, e isso é um array.
+	 */
+	specs: SpecDef[];
 	exampleBefore: File | null;
 	exampleAfter: File | null;
 	/** Marcar pra limpar um exemplo existente na edição. */
@@ -84,11 +136,39 @@ function emptyForm(): BankFormValues {
 		data: {},
 		dataImages: {},
 		imageSize: null,
+		specs: [],
 		exampleBefore: null,
 		exampleAfter: null,
 		removeBefore: false,
 		removeAfter: false,
 	};
+}
+
+/** Lê `entry.data.specs` com guarda defensiva de forma — `[]` se ausente/malformado. */
+function specsFromEntryData(
+	data: Record<string, unknown> | undefined,
+): SpecDef[] {
+	const raw = data?.specs;
+	if (!Array.isArray(raw)) return [];
+	const out: SpecDef[] = [];
+	for (const item of raw) {
+		if (
+			item &&
+			typeof item === 'object' &&
+			typeof (item as { name?: unknown }).name === 'string' &&
+			typeof (item as { label?: unknown }).label === 'string'
+		) {
+			const s = item as SpecDef;
+			out.push({
+				name: s.name,
+				label: s.label,
+				placeholder:
+					typeof s.placeholder === 'string' ? s.placeholder : undefined,
+				required: !!s.required,
+			});
+		}
+	}
+	return out;
 }
 
 function formFromEntry(entry: ToolBankEntry): BankFormValues {
@@ -112,6 +192,7 @@ function formFromEntry(entry: ToolBankEntry): BankFormValues {
 		data,
 		dataImages: {},
 		imageSize,
+		specs: specsFromEntryData(entry.data),
 		exampleBefore: null,
 		exampleAfter: null,
 		removeBefore: false,
@@ -324,7 +405,74 @@ function ImagePick({
 	);
 }
 
-/** Renderiza UM campo do banco (text/textarea/enum/image). */
+/**
+ * Select das marcas licenciadas cadastradas.
+ *
+ * Guarda a `feature_key` como valor (é ela que o pipeline resolve), mas mostra
+ * o nome de gente — ninguém escolhe "clube:corinthians" numa lista, escolhe
+ * "Corinthians".
+ *
+ * Marca inativa aparece marcada em vez de sumir: um prompt pode ter sido criado
+ * quando ela ainda valia, e esconder faria o campo abrir vazio sem explicação.
+ */
+function BrandPick({
+	field,
+	value,
+	onPick,
+}: {
+	field: BankFieldDef;
+	value: string;
+	onPick: (v: string) => void;
+}) {
+	const { data: marcas, isLoading } = useLicensedBrands();
+	const label = field.label ?? field.name;
+	const orfa =
+		!!value && !!marcas && !marcas.some((m) => m.feature_key === value);
+
+	return (
+		<div>
+			<span className={labelCls}>
+				{label}
+				{field.required && <span className="text-rose-400"> *</span>}
+			</span>
+			<select
+				value={value}
+				onChange={(e) => onPick(e.target.value)}
+				disabled={isLoading}
+				className={inputCls}
+			>
+				<option value="">— escolha a marca —</option>
+				{(marcas ?? []).map((m) => (
+					<option key={m.id} value={m.feature_key}>
+						{m.display_name}
+						{m.active ? '' : ' (inativa)'} — {m.feature_key}
+					</option>
+				))}
+				{/* A chave gravada some da lista se a marca for removida. Mantê-la
+				    como opção evita o campo abrir vazio e o admin salvar por cima
+				    sem perceber que perdeu o vínculo. */}
+				{orfa && <option value={value}>{value} — marca removida</option>}
+			</select>
+			{marcas && marcas.length === 0 && (
+				<p className="mt-1 text-[11px] text-amber-400">
+					Nenhuma marca cadastrada.{' '}
+					<Link href="/ferramentas/marcas" className="underline">
+						Cadastre a primeira
+					</Link>{' '}
+					para os prompts licenciados funcionarem.
+				</p>
+			)}
+			{orfa && (
+				<p className="mt-1 text-[11px] text-amber-400">
+					A marca “{value}” não está mais cadastrada — este prompt não gera até
+					ser recadastrada ou trocada.
+				</p>
+			)}
+		</div>
+	);
+}
+
+/** Renderiza UM campo do banco (text/textarea/enum/image/brand). */
 function BankFieldControl({
 	field,
 	value,
@@ -378,6 +526,9 @@ function BankFieldControl({
 			</div>
 		);
 	}
+	if (field.type === 'brand') {
+		return <BrandPick field={field} value={value} onPick={onText} />;
+	}
 	if (field.type === 'image') {
 		return (
 			<ImagePick
@@ -413,6 +564,13 @@ function FieldShell({ children }: { children: ReactNode }) {
  * {USER_INPUT}" do comunidade_laser). Só aparece quando o modo inclui texto
  * (`texto` / `texto_imagem`) — no modo só-imagem não há tema do aluno.
  */
+/** Cor do contador de caracteres conforme a proximidade do limite real do modelo. */
+function charCountColor(len: number): string {
+	if (len > PROMPT_HARD_LIMIT) return 'text-rose-400';
+	if (len > PROMPT_HARD_LIMIT * PROMPT_WARN_RATIO) return 'text-amber-400';
+	return 'text-slate-500';
+}
+
 function PromptScriptField({
 	field,
 	value,
@@ -425,6 +583,7 @@ function PromptScriptField({
 	mode: string | undefined;
 }) {
 	const smartMut = useSmartInjectTema();
+	const summarizeMut = useSummarizePrompt();
 	const label = field.label ?? field.name;
 	const modeAllowsText = mode !== 'imagem';
 
@@ -449,12 +608,45 @@ function PromptScriptField({
 		}
 	};
 
+	const runSummarize = async () => {
+		if (!value.trim()) {
+			toast.error('Escreva um prompt antes de resumir.');
+			return;
+		}
+		try {
+			const res = await summarizeMut.mutateAsync({
+				prompt_script: value,
+				mode,
+				target_chars: PROMPT_SUMMARIZE_TARGET,
+			});
+			if (res.unchanged)
+				toast.info(
+					`Já está dentro do alvo (${PROMPT_SUMMARIZE_TARGET} caracteres).`,
+				);
+			else if (res.fallback)
+				toast.error(
+					'Não deu pra resumir automaticamente sem perder algum {placeholder} — encurte manualmente.',
+				);
+			else toast.success('Prompt resumido.');
+			onText(res.result);
+		} catch (err) {
+			toast.error(getApiErrorMessage(err, 'Falha ao resumir o prompt.'));
+		}
+	};
+
 	return (
 		<div>
-			<span className={labelCls}>
-				{label}
-				{field.required && <span className="text-rose-400"> *</span>}
-			</span>
+			<div className="flex items-center justify-between">
+				<span className={labelCls}>
+					{label}
+					{field.required && <span className="text-rose-400"> *</span>}
+				</span>
+				<span
+					className={`font-mono text-[11px] tabular-nums ${charCountColor(value.length)}`}
+				>
+					{value.length}/{PROMPT_HARD_LIMIT}
+				</span>
+			</div>
 			<textarea
 				value={value}
 				onChange={(e) => onText(e.target.value)}
@@ -462,21 +654,40 @@ function PromptScriptField({
 				placeholder={field.placeholder}
 				className={`${areaCls} font-mono text-[12px]`}
 			/>
-			{modeAllowsText && (
+			<p className="mt-1 text-[11px] text-slate-500">
+				Contagem só deste texto — não inclui o que o aluno preencher no
+				tema/especificações depois.
+			</p>
+			<div className="mt-2 flex flex-wrap items-center gap-2">
+				{modeAllowsText && (
+					<button
+						type="button"
+						onClick={runSmart}
+						disabled={smartMut.isPending}
+						className="inline-flex items-center gap-1.5 rounded-lg border border-violet-400/30 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-200 transition-colors hover:bg-violet-500/20 disabled:opacity-50"
+					>
+						{smartMut.isPending ? (
+							<Loader2 className="h-3.5 w-3.5 animate-spin" />
+						) : (
+							<Sparkles className="h-3.5 w-3.5" />
+						)}
+						Add tema inteligente
+					</button>
+				)}
 				<button
 					type="button"
-					onClick={runSmart}
-					disabled={smartMut.isPending}
-					className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-violet-400/30 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-200 transition-colors hover:bg-violet-500/20 disabled:opacity-50"
+					onClick={runSummarize}
+					disabled={summarizeMut.isPending}
+					className="inline-flex items-center gap-1.5 rounded-lg border border-sky-400/30 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-200 transition-colors hover:bg-sky-500/20 disabled:opacity-50"
 				>
-					{smartMut.isPending ? (
+					{summarizeMut.isPending ? (
 						<Loader2 className="h-3.5 w-3.5 animate-spin" />
 					) : (
-						<Sparkles className="h-3.5 w-3.5" />
+						<Scissors className="h-3.5 w-3.5" />
 					)}
-					Add tema inteligente
+					Resumir prompt
 				</button>
-			)}
+			</div>
 		</div>
 	);
 }
@@ -523,6 +734,119 @@ function MaxImagesControl({
 			<p className="mt-1.5 text-[11px] text-slate-500">
 				O cliente verá {value} {value === 1 ? 'campo' : 'campos'} de upload.
 			</p>
+		</div>
+	);
+}
+
+/**
+ * "Especificações" — o staff define campos com nome aberto por registro (ex.:
+ * "Nome do jogador"), que substituem a caixa genérica de tema pro aluno. Cada
+ * linha vira `{chave}` no `prompt_script` (mesma mecânica de `{tema}`, via
+ * `substituteVars` no backend — nenhuma mudança de backend necessária).
+ */
+function SpecsEditor({
+	specs,
+	onChange,
+}: {
+	specs: SpecDef[];
+	onChange: (specs: SpecDef[]) => void;
+}) {
+	const patch = (i: number, p: Partial<SpecDef>) =>
+		onChange(specs.map((s, idx) => (idx === i ? { ...s, ...p } : s)));
+	const remove = (i: number) => onChange(specs.filter((_, idx) => idx !== i));
+	const add = () =>
+		onChange([
+			...specs,
+			{ name: `campo_${specs.length + 1}`, label: '', required: true },
+		]);
+
+	const copyKey = (name: string) => {
+		navigator.clipboard?.writeText(`{${name}}`);
+		toast.success(`Copiado: {${name}}`);
+	};
+
+	return (
+		<div className="space-y-3 border-t border-white/[0.06] pt-5">
+			<div className="flex items-center justify-between gap-3">
+				<div>
+					<p className="font-mono text-[11px] uppercase tracking-widest text-fuchsia-300/80">
+						Especificações
+					</p>
+					<p className="mt-1 text-[11px] text-slate-500">
+						Substitui a caixa de tema padrão pro aluno. Use {'{chave}'} no
+						prompt acima pra inserir o valor que ele preencher.
+					</p>
+				</div>
+				<button
+					type="button"
+					onClick={add}
+					className="flex shrink-0 items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-white/10"
+				>
+					<Plus className="h-3.5 w-3.5" /> Especificação
+				</button>
+			</div>
+
+			{specs.length === 0 && (
+				<p className="text-xs text-slate-500">
+					Nenhuma especificação — o aluno vê a caixa de tema padrão.
+				</p>
+			)}
+
+			{specs.map((s, i) => (
+				<div
+					key={`spec-${i}`}
+					className="space-y-2 rounded-xl border border-white/10 bg-black/20 p-3"
+				>
+					<div className="flex flex-wrap items-end gap-2">
+						<label className="flex min-w-[180px] flex-1 flex-col gap-1">
+							<span className="text-[10px] uppercase text-slate-500">
+								Rótulo (o que o aluno vê)
+							</span>
+							<input
+								value={s.label}
+								onChange={(e) => {
+									const label = e.target.value;
+									patch(i, { label, name: slug(label) || s.name });
+								}}
+								placeholder="Ex.: Nome do jogador"
+								className={inputCls}
+							/>
+						</label>
+						<label className="flex items-center gap-1.5 pb-2.5 text-[11px] text-slate-400">
+							<input
+								type="checkbox"
+								checked={!!s.required}
+								onChange={(e) => patch(i, { required: e.target.checked })}
+								className="accent-fuchsia-500"
+							/>
+							obrigatório
+						</label>
+						<button
+							type="button"
+							onClick={() => remove(i)}
+							className="mb-1.5 rounded p-1.5 text-slate-500 hover:bg-rose-500/10 hover:text-rose-400"
+						>
+							<Trash2 className="h-3.5 w-3.5" />
+						</button>
+					</div>
+					<div className="flex flex-wrap items-center gap-2">
+						<button
+							type="button"
+							onClick={() => copyKey(s.name)}
+							className="inline-flex shrink-0 items-center gap-1 rounded-md border border-white/10 bg-black/30 px-2 py-1.5 font-mono text-[11px] text-emerald-300 hover:bg-white/5"
+						>
+							<Copy className="h-3 w-3" />
+							{`{${s.name || '...'}}`}
+						</button>
+						<input
+							value={s.placeholder ?? ''}
+							onChange={(e) => patch(i, { placeholder: e.target.value })}
+							placeholder="placeholder de exemplo (opcional)"
+							className={`${inputCls} flex-1`}
+						/>
+					</div>
+				</div>
+			))}
 		</div>
 	);
 }
@@ -581,6 +905,7 @@ export function ToolBankManager({
 		const dataPayload: Record<string, unknown> = { ...form.data };
 		if (form.imageSize)
 			dataPayload.image_size = imageSizeToPayload(form.imageSize);
+		if (form.specs.length > 0) dataPayload.specs = form.specs;
 		fd.append('data', JSON.stringify(dataPayload));
 		for (const [name, file] of Object.entries(form.dataImages)) {
 			fd.append(name, file);
@@ -616,6 +941,27 @@ export function ToolBankManager({
 				toast.error(`O campo "${f.label ?? f.name}" é obrigatório.`);
 				return;
 			}
+		}
+		// Valida especificações: rótulo preenchido, chave única e não-reservada.
+		const seenSpecNames = new Set<string>();
+		for (const s of form.specs) {
+			if (!s.label.trim()) {
+				toast.error('Toda especificação precisa de um rótulo.');
+				return;
+			}
+			if (!s.name || RESERVED_SPEC_NAMES.has(s.name)) {
+				toast.error(
+					`A chave "${s.name}" é reservada — mude o rótulo da especificação "${s.label}".`,
+				);
+				return;
+			}
+			if (seenSpecNames.has(s.name)) {
+				toast.error(
+					`Duas especificações geraram a mesma chave "{${s.name}}" — ajuste os rótulos.`,
+				);
+				return;
+			}
+			seenSpecNames.add(s.name);
 		}
 		if (form.imageSize?.unit === 'preset' && !form.imageSize.presetId) {
 			toast.error(
@@ -677,6 +1023,14 @@ export function ToolBankManager({
 	const editingEntry = entries.find((e) => e.id === editingId) ?? null;
 	const showForm = creating || !!editingId;
 
+	/**
+	 * Banco de tool licenciada é o que declara o campo `feature_key`: a arte da
+	 * marca vive no cadastro de Marcas licenciadas, não no registro do prompt.
+	 * Sem esta sinalização o admin abre a tela, não acha onde subir o brasão, e
+	 * conclui que faltou campo.
+	 */
+	const ehBancoLicenciado = fields.some((f) => f.name === 'feature_key');
+
 	return (
 		<div className="space-y-5">
 			{/* Cabeçalho */}
@@ -693,6 +1047,14 @@ export function ToolBankManager({
 					</div>
 				</div>
 				<div className="flex items-center gap-2">
+					{ehBancoLicenciado && (
+						<Link
+							href="/ferramentas/marcas"
+							className="flex items-center gap-1.5 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-xs font-medium text-emerald-300 transition-colors hover:bg-emerald-400/20"
+						>
+							<BadgeCheck className="h-4 w-4" /> Marcas licenciadas
+						</Link>
+					)}
 					{onConfigure && (
 						<button
 							type="button"
@@ -713,6 +1075,23 @@ export function ToolBankManager({
 					)}
 				</div>
 			</div>
+
+			{ehBancoLicenciado && (
+				<p className="rounded-xl border border-emerald-400/20 bg-emerald-400/5 px-3.5 py-2.5 text-xs text-emerald-200/90">
+					O <strong>brasão e o mascote não ficam no prompt</strong> — eles são
+					da marca. Cadastre a arte uma vez em{' '}
+					<Link
+						href="/ferramentas/marcas"
+						className="underline underline-offset-2"
+					>
+						Marcas licenciadas
+					</Link>{' '}
+					e aqui basta escrever a chave dela (ex.:{' '}
+					<code>clube:corinthians</code>). Assim um clube com caneca, capinha e
+					chaveiro usa um upload só, e trocar a arte oficial atualiza todos de
+					uma vez.
+				</p>
+			)}
 
 			{!bank?.enabled && (
 				<div className="flex items-start gap-3 rounded-xl border border-amber-400/30 bg-amber-500/5 p-4">
@@ -840,6 +1219,15 @@ export function ToolBankManager({
 											data: { ...form.data, max_images: String(n) },
 										})
 									}
+								/>
+							)}
+							{/* Especificações: só faz sentido quando o modo pede algo do
+							    aluno em texto (`texto`/`texto_imagem`) — substitui a caixa
+							    de tema padrão. */}
+							{form.data.mode !== 'imagem' && (
+								<SpecsEditor
+									specs={form.specs}
+									onChange={(specs) => patchForm({ specs })}
 								/>
 							)}
 						</div>

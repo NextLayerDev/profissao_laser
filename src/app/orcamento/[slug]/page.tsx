@@ -1,7 +1,13 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, ArrowRight, Info, ShieldCheck } from 'lucide-react';
+import {
+	AlertTriangle,
+	ArrowRight,
+	Info,
+	MessageCircle,
+	ShieldCheck,
+} from 'lucide-react';
 import { useParams } from 'next/navigation';
 import {
 	type CSSProperties,
@@ -21,6 +27,7 @@ import {
 	EXTENSOES,
 	erroAmigavel,
 	getQuoteLink,
+	linkWhatsapp,
 	logoSegura,
 	MAX_ARQUIVO_MB,
 	type MaterialPublico,
@@ -325,6 +332,15 @@ export default function OrcamentoPublicoPage() {
 					/>
 				) : null}
 				<div className="min-w-0">
+					{/* A EMPRESA vem da marca do profissional (`usar_marca` no link) e é
+					    o que transforma isto numa proposta assinada em vez de um
+					    formulário anônimo. Quando ele não cadastrou marca, `empresa` é
+					    vazio e a página fica exatamente como sempre foi: só o título. */}
+					{info.empresa ? (
+						<p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--screen-accent,#7c3aed)]">
+							{info.empresa}
+						</p>
+					) : null}
 					<h1 className="text-xl font-semibold leading-tight text-slate-900 dark:text-white">
 						{info.titulo}
 					</h1>
@@ -342,6 +358,8 @@ export default function OrcamentoPublicoPage() {
 						mostrarPrazo={info.mostrar_prazo}
 						pedeLead={pedeLead}
 						titulo={info.titulo}
+						empresa={info.empresa}
+						whatsapp={info.whatsapp}
 					/>
 				</div>
 			) : null}
@@ -685,15 +703,55 @@ function Resultado({
 	mostrarPrazo,
 	pedeLead,
 	titulo,
+	empresa,
+	whatsapp,
 }: {
 	r: EstimateResult;
 	mostrarPrazo: boolean;
 	pedeLead: boolean;
 	titulo: string;
+	empresa: string;
+	whatsapp: string;
 }) {
 	const total = r.price_total_cents ?? 0;
 	const unit = r.price_unit_cents ?? 0;
 	const qtd = r.qtd ?? 1;
+	const desconto = r.desconto_pct ?? 0;
+
+	/** As fichas da proposta, já sem as que não se aplicam a este orçamento. */
+	const dados: { rotulo: string; valor: string }[] = [];
+	if (r.dims_mm) {
+		dados.push({
+			rotulo: 'Tamanho do desenho',
+			valor: `${mm(r.dims_mm.largura)} × ${mm(r.dims_mm.altura)} mm`,
+		});
+	}
+	// "PEÇAS NO ARQUIVO: 7" ao lado de "10 peças · R$ 15,00 cada" fazia o cliente
+	// perguntar se são 10 ou 70. Só aparece quando o desenho tem mais de uma peça
+	// — e aí o rótulo já diz que a contagem é POR unidade.
+	if (r.pecas !== undefined && r.pecas > 1) {
+		dados.push({ rotulo: 'Peças em cada unidade', valor: String(r.pecas) });
+	}
+	if (mostrarPrazo && r.prazo_dias !== undefined) {
+		dados.push({
+			rotulo: 'Prazo estimado',
+			valor: r.prazo_dias === 1 ? '1 dia útil' : `${r.prazo_dias} dias úteis`,
+		});
+	}
+
+	// A mensagem já vai pronta: o cliente aperta um botão e o profissional recebe
+	// o pedido com o valor que ELE mesmo orçou — sem "oi, quanto ficou mesmo?".
+	const zap = linkWhatsapp(
+		whatsapp,
+		[
+			`Olá! Fiz um orçamento no site${empresa ? ` da ${empresa}` : ''}.`,
+			r.resumo ? `Peça: ${r.resumo}` : '',
+			`Valor: ${reais(total)}${qtd > 1 ? ` (${qtd} peças)` : ''}`,
+			'Quero fechar o pedido.',
+		]
+			.filter(Boolean)
+			.join('\n'),
+	);
 
 	return (
 		<div className="overflow-hidden rounded-2xl border border-[color-mix(in_srgb,var(--screen-accent,#7c3aed)_35%,transparent)] bg-white shadow-lg shadow-black/5 dark:bg-[#141416]">
@@ -707,28 +765,72 @@ function Resultado({
 				<p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
 					{qtd === 1 ? '1 peça' : `${qtd} peças · ${reais(unit)} cada`}
 				</p>
+				{/* A CONTA TEM QUE FECHAR NA CARA DO CLIENTE. Com desconto por
+				    quantidade, `qtd × unitário` não dá o total, e a página não citava
+				    o desconto em lugar nenhum: "10 peças · R$ 13,00 cada" em cima de
+				    "R$ 123,50" some R$ 6,50 sem explicação e parece erro de quem
+				    mandou. O desconto é uma condição comercial que o profissional
+				    CONCEDE — dizer isso ao cliente é bom para ele. */}
+				{desconto > 0 && qtd > 1 ? (
+					<p className="mt-1 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+						Desconto por quantidade de {desconto.toFixed(0)}% já aplicado —{' '}
+						{reais(Math.ceil(total / qtd))} por peça
+					</p>
+				) : null}
 			</div>
 
-			<dl className="grid grid-cols-2 gap-px bg-slate-200 text-sm dark:bg-white/10">
-				{r.dims_mm ? (
-					<Dado rotulo="Tamanho do desenho">
-						{mm(r.dims_mm.largura)} × {mm(r.dims_mm.altura)} mm
-					</Dado>
-				) : null}
-				{r.pecas !== undefined ? (
-					<Dado rotulo="Peças no arquivo">{r.pecas}</Dado>
-				) : null}
-				{mostrarPrazo && r.prazo_dias !== undefined ? (
-					<Dado rotulo="Prazo estimado">
-						{r.prazo_dias === 1 ? '1 dia útil' : `${r.prazo_dias} dias úteis`}
-					</Dado>
-				) : null}
-			</dl>
+			{dados.length > 0 ? (
+				<dl className="grid grid-cols-2 gap-px bg-slate-200 text-sm dark:bg-white/10">
+					{dados.map((d) => (
+						<Dado key={d.rotulo} rotulo={d.rotulo}>
+							{d.valor}
+						</Dado>
+					))}
+					{/* Número ÍMPAR de fichas deixava meia célula com a cor do separador
+					    — um retângulo cinza vazio no meio da proposta, que lê como
+					    "faltou carregar alguma coisa". A célula de sobra é preenchida. */}
+					{dados.length % 2 === 1 ? (
+						<div className="bg-white dark:bg-[#141416]" />
+					) : null}
+				</dl>
+			) : null}
 
 			<div className="space-y-3 p-4">
 				{r.resumo ? (
 					<p className="text-xs text-slate-500 dark:text-slate-400">
 						{r.resumo}
+					</p>
+				) : null}
+
+				{/* FECHAR O PEDIDO. Antes desta versão o único botão da página era
+				    "Recalcular": o cliente recebia o preço e não tinha para onde ir.
+				    Sem WhatsApp cadastrado o botão não existe, e a página segue como
+				    era — não inventamos um canal que o profissional não ofereceu. */}
+				{zap ? (
+					<a
+						href={zap}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+						style={{ background: 'var(--screen-accent, #7c3aed)' }}
+					>
+						<MessageCircle className="h-4 w-4" />
+						Fechar pedido no WhatsApp
+					</a>
+				) : null}
+
+				{/* HONESTIDADE DO NÚMERO. O motor marca `estimativa` quando a
+				    velocidade de corte saiu de um modelo e não de uma medição — e o
+				    cliente recebia esse preço com cara de fechado. Dizer isto agora
+				    custa uma frase; descobrir na entrega custa o cliente. */}
+				{r.estimativa ? (
+					<p className="flex gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs leading-relaxed text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+						<Info className="mt-px h-3.5 w-3.5 shrink-0" />
+						<span>
+							Este é um <strong>valor estimado</strong>. Ele é confirmado
+							{empresa ? ` pela ${empresa}` : ' pelo profissional'} antes de a
+							produção começar.
+						</span>
 					</p>
 				) : null}
 

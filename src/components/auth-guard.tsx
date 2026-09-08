@@ -19,6 +19,11 @@ const PUBLIC_PATHS = [
 	// cliente final do profissional — que não tem e nunca vai ter conta — direto
 	// para `/login`, e a página pública simplesmente não existe.
 	'/orcamento',
+	// Verificação pública da arte licenciada gerada na ferramenta. Quem escaneia
+	// o QR gravado na peça é o consumidor final: não tem conta e não vai criar
+	// uma para conferir se o escudo é oficial. Um 401 daqui também não pode
+	// derrubar a sessão de quem estiver logado noutra aba.
+	'/a',
 ];
 
 const ADMIN_PATHS = [

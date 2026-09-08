@@ -1,77 +1,26 @@
 'use client';
 
-import { CalendarRange, Copy, Loader2, Power, PowerOff } from 'lucide-react';
+import { CalendarRange, Loader2 } from 'lucide-react';
 import { useState } from 'react';
-import { toast } from 'sonner';
+import {
+	effectiveStatus,
+	formatDate,
+	LinkRowActions,
+	LinkTableHead,
+	PlanVoxesBadge,
+	StatusBadge,
+	useLinkRowActions,
+} from '@/components/links/link-table-shared';
 import { usePlanLinks, useUpdatePlanLinkStatus } from '@/hooks/use-plan-links';
-import type { PlanLinkListItem } from '@/types/plan-link';
-
-const STATUS_STYLES: Record<string, string> = {
-	active: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-	disabled: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
-	expired: 'bg-red-500/10 text-red-400 border-red-500/20',
-	exhausted: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-};
-
-const STATUS_LABELS: Record<string, string> = {
-	active: 'Ativo',
-	disabled: 'Desativado',
-	expired: 'Expirado',
-	exhausted: 'Esgotado',
-};
-
-function formatDate(iso: string) {
-	return new Date(iso).toLocaleDateString('pt-BR', {
-		day: '2-digit',
-		month: '2-digit',
-		year: 'numeric',
-		hour: '2-digit',
-		minute: '2-digit',
-	});
-}
-
-/** Status efetivo pra exibição (expiração/esgotamento derivados no front). */
-function effectiveStatus(link: PlanLinkListItem): string {
-	if (link.status === 'disabled') return 'disabled';
-	if (link.expires_at && new Date(link.expires_at) < new Date())
-		return 'expired';
-	if (
-		link.max_redemptions !== null &&
-		link.current_redemptions >= link.max_redemptions
-	)
-		return 'exhausted';
-	return 'active';
-}
 
 /** Links ANUAIS (plano único travado, 1º ano = piso mensal × 12). */
 export function AnnualLinksTable() {
 	const { data, isLoading } = usePlanLinks();
 	const toggleMutation = useUpdatePlanLinkStatus();
+	const rowActions = useLinkRowActions(toggleMutation.mutateAsync);
 	const [copiedId, setCopiedId] = useState<string | null>(null);
 
 	const links = (data ?? []).filter((l) => l.kind === 'annual_fixed');
-
-	async function copyLink(token: string, id: string) {
-		const url = `${window.location.origin}/link-plano/${token}`;
-		try {
-			await navigator.clipboard.writeText(url);
-			setCopiedId(id);
-			toast.success('Link copiado!');
-			setTimeout(() => setCopiedId(null), 2000);
-		} catch {
-			toast.error('Erro ao copiar link');
-		}
-	}
-
-	async function handleToggle(link: PlanLinkListItem) {
-		const next = link.status === 'active' ? 'disabled' : 'active';
-		try {
-			await toggleMutation.mutateAsync({ id: link.id, status: next });
-			toast.success(next === 'active' ? 'Link ativado!' : 'Link desativado!');
-		} catch {
-			toast.error('Erro ao alterar status do link');
-		}
-	}
 
 	if (isLoading) {
 		return (
@@ -99,29 +48,20 @@ export function AnnualLinksTable() {
 	return (
 		<div className="overflow-x-auto">
 			<table className="w-full text-sm">
-				<thead>
-					<tr className="border-b border-slate-200 dark:border-gray-800">
-						{[
-							'Link',
-							'Plano',
-							'Voxxys de presente',
-							'Voxxys do plano',
-							'Usos',
-							'Status',
-							'Criado por',
-							'Criado em',
-							'Expira em',
-							'Ações',
-						].map((h) => (
-							<th
-								key={h}
-								className="text-left py-3 px-4 font-medium text-slate-400 dark:text-gray-600"
-							>
-								{h}
-							</th>
-						))}
-					</tr>
-				</thead>
+				<LinkTableHead
+					columns={[
+						'Link',
+						'Plano',
+						'Voxxys de presente',
+						'Voxxys do plano',
+						'Usos',
+						'Status',
+						'Criado por',
+						'Criado em',
+						'Expira em',
+						'Ações',
+					]}
+				/>
 				<tbody>
 					{links.map((link) => {
 						const status = effectiveStatus(link);
@@ -146,15 +86,7 @@ export function AnnualLinksTable() {
 									</span>
 								</td>
 								<td className="py-3 px-4">
-									{link.grants_plan_voxes === false ? (
-										<span className="inline-flex items-center rounded-full border border-slate-300 dark:border-gray-700 px-2 py-0.5 text-[11px] font-medium text-slate-500 dark:text-gray-400">
-											Não inclui
-										</span>
-									) : (
-										<span className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-											Inclui
-										</span>
-									)}
+									<PlanVoxesBadge includes={link.grants_plan_voxes !== false} />
 								</td>
 								<td className="py-3 px-4 text-slate-600 dark:text-gray-300">
 									<span className="font-medium text-slate-900 dark:text-white">
@@ -165,11 +97,7 @@ export function AnnualLinksTable() {
 									</span>
 								</td>
 								<td className="py-3 px-4">
-									<span
-										className={`inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border ${STATUS_STYLES[status] ?? STATUS_STYLES.active}`}
-									>
-										{STATUS_LABELS[status] ?? status}
-									</span>
+									<StatusBadge status={status} />
 								</td>
 								<td className="py-3 px-4 text-slate-600 dark:text-gray-400">
 									{link.created_by_name ?? '—'}
@@ -181,41 +109,15 @@ export function AnnualLinksTable() {
 									{link.expires_at ? formatDate(link.expires_at) : '—'}
 								</td>
 								<td className="py-3 px-4">
-									<div className="flex items-center gap-1">
-										<button
-											type="button"
-											onClick={() => copyLink(link.token, link.id)}
-											className={`p-2 rounded-lg transition-colors ${
-												copiedId === link.id
-													? 'bg-emerald-500/20 text-emerald-400'
-													: 'text-slate-500 dark:text-gray-500 hover:text-violet-400 hover:bg-slate-100 dark:hover:bg-[#252528]'
-											}`}
-											title="Copiar link"
-										>
-											<Copy className="w-4 h-4" />
-										</button>
-										<button
-											type="button"
-											onClick={() => handleToggle(link)}
-											disabled={toggleMutation.isPending}
-											className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${
-												link.status === 'active'
-													? 'text-slate-500 dark:text-gray-500 hover:text-red-400 hover:bg-red-500/10'
-													: 'text-slate-500 dark:text-gray-500 hover:text-emerald-400 hover:bg-emerald-500/10'
-											}`}
-											title={
-												link.status === 'active'
-													? 'Desativar link'
-													: 'Ativar link'
-											}
-										>
-											{link.status === 'active' ? (
-												<PowerOff className="w-4 h-4" />
-											) : (
-												<Power className="w-4 h-4" />
-											)}
-										</button>
-									</div>
+									<LinkRowActions
+										link={link}
+										copied={copiedId === link.id}
+										onCopy={() =>
+											rowActions.copy(link.token, link.id, setCopiedId)
+										}
+										onToggle={() => rowActions.toggle(link)}
+										toggling={toggleMutation.isPending}
+									/>
 								</td>
 							</tr>
 						);

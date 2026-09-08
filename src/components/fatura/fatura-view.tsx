@@ -10,6 +10,7 @@ import {
 	FileSpreadsheet,
 	FileText,
 	Gem,
+	Gift,
 	Lightbulb,
 	Link2,
 	Loader2,
@@ -125,6 +126,11 @@ const SOURCE_META: Record<CompanyInvoiceSource, SourceMeta> = {
 		badge:
 			'bg-slate-500/10 text-slate-600 dark:text-gray-300 border-slate-400/25',
 	},
+	granted_access_use: {
+		label: 'Uso de acesso dado',
+		Icon: Gift,
+		badge: 'bg-rose-500/10 text-rose-600 dark:text-rose-300 border-rose-500/25',
+	},
 };
 
 const SOURCE_OPTIONS: { value: CompanyInvoiceSource; label: string }[] = [
@@ -132,6 +138,7 @@ const SOURCE_OPTIONS: { value: CompanyInvoiceSource; label: string }[] = [
 	{ value: 'link_purchase', label: 'Compra via link (100%)' },
 	{ value: 'link_tool_use', label: 'Uso de ferramenta' },
 	{ value: 'plan_grant', label: 'Voxxys do plano (registro, R$ 0,00)' },
+	{ value: 'granted_access_use', label: 'Uso de acesso dado (custo real)' },
 ];
 
 /* ── cards do topo (financeiro) ─────────────────────────────────────────── */
@@ -714,6 +721,11 @@ export function FaturaView() {
 			color: 'bg-slate-400',
 		},
 		{
+			label: 'Acessos dados (uso)',
+			cents: totals?.granted_access_cents ?? 0,
+			color: 'bg-rose-500',
+		},
+		{
 			label: 'Voxxy comprado (50%)',
 			cents: totals?.vox_purchase_use_cents ?? 0,
 			color: 'bg-teal-500',
@@ -748,6 +760,11 @@ export function FaturaView() {
 			name: 'Ferramentas',
 			value: (totals?.tools_cents ?? 0) / 100,
 			color: '#94a3b8',
+		},
+		{
+			name: 'Acessos dados (uso)',
+			value: (totals?.granted_access_cents ?? 0) / 100,
+			color: '#f43f5e',
 		},
 		{
 			name: 'Voxxy comprado (50%)',

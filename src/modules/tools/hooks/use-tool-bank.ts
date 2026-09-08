@@ -7,7 +7,9 @@ import {
 	listToolBank,
 	reorderToolBank,
 	type SmartTemaResult,
+	type SummarizePromptResult,
 	smartInjectTema,
+	summarizePrompt,
 	type ToolBankEntry,
 	updateToolBankEntry,
 } from '../services/tool-bank.service';
@@ -83,5 +85,21 @@ export function useSmartInjectTema() {
 	>({
 		mutationFn: ({ prompt_script, mode }) =>
 			smartInjectTema(prompt_script, mode),
+	});
+}
+
+/**
+ * "Resumir prompt": a IA encurta o `prompt_script` preservando todo
+ * `{placeholder}`. Não toca o banco (só transforma o texto); o admin revisa e
+ * salva depois.
+ */
+export function useSummarizePrompt() {
+	return useMutation<
+		SummarizePromptResult,
+		Error,
+		{ prompt_script: string; mode?: string; target_chars?: number }
+	>({
+		mutationFn: ({ prompt_script, mode, target_chars }) =>
+			summarizePrompt(prompt_script, mode, target_chars),
 	});
 }

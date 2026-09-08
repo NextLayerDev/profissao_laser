@@ -249,7 +249,9 @@ export interface FailedPaymentsAnalyticsParams {
 
 // ---- Entries (entradas) ----
 
-export const entryTypeSchema = z.enum(['subscription', 'vox']);
+// 'package' = venda de curso avulso; vem da mesma fatura que 'subscription',
+// separado pelo tipo do produto no backend.
+export const entryTypeSchema = z.enum(['subscription', 'package', 'vox']);
 export type EntryType = z.infer<typeof entryTypeSchema>;
 
 export const entryRowSchema = z.object({
@@ -262,7 +264,7 @@ export const entryRowSchema = z.object({
 		.object({
 			subscription_id: z.string().optional(),
 			billing_reason: billingReasonSchema,
-			interval: z.enum(['monthly', 'yearly']),
+			interval: z.enum(['monthly', 'yearly', 'lifetime']),
 			plan: z.object({ id: z.string(), key: z.string(), name: z.string() }),
 			status: z.enum(['paid', 'payment_failed', 'refunded']).optional(),
 		})
@@ -301,7 +303,11 @@ export interface EntriesAnalyticsParams {
 
 // ---- Refunds ----
 
-export const refundTypeSchema = z.enum(['subscription', 'vox_purchase']);
+export const refundTypeSchema = z.enum([
+	'subscription',
+	'package',
+	'vox_purchase',
+]);
 export type RefundType = z.infer<typeof refundTypeSchema>;
 
 export const refundRowSchema = z.object({

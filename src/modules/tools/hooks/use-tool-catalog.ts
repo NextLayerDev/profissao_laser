@@ -146,6 +146,16 @@ type ToolUi = {
 	/** Tools nativas (`native_v1`): rota da página e permissão que a gateia. */
 	href?: string;
 	permission?: string;
+	/**
+	 * `false` = NÃO é ferramenta, não entra em catálogo nenhum.
+	 *
+	 * Existe porque nem todo `native_v1` é uma tool: o contêiner `perfil` é só um
+	 * ENDEREÇO para a coleção `marca` (sem pipeline, sem billing, sem linha em
+	 * `public.tools`). Sem esta chave ele virava um card "Perfil do aluno" em
+	 * Ferramentas para o super-admin — e o pedido do dono foi literal, "não quero
+	 * como ferramenta". Ausente ou `true` mantém o comportamento de sempre.
+	 */
+	catalogo?: boolean;
 };
 
 function readUi(def: AiToolDefinition | undefined): ToolUi {
@@ -238,6 +248,8 @@ function useAdminCatalog(): UseToolCatalog {
 		// prod ignora rascunhos. Gateadas pela `permission` declarada na `ui`.
 		const nativeRows = (data ?? [])
 			.filter((d) => d.engine_runtime === 'native_v1')
+			// Contêiner de dado (`ui.catalogo: false`) não é ferramenta — ver ToolUi.
+			.filter((d) => readUi(d).catalogo !== false)
 			.filter((d) => can(readUi(d).permission ?? ''))
 			.map((d): CatalogTool => {
 				const ui = readUi(d);
@@ -310,9 +322,7 @@ function useStudentCatalog(): UseToolCatalog {
 
 	const keys = useMemo(() => {
 		const known = new Set(SYSTEM_TOOLS.map((t) => t.key));
-		return entTools
-			.filter((t) => (t.entitled || t.is_free) && !known.has(t.key))
-			.map((t) => t.key);
+		return entTools.filter((t) => !known.has(t.key)).map((t) => t.key);
 	}, [entTools]);
 
 	// Uma query por tool (dedupe/cache com `useToolDefinition`) só pro `ui.*`.
@@ -359,7 +369,7 @@ function useStudentCatalog(): UseToolCatalog {
 		// dinâmicas mudam — o registry já foi atualizado pelo `useToolCategories`.
 		void categories;
 		return entTools
-			.filter((t) => (t.entitled || t.is_free) && !known.has(t.key))
+			.filter((t) => !known.has(t.key))
 			.map((t): CatalogTool => {
 				const ui = uiByKey.get(t.key) ?? {};
 				return {

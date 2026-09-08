@@ -1,6 +1,7 @@
 'use client';
 
 import {
+	BadgeCheck,
 	BarChart3,
 	FolderTree,
 	Loader2,
@@ -131,6 +132,13 @@ export function ToolsHub({ audience }: ToolsHubProps) {
 						>
 							<FolderTree className="h-4 w-4" />
 							Categorias
+						</Link>
+						<Link
+							href="/ferramentas/marcas"
+							className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-violet-400 hover:text-violet-600 dark:border-white/10 dark:bg-[#1a1a1d] dark:text-gray-300 dark:hover:border-violet-500/50 dark:hover:text-white"
+						>
+							<BadgeCheck className="h-4 w-4" />
+							Marcas licenciadas
 						</Link>
 						<Link
 							href="/ferramentas/analytics"

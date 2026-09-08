@@ -1,14 +1,18 @@
 'use client';
 
-import { CreditCard, Loader2 } from 'lucide-react';
+import { CreditCard, Loader2, Package } from 'lucide-react';
 import { useState } from 'react';
 import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 import { formatCurrency } from '@/utils/format-currency';
 import { formatDate } from '@/utils/formatDate';
-import { usePlanRefunds, useVoxRefunds } from '../hooks/use-analytics';
+import {
+	usePackageRefunds,
+	usePlanRefunds,
+	useVoxRefunds,
+} from '../hooks/use-analytics';
 import type { RefundRow } from '../types/analytics';
 
-type SubTab = 'plans' | 'vox';
+type SubTab = 'plans' | 'packages' | 'vox';
 
 function RefundTable({
 	rows,
@@ -103,67 +107,49 @@ function RefundTable({
 export function RefundsSection() {
 	const [activeTab, setActiveTab] = useState<SubTab>('plans');
 
-	const {
-		data: planRows = [],
-		isLoading: planLoading,
-		error: planError,
-	} = usePlanRefunds();
-	const {
-		data: voxRows = [],
-		isLoading: voxLoading,
-		error: voxError,
-	} = useVoxRefunds();
+	const plans = usePlanRefunds();
+	const packages = usePackageRefunds();
+	const vox = useVoxRefunds();
+
+	const tabs = [
+		{ id: 'plans' as const, label: 'Assinaturas', Icon: CreditCard, q: plans },
+		{ id: 'packages' as const, label: 'Pacotes', Icon: Package, q: packages },
+		{ id: 'vox' as const, label: 'VOX', Icon: VoxxysIcon, q: vox },
+	];
+
+	const active = tabs.find((t) => t.id === activeTab) ?? tabs[0];
 
 	return (
 		<div className="space-y-4">
 			{/* Sub-tabs */}
 			<div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 rounded-xl p-1 w-fit">
-				<button
-					type="button"
-					onClick={() => setActiveTab('plans')}
-					className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-						activeTab === 'plans'
-							? 'bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm'
-							: 'text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200'
-					}`}
-				>
-					<CreditCard className="w-4 h-4" />
-					Assinaturas
-					{!planLoading && (
-						<span className="ml-1 text-xs bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-gray-400 px-1.5 py-0.5 rounded-full">
-							{planRows.length}
-						</span>
-					)}
-				</button>
-				<button
-					type="button"
-					onClick={() => setActiveTab('vox')}
-					className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-						activeTab === 'vox'
-							? 'bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm'
-							: 'text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200'
-					}`}
-				>
-					<VoxxysIcon className="w-4 h-4" />
-					VOX
-					{!voxLoading && (
-						<span className="ml-1 text-xs bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-gray-400 px-1.5 py-0.5 rounded-full">
-							{voxRows.length}
-						</span>
-					)}
-				</button>
+				{tabs.map(({ id, label, Icon, q }) => (
+					<button
+						key={id}
+						type="button"
+						onClick={() => setActiveTab(id)}
+						className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+							activeTab === id
+								? 'bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm'
+								: 'text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200'
+						}`}
+					>
+						<Icon className="w-4 h-4" />
+						{label}
+						{!q.isLoading && (
+							<span className="ml-1 text-xs bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-gray-400 px-1.5 py-0.5 rounded-full">
+								{q.data?.length ?? 0}
+							</span>
+						)}
+					</button>
+				))}
 			</div>
 
-			{activeTab === 'plans' && (
-				<RefundTable
-					rows={planRows}
-					isLoading={planLoading}
-					error={planError}
-				/>
-			)}
-			{activeTab === 'vox' && (
-				<RefundTable rows={voxRows} isLoading={voxLoading} error={voxError} />
-			)}
+			<RefundTable
+				rows={active.q.data ?? []}
+				isLoading={active.q.isLoading}
+				error={active.q.error}
+			/>
 		</div>
 	);
 }

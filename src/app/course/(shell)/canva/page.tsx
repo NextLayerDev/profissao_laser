@@ -1,14 +1,9 @@
 'use client';
 
 import { CanvaView } from '@/components/canva/canva-view';
-import { SubscriptionGate } from '@/components/course/subscription-gate';
 
 export default function CanvaCoursePage() {
-	// Acesso 100% pelo plano: SubscriptionGate libera só com assinatura ativa
-	// (ou conta ilimitada / staff). O uso do ai_canvas é cobrado no próprio editor.
-	return (
-		<SubscriptionGate toolKey="ai_canvas">
-			<CanvaView />
-		</SubscriptionGate>
-	);
+	// Ferramenta abre pra todo aluno, com ou sem plano. A trava é o USO:
+	// `useToolBilling` cobra voxxys e barra por saldo insuficiente.
+	return <CanvaView />;
 }

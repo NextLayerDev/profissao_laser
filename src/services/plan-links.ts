@@ -14,6 +14,8 @@ import {
 	planLinkRedemptionsSchema,
 	planLinkSchema,
 	publicPlanLinkSchema,
+	type RedeemPlanLinkResponse,
+	redeemPlanLinkResponseSchema,
 } from '@/types/plan-link';
 
 /** Cria um Link de Plano (staff/admin). */
@@ -64,12 +66,13 @@ export async function listPlanLinkRedemptions(params: {
 export async function redeemPlanLink(
 	token: string,
 	payload: { cpf: string; plan_key?: string },
-): Promise<{ checkout_url: string }> {
+): Promise<RedeemPlanLinkResponse> {
 	const { data } = await apiCourses.post(
 		`/v1/plan-links/${token}/redeem`,
 		payload,
 	);
-	return data as { checkout_url: string };
+	// `mode` só existe na API nova; o schema faz default 'checkout' pro resto.
+	return redeemPlanLinkResponseSchema.parse(data);
 }
 
 /** Fatura aberta da empresa (staff/admin), com filtros opcionais. */

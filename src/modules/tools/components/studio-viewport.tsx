@@ -3,6 +3,10 @@
 import type { ComponentProps } from 'react';
 import { StudioPreview } from './studio-preview';
 import { type Assembly, ModelViewport } from './viewport/model-viewport';
+import {
+	type QuoteBreakdownLike,
+	QuoteViewport,
+} from './viewport/quote-viewport';
 import { TurntableViewport } from './viewport/turntable-viewport';
 import { type VectorLayer, VectorViewport } from './viewport/vector-viewport';
 
@@ -32,6 +36,9 @@ export interface StudioViewportProps extends PreviewProps {
 		framesFrom?: string;
 		modelFrom?: string;
 		quoteFrom?: string;
+		/** Prévia da peça e texto do orçamento do cliente (`kind: 'quote'`). */
+		previewFrom?: string;
+		publicFrom?: string;
 	};
 	/**
 	 * Montagem vinda do preview AO VIVO (`/preview` → `assembly`). Tem prioridade
@@ -125,8 +132,34 @@ export function StudioViewport({
 		// Sem montagem e sem quadros: cai no preview de imagem abaixo.
 	}
 
-	// `quote` e `table` ainda não têm viewport próprio — caem no preview de
-	// imagem, que é o comportamento correto até a fase de Orçamento existir.
-	// Melhor isso do que uma tela em branco.
+	if (kind === 'quote') {
+		const bd =
+			(pick(output, sources?.quoteFrom) as QuoteBreakdownLike | undefined) ??
+			(pick(output, 'breakdown') as QuoteBreakdownLike | undefined);
+
+		// Só entra no viewport de orçamento quando existe orçamento. Antes do
+		// primeiro run, `bd` é undefined e o preview padrão já sabe desenhar o
+		// estado vazio — repetir isso aqui seria só uma tela vazia a mais.
+		if (bd && typeof bd === 'object') {
+			const publico =
+				pick(output, sources?.publicFrom) ?? pick(output, 'quote_public');
+			return (
+				<QuoteViewport
+					breakdown={bd}
+					preview={
+						(pick(output, sources?.previewFrom) as string | undefined) ??
+						(pick(output, 'preview') as string | undefined) ??
+						// `resultPreview` é `string | null` no contrato do preview antigo.
+						previewProps.resultPreview ??
+						undefined
+					}
+					publico={typeof publico === 'string' ? publico : undefined}
+				/>
+			);
+		}
+	}
+
+	// `table` ainda não tem viewport próprio — cai no preview de imagem, que
+	// desenha esqueleto e estado vazio. Melhor isso do que uma tela em branco.
 	return <StudioPreview {...previewProps} />;
 }

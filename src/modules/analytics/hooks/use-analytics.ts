@@ -6,6 +6,7 @@ import {
 	getFailedPaymentsAnalytics,
 	getInvoicesAnalytics,
 	getInvoicesSummary,
+	getPackageRefunds,
 	getPlanRefunds,
 	getSalesAnalytics,
 	getSalesSummary,
@@ -43,6 +44,7 @@ export const analyticsQueryKeys = {
 	toolUsage: (params: ToolUsageParams) =>
 		['analytics', 'tool-usage', params] as const,
 	planRefunds: ['analytics', 'refunds', 'plans'] as const,
+	packageRefunds: ['analytics', 'refunds', 'packages'] as const,
 	voxRefunds: ['analytics', 'refunds', 'vox'] as const,
 };
 
@@ -117,6 +119,13 @@ export function usePlanRefunds() {
 	return useQuery({
 		queryKey: analyticsQueryKeys.planRefunds,
 		queryFn: getPlanRefunds,
+	});
+}
+
+export function usePackageRefunds() {
+	return useQuery({
+		queryKey: analyticsQueryKeys.packageRefunds,
+		queryFn: getPackageRefunds,
 	});
 }
 

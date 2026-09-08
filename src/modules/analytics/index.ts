@@ -23,6 +23,7 @@ export {
 	getFailedPaymentsAnalytics,
 	getInvoicesAnalytics,
 	getInvoicesSummary,
+	getPackageRefunds,
 	getPlanRefunds,
 	getSalesAnalytics,
 	getSalesSummary,

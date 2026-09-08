@@ -52,6 +52,62 @@ export function modeUsesImage(mode: string): boolean {
 	return mode.includes('imagem');
 }
 
+/**
+ * Uma "especificação" — campo com nome aberto que o STAFF define por registro
+ * (ex.: "Nome do jogador"), no lugar da caixa genérica de tema. `name` é a
+ * chave usada como `{name}` no `prompt_script` (via `substituteVars` no
+ * backend); `label` é o que o aluno vê.
+ */
+export interface SpecDef {
+	name: string;
+	label: string;
+	placeholder?: string;
+	required?: boolean;
+}
+
+/** Lê `data.specs` de um registro — `[]` se ausente/malformado. */
+export function specsOf(entry: ToolBankEntry): SpecDef[] {
+	const raw = entry.data?.specs;
+	if (!Array.isArray(raw)) return [];
+	const out: SpecDef[] = [];
+	for (const item of raw) {
+		if (
+			item &&
+			typeof item === 'object' &&
+			typeof (item as { name?: unknown }).name === 'string' &&
+			typeof (item as { label?: unknown }).label === 'string'
+		) {
+			const s = item as SpecDef;
+			out.push({
+				name: s.name,
+				label: s.label,
+				placeholder:
+					typeof s.placeholder === 'string' ? s.placeholder : undefined,
+				required: !!s.required,
+			});
+		}
+	}
+	return out;
+}
+
+/**
+ * "Tem entrada de texto?" — quando o registro tem especificações, significa
+ * "toda especificação obrigatória está preenchida" (as opcionais não bloqueiam
+ * nada); sem especificações, cai no comportamento legado do `tema` livre.
+ * Fonte única usada tanto pro gate de habilitar o botão (`texto`/`texto_imagem`)
+ * quanto pro OR de `texto_imagem` (tema/specs OU imagem).
+ */
+export function hasTextInput(
+	specs: SpecDef[],
+	specValues: Record<string, string>,
+	tema: string,
+): boolean {
+	if (specs.length > 0) {
+		return specs.every((s) => !s.required || !!specValues[s.name]?.trim());
+	}
+	return !!tema.trim();
+}
+
 /** Uma etapa do fluxo de geração (stepper). */
 export interface PromptStep {
 	key: 'criacao' | 'tema' | 'referencias' | 'variacoes' | 'gerar';

@@ -16,6 +16,10 @@ export interface GlobalConfig {
 	lunchStart: string | null;
 	lunchEnd: string | null;
 	slotDurationMinutes: number;
+	/** Intervalo mínimo entre atendimentos do mesmo cliente (opcional). */
+	clientCooldownEnabled: boolean;
+	clientCooldownHours: number;
+	clientCooldownMatchPhone: boolean;
 	updatedAt: string;
 	updatedBy: string | null;
 }
@@ -27,6 +31,9 @@ export interface UpdateGlobalConfigPayload {
 	lunchStart?: string | null;
 	lunchEnd?: string | null;
 	slotDurationMinutes?: number;
+	clientCooldownEnabled?: boolean;
+	clientCooldownHours?: number;
+	clientCooldownMatchPhone?: boolean;
 }
 
 export interface Holiday {

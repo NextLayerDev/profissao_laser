@@ -36,6 +36,7 @@ const techScheduleKey = (technicianId: string) =>
 function invalidateAll(qc: ReturnType<typeof useQueryClient>) {
 	qc.invalidateQueries({ queryKey: ['appointment-config'] });
 	qc.invalidateQueries({ queryKey: ['appointments', 'available-slots'] });
+	qc.invalidateQueries({ queryKey: ['appointments', 'cooldown'] });
 }
 
 export function useGlobalConfig() {

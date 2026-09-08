@@ -17,6 +17,7 @@ Este documento resume as rotas de backend para o sistema de agendamentos. O fron
 | GET | /appointments | Listar agendamentos | Bearer |
 | GET | /appointments/available-slots?date=YYYY-MM-DD | Slots globalmente livres | Bearer |
 | GET | /appointments/available-slots?date=YYYY-MM-DD&technicianId=UUID | Slots livres para um técnico | Bearer |
+| GET | /appointments/cooldown | Intervalo mínimo entre atendimentos do cliente | Bearer |
 | GET | /appointments/:id_customer | Listar agendamentos de um cliente (admin only) | Bearer (user) |
 | GET | /appointments/technician/:id | Listar agendamentos de um técnico (admin only) | Bearer (user) |
 | POST | /appointment | Criar agendamento | Bearer (customer ou user) |
@@ -79,13 +80,56 @@ O backend filtra automaticamente: admin vê todos os agendamentos; cliente vê a
   "date": "YYYY-MM-DD",
   "time": "HH:mm",
   "notes": "string | null (opcional)",
-  "technicianId": "string (UUID, opcional)"
+  "technicianId": "string (UUID, opcional)",
+  "overrideCooldown": "boolean (opcional, só a equipe)"
 }
 ```
 
 **Resposta**: Objeto `Appointment` criado (com `id`, `status: "pendente"`, `createdAt`).
 
 **Conflito**: Quando `technicianId` é enviado, o backend verifica conflito apenas para esse técnico (se já tem agendamento no mesmo horário). Retorna 409/400 se indisponível.
+
+**Identidade do cliente**: para quem não é staff, o backend sobrescreve `customerEmail` com o e-mail do token — não dá pra marcar em nome de outra pessoa.
+
+**Intervalo mínimo** (quando ligado em `appointment-config/global`): retorna **409** com
+
+```json
+{ "code": "client_cooldown", "message": "Você já tem um atendimento em 24/08 às 10:00. Só é possível marcar outro a partir de 26/08 às 10:00 (intervalo mínimo de 48h entre atendimentos)." }
+```
+
+`overrideCooldown: true` fura a regra, mas **só** vindo de admin/staff — de cliente é ignorado. Horários no mesmo dia são isentos (contam como uma visita).
+
+---
+
+### 2b. Intervalo mínimo entre atendimentos do cliente
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| GET | /appointments/cooldown | Situação do intervalo mínimo. Staff pode passar `?email=&phone=`; cliente recebe sempre a própria situação (params ignorados). |
+
+**Query (opcional)**: `email`, `phone`, `from` (YYYY-MM-DD, default hoje), `days` (1–120, default 60).
+
+**Resposta**:
+
+```json
+{
+  "enabled": true,
+  "hours": 48,
+  "matchPhone": true,
+  "blocked": false,
+  "nextAllowedDate": "2026-08-26",
+  "blockedDates": ["2026-08-25"],
+  "lastAppointment": { "id": "uuid", "date": "2026-08-24", "time": "10:00", "service": "Corte" }
+}
+```
+
+Serve só pro aviso adiantado na UI (banner e `min` do input de data). Quem barra de verdade é o `POST /appointment`. Com `enabled: false` a resposta vem toda neutra.
+
+⚠️ `nextAllowedDate` é a **primeira data da janela com algum horário livre** — piso pro `min` do input, não texto pro usuário. Como o dia do próprio atendimento é isento, ele costuma ser hoje ou o próprio dia já marcado. A data exata de liberação vem do `reason` do `available-slots` e da mensagem do 409, que saem do atendimento que realmente empurra.
+
+Os três campos de config vivem no `appointment-config/global`: `clientCooldownEnabled` (bool), `clientCooldownHours` (1–720) e `clientCooldownMatchPhone` (bool, casa o cliente também por telefone normalizado).
+
+**Nota**: `GET /appointments/available-slots` também aplica o intervalo quando quem chama é um cliente — o dia todo bloqueado volta como `{slots: [], blocked: true, reason: "..."}`. Pro painel (staff) os slots não são filtrados.
 
 ---
 

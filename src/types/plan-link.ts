@@ -2,11 +2,27 @@ import { z } from 'zod';
 
 // ── Links de Plano (upvox /v1/plan-links) ─────────────────────────────────────
 
-/** monthly_choice = comprador escolhe o plano (mensal); annual_fixed = plano travado, cobrança anual. */
+/**
+ * monthly_choice = comprador escolhe o plano (mensal);
+ * annual_fixed   = plano travado, cobrança anual;
+ * custom         = Link Avançado — o admin define modo de entrada (grátis/pago),
+ *                  plano (ou nenhum), preço do 1º período, voxxys e duração.
+ */
 export const planLinkKindSchema = z
-	.enum(['monthly_choice', 'annual_fixed'])
+	.enum(['monthly_choice', 'annual_fixed', 'custom'])
 	.default('monthly_choice');
 export type PlanLinkKind = z.infer<typeof planLinkKindSchema>;
+
+/** Modo de entrada de um Link Avançado. */
+export const planLinkAccessModeSchema = z
+	.enum(['free', 'paid'])
+	.default('paid');
+export type PlanLinkAccessMode = z.infer<typeof planLinkAccessModeSchema>;
+
+export const planLinkIntervalSchema = z
+	.enum(['monthly', 'yearly'])
+	.default('monthly');
+export type PlanLinkInterval = z.infer<typeof planLinkIntervalSchema>;
 
 export const planLinkSchema = z.object({
 	id: z.string(),
@@ -16,6 +32,13 @@ export const planLinkSchema = z.object({
 	vox_grant: z.coerce.number(),
 	/** D4 — o link concede os voxxys mensais do plano? (default true na API antiga) */
 	grants_plan_voxes: z.boolean().optional().default(true),
+	/** kind='custom': a pessoa paga ou entra de graça. */
+	access_mode: planLinkAccessModeSchema.optional().default('paid'),
+	/** Modo grátis: duração do acesso concedido, em dias. */
+	access_days: z.number().int().nullable().optional().default(null),
+	/** Modo pago: preço do 1º período definido pelo admin, em cents. */
+	first_period_cents: z.number().int().nullable().optional().default(null),
+	interval: planLinkIntervalSchema.optional().default('monthly'),
 	status: z.enum(['active', 'disabled']),
 	max_redemptions: z.number().int().nullable(),
 	current_redemptions: z.number().int(),
@@ -36,11 +59,19 @@ export type PlanLinkListItem = z.infer<typeof planLinkListItemSchema>;
 
 export interface CreatePlanLinkPayload {
 	kind?: PlanLinkKind;
-	/** Obrigatório quando kind = annual_fixed (plano travado do link). */
+	/** Obrigatório em annual_fixed e no custom pago (plano travado do link). */
 	plan_key?: string;
 	vox_grant: number;
 	/** D4 — false: quem comprar por este link NÃO recebe os voxxys do plano. */
 	grants_plan_voxes?: boolean;
+	/** kind='custom': 'free' concede na hora, 'paid' manda pro checkout. */
+	access_mode?: PlanLinkAccessMode;
+	/** kind='custom' + free: duração do acesso, em dias. */
+	access_days?: number;
+	/** kind='custom' + paid: preço do 1º período, em cents (≥ piso). */
+	first_period_cents?: number;
+	/** kind='custom': período de cobrança. */
+	interval?: PlanLinkInterval;
 	max_redemptions?: number;
 	expires_at?: string;
 }
@@ -65,6 +96,10 @@ export type PublicPlanLinkPlan = z.infer<typeof publicPlanLinkPlanSchema>;
 
 export const publicPlanLinkSchema = z.object({
 	kind: planLinkKindSchema,
+	/** kind='custom': 'free' → a página oferece "ativar acesso", sem checkout. */
+	access_mode: planLinkAccessModeSchema.optional().default('paid'),
+	/** Modo grátis: por quantos dias o acesso vale. */
+	access_days: z.number().int().nullable().optional().default(null),
 	vox_grant: z.coerce.number(),
 	grants_plan_voxes: z.boolean().optional().default(true),
 	status: z.enum(['ok', 'disabled', 'expired', 'exhausted']),
@@ -81,6 +116,8 @@ export const planLinkRedemptionSchema = z.object({
 	cpf: z.string().nullable(),
 	plan_id: z.string().nullable(),
 	status: z.enum(['pending', 'completed']),
+	/** Fim do acesso concedido por um Link Avançado grátis. */
+	access_expires_at: z.string().nullable().optional().default(null),
 	floor_cents: z.number().int(),
 	amount_off_cents: z.number().int(),
 	vox_grant: z.coerce.number(),
@@ -97,6 +134,22 @@ export const planLinkRedemptionSchema = z.object({
 });
 export type PlanLinkRedemption = z.infer<typeof planLinkRedemptionSchema>;
 
+/**
+ * Resgate: `checkout` manda pro Stripe (modo pago); `granted` já entregou o
+ * acesso (Link Avançado grátis). `checkout_url` continua no topo — a API antiga
+ * devolvia só ele.
+ */
+export const redeemPlanLinkResponseSchema = z.object({
+	mode: z.enum(['checkout', 'granted']).optional().default('checkout'),
+	checkout_url: z.string().nullable().optional().default(null),
+	access_expires_at: z.string().nullable().optional().default(null),
+	vox_granted: z.coerce.number().optional().default(0),
+	plan_key: z.string().nullable().optional().default(null),
+});
+export type RedeemPlanLinkResponse = z.infer<
+	typeof redeemPlanLinkResponseSchema
+>;
+
 export const planLinkRedemptionsSchema = z.object({
 	rows: z.array(planLinkRedemptionSchema),
 	total: z.number().int(),
@@ -109,13 +162,16 @@ export type PlanLinkRedemptions = z.infer<typeof planLinkRedemptionsSchema>;
  * link_tool_use   = uso de tool por cliente de link (custo de plataforma);
  * plan_grant      = voxxys do plano cobrados no ato (R$1,20/voxxy);
  * subscription_fee= taxa Hotmart de cada pagamento de assinatura (9,9% + R$1, ou 20% < R$10);
- * link_purchase   = 100% do 1º período pago numa compra por link.
+ * link_purchase   = 100% do 1º período pago numa compra por link;
+ * granted_access_use = uso de cota grátis de uma assinatura DADA por link
+ *                   (custo real de plataforma da ferramenta, no ato do uso).
  */
 export const companyInvoiceSourceSchema = z.enum([
 	'link_tool_use',
 	'plan_grant',
 	'subscription_fee',
 	'link_purchase',
+	'granted_access_use',
 ]);
 export type CompanyInvoiceSource = z.infer<typeof companyInvoiceSourceSchema>;
 
@@ -230,6 +286,8 @@ export const companyInvoiceSchema = z.object({
 		plan_grants_cents: z.number().int().optional().default(0),
 		subscription_fees_cents: z.number().int().optional().default(0),
 		link_purchases_cents: z.number().int().optional().default(0),
+		/** Custo dos usos de cota grátis de assinaturas DADAS por link. */
+		granted_access_cents: z.number().int().optional().default(0),
 		/** Receita bruta dos alunos na janela (pagamentos reais). */
 		gross_revenue_cents: z.number().int().optional().default(0),
 		/** Líquido da empresa do curso = bruta − repasse total. */
