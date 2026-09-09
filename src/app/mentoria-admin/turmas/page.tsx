@@ -1,8 +1,15 @@
 'use client';
 
-import { Button, buttonLabel } from '@upvox-dev/ui';
+import {
+	Button,
+	buttonLabel,
+	Card,
+	EmptyState,
+	PageHeader,
+} from '@upvox-dev/ui';
 import { Pencil, Plus, UserPlus, Users } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Text } from 'react-native-css/components/Text';
 import { Header } from '@/components/dashboard/header';
@@ -13,14 +20,7 @@ import {
 	CohortMentorsModal,
 	EnrollStudentModal,
 } from '../_components/cohort-modals';
-import {
-	Card,
-	cohortStatusBadge,
-	EmptyState,
-	formatDate,
-	PageTitle,
-	Spinner,
-} from '../_components/ui';
+import { cohortStatusBadge, formatDate, Spinner } from '../_components/ui';
 
 type ModalState =
 	| { kind: 'create' }
@@ -30,6 +30,7 @@ type ModalState =
 	| null;
 
 export default function TurmasPage() {
+	const router = useRouter();
 	const cohorts = useCohortsAdmin();
 	const [modal, setModal] = useState<ModalState>(null);
 
@@ -37,10 +38,10 @@ export default function TurmasPage() {
 		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
 			<main className="px-4 md:px-8 py-6 max-w-6xl mx-auto">
-				<PageTitle
+				<PageHeader
 					title="Turmas"
-					description="Turmas do programa de mentoria: crie, defina datas e status, gerencie mentores e matricule alunos."
-					backHref="/mentoria-admin"
+					subtitle="Turmas do programa de mentoria: crie, defina datas e status, gerencie mentores e matricule alunos."
+					onBack={() => router.push('/mentoria-admin')}
 					actions={
 						<Button onPress={() => setModal({ kind: 'create' })}>
 							<Plus className="w-4 h-4" />
@@ -59,9 +60,9 @@ export default function TurmasPage() {
 					{cohorts.isLoading ? (
 						<Spinner />
 					) : cohorts.isError ? (
-						<EmptyState message="Erro ao carregar as turmas." />
+						<EmptyState title="Erro ao carregar as turmas." />
 					) : !cohorts.data?.length ? (
-						<EmptyState message="Nenhuma turma criada ainda." />
+						<EmptyState title="Nenhuma turma criada ainda." />
 					) : (
 						<div className="overflow-x-auto">
 							<table className="w-full text-sm">
@@ -77,7 +78,7 @@ export default function TurmasPage() {
 									{cohorts.data.map((c) => (
 										<tr
 											key={c.id}
-											className="hover:bg-slate-50 dark:hover:bg-white/[0.03]"
+											className="hover:bg-slate-50 dark:hover:bg-white/3"
 										>
 											<td className="px-5 py-3.5">
 												<Link

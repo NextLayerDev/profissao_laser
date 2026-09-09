@@ -1,18 +1,12 @@
 'use client';
 
+import { Card, EmptyState, PageHeader, ProgressBar } from '@upvox-dev/ui';
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Header } from '@/components/dashboard/header';
 import { useCohortDashboard, useMentorCohorts } from '@/modules/mentoria/hooks';
-import {
-	Badge,
-	Card,
-	EmptyState,
-	PageTitle,
-	ProgressBar,
-	Spinner,
-} from '../../_components/ui';
+import { Badge, Spinner } from '../../_components/ui';
 
 function journeyStatusBadge(status: string) {
 	const map: Record<
@@ -28,6 +22,7 @@ function journeyStatusBadge(status: string) {
 }
 
 export default function CohortDashboardPage() {
+	const router = useRouter();
 	const { cohortId } = useParams<{ cohortId: string }>();
 	const dashboard = useCohortDashboard(cohortId);
 	const cohorts = useMentorCohorts();
@@ -37,19 +32,19 @@ export default function CohortDashboardPage() {
 		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
 			<main className="px-4 md:px-8 py-6 max-w-6xl mx-auto">
-				<PageTitle
+				<PageHeader
 					title={cohort ? `Turma — ${cohort.name}` : 'Dashboard da turma'}
-					description="Acompanhamento das empresas da turma: progresso na jornada e acesso ao detalhe de cada mentoria."
-					backHref="/mentoria-admin/turmas"
+					subtitle="Acompanhamento das empresas da turma: progresso na jornada e acesso ao detalhe de cada mentoria."
+					onBack={() => router.push('/mentoria-admin/turmas')}
 				/>
 
 				<Card>
 					{dashboard.isLoading ? (
 						<Spinner />
 					) : dashboard.isError ? (
-						<EmptyState message="Erro ao carregar o dashboard. Verifique se você é mentor desta turma." />
+						<EmptyState title="Erro ao carregar o dashboard. Verifique se você é mentor desta turma." />
 					) : !dashboard.data?.length ? (
-						<EmptyState message="Nenhum aluno matriculado nesta turma ainda." />
+						<EmptyState title="Nenhum aluno matriculado nesta turma ainda." />
 					) : (
 						<div className="overflow-x-auto">
 							<table className="w-full text-sm">
@@ -66,7 +61,7 @@ export default function CohortDashboardPage() {
 									{dashboard.data.map((row) => (
 										<tr
 											key={row.journey_id}
-											className="hover:bg-slate-50 dark:hover:bg-white/[0.03]"
+											className="hover:bg-slate-50 dark:hover:bg-white/3"
 										>
 											<td className="px-5 py-3.5">
 												<p className="font-medium text-slate-900 dark:text-white">

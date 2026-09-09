@@ -15,13 +15,12 @@
 //   2. preenchimento           → formulário + rascunho + confirmação;
 //   3. Foto Zero congelada     → modo leitura, para sempre.
 
-import { Button, buttonLabel } from '@upvox-dev/ui';
+import { Button, buttonLabel, SectionCard } from '@upvox-dev/ui';
 import { Camera, ClipboardList, Lock, Save, Send } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Text } from 'react-native-css/components/Text';
 import { ModalPortal } from '@/components/ui/modal-portal';
 import { DynamicForm } from '@/modules/mentoria/components/dynamic-form';
-import { SectionCard } from '@/modules/mentoria/components/ui';
 import type { DiagnosticState, MntSnapshot } from '@/modules/mentoria/types';
 import { isUnknownAnswer } from '@/modules/mentoria/types';
 import { EmptyState, fmtDate, MntHeader } from '../../_components/shared';

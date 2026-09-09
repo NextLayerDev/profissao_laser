@@ -30,6 +30,22 @@ export const SEMAPHORE_TONE = {
 } as const;
 
 /**
+ * O semáforo do indicador (`green`/`yellow`/`red`/`unmeasured`) é vocabulário
+ * da Mentoria — o `SemaphoreBadge` da lib fala `tone` (`success`/`warning`/
+ * `danger`/`neutral`). Compartilhado entre Indicadores e o drilldown de
+ * jornada do admin — os dois renderizam o mesmo badge de semáforo.
+ */
+export const SEMAPHORE_BADGE: Record<
+	'green' | 'yellow' | 'red' | 'unmeasured',
+	{ tone: 'success' | 'warning' | 'danger' | 'neutral'; label: string }
+> = {
+	green: { tone: 'success', label: 'Saudável' },
+	yellow: { tone: 'warning', label: 'Atenção' },
+	red: { tone: 'danger', label: 'Crítico' },
+	unmeasured: { tone: 'neutral', label: 'Não medido' },
+};
+
+/**
  * A unidade do KPI é texto livre no contrato ("R$", "%", "un", "clientes"…),
  * então a formatação é por heurística e não por enum.
  */

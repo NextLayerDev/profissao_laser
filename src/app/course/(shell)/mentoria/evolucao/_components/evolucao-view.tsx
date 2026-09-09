@@ -9,14 +9,17 @@
 // negativos e nulos na mesma tabela exige meses de snapshots.
 // `app/(dev)/mentoria-evolucao-check` monta os cenários com fixtures.
 
-import { Badge, Button, buttonLabel, Table } from '@upvox-dev/ui';
-import { Camera, FileText, TrendingUp } from 'lucide-react';
-import { Text } from 'react-native-css/components/Text';
 import {
+	Badge,
+	Button,
+	buttonLabel,
 	DeltaPill,
 	ListRow,
 	SectionCard,
-} from '@/modules/mentoria/components/ui';
+	Table,
+} from '@upvox-dev/ui';
+import { Camera, FileText, TrendingUp } from 'lucide-react';
+import { Text } from 'react-native-css/components/Text';
 import type { Comparison, MntReport } from '@/modules/mentoria/types';
 import {
 	EmptyState,
@@ -187,7 +190,7 @@ export function EvolucaoView({
 								boxed
 								title="Raio-X Empresarial"
 								description={`Gerado em ${fmtDate(report.generated_at)}`}
-								onSelect={() => onToggleReport(report)}
+								onPress={() => onToggleReport(report)}
 								trailing={
 									openReport?.id === report.id ? (
 										<Badge tone="brand">Aberto</Badge>
