@@ -240,6 +240,27 @@ export function CreationsEditor({
 									/>
 									Ativo
 								</label>
+								{/* Só a arte licenciada lê este flag: nos formatos de recorte
+								    (chaveiro, vetor, capinha) o motor passa a arte pelo
+								    removedor de fundo antes do carimbo quando o modelo a
+								    devolve opaca. Copo/caneca é sangria total — fica desligado. */}
+								<label
+									className="flex items-center gap-2 text-[12px] text-slate-400"
+									title="Arte licenciada: se o modelo devolver a arte com fundo (branco ou xadrez), o motor remove o fundo antes do carimbo. Deixe desligado em copos e canecas."
+								>
+									<input
+										type="checkbox"
+										checked={c.transparent === true}
+										disabled={disabled}
+										onChange={(e) =>
+											update(c.id, {
+												transparent: e.target.checked || undefined,
+											})
+										}
+										className="accent-emerald-400"
+									/>
+									Sem fundo
+								</label>
 							</div>
 						</div>
 					);

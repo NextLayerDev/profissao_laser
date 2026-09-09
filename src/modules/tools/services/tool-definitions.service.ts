@@ -215,6 +215,11 @@ export const toolDefinitionDocSchema = z
 		 * nome amigável) que o cliente escolhe; a resolução (width×height) é
 		 * HIDDEN e injetada no run via `creation_id`. Vazio → cai em
 		 * `image_width/height` legado. `active:false` oculta o card.
+		 *
+		 * `transparent`: só a arte licenciada lê. Nos formatos de recorte, o motor
+		 * remove o fundo antes do carimbo se o modelo devolver a arte opaca. Tem
+		 * de estar AQUI: este schema faz `strip`, e um campo que ele não conhece
+		 * é apagado em silêncio no próximo salvar do admin.
 		 */
 		creations: z
 			.array(
@@ -225,6 +230,7 @@ export const toolDefinitionDocSchema = z
 					width: z.number(),
 					height: z.number(),
 					active: z.boolean().optional(),
+					transparent: z.boolean().optional(),
 				}),
 			)
 			.optional(),
