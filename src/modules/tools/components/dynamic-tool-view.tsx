@@ -18,8 +18,10 @@ import { useToolDefinition } from '../hooks/use-tool-definition';
 import {
 	downloadUrl,
 	hasTextInput,
+	isCarimbo,
 	maxImagesOf,
 	modeOf,
+	modeUsesImage,
 	specsOf,
 } from '../lib/prompt-bank';
 import { accentForTool, resolveScreenUi } from '../lib/screen-ui';
@@ -326,14 +328,28 @@ export function DynamicToolView({
 			.slice(0, max)
 			.filter((f): f is File => f instanceof File);
 		const hasText = hasTextInput(specs, specValues, tema);
+		const carimbo = isCarimbo(mode);
 		// Com lista, a entrada mora nela: cada linha precisa de nome OU foto, e o
 		// campo "tema" do formulário vira só o que é comum a todas as peças.
-		if (pecas) {
+		// No só-licenciar não há geração: nome sozinho não vira peça — cada
+		// linha precisa da PRÓPRIA arte, e o texto é só o rótulo.
+		if (pecas && carimbo) {
+			const semArte = pecas.findIndex((p) => p.imagem === null);
+			if (semArte >= 0) {
+				toast.error(`A peça ${semArte + 1} precisa da própria arte.`);
+				return;
+			}
+		} else if (pecas) {
 			const vazia = pecas.findIndex(
 				(p) => p.tema.trim() === '' && p.imagem === null,
 			);
 			if (vazia >= 0) {
 				toast.error(`Preencha o nome ou a foto da peça ${vazia + 1}.`);
+				return;
+			}
+		} else if (carimbo) {
+			if (chosen.length === 0) {
+				toast.error('Envie a arte pronta que você quer licenciar.');
 				return;
 			}
 		} else if (mode === 'texto_imagem') {
@@ -362,14 +378,16 @@ export function DynamicToolView({
 				bankInputs.tema = tema.trim();
 			}
 		}
-		if (mode.includes('imagem')) {
+		if (modeUsesImage(mode)) {
 			const fieldNames = ['referencia', 'referencia2', 'referencia3'];
 			chosen.forEach((file, i) => {
 				bankInputs[fieldNames[i]] = file;
 			});
 		}
-		// Passo 1/3: tipo de criação (resolução oculta) + variações.
-		if (creationId) bankInputs.creation_id = creationId;
+		// Passo 1/3: tipo de criação (resolução oculta) + variações. Só licenciar
+		// não tem Passo 1 — a arte já vem no tamanho dela — e o motor recusa
+		// `creation_id` que não pediu.
+		if (creationId && !carimbo) bankInputs.creation_id = creationId;
 		/**
 		 * `variation_count` NÃO acompanha a lista de peças.
 		 *
@@ -378,7 +396,7 @@ export function DynamicToolView({
 		 * A multiplicidade do lote personalizado viaja em `pieces`, e o motor a
 		 * reconcilia contra as gerações que a invocação de fato pagou.
 		 */
-		if (variationCount && !pecas) {
+		if (variationCount && !pecas && !carimbo) {
 			bankInputs.variation_count = String(variationCount);
 		}
 		if (pecas) {
@@ -494,15 +512,21 @@ export function DynamicToolView({
 	}
 
 	const pending = isDraft ? draftRunning : billing.pending;
-	const actionLabel = ui?.action?.label ?? 'Executar';
+	const soLicenciar = !!selectedEntry && isCarimbo(modeOf(selectedEntry));
+	// "Gerar a peça" mentiria no só-licenciar: nada é gerado, a arte é a dele.
+	const actionLabel = soLicenciar
+		? 'Licenciar a peça'
+		: (ui?.action?.label ?? 'Executar');
 	/**
 	 * O lote personalizado leva minutos e é gerado peça a peça. Sem dizer em qual
 	 * peça ele está, a espera é indistinguível de tela travada — e o aluno já
 	 * pagou, então recarregar a página é o pior que ele pode fazer.
 	 */
 	const pendingLabel = pecaEmCurso
-		? `Gerando a peça ${Math.max(1, pecaEmCurso.atual)} de ${pecaEmCurso.total}…`
-		: undefined;
+		? `${soLicenciar ? 'Licenciando' : 'Gerando'} a peça ${Math.max(1, pecaEmCurso.atual)} de ${pecaEmCurso.total}…`
+		: soLicenciar
+			? 'Licenciando…'
+			: undefined;
 	const showCostNotice = !isDraft && (ui?.action?.showCostNotice ?? true);
 	const resultUi = ui?.result;
 	const downloadKey = (resultUi?.downloadFrom ?? 'output.primary').replace(
@@ -869,20 +893,28 @@ export function DynamicToolView({
 		 * que faltava. Cada linha precisa ter nome OU foto: linha vazia viraria
 		 * uma peça sem nada de próprio, cobrada como geração.
 		 */
+		const carimbo = isCarimbo(mode);
 		const listaCompleta =
 			!!pecas &&
 			pecas.length > 0 &&
-			pecas.every((p) => p.tema.trim() !== '' || p.imagem !== null);
+			(carimbo
+				? // Sem geração, só a arte conta: nome sozinho não vira peça.
+					pecas.every((p) => p.imagem !== null)
+				: pecas.every((p) => p.tema.trim() !== '' || p.imagem !== null));
 		const meetsInputRequirement = pecas
 			? listaCompleta
-			: mode === 'texto_imagem'
-				? hasText || chosenImages.length > 0
-				: (!needsTema || hasText) &&
-					(mode !== 'imagem' || chosenImages.length > 0);
+			: carimbo
+				? chosenImages.length > 0
+				: mode === 'texto_imagem'
+					? hasText || chosenImages.length > 0
+					: (!needsTema || hasText) &&
+						(mode !== 'imagem' || chosenImages.length > 0);
+		// Só licenciar não tem Passo 1 nem variações — o botão não pode esperar
+		// por escolhas que a tela nem mostra.
 		const canGenerate =
 			meetsInputRequirement &&
-			(!hasCreations || !!creationId) &&
-			(!hasVariations || !!variationCount);
+			(carimbo || !hasCreations || !!creationId) &&
+			(carimbo || !hasVariations || !!variationCount);
 
 		return (
 			<div className={`p-4 md:p-8 ${screenUi.themeClass}`} style={screenStyle}>
