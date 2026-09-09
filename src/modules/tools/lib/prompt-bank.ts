@@ -28,7 +28,14 @@ export function isCarimbo(mode: string): boolean {
 	return mode === 'carimbo';
 }
 
-/** Lê `data.max_images` de um registro e clampa em 1–3 (default 1). */
+/**
+ * Lê `data.max_images` de um registro e clampa em 1–3 (default 1).
+ *
+ * Registro LICENCIADO (tem `feature_key`) clampa em 2: o bloco de geração
+ * aceita 3 imagens e o escudo da marca ocupa a primeira. Um registro salvo
+ * com 3 fazia a tela mostrar três uploads, o aluno mandar `referencia3` e o
+ * motor recusar com "Arquivo inesperado" — com a rodada já cobrada.
+ */
 export function maxImagesOf(entry: ToolBankEntry): number {
 	// Só licenciar é UMA arte: a que vai receber o código.
 	if (isCarimbo(modeOf(entry))) return 1;
@@ -40,7 +47,8 @@ export function maxImagesOf(entry: ToolBankEntry): number {
 				? Number.parseInt(raw, 10)
 				: 1;
 	if (!Number.isFinite(n)) return 1;
-	return Math.min(3, Math.max(1, Math.trunc(n)));
+	const teto = typeof entry.data?.feature_key === 'string' ? 2 : 3;
+	return Math.min(teto, Math.max(1, Math.trunc(n)));
 }
 
 /** Imagem de capa do registro (depois ?? antes). */

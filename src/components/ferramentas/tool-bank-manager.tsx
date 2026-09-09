@@ -715,15 +715,24 @@ function parseMaxImages(raw: string | undefined): number {
 function MaxImagesControl({
 	value,
 	onChange,
+	max = 3,
 }: {
 	value: number;
 	onChange: (n: number) => void;
+	/**
+	 * Teto de fotos do aluno. O bloco de geração aceita 3 imagens no total, e
+	 * no banco licenciado o ESCUDO ocupa a primeira — sobram 2. Oferecer 3 ali
+	 * fazia o aluno subir `referencia3` e o motor recusar com "Arquivo
+	 * inesperado", já com a rodada cobrada.
+	 */
+	max?: number;
 }) {
+	const opcoes = [1, 2, 3].filter((n) => n <= max);
 	return (
 		<div>
 			<span className={labelCls}>Quantas imagens de referência</span>
 			<div className="inline-flex overflow-hidden rounded-xl border border-white/10 bg-black/30">
-				{[1, 2, 3].map((n) => (
+				{opcoes.map((n) => (
 					<button
 						key={n}
 						type="button"
@@ -739,7 +748,9 @@ function MaxImagesControl({
 				))}
 			</div>
 			<p className="mt-1.5 text-[11px] text-slate-500">
-				O cliente verá {value} {value === 1 ? 'campo' : 'campos'} de upload.
+				O cliente verá {Math.min(value, max)}{' '}
+				{Math.min(value, max) === 1 ? 'campo' : 'campos'} de upload.
+				{max < 3 && ' O escudo da marca ocupa a primeira vaga da geração.'}
 			</p>
 		</div>
 	);
@@ -1245,6 +1256,7 @@ export function ToolBankManager({
 							{modeHasImage(form.data.mode) && (
 								<MaxImagesControl
 									value={parseMaxImages(form.data.max_images)}
+									max={ehBancoLicenciado ? 2 : 3}
 									onChange={(n) =>
 										patchForm({
 											data: { ...form.data, max_images: String(n) },
