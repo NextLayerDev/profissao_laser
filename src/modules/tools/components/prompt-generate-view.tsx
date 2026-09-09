@@ -26,6 +26,7 @@ import {
 	coverOf,
 	downloadUrl,
 	hasTextInput,
+	isCarimbo,
 	maxImagesOf,
 	modeLabel,
 	modeOf,
@@ -1107,8 +1108,12 @@ export function PromptGenerateView({
 	const needsTema = modeUsesText(mode);
 	const needsImage = modeUsesImage(mode);
 	const maxImages = maxImagesOf(entry);
-	const hasCreations = !!creations && creations.length > 0;
-	const hasVariations = !!returnVariations && returnVariations.length > 0;
+	// Só licenciar: a arte já vem pronta, no tamanho dela — sem Passo 1, sem
+	// variações, sem resolução de saída. Sobra a tiragem e a própria arte.
+	const carimbo = isCarimbo(mode);
+	const hasCreations = !carimbo && !!creations && creations.length > 0;
+	const hasVariations =
+		!carimbo && !!returnVariations && returnVariations.length > 0;
 	const hasTiragem = !!printRunOptions && printRunOptions.length > 1;
 	// Tiragem > 1 desliga variações: 4 versões × 50 peças são 200 arquivos, e
 	// não é fluxo real — quem encomenda tiragem já escolheu a arte.
@@ -1450,12 +1455,17 @@ export function PromptGenerateView({
 						licenciada={licenciada}
 						no={sectionNo.lista}
 						title="O que muda em cada peça"
-						hint="Um nome, uma foto, ou os dois"
+						hint={
+							carimbo
+								? 'Uma arte por peça; o nome vira só o rótulo do arquivo'
+								: 'Um nome, uma foto, ou os dois'
+						}
 					/>
 					<LicensedPiecesEditor
 						pecas={pecas}
 						onChange={onPecasChange}
 						max={printRunMax}
+						fotoObrigatoria={carimbo}
 					/>
 				</section>
 			)}
@@ -1466,8 +1476,12 @@ export function PromptGenerateView({
 				<SectionHeader
 					licenciada={licenciada}
 					no={sectionNo.detalhes}
-					title="Detalhes"
-					hint="Quanto mais específico, melhor"
+					title={carimbo ? 'Sua arte pronta' : 'Detalhes'}
+					hint={
+						carimbo
+							? 'PNG ou JPG finalizado — entra como está, só recebe o código'
+							: 'Quanto mais específico, melhor'
+					}
 				/>
 				{needsTema && specs.length > 0 && (
 					<div className="space-y-3">
@@ -1515,7 +1529,11 @@ export function PromptGenerateView({
 							<ReferenceDrop
 								key={`ref-${i}`}
 								label={
-									maxImages > 1 ? `Referência ${i + 1}` : 'Imagem de referência'
+									carimbo
+										? 'Arte finalizada'
+										: maxImages > 1
+											? `Referência ${i + 1}`
+											: 'Imagem de referência'
 								}
 								file={referencias[i] ?? null}
 								onChange={(f) => onReferenciaChange(i, f)}
@@ -1530,10 +1548,13 @@ export function PromptGenerateView({
 				)}
 			</section>
 
-			{/* Resolução de saída (opcional, largura total) */}
-			<section className={`${stepCardCls} space-y-3`}>
-				<ImageSizePicker value={imageSize} onChange={onImageSizeChange} />
-			</section>
+			{/* Resolução de saída (opcional, largura total). Não no só-licenciar:
+			    a arte sai no tamanho em que entrou. */}
+			{!carimbo && (
+				<section className={`${stepCardCls} space-y-3`}>
+					<ImageSizePicker value={imageSize} onChange={onImageSizeChange} />
+				</section>
+			)}
 
 			{/* Gerar (largura total) */}
 			<div className="space-y-3">

@@ -116,7 +116,7 @@ function modelo(
 	featureKey: string,
 	licensorName: string,
 	position: number,
-	mode: 'texto' | 'imagem' | 'texto_imagem',
+	mode: 'texto' | 'imagem' | 'texto_imagem' | 'carimbo',
 	description: string,
 ): ToolBankEntry {
 	return {
@@ -132,8 +132,11 @@ function modelo(
 			max_images: 1,
 			feature_key: featureKey,
 			licensor_name: licensorName,
-			prompt_script:
-				'Gravação a laser 1-bit puro, sem meio-tom, espessura mínima de traço 0.3mm, sem ilhas soltas, contorno de corte fechado. {tema}',
+			// Só licenciar não tem prompt: nada é gerado.
+			...(mode !== 'carimbo' && {
+				prompt_script:
+					'Gravação a laser 1-bit puro, sem meio-tom, espessura mínima de traço 0.3mm, sem ilhas soltas, contorno de corte fechado. {tema}',
+			}),
 		},
 		example_before_url: null,
 		// Sem exemplo cadastrado de propósito: é o estado real hoje (nenhum modelo
@@ -176,6 +179,25 @@ function semear(): Estado {
 	];
 
 	const modelos: ToolBankEntry[] = [
+		// O que toda marca ganha ao nascer (ver `garantirModeloCarimbo` na API).
+		modelo(
+			'mk-entry-carimbo-1',
+			'Só licenciar — arte pronta',
+			'clube:corinthians',
+			'Corinthians',
+			0,
+			'carimbo',
+			'Envie sua arte finalizada e receba o código de autenticidade gravado nela.',
+		),
+		modelo(
+			'mk-entry-carimbo-2',
+			'Só licenciar — arte pronta',
+			'clube:palmeiras',
+			'Palmeiras',
+			0,
+			'carimbo',
+			'Envie sua arte finalizada e receba o código de autenticidade gravado nela.',
+		),
 		modelo(
 			'mk-entry-1',
 			'Caneca 360°',
@@ -475,7 +497,7 @@ export function mockToolDefinition(): AiToolDefinition {
 						name: 'mode',
 						label: 'Modo',
 						type: 'enum',
-						options: ['texto', 'imagem', 'texto_imagem'],
+						options: ['texto', 'imagem', 'texto_imagem', 'carimbo'],
 					},
 					{ name: 'prompt_script', label: 'Prompt', type: 'textarea' },
 				],

@@ -37,10 +37,16 @@ export function LicensedPiecesEditor({
 	pecas,
 	onChange,
 	max,
+	fotoObrigatoria = false,
 }: {
 	pecas: PecaDaLista[];
 	onChange: (p: PecaDaLista[]) => void;
 	max: number;
+	/**
+	 * Só licenciar: cada linha É uma arte pronta, e o texto vira só o rótulo.
+	 * Sem geração, nome sozinho não vira peça — a foto deixa de ser opcional.
+	 */
+	fotoObrigatoria?: boolean;
 }) {
 	const [colar, setColar] = useState('');
 	const colarId = useId();
@@ -150,7 +156,11 @@ export function LicensedPiecesEditor({
 						<input
 							value={p.tema}
 							onChange={(e) => alterar(i, { tema: e.target.value })}
-							placeholder={`Nome ou frase da peça ${i + 1}`}
+							placeholder={
+								fotoObrigatoria
+									? `Rótulo da peça ${i + 1} (opcional)`
+									: `Nome ou frase da peça ${i + 1}`
+							}
 							className={CAMPO}
 						/>
 						{p.imagem ? (
@@ -165,11 +175,19 @@ export function LicensedPiecesEditor({
 							</button>
 						) : (
 							<label
-								className="flex shrink-0 cursor-pointer items-center gap-1 rounded-md border border-dashed border-[var(--al-rule)] px-2 py-1.5 text-[11px] text-[var(--al-mute)]"
-								title={`Escolher a foto da peça ${i + 1}`}
+								className={`flex shrink-0 cursor-pointer items-center gap-1 rounded-md border border-dashed px-2 py-1.5 text-[11px] ${
+									fotoObrigatoria
+										? 'border-[var(--al-ink)] text-[var(--al-ink)]'
+										: 'border-[var(--al-rule)] text-[var(--al-mute)]'
+								}`}
+								title={
+									fotoObrigatoria
+										? `Escolher a arte da peça ${i + 1} (obrigatória)`
+										: `Escolher a foto da peça ${i + 1}`
+								}
 							>
 								<ImagePlus className="h-3 w-3" />
-								Foto
+								{fotoObrigatoria ? 'Arte *' : 'Foto'}
 								<input
 									type="file"
 									accept="image/*"

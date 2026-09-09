@@ -697,6 +697,13 @@ function modeHasImage(mode: string | undefined): boolean {
 	return mode === 'imagem' || mode === 'texto_imagem';
 }
 
+/**
+ * O modo "só licenciar" da arte licenciada: o aluno envia a arte pronta e o
+ * motor só carimba o código. Sem prompt, sem especificações, sem tamanho de
+ * saída, uma imagem — o formulário esconde o que não se aplica.
+ */
+const MODE_CARIMBO = 'carimbo';
+
 /** Lê `data.max_images` (string no form) e clampa em 1–3 (default 1). */
 function parseMaxImages(raw: string | undefined): number {
 	const n = raw ? Number.parseInt(raw, 10) : 1;
@@ -1183,21 +1190,45 @@ export function ToolBankManager({
 										}
 									>
 										{f.name === 'prompt_script' ? (
-											<PromptScriptField
-												field={f}
-												value={form.data[f.name] ?? ''}
-												onText={(v) =>
-													patchForm({ data: { ...form.data, [f.name]: v } })
-												}
-												mode={form.data.mode}
-											/>
+											// Só licenciar não tem prompt: nada é gerado.
+											form.data.mode !== MODE_CARIMBO && (
+												<PromptScriptField
+													field={f}
+													value={form.data[f.name] ?? ''}
+													onText={(v) =>
+														patchForm({ data: { ...form.data, [f.name]: v } })
+													}
+													mode={form.data.mode}
+												/>
+											)
 										) : (
 											<BankFieldControl
-												field={f}
+												// O banco licenciado sempre oferece "só licenciar",
+												// mesmo que a definition publicada ainda não liste a
+												// opção — é o motor que a entende, não o enum.
+												field={
+													f.name === 'mode' &&
+													ehBancoLicenciado &&
+													!(f.options ?? []).includes(MODE_CARIMBO)
+														? {
+																...f,
+																options: [...(f.options ?? []), MODE_CARIMBO],
+															}
+														: f
+												}
 												value={form.data[f.name] ?? ''}
 												imageFile={form.dataImages[f.name]}
 												onText={(v) =>
-													patchForm({ data: { ...form.data, [f.name]: v } })
+													patchForm({
+														data: {
+															...form.data,
+															[f.name]: v,
+															// Uma arte, sempre: a que recebe o código.
+															...(f.name === 'mode' && v === MODE_CARIMBO
+																? { max_images: '1' }
+																: {}),
+														},
+													})
 												}
 												onImage={(file) =>
 													patchForm({
@@ -1224,25 +1255,29 @@ export function ToolBankManager({
 							{/* Especificações: só faz sentido quando o modo pede algo do
 							    aluno em texto (`texto`/`texto_imagem`) — substitui a caixa
 							    de tema padrão. */}
-							{form.data.mode !== 'imagem' && (
-								<SpecsEditor
-									specs={form.specs}
-									onChange={(specs) => patchForm({ specs })}
-								/>
-							)}
+							{form.data.mode !== 'imagem' &&
+								form.data.mode !== MODE_CARIMBO && (
+									<SpecsEditor
+										specs={form.specs}
+										onChange={(specs) => patchForm({ specs })}
+									/>
+								)}
 						</div>
 					)}
 
-					{/* Tamanho de saída da IA (opcional — vence o tamanho da tool) */}
-					<div className="space-y-4 border-t border-white/[0.06] pt-5">
-						<p className="font-mono text-[11px] uppercase tracking-widest text-cyan-300/80">
-							Tamanho de saída
-						</p>
-						<ImageSizeControl
-							value={form.imageSize}
-							onChange={(imageSize) => patchForm({ imageSize })}
-						/>
-					</div>
+					{/* Tamanho de saída da IA (opcional — vence o tamanho da tool). Não
+					    no só-licenciar: a arte sai no tamanho em que entrou. */}
+					{form.data.mode !== MODE_CARIMBO && (
+						<div className="space-y-4 border-t border-white/[0.06] pt-5">
+							<p className="font-mono text-[11px] uppercase tracking-widest text-cyan-300/80">
+								Tamanho de saída
+							</p>
+							<ImageSizeControl
+								value={form.imageSize}
+								onChange={(imageSize) => patchForm({ imageSize })}
+							/>
+						</div>
+					)}
 
 					{/* Exemplos antes/depois */}
 					<div className="space-y-4 border-t border-white/[0.06] pt-5">

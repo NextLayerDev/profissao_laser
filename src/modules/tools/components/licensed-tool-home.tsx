@@ -6,6 +6,7 @@ import { useLicensedBrands } from '../hooks/use-licensed-brands';
 import { useDeclaracao } from '../hooks/use-licensed-seller';
 import {
 	coverOf,
+	isCarimbo,
 	maxImagesOf,
 	modeLabel,
 	modeOf,
@@ -195,10 +196,14 @@ function CartaoDoModelo({
 					{entry.title}
 				</p>
 				<LinhaDeRegistro rotulo="Entrada">{modeLabel(mode)}</LinhaDeRegistro>
-				{modeUsesImage(mode) && (
-					<LinhaDeRegistro rotulo="Fotos">
-						{imagens === 1 ? 'até 1' : `até ${imagens}`}
-					</LinhaDeRegistro>
+				{isCarimbo(mode) ? (
+					<LinhaDeRegistro rotulo="Arte">sua, pronta</LinhaDeRegistro>
+				) : (
+					modeUsesImage(mode) && (
+						<LinhaDeRegistro rotulo="Fotos">
+							{imagens === 1 ? 'até 1' : `até ${imagens}`}
+						</LinhaDeRegistro>
+					)
 				)}
 			</div>
 		</button>
