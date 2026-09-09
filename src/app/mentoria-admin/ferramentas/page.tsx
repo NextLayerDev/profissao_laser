@@ -108,7 +108,7 @@ export default function FerramentasPage() {
 									{sorted.map((t) => (
 										<tr
 											key={t.id}
-											className="hover:bg-slate-50 dark:hover:bg-white/[0.04]"
+											className="hover:bg-slate-50 dark:hover:bg-white/4"
 										>
 											<td className="px-5 py-3 font-mono text-xs text-slate-500 dark:text-gray-400">
 												{t.key}

@@ -111,7 +111,7 @@ export default function MentoriaAdminHubPage() {
 									<li key={c.id}>
 										<Link
 											href={`/mentoria-admin/turmas/${c.id}`}
-											className="flex items-center justify-between gap-3 px-5 py-4 hover:bg-slate-50 dark:hover:bg-white/[0.04] transition-colors"
+											className="flex items-center justify-between gap-3 px-5 py-4 hover:bg-slate-50 dark:hover:bg-white/4 transition-colors"
 										>
 											<div>
 												<p className="font-medium text-slate-900 dark:text-white">

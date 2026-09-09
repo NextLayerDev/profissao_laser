@@ -37,13 +37,10 @@ import {
 	computeDelta,
 	formatKpiValue,
 	KpiEvolutionChart,
+	SEMAPHORE_BADGE,
 	SEMAPHORE_TONE,
 } from '@/modules/mentoria/components/kpi-evolution';
-import type {
-	MntKpi,
-	MntKpiMeasurement,
-	Semaphore,
-} from '@/modules/mentoria/types';
+import type { MntKpi, MntKpiMeasurement } from '@/modules/mentoria/types';
 import {
 	CARD,
 	EmptyState,
@@ -59,21 +56,6 @@ const CATEGORY_LABEL: Record<string, string> = {
 	producao: 'Produção',
 	funnel: 'Funil comercial',
 	geral: 'Geral',
-};
-
-/**
- * O semáforo do indicador (`green`/`yellow`/`red`/`unmeasured`) é vocabulário
- * da Mentoria — o `SemaphoreBadge` da lib fala `tone` (`success`/`warning`/
- * `danger`/`neutral`). Mesmo semáforo do `Table` de baixo e do `ProgressBar`.
- */
-const SEMAPHORE_BADGE: Record<
-	Semaphore,
-	{ tone: 'success' | 'warning' | 'danger' | 'neutral'; label: string }
-> = {
-	green: { tone: 'success', label: 'Saudável' },
-	yellow: { tone: 'warning', label: 'Atenção' },
-	red: { tone: 'danger', label: 'Crítico' },
-	unmeasured: { tone: 'neutral', label: 'Não medido' },
 };
 
 type Period = '3m' | '6m' | '12m';

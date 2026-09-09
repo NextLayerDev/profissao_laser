@@ -61,7 +61,7 @@ export default function CohortDashboardPage() {
 									{dashboard.data.map((row) => (
 										<tr
 											key={row.journey_id}
-											className="hover:bg-slate-50 dark:hover:bg-white/[0.03]"
+											className="hover:bg-slate-50 dark:hover:bg-white/3"
 										>
 											<td className="px-5 py-3.5">
 												<p className="font-medium text-slate-900 dark:text-white">

@@ -11,10 +11,7 @@
 // app/globals.css), e é por isso que quase todo par `dark:` sumiu deste
 // arquivo. O que sobrou de `dark:` está comentado no ponto.
 //
-// A API é a mesma de antes: mesmos exports, mesmas props, mesmo DOM. Os 11
-// arquivos que importam daqui não mudaram uma linha.
-import { ArrowLeft, Loader2, X } from 'lucide-react';
-import Link from 'next/link';
+import { Loader2, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 // Sem altura fixa (`h-control-md`) de propósito: esta string também veste
@@ -34,55 +31,6 @@ export const secondaryBtn =
 // vermelho mudaria o peso dele na tela — isso é comportamento, não pintura.
 export const dangerBtn =
 	'inline-flex items-center gap-2 h-control-md px-field-md rounded-control text-label border border-danger text-danger hover:bg-danger-wash transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
-
-export function Card({
-	children,
-	className = '',
-}: {
-	children: ReactNode;
-	className?: string;
-}) {
-	return (
-		<div
-			className={`rounded-card border border-subtle bg-surface ${className}`}
-		>
-			{children}
-		</div>
-	);
-}
-
-export function PageTitle({
-	title,
-	description,
-	backHref,
-	actions,
-}: {
-	title: string;
-	description?: string;
-	backHref?: string;
-	actions?: ReactNode;
-}) {
-	return (
-		<div className="mb-6 flex items-start justify-between gap-3 flex-wrap">
-			<div>
-				{backHref && (
-					<Link
-						href={backHref}
-						className="inline-flex items-center gap-1.5 text-body text-muted hover:text-brand mb-2"
-					>
-						<ArrowLeft className="w-4 h-4" />
-						Voltar
-					</Link>
-				)}
-				<h2 className="text-page text-primary">{title}</h2>
-				{description && (
-					<p className="text-body text-muted mt-1 max-w-2xl">{description}</p>
-				)}
-			</div>
-			{actions && <div className="flex items-center gap-2">{actions}</div>}
-		</div>
-	);
-}
 
 export function Modal({
 	title,
@@ -161,12 +109,6 @@ export function Spinner({ label }: { label?: string }) {
 	);
 }
 
-export function EmptyState({ message }: { message: string }) {
-	return (
-		<div className="py-12 text-center text-body text-muted">{message}</div>
-	);
-}
-
 export function Badge({
 	tone,
 	children,
@@ -204,26 +146,6 @@ export function Badge({
 		>
 			{children}
 		</span>
-	);
-}
-
-export function ProgressBar({ pct }: { pct: number }) {
-	const clamped = Math.max(0, Math.min(100, Math.round(pct)));
-	return (
-		<div className="flex items-center gap-2 min-w-32">
-			{/* `bg-subtle` e não `bg-surface-sunken`: o trilho precisa contrastar
-			    com o card, e no escuro o sunken é o fundo da página (some dentro
-			    do card). O subtle é branco 10% — exatamente o que estava aqui. */}
-			<div className="flex-1 h-2 rounded-full bg-subtle overflow-hidden">
-				<div
-					className="h-full rounded-full bg-brand transition-all"
-					style={{ width: `${clamped}%` }}
-				/>
-			</div>
-			<span className="text-caption tabular-nums text-muted w-9 text-right">
-				{clamped}%
-			</span>
-		</div>
 	);
 }
 

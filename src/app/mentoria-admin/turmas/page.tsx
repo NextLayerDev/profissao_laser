@@ -78,7 +78,7 @@ export default function TurmasPage() {
 									{cohorts.data.map((c) => (
 										<tr
 											key={c.id}
-											className="hover:bg-slate-50 dark:hover:bg-white/[0.03]"
+											className="hover:bg-slate-50 dark:hover:bg-white/3"
 										>
 											<td className="px-5 py-3.5">
 												<Link
