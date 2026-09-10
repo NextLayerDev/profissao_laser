@@ -26,7 +26,12 @@ type VerificationState =
 
 // This is the application's API, not the gateway. The public verifier must not
 // depend on gateway authentication or its private upstream network.
-const apiUrl = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/$/, '');
+const defaultPublicApiUrl =
+	'https://profissao-laser-profissao-laser-back.1nwz76.easypanel.host';
+const apiUrl = (process.env.NEXT_PUBLIC_API_URL || defaultPublicApiUrl).replace(
+	/\/+$/,
+	'',
+);
 
 function formatDate(value?: string | null): string | null {
 	if (!value) return null;
@@ -49,7 +54,7 @@ export default function LicensedArtVerificationPage() {
 		const controller = new AbortController();
 
 		async function verify() {
-			if (!apiUrl || !code) {
+			if (!code) {
 				setState({ kind: 'unavailable' });
 				return;
 			}
