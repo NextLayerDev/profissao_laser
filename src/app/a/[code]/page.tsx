@@ -24,10 +24,9 @@ type VerificationState =
 	| { kind: 'not-found' }
 	| { kind: 'unavailable' };
 
-const gatewayUrl = (process.env.NEXT_PUBLIC_GATEWAY_URL ?? '').replace(
-	/\/$/,
-	'',
-);
+// This is the application's API, not the gateway. The public verifier must not
+// depend on gateway authentication or its private upstream network.
+const apiUrl = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/$/, '');
 
 function formatDate(value?: string | null): string | null {
 	if (!value) return null;
@@ -50,14 +49,14 @@ export default function LicensedArtVerificationPage() {
 		const controller = new AbortController();
 
 		async function verify() {
-			if (!gatewayUrl || !code) {
+			if (!apiUrl || !code) {
 				setState({ kind: 'unavailable' });
 				return;
 			}
 
 			try {
 				const response = await fetch(
-					`${gatewayUrl}/api/licensed-art/${encodeURIComponent(code)}`,
+					`${apiUrl}/api/licensed-art/${encodeURIComponent(code)}`,
 					{
 						cache: 'no-store',
 						credentials: 'omit',
