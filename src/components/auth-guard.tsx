@@ -26,6 +26,19 @@ const PUBLIC_PATHS = [
 	'/a',
 ];
 
+/**
+ * Rotas públicas precisam bater em um segmento inteiro. `startsWith('/a')`
+ * também aceitava `/acessos`, `/alunos` e qualquer outra rota protegida que
+ * comece com "a", deixando o guard de login passar por engano.
+ */
+function isPublicPath(pathname: string): boolean {
+	return PUBLIC_PATHS.some((path) =>
+		path === '/'
+			? pathname === '/'
+			: pathname === path || pathname.startsWith(`${path}/`),
+	);
+}
+
 const ADMIN_PATHS = [
 	'/dashboard',
 	'/products',
@@ -52,9 +65,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 	const [ready, setReady] = useState(false);
 
 	useEffect(() => {
-		const isPublic = PUBLIC_PATHS.some((p) =>
-			p === '/' ? pathname === '/' : pathname.startsWith(p),
-		);
+		const isPublic = isPublicPath(pathname);
 
 		if (!isPublic && !getCurrentUser()) {
 			router.replace('/login');

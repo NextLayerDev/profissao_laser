@@ -42,14 +42,22 @@ const PUBLIC_PAGE_PREFIXES = [
 	'/a',
 ];
 
+function isPublicPath(pathname: string): boolean {
+	return (
+		pathname === '/' ||
+		PUBLIC_PAGE_PREFIXES.some(
+			(path) => pathname === path || pathname.startsWith(`${path}/`),
+		)
+	);
+}
+
 api.interceptors.response.use(
 	(response) => response,
 	(error) => {
 		if (error.response?.status === 401) {
 			const path =
 				typeof window !== 'undefined' ? window.location.pathname : '';
-			const isPublicPage =
-				path === '/' || PUBLIC_PAGE_PREFIXES.some((p) => path.startsWith(p));
+			const isPublicPage = isPublicPath(path);
 
 			// Staff/colaborador (token de painel) navegando a área do aluno
 			// (/course) pode receber 401 em endpoints exclusivos de customer (ex.:

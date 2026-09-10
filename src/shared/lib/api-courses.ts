@@ -41,14 +41,22 @@ const PUBLIC_PAGE_PREFIXES = [
 	'/a',
 ];
 
+function isPublicPath(pathname: string): boolean {
+	return (
+		pathname === '/' ||
+		PUBLIC_PAGE_PREFIXES.some(
+			(path) => pathname === path || pathname.startsWith(`${path}/`),
+		)
+	);
+}
+
 apiCourses.interceptors.response.use(
 	(response) => response,
 	(error) => {
 		if (error.response?.status === 401) {
 			const path =
 				typeof window !== 'undefined' ? window.location.pathname : '';
-			const isPublicPage =
-				path === '/' || PUBLIC_PAGE_PREFIXES.some((p) => path.startsWith(p));
+			const isPublicPage = isPublicPath(path);
 
 			// Staff/colaborador (token de painel) pode navegar a área do aluno
 			// (/course) e receber 401 em rotas exclusivas de customer (ex.:
