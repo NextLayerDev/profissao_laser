@@ -19,7 +19,18 @@ const PUBLIC_PATHS = [
 	// cliente final do profissional — que não tem e nunca vai ter conta — direto
 	// para `/login`, e a página pública simplesmente não existe.
 	'/orcamento',
+	// QR gravado numa peça é conferido por quem a recebeu, sem conta na
+	// plataforma. A página em si também não envia credenciais ao gateway.
+	'/a',
 ];
+
+function isPublicPath(pathname: string): boolean {
+	return PUBLIC_PATHS.some((path) =>
+		path === '/'
+			? pathname === '/'
+			: pathname === path || pathname.startsWith(`${path}/`),
+	);
+}
 
 const ADMIN_PATHS = [
 	'/dashboard',
@@ -47,9 +58,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 	const [ready, setReady] = useState(false);
 
 	useEffect(() => {
-		const isPublic = PUBLIC_PATHS.some((p) =>
-			p === '/' ? pathname === '/' : pathname.startsWith(p),
-		);
+		const isPublic = isPublicPath(pathname);
 
 		if (!isPublic && !getCurrentUser()) {
 			router.replace('/login');
