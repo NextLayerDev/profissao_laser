@@ -41,6 +41,7 @@ import { useKnowledgeBase } from '@/hooks/use-knowledge-base';
 import { useSupportChat, useSupportChats } from '@/hooks/use-support-chat';
 import { type DoubtChat, isDoubtPending } from '@/types/doubt-chat';
 import type { KnowledgeBaseArticle } from '@/types/knowledge-base';
+import { formatAppointmentDate } from '@/utils/formatDate';
 import { getEmbedUrl, getVideoType } from '@/utils/video';
 
 const ACTION_CARDS = [
@@ -343,7 +344,7 @@ function SchedulingModal({ onClose }: { onClose: () => void }) {
 													{a.service}
 												</p>
 												<p className="text-xs text-slate-500 dark:text-gray-400">
-													{formatDate(a.date)} as {a.time} ·{' '}
+													{formatAppointmentDate(a.date)} às {a.time} ·{' '}
 													<span className="capitalize">{a.status}</span>
 												</p>
 											</div>
