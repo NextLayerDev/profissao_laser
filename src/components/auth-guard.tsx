@@ -33,7 +33,9 @@ const PUBLIC_PATHS = [
  */
 function isPublicPath(pathname: string): boolean {
 	return PUBLIC_PATHS.some((path) =>
-		path === '/' ? pathname === '/' : pathname === path || pathname.startsWith(`${path}/`),
+		path === '/'
+			? pathname === '/'
+			: pathname === path || pathname.startsWith(`${path}/`),
 	);
 }
 

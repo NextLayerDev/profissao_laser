@@ -42,8 +42,11 @@ const PUBLIC_PAGE_PREFIXES = [
 ];
 
 function isPublicPath(pathname: string): boolean {
-	return PUBLIC_PAGE_PREFIXES.some(
-		(path) => path === '/' || pathname === path || pathname.startsWith(`${path}/`),
+	return (
+		pathname === '/' ||
+		PUBLIC_PAGE_PREFIXES.some(
+			(path) => pathname === path || pathname.startsWith(`${path}/`),
+		)
 	);
 }
 
