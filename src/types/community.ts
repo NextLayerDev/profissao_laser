@@ -5,6 +5,7 @@ export interface Post {
 	time: string;
 	content: string;
 	image?: string | null;
+	video?: string | null;
 	likes: number;
 	comments: number;
 	shares: number;

@@ -169,7 +169,9 @@ export function CommunityView({
 	const [memberFilter, setMemberFilter] = useState('all');
 
 	const [postContent, setPostContent] = useState('');
-	const [postImage, setPostImage] = useState<string | null>(null);
+	const [postFile, setPostFile] = useState<File | null>(null);
+	// Preview local: objectURL, não base64 — um vídeo em base64 trava a aba.
+	const [postPreview, setPostPreview] = useState<string | null>(null);
 
 	const [newProject, setNewProject] = useState({
 		title: '',
@@ -411,13 +413,21 @@ export function CommunityView({
 		setShowDetailsModal(true);
 	};
 
-	const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+	const clearPostFile = () => {
+		setPostFile(null);
+		setPostPreview((prev) => {
+			if (prev) URL.revokeObjectURL(prev);
+			return null;
+		});
+		if (fileInputRef.current) fileInputRef.current.value = '';
+	};
+
+	const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
-		if (file) {
-			const reader = new FileReader();
-			reader.onloadend = () => setPostImage(reader.result as string);
-			reader.readAsDataURL(file);
-		}
+		if (!file) return;
+		if (postPreview) URL.revokeObjectURL(postPreview);
+		setPostFile(file);
+		setPostPreview(URL.createObjectURL(file));
 	};
 
 	const handleProjectImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -433,11 +443,11 @@ export function CommunityView({
 	const handlePublishPost = () => {
 		if (!postContent.trim()) return;
 		createPostMutation.mutate(
-			{ content: postContent, image: postImage ?? undefined },
+			{ content: postContent, file: postFile ?? undefined },
 			{
 				onSuccess: () => {
 					setPostContent('');
-					setPostImage(null);
+					clearPostFile();
 				},
 			},
 		);
@@ -512,16 +522,26 @@ export function CommunityView({
 										onChange={(e) => setPostContent(e.target.value)}
 										className="w-full min-h-[100px] p-4 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 resize-none"
 									/>
-									{postImage && (
+									{postPreview && (
 										<div className="relative rounded-xl overflow-hidden">
-											<img
-												src={postImage}
-												alt="Preview"
-												className="w-full max-h-48 object-cover rounded-xl"
-											/>
+											{postFile?.type.startsWith('video/') ? (
+												<video
+													src={postPreview}
+													controls
+													className="w-full max-h-48 rounded-xl bg-black"
+												>
+													<track kind="captions" />
+												</video>
+											) : (
+												<img
+													src={postPreview}
+													alt="Preview"
+													className="w-full max-h-48 object-cover rounded-xl"
+												/>
+											)}
 											<button
 												type="button"
-												onClick={() => setPostImage(null)}
+												onClick={clearPostFile}
 												className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white"
 											>
 												<X className="h-4 w-4" />
@@ -532,8 +552,8 @@ export function CommunityView({
 										<input
 											type="file"
 											ref={fileInputRef}
-											onChange={handleImageUpload}
-											accept="image/*"
+											onChange={handleMediaUpload}
+											accept="image/*,video/*"
 											className="hidden"
 										/>
 										<button
@@ -643,6 +663,18 @@ export function CommunityView({
 													alt="Post"
 													className="w-full h-full object-cover"
 												/>
+											</div>
+										)}
+										{post.video && (
+											<div className="mt-4 rounded-xl overflow-hidden">
+												<video
+													src={post.video}
+													controls
+													preload="metadata"
+													className="w-full max-h-[400px] rounded-xl bg-black"
+												>
+													<track kind="captions" />
+												</video>
 											</div>
 										)}
 									</div>

@@ -25,9 +25,13 @@ export async function getPosts(params?: {
 
 export async function createPost(body: {
 	content: string;
-	image?: string;
+	/** Imagem ou vídeo — a API decide pelo mimetype. */
+	file?: File;
 }): Promise<Post> {
-	const { data } = await api.post<Post>('/community/posts', body);
+	const formData = new FormData();
+	formData.append('content', body.content);
+	if (body.file) formData.append('file', body.file);
+	const { data } = await api.post<Post>('/community/posts', formData);
 	return data as Post;
 }
 
