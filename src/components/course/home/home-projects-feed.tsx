@@ -3,6 +3,7 @@
 import { Eye, Heart, Loader2, MessageSquare, Send } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import { ProjectMedia } from '@/components/community/project-media';
 import { Avatar } from '@/components/ui/avatar';
 import { FeedCardsSkeleton } from '@/components/ui/skeletons/feed-skeleton';
 import {
@@ -100,16 +101,17 @@ function FeedCard({ p }: { p: Project }) {
 			{/* Imagem inteira, SEM corte, mas com TETO de altura (~420px) p/ o feed
 			    rolar rápido: object-contain encolhe pra caber — larga preenche a
 			    largura; alta fica contida e centralizada (faixas sutis nas laterais). */}
-			{p.img ? (
+			{p.img || p.video ? (
 				<Link
 					href={`/course/vitrine?project=${p.id}`}
 					className="mt-2 flex max-h-[420px] items-center justify-center overflow-hidden bg-slate-100 dark:bg-white/[0.03]"
 				>
-					<img
-						src={p.img}
+					<ProjectMedia
+						img={p.img}
+						video={p.video}
 						alt={p.title}
+						controls
 						className="max-h-[420px] w-auto max-w-full object-contain"
-						loading="lazy"
 					/>
 				</Link>
 			) : null}

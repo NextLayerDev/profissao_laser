@@ -151,11 +151,16 @@ export async function createProject(body: {
 	author: string;
 	title: string;
 	description: string;
-	img?: string;
+	/** Imagem ou vídeo — a API decide pelo mimetype. */
+	file?: File;
 	material?: string;
 	technique?: string;
 }): Promise<Project> {
-	const { data } = await api.post<Project>('/community/projects', body);
+	const formData = new FormData();
+	for (const [key, value] of Object.entries(body)) {
+		if (value !== undefined) formData.append(key, value as string | File);
+	}
+	const { data } = await api.post<Project>('/community/projects', formData);
 	return data as Project;
 }
 

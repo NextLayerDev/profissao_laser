@@ -375,7 +375,7 @@ export function useCreateProject() {
 			author: string;
 			title: string;
 			description: string;
-			img?: string;
+			file?: File;
 			material?: string;
 			technique?: string;
 		}) => createProject(body),

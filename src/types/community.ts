@@ -83,6 +83,7 @@ export interface Project {
 	author: string;
 	authorAvatar?: string | null;
 	img?: string | null;
+	video?: string | null;
 	description?: string | null;
 	material?: string | null;
 	technique?: string | null;
