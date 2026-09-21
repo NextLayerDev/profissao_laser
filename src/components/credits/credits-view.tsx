@@ -9,6 +9,7 @@ import {
 	VoxesPackagesSkeleton,
 } from '@/components/ui/skeletons/voxes-skeleton';
 import { VoxxysIcon } from '@/components/ui/voxxys-icon';
+import { useEntitlements } from '@/hooks/use-entitlements';
 import { useIsTestUnlimited } from '@/hooks/use-is-test-unlimited';
 import { useStudentPreview } from '@/hooks/use-student-preview';
 import {
@@ -25,6 +26,7 @@ const REASON_CLASS: Record<VoxLedgerReason, string> = {
 	spend: 'bg-slate-500/15 text-slate-600 dark:text-slate-300',
 	refund: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
 	adjustment: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+	plan_grant: 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
 };
 
 export function CreditsView() {
@@ -37,6 +39,9 @@ export function CreditsView() {
 	// Em Visão Aluno o `unlimited` é da STAFF, não de uma conta teste — o
 	// rótulo tem de dizer a verdade.
 	const { active: previewActive } = useStudentPreview();
+	const { entitlements } = useEntitlements();
+	const sub = entitlements?.subscription ?? null;
+	const planGrant = sub && sub.vox_monthly_grant > 0 ? sub : null;
 	const [buyingPkg, setBuyingPkg] = useState<VoxPackage | null>(null);
 
 	const balance = voxes?.balance ?? null;
@@ -121,6 +126,46 @@ export function CreditsView() {
 					</div>
 				</div>
 			</div>
+
+			{planGrant && (
+				<div className="rounded-2xl border border-violet-200/70 dark:border-violet-500/20 bg-violet-50/60 dark:bg-violet-500/[0.06] px-5 py-4">
+					<p className="text-sm text-slate-700 dark:text-gray-200 leading-relaxed">
+						{planGrant.vox_grant_mode === 'first_only' ? (
+							<>
+								Seu plano{' '}
+								<strong className="text-slate-900 dark:text-white">
+									{planGrant.plan.name}
+								</strong>{' '}
+								incluiu{' '}
+								<strong className="text-slate-900 dark:text-white">
+									{planGrant.vox_monthly_grant} voxxys
+								</strong>{' '}
+								como bônus único —{' '}
+								<strong>eles não renovam a cada período</strong>. Para repor,
+								compre um pacote abaixo.
+							</>
+						) : (
+							<>
+								Seu plano{' '}
+								<strong className="text-slate-900 dark:text-white">
+									{planGrant.plan.name}
+								</strong>{' '}
+								renova{' '}
+								<strong className="text-slate-900 dark:text-white">
+									{planGrant.vox_monthly_grant} voxxys
+								</strong>{' '}
+								a cada período. Próximo crédito em{' '}
+								<strong className="text-slate-900 dark:text-white">
+									{new Date(planGrant.current_period_end).toLocaleDateString(
+										'pt-BR',
+									)}
+								</strong>
+								.
+							</>
+						)}
+					</p>
+				</div>
+			)}
 
 			{/* O que são Voxxys? */}
 			<div className="rounded-2xl border border-violet-200/70 dark:border-violet-500/20 bg-violet-50/60 dark:bg-violet-500/[0.06] p-5 flex gap-4">
