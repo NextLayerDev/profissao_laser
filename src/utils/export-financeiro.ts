@@ -167,8 +167,24 @@ export async function exportFinanceiroExcel(
 					),
 				],
 				['Usado (valor)', reais(vx?.plan_used_value_cents ?? 0)],
-				['Cobrado da empresa', reais(vx?.plan_upvox_share_cents ?? 0)],
-				['Não usados (SEM custo)', reais(vx?.plan_unused_value_cents ?? 0)],
+				[
+					'Cobrado por uso (estoque pré-set/2026)',
+					reais(vx?.plan_upvox_share_cents ?? 0),
+				],
+				[
+					'Não usados — já pagos na concessão',
+					reais(vx?.plan_prepaid_value_cents ?? 0),
+				],
+				[
+					'Não usados — ainda sem custo (estoque antigo)',
+					reais(
+						Math.max(
+							(vx?.plan_unused_value_cents ?? 0) -
+								(vx?.plan_prepaid_value_cents ?? 0),
+							0,
+						),
+					),
+				],
 				[],
 				[
 					'Cliente (plano)',
@@ -317,10 +333,23 @@ export async function exportFinanceiroPdf(
 					),
 				],
 				['Usado (valor)', fmtBRL(vx?.plan_used_value_cents ?? 0)],
-				['Cobrado da empresa', fmtBRL(vx?.plan_upvox_share_cents ?? 0)],
 				[
-					'Não usados (SEM custo pra empresa)',
-					fmtBRL(vx?.plan_unused_value_cents ?? 0),
+					'Cobrado por uso (estoque pré-set/2026)',
+					fmtBRL(vx?.plan_upvox_share_cents ?? 0),
+				],
+				[
+					'Não usados — já pagos na concessão',
+					fmtBRL(vx?.plan_prepaid_value_cents ?? 0),
+				],
+				[
+					'Não usados — ainda sem custo (estoque antigo)',
+					fmtBRL(
+						Math.max(
+							(vx?.plan_unused_value_cents ?? 0) -
+								(vx?.plan_prepaid_value_cents ?? 0),
+							0,
+						),
+					),
 				],
 			],
 		)}`,
