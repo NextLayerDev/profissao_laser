@@ -1,7 +1,7 @@
 'use client';
 
 import type { LucideIcon } from 'lucide-react';
-import { ArrowLeft, Compass } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Compass } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { useMentoriaBootstrap } from '@/modules/mentoria/hooks';
@@ -170,7 +170,21 @@ export function JourneyGate({
 
 	if (isLoading) return <MntSkeleton />;
 
-	if (isError || !data?.journey) {
+	// Falha de carregamento NÃO é falta de matrícula. Falta de plano também não:
+	// o 403 do gate já foi capturado pelo `MentoriaAccessGate`, no layout, e nem
+	// chega aqui. Então um erro neste ponto é a api fora do ar — mandar cadastrar
+	// a empresa seria mentir sobre a causa, e a rota de cadastro falharia igual.
+	if (isError) {
+		return (
+			<EmptyState
+				icon={AlertTriangle}
+				title="Não foi possível carregar sua mentoria"
+				description="Houve uma falha ao falar com o servidor. Tente recarregar a página em instantes."
+			/>
+		);
+	}
+
+	if (!data?.journey) {
 		return (
 			<div>
 				<EmptyState

@@ -7,12 +7,17 @@
 // precisa guardar o estado do Assistente; aqui ficam só o padding e o rodapé.
 
 import type { ReactNode } from 'react';
+import { MentoriaAccessGate } from './_components/mentoria-access-gate';
 import { MentoriaShell } from './_components/mentoria-shell';
 
 export default function MentoriaLayout({ children }: { children: ReactNode }) {
 	return (
 		<div className="p-4 md:p-8">
-			<MentoriaShell>{children}</MentoriaShell>
+			{/* Cadeado de plano por fora do shell: sem a tool `mentoria_360` não há
+			    o que navegar, então nem a navegação nem o Assistente sobem. */}
+			<MentoriaAccessGate>
+				<MentoriaShell>{children}</MentoriaShell>
+			</MentoriaAccessGate>
 
 			<footer className="mt-8 pt-6 border-t border-subtle text-center text-caption text-muted">
 				© {new Date().getFullYear()} Profissão Laser — todos os direitos
