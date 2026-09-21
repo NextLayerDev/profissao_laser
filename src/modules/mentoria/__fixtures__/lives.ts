@@ -20,6 +20,9 @@ function live(
 		description: null,
 		scheduled_at: '2026-09-10T22:00:00.000Z',
 		status,
+		source: 'mux',
+		external_url: null,
+		recording_url: null,
 		mux_playback_id: null,
 		vod_playback_id: null,
 		started_at: null,
@@ -71,6 +74,39 @@ export const livesAllStatusesFixture: MntLiveRoom[] = [
 		vod_playback_id: 'playback-vod-fixture',
 	}),
 ];
+
+/**
+ * Salas de link externo (Zoom/Meet) — o caminho que roda enquanto a plataforma
+ * própria não existe. Ficam fora do `livesAllStatusesFixture` de propósito: a
+ * listagem agrupa por status, e o que muda aqui é o `source`, então as duas
+ * aparecem no detalhe, onde a diferença é visível (botão no lugar do player).
+ */
+export const liveExternalActiveFixture: MntLiveRoom = live(
+	'live-external-1',
+	'active',
+	{
+		title: 'Plantão ao vivo no Meet — fechamento do mês',
+		description: 'A sala abre 10 minutos antes. Entre pelo botão abaixo.',
+		source: 'external',
+		external_url: 'https://meet.google.com/abc-defg-hij',
+		started_at: '2026-09-04T22:01:00.000Z',
+	},
+);
+
+/** Externa encerrada com a gravação já colada pelo admin. */
+export const liveExternalVodFixture: MntLiveRoom = live(
+	'live-external-2',
+	'vod_ready',
+	{
+		title: 'Precificação — gravação do encontro',
+		description: null,
+		source: 'external',
+		external_url: 'https://meet.google.com/abc-defg-hij',
+		recording_url: 'https://youtu.be/dQw4w9WgXcQ',
+		started_at: '2026-08-27T22:00:00.000Z',
+		ended_at: '2026-08-27T23:40:00.000Z',
+	},
+);
 
 /** Detalhe: transmissão no ar. */
 export const liveActiveFixture: MntLiveRoom = livesAllStatusesFixture[0];

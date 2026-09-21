@@ -28,6 +28,8 @@ import {
 	chatEmptyFixture,
 	liveActiveFixture,
 	liveEndedFixture,
+	liveExternalActiveFixture,
+	liveExternalVodFixture,
 	liveIdleFixture,
 	livePlaybackLiveFixture,
 	livesAllStatusesFixture,
@@ -148,7 +150,31 @@ export default function LivesCheckPage() {
 				</Section>
 
 				<Section
-					title="6. Live não encontrada"
+					title="6. Link externo — no ar"
+					note="Sala `source: 'external'`: não há player nosso, então o card manda o aluno para o Zoom/Meet em outra aba. É o caminho que roda enquanto a plataforma própria não está contratada."
+				>
+					<LiveView
+						live={liveExternalActiveFixture}
+						playback={null}
+						playbackState="external"
+						chat={chat}
+					/>
+				</Section>
+
+				<Section
+					title="7. Link externo — gravação"
+					note="Encerrada com o link de gravação colado pelo admin. O mesmo card troca o CTA. A sala externa agendada cai no aviso de aguardando, sem botão."
+				>
+					<LiveView
+						live={liveExternalVodFixture}
+						playback={null}
+						playbackState="external"
+						chat={chat}
+					/>
+				</Section>
+
+				<Section
+					title="8. Live não encontrada"
 					note="Guarda de id inválido na URL. Antes esse caso caía no esqueleto e girava para sempre."
 				>
 					<LiveNotFound />
@@ -157,7 +183,7 @@ export default function LivesCheckPage() {
 				<h2 className="text-title text-primary">Chat</h2>
 
 				<Section
-					title="7. Chat vazio e chat cheio"
+					title="9. Chat vazio e chat cheio"
 					note="Nome longo, `user_name` nulo (cai em 'Aluno') e uma mensagem no limite de 500 caracteres. Use o botão do topo para ver o envio em andamento."
 				>
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-104">

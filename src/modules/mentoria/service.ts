@@ -896,8 +896,27 @@ export async function getLiveCredentials(id: string): Promise<LiveCredentials> {
 	return data;
 }
 
-export async function endLive(id: string): Promise<MntLiveRoom> {
-	const { data } = await api.post(`/v1/admin/mentoria/live/${id}/end`);
+/**
+ * Coloca uma live de link externo no ar. Só existe para `source: 'external'`:
+ * nas do Mux quem vira o status é o webhook da transmissão.
+ */
+export async function startLive(id: string): Promise<MntLiveRoom> {
+	const { data } = await api.post(`/v1/admin/mentoria/live/${id}/start`);
+	return data;
+}
+
+/**
+ * Encerra a live. No link externo o admin pode colar a gravação na hora — não
+ * existe VOD automático como no Mux —, e aí a sala já vira `vod_ready`.
+ */
+export async function endLive(
+	id: string,
+	recordingUrl?: string | null,
+): Promise<MntLiveRoom> {
+	const { data } = await api.post(
+		`/v1/admin/mentoria/live/${id}/end`,
+		recordingUrl ? { recording_url: recordingUrl } : undefined,
+	);
 	return data;
 }
 

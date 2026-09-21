@@ -22,7 +22,10 @@ export default function LiveDetailPage() {
 
 function Content({ liveId }: { liveId: string }) {
 	const { data: live, isLoading, isError } = useLive(liveId);
-	const playable = live?.status === 'active' || live?.status === 'vod_ready';
+	// Sala de link externo não tem vídeo nosso: pedir o token seria 404 certo.
+	const isExternal = live?.source === 'external';
+	const playable =
+		!isExternal && (live?.status === 'active' || live?.status === 'vod_ready');
 	const { data: playback } = useLivePlayback(liveId, Boolean(playable));
 
 	if (isLoading) return <MntSkeleton />;
@@ -33,8 +36,9 @@ function Content({ liveId }: { liveId: string }) {
 
 	// A view não refaz a regra: só o container sabe se o token de playback já
 	// chegou (o `useLivePlayback` só roda quando a sala é tocável).
-	const playbackState: PlaybackState =
-		playable && playback
+	const playbackState: PlaybackState = isExternal
+		? 'external'
+		: playable && playback
 			? 'playing'
 			: live.status === 'ended'
 				? 'ended'
