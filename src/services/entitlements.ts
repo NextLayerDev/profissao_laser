@@ -31,6 +31,11 @@ export const entitlementsSchema = z.object({
 			current_period_start: z.string(),
 			current_period_end: z.string(),
 			vox_monthly_grant: z.number(),
+			/** 'recurring' = renova a cada período pago; 'first_only' = bônus único. */
+			vox_grant_mode: z
+				.enum(['recurring', 'first_only'])
+				.optional()
+				.default('recurring'),
 		})
 		.nullable(),
 	courses: z.array(
