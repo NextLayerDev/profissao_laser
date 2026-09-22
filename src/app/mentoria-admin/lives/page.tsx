@@ -5,9 +5,8 @@ import {
 	Copy,
 	ExternalLink,
 	KeyRound,
-	Loader2,
+	PlayCircle,
 	Plus,
-	Radio,
 	Square,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -36,6 +35,8 @@ import {
 	Spinner,
 	secondaryBtn,
 } from '../_components/ui';
+import { CreateLiveModal } from './_components/create-live-modal';
+import { EndLiveModal } from './_components/end-live-modal';
 
 function LiveStatusBadge({ status }: { status: LiveStatus }) {
 	if (status === 'active') {
@@ -64,7 +65,7 @@ function LiveStatusBadge({ status }: { status: LiveStatus }) {
 export default function LivesAdminPage() {
 	const lives = useLivesAdmin();
 	const cohorts = useCohortsAdmin();
-	const { end } = useLiveMutations();
+	const { start } = useLiveMutations();
 	const [creating, setCreating] = useState(false);
 	const [credentialsFor, setCredentialsFor] = useState<MntLiveRoom | null>(
 		null,
@@ -77,14 +78,12 @@ export default function LivesAdminPage() {
 		return map;
 	}, [cohorts.data]);
 
-	const doEnd = async () => {
-		if (!ending) return;
+	const doStart = async (live: MntLiveRoom) => {
 		try {
-			await end.mutateAsync(ending.id);
-			toast.success('Live encerrada');
-			setEnding(null);
+			await start.mutateAsync(live.id);
+			toast.success('Live no ar');
 		} catch (err) {
-			toast.error(mentoriaErrorMessage(err, 'Erro ao encerrar a live'));
+			toast.error(mentoriaErrorMessage(err, 'Erro ao iniciar a live'));
 		}
 	};
 
@@ -139,6 +138,11 @@ export default function LivesAdminPage() {
 													? (cohortName.get(live.cohort_id) ?? 'Turma')
 													: 'Todas as turmas'}
 											</Badge>
+											<Badge tone="slate">
+												{live.source === 'external'
+													? 'Link externo'
+													: 'Transmissão própria'}
+											</Badge>
 											<span>Agendada: {formatDateTime(live.scheduled_at)}</span>
 											{live.started_at && (
 												<span>· Início: {formatDateTime(live.started_at)}</span>
@@ -149,14 +153,29 @@ export default function LivesAdminPage() {
 										</div>
 									</div>
 									<div className="flex gap-2 flex-wrap">
-										{(live.status === 'idle' || live.status === 'active') && (
+										{/* Credenciais só existem na transmissão própria. No link
+										    externo o que falta é alguém dizer que começou: não há
+										    webhook para virar o status sozinho. */}
+										{live.source !== 'external' &&
+											(live.status === 'idle' || live.status === 'active') && (
+												<button
+													type="button"
+													className={secondaryBtn}
+													onClick={() => setCredentialsFor(live)}
+												>
+													<KeyRound className="w-3.5 h-3.5" />
+													Credenciais de transmissão
+												</button>
+											)}
+										{live.source === 'external' && live.status === 'idle' && (
 											<button
 												type="button"
 												className={secondaryBtn}
-												onClick={() => setCredentialsFor(live)}
+												onClick={() => doStart(live)}
+												disabled={start.isPending}
 											>
-												<KeyRound className="w-3.5 h-3.5" />
-												Credenciais de transmissão
+												<PlayCircle className="w-3.5 h-3.5" />
+												Iniciar live
 											</button>
 										)}
 										{live.status === 'active' && (
@@ -193,133 +212,8 @@ export default function LivesAdminPage() {
 				/>
 			)}
 
-			{ending && (
-				<Modal title="Encerrar live" onClose={() => setEnding(null)}>
-					<p className="text-sm text-slate-600 dark:text-gray-400">
-						Encerrar <b>{ending.title}</b>? A transmissão será finalizada para
-						todos os alunos e a gravação (VOD) começará a ser processada.
-					</p>
-					<div className="flex justify-end gap-2 pt-4">
-						<button
-							type="button"
-							className={secondaryBtn}
-							onClick={() => setEnding(null)}
-						>
-							Cancelar
-						</button>
-						<button
-							type="button"
-							className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-60"
-							onClick={doEnd}
-							disabled={end.isPending}
-						>
-							{end.isPending ? (
-								<Loader2 className="w-4 h-4 animate-spin" />
-							) : (
-								<Square className="w-4 h-4" />
-							)}
-							Encerrar
-						</button>
-					</div>
-				</Modal>
-			)}
+			{ending && <EndLiveModal live={ending} onClose={() => setEnding(null)} />}
 		</div>
-	);
-}
-
-function CreateLiveModal({ onClose }: { onClose: () => void }) {
-	const { create } = useLiveMutations();
-	const cohorts = useCohortsAdmin();
-	const [form, setForm] = useState({
-		title: '',
-		description: '',
-		scheduled_at: '',
-		cohort_id: '',
-	});
-	const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
-		setForm((f) => ({ ...f, [key]: value }));
-
-	const save = async () => {
-		if (!form.title.trim()) {
-			toast.error('Informe o título da live');
-			return;
-		}
-		try {
-			await create.mutateAsync({
-				title: form.title.trim(),
-				description: form.description.trim() || null,
-				scheduled_at: form.scheduled_at
-					? new Date(form.scheduled_at).toISOString()
-					: null,
-				...(form.cohort_id ? { cohort_id: form.cohort_id } : {}),
-			});
-			toast.success('Live criada');
-			onClose();
-		} catch (err) {
-			toast.error(mentoriaErrorMessage(err, 'Erro ao criar a live'));
-		}
-	};
-
-	return (
-		<Modal title="Nova live" onClose={onClose}>
-			<div className="space-y-4">
-				<Field label="Título" required>
-					<input
-						className={inputClass}
-						value={form.title}
-						onChange={(e) => set('title', e.target.value)}
-						placeholder="Encontro ao vivo — Tira-dúvidas"
-					/>
-				</Field>
-				<Field label="Descrição">
-					<textarea
-						className={`${inputClass} min-h-16`}
-						value={form.description}
-						onChange={(e) => set('description', e.target.value)}
-					/>
-				</Field>
-				<Field label="Data e hora agendadas">
-					<input
-						type="datetime-local"
-						className={inputClass}
-						value={form.scheduled_at}
-						onChange={(e) => set('scheduled_at', e.target.value)}
-					/>
-				</Field>
-				<Field label="Turma" hint="Deixe em branco para todas as turmas.">
-					<select
-						className={inputClass}
-						value={form.cohort_id}
-						onChange={(e) => set('cohort_id', e.target.value)}
-					>
-						<option value="">Todas as turmas</option>
-						{(cohorts.data ?? []).map((c) => (
-							<option key={c.id} value={c.id}>
-								{c.name}
-							</option>
-						))}
-					</select>
-				</Field>
-				<div className="flex justify-end gap-2 pt-2">
-					<button type="button" className={secondaryBtn} onClick={onClose}>
-						Cancelar
-					</button>
-					<button
-						type="button"
-						className={primaryBtn}
-						onClick={save}
-						disabled={create.isPending}
-					>
-						{create.isPending ? (
-							<Loader2 className="w-4 h-4 animate-spin" />
-						) : (
-							<Radio className="w-4 h-4" />
-						)}
-						Criar live
-					</button>
-				</div>
-			</div>
-		</Modal>
 	);
 }
 

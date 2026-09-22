@@ -526,6 +526,17 @@ export type MntMaturityConfig = {
 
 export type LiveStatus = 'idle' | 'active' | 'ended' | 'vod_ready';
 
+/**
+ * De onde sai o vídeo da sala. `mux` é a transmissão própria (mentor no OBS,
+ * player embutido); `external` é um link de Zoom/Meet/YouTube que o aluno abre
+ * em outra aba — o caminho que existe enquanto a plataforma própria não está
+ * contratada, já que sem as credenciais do Mux a API não deixa nem criar a sala.
+ *
+ * Numa sala `external` os campos `mux_playback_id`/`vod_playback_id` são sempre
+ * nulos e não há token de playback para pedir.
+ */
+export type LiveSource = 'mux' | 'external';
+
 export type MntLiveRoom = {
 	id: string;
 	cohort_id: string | null;
@@ -533,6 +544,11 @@ export type MntLiveRoom = {
 	description: string | null;
 	scheduled_at: string | null;
 	status: LiveStatus;
+	source: LiveSource;
+	/** Link da transmissão. Só em `source: 'external'`. */
+	external_url: string | null;
+	/** Link da gravação, colado pelo admin ao encerrar. Só em `external`. */
+	recording_url: string | null;
 	mux_playback_id: string | null;
 	vod_playback_id: string | null;
 	started_at: string | null;
