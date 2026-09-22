@@ -11,12 +11,14 @@ import { useState } from 'react';
 import { Text } from 'react-native-css/components/Text';
 import { toast } from 'sonner';
 import type { MntCohort } from '@/modules/mentoria/types';
+import { useTeamUsers } from '@/modules/users';
 import {
 	mentoriaErrorMessage,
 	useCohortMutations,
 	useStudentSearch,
 } from './admin-hooks';
 import { Field, inputClass, Modal } from './ui';
+import { UserPicker } from './user-picker';
 
 // ── Criar / editar turma ─────────────────────────────────────────────────────
 export function CohortFormModal({
@@ -135,8 +137,15 @@ export function CohortMentorsModal({
 }) {
 	const { addMentor, removeMentor } = useCohortMutations();
 	const [mentorId, setMentorId] = useState('');
+	const [mentorLabel, setMentorLabel] = useState('');
 	const [role, setRole] = useState<'lead' | 'assistant'>('lead');
 	const [removeId, setRemoveId] = useState('');
+	const [removeLabel, setRemoveLabel] = useState('');
+	// Uma query só para as duas metades — mesmo cache, mesma lista. São os
+	// staff/admin: é exatamente quem a api aceita como mentor, então não dá para
+	// escolher alguém que ela vá recusar com `mentor_must_be_staff`.
+	const team = useTeamUsers();
+	const users = team.data ?? [];
 
 	const add = async () => {
 		if (!mentorId.trim()) {
@@ -150,6 +159,7 @@ export function CohortMentorsModal({
 			});
 			toast.success('Mentor adicionado à turma');
 			setMentorId('');
+			setMentorLabel('');
 		} catch (err) {
 			toast.error(mentoriaErrorMessage(err, 'Erro ao adicionar mentor'));
 		}
@@ -167,6 +177,7 @@ export function CohortMentorsModal({
 			});
 			toast.success('Mentor removido da turma');
 			setRemoveId('');
+			setRemoveLabel('');
 		} catch (err) {
 			toast.error(mentoriaErrorMessage(err, 'Erro ao remover mentor'));
 		}
@@ -177,10 +188,30 @@ export function CohortMentorsModal({
 			<div className="space-y-6">
 				<div className="space-y-3">
 					<p className="text-sm text-slate-600 dark:text-gray-400">
-						Adicione o mentor pelo ID de usuário (UUID). O ID aparece na página
-						de Alunos/Acessos do admin.
+						Só quem é staff ou admin pode ser mentor — a lista abaixo já traz
+						esse time.
 					</p>
-					<Field label="ID do usuário (UUID)" required>
+					<Field label="Buscar mentor" hint="Busque por nome ou email.">
+						<UserPicker
+							users={users}
+							isLoading={team.isLoading}
+							selectedId={mentorId}
+							onSelect={(u) => {
+								setMentorId(u.id);
+								setMentorLabel(u.name?.trim() || u.email);
+							}}
+							emptyLabel="Nenhum mentor encontrado."
+						/>
+					</Field>
+					<Field
+						label="ID do usuário (UUID)"
+						required
+						hint={
+							mentorLabel
+								? `Selecionado: ${mentorLabel}`
+								: 'Preenchido pela busca acima, ou cole o UUID manualmente.'
+						}
+					>
 						<Input
 							value={mentorId}
 							onChangeText={setMentorId}
@@ -207,8 +238,27 @@ export function CohortMentorsModal({
 
 				<div className="border-t border-subtle pt-4 space-y-3">
 					<Field
-						label="Remover mentor (user_id)"
-						hint="A API não expõe a listagem de mentores da turma; a remoção é feita pelo mesmo ID usado na adição."
+						label="Remover mentor"
+						hint="A API não expõe a listagem de mentores da turma, então aqui você escolhe a PESSOA — não há como marcar entre os mentores atuais."
+					>
+						<UserPicker
+							users={users}
+							isLoading={team.isLoading}
+							selectedId={removeId}
+							onSelect={(u) => {
+								setRemoveId(u.id);
+								setRemoveLabel(u.name?.trim() || u.email);
+							}}
+							emptyLabel="Nenhum mentor encontrado."
+						/>
+					</Field>
+					<Field
+						label="ID do usuário (UUID)"
+						hint={
+							removeLabel
+								? `Selecionado: ${removeLabel}`
+								: 'Preenchido pela busca acima, ou cole o UUID manualmente.'
+						}
 					>
 						<Input
 							value={removeId}

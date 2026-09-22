@@ -8,6 +8,7 @@ import {
 	useQuery,
 	useQueryClient,
 } from '@tanstack/react-query';
+import { isMentoriaAccessDenied } from './access';
 import * as svc from './service';
 
 const ROOT = ['mentoria'] as const;
@@ -17,6 +18,10 @@ export function useMentoriaBootstrap() {
 		queryKey: [...ROOT, 'bootstrap'],
 		queryFn: svc.getBootstrap,
 		staleTime: 60_000,
+		// O default global é `retry: 1`, mas o 403 do gate de plano nunca vira
+		// 200 — repetir só atrasa o CTA de upgrade. As demais falhas seguem com
+		// a tentativa extra.
+		retry: (count, err) => !isMentoriaAccessDenied(err) && count < 1,
 	});
 }
 

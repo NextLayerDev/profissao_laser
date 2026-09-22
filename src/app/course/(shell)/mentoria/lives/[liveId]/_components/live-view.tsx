@@ -19,15 +19,19 @@ import {
 	EmptyState,
 	MntHeader,
 } from '../../../_components/shared';
+import { ExternalLiveCard } from './external-live-card';
 
 /**
  * O que ocupa a área do player. Derivado no container: só ele sabe se o token
  * de playback chegou, e a view não deve refazer a regra.
+ *
+ * `external` é a sala sem vídeo nosso (`source: 'external'`) — quem desenha é o
+ * `ExternalLiveCard`, que manda o aluno para o Zoom/Meet em outra aba.
  */
-export type PlaybackState = 'playing' | 'ended' | 'waiting';
+export type PlaybackState = 'playing' | 'ended' | 'waiting' | 'external';
 
 const WAITING_COPY: Record<
-	Exclude<PlaybackState, 'playing'>,
+	Exclude<PlaybackState, 'playing' | 'external'>,
 	{ title: string; description: string }
 > = {
 	ended: {
@@ -68,7 +72,9 @@ export function LiveView({
 
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 				<div className="lg:col-span-2">
-					{playbackState === 'playing' && playback ? (
+					{playbackState === 'external' ? (
+						<ExternalLiveCard live={live} />
+					) : playbackState === 'playing' && playback ? (
 						<LivePlayer playback={playback} />
 					) : (
 						<Waiting

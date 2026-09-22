@@ -286,8 +286,17 @@ export function useLiveMutations() {
 		mutationFn: svc.createLive,
 		onSuccess: invalidate,
 	});
-	const end = useMutation({ mutationFn: svc.endLive, onSuccess: invalidate });
-	return { create, end };
+	const start = useMutation({
+		mutationFn: svc.startLive,
+		onSuccess: invalidate,
+	});
+	// Objeto e não dois argumentos: `useMutation` só passa o primeiro adiante.
+	const end = useMutation({
+		mutationFn: (v: { id: string; recordingUrl?: string | null }) =>
+			svc.endLive(v.id, v.recordingUrl),
+		onSuccess: invalidate,
+	});
+	return { create, start, end };
 }
 
 export function useLiveCredentials(
