@@ -340,6 +340,10 @@ function LastroVoxxysSection({ voxxy }: { voxxy: VoxxyLastro | undefined }) {
 	const planUpvox = voxxy?.plan_upvox_share_cents ?? 0;
 	const planUnused = voxxy?.plan_unused_value_cents ?? 0;
 	const planGranted = planUsedValue + planUnused;
+	// Do não usado, o que JÁ foi pago na concessão (set/2026 em diante) e o que
+	// ainda é estoque do modelo antigo, que só cobra quando for consumido.
+	const planPrepaid = voxxy?.plan_prepaid_value_cents ?? 0;
+	const planUnusedLegacy = Math.max(planUnused - planPrepaid, 0);
 	const planPerCustomer = perCustomer
 		.filter(
 			(c) =>
@@ -444,15 +448,15 @@ function LastroVoxxysSection({ voxxy }: { voxxy: VoxxyLastro | undefined }) {
 			<div className="pt-2">
 				<h3 className="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-3 flex items-center gap-2">
 					<Gem className="w-4 h-4 text-violet-500 dark:text-violet-400" />
-					Voxxys do plano (cobrados só no uso)
+					Voxxys do plano (cobrados na concessão)
 				</h3>
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 					<HeroStat
 						tone="primary"
 						Icon={Coins}
-						label="Cobrado da empresa"
+						label="Cobrado por uso (estoque antigo)"
 						value={fmtBRL(planUpvox)}
-						hint="Só os voxxys de plano que o aluno realmente usou."
+						hint="Voxxys concedidos ANTES de set/2026 — só cobram quando usados."
 					/>
 					<HeroStat
 						tone="primary"
@@ -462,27 +466,30 @@ function LastroVoxxysSection({ voxxy }: { voxxy: VoxxyLastro | undefined }) {
 						hint="Valor de mercado do que foi consumido."
 					/>
 					<HeroStat
-						tone="emerald"
-						Icon={PiggyBank}
-						label="Não usados (sem custo)"
-						value={fmtBRL(planUnused)}
-						hint="Concedidos e ainda não usados — não entram na fatura."
-					/>
-					<HeroStat
 						tone="sky"
 						Icon={Gem}
-						label="Total concedido"
-						value={fmtBRL(planGranted)}
-						hint="Valor de mercado de tudo que a empresa doou no plano."
+						label="Não usados — já pagos"
+						value={fmtBRL(planPrepaid)}
+						hint="Concedidos a partir de set/2026: já entraram na fatura na concessão."
+					/>
+					<HeroStat
+						tone="emerald"
+						Icon={PiggyBank}
+						label="Não usados — ainda sem custo"
+						value={fmtBRL(planUnusedLegacy)}
+						hint="Estoque anterior a set/2026: só entra na fatura se for usado."
 					/>
 				</div>
 			</div>
 
 			<p className="text-xs text-slate-500 dark:text-gray-500">
-				Voxxys que a empresa <strong>doa no plano</strong>. A empresa só paga o
-				que o aluno <strong>realmente usa</strong> (R$1,20/vox usado); o que é
-				concedido e não usado <strong>não custa nada</strong>. Doar mais não
-				aumenta a fatura.
+				Voxxys que a empresa <strong>doa no plano</strong>. Desde{' '}
+				<strong>setembro/2026</strong> a cobrança é na{' '}
+				<strong>concessão</strong>: R$1,20 por voxxy concedido, usado ou não — e
+				o uso depois não cobra de novo. Doar mais{' '}
+				<strong>aumenta a fatura</strong>. O que foi concedido antes do corte
+				segue no modelo antigo (só cobra quando usado) até o estoque acabar.
+				Total concedido no período: <strong>{fmtBRL(planGranted)}</strong>.
 			</p>
 
 			{/* Plano por cliente */}
