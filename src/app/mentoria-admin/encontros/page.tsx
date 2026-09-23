@@ -89,9 +89,9 @@ export default function EncontrosPage() {
 					<Info className="w-4 h-4 mt-0.5 shrink-0" />
 					<p>
 						Editar um encontro cria uma <b>nova versão em rascunho</b>. Ao{' '}
-						<b>publicar</b>, ela vale para as novas matrículas e também para os
-						encontros ainda não concluídos das jornadas em andamento — os já
-						concluídos mantêm o conteúdo que o aluno fez.
+						<b>publicar</b>, ela vale para as novas matrículas e para todas as
+						jornadas em andamento — inclusive nos encontros já concluídos, para
+						o aluno rever com o conteúdo atual.
 					</p>
 				</div>
 
