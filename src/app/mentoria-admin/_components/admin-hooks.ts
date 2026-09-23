@@ -25,6 +25,8 @@ export function mentoriaErrorMessage(err: unknown, fallback: string): string {
 		form_template_in_use:
 			'Este formulário está em uso e não pode ser alterado.',
 		live_not_active: 'A live não está ativa.',
+		mentoria_access_invalid_students:
+			'Algum dos selecionados não é aluno. Revise a lista.',
 	};
 	if (err instanceof AxiosError) {
 		const body = err.response?.data as
@@ -325,5 +327,24 @@ export function useCreateMaturityConfig() {
 		mutationFn: svc.createMaturityConfig,
 		onSuccess: () =>
 			qc.invalidateQueries({ queryKey: [...ROOT, 'maturity-configs'] }),
+	});
+}
+
+// ── Liberação restrita ───────────────────────────────────────────────────────
+export function useMentoriaAccessAdmin() {
+	return useQuery({
+		queryKey: [...ROOT, 'access'],
+		queryFn: svc.getMentoriaAccessAdmin,
+	});
+}
+
+export function useUpdateMentoriaAccess() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: svc.updateMentoriaAccess,
+		onSuccess: (data) => {
+			qc.setQueryData([...ROOT, 'access'], data);
+			qc.invalidateQueries({ queryKey: MNT });
+		},
 	});
 }

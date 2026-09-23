@@ -6,6 +6,7 @@ import { useMemo } from 'react';
 import { toast } from 'sonner';
 import { useEntitlements } from '@/hooks/use-entitlements';
 import { getToken } from '@/lib/auth';
+import { useMentoriaRestrictedOut } from '@/modules/mentoria/hooks';
 import { useExtraToolNav } from '@/modules/tools/hooks/use-extra-tool-nav';
 import { useToolColorByKey } from '@/modules/tools/hooks/use-tool-colors';
 import {
@@ -77,6 +78,8 @@ function useMergedQuickAccess(): QuickAccessItem[] {
 	const isStaff = typeof window !== 'undefined' && !!getToken('user');
 	const { isTestUnlimited, hasActiveSubscription } = useEntitlements();
 	const hasFullAccess = isStaff || isTestUnlimited || hasActiveSubscription;
+	// Mentoria em liberação restrita: quem não está na lista nem vê o atalho.
+	const mentoriaRestrictedOut = useMentoriaRestrictedOut();
 	return useMemo(() => {
 		const byKey = new Map<string, QuickAccessItem>();
 		for (const it of quickAccessItems) byKey.set(norm(it.label), it);
@@ -94,6 +97,7 @@ function useMergedQuickAccess(): QuickAccessItem[] {
 		const out: QuickAccessItem[] = [];
 		for (const [k, it] of byKey) {
 			if (it.hideWhenSubscribed && hasFullAccess) continue;
+			if (mentoriaRestrictedOut && it.toolKey === 'mentoria_360') continue;
 			const adminKey = FEATURE_TOOL_KEY[k];
 			const color = adminKey ? colorByKey.get(adminKey) : undefined;
 			out.push(color ? { ...it, ...TOOL_COLORS[color] } : it);
@@ -101,7 +105,7 @@ function useMergedQuickAccess(): QuickAccessItem[] {
 		// Atalho pro catálogo completo, sempre por último na seção FERRAMENTAS.
 		out.push(OUTRAS_FERRAMENTAS);
 		return out;
-	}, [dynamic, colorByKey, hasFullAccess]);
+	}, [dynamic, colorByKey, hasFullAccess, mentoriaRestrictedOut]);
 }
 
 // Acesso 100% pelo plano: o grid vive dentro do SubscriptionGate (cliente já

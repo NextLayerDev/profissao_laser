@@ -13,8 +13,9 @@ import { MentoriaShell } from './_components/mentoria-shell';
 export default function MentoriaLayout({ children }: { children: ReactNode }) {
 	return (
 		<div className="p-4 md:p-8">
-			{/* Cadeado de plano por fora do shell: sem a tool `mentoria_360` não há
-			    o que navegar, então nem a navegação nem o Assistente sobem. */}
+			{/* Cadeado por fora do shell: sem plano com a tool `mentoria_360` — ou fora
+			    da lista, na liberação restrita — não há o que navegar, então nem a
+			    navegação nem o Assistente sobem. */}
 			<MentoriaAccessGate>
 				<MentoriaShell>{children}</MentoriaShell>
 			</MentoriaAccessGate>

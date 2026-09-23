@@ -8,10 +8,30 @@ import {
 	useQuery,
 	useQueryClient,
 } from '@tanstack/react-query';
+import { getToken } from '@/lib/auth';
 import { isMentoriaAccessDenied } from './access';
 import * as svc from './service';
 
 const ROOT = ['mentoria'] as const;
+
+/**
+ * Se o usuário pode ver a Mentoria (menu + gate das páginas). Staff/admin
+ * sempre veem — a query nem roda.
+ */
+export function useMyMentoriaAccess() {
+	const isStaff = typeof window !== 'undefined' && !!getToken('user');
+	return useQuery({
+		queryKey: [...ROOT, 'access'],
+		queryFn: svc.getMyMentoriaAccess,
+		enabled: !isStaff,
+		staleTime: 60_000,
+	});
+}
+
+/** true quando o admin limitou a Mentoria e este aluno não está na lista. */
+export function useMentoriaRestrictedOut(): boolean {
+	return useMyMentoriaAccess().data?.reason === 'restricted';
+}
 
 export function useMentoriaBootstrap() {
 	return useQuery({

@@ -8,6 +8,7 @@ import type {
 	GoodNewsState,
 	LiveCredentials,
 	LivePlayback,
+	MentoriaAccessAdmin,
 	MentoriaBootstrap,
 	MntBusinessPlanVersion,
 	MntCohort,
@@ -38,10 +39,17 @@ import type {
 	MntTask,
 	MntToolDefinition,
 	MntToolInstance,
+	MyMentoriaAccess,
 	ToolWithInstance,
 } from './types';
 
 // ── Mentorado: núcleo ────────────────────────────────────────────────────────
+/** Pode ver a Mentoria? Responde false em vez de 403 (usado pelo menu). */
+export async function getMyMentoriaAccess(): Promise<MyMentoriaAccess> {
+	const { data } = await api.get('/v1/me/mentoria/access');
+	return data;
+}
+
 export async function getBootstrap(): Promise<MentoriaBootstrap> {
 	const { data } = await api.get('/v1/me/mentoria');
 	return data;
@@ -931,5 +939,19 @@ export async function createMaturityConfig(body: {
 	active?: boolean;
 }): Promise<MntMaturityConfig> {
 	const { data } = await api.post('/v1/admin/mentoria/maturity-configs', body);
+	return data;
+}
+
+// ── Admin: liberação restrita ────────────────────────────────────────────────
+export async function getMentoriaAccessAdmin(): Promise<MentoriaAccessAdmin> {
+	const { data } = await api.get('/v1/admin/mentoria/access');
+	return data;
+}
+
+export async function updateMentoriaAccess(body: {
+	restricted: boolean;
+	user_ids: string[];
+}): Promise<MentoriaAccessAdmin> {
+	const { data } = await api.put('/v1/admin/mentoria/access', body);
 	return data;
 }
