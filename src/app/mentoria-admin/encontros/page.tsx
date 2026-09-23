@@ -25,6 +25,13 @@ import {
 
 type Editing = { template: MntMeetingTemplate | null } | null;
 
+/**
+ * Único programa de mentoria que existe (turmas e seed usam este). O campo era
+ * texto livre e virou fonte de templates órfãos ("Mentoria 360", "mentoria_360"),
+ * que nenhuma jornada enxerga — a api agora recusa outro valor.
+ */
+const PROGRAM_KEY = 'laser360';
+
 export default function EncontrosPage() {
 	const templates = useMeetingTemplatesAdmin();
 	const { publish } = useMeetingTemplateMutations();
@@ -46,8 +53,13 @@ export default function EncontrosPage() {
 
 	const doPublish = async (t: MntMeetingTemplate) => {
 		try {
-			await publish.mutateAsync(t.id);
-			toast.success(`Encontro ${t.position} v${t.version} publicado`);
+			const res = await publish.mutateAsync(t.id);
+			const updated = res.journeys_updated ?? 0;
+			toast.success(
+				updated > 0
+					? `Encontro ${t.position} v${t.version} publicado e aplicado a ${updated} jornada(s) em andamento`
+					: `Encontro ${t.position} v${t.version} publicado`,
+			);
 		} catch (err) {
 			toast.error(mentoriaErrorMessage(err, 'Erro ao publicar o template'));
 		}
@@ -76,9 +88,10 @@ export default function EncontrosPage() {
 				<div className="mb-6 flex items-start gap-2 rounded-xl border border-blue-300/50 dark:border-blue-500/30 bg-blue-500/5 px-4 py-3 text-sm text-blue-700 dark:text-blue-300">
 					<Info className="w-4 h-4 mt-0.5 shrink-0" />
 					<p>
-						Editar um encontro cria automaticamente uma <b>nova versão</b>. As
-						edições valem para novas turmas; jornadas em andamento mantêm a
-						versão da matrícula.
+						Editar um encontro cria uma <b>nova versão em rascunho</b>. Ao{' '}
+						<b>publicar</b>, ela vale para as novas matrículas e também para os
+						encontros ainda não concluídos das jornadas em andamento — os já
+						concluídos mantêm o conteúdo que o aluno fez.
 					</p>
 				</div>
 
@@ -183,7 +196,6 @@ function MeetingTemplateModal({
 }) {
 	const { create } = useMeetingTemplateMutations();
 	const [form, setForm] = useState({
-		program_key: template?.program_key ?? 'mentoria_360',
 		position: template?.position ?? 1,
 		title: template?.title ?? '',
 		subtitle: template?.subtitle ?? '',
@@ -207,7 +219,7 @@ function MeetingTemplateModal({
 		}
 		try {
 			await create.mutateAsync({
-				program_key: form.program_key,
+				program_key: PROGRAM_KEY,
 				position: form.position,
 				title: form.title.trim(),
 				subtitle: form.subtitle.trim() || null,
@@ -239,13 +251,7 @@ function MeetingTemplateModal({
 			wide
 		>
 			<div className="space-y-4">
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-					<Field label="Programa">
-						<Input
-							value={form.program_key}
-							onChangeText={(v) => set('program_key', v)}
-						/>
-					</Field>
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 					<Field label="Posição (1–10)" required>
 						<input
 							type="number"

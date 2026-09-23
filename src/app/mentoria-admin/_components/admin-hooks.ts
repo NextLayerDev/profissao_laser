@@ -193,7 +193,11 @@ export function useMeetingTemplateMutations() {
 	});
 	const publish = useMutation({
 		mutationFn: svc.publishMeetingTemplate,
-		onSuccess: invalidate,
+		onSuccess: () => {
+			invalidate();
+			// Publicar mexe nas jornadas em andamento (visão do mentor/aluno).
+			qc.invalidateQueries({ queryKey: MNT });
+		},
 	});
 	return { create, publish };
 }

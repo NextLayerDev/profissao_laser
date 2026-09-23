@@ -819,7 +819,7 @@ export async function createMeetingTemplate(
 
 export async function publishMeetingTemplate(
 	id: string,
-): Promise<MntMeetingTemplate> {
+): Promise<MntMeetingTemplate & { journeys_updated?: number }> {
 	const { data } = await api.post(
 		`/v1/admin/mentoria/meeting-template/${id}/publish`,
 	);
