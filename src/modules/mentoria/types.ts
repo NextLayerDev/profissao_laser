@@ -85,6 +85,28 @@ export type MntJourneyMeeting = {
 	template?: MntMeetingTemplate | null;
 };
 
+/** Aluno liberado na Mentoria quando a restrição está ligada. */
+export type MentoriaAccessStudent = {
+	id: string;
+	name: string | null;
+	email: string;
+};
+
+/**
+ * `reason='restricted'`: o admin limitou a Mentoria e o aluno não está na
+ * lista — some do menu. `'required'`: sem plano/matrícula — o menu continua
+ * mostrando e o SubscriptionGate oferece o plano.
+ */
+export type MyMentoriaAccess = {
+	has_access: boolean;
+	reason: 'required' | 'restricted' | null;
+};
+
+export type MentoriaAccessAdmin = {
+	restricted: boolean;
+	students: MentoriaAccessStudent[];
+};
+
 export type MentoriaBootstrap = {
 	has_access: boolean;
 	company: MntCompany | null;

@@ -27,6 +27,13 @@
 // decide aqui é o `/me/entitlements` (ver `modules/mentoria/access.ts`); o 403
 // fica como rede de segurança, para quem não tem assinatura nenhuma e por isso
 // nem aparece com a tool na lista.
+//
+// ── Liberação restrita ───────────────────────────────────────────────────────
+//
+// O admin pode limitar a Mentoria a uma lista de alunos (/mentoria-admin/acesso).
+// Quem está fora dela recebe `reason: 'restricted'` de `/me/mentoria/access` e
+// vê "ainda não liberada" — nunca o CTA de plano, porque essa pessoa JÁ tem o
+// plano (sem ele a api responde `required`, e aí vale o cadeado de plano abaixo).
 
 import { Lock } from 'lucide-react';
 import Link from 'next/link';
@@ -38,7 +45,10 @@ import {
 	isMentoriaAccessDenied,
 	MENTORIA_TOOL_KEY,
 } from '@/modules/mentoria/access';
-import { useMentoriaBootstrap } from '@/modules/mentoria/hooks';
+import {
+	useMentoriaBootstrap,
+	useMyMentoriaAccess,
+} from '@/modules/mentoria/hooks';
 import { BTN_PRIMARY, EmptyState, MntSkeleton } from './shared';
 
 export function MentoriaAccessGate({ children }: { children: ReactNode }) {
@@ -51,9 +61,24 @@ export function MentoriaAccessGate({ children }: { children: ReactNode }) {
 
 	const { isLoading, isSuccess, isTestUnlimited, toolFor } = useEntitlements();
 	const { error } = useMentoriaBootstrap();
+	const access = useMyMentoriaAccess();
 
 	if (isStaff) return <>{children}</>;
-	if (isLoading) return <MntSkeleton />;
+	if (isLoading || access.isLoading) return <MntSkeleton />;
+
+	if (access.data?.reason === 'restricted') {
+		return (
+			<EmptyState
+				icon={Lock}
+				title="Mentoria ainda não liberada para você"
+				description="A Mentoria 360° está sendo liberada aos poucos para um grupo de alunos. Assim que chegar a sua vez, ela aparece aqui."
+			>
+				<Link href="/course" className={BTN_PRIMARY}>
+					Voltar ao início
+				</Link>
+			</EmptyState>
+		);
+	}
 
 	// Só decide pelo plano quando a lista REALMENTE chegou. `toolFor` devolve
 	// `undefined` tanto para "a tool não está na sua lista" quanto para "a lista

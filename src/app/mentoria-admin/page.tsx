@@ -5,6 +5,7 @@ import {
 	ClipboardList,
 	FolderOpen,
 	GraduationCap,
+	Lock,
 	Radio,
 	Settings,
 	Users,
@@ -58,6 +59,12 @@ const SECTIONS = [
 		icon: Radio,
 		title: 'Lives',
 		description: 'Salas de transmissão ao vivo e credenciais OBS.',
+	},
+	{
+		href: '/mentoria-admin/acesso',
+		icon: Lock,
+		title: 'Acesso',
+		description: 'Liberar a Mentoria só para alunos escolhidos.',
 	},
 	{
 		href: '/mentoria-admin/configuracoes',
