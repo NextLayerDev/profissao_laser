@@ -12,9 +12,6 @@ on:
 
 env:
   NODE_VERSION: "24"
-
-env:
-  NODE_VERSION: "24"
   # `.npmrc` já manda o escopo @upvox-dev pro GitHub Packages; falta só o
   # token, que não pode ir pro arquivo versionado. GITHUB_TOKEN não serve
   # aqui — @upvox-dev/ui vive no repo UpVox-Dev/upvox-ui, outra org, e o
