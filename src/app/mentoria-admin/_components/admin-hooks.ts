@@ -4,6 +4,7 @@
 // Não tocamos em @/modules/mentoria/hooks — apenas consumimos o service.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
+import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import * as svc from '@/modules/mentoria/service';
 import { listStudents } from '@/services/students';
 import { getApiErrorMessage } from '@/shared/lib/api-error';
@@ -101,12 +102,35 @@ export function useCohortMutations() {
 
 /** Busca de alunos p/ matrícula (endpoint admin de students do upvox). */
 export function useStudentSearch(q: string) {
-	return useQuery({
-		queryKey: [...ROOT, 'student-search', q],
-		queryFn: () => listStudents({ q, limit: 8 }),
-		enabled: q.trim().length >= 2,
+	const term = q.trim();
+	// Espera a pessoa parar de digitar: sem isso cada tecla virava uma request
+	// e a resposta de "fasnuc" podia chegar depois da de "fasnucci".
+	const debounced = useDebouncedValue(term, 300);
+	const query = useQuery({
+		queryKey: [...ROOT, 'student-search', debounced],
+		queryFn: () => listStudents({ q: debounced, limit: 8 }),
+		enabled: debounced.length >= 2,
 		staleTime: 30_000,
 	});
+	// Enquanto o debounce não assentou, mostra "Buscando..." em vez de piscar
+	// "Nenhum aluno encontrado" com o resultado da busca anterior.
+	const settling = term.length >= 2 && term !== debounced;
+	return { ...query, isLoading: query.isLoading || settling };
+}
+
+/**
+ * Erro da busca de alunos em pt-BR. Antes qualquer falha (inclusive 403 de
+ * quem não é admin/staff) aparecia como "Nenhum aluno encontrado".
+ */
+export function studentSearchErrorMessage(
+	err: unknown,
+	action = 'buscar alunos',
+): string {
+	const status = err instanceof AxiosError ? err.response?.status : undefined;
+	if (status === 403)
+		return `Sua conta não tem permissão de admin/staff para ${action}.`;
+	if (status === 401) return 'Sessão expirada. Entre novamente.';
+	return 'Não foi possível buscar agora. Tente de novo.';
 }
 
 // ── Jornada (visão do mentor) ────────────────────────────────────────────────
