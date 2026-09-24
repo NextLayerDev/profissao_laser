@@ -1,12 +1,12 @@
 'use client';
 
-import type { LucideIcon } from 'lucide-react';
+import { ChevronDown, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type {
 	ToolControl,
 	ToolInputSpec,
 } from '../services/tool-definitions.service';
-import { bindName } from './tool-widgets';
+import { bindName, WidgetField } from './tool-widgets';
 
 /* Acento da tela via CSS var `--screen-accent` (herdada do wrapper do Estúdio). */
 const accentSolid = { backgroundColor: 'var(--screen-accent)' };
@@ -17,33 +17,72 @@ const accentTint = {
 };
 
 /* ─────────────── Seção (card de grupo) ─────────────── */
+
+/**
+ * `collapsed` é OPT-IN, via `ui.collapsedGroups` na definition. Serve para uma
+ * ferramenta poder abrir com 3 campos na cara e o resto atrás de "Ajustes
+ * avançados" — que é a diferença entre uma tela usável por leigo e uma parede
+ * de 12 controles.
+ *
+ * Sendo opt-in, nenhuma das tools-mãe já publicadas muda: sem a chave, o grupo
+ * continua sendo a `<section>` sempre aberta de antes.
+ *
+ * Usa `<details>`/`<summary>` nativos de propósito: o estado de aberto/fechado
+ * sobrevive sem React, funciona com teclado e leitor de tela sem uma linha de
+ * ARIA, e o campo dentro continua sendo alcançável pelo Ctrl+F do navegador.
+ */
 export function StudioGroup({
 	title,
 	icon: Icon,
+	collapsed,
 	children,
 }: {
 	title: string;
 	icon?: LucideIcon;
+	collapsed?: boolean;
 	children: ReactNode;
 }) {
+	const cabecalho = (
+		<div className="flex items-center gap-2">
+			{Icon && (
+				<span
+					className="flex h-6 w-6 items-center justify-center rounded-lg"
+					style={accentTint}
+				>
+					<Icon className="h-3.5 w-3.5" />
+				</span>
+			)}
+			<h5 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400">
+				{title}
+			</h5>
+		</div>
+	);
+
+	const corpo = (
+		<div className="divide-y divide-slate-100 dark:divide-white/5">
+			{children}
+		</div>
+	);
+
+	const card =
+		'rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#16161a]';
+
+	if (collapsed) {
+		return (
+			<details className={`${card} group`}>
+				<summary className="flex cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
+					{cabecalho}
+					<ChevronDown className="h-4 w-4 text-slate-400 transition-transform group-open:rotate-180" />
+				</summary>
+				<div className="mt-2">{corpo}</div>
+			</details>
+		);
+	}
+
 	return (
-		<section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#16161a]">
-			<div className="mb-1 flex items-center gap-2">
-				{Icon && (
-					<span
-						className="flex h-6 w-6 items-center justify-center rounded-lg"
-						style={accentTint}
-					>
-						<Icon className="h-3.5 w-3.5" />
-					</span>
-				)}
-				<h5 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400">
-					{title}
-				</h5>
-			</div>
-			<div className="divide-y divide-slate-100 dark:divide-white/5">
-				{children}
-			</div>
+		<section className={card}>
+			<div className="mb-1">{cabecalho}</div>
+			{corpo}
 		</section>
 	);
 }
@@ -219,9 +258,25 @@ function prettyOption(v: unknown): string {
 }
 
 /**
- * Renderiza UM control no estúdio (slider/select/toggle/color/number) com o
- * visual premium acent-aware. Imagem (file-drop) é tratada à parte pelo
- * `StudioDropzone`. Faz o switch por `control.widget`; desconhecido → range.
+ * Renderiza UM control no estúdio. Imagem (`file-drop`) é tratada à parte pelo
+ * `StudioDropzone`.
+ *
+ * ATENÇÃO — ESTE ARQUIVO É UM SEGUNDO DESPACHANTE DE WIDGET, paralelo ao
+ * registry de `tool-widgets.tsx`. Ele existe porque `toggle`/`select`/`color`
+ * têm aqui um visual de LINHA (label à esquerda, controle à direita) que as
+ * tools-mãe publicadas — `estudio_laser`, `estudio_editor`, `estudio_ia` —
+ * dependem. Esses três continuam sendo tratados aqui, de propósito.
+ *
+ * O QUE MUDOU: o `else` final mandava TUDO para um `<input type="range">`.
+ * Um upload de `.dxf` virava um slider em 0 — foi assim que a primeira tela da
+ * Central de Custos foi ao ar. Agora só `slider`/`number` (e control sem widget
+ * declarado sobre campo numérico) caem no range; o resto **delega ao registry**,
+ * que já sabe renderizar `file`, `money`, `dimension`, `segmented`, `textarea`,
+ * `text` e `collection`.
+ *
+ * A mudança é estritamente monotônica: o `else` só era atingido por widget que
+ * este arquivo não conhece, e para esses ele estava comprovadamente errado.
+ * Registrar um widget novo volta a ser UM ponto (o registry), não dois.
  */
 export function StudioWidgetField({
 	control,
@@ -272,21 +327,48 @@ export function StudioWidgetField({
 			/>
 		);
 	}
-	// slider / number / fallback → range
-	const min = control.min ?? spec?.min ?? 0;
-	const max = control.max ?? spec?.max ?? 100;
-	const step = control.step ?? 1;
-	const current = Number(value ?? spec?.default ?? min);
-	const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(2));
+	/**
+	 * Range só para quem É range. `number` entra aqui porque no estúdio um
+	 * numérico com min/max conhecidos fica melhor como slider — é o visual que
+	 * as tools-mãe publicadas usam hoje e que não vamos mexer.
+	 *
+	 * Control sem `widget` declarado sobre um campo numérico também cai aqui:
+	 * é o comportamento histórico das tools antigas, e mudá-lo mexeria em telas
+	 * publicadas sem necessidade.
+	 */
+	const numerico = spec?.type === 'number' || spec?.type === 'int';
+	if (widget === 'slider' || widget === 'number' || (!widget && numerico)) {
+		const min = control.min ?? spec?.min ?? 0;
+		const max = control.max ?? spec?.max ?? 100;
+		const step = control.step ?? 1;
+		const current = Number(value ?? spec?.default ?? min);
+		const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(2));
+		return (
+			<StudioRange
+				label={label}
+				value={current}
+				min={min}
+				max={max}
+				step={step}
+				onChange={onChange}
+				fmt={fmt}
+			/>
+		);
+	}
+
+	/**
+	 * Todo o resto vai para o registry — a MESMA função que a tela pública de
+	 * orçamento usa e que, por isso, sempre funcionou lá enquanto quebrava aqui.
+	 * `WidgetProps` tem exatamente esta assinatura, então não há adaptação.
+	 * Widget desconhecido cai no `TextWidget` do registry, que é um campo de
+	 * texto — errado, mas honesto, ao contrário de um slider em 0.
+	 */
 	return (
-		<StudioRange
-			label={label}
-			value={current}
-			min={min}
-			max={max}
-			step={step}
+		<WidgetField
+			control={control}
+			spec={spec}
+			value={value}
 			onChange={onChange}
-			fmt={fmt}
 		/>
 	);
 }

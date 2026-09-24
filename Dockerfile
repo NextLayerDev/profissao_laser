@@ -7,7 +7,16 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+
+# package-lock.json resolve @upvox-dev/ui direto no GitHub Packages (outra
+# org, UpVox-Dev) — sem token o npm ci cai com 401. O token não pode ir pro
+# .npmrc versionado, então entra como build-arg (configurado no Easypanel,
+# igual às outras envs deste Dockerfile) e é escrito/apagado num único RUN
+# pra não sobrar no histórico da imagem intermediária.
+ARG NPM_TOKEN
+RUN if [ -n "$NPM_TOKEN" ]; then npm config set //npm.pkg.github.com/:_authToken="$NPM_TOKEN"; fi \
+    && npm ci \
+    && npm config delete //npm.pkg.github.com/:_authToken 2>/dev/null || true
 
 # ─── Builder ──────────────────────────────────────────────────────────────────
 

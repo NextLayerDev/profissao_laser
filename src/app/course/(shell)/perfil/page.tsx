@@ -24,6 +24,8 @@ import {
 	useUploadMyAvatar,
 	useUploadMyBanner,
 } from '@/hooks/use-profile';
+import { PerfilMarcaSection } from '@/modules/tools/components/marca/perfil-marca-section';
+import { PerfilEcommercesSection } from '@/modules/tools/components/perfil-ecommerces-section';
 import {
 	AVATAR_PRESETS,
 	avatarPresetUrl,
@@ -501,6 +503,23 @@ export default function PerfilPage() {
 							</button>
 						</div>
 					</form>
+
+					{/*
+					 * MINHA MARCA — a identidade da EMPRESA do aluno.
+					 *
+					 * Entra aqui, entre "Informações" e "Trocar senha", porque a página
+					 * já narra "quem você é (visual) → quem você é (dados) → segurança
+					 * da conta": a cara da empresa é o quarto capítulo dessa mesma
+					 * narrativa. No topo competiria com o avatar; depois da senha,
+					 * ficaria enterrada.
+					 *
+					 * A seção se desenha sozinha e SE APAGA sozinha: quando o cadastro
+					 * não está disponível para quem está olhando, ela devolve `null` e
+					 * o perfil fica exatamente como era. Ver `perfil-marca-section.tsx`.
+					 */}
+					<PerfilMarcaSection />
+
+					<PerfilEcommercesSection />
 
 					{/* Trocar senha */}
 					<form onSubmit={handleChangePassword} className={cardClass}>

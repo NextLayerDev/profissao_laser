@@ -19,11 +19,18 @@ const PUBLIC_PATHS = [
 	// cliente final do profissional — que não tem e nunca vai ter conta — direto
 	// para `/login`, e a página pública simplesmente não existe.
 	'/orcamento',
-	// QR gravado numa peça é conferido por quem a recebeu, sem conta na
-	// plataforma. A página em si também não envia credenciais ao gateway.
+	// Verificação pública da arte licenciada gerada na ferramenta. Quem escaneia
+	// o QR gravado na peça é o consumidor final: não tem conta e não vai criar
+	// uma para conferir se o escudo é oficial. Um 401 daqui também não pode
+	// derrubar a sessão de quem estiver logado noutra aba.
 	'/a',
 ];
 
+/**
+ * Rotas públicas precisam bater em um segmento inteiro. `startsWith('/a')`
+ * também aceitava `/acessos`, `/alunos` e qualquer outra rota protegida que
+ * comece com "a", deixando o guard de login passar por engano.
+ */
 function isPublicPath(pathname: string): boolean {
 	return PUBLIC_PATHS.some((path) =>
 		path === '/'

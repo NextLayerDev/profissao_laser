@@ -8,8 +8,14 @@ import type { ToolBankEntry } from '../services/tool-bank.service';
  * NÃO reinventar a leitura de `data` em cada lugar.
  */
 
-/** Modos suportados de um registro do banco. */
-export type PromptMode = 'texto' | 'imagem' | 'texto_imagem';
+/**
+ * Modos suportados de um registro do banco.
+ *
+ * `carimbo` é o "só licenciar" da arte licenciada: o aluno envia a arte pronta
+ * e o motor só emite o código e carimba o QR — nada é gerado, nada é
+ * reinterpretado. Sem tema, sem especificações, sem Passo 1; uma imagem.
+ */
+export type PromptMode = 'texto' | 'imagem' | 'texto_imagem' | 'carimbo';
 
 /** O `mode` do registro determina quais inputs o cliente preenche. */
 export function modeOf(entry: ToolBankEntry): string {
@@ -17,8 +23,15 @@ export function modeOf(entry: ToolBankEntry): string {
 	return typeof m === 'string' ? m : 'texto';
 }
 
+/** É o modo "só licenciar" (carimbo na arte pronta, sem geração)? */
+export function isCarimbo(mode: string): boolean {
+	return mode === 'carimbo';
+}
+
 /** Lê `data.max_images` de um registro e clampa em 1–3 (default 1). */
 export function maxImagesOf(entry: ToolBankEntry): number {
+	// Só licenciar é UMA arte: a que vai receber o código.
+	if (isCarimbo(modeOf(entry))) return 1;
 	const raw = entry.data?.max_images;
 	const n =
 		typeof raw === 'number'
@@ -37,6 +50,7 @@ export function coverOf(entry: ToolBankEntry): string | null {
 
 /** Rótulo amigável do modo, pra badges. */
 export function modeLabel(mode: string): string {
+	if (isCarimbo(mode)) return 'Só licenciar';
 	if (mode === 'imagem') return 'Imagem';
 	if (mode === 'texto_imagem') return 'Texto + Imagem';
 	return 'Texto';
@@ -44,12 +58,12 @@ export function modeLabel(mode: string): string {
 
 /** O modo usa entrada de texto (tema)? */
 export function modeUsesText(mode: string): boolean {
-	return mode.includes('texto');
+	return !isCarimbo(mode) && mode.includes('texto');
 }
 
 /** O modo usa imagem(ns) de referência? */
 export function modeUsesImage(mode: string): boolean {
-	return mode.includes('imagem');
+	return isCarimbo(mode) || mode.includes('imagem');
 }
 
 /**
@@ -137,8 +151,12 @@ export interface StepsOptions {
  */
 export function stepsForMode(mode: string, opts?: StepsOptions): PromptStep[] {
 	const steps: PromptStep[] = [];
-	if (opts?.creations?.length) steps.push({ key: 'criacao', label: 'Tipo' });
-	if (opts?.returnVariations?.length)
+	// Só licenciar não tem Passo 1 nem variações: a arte já vem pronta, no
+	// tamanho dela. Só a Tiragem (dirigida por `printRunOptions`) e a arte.
+	const carimbo = isCarimbo(mode);
+	if (!carimbo && opts?.creations?.length)
+		steps.push({ key: 'criacao', label: 'Tipo' });
+	if (!carimbo && opts?.returnVariations?.length)
 		steps.push({ key: 'variacoes', label: 'Variações' });
 	if (modeUsesText(mode)) steps.push({ key: 'tema', label: 'Detalhes' });
 	if (modeUsesImage(mode))

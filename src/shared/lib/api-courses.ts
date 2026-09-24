@@ -34,7 +34,21 @@ const PUBLIC_PAGE_PREFIXES = [
 	// derrubar a sessão de quem estiver logado noutra aba — e o mesmo prefixo
 	// tem de estar em `lib/fetch.ts` e no `AuthGuard`.
 	'/orcamento',
+	// Verificação pública da arte licenciada gerada na ferramenta. Quem escaneia
+	// o QR gravado na peça é o consumidor final: não tem conta e não vai criar
+	// uma para conferir se o escudo é oficial. Um 401 daqui também não pode
+	// derrubar a sessão de quem estiver logado noutra aba.
+	'/a',
 ];
+
+function isPublicPath(pathname: string): boolean {
+	return (
+		pathname === '/' ||
+		PUBLIC_PAGE_PREFIXES.some(
+			(path) => pathname === path || pathname.startsWith(`${path}/`),
+		)
+	);
+}
 
 apiCourses.interceptors.response.use(
 	(response) => response,
@@ -42,8 +56,7 @@ apiCourses.interceptors.response.use(
 		if (error.response?.status === 401) {
 			const path =
 				typeof window !== 'undefined' ? window.location.pathname : '';
-			const isPublicPage =
-				path === '/' || PUBLIC_PAGE_PREFIXES.some((p) => path.startsWith(p));
+			const isPublicPage = isPublicPath(path);
 
 			// Staff/colaborador (token de painel) pode navegar a área do aluno
 			// (/course) e receber 401 em rotas exclusivas de customer (ex.:

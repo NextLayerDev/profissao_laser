@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { toast } from 'sonner';
 import { useEntitlements } from '@/hooks/use-entitlements';
 import { getToken } from '@/lib/auth';
+import { useMentoriaRestrictedOut } from '@/modules/mentoria/hooks';
 import { useExtraToolNav } from '@/modules/tools/hooks/use-extra-tool-nav';
 import {
 	type QuickAccessItem,
@@ -34,6 +35,8 @@ export function CourseSidebar({
 	const isStaff = typeof window !== 'undefined' && !!getToken('user');
 	const { isTestUnlimited, hasActiveSubscription } = useEntitlements();
 	const hasFullAccess = isStaff || isTestUnlimited || hasActiveSubscription;
+	// Mentoria em liberação restrita: quem não está na lista nem vê o item.
+	const mentoriaRestrictedOut = useMentoriaRestrictedOut();
 	// Dedup por label: uma tool que já é destaque ESTÁTICO e que o aluno também
 	// FIXOU (extraTools) apareceria 2x — mantém a 1ª (estática) e descarta a pinada.
 	// Itens gated (`toolKey`) SEMPRE aparecem no menu, mesmo sem assinatura — o
@@ -42,6 +45,7 @@ export function CourseSidebar({
 	const seenLabels = new Set<string>();
 	const allItems = [...quickAccessItems, ...extraTools]
 		.filter((i) => !i.hideWhenSubscribed || !hasFullAccess)
+		.filter((i) => !(mentoriaRestrictedOut && i.toolKey === 'mentoria_360'))
 		.filter((i) => {
 			if (seenLabels.has(i.label)) return false;
 			seenLabels.add(i.label);

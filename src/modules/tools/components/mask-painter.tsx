@@ -6,9 +6,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 /**
  * Pincel de MÁSCARA para o modo "editar com máscara".
  *
- * CONTRATO COM O MOTOR (`editor-ai`): PNG do mesmo tamanho da imagem, BRANCO
- * onde repintar e PRETO onde preservar. Nada de alfa, nada de cinza — a máscara
- * é binária do lado de lá.
+ * CONTRATO COM O MOTOR (`editor-ai`): PNG BRANCO onde repintar, PRETO onde
+ * preservar. Nada de alfa, nada de cinza.
+ *
+ * EXPECTATIVA HONESTA: o `editor-ai` não recorta pixel a pixel — ele manda a
+ * máscara ao modelo como uma SEGUNDA IMAGEM e pede que só a área branca mude.
+ * Ou seja, o recorte é interpretado, não aplicado: a borda sai aproximada e o
+ * modelo às vezes encosta fora da região. Por isso o canvas de trabalho pode
+ * ser reduzido (proporção preservada) sem prejuízo — precisão de sub-pixel não
+ * chegaria a lugar nenhum.
  *
  * CANVAS CRU, NÃO FABRIC: o `fabric` está nas dependências e pesa ~300 KB
  * gzipados. Ele resolve seleção, transformação e serialização de objetos —

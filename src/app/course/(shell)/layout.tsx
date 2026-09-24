@@ -95,8 +95,11 @@ export default function CourseShellLayout({
 						onMobileMenuToggle={() => setMobileOpen(true)}
 						offsetTop={previewActive}
 					/>
+					{/* `overflow-x-clip` e não `-hidden`: `hidden` faria o <main> virar scroll
+					    container e quebraria `position: sticky` em toda página do curso.
+					    `clip` recorta o mesmo excesso sem criar container. */}
 					<main
-						className={`flex-1 overflow-x-hidden animate-[fade-in-up_0.4s_ease-out_both] ${
+						className={`flex-1 overflow-x-clip animate-[fade-in-up_0.4s_ease-out_both] ${
 							previewActive ? 'mt-[6.5rem]' : 'mt-16'
 						}`}
 					>

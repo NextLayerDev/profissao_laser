@@ -46,6 +46,7 @@ export function useRunTool(toolKey: string, courseSlug: string | undefined) {
 		async <T>(
 			engine: (invocationId: string) => Promise<T>,
 			variationCount?: number,
+			licenseUnits?: number,
 		): Promise<T | null> => {
 			setPending(true);
 			setBlock(null);
@@ -53,7 +54,12 @@ export function useRunTool(toolKey: string, courseSlug: string | undefined) {
 			// 1) authorize + bill on upvox (variation_count escala o custo: vox_cost × N)
 			let invocationId: string;
 			try {
-				const res = await invokeTool(toolKey, courseSlug, variationCount);
+				const res = await invokeTool(
+					toolKey,
+					courseSlug,
+					variationCount,
+					licenseUnits,
+				);
 				invocationId = res.invocation_id;
 				// Debita no header + anima "−custo" na hora (o invoke já cobrou).
 				applyVoxCharge(qc, res);

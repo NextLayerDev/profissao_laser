@@ -34,6 +34,13 @@ export interface GalleryImage {
 	tileable: boolean;
 	parentId: string | null;
 	createdAt: string;
+	/**
+	 * O MP4 do anúncio em vídeo, quando a arte tem um.
+	 *
+	 * Campo próprio e não `url`: aquele alimenta o `<img>` da grade e o download
+	 * da imagem. Vazio é o estado normal — a maioria das artes não tem vídeo.
+	 */
+	videoUrl: string;
 }
 
 function str(v: unknown): string {
@@ -62,6 +69,7 @@ export function toGalleryImage(entry: CollectionEntry): GalleryImage {
 		vectorReady: d.vector_ready === true,
 		tileable: d.tileable === true,
 		parentId: str(d.parent_id) || null,
+		videoUrl: str(d.video_url),
 		createdAt: str((entry as unknown as Record<string, unknown>).created_at),
 	};
 }

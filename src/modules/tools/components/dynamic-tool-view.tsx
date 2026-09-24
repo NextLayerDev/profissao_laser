@@ -18,12 +18,15 @@ import { useToolDefinition } from '../hooks/use-tool-definition';
 import {
 	downloadUrl,
 	hasTextInput,
+	isCarimbo,
 	maxImagesOf,
 	modeOf,
+	modeUsesImage,
 	specsOf,
 } from '../lib/prompt-bank';
 import { accentForTool, resolveScreenUi } from '../lib/screen-ui';
 import { resolveToolIcon } from '../lib/tool-icons';
+import type { LicensedBrand } from '../services/licensed-brand.service';
 import type { ToolBankEntry } from '../services/tool-bank.service';
 import {
 	type AiToolDefinition,
@@ -31,6 +34,14 @@ import {
 	runToolEngine,
 	type ToolRunResult,
 } from '../services/tool-definitions.service';
+import { runToolStream } from '../services/tool-stream.service';
+import { ToolAtelieView } from './atelie';
+import { ToolIntelView } from './intel/tool-intel-view';
+import { TEMA_LICENCIADA } from './licenciada-ui';
+import { type PecaDaLista, pecaVazia } from './licensed-pieces-editor';
+import { LicensedToolHome } from './licensed-tool-home';
+import { MyLicensedArtLibrary } from './my-licensed-art-library';
+import { ToolOrcamentoView } from './orcamento';
 import { PromptGallery } from './prompt-gallery';
 import { PromptGenerateView } from './prompt-generate-view';
 import { ScreenNotice } from './screen-notice';
@@ -38,6 +49,7 @@ import { type CanvasSpec, ToolCanvasView } from './tool-canvas-view';
 import { type CatalogSpec, ToolCatalogView } from './tool-catalog-view';
 import { ToolStudioView } from './tool-studio-view';
 import { bindName, WidgetField } from './tool-widgets';
+import { ToolVideoView } from './video';
 
 function ResultPanel({
 	result,
@@ -139,7 +151,27 @@ export function DynamicToolView({
 	const bankQuery = useToolBank(toolKey, {
 		enabled: bankEnabled && toolKey !== 'preview',
 	});
+	/**
+	 * Aba da galeria. A biblioteca só existe em tool licenciada — em tool comum
+	 * não há licença para listar, e uma aba vazia seria ruído.
+	 */
+	const [abaGaleria, setAbaGaleria] = useState<'prompts' | 'minhas'>('prompts');
 	const [selectedEntry, setSelectedEntry] = useState<ToolBankEntry | null>(
+		null,
+	);
+	/**
+	 * Arte Licenciada: a MARCA INTEIRA escolhida no balcão.
+	 *
+	 * Sobrevive ao ir e voltar da geração — sem isto, "voltar" jogaria o aluno na
+	 * lista de escudos toda vez, e quem produz peça do mesmo clube faz esse
+	 * caminho várias vezes seguidas.
+	 *
+	 * Guarda o objeto e não só a chave + a cor porque a tela de geração passou a
+	 * mostrar o escudo e o nome. O `onSelect` do balcão já entrega a marca
+	 * completa, então isto não custa nenhuma chamada — só deixa de jogar fora o
+	 * que já estava em mãos.
+	 */
+	const [licensedMarca, setLicensedMarca] = useState<LicensedBrand | null>(
 		null,
 	);
 	const [tema, setTema] = useState('');
@@ -162,11 +194,45 @@ export function DynamicToolView({
 	// definition da tool; ausentes → o cliente não vê essas etapas (tool legada).
 	const [creationId, setCreationId] = useState<string | null>(null);
 	const [variationCount, setVariationCount] = useState<number | null>(null);
+	/**
+	 * TIRAGEM: quantas peças licenciadas esta rodada vai produzir. Uma por
+	 * padrão — a ferramenta que não declara `print_run` nunca sai daí.
+	 */
+	const [printRun, setPrintRun] = useState(1);
+	/**
+	 * DADOS VARIÁVEIS: uma linha por peça, cada uma com seu nome e/ou sua foto.
+	 * `null` é o lote uniforme — N cópias da mesma arte, que continua o padrão.
+	 *
+	 * Quando a lista existe, ela É a tiragem: o número de linhas manda, porque
+	 * cada linha é uma geração própria e é isso que a rodada vai cobrar.
+	 */
+	const [pecas, setPecas] = useState<PecaDaLista[] | null>(null);
+	/** "Gerando a peça 7 de 20" — o lote personalizado leva minutos. */
+	const [pecaEmCurso, setPecaEmCurso] = useState<{
+		atual: number;
+		total: number;
+	} | null>(null);
 	const creations = def?.definition.creations;
 	const returnVariations = def?.definition.return_variations;
+	const printRunOptions = def?.definition.print_run;
 	// Billing scale por variação (vox_cost × N): precisa ser lido DEPOIS do estado
 	// `variationCount`. Default 1 quando nenhuma selecionada (tool legada/sem passo 3).
-	const billing = useToolBilling(toolKey, courseSlug, variationCount ?? 1);
+	/**
+	 * A TIRAGEM QUE VALE. Com lista, é o número de linhas — quem edita a lista
+	 * não devia precisar lembrar de acertar o número em outro lugar.
+	 */
+	const tiragem = pecas ? pecas.length : printRun;
+	/**
+	 * GERAÇÕES COBRADAS. No lote uniforme é a variação escolhida (a arte é uma
+	 * só, copiada N vezes). No personalizado é uma por linha: 30 nomes são 30
+	 * chamadas ao modelo, e cobrar por uma seria dar 29 de graça.
+	 */
+	const billing = useToolBilling(
+		toolKey,
+		courseSlug,
+		pecas ? pecas.length : (variationCount ?? 1),
+		tiragem,
+	);
 
 	const inputSpec = useMemo(() => def?.definition.input ?? {}, [def]);
 	const ui = def?.definition.ui;
@@ -184,11 +250,15 @@ export function DynamicToolView({
 		setValues(init);
 		setResult(null);
 		setSelectedEntry(null);
+		setLicensedMarca(null);
 		setTema('');
 		setSpecValues({});
 		setReferencias([null, null, null]);
 		setImageSize(null);
 		setCreationId(null);
+		setPrintRun(1);
+		setPecas(null);
+		setPecaEmCurso(null);
 		// Default do Passo 3 = 1º elemento do allowlist (se houver).
 		setVariationCount(
 			def?.definition.return_variations?.length
@@ -258,9 +328,31 @@ export function DynamicToolView({
 			.slice(0, max)
 			.filter((f): f is File => f instanceof File);
 		const hasText = hasTextInput(specs, specValues, tema);
-		// `texto_imagem`: texto (ou especificações) OU imagem — não exige os dois.
-		// `texto`/`imagem` puros continuam exigindo seu único campo.
-		if (mode === 'texto_imagem') {
+		const carimbo = isCarimbo(mode);
+		// Com lista, a entrada mora nela: cada linha precisa de nome OU foto, e o
+		// campo "tema" do formulário vira só o que é comum a todas as peças.
+		// No só-licenciar não há geração: nome sozinho não vira peça — cada
+		// linha precisa da PRÓPRIA arte, e o texto é só o rótulo.
+		if (pecas && carimbo) {
+			const semArte = pecas.findIndex((p) => p.imagem === null);
+			if (semArte >= 0) {
+				toast.error(`A peça ${semArte + 1} precisa da própria arte.`);
+				return;
+			}
+		} else if (pecas) {
+			const vazia = pecas.findIndex(
+				(p) => p.tema.trim() === '' && p.imagem === null,
+			);
+			if (vazia >= 0) {
+				toast.error(`Preencha o nome ou a foto da peça ${vazia + 1}.`);
+				return;
+			}
+		} else if (carimbo) {
+			if (chosen.length === 0) {
+				toast.error('Envie a arte pronta que você quer licenciar.');
+				return;
+			}
+		} else if (mode === 'texto_imagem') {
 			if (!hasText && chosen.length === 0) {
 				toast.error('Escreva algo ou envie uma imagem.');
 				return;
@@ -286,15 +378,83 @@ export function DynamicToolView({
 				bankInputs.tema = tema.trim();
 			}
 		}
-		if (mode.includes('imagem')) {
+		if (modeUsesImage(mode)) {
 			const fieldNames = ['referencia', 'referencia2', 'referencia3'];
 			chosen.forEach((file, i) => {
 				bankInputs[fieldNames[i]] = file;
 			});
 		}
-		// Passo 1/3: tipo de criação (resolução oculta) + variações.
-		if (creationId) bankInputs.creation_id = creationId;
-		if (variationCount) bankInputs.variation_count = String(variationCount);
+		// Passo 1/3: tipo de criação (resolução oculta) + variações. Só licenciar
+		// não tem Passo 1 — a arte já vem no tamanho dela — e o motor recusa
+		// `creation_id` que não pediu.
+		if (creationId && !carimbo) bankInputs.creation_id = creationId;
+		/**
+		 * `variation_count` NÃO acompanha a lista de peças.
+		 *
+		 * Ele é o allowlist do que a tool pode entregar por rodada, e a Arte
+		 * Licenciada não oferece variações — mandar N aqui seria recusado com 400.
+		 * A multiplicidade do lote personalizado viaja em `pieces`, e o motor a
+		 * reconcilia contra as gerações que a invocação de fato pagou.
+		 */
+		if (variationCount && !pecas && !carimbo) {
+			bankInputs.variation_count = String(variationCount);
+		}
+		if (pecas) {
+			bankInputs.pieces = JSON.stringify(
+				pecas.map((p) => ({ tema: p.tema.trim() })),
+			);
+			pecas.forEach((p, i) => {
+				if (p.imagem) bankInputs[`piece_image_${i}`] = p.imagem;
+			});
+		}
+
+		if (pecas) {
+			/**
+			 * O LOTE PERSONALIZADO VAI PELO STREAM, e não é preferência de
+			 * interface: são N chamadas ao modelo em série, minutos de relógio. Na
+			 * rota normal o proxy corta a requisição muda muito antes do fim — e o
+			 * aluno já pagou. Os eventos de progresso mantêm o socket vivo e dizem
+			 * em qual peça o lote está.
+			 */
+			setPecaEmCurso({ atual: 0, total: pecas.length });
+			try {
+				await billing.runEngine(async (invocationId) => {
+					let entregue: ToolRunResult | null = null;
+					for await (const ev of runToolStream({
+						key: toolKey,
+						runId: crypto.randomUUID(),
+						invocationId,
+						values: { ...bankInputs, bank_entry_id: selectedEntry.id },
+					})) {
+						if (ev.type === 'progresso' && ev.ev.etapa === 'peca') {
+							setPecaEmCurso({
+								atual: Number(ev.ev.atual) || 0,
+								total: Number(ev.ev.total) || pecas.length,
+							});
+						} else if (ev.type === 'erro') {
+							throw new Error(ev.message);
+						} else if (ev.type === 'done') {
+							entregue = {
+								output: ev.output,
+								license: ev.license,
+							} as ToolRunResult;
+						}
+					}
+					if (!entregue) throw new Error('O lote não chegou ao fim.');
+					setResult(entregue);
+					return entregue;
+				});
+			} catch (err) {
+				toast.error(
+					err instanceof Error
+						? err.message
+						: 'Não foi possível gerar o lote. Nada foi cobrado.',
+				);
+			} finally {
+				setPecaEmCurso(null);
+			}
+			return;
+		}
 
 		await billing.runEngine((invocationId) =>
 			runToolEngine(toolKey, {
@@ -320,6 +480,7 @@ export function DynamicToolView({
 		imageSize,
 		toolKey,
 		billing,
+		pecas,
 		creationId,
 		variationCount,
 	]);
@@ -351,7 +512,21 @@ export function DynamicToolView({
 	}
 
 	const pending = isDraft ? draftRunning : billing.pending;
-	const actionLabel = ui?.action?.label ?? 'Executar';
+	const soLicenciar = !!selectedEntry && isCarimbo(modeOf(selectedEntry));
+	// "Gerar a peça" mentiria no só-licenciar: nada é gerado, a arte é a dele.
+	const actionLabel = soLicenciar
+		? 'Licenciar a peça'
+		: (ui?.action?.label ?? 'Executar');
+	/**
+	 * O lote personalizado leva minutos e é gerado peça a peça. Sem dizer em qual
+	 * peça ele está, a espera é indistinguível de tela travada — e o aluno já
+	 * pagou, então recarregar a página é o pior que ele pode fazer.
+	 */
+	const pendingLabel = pecaEmCurso
+		? `${soLicenciar ? 'Licenciando' : 'Gerando'} a peça ${Math.max(1, pecaEmCurso.atual)} de ${pecaEmCurso.total}…`
+		: soLicenciar
+			? 'Licenciando…'
+			: undefined;
 	const showCostNotice = !isDraft && (ui?.action?.showCostNotice ?? true);
 	const resultUi = ui?.result;
 	const downloadKey = (resultUi?.downloadFrom ?? 'output.primary').replace(
@@ -376,7 +551,9 @@ export function DynamicToolView({
 	const themedShell = screenUi.themeClass
 		? `rounded-2xl p-4 sm:p-6 ${screenUi.themeClass === 'dark' ? 'bg-[#0d0d0f]' : 'bg-slate-50'}`
 		: '';
-	const screenStyle = { '--screen-accent': screenUi.accent } as CSSProperties;
+	const screenStyle = {
+		'--screen-accent': licensedMarca?.accent_color ?? screenUi.accent,
+	} as CSSProperties;
 
 	/* ── Estúdio (tools-mãe): controles agrupados + preview ao vivo ── */
 	const studioUi = ui as
@@ -388,6 +565,70 @@ export function DynamicToolView({
 				canvas?: CanvasSpec;
 		  }
 		| undefined;
+
+	/* ── Ateliê (Estúdio de Imagens): três passos → mesa de criação → arte ──
+	   Vem ANTES do canvas, e a ordem é a correção de uma armadilha real: esta
+	   MESMA tool (`estudio_imagens`) declarava `canvas` até a F2, e a tela do
+	   canvas pergunta modo, máscara e fator de ampliação — inputs que o pipeline
+	   do Ateliê não tem mais. Uma definition antiga em cache (ou um rollback do
+	   seed) faria a ferramenta cair no ramo velho e mandar campos que ninguém lê,
+	   sem mandar a foto do produto. Como os dois nunca coexistem numa definition,
+	   testar o novo primeiro é o que garante que o velho não vença por acidente.
+
+	   Como o ramo `intel`, recebe só `def` e `toolKey`: cuida do próprio billing
+	   e do próprio stream (SSE), e não tem formulário genérico nenhum. */
+	if (studioUi?.layout === 'atelie') {
+		/*
+		 * O PREVIEW DO BUILDER NÃO RODA AQUI, e é melhor dizer isso do que deixar
+		 * o admin descobrir por um 404.
+		 *
+		 * `ToolAtelieView` cobra e abre o próprio stream (`POST
+		 * /api/tool-run/:key/stream`), então ele precisa de uma tool SALVA: com a
+		 * key placeholder de uma tool que ainda não existe, o POST volta 404 e o
+		 * Ateliê desenha "A arte não saiu desta vez" — como se fosse falha do
+		 * time. E mesmo com a tool salva o run usaria a definition do BANCO, não a
+		 * que está sendo editada: o caminho não cobrado (`draftDefinition`) é do
+		 * renderizador genérico e não passa por este ramo.
+		 *
+		 * (O ramo `intel` tem o mesmo furo e é anterior; ele fica registrado aqui
+		 * porque o Ateliê copiou o contrato dele de propósito.)
+		 */
+		if (toolKey === 'preview') {
+			return (
+				<div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5 text-sm leading-relaxed text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/5 dark:text-amber-300">
+					O Ateliê só roda depois que a ferramenta é salva — ele cobra e abre o
+					acompanhamento ao vivo pela chave dela. Salve o rascunho e abra a
+					ferramenta para testar.
+				</div>
+			);
+		}
+		return <ToolAtelieView def={def} toolKey={toolKey} />;
+	}
+
+	/* ── Vídeo do Anúncio: arte pronta → movimento → vídeo gerado por IA ──
+	   Fica junto do Ateliê e logo depois dele porque é a mesma família de tela:
+	   cobra sozinha, abre o próprio stream (`POST /api/tool-run/:key/stream`) e
+	   não tem formulário genérico nenhum. A definition NÃO declara `controls`,
+	   então cair no renderizador comum abriria uma ferramenta PAGA sem nenhum
+	   campo — daí este ramo vir antes de todos os outros que sobraram. */
+	if (studioUi?.layout === 'video') {
+		/*
+		 * Mesmo portão do Ateliê, e pelo mesmo motivo: `ToolVideoView` COBRA (12
+		 * voxxys) pela chave da tool. Com a key placeholder de um rascunho que
+		 * ainda não existe, o `/invoke` volta 404 e a tela desenharia "não foi
+		 * possível gerar" — como se o gerador tivesse falhado.
+		 */
+		if (toolKey === 'preview') {
+			return (
+				<div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5 text-sm leading-relaxed text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/5 dark:text-amber-300">
+					O Vídeo do Anúncio só roda depois que a ferramenta é salva — ele cobra
+					e abre o acompanhamento ao vivo pela chave dela. Salve o rascunho e
+					abra a ferramenta para testar.
+				</div>
+			);
+		}
+		return <ToolVideoView def={def} toolKey={toolKey} />;
+	}
 
 	/* ── Canvas (Estúdio de Imagens): composer + galeria pessoal ──
 	   Vem ANTES do catálogo e do estúdio: esta tela tem formulário PRÓPRIO
@@ -408,6 +649,44 @@ export function DynamicToolView({
 				/>
 			</div>
 		);
+	}
+
+	/* ── Intel (Central de Inteligência): entrada → sala de guerra → dossiê ──
+	   Vem PRIMEIRO porque é a tela que menos se parece com as outras: não tem
+	   coluna de controles, não tem card, e cada uma das três fases toma a tela
+	   inteira. Nenhum dos outros ramos daria conta. */
+	if (studioUi?.layout === 'intel') {
+		return <ToolIntelView def={def} toolKey={toolKey} />;
+	}
+
+	/* ── Orçamento: desenho → material e quantidade → preço, sobra e curva ──
+	   Mesma família do Ateliê e do Intel: recebe só `def` e `toolKey`, cobra
+	   sozinho e não usa o formulário genérico.
+
+	   Vem ANTES do ramo `studio`, e a ordem é a correção de um defeito medido:
+	   esta MESMA tool declarava `layout:'studio'` até agora, e o estúdio abre
+	   com o viewport de IMAGEM — meia tela de xadrez de transparência pedindo
+	   "envie uma foto para ver a prévia ao vivo" numa ferramenta que lê DXF. Uma
+	   definition antiga em cache (ou um rollback do seed) faria a ferramenta
+	   cair no ramo velho; testar o novo primeiro é o que garante que o genérico
+	   não vença por acidente. */
+	if (studioUi?.layout === 'orcamento') {
+		/*
+		 * Mesmo portão do Ateliê e do Vídeo, e pelo mesmo motivo: `ToolOrcamentoView`
+		 * COBRA pela chave da tool. Com a key placeholder de um rascunho que ainda
+		 * não existe, o `/invoke` volta 404 e a tela desenharia uma falha de
+		 * orçamento — como se a conta não tivesse fechado.
+		 */
+		if (toolKey === 'preview') {
+			return (
+				<div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5 text-sm leading-relaxed text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/5 dark:text-amber-300">
+					O Orçamento só roda depois que a ferramenta é salva — ele cobra pela
+					chave dela e lê as coleções de materiais e perfis. Salve o rascunho e
+					abra a ferramenta para testar.
+				</div>
+			);
+		}
+		return <ToolOrcamentoView def={def} toolKey={toolKey} />;
 	}
 
 	/* ── Catálogo: navegação de uma COLEÇÃO da tool (Metallic e afins) ──
@@ -461,8 +740,62 @@ export function DynamicToolView({
 		);
 	}
 
+	/**
+	 * Tool licenciada é a que tem algum registro com marca. Detectar pelo DADO e
+	 * não por uma flag na definition mantém a aba aparecendo sozinha em qualquer
+	 * tool que passe a usar prompts licenciados.
+	 */
+	const ehLicenciada = (bankQuery.data ?? []).some(
+		(e) => typeof (e.data as Record<string, unknown>)?.feature_key === 'string',
+	);
+
 	/* ── Banco do Admin: galeria → detalhe + geração por registro ── */
 	if (bankEnabled) {
+		/*
+		 * Arte Licenciada: a ABERTURA é outra, o resto é o mesmo.
+		 *
+		 * Quem abre esta ferramenta não escolhe um prompt — escolhe uma MARCA, e
+		 * só depois o que vai produzir com ela. Por isso a tela inicial é própria
+		 * (`ui.layout: 'licenciada'`), enquanto a geração continua sendo o
+		 * `PromptGenerateView` de sempre: o passo a passo de gerar é idêntico ao
+		 * dos Prompts Mágicos e duplicá-lo só criaria duas telas para divergir.
+		 *
+		 * A troca fica DENTRO deste ramo, e não num ramo próprio lá em cima, por
+		 * um motivo prático: `runBank`, o billing e o estado do formulário vivem
+		 * aqui. Um ramo separado teria de recriar tudo isso — inclusive a aba de
+		 * "Minhas peças" — para desenhar a mesma coisa.
+		 *
+		 * A chave é o `layout`, nunca a presença de marca nos registros: os
+		 * Prompts Mágicos não podem virar esta tela por acidente no dia em que
+		 * alguém marcar um prompt de lá com uma marca.
+		 */
+		if (studioUi?.layout === 'licenciada' && !selectedEntry) {
+			return (
+				<LicensedToolHome
+					title={screenUi.title ?? def.title}
+					subtitle={screenUi.subtitle ?? def.description ?? undefined}
+					notice={screenUi.notice}
+					entries={bankQuery.data ?? []}
+					loading={bankQuery.isLoading}
+					entriesError={bankQuery.isError}
+					initialBrandKey={licensedMarca?.feature_key ?? null}
+					onSelect={(entry, marca) => {
+						// A marca inteira, e não só a chave: o Igor precisa dela na tela
+						// de geração, e ela já estava em mãos.
+						setLicensedMarca(marca);
+						// Trocar de modelo recomeça a tiragem no padrão.
+						setPrintRun(1);
+						setSelectedEntry(entry);
+						setResult(null);
+						setTema('');
+						setSpecValues({});
+						setReferencias([null, null, null]);
+						setImageSize(null);
+					}}
+				/>
+			);
+		}
+
 		// Sem registro escolhido → galeria premium (stats + busca + cards + sidebar).
 		if (!selectedEntry) {
 			return (
@@ -473,18 +806,64 @@ export function DynamicToolView({
 					<div className={themedShell}>
 						{screenUi.notice && <ScreenNotice notice={screenUi.notice} />}
 						{header}
-						<PromptGallery
-							entries={bankQuery.data ?? []}
-							loading={bankQuery.isLoading}
-							onSelect={(entry) => {
-								setSelectedEntry(entry);
-								setResult(null);
-								setTema('');
-								setSpecValues({});
-								setReferencias([null, null, null]);
-								setImageSize(null);
-							}}
-						/>
+						{ehLicenciada && (
+							<div className="mb-6 flex gap-1 border-b border-slate-200 dark:border-white/10">
+								<button
+									type="button"
+									onClick={() => setAbaGaleria('prompts')}
+									aria-current={abaGaleria === 'prompts' ? 'page' : undefined}
+									className={`-mb-px border-b-2 px-4 py-2.5 text-sm transition-colors ${
+										abaGaleria === 'prompts'
+											? 'border-violet-500 font-semibold text-violet-600 dark:text-violet-400'
+											: 'border-transparent text-slate-500 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white'
+									}`}
+								>
+									Criar
+								</button>
+								<button
+									type="button"
+									onClick={() => setAbaGaleria('minhas')}
+									aria-current={abaGaleria === 'minhas' ? 'page' : undefined}
+									className={`-mb-px border-b-2 px-4 py-2.5 text-sm transition-colors ${
+										abaGaleria === 'minhas'
+											? 'border-violet-500 font-semibold text-violet-600 dark:text-violet-400'
+											: 'border-transparent text-slate-500 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white'
+									}`}
+								>
+									Minhas artes licenciadas
+								</button>
+							</div>
+						)}
+						{abaGaleria === 'minhas' ? (
+							/*
+							 * A biblioteca é uma superfície ESCURA de paleta própria — a
+							 * bancada da Arte Licenciada, que não segue o tema do aparelho.
+							 * Aqui ela cai dentro da galeria genérica, que SEGUE: em tema
+							 * claro os cartões escuros ficavam boiando sobre fundo branco.
+							 *
+							 * A moldura é do HOSPEDEIRO, e não da biblioteca: quem escolhe
+							 * onde ela aparece é que sabe o que tem atrás. No balcão o chão
+							 * já é este, e lá a moldura não muda nada.
+							 */
+							<div
+								className={`${TEMA_LICENCIADA} rounded-xl bg-[var(--al-ground)] p-4 sm:p-6`}
+							>
+								<MyLicensedArtLibrary />
+							</div>
+						) : (
+							<PromptGallery
+								entries={bankQuery.data ?? []}
+								loading={bankQuery.isLoading}
+								onSelect={(entry) => {
+									setSelectedEntry(entry);
+									setResult(null);
+									setTema('');
+									setSpecValues({});
+									setReferencias([null, null, null]);
+									setImageSize(null);
+								}}
+							/>
+						)}
 					</div>
 				</div>
 			);
@@ -506,15 +885,36 @@ export function DynamicToolView({
 		// espelha a da API (que rejeita 400 antes de cobrar).
 		const hasCreations = !!creations && creations.length > 0;
 		const hasVariations = !!returnVariations && returnVariations.length > 0;
-		const meetsInputRequirement =
-			mode === 'texto_imagem'
-				? hasText || chosenImages.length > 0
-				: (!needsTema || hasText) &&
-					(mode !== 'imagem' || chosenImages.length > 0);
+		/**
+		 * COM LISTA, A LISTA É A ENTRADA.
+		 *
+		 * O nome de cada peça mora nela, não no campo "tema" — exigir os dois
+		 * deixava o botão apagado com 30 nomes já digitados na tela, sem dizer o
+		 * que faltava. Cada linha precisa ter nome OU foto: linha vazia viraria
+		 * uma peça sem nada de próprio, cobrada como geração.
+		 */
+		const carimbo = isCarimbo(mode);
+		const listaCompleta =
+			!!pecas &&
+			pecas.length > 0 &&
+			(carimbo
+				? // Sem geração, só a arte conta: nome sozinho não vira peça.
+					pecas.every((p) => p.imagem !== null)
+				: pecas.every((p) => p.tema.trim() !== '' || p.imagem !== null));
+		const meetsInputRequirement = pecas
+			? listaCompleta
+			: carimbo
+				? chosenImages.length > 0
+				: mode === 'texto_imagem'
+					? hasText || chosenImages.length > 0
+					: (!needsTema || hasText) &&
+						(mode !== 'imagem' || chosenImages.length > 0);
+		// Só licenciar não tem Passo 1 nem variações — o botão não pode esperar
+		// por escolhas que a tela nem mostra.
 		const canGenerate =
 			meetsInputRequirement &&
-			(!hasCreations || !!creationId) &&
-			(!hasVariations || !!variationCount);
+			(carimbo || !hasCreations || !!creationId) &&
+			(carimbo || !hasVariations || !!variationCount);
 
 		return (
 			<div className={`p-4 md:p-8 ${screenUi.themeClass}`} style={screenStyle}>
@@ -542,6 +942,7 @@ export function DynamicToolView({
 						downloadKey={downloadKey}
 						actionLabel={actionLabel}
 						pending={pending}
+						pendingLabel={pendingLabel}
 						insufficient={billing.insufficient}
 						canGenerate={canGenerate}
 						imageSize={imageSize}
@@ -552,13 +953,51 @@ export function DynamicToolView({
 							setSelectedEntry(null);
 							setResult(null);
 						}}
+						backLabel={
+							studioUi?.layout === 'licenciada'
+								? 'Voltar aos modelos'
+								: undefined
+						}
+						// A variante NUNCA sai do `layout`: um prompt dos Prompts Mágicos
+						// marcado com marca por engano não pode virar esta tela.
+						variante={
+							studioUi?.layout === 'licenciada' ? 'licenciada' : undefined
+						}
+						marca={licensedMarca}
 						billingNotice={showCostNotice ? billing.notice : null}
 						creations={creations}
 						creationId={creationId}
 						onCreationIdChange={setCreationId}
 						returnVariations={returnVariations}
 						variationCount={variationCount}
+						printRunOptions={printRunOptions}
+						printRun={tiragem}
+						onPrintRunChange={(n) => {
+							setPrintRun(n);
+							// Tiragem > 1 volta as variações para 1: quem encomenda peças
+							// já escolheu a arte, e 4 versões × 50 peças não é fluxo real.
+							if (n > 1 && (variationCount ?? 1) > 1) setVariationCount(1);
+							// Com lista, mexer no número é mexer na lista — senão a tela
+							// mostraria "20 peças" ao lado de 5 linhas.
+							setPecas((atual) => {
+								if (!atual) return atual;
+								if (n <= atual.length) return atual.slice(0, n);
+								return [
+									...atual,
+									...Array.from({ length: n - atual.length }, pecaVazia),
+								];
+							});
+						}}
 						onVariationCountChange={setVariationCount}
+						pecas={studioUi?.layout === 'licenciada' ? pecas : undefined}
+						onPecasChange={
+							studioUi?.layout === 'licenciada'
+								? (p) => {
+										setPecas(p);
+										if (p) setPrintRun(p.length);
+									}
+								: undefined
+						}
 					/>
 				</div>
 			</div>

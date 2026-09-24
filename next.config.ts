@@ -1,3 +1,4 @@
+import withUpvox from '@upvox-dev/ui/next';
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
@@ -57,4 +58,7 @@ const nextConfig: NextConfig = {
 	},
 };
 
-export default nextConfig;
+// O wrapper do design system: transpila o TS fonte do `@upvox-dev/ui` e aponta
+// `react-native` para o `react-native-web` nos dois bundlers. Sem ele os
+// componentes da lib renderizam sem estilo — ou nem compilam.
+export default withUpvox(nextConfig);

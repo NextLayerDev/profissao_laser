@@ -20,6 +20,9 @@ const FIELD_TYPES: { value: BankFieldDef['type']; label: string }[] = [
 	{ value: 'textarea', label: 'Texto longo' },
 	{ value: 'enum', label: 'Opções' },
 	{ value: 'image', label: 'Imagem' },
+	// Select alimentado pelo cadastro de Marcas licenciadas — não é lista
+	// estática como o enum.
+	{ value: 'brand', label: 'Marca licenciada' },
 ];
 
 const labelCls = 'mb-1.5 block text-[13px] font-medium text-slate-300';

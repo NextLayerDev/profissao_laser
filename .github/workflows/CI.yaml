@@ -13,6 +13,16 @@ on:
 env:
   NODE_VERSION: "24"
 
+env:
+  NODE_VERSION: "24"
+  # `.npmrc` já manda o escopo @upvox-dev pro GitHub Packages; falta só o
+  # token, que não pode ir pro arquivo versionado. GITHUB_TOKEN não serve
+  # aqui — @upvox-dev/ui vive no repo UpVox-Dev/upvox-ui, outra org, e o
+  # GITHUB_TOKEN de um workflow não enxerga pacotes fora do seu próprio
+  # org/repo. Precisa de um PAT (classic, escopo `read:packages`) de uma
+  # conta com acesso à UpVox-Dev, salvo aqui como secret UPVOX_UI_PACKAGES_TOKEN.
+  NODE_AUTH_TOKEN: ${{ secrets.UPVOX_UI_PACKAGES_TOKEN }}
+
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -22,6 +32,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@upvox-dev"
       - name: 📦 Install dependencies
         run: npm ci
 
@@ -34,6 +46,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@upvox-dev"
       - run: npm ci
       - name: 린 Lint check
         run: npx biome check .
@@ -49,6 +63,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@upvox-dev"
       - run: npm ci
       - name: 🏗️ Build application
         run: npm run build
@@ -62,6 +78,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@upvox-dev"
       - run: npm ci
       - name: 🔒 Run NPM Audit
         run: npm audit --audit-level=critical

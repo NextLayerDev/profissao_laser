@@ -30,7 +30,19 @@ const PUBLIC_PAGE_PREFIXES = [
 	'/promo-link',
 	'/global-promo-link',
 	'/link-plano',
+	// Verificação pública da arte licenciada. Mantém esta lista em paridade com
+	// os outros clients para que um 401 isolado não redirecione o QR ao login.
+	'/a',
 ];
+
+function isPublicPath(pathname: string): boolean {
+	return (
+		pathname === '/' ||
+		PUBLIC_PAGE_PREFIXES.some(
+			(path) => pathname === path || pathname.startsWith(`${path}/`),
+		)
+	);
+}
 
 api.interceptors.response.use(
 	(response) => response,
@@ -38,8 +50,7 @@ api.interceptors.response.use(
 		if (error.response?.status === 401) {
 			const path =
 				typeof window !== 'undefined' ? window.location.pathname : '';
-			const isPublicPage =
-				path === '/' || PUBLIC_PAGE_PREFIXES.some((p) => path.startsWith(p));
+			const isPublicPage = isPublicPath(path);
 
 			if (!isPublicPage) {
 				clearToken();
