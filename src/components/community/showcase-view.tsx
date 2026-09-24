@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type React from 'react';
 import { useMemo, useRef, useState } from 'react';
+import { ProjectMedia } from '@/components/community/project-media';
 import { Avatar } from '@/components/ui/avatar';
 import { ModalOverlay } from '@/components/ui/modal-overlay';
 import { ProjectCardsSkeleton } from '@/components/ui/skeletons/community-grid-skeleton';
@@ -53,7 +54,9 @@ export function ShowcaseView({
 		description: '',
 		material: '',
 		technique: '',
-		image: null as string | null,
+		file: null as File | null,
+		// Preview local: objectURL, não base64 — base64 de vídeo trava a aba.
+		preview: null as string | null,
 	});
 	const projectFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -112,9 +115,7 @@ export function ShowcaseView({
 				author: userName,
 				title: newProject.title.trim(),
 				description: newProject.description.trim(),
-				img:
-					newProject.image ||
-					'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?q=80&w=2940&auto=format&fit=crop',
+				file: newProject.file ?? undefined,
 				material: newProject.material || undefined,
 				technique: newProject.technique || undefined,
 			},
@@ -125,7 +126,8 @@ export function ShowcaseView({
 						description: '',
 						material: '',
 						technique: '',
-						image: null,
+						file: null,
+						preview: null,
 					});
 					setShowSubmitProjectModal(false);
 				},
@@ -133,14 +135,19 @@ export function ShowcaseView({
 		);
 	};
 
-	const handleProjectImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+	const clearProjectFile = () =>
+		setNewProject((prev) => {
+			if (prev.preview) URL.revokeObjectURL(prev.preview);
+			return { ...prev, file: null, preview: null };
+		});
+
+	const handleProjectMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
-		if (file) {
-			const reader = new FileReader();
-			reader.onloadend = () =>
-				setNewProject((prev) => ({ ...prev, image: reader.result as string }));
-			reader.readAsDataURL(file);
-		}
+		if (!file) return;
+		setNewProject((prev) => {
+			if (prev.preview) URL.revokeObjectURL(prev.preview);
+			return { ...prev, file, preview: URL.createObjectURL(file) };
+		});
 	};
 
 	const handleAddProjectComment = () => {
@@ -184,11 +191,13 @@ export function ShowcaseView({
 									/>
 									<p className="text-violet-400">por {currentProject.author}</p>
 								</div>
-								{currentProject.img && (
+								{(currentProject.img || currentProject.video) && (
 									<div className="rounded-xl overflow-hidden mt-4 bg-slate-100 dark:bg-[#111]">
-										<img
-											src={currentProject.img}
+										<ProjectMedia
+											img={currentProject.img}
+											video={currentProject.video}
 											alt={currentProject.title}
+											controls
 											className="w-full max-h-[60vh] object-contain"
 										/>
 									</div>
@@ -330,28 +339,36 @@ export function ShowcaseView({
 									htmlFor="project-image"
 									className="text-sm font-medium text-white block mb-2"
 								>
-									Imagem do Projeto
+									Foto ou vídeo do projeto
 								</label>
 								<input
 									id="project-image"
 									type="file"
 									ref={projectFileInputRef}
-									onChange={handleProjectImageUpload}
-									accept="image/*"
+									onChange={handleProjectMediaUpload}
+									accept="image/*,video/*"
 									className="hidden"
 								/>
-								{newProject.image ? (
+								{newProject.preview ? (
 									<div className="relative rounded-xl overflow-hidden bg-slate-100 dark:bg-[#111]">
-										<img
-											src={newProject.image}
-											alt="Preview"
-											className="w-full max-h-56 object-contain rounded-xl"
-										/>
+										{newProject.file?.type.startsWith('video/') ? (
+											// biome-ignore lint/a11y/useMediaCaption: vídeo do aluno
+											<video
+												src={newProject.preview}
+												controls
+												playsInline
+												className="w-full max-h-56 rounded-xl bg-black"
+											/>
+										) : (
+											<img
+												src={newProject.preview}
+												alt="Preview"
+												className="w-full max-h-56 object-contain rounded-xl"
+											/>
+										)}
 										<button
 											type="button"
-											onClick={() =>
-												setNewProject((p) => ({ ...p, image: null }))
-											}
+											onClick={clearProjectFile}
 											className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white"
 										>
 											<X className="h-4 w-4" />
@@ -365,7 +382,7 @@ export function ShowcaseView({
 									>
 										<ImageIcon className="h-10 w-10 text-violet-400 mx-auto mb-2" />
 										<p className="text-sm text-slate-600 dark:text-gray-400">
-											Clique para adicionar uma imagem
+											Clique para adicionar uma foto ou vídeo
 										</p>
 									</button>
 								)}
@@ -610,12 +627,11 @@ export function ShowcaseView({
 										className="bg-slate-100 dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden text-left hover:border-violet-500/40 hover:shadow-xl hover:shadow-violet-500/10 transition-all duration-300 group cursor-pointer"
 									>
 										<div className="aspect-square overflow-hidden bg-slate-100 dark:bg-[#111]">
-											<img
-												src={
-													item.img ??
-													'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?q=80&w=2940&auto=format&fit=crop'
-												}
+											<ProjectMedia
+												img={item.img}
+												video={item.video}
 												alt={item.title}
+												fallbackSrc="https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?q=80&w=2940&auto=format&fit=crop"
 												className="w-full h-full object-contain group-hover:scale-105 transition-transform"
 											/>
 										</div>

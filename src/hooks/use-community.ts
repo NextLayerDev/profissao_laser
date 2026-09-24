@@ -94,7 +94,7 @@ export function useCommunityPosts(page = 1, limit = 20) {
 export function useCreatePost() {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: (body: { content: string; image?: string }) => createPost(body),
+		mutationFn: (body: { content: string; file?: File }) => createPost(body),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['community', 'posts'] });
 			toast.success('Post publicado!');
@@ -375,7 +375,7 @@ export function useCreateProject() {
 			author: string;
 			title: string;
 			description: string;
-			img?: string;
+			file?: File;
 			material?: string;
 			technique?: string;
 		}) => createProject(body),

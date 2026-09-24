@@ -14,7 +14,7 @@ const BAR_COLORS = [
 
 export function MonthSummary() {
 	const { canPrice, can } = usePermissions();
-	const { data, isLoading } = useSalesSummary();
+	const { data, isLoading, isError } = useSalesSummary();
 
 	// Sem permissão de ver vendas, nada de resumo de vendas/receita na home.
 	if (!can('vendas.view')) return null;
@@ -54,7 +54,14 @@ export function MonthSummary() {
 						</div>
 					) : (
 						<>
-							{topPlans.length === 0 && (
+							{/* Falha da API não pode virar "sem dados": são coisas
+							    diferentes pra quem lê o dashboard. */}
+							{isError && (
+								<p className="text-sm text-rose-600 dark:text-rose-400">
+									Não foi possível carregar os planos mais vendidos.
+								</p>
+							)}
+							{!isError && topPlans.length === 0 && (
 								<p className="text-sm text-slate-500 dark:text-gray-500">
 									Sem dados disponíveis.
 								</p>

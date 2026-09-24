@@ -28,7 +28,9 @@ export function PublishComposer() {
 	const [description, setDescription] = useState('');
 	const [material, setMaterial] = useState('');
 	const [technique, setTechnique] = useState('');
-	const [image, setImage] = useState<string | null>(null);
+	const [file, setFile] = useState<File | null>(null);
+	// Preview local: objectURL, não base64 — base64 de vídeo trava a aba.
+	const [preview, setPreview] = useState<string | null>(null);
 	const [focused, setFocused] = useState(false);
 	const fileRef = useRef<HTMLInputElement>(null);
 	const createProject = useCreateProject();
@@ -45,24 +47,32 @@ export function PublishComposer() {
 		!!description.trim() ||
 		!!material.trim() ||
 		!!technique.trim() ||
-		!!image;
+		!!preview;
 
 	function reset() {
 		setTitle('');
 		setDescription('');
 		setMaterial('');
 		setTechnique('');
-		setImage(null);
+		clearFile();
 		setFocused(false);
 	}
 
-	function handleImage(e: ChangeEvent<HTMLInputElement>) {
-		const file = e.target.files?.[0];
+	function clearFile() {
+		setFile(null);
+		setPreview((prev) => {
+			if (prev) URL.revokeObjectURL(prev);
+			return null;
+		});
+	}
+
+	function handleMedia(e: ChangeEvent<HTMLInputElement>) {
+		const picked = e.target.files?.[0];
 		e.target.value = '';
-		if (!file) return;
-		const reader = new FileReader();
-		reader.onloadend = () => setImage(reader.result as string);
-		reader.readAsDataURL(file);
+		if (!picked) return;
+		if (preview) URL.revokeObjectURL(preview);
+		setFile(picked);
+		setPreview(URL.createObjectURL(picked));
 	}
 
 	function publish() {
@@ -72,7 +82,7 @@ export function PublishComposer() {
 				author: authorName,
 				title: title.trim(),
 				description: description.trim(),
-				img: image ?? undefined,
+				file: file ?? undefined,
 				material: material.trim() || undefined,
 				technique: technique.trim() || undefined,
 			},
@@ -101,16 +111,26 @@ export function PublishComposer() {
 
 					{open ? (
 						<div className="mt-2 space-y-2.5">
-							{image ? (
+							{preview ? (
 								<div className="relative rounded-lg overflow-hidden">
-									<img
-										src={image}
-										alt="Pré-visualização"
-										className="w-full max-h-60 object-cover"
-									/>
+									{file?.type.startsWith('video/') ? (
+										// biome-ignore lint/a11y/useMediaCaption: vídeo do aluno
+										<video
+											src={preview}
+											controls
+											playsInline
+											className="w-full max-h-60 bg-black"
+										/>
+									) : (
+										<img
+											src={preview}
+											alt="Pré-visualização"
+											className="w-full max-h-60 object-cover"
+										/>
+									)}
 									<button
 										type="button"
-										onClick={() => setImage(null)}
+										onClick={clearFile}
 										className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 hover:bg-black/70 text-white"
 									>
 										<X className="w-4 h-4" />
@@ -152,7 +172,7 @@ export function PublishComposer() {
 					className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors"
 				>
 					<ImageIcon className="w-4 h-4" />
-					{image ? 'Trocar imagem' : 'Foto'}
+					{file ? 'Trocar mídia' : 'Foto/Vídeo'}
 				</button>
 				<div className="flex items-center gap-2">
 					{open ? (
@@ -183,9 +203,9 @@ export function PublishComposer() {
 			<input
 				ref={fileRef}
 				type="file"
-				accept="image/*"
+				accept="image/*,video/*"
 				className="hidden"
-				onChange={handleImage}
+				onChange={handleMedia}
 			/>
 		</div>
 	);

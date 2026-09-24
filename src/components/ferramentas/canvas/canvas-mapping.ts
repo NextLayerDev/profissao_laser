@@ -294,6 +294,7 @@ export function removeNode(state: BuilderState, id: string): BuilderState {
 		output: {
 			primary: orphan(state.output.primary) ? '' : state.output.primary,
 			preview: orphan(state.output.preview) ? '' : state.output.preview,
+			images: orphan(state.output.images) ? '' : state.output.images,
 			meta: state.output.meta.filter((m) => !orphan(m)),
 		},
 	};

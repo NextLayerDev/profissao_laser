@@ -20,6 +20,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { StudentPreviewButton } from '@/components/dashboard/student-preview-button';
 import { SupportNotificationsBell } from '@/components/dashboard/support-notifications-bell';
 import { UserBadge } from '@/components/store/user-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -536,6 +537,7 @@ export function Header() {
 					</kbd>
 				</button>
 				<Separator />
+				<StudentPreviewButton />
 				<SupportNotificationsBell />
 				<ThemeToggle />
 				<Separator />
@@ -710,10 +712,13 @@ export function Header() {
 							)}
 						</div>
 
-						{/* Footer: UserBadge */}
-						<div className="px-3 py-3 border-t border-slate-200 dark:border-white/5 flex items-center gap-2">
-							<Users className="w-4 h-4 text-slate-400 dark:text-gray-500 shrink-0" />
-							<UserBadge />
+						{/* Footer: Visão Aluno + UserBadge */}
+						<div className="px-3 py-3 border-t border-slate-200 dark:border-white/5 space-y-2">
+							<StudentPreviewButton variant="drawer" />
+							<div className="flex items-center gap-2">
+								<Users className="w-4 h-4 text-slate-400 dark:text-gray-500 shrink-0" />
+								<UserBadge />
+							</div>
 						</div>
 					</div>
 				</div>

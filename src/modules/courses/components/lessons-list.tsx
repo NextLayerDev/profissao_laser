@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import {
 	ChevronRight,
 	FileText,
@@ -11,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import {
+	moduleLessonsQueryKey,
 	useCreateLesson,
 	useDeleteLesson,
 	useModuleLessons,
@@ -34,6 +36,7 @@ export function LessonsList({ moduleId, expanded }: Props) {
 	const createMut = useCreateLesson(moduleId);
 	const updateMut = useUpdateLesson(moduleId);
 	const deleteMut = useDeleteLesson(moduleId);
+	const qc = useQueryClient();
 
 	const [editing, setEditing] = useState<Lesson | null>(null);
 	const [open, setOpen] = useState(false);
@@ -133,6 +136,9 @@ export function LessonsList({ moduleId, expanded }: Props) {
 					editing={editing}
 					pending={createMut.isPending || updateMut.isPending}
 					onClose={() => setOpen(false)}
+					onVideoUploaded={() =>
+						qc.invalidateQueries({ queryKey: moduleLessonsQueryKey(moduleId) })
+					}
 					onSubmit={(payload) => {
 						if (editing) {
 							return updateMut.mutateAsync({

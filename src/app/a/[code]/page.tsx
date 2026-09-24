@@ -4,7 +4,6 @@ import { BadgeCheck, ShieldAlert, ShieldX } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useParams } from 'next/navigation';
 import { type CSSProperties, type ReactNode, useEffect, useState } from 'react';
-import { api } from '@/lib/fetch';
 import {
 	CARIMBO,
 	DURACAO,
@@ -28,6 +27,30 @@ interface Verificacao {
 	previewUrl: string | null;
 	issuedAt: string;
 	checkedAt: string;
+}
+
+// A API da aplicação, não o gateway: o verificador público não pode depender
+// da autenticação do gateway nem da rede privada dele. Sem credenciais, para um
+// 401 daqui nunca afetar a sessão de quem estiver logado noutra aba.
+const defaultPublicApiUrl =
+	'https://profissao-laser-profissao-laser-back.1nwz76.easypanel.host';
+const apiUrl = (process.env.NEXT_PUBLIC_API_URL || defaultPublicApiUrl).replace(
+	/\/+$/,
+	'',
+);
+
+async function verificarNaApi(
+	code: string,
+	signal: AbortSignal,
+): Promise<{ data: Verificacao }> {
+	const response = await fetch(
+		`${apiUrl}/api/licensed-art/${encodeURIComponent(code)}`,
+		{ cache: 'no-store', credentials: 'omit', signal },
+	);
+	if (!response.ok) {
+		throw { response: { status: response.status } };
+	}
+	return { data: (await response.json()) as Verificacao };
 }
 
 type Estado =
@@ -173,13 +196,12 @@ export default function VerificacaoArteLicenciada() {
 
 	useEffect(() => {
 		let vivo = true;
+		const controller = new AbortController();
 		// Com o mock ligado, o código sai da biblioteca falsa do navegador em vez
 		// da main-api — inclusive o de peça arquivada, que TEM de responder.
 		const buscar = MOCK_LICENCIADA
 			? mockVerify(params.code).then((data) => ({ data }))
-			: api.get<Verificacao>(
-					`/api/licensed-art/${encodeURIComponent(params.code)}`,
-				);
+			: verificarNaApi(params.code, controller.signal);
 		buscar
 			.then(({ data }) => {
 				if (!vivo) return;
@@ -197,6 +219,7 @@ export default function VerificacaoArteLicenciada() {
 			});
 		return () => {
 			vivo = false;
+			controller.abort();
 		};
 	}, [params.code]);
 

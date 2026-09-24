@@ -87,7 +87,7 @@ export function AlunosAdminView() {
 
 	const { flat: planOptions } = usePlanOptions();
 	const setTestUnlimited = useSetStudentTestUnlimited();
-	const { data: payingCount } = usePayingMembersCount();
+	const { data: payingCount, isError: payingError } = usePayingMembersCount();
 	const { data: presence } = usePresenceSummary();
 
 	/* debounce the search box → drives `q`; reset to page 1 on change */
@@ -160,9 +160,17 @@ export function AlunosAdminView() {
 				/>
 				<StatCard
 					value={
-						payingCount != null ? payingCount.toLocaleString('pt-BR') : '—'
+						payingError
+							? 'erro'
+							: payingCount != null
+								? payingCount.toLocaleString('pt-BR')
+								: '—'
 					}
-					label="Pagantes (ativos + trial)"
+					label={
+						payingError
+							? 'Pagantes — falha ao carregar'
+							: 'Pagantes (ativos + trial)'
+					}
 					icon={UserCheck}
 					color="bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400"
 				/>

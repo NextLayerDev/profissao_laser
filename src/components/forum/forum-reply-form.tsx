@@ -1,7 +1,9 @@
 'use client';
 
-import { Loader2, Send } from 'lucide-react';
+import { Loader2, Lock, Send } from 'lucide-react';
+import Link from 'next/link';
 import { useState } from 'react';
+import { useEntitlements } from '@/hooks/use-entitlements';
 import { useCreateForumReply } from '@/hooks/use-forum';
 
 interface ForumReplyFormProps {
@@ -11,6 +13,25 @@ interface ForumReplyFormProps {
 export function ForumReplyForm({ postId }: ForumReplyFormProps) {
 	const [content, setContent] = useState('');
 	const replyMut = useCreateForumReply(postId);
+	const { hasFullAccess, isLoading: accessLoading } = useEntitlements();
+
+	// Escrever no fórum exige plano ativo — a leitura da thread continua aberta.
+	if (!accessLoading && !hasFullAccess) {
+		return (
+			<div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-6 flex flex-col items-center text-center gap-3">
+				<Lock className="w-6 h-6 text-slate-400 dark:text-gray-500" />
+				<p className="text-sm text-slate-600 dark:text-gray-300">
+					Assine um plano para participar das discussões do fórum.
+				</p>
+				<Link
+					href="/course/store"
+					className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-lg transition-colors"
+				>
+					Ver planos
+				</Link>
+			</div>
+		);
+	}
 
 	async function handleSubmit() {
 		const trimmed = content.trim();

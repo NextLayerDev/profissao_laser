@@ -25,9 +25,13 @@ export async function getPosts(params?: {
 
 export async function createPost(body: {
 	content: string;
-	image?: string;
+	/** Imagem ou vídeo — a API decide pelo mimetype. */
+	file?: File;
 }): Promise<Post> {
-	const { data } = await api.post<Post>('/community/posts', body);
+	const formData = new FormData();
+	formData.append('content', body.content);
+	if (body.file) formData.append('file', body.file);
+	const { data } = await api.post<Post>('/community/posts', formData);
 	return data as Post;
 }
 
@@ -147,11 +151,16 @@ export async function createProject(body: {
 	author: string;
 	title: string;
 	description: string;
-	img?: string;
+	/** Imagem ou vídeo — a API decide pelo mimetype. */
+	file?: File;
 	material?: string;
 	technique?: string;
 }): Promise<Project> {
-	const { data } = await api.post<Project>('/community/projects', body);
+	const formData = new FormData();
+	for (const [key, value] of Object.entries(body)) {
+		if (value !== undefined) formData.append(key, value as string | File);
+	}
+	const { data } = await api.post<Project>('/community/projects', formData);
 	return data as Project;
 }
 

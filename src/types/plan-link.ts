@@ -162,6 +162,8 @@ export type PlanLinkRedemptions = z.infer<typeof planLinkRedemptionsSchema>;
  * link_tool_use   = uso de tool por cliente de link (custo de plataforma);
  * plan_grant      = voxxys do plano cobrados no ato (R$1,20/voxxy);
  * subscription_fee= taxa Hotmart de cada pagamento de assinatura (9,9% + R$1, ou 20% < R$10);
+ * plan_grant      = voxxys do plano, cobrados na CONCESSÃO (R$1,20/vox concedido,
+ *                   desde set/2026). O uso depois não cobra de novo;
  * link_purchase   = 100% do 1º período pago numa compra por link;
  * granted_access_use = uso de cota grátis de uma assinatura DADA por link
  *                   (custo real de plataforma da ferramenta, no ato do uso).
@@ -240,6 +242,8 @@ export const voxxyLastroCustomerSchema = z.object({
 	plan_upvox_share_cents: z.number().int().optional().default(0),
 	plan_company_share_cents: z.number().int().optional().default(0),
 	plan_unused_value_cents: z.number().int().optional().default(0),
+	/** Fatia do não usado que JÁ foi paga na concessão (set/2026 em diante). */
+	plan_prepaid_value_cents: z.number().int().optional().default(0),
 });
 export type VoxxyLastroCustomer = z.infer<typeof voxxyLastroCustomerSchema>;
 
@@ -256,6 +260,7 @@ export const voxxyLastroSchema = z.object({
 	plan_upvox_share_cents: z.number().int().optional().default(0),
 	plan_company_share_cents: z.number().int().optional().default(0),
 	plan_unused_value_cents: z.number().int().optional().default(0),
+	plan_prepaid_value_cents: z.number().int().optional().default(0),
 	per_customer: z.array(voxxyLastroCustomerSchema).optional().default([]),
 });
 export type VoxxyLastro = z.infer<typeof voxxyLastroSchema>;
@@ -282,7 +287,7 @@ export const companyInvoiceSchema = z.object({
 		open_cents: z.number().int(),
 		/** Quebra por origem (optional p/ retrocompat com API antiga). */
 		tools_cents: z.number().int().optional().default(0),
-		/** Registro das concessões de voxxys do plano — 0 desde jul/2026. */
+		/** Voxxys do plano cobrados na concessão (R$1,20/vox) — desde set/2026. */
 		plan_grants_cents: z.number().int().optional().default(0),
 		subscription_fees_cents: z.number().int().optional().default(0),
 		link_purchases_cents: z.number().int().optional().default(0),

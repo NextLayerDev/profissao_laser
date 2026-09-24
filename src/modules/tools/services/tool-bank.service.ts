@@ -131,10 +131,10 @@ export async function smartInjectTema(
 }
 
 /**
- * "Resumir prompt" — a IA (gemini-2.5-flash) encurta o `prompt_script` do admin
- * quando ele se aproxima do limite de `ai.generate_image` (8.000 caracteres),
- * preservando todo `{placeholder}` (tema e especificações custom) intacto.
- * Admin-only; não depende da tool.
+ * "Resumir prompt" — a IA (gemini-2.5-flash) encurta o `prompt_script` do
+ * admin quando ele se aproxima do limite de `ai.generate_image` (8.000
+ * caracteres), preservando todo `{placeholder}` (tema e especificações
+ * custom) intacto. Admin-only; não depende da tool.
  */
 export const summarizePromptResultSchema = z.object({
 	result: z.string(),

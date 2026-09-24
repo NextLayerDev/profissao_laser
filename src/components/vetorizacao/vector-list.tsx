@@ -292,7 +292,7 @@ export function VectorList({
 												type="button"
 												disabled={invertingId !== null}
 												onClick={() => handleInvert(v)}
-												title="Gera o negativo real do vetor (fundo preto) e guarda na biblioteca. Não consome voxxys."
+												title="Gera o negativo real do vetor, delimitado pela silhueta com contorno fino, e guarda na biblioteca. Não consome voxxys."
 												className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-800 dark:bg-white/20 hover:bg-slate-700 dark:hover:bg-white/30 text-white text-xs font-medium transition-colors disabled:opacity-50"
 											>
 												{invertingId === v.id ? (

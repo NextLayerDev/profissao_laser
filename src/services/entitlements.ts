@@ -36,12 +36,28 @@ export const entitlementsSchema = z.object({
 			current_period_start: z.string(),
 			current_period_end: z.string(),
 			vox_monthly_grant: z.number(),
+			/** 'recurring' = renova a cada período pago; 'first_only' = bônus único. */
+			vox_grant_mode: z
+				.enum(['recurring', 'first_only'])
+				.optional()
+				.default('recurring'),
 		})
 		.nullable(),
 	courses: z.array(
 		z.object({ id: z.string(), slug: z.string(), title: z.string() }),
 	),
 	tools: z.array(entitlementToolSchema),
+	/**
+	 * Visão Aluno da staff: `null` quando é um aluno de verdade.
+	 *
+	 * Em prévia, `is_test_unlimited` e `subscription` vêm SINTÉTICOS — este
+	 * campo é o único jeito de distinguir "plano real" de "staff olhando".
+	 * `.nullish()` p/ não quebrar contra um backend ainda sem o campo.
+	 */
+	student_preview: z
+		.object({ active: z.boolean(), until: z.string().nullable() })
+		.nullish()
+		.transform((v) => v ?? null),
 });
 export type Entitlements = z.infer<typeof entitlementsSchema>;
 
