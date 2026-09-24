@@ -2164,23 +2164,13 @@ export function ToolBuilderView() {
 													>
 														<SelectInput
 															id="out-images"
-															value={
-																typeof state.output.extra?.images === 'string'
-																	? state.output.extra.images
-																	: ''
-															}
+															value={state.output.images}
 															onChange={(v) =>
 																patch({
-																	output: {
-																		...state.output,
-																		extra: { ...state.output.extra, images: v },
-																	},
+																	output: { ...state.output, images: v },
 																})
 															}
-															muted={
-																typeof state.output.extra?.images !==
-																	'string' || !state.output.extra.images
-															}
+															muted={!state.output.images}
 														>
 															<option value="">— nenhuma —</option>
 															{outputs.map((o) => (

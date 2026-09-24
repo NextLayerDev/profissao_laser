@@ -13,6 +13,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { ModalOverlay } from '@/components/ui/modal-overlay';
+import { getEmbedUrl } from '@/utils/video';
 import {
 	useDeleteMaterial,
 	useLessonMaterials,
@@ -236,7 +237,7 @@ export function LessonFormModal({
 							</div>
 							{playbackUrl && (
 								<a
-									href={playbackUrl}
+									href={getEmbedUrl(playbackUrl) ?? playbackUrl}
 									target="_blank"
 									rel="noopener noreferrer"
 									className="inline-flex items-center gap-1.5 text-xs text-violet-600 dark:text-violet-400 hover:underline"

@@ -82,6 +82,22 @@ export function useCompanyInvoice(page: number, filters: InvoiceFilters = {}) {
 	});
 }
 
+/**
+ * Histórico completo de meses (Resumo por mês → "Mostrar anteriores").
+ * Ignora o filtro de período do topo: janela ampla (o backend usa
+ * PLATFORM_BILLING_START como início quando `from` é omitido). `limit: 1`
+ * porque só interessa o rollup `monthly` (calculado no servidor sobre todas
+ * as linhas, independente do limite). Só busca quando `enabled`.
+ */
+export function useCompanyInvoiceAllMonths(enabled: boolean) {
+	return useQuery({
+		queryKey: ['company-invoice-all-months'] as const,
+		queryFn: () => getCompanyInvoice({ limit: 1, offset: 0 }),
+		enabled,
+		placeholderData: (prev) => prev,
+	});
+}
+
 export function usePlanLinkRedemptions(page: number) {
 	const offset = page * INVOICE_PAGE_SIZE;
 	return useQuery({

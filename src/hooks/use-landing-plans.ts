@@ -26,6 +26,10 @@ export interface LandingPlan {
 	badge?: string;
 	/** Itens definidos pelo admin (tools/áreas/texto). Vazio → landing usa a lista padrão. */
 	features: PlanFeatureItem[];
+	/** Voxxys grátis do plano. 0 = nenhum (não vira bullet). */
+	voxGrant: number;
+	/** 'recurring' = por período; 'first_only' = bônus único. */
+	voxGrantMode: 'recurring' | 'first_only';
 }
 
 /**
@@ -53,6 +57,8 @@ export function useLandingPlans() {
 					featured: p.key === FEATURED_KEY,
 					badge: p.key === FEATURED_KEY ? 'MAIS ESCOLHIDO' : undefined,
 					features: p.features ?? [],
+					voxGrant: p.vox_monthly_grant ?? 0,
+					voxGrantMode: p.vox_grant_mode ?? 'recurring',
 				};
 			});
 		},

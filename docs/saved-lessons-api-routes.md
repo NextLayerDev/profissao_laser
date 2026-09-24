@@ -1,5 +1,12 @@
 # Rotas de API Necessárias para Aulas Salvas
 
+> **OBSOLETO (2026-08-24).** Estas rotas nunca foram implementadas na main API —
+> era por isso que o botão "Salvar" não funcionava (UPV-55). A funcionalidade
+> vive agora na **upvox** (`src/modules/saved-lessons`), com outro contrato:
+> `GET/POST /v1/me/saved-lessons` e `DELETE /v1/me/saved-lesson/{lessonId}`,
+> corpo `{ lesson_id }` e resposta em snake_case com `lesson`/`module`/`course`.
+> Mantido apenas como histórico.
+
 Este documento lista as rotas de API que precisam ser implementadas no backend Profissão Laser para que a funcionalidade de **Aulas Salvas** funcione integralmente no frontend.
 
 **Base URL**: `NEXT_PUBLIC_API_URL` (configurado em `.env`)

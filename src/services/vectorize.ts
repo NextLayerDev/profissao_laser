@@ -191,7 +191,7 @@ export async function aiLineartVectorize(
 }
 
 /**
- * VETOR INVERTIDO (fundo preto): negativo REAL do vetor — o Corel/LightBurn e o
+ * VETOR INVERTIDO (delimitado pela silhueta): negativo REAL do vetor — o Corel/LightBurn e o
  * laser enxergam a polaridade trocada, não é só a cor da prévia. **Não cobra**:
  * é transformação pura de um vetor já gerado, e o crédito de formato já pago
  * cobre o arquivo invertido.

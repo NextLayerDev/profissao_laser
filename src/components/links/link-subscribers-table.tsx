@@ -6,6 +6,7 @@ import {
 	ChevronRight,
 	Clock,
 	Loader2,
+	RefreshCw,
 	TicketPercent,
 	Users,
 } from 'lucide-react';
@@ -42,12 +43,40 @@ function formatCpf(cpf: string | null): string {
 /** Assinantes que entraram pelos links especiais (mensais e anuais). */
 export function LinkSubscribersTable() {
 	const [page, setPage] = useState(0);
-	const { data, isLoading } = usePlanLinkRedemptions(page);
+	const { data, isLoading, isError, refetch, isFetching } =
+		usePlanLinkRedemptions(page);
 
 	if (isLoading && !data) {
 		return (
 			<div className="flex items-center justify-center py-20">
 				<Loader2 className="w-7 h-7 text-violet-500 animate-spin" />
+			</div>
+		);
+	}
+
+	// Sem este branch a falha da API cai no `total === 0` abaixo e vira "ninguém
+	// assinou ainda" — indistinguível de lista vazia de verdade.
+	if (isError && !data) {
+		return (
+			<div className="text-center py-20">
+				<Users className="w-10 h-10 text-rose-400 dark:text-rose-500/70 mx-auto mb-4" />
+				<p className="text-slate-600 dark:text-gray-400 font-medium">
+					Não foi possível carregar os assinantes
+				</p>
+				<p className="text-slate-500 dark:text-gray-600 text-sm mt-1">
+					A lista existe, mas a requisição falhou. Tente de novo.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetch()}
+					disabled={isFetching}
+					className="mt-4 inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 px-4 py-2 text-sm font-medium text-slate-700 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-60"
+				>
+					<RefreshCw
+						className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`}
+					/>
+					Tentar novamente
+				</button>
 			</div>
 		);
 	}

@@ -543,9 +543,24 @@ function ProductSelector({
 						Escolha a variante (cor/tipo):
 					</p>
 					{variants.length === 0 ? (
-						<p className="text-sm text-slate-500 dark:text-gray-400 py-4 text-center">
-							Nenhuma variante disponivel para este produto.
-						</p>
+						/* Sem variante ativa não há como gerar (a API exige
+						   productVariantId) — o wizard virava beco sem saída. */
+						<div className="py-4 text-center space-y-3">
+							<p className="text-sm text-slate-500 dark:text-gray-400">
+								Este produto ainda não tem variante disponível — escolha outro
+								para continuar.
+							</p>
+							<button
+								type="button"
+								onClick={() => {
+									onSelectProduct('');
+									onSelectVariant('');
+								}}
+								className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-lg transition-colors"
+							>
+								Escolher outro produto
+							</button>
+						</div>
 					) : (
 						<>
 							{/* Pesquisa inteligente (esquerda) + seleção rápida por texto (direita) */}

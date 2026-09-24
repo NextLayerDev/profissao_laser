@@ -278,6 +278,9 @@ export const entryRowSchema = z.object({
 		})
 		.nullable()
 		.optional(),
+	// Forma de pagamento do Stripe ('card', 'pix', 'boleto'...). Null nas
+	// entradas anteriores à captura e nas compras de voxxys.
+	payment_method: z.string().nullable().optional(),
 });
 export type EntryRow = z.infer<typeof entryRowSchema>;
 

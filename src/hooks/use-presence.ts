@@ -47,7 +47,7 @@ export function usePresenceSummary() {
 	});
 }
 
-/** Assinantes pagantes (active+trialing) — analytics upvox (staff). */
+/** Assinantes pagantes (active+trialing) — contagem dedicada upvox (staff). */
 export function usePayingMembersCount() {
 	return useQuery({
 		queryKey: ['paying-members-count'],

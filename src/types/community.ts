@@ -5,6 +5,7 @@ export interface Post {
 	time: string;
 	content: string;
 	image?: string | null;
+	video?: string | null;
 	likes: number;
 	comments: number;
 	shares: number;
@@ -82,6 +83,7 @@ export interface Project {
 	author: string;
 	authorAvatar?: string | null;
 	img?: string | null;
+	video?: string | null;
 	description?: string | null;
 	material?: string | null;
 	technique?: string | null;

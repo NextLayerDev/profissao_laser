@@ -9,6 +9,7 @@ import type {
 	PlanFeatureItem,
 	PlanType,
 	UpdatePlanPayload,
+	VoxGrantMode,
 } from '../types/plans';
 import { PlanFeaturesEditor } from './plan-features-editor';
 
@@ -40,12 +41,16 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 	const [voxGrant, setVoxGrant] = useState(
 		editing?.vox_monthly_grant ? String(editing.vox_monthly_grant) : '0',
 	);
+	const [voxGrantMode, setVoxGrantMode] = useState<VoxGrantMode>(
+		editing?.vox_grant_mode ?? 'recurring',
+	);
 	const [features, setFeatures] = useState<PlanFeatureItem[]>(
 		editing?.features ?? [],
 	);
 
 	const voxGrantNum = Math.max(0, Math.trunc(Number(voxGrant) || 0));
 	const isLifetime = billingMode === 'lifetime';
+	const voxOnce = voxGrantMode === 'first_only';
 
 	const canSubmit =
 		!pending && !!name.trim() && (editing !== null || !!key.trim());
@@ -169,21 +174,36 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 					</p>
 				)}
 
-				<Field label="Voxxys grátis por mês">
-					<input
-						type="number"
-						min={0}
-						step={1}
-						value={voxGrant}
-						onChange={(e) => setVoxGrant(e.target.value)}
-						placeholder="0 = nenhum"
-						className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white"
-					/>
-					<p className="text-xs text-slate-500 mt-1">
-						Creditados ao assinante na compra e em cada renovação paga. Cobrados
-						da empresa só quando usados.
-					</p>
-				</Field>
+				<div className="grid grid-cols-2 gap-3">
+					<Field label={voxOnce ? 'Voxxys grátis' : 'Voxxys grátis por mês'}>
+						<input
+							type="number"
+							min={0}
+							step={1}
+							value={voxGrant}
+							onChange={(e) => setVoxGrant(e.target.value)}
+							placeholder="0 = nenhum"
+							className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white"
+						/>
+					</Field>
+					<Field label="Recorrência dos voxxys">
+						<select
+							value={voxGrantMode}
+							onChange={(e) => setVoxGrantMode(e.target.value as VoxGrantMode)}
+							className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white"
+						>
+							<option value="recurring">A cada período (renova)</option>
+							<option value="first_only">Só na primeira vez</option>
+						</select>
+					</Field>
+				</div>
+
+				<p className="text-xs text-slate-500 -mt-2">
+					{voxOnce
+						? 'Creditados UMA única vez por aluno. Não renovam — e não são concedidos de novo se ele cancelar e reassinar, nem por um novo link de plano.'
+						: 'Creditados ao assinante na compra e em cada renovação paga.'}{' '}
+					Cobrados da empresa só quando usados.
+				</p>
 
 				{voxGrantNum > 0 && (
 					<div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-3.5 py-2.5 text-xs text-emerald-700 dark:text-emerald-300 leading-snug">
@@ -196,7 +216,7 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 						plano gera{' '}
 						<span className="font-semibold">
 							R$ {((voxGrantNum * 120) / 100).toFixed(2).replace('.', ',')}
-							/assinante/mês
+							{voxOnce ? '/assinante (uma vez)' : '/assinante/mês'}
 						</span>{' '}
 						na fatura.
 					</div>
@@ -239,6 +259,7 @@ export function PlanFormModal({ editing, pending, onClose, onSubmit }: Props) {
 									? reaisToCents(lifetime)
 									: undefined,
 								vox_monthly_grant: voxGrantNum,
+								vox_grant_mode: voxGrantMode,
 								features,
 							};
 							onSubmit(editing ? base : { ...base, key: key.trim() });

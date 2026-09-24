@@ -66,6 +66,8 @@ const FALLBACK_PLANS: LandingPlan[] = [
 		installment: 29.9,
 		featured: false,
 		features: [],
+		voxGrant: 0,
+		voxGrantMode: 'recurring',
 	},
 	{
 		id: 'pro',
@@ -77,6 +79,8 @@ const FALLBACK_PLANS: LandingPlan[] = [
 		installment: 39.9,
 		featured: false,
 		features: [],
+		voxGrant: 0,
+		voxGrantMode: 'recurring',
 	},
 	{
 		id: 'avan',
@@ -89,6 +93,8 @@ const FALLBACK_PLANS: LandingPlan[] = [
 		featured: true,
 		badge: 'MAIS ESCOLHIDO',
 		features: [],
+		voxGrant: 0,
+		voxGrantMode: 'recurring',
 	},
 	{
 		id: 'max',
@@ -100,6 +106,8 @@ const FALLBACK_PLANS: LandingPlan[] = [
 		installment: 99.9,
 		featured: false,
 		features: [],
+		voxGrant: 0,
+		voxGrantMode: 'recurring',
 	},
 ];
 
@@ -186,9 +194,18 @@ function PlanCard({
 	const a = accentFor(p.key);
 	// Itens definidos pelo admin (na tela de Planos); se o plano não tiver nenhum,
 	// cai na lista padrão hardcoded (`featuresFor`) — sem regressão visual.
-	const features = p.features.length
+	// O grant de voxxys vem do plano no banco (fonte única de verdade) e encabeça
+	// a lista — antes ele só existia hardcoded em `featuresFor`, e desatualizava.
+	const voxLine =
+		p.voxGrant > 0
+			? p.voxGrantMode === 'first_only'
+				? `${p.voxGrant} Voxxys de bônus (uma vez)`
+				: `${p.voxGrant} Voxxys por mês`
+			: null;
+	const baseFeatures = p.features.length
 		? p.features.map((f) => f.label)
 		: featuresFor(p.key);
+	const features = voxLine ? [voxLine, ...baseFeatures] : baseFeatures;
 	const tagline = p.tagline || PLAN_TAGLINES[p.key] || '';
 	const annualP = p.annual != null ? splitPrice(p.annual) : null;
 	const monthlyP = p.monthly != null ? splitPrice(p.monthly) : null;

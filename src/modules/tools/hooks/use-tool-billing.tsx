@@ -70,7 +70,7 @@ export function useToolBilling(
 	const runTool = useRunTool(featureKey, courseSlug);
 
 	const consumeMut = useMutation({
-		mutationFn: () => consumeTool(featureKey, courseSlug ?? ''),
+		mutationFn: () => consumeTool(featureKey, courseSlug),
 		onSuccess: (res) => {
 			applyVoxCharge(qc, res); // saldo cai no header + anima "−custo" na hora
 			qc.invalidateQueries({ queryKey: ['entitlements'] });
@@ -97,9 +97,29 @@ export function useToolBilling(
 	const mustPay = billed && effectiveCost > 0;
 	const insufficient = mustPay && !ent.isLoading && voxBalance < effectiveCost;
 
+	// Bloqueio por saldo precisa ser AUDÍVEL: antes os dois fluxos abaixo só
+	// davam `return`, e o clique em "Gerar" não fazia nada visível (o aviso
+	// inline nem sempre está na tela).
+	const warnInsufficient = useCallback(() => {
+		toast.error(
+			`Saldo insuficiente: esta ação custa ${effectiveCost} voxxys e você tem ${voxBalance}.`,
+			{
+				action: {
+					label: 'Comprar voxxys',
+					onClick: () => {
+						window.location.href = '/course/voxes';
+					},
+				},
+			},
+		);
+	}, [effectiveCost, voxBalance]);
+
 	const runEngine = useCallback(
 		async <T,>(engineFn: (invocationId?: string) => Promise<T>) => {
-			if (insufficient) return; // o aviso inline mostra "comprar voxxys"
+			if (insufficient) {
+				warnInsufficient(); // + aviso inline "comprar voxxys"
+				return;
+			}
 			return billed
 				? runTool.run(
 						(invocationId) => engineFn(invocationId),
@@ -108,13 +128,23 @@ export function useToolBilling(
 					)
 				: Promise.resolve(engineFn(undefined));
 		},
-		[billed, insufficient, runTool, variationCount, licenseUnits],
+		[
+			billed,
+			insufficient,
+			runTool,
+			variationCount,
+			licenseUnits,
+			warnInsufficient,
+		],
 	);
 
 	const consume = useCallback(
 		async (onProceed: () => void) => {
-			if (insufficient) return;
-			if (billed && courseSlug) {
+			if (insufficient) {
+				warnInsufficient();
+				return;
+			}
+			if (billed) {
 				try {
 					await consumeMut.mutateAsync();
 				} catch {
@@ -123,7 +153,7 @@ export function useToolBilling(
 			}
 			onProceed();
 		},
-		[billed, courseSlug, insufficient, consumeMut],
+		[billed, insufficient, consumeMut, warnInsufficient],
 	);
 
 	const pending = runTool.pending || consumeMut.isPending;

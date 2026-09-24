@@ -17,13 +17,16 @@ export const voxLedgerReasonSchema = z.enum([
 	'spend',
 	'refund',
 	'adjustment',
+	// Voxxys concedidos pelo plano (assinatura, renovação ou link de plano).
+	'plan_grant',
 ]);
 export type VoxLedgerReason = z.infer<typeof voxLedgerReasonSchema>;
 
 export const voxLedgerEntrySchema = z.object({
 	id: z.string(),
 	customer_id: z.string(),
-	delta: z.number().int(),
+	// numeric(12,2) no banco — gasto de ferramenta é fracionário.
+	delta: z.number(),
 	reason: voxLedgerReasonSchema,
 	ref_type: z.string().nullable(),
 	ref_id: z.string().nullable(),
@@ -32,7 +35,7 @@ export const voxLedgerEntrySchema = z.object({
 export type VoxLedgerEntry = z.infer<typeof voxLedgerEntrySchema>;
 
 export const myVoxesResponseSchema = z.object({
-	balance: z.number().int().nonnegative(),
+	balance: z.number().nonnegative(),
 	ledger: z.array(voxLedgerEntrySchema),
 });
 export type MyVoxesResponse = z.infer<typeof myVoxesResponseSchema>;
@@ -103,4 +106,5 @@ export const VOX_LEDGER_REASON_LABELS: Record<VoxLedgerReason, string> = {
 	spend: 'Uso de ferramenta',
 	refund: 'Reembolso',
 	adjustment: 'Ajuste',
+	plan_grant: 'Voxxys do plano',
 };

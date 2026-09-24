@@ -22,6 +22,14 @@ export type PlanType = z.infer<typeof planTypeSchema>;
 export const billingModeSchema = z.enum(['recurring', 'lifetime']);
 export type BillingMode = z.infer<typeof billingModeSchema>;
 
+/**
+ * Recorrência dos voxxys do plano.
+ * - 'recurring': creditados na compra E em cada renovação paga.
+ * - 'first_only': creditados UMA única vez por aluno+plano, pra sempre.
+ */
+export const voxGrantModeSchema = z.enum(['recurring', 'first_only']);
+export type VoxGrantMode = z.infer<typeof voxGrantModeSchema>;
+
 export const planSchema = z.object({
 	id: z.string(),
 	key: z.string(),
@@ -36,6 +44,8 @@ export const planSchema = z.object({
 	price_lifetime_cents: z.number().int().nullable().optional().default(0),
 	/** Voxxys grátis por período (compra + renovações) — cobrados da empresa a R$1,20/voxxy na fatura aberta. */
 	vox_monthly_grant: z.number().int().optional().default(0),
+	/** Recorrência do `vox_monthly_grant`. */
+	vox_grant_mode: voxGrantModeSchema.optional().default('recurring'),
 	/** Itens exibidos nos cards da landing (tools/áreas/texto), definidos pelo admin. */
 	features: z.array(planFeatureItemSchema).optional().default([]),
 	stripe_product_id: z.string().nullable().optional(),
@@ -62,6 +72,7 @@ export const createPlanSchema = z.object({
 	price_yearly_cents: z.number().int().min(0).nullable().optional(),
 	price_lifetime_cents: z.number().int().min(0).nullable().optional(),
 	vox_monthly_grant: z.number().int().min(0).optional(),
+	vox_grant_mode: voxGrantModeSchema.optional(),
 	/** Itens da landing (tools/áreas/texto) definidos pelo admin. */
 	features: z.array(planFeatureItemSchema).optional(),
 });
