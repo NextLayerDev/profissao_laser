@@ -14,6 +14,7 @@ import type { MntCohort } from '@/modules/mentoria/types';
 import { useTeamUsers } from '@/modules/users';
 import {
 	mentoriaErrorMessage,
+	studentSearchErrorMessage,
 	useCohortMutations,
 	useStudentSearch,
 } from './admin-hooks';
@@ -339,6 +340,10 @@ export function EnrollStudentModal({
 						{search.isLoading ? (
 							<p className="px-4 py-3 text-sm text-slate-500 dark:text-gray-400">
 								Buscando...
+							</p>
+						) : search.isError ? (
+							<p className="px-4 py-3 text-sm text-red-600 dark:text-red-400">
+								{studentSearchErrorMessage(search.error)}
 							</p>
 						) : !search.data?.items.length ? (
 							<p className="px-4 py-3 text-sm text-slate-500 dark:text-gray-400">

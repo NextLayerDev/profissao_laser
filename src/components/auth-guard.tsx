@@ -49,6 +49,9 @@ const ADMIN_PATHS = [
 	'/community',
 	'/acessos',
 	'/forum',
+	// Admin/mentor da Mentoria 360°: sem token de painel, toda chamada daqui
+	// volta 403 e a tela parecia "vazia" em vez de barrar o aluno.
+	'/mentoria-admin',
 ];
 
 function isAdminPath(pathname: string): boolean {
