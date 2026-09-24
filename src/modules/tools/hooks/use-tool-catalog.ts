@@ -5,6 +5,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useEntitlements } from '@/hooks/use-entitlements';
 import { usePermissions } from '@/modules/access';
+import { quickAccessItems } from '@/utils/constants/quick-access';
 import { TOOL_COLORS, type ToolColorKey } from '@/utils/constants/tool-colors';
 import { categoryColor, categoryToSection } from '../lib/tool-categories';
 import { resolveToolIcon } from '../lib/tool-icons';
@@ -314,6 +315,29 @@ function useAdminCatalog(): UseToolCatalog {
 	return { tools, isLoading: enabled ? isLoading : false };
 }
 
+/**
+ * Chaves de `tools` que são PORTÃO de uma página nativa (Mentoria → /course/
+ * mentoria, chat → /course/comunity, suporte, eventos…), não ferramentas da
+ * Fábrica. Elas vêm nos entitlements como qualquer tool, mas não têm
+ * definition: sem este filtro viravam um item extra "Mentoria Profissão Laser
+ * 360°" → /course/t/mentoria_360 → "Ferramenta não encontrada". O item certo
+ * dessas áreas já existe em `quickAccessItems`, com a rota própria.
+ */
+const PAGE_GATE_KEYS = new Set(
+	quickAccessItems
+		.filter((i) => i.toolKey && !i.href?.startsWith('/course/t/'))
+		.map((i) => i.toolKey as string),
+);
+
+/** 404 da definition = a key não é tool da Fábrica (portão novo, rascunho…). */
+function isNotFound(err: unknown): boolean {
+	return (
+		typeof err === 'object' &&
+		err !== null &&
+		(err as { response?: { status?: number } }).response?.status === 404
+	);
+}
+
 /* ── Aluno: entitlements + def por key (lista é admin-only) ── */
 function useStudentCatalog(): UseToolCatalog {
 	const { tools: entTools } = useEntitlements();
@@ -322,7 +346,9 @@ function useStudentCatalog(): UseToolCatalog {
 
 	const keys = useMemo(() => {
 		const known = new Set(SYSTEM_TOOLS.map((t) => t.key));
-		return entTools.filter((t) => !known.has(t.key)).map((t) => t.key);
+		return entTools
+			.filter((t) => !known.has(t.key) && !PAGE_GATE_KEYS.has(t.key))
+			.map((t) => t.key);
 	}, [entTools]);
 
 	// Uma query por tool (dedupe/cache com `useToolDefinition`) só pro `ui.*`.
@@ -331,10 +357,16 @@ function useStudentCatalog(): UseToolCatalog {
 			queryKey: TOOL_DEFINITION_KEY(key),
 			queryFn: () => getToolDefinition(key),
 			staleTime: 60_000,
+			// 404 é definitivo (não é tool da Fábrica): não insiste.
+			retry: (count: number, err: unknown) => !isNotFound(err) && count < 2,
 		})),
 	});
 
 	const isLoading = defs.some((q) => q.isLoading);
+	// Sem definition → fora do catálogo, em vez de um link para "não encontrada".
+	const missingKey = keys
+		.filter((_, i) => isNotFound(defs[i]?.error))
+		.join('|');
 
 	// String estável `key→ui` (evita objetos novos como dependência do memo).
 	const uiKey = keys
@@ -368,8 +400,14 @@ function useStudentCatalog(): UseToolCatalog {
 		// `categories` (na dep do memo) força recompor seção/cor quando as categorias
 		// dinâmicas mudam — o registry já foi atualizado pelo `useToolCategories`.
 		void categories;
+		const missing = new Set(missingKey.split('|').filter(Boolean));
 		return entTools
-			.filter((t) => !known.has(t.key))
+			.filter(
+				(t) =>
+					!known.has(t.key) &&
+					!PAGE_GATE_KEYS.has(t.key) &&
+					!missing.has(t.key),
+			)
 			.map((t): CatalogTool => {
 				const ui = uiByKey.get(t.key) ?? {};
 				return {
@@ -387,7 +425,7 @@ function useStudentCatalog(): UseToolCatalog {
 			})
 			.filter((t) => t.audience !== 'admin')
 			.sort(sortTools);
-	}, [entTools, uiKey, categories]);
+	}, [entTools, uiKey, categories, missingKey]);
 
 	return { tools, isLoading };
 }
