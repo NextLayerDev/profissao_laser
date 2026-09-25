@@ -1,8 +1,27 @@
 'use client';
 
 import {
+	closestCenter,
+	DndContext,
+	type DragEndEvent,
+	KeyboardSensor,
+	PointerSensor,
+	useSensor,
+	useSensors,
+} from '@dnd-kit/core';
+import {
+	arrayMove,
+	SortableContext,
+	sortableKeyboardCoordinates,
+	useSortable,
+	verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
 	CheckCircle2,
 	Eye,
+	GitCompare,
+	GripVertical,
 	Info,
 	Loader2,
 	Pencil,
@@ -10,15 +29,18 @@ import {
 	Trash2,
 	Upload,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Header } from '@/components/dashboard/header';
 import { DynamicForm } from '@/modules/mentoria/components/dynamic-form';
-import type {
-	FormBlock,
-	FormField,
-	FormFieldType,
-	MntFormTemplate,
+import { diffFormSchemas } from '@/modules/mentoria/form-diff';
+import {
+	type FormBlock,
+	type FormField,
+	type FormFieldType,
+	type FormSchemaDiff,
+	KPI_METRIC_OPTIONS,
+	type MntFormTemplate,
 } from '@/modules/mentoria/types';
 import {
 	mentoriaErrorMessage,
@@ -31,6 +53,7 @@ import {
 	EmptyState,
 	Field,
 	inputClass,
+	Modal,
 	PageTitle,
 	primaryBtn,
 	Spinner,
@@ -47,6 +70,13 @@ const FIELD_TYPES: Array<{ value: FormFieldType; label: string }> = [
 	{ value: 'boolean', label: 'Sim / Não' },
 	{ value: 'date', label: 'Data' },
 	{ value: 'scale', label: 'Escala (0–10)' },
+];
+
+// As keys que o comparador e a Foto Zero entendem (extractMetrics na API):
+// as do KPI + o gargalo do diagnóstico.
+const METRIC_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
+	...KPI_METRIC_OPTIONS,
+	{ value: 'gargalo', label: 'Gargalo principal' },
 ];
 
 /** label → key snake_case (sem acentos, minúsculas, `_`). */
@@ -73,8 +103,8 @@ function toSnakeCaseTyping(label: string): string {
 }
 
 // Campos e blocos do builder carregam um id de cliente (`cid`) só para a
-// `key` do React. Antes a key do card vinha do título do bloco, que muda a cada
-// tecla: o card remontava e o input perdia o foco.
+// `key` do React e para o arrastar. Antes a key do card vinha do título do
+// bloco, que muda a cada tecla: o card remontava e o input perdia o foco.
 // `locked` marca o que já existe na versão base: a key desses NÃO muda ao
 // editar o rótulo, senão as respostas e métricas antigas deixam de casar com a
 // nova versão. `optionsText` guarda o texto cru das opções enquanto se digita.
@@ -97,6 +127,10 @@ type BuilderState = {
 	description: string;
 	blocks: BuilderBlock[];
 	baseVersion: number | null;
+	/** Blocos da versão editada: base do "Comparar". */
+	baseBlocks: FormBlock[];
+	/** Foto do estado ao abrir: diferente dela = alterações não salvas. */
+	initial: string;
 };
 
 let cidSeq = 0;
@@ -115,8 +149,21 @@ function toBuilderBlocks(blocks: FormBlock[]): BuilderBlock[] {
 function toSchemaBlocks(blocks: BuilderBlock[]): FormBlock[] {
 	return blocks.map(({ cid: _c, locked: _l, fields, ...b }) => ({
 		...b,
+		// Descrição vazia não vai: o aluno veria um bloco com subtítulo em branco.
+		description: b.description?.trim() || undefined,
 		fields: fields.map(({ cid: _fc, locked: _fl, optionsText: _o, ...f }) => f),
 	}));
+}
+
+function snapshotOf(
+	s: Pick<BuilderState, 'key' | 'title' | 'description' | 'blocks'>,
+): string {
+	return JSON.stringify({
+		key: s.key,
+		title: s.title,
+		description: s.description,
+		blocks: toSchemaBlocks(s.blocks),
+	});
 }
 
 function parseOptions(text: string): string[] {
@@ -126,10 +173,37 @@ function parseOptions(text: string): string[] {
 		.filter(Boolean);
 }
 
+function builderFor(t: MntFormTemplate | null): BuilderState {
+	const base = t
+		? {
+				baseKey: t.key,
+				key: t.key,
+				title: t.title,
+				description: t.description ?? '',
+				blocks: toBuilderBlocks(t.schema.blocks),
+				baseVersion: t.version,
+				baseBlocks: t.schema.blocks,
+			}
+		: {
+				baseKey: null,
+				key: '',
+				title: '',
+				description: '',
+				blocks: [],
+				baseVersion: null,
+				baseBlocks: [],
+			};
+	return { ...base, initial: snapshotOf(base) };
+}
+
 export default function FormulariosPage() {
 	const templates = useFormTemplatesAdmin();
 	const { publish } = useFormTemplateMutations();
 	const [builder, setBuilder] = useState<BuilderState | null>(null);
+	const [comparing, setComparing] = useState<{
+		before: MntFormTemplate;
+		after: MntFormTemplate;
+	} | null>(null);
 
 	// Agrupa por key; versões desc dentro de cada grupo.
 	const grouped = useMemo(() => {
@@ -154,28 +228,6 @@ export default function FormulariosPage() {
 		}
 	};
 
-	const openEditor = (t: MntFormTemplate | null) => {
-		setBuilder(
-			t
-				? {
-						baseKey: t.key,
-						key: t.key,
-						title: t.title,
-						description: t.description ?? '',
-						blocks: toBuilderBlocks(t.schema.blocks),
-						baseVersion: t.version,
-					}
-				: {
-						baseKey: null,
-						key: '',
-						title: '',
-						description: '',
-						blocks: [],
-						baseVersion: null,
-					},
-		);
-	};
-
 	if (builder) {
 		return (
 			<FormBuilder
@@ -192,13 +244,13 @@ export default function FormulariosPage() {
 			<main className="px-4 md:px-8 py-6 max-w-5xl mx-auto">
 				<PageTitle
 					title="Formulários"
-					description="Templates data-driven do diagnóstico e exercícios. Cada salvamento gera uma nova versão."
+					description="Diagnóstico e exercícios. Cada salvamento gera uma versão."
 					backHref="/mentoria-admin"
 					actions={
 						<button
 							type="button"
 							className={primaryBtn}
-							onClick={() => openEditor(null)}
+							onClick={() => setBuilder(builderFor(null))}
 						>
 							<Plus className="w-4 h-4" />
 							Novo formulário
@@ -208,11 +260,7 @@ export default function FormulariosPage() {
 
 				<div className="mb-6 flex items-start gap-2 rounded-xl border border-blue-300/50 dark:border-blue-500/30 bg-blue-500/5 px-4 py-3 text-sm text-blue-700 dark:text-blue-300">
 					<Info className="w-4 h-4 mt-0.5 shrink-0" />
-					<p>
-						<b>Publicar congela a versão</b>: respostas enviadas ficam sempre
-						amarradas à versão respondida. Editar um formulário cria uma{' '}
-						<b>nova versão</b> em rascunho.
-					</p>
+					<p>Respostas ficam presas à versão respondida.</p>
 				</div>
 
 				{templates.isLoading ? (
@@ -231,6 +279,7 @@ export default function FormulariosPage() {
 					<div className="space-y-4">
 						{grouped.map(([key, versions]) => {
 							const latest = versions[0];
+							const previous = versions[1];
 							return (
 								<Card key={key} className="p-5">
 									<div className="flex items-start justify-between gap-4 flex-wrap">
@@ -266,7 +315,19 @@ export default function FormulariosPage() {
 												</span>
 											</div>
 										</div>
-										<div className="flex gap-2">
+										<div className="flex gap-2 flex-wrap">
+											{previous && (
+												<button
+													type="button"
+													className={secondaryBtn}
+													onClick={() =>
+														setComparing({ before: previous, after: latest })
+													}
+												>
+													<GitCompare className="w-3.5 h-3.5" />
+													Comparar v{previous.version} × v{latest.version}
+												</button>
+											)}
 											{!latest.published && (
 												<button
 													type="button"
@@ -281,10 +342,10 @@ export default function FormulariosPage() {
 											<button
 												type="button"
 												className={secondaryBtn}
-												onClick={() => openEditor(latest)}
+												onClick={() => setBuilder(builderFor(latest))}
 											>
 												<Pencil className="w-3.5 h-3.5" />
-												Editar (nova versão)
+												Editar
 											</button>
 										</div>
 									</div>
@@ -294,8 +355,139 @@ export default function FormulariosPage() {
 					</div>
 				)}
 			</main>
+
+			{comparing && (
+				<Modal
+					title={`${comparing.after.title}: v${comparing.before.version} × v${comparing.after.version}`}
+					onClose={() => setComparing(null)}
+					wide
+				>
+					<DiffView
+						diff={diffFormSchemas(
+							comparing.before.schema.blocks,
+							comparing.after.schema.blocks,
+						)}
+					/>
+				</Modal>
+			)}
 		</div>
 	);
+}
+
+// ── Comparar versões ─────────────────────────────────────────────────────────
+function DiffView({ diff }: { diff: FormSchemaDiff }) {
+	const empty =
+		!diff.added.length && !diff.removed.length && !diff.changed.length;
+	if (empty) {
+		return (
+			<p data-testid="form-diff" className="text-sm text-slate-500">
+				Sem diferenças nos campos.
+			</p>
+		);
+	}
+	const section = (
+		title: string,
+		tone: 'green' | 'red' | 'amber',
+		items: Array<{ key: string; label: string; block: string; extra?: string }>,
+	) =>
+		items.length > 0 && (
+			<div data-testid={`diff-${title}`}>
+				<p className="text-sm font-medium mb-1.5">
+					<Badge tone={tone}>{items.length}</Badge> {title}
+				</p>
+				<ul className="space-y-1 text-sm text-slate-600 dark:text-gray-400">
+					{items.map((i) => (
+						<li key={i.key}>
+							<b className="text-slate-800 dark:text-slate-200">
+								{i.label || i.key}
+							</b>{' '}
+							<span className="text-xs">· {i.block}</span>
+							{i.extra && <span className="text-xs"> · {i.extra}</span>}
+						</li>
+					))}
+				</ul>
+			</div>
+		);
+	return (
+		<div data-testid="form-diff" className="space-y-4">
+			{section('novos', 'green', diff.added)}
+			{section('removidos', 'red', diff.removed)}
+			{section(
+				'alterados',
+				'amber',
+				diff.changed.map((c) => ({ ...c, extra: c.changes.join(', ') })),
+			)}
+		</div>
+	);
+}
+
+// ── Arrastar para reordenar ──────────────────────────────────────────────────
+/** Item arrastável: só a alça (⋮⋮) inicia o arraste; os inputs seguem livres. */
+function Sortable({
+	id,
+	label,
+	children,
+}: {
+	id: string;
+	label: string;
+	children: (handle: ReactNode) => ReactNode;
+}) {
+	const {
+		attributes,
+		listeners,
+		setNodeRef,
+		setActivatorNodeRef,
+		transform,
+		transition,
+		isDragging,
+	} = useSortable({ id });
+	const handle = (
+		<button
+			type="button"
+			ref={setActivatorNodeRef}
+			{...attributes}
+			{...listeners}
+			aria-label={label}
+			className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-white/10 cursor-grab active:cursor-grabbing touch-none shrink-0"
+		>
+			<GripVertical className="w-4 h-4" />
+		</button>
+	);
+	return (
+		<div
+			ref={setNodeRef}
+			style={{
+				transform: CSS.Transform.toString(transform),
+				transition,
+				opacity: isDragging ? 0.6 : undefined,
+				position: 'relative',
+				zIndex: isDragging ? 10 : undefined,
+			}}
+		>
+			{children(handle)}
+		</div>
+	);
+}
+
+function useDragSensors() {
+	return useSensors(
+		useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+		useSensor(KeyboardSensor, {
+			coordinateGetter: sortableKeyboardCoordinates,
+		}),
+	);
+}
+
+/** Lista reordenada após soltar `active` sobre `over` (null = nada muda). */
+function reorder<T extends { cid: string }>(
+	items: T[],
+	e: DragEndEvent,
+): T[] | null {
+	if (!e.over || e.active.id === e.over.id) return null;
+	const from = items.findIndex((i) => i.cid === e.active.id);
+	const to = items.findIndex((i) => i.cid === e.over?.id);
+	if (from < 0 || to < 0) return null;
+	return arrayMove(items, from, to);
 }
 
 // ── Builder ──────────────────────────────────────────────────────────────────
@@ -310,6 +502,24 @@ function FormBuilder({
 }) {
 	const { create } = useFormTemplateMutations();
 	const templates = useFormTemplatesAdmin();
+	const sensors = useDragSensors();
+	const [confirmLeave, setConfirmLeave] = useState(false);
+	const [showDiff, setShowDiff] = useState(false);
+
+	const dirty = snapshotOf(state) !== state.initial;
+
+	// Fechar a aba / recarregar com alterações pede confirmação do navegador.
+	useEffect(() => {
+		if (!dirty) return;
+		const onBeforeUnload = (e: BeforeUnloadEvent) => {
+			e.preventDefault();
+			e.returnValue = '';
+		};
+		window.addEventListener('beforeunload', onBeforeUnload);
+		return () => window.removeEventListener('beforeunload', onBeforeUnload);
+	}, [dirty]);
+
+	const cancel = () => (dirty ? setConfirmLeave(true) : onClose());
 
 	const set = (patch: Partial<BuilderState>) =>
 		setState({ ...state, ...patch });
@@ -381,6 +591,14 @@ function FormBuilder({
 		});
 	};
 
+	// metric_key já usada por outro campo (a API recusa repetida).
+	const usedMetrics = new Map<string, string>();
+	for (const b of state.blocks) {
+		for (const f of b.fields) {
+			if (f.metric_key) usedMetrics.set(f.metric_key, f.cid);
+		}
+	}
+
 	// Template fake p/ preview com o DynamicForm real.
 	const previewTemplate: MntFormTemplate = useMemo(
 		() => ({
@@ -395,6 +613,14 @@ function FormBuilder({
 			updated_at: '',
 		}),
 		[state],
+	);
+
+	const diff = useMemo(
+		() =>
+			showDiff
+				? diffFormSchemas(state.baseBlocks, toSchemaBlocks(state.blocks))
+				: null,
+		[showDiff, state.baseBlocks, state.blocks],
 	);
 
 	const save = async () => {
@@ -458,9 +684,7 @@ function FormBuilder({
 				description: state.description.trim() || null,
 				schema: { blocks: toSchemaBlocks(state.blocks) },
 			});
-			toast.success(
-				'Formulário salvo como nova versão (rascunho). Publique quando estiver pronto.',
-			);
+			toast.success('Nova versão salva (rascunho).');
 			onClose();
 		} catch (err) {
 			toast.error(mentoriaErrorMessage(err, 'Erro ao salvar o formulário'));
@@ -474,13 +698,32 @@ function FormBuilder({
 				<PageTitle
 					title={
 						state.baseKey
-							? `Editar formulário: ${state.baseKey} (gera v${(state.baseVersion ?? 0) + 1})`
+							? `Editar ${state.baseKey} (gera v${(state.baseVersion ?? 0) + 1})`
 							: 'Novo formulário'
 					}
-					description="Monte blocos e campos; o preview ao lado usa o mesmo componente que o aluno vê. Salvar cria sempre uma nova versão em rascunho."
+					description="Arraste ⋮⋮ para reordenar. O preview é o que o aluno vê."
 					actions={
 						<>
-							<button type="button" className={secondaryBtn} onClick={onClose}>
+							{dirty && (
+								<span
+									data-testid="unsaved-badge"
+									className="text-xs text-amber-600 dark:text-amber-400"
+								>
+									Não salvo
+								</span>
+							)}
+							{state.baseKey && (
+								<button
+									type="button"
+									className={secondaryBtn}
+									aria-pressed={showDiff}
+									onClick={() => setShowDiff((v) => !v)}
+								>
+									<GitCompare className="w-4 h-4" />
+									Comparar com v{state.baseVersion}
+								</button>
+							)}
+							<button type="button" className={secondaryBtn} onClick={cancel}>
 								Cancelar
 							</button>
 							<button
@@ -500,6 +743,15 @@ function FormBuilder({
 					}
 				/>
 
+				{diff && (
+					<Card className="p-5 mb-6">
+						<p className="text-sm font-semibold mb-3">
+							Mudanças desde a v{state.baseVersion}
+						</p>
+						<DiffView diff={diff} />
+					</Card>
+				)}
+
 				<div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
 					{/* Builder */}
 					<div className="space-y-4">
@@ -510,8 +762,8 @@ function FormBuilder({
 									required
 									hint={
 										state.baseKey
-											? 'A chave não muda entre versões.'
-											: 'Identificador único, ex.: diagnostico_inicial.'
+											? 'Fixa entre versões.'
+											: 'Ex.: diagnostico_inicial.'
 									}
 								>
 									<input
@@ -542,167 +794,122 @@ function FormBuilder({
 							</Field>
 						</Card>
 
-						{state.blocks.map((block, bi) => (
-							<Card key={block.cid} className="p-5 space-y-4">
-								<div className="flex items-center gap-2">
-									<input
-										className={`${inputClass} font-semibold`}
-										value={block.title}
-										onChange={(e) => {
-											const title = e.target.value;
-											setBlock(
-												bi,
-												block.locked
-													? { title }
-													: { title, key: toSnakeCase(title) || block.key },
-											);
-										}}
-										placeholder="Nome do bloco"
-									/>
-									<button
-										type="button"
-										className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 shrink-0"
-										onClick={() => removeBlock(bi)}
-										aria-label="Remover bloco"
-									>
-										<Trash2 className="w-4 h-4" />
-									</button>
+						<DndContext
+							sensors={sensors}
+							collisionDetection={closestCenter}
+							onDragEnd={(e) => {
+								const blocks = reorder(state.blocks, e);
+								if (blocks) set({ blocks });
+							}}
+						>
+							<SortableContext
+								items={state.blocks.map((b) => b.cid)}
+								strategy={verticalListSortingStrategy}
+							>
+								<div className="space-y-4">
+									{state.blocks.map((block, bi) => (
+										<Sortable
+											key={block.cid}
+											id={block.cid}
+											label={`Arrastar bloco ${block.title}`}
+										>
+											{(handle) => (
+												<div data-testid="builder-block">
+													<Card className="p-5 space-y-4">
+														<div className="flex items-center gap-2">
+															{handle}
+															<input
+																className={`${inputClass} font-semibold`}
+																aria-label="Nome do bloco"
+																value={block.title}
+																onChange={(e) => {
+																	const title = e.target.value;
+																	setBlock(
+																		bi,
+																		block.locked
+																			? { title }
+																			: {
+																					title,
+																					key: toSnakeCase(title) || block.key,
+																				},
+																	);
+																}}
+																placeholder="Nome do bloco"
+															/>
+															<button
+																type="button"
+																className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 shrink-0"
+																onClick={() => removeBlock(bi)}
+																aria-label="Remover bloco"
+															>
+																<Trash2 className="w-4 h-4" />
+															</button>
+														</div>
+														<input
+															className={`${inputClass} text-sm`}
+															aria-label="Descrição do bloco"
+															value={block.description ?? ''}
+															onChange={(e) =>
+																setBlock(bi, { description: e.target.value })
+															}
+															placeholder="Descrição do bloco (opcional)"
+														/>
+
+														<DndContext
+															sensors={sensors}
+															collisionDetection={closestCenter}
+															onDragEnd={(e) => {
+																const fields = reorder(block.fields, e);
+																if (fields) setBlock(bi, { fields });
+															}}
+														>
+															<SortableContext
+																items={block.fields.map((f) => f.cid)}
+																strategy={verticalListSortingStrategy}
+															>
+																<div className="space-y-3">
+																	{block.fields.map((field, fi) => (
+																		<Sortable
+																			key={field.cid}
+																			id={field.cid}
+																			label={`Arrastar campo ${field.label || fi + 1}`}
+																		>
+																			{(fieldHandle) => (
+																				<FieldEditor
+																					field={field}
+																					handle={fieldHandle}
+																					metricTaken={(m) =>
+																						usedMetrics.has(m) &&
+																						usedMetrics.get(m) !== field.cid
+																					}
+																					onChange={(patch) =>
+																						setField(bi, fi, patch)
+																					}
+																					onRemove={() => removeField(bi, fi)}
+																				/>
+																			)}
+																		</Sortable>
+																	))}
+																</div>
+															</SortableContext>
+														</DndContext>
+
+														<button
+															type="button"
+															className={secondaryBtn}
+															onClick={() => addField(bi)}
+														>
+															<Plus className="w-3.5 h-3.5" />
+															Adicionar campo
+														</button>
+													</Card>
+												</div>
+											)}
+										</Sortable>
+									))}
 								</div>
-
-								{block.fields.map((field, fi) => (
-									<div
-										key={field.cid}
-										className="rounded-xl border border-slate-200 dark:border-white/10 p-3 space-y-3"
-									>
-										<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-											<Field
-												label="Rótulo"
-												required
-												hint={
-													field.locked
-														? `key: ${field.key} (fixa)`
-														: field.key
-															? `key: ${field.key}`
-															: 'key gerada do rótulo'
-												}
-											>
-												<input
-													className={inputClass}
-													value={field.label}
-													onChange={(e) =>
-														setField(
-															bi,
-															fi,
-															field.locked
-																? { label: e.target.value }
-																: {
-																		label: e.target.value,
-																		key: toSnakeCase(e.target.value),
-																	},
-														)
-													}
-													placeholder="Faturamento mensal"
-												/>
-											</Field>
-											<Field label="Tipo">
-												<select
-													className={inputClass}
-													value={field.type}
-													onChange={(e) =>
-														setField(bi, fi, {
-															type: e.target.value as FormFieldType,
-															options:
-																e.target.value === 'select'
-																	? (field.options ?? [])
-																	: undefined,
-															optionsText: undefined,
-														})
-													}
-												>
-													{/* Tipo que o builder não oferece (ex.: multiselect
-														    vindo do seed) continua visível e preservado. */}
-													{!FIELD_TYPES.some((t) => t.value === field.type) && (
-														<option value={field.type}>{field.type}</option>
-													)}
-													{FIELD_TYPES.map((t) => (
-														<option key={t.value} value={t.value}>
-															{t.label}
-														</option>
-													))}
-												</select>
-											</Field>
-										</div>
-										{field.type === 'select' && (
-											<Field
-												label="Opções (uma por linha)"
-												required
-												hint="Cada linha vira uma opção da seleção."
-											>
-												<textarea
-													className={`${inputClass} min-h-16`}
-													// Texto cru enquanto digita: parsear a cada tecla
-													// comia o Enter e o espaço final, e não dava para
-													// escrever a 2ª opção.
-													value={
-														field.optionsText ??
-														(field.options ?? []).join('\n')
-													}
-													onChange={(e) =>
-														setField(bi, fi, {
-															optionsText: e.target.value,
-															options: parseOptions(e.target.value),
-														})
-													}
-												/>
-											</Field>
-										)}
-										<div className="flex items-center gap-5 flex-wrap">
-											<label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-												<input
-													type="checkbox"
-													className="w-4 h-4 accent-violet-600"
-													checked={field.required ?? false}
-													onChange={(e) =>
-														setField(bi, fi, { required: e.target.checked })
-													}
-												/>
-												Obrigatório
-											</label>
-											<label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-												<input
-													type="checkbox"
-													className="w-4 h-4 accent-violet-600"
-													checked={field.allow_unknown ?? false}
-													onChange={(e) =>
-														setField(bi, fi, {
-															allow_unknown: e.target.checked,
-														})
-													}
-												/>
-												Permitir "[A levantar / não medido]"
-											</label>
-											<button
-												type="button"
-												className="ml-auto inline-flex items-center gap-1.5 text-sm text-red-500 hover:text-red-600"
-												onClick={() => removeField(bi, fi)}
-											>
-												<Trash2 className="w-3.5 h-3.5" />
-												Remover campo
-											</button>
-										</div>
-									</div>
-								))}
-
-								<button
-									type="button"
-									className={secondaryBtn}
-									onClick={() => addField(bi)}
-								>
-									<Plus className="w-3.5 h-3.5" />
-									Adicionar campo
-								</button>
-							</Card>
-						))}
+							</SortableContext>
+						</DndContext>
 
 						<button type="button" className={secondaryBtn} onClick={addBlock}>
 							<Plus className="w-4 h-4" />
@@ -726,6 +933,188 @@ function FormBuilder({
 					</div>
 				</div>
 			</main>
+
+			{confirmLeave && (
+				<Modal
+					title="Descartar alterações?"
+					onClose={() => setConfirmLeave(false)}
+				>
+					<p className="text-sm text-slate-600 dark:text-gray-400">
+						O que não foi salvo se perde.
+					</p>
+					<div className="flex justify-end gap-2 pt-4">
+						<button
+							type="button"
+							className={secondaryBtn}
+							onClick={() => setConfirmLeave(false)}
+						>
+							Continuar editando
+						</button>
+						<button
+							type="button"
+							className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-colors"
+							onClick={onClose}
+						>
+							Descartar
+						</button>
+					</div>
+				</Modal>
+			)}
+		</div>
+	);
+}
+
+function FieldEditor({
+	field,
+	handle,
+	metricTaken,
+	onChange,
+	onRemove,
+}: {
+	field: BuilderField;
+	handle: ReactNode;
+	metricTaken: (metric: string) => boolean;
+	onChange: (patch: Partial<BuilderField>) => void;
+	onRemove: () => void;
+}) {
+	return (
+		<div
+			data-testid="builder-field"
+			className="rounded-xl border border-slate-200 dark:border-white/10 p-3 space-y-3 bg-surface"
+		>
+			<div className="flex items-start gap-2">
+				<div className="pt-6">{handle}</div>
+				<div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
+					<Field
+						label="Rótulo"
+						required
+						hint={
+							field.locked
+								? `key: ${field.key} (fixa)`
+								: field.key
+									? `key: ${field.key}`
+									: 'key gerada do rótulo'
+						}
+					>
+						<input
+							className={inputClass}
+							aria-label="Rótulo"
+							value={field.label}
+							onChange={(e) =>
+								onChange(
+									field.locked
+										? { label: e.target.value }
+										: {
+												label: e.target.value,
+												key: toSnakeCase(e.target.value),
+											},
+								)
+							}
+							placeholder="Faturamento mensal"
+						/>
+					</Field>
+					<Field label="Tipo">
+						<select
+							className={inputClass}
+							aria-label="Tipo"
+							value={field.type}
+							onChange={(e) =>
+								onChange({
+									type: e.target.value as FormFieldType,
+									options:
+										e.target.value === 'select'
+											? (field.options ?? [])
+											: undefined,
+									optionsText: undefined,
+								})
+							}
+						>
+							{/* Tipo que o builder não oferece (ex.: multiselect
+							    vindo do seed) continua visível e preservado. */}
+							{!FIELD_TYPES.some((t) => t.value === field.type) && (
+								<option value={field.type}>{field.type}</option>
+							)}
+							{FIELD_TYPES.map((t) => (
+								<option key={t.value} value={t.value}>
+									{t.label}
+								</option>
+							))}
+						</select>
+					</Field>
+					<Field label="Métrica">
+						<select
+							className={inputClass}
+							aria-label="Métrica"
+							title="Leva a resposta ao comparador (Foto Zero × Agora)"
+							value={field.metric_key ?? ''}
+							onChange={(e) =>
+								onChange({ metric_key: e.target.value || undefined })
+							}
+						>
+							<option value="">Nenhuma</option>
+							{/* Key antiga fora da lista continua visível e preservada. */}
+							{field.metric_key &&
+								!METRIC_OPTIONS.some((m) => m.value === field.metric_key) && (
+									<option value={field.metric_key}>{field.metric_key}</option>
+								)}
+							{METRIC_OPTIONS.map((m) => (
+								<option
+									key={m.value}
+									value={m.value}
+									disabled={metricTaken(m.value)}
+								>
+									{m.label}
+									{metricTaken(m.value) ? ' (em uso)' : ''}
+								</option>
+							))}
+						</select>
+					</Field>
+				</div>
+			</div>
+			{field.type === 'select' && (
+				<Field label="Opções (uma por linha)" required>
+					<textarea
+						className={`${inputClass} min-h-16`}
+						// Texto cru enquanto digita: parsear a cada tecla comia o
+						// Enter e o espaço final, e não dava para escrever a 2ª opção.
+						value={field.optionsText ?? (field.options ?? []).join('\n')}
+						onChange={(e) =>
+							onChange({
+								optionsText: e.target.value,
+								options: parseOptions(e.target.value),
+							})
+						}
+					/>
+				</Field>
+			)}
+			<div className="flex items-center gap-5 flex-wrap">
+				<label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+					<input
+						type="checkbox"
+						className="w-4 h-4 accent-violet-600"
+						checked={field.required ?? false}
+						onChange={(e) => onChange({ required: e.target.checked })}
+					/>
+					Obrigatório
+				</label>
+				<label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+					<input
+						type="checkbox"
+						className="w-4 h-4 accent-violet-600"
+						checked={field.allow_unknown ?? false}
+						onChange={(e) => onChange({ allow_unknown: e.target.checked })}
+					/>
+					Permitir "[A levantar / não medido]"
+				</label>
+				<button
+					type="button"
+					className="ml-auto inline-flex items-center gap-1.5 text-sm text-red-500 hover:text-red-600"
+					onClick={onRemove}
+				>
+					<Trash2 className="w-3.5 h-3.5" />
+					Remover campo
+				</button>
+			</div>
 		</div>
 	);
 }
