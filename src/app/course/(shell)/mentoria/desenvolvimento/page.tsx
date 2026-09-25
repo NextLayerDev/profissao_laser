@@ -29,6 +29,7 @@ import {
 } from '@/modules/mentoria/service';
 import {
 	apiErrorCode,
+	apiErrorDetails,
 	JourneyGate,
 	MntHeader,
 	MntSkeleton,
@@ -228,7 +229,27 @@ function BusinessPlanTab({ journeyId }: { journeyId: string }) {
 			});
 			toast.success('Nova versão do plano salva!');
 		},
-		onError: () => toast.error('Não foi possível salvar o plano.'),
+		// A API valida os obrigatórios do formulário plano_negocios: dizer quais.
+		onError: (e) => {
+			if (apiErrorCode(e) !== 'required_fields_missing') {
+				toast.error('Não foi possível salvar o plano.');
+				return;
+			}
+			const missing = apiErrorDetails(e)?.missing;
+			const labels = new Map(
+				(template?.schema.blocks ?? []).flatMap((b) =>
+					b.fields.map((f) => [f.key, f.label] as const),
+				),
+			);
+			const names = Array.isArray(missing)
+				? missing.map((k) => labels.get(String(k)) ?? String(k))
+				: [];
+			toast.error(
+				names.length
+					? `Falta responder: ${names.join(', ')}.`
+					: 'Há campos obrigatórios sem resposta.',
+			);
+		},
 	});
 
 	if (isLoading) return <MntSkeleton />;
