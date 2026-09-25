@@ -15,17 +15,44 @@ const MNT = ['mentoria'] as const;
 
 /** Traduz códigos de erro conhecidos da mentoria (409 etc.) p/ pt-BR. */
 export function mentoriaErrorMessage(err: unknown, fallback: string): string {
+	// Códigos que os services mentoria-* da API lançam de fato (o mapa antigo
+	// tinha vários que ela nunca emite e deixava os reais chegarem crus).
 	const KNOWN: Record<string, string> = {
 		journey_already_active: 'Este aluno já tem uma jornada ativa.',
-		already_enrolled: 'Este aluno já está matriculado nesta turma.',
+		journey_not_found: 'Jornada não encontrada.',
+		journey_not_active: 'A jornada deste aluno não está ativa.',
 		user_not_found: 'Usuário não encontrado. Confira o ID informado.',
 		cohort_not_found: 'Turma não encontrada.',
-		company_required: 'Informe o nome da empresa do aluno.',
-		mentor_already_added: 'Este mentor já está na turma.',
-		template_not_published: 'O template precisa estar publicado.',
-		form_template_in_use:
-			'Este formulário está em uso e não pode ser alterado.',
-		live_not_active: 'A live não está ativa.',
+		cohort_not_open: 'A turma não está aberta para matrículas.',
+		cohort_dates_invalid: 'A data de término precisa ser depois do início.',
+		no_published_meeting_templates:
+			'Não há encontros publicados. Publique os encontros antes de matricular.',
+		mentor_must_be_staff:
+			'Só usuários da equipe (staff/admin) podem ser mentores.',
+		not_mentor_of_cohort: 'Você não é mentor da turma deste aluno.',
+		forbidden: 'Você não tem permissão para esta ação.',
+		meeting_not_found: 'Encontro não encontrado.',
+		meeting_locked: 'Este encontro ainda está bloqueado.',
+		meeting_not_done: 'O encontro ainda não foi concluído.',
+		template_not_found: 'Modelo não encontrado.',
+		template_version_conflict:
+			'Outra pessoa salvou este modelo ao mesmo tempo. Recarregue e tente de novo.',
+		form_template_not_found: 'Formulário não encontrado ou não publicado.',
+		form_template_version_conflict:
+			'Outra pessoa salvou este formulário ao mesmo tempo. Recarregue e tente de novo.',
+		maturity_config_version_conflict:
+			'Outra pessoa salvou a metodologia ao mesmo tempo. Recarregue e tente de novo.',
+		live_not_found: 'Live não encontrada.',
+		live_already_ended: 'Esta live já foi encerrada.',
+		live_start_external_only:
+			'Só lives com link externo são iniciadas por aqui.',
+		live_links_external_only: 'Links só valem para lives externas.',
+		external_url_required: 'Informe o link da live externa.',
+		stream_key_missing: 'Esta live ainda não tem chave de transmissão.',
+		mux_not_configured:
+			'Transmissão pela plataforma indisponível (Mux não configurado).',
+		file_required: 'Selecione um arquivo.',
+		material_not_found: 'Material não encontrado.',
 		mentoria_access_invalid_students:
 			'Algum dos selecionados não é aluno. Revise a lista.',
 		foto_zero_missing: 'Este aluno ainda não enviou o diagnóstico.',
@@ -33,7 +60,7 @@ export function mentoriaErrorMessage(err: unknown, fallback: string): string {
 			'Já existe Raio-X final calculado sobre esta Foto Zero; não dá para reabrir.',
 		migration_pending:
 			'Recurso ainda não disponível no banco (migration pendente). Avise o suporte técnico.',
-		not_mentor_of_cohort: 'Você não é mentor da turma deste aluno.',
+		tool_definition_not_found: 'Ferramenta não encontrada.',
 		tool_definition_key_exists:
 			'Já existe uma ferramenta com esse nome (key). Use outro nome.',
 		tool_definition_protected:
@@ -45,6 +72,14 @@ export function mentoriaErrorMessage(err: unknown, fallback: string): string {
 			| undefined;
 		const raw = body?.message ?? body?.code ?? body?.error;
 		if (raw && KNOWN[raw]) return KNOWN[raw];
+		// Validação do Fastify vinha como 'body/name Too small: expected…'.
+		if (body?.code === 'FST_ERR_VALIDATION') {
+			return 'Dados inválidos. Revise o formulário.';
+		}
+		// 500 trazia 'internal_error' ou mensagem interna do banco, e código
+		// snake_case desconhecido não diz nada ao admin: usa o texto da tela.
+		if ((err.response?.status ?? 0) >= 500) return fallback;
+		if (raw && /^[a-z0-9_]+$/.test(raw)) return fallback;
 	}
 	return getApiErrorMessage(err, fallback);
 }
