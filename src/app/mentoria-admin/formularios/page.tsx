@@ -60,6 +60,18 @@ function toSnakeCase(label: string): string {
 		.slice(0, 60);
 }
 
+/** Igual ao toSnakeCase, mas sem aparar `_` das pontas: usado a cada tecla
+ * no campo Chave, senão o separador sumia e 'diagnostico_inicial' virava
+ * 'diagnosticoinicial'. As pontas são aparadas no save. */
+function toSnakeCaseTyping(label: string): string {
+	return label
+		.normalize('NFD')
+		.replace(/[̀-ͯ]/g, '')
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, '_')
+		.slice(0, 60);
+}
+
 // Campos e blocos do builder carregam um id de cliente (`cid`) só para a
 // `key` do React. Antes a key do card vinha do título do bloco, que muda a cada
 // tecla: o card remontava e o input perdia o foco.
@@ -293,6 +305,7 @@ function FormBuilder({
 	onClose: () => void;
 }) {
 	const { create } = useFormTemplateMutations();
+	const templates = useFormTemplatesAdmin();
 
 	const set = (patch: Partial<BuilderState>) =>
 		setState({ ...state, ...patch });
@@ -305,7 +318,11 @@ function FormBuilder({
 	};
 
 	const addBlock = () => {
-		const n = state.blocks.length + 1;
+		// length+1 repetia a key depois de remover um bloco do meio
+		// ([1,2,3] − 2 + novo = dois bloco_3); pula as keys já usadas.
+		const used = new Set(state.blocks.map((b) => b.key));
+		let n = state.blocks.length + 1;
+		while (used.has(`bloco_${n}`)) n++;
 		set({
 			blocks: [
 				...state.blocks,
@@ -380,6 +397,14 @@ function FormBuilder({
 		const key = state.baseKey ?? toSnakeCase(state.key);
 		if (!key) {
 			toast.error('Informe a chave (key) do formulário');
+			return;
+		}
+		// Formulário novo com key existente virava, calado, nova versão do outro
+		// formulário (e trocava o diagnóstico/ferramenta dos alunos ao publicar).
+		if (!state.baseKey && templates.data?.some((t) => t.key === key)) {
+			toast.error(
+				'Já existe um formulário com essa chave. Use "Editar" nele ou escolha outra chave.',
+			);
 			return;
 		}
 		if (!state.title.trim()) {
@@ -489,7 +514,9 @@ function FormBuilder({
 										className={`${inputClass} font-mono`}
 										value={state.key}
 										disabled={!!state.baseKey}
-										onChange={(e) => set({ key: toSnakeCase(e.target.value) })}
+										onChange={(e) =>
+											set({ key: toSnakeCaseTyping(e.target.value) })
+										}
 										placeholder="diagnostico_inicial"
 									/>
 								</Field>
