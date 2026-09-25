@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
 	AlertTriangle,
 	ArrowDown,
+	ChevronDown,
+	ChevronUp,
 	GitBranch,
 	Pencil,
 	Plus,
@@ -141,9 +143,18 @@ function FlowCard({
 	const [editingStep, setEditingStep] = useState<MntProcessStep | null>(null);
 	const [form, setForm] = useState<StepForm>(EMPTY_STEP);
 
+	// Ordem estável: `position` primeiro e `id` no empate. Etapas antigas
+	// nasceram todas com position 0 e a ordem física do Postgres mudava depois
+	// de um UPDATE — a etapa editada pulava para o fim.
+	const steps = [...flow.steps].sort(
+		(a, b) => a.position - b.position || a.id.localeCompare(b.id),
+	);
+
 	const addStep = useMutation({
 		mutationFn: () =>
 			createProcessStep(flow.id, {
+				// Sem `position` toda etapa nascia com 0 (default da coluna).
+				position: steps.reduce((max, st) => Math.max(max, st.position), -1) + 1,
 				name: form.name.trim(),
 				owner_name: form.owner_name || null,
 				deadline: form.deadline || null,
@@ -179,7 +190,24 @@ function FlowCard({
 		onError: () => toast.error('Não foi possível remover a etapa.'),
 	});
 
-	const steps = [...flow.steps].sort((a, b) => a.position - b.position);
+	// Subir/descer: renumera 0..n-1 e só grava as etapas que mudaram.
+	const moveStep = useMutation({
+		mutationFn: async ({ from, to }: { from: number; to: number }) => {
+			const ordered = [...steps];
+			const [moved] = ordered.splice(from, 1);
+			if (!moved) return;
+			ordered.splice(to, 0, moved);
+			await Promise.all(
+				ordered.map((st, i) =>
+					st.position === i
+						? null
+						: updateProcessStep(st.id, { name: st.name, position: i }),
+				),
+			);
+		},
+		onSettled: onChanged,
+		onError: () => toast.error('Não foi possível reordenar as etapas.'),
+	});
 
 	const startEdit = (step: MntProcessStep) => {
 		setAdding(false);
@@ -241,6 +269,26 @@ function FlowCard({
 								)}
 							</div>
 							<div className="flex gap-1 shrink-0">
+								<button
+									type="button"
+									className="text-slate-400 hover:text-teal-500 transition disabled:opacity-30"
+									disabled={idx === 0 || moveStep.isPending}
+									onClick={() => moveStep.mutate({ from: idx, to: idx - 1 })}
+									title="Subir etapa"
+									aria-label="Subir etapa"
+								>
+									<ChevronUp className="w-3.5 h-3.5" />
+								</button>
+								<button
+									type="button"
+									className="text-slate-400 hover:text-teal-500 transition disabled:opacity-30"
+									disabled={idx === steps.length - 1 || moveStep.isPending}
+									onClick={() => moveStep.mutate({ from: idx, to: idx + 1 })}
+									title="Descer etapa"
+									aria-label="Descer etapa"
+								>
+									<ChevronDown className="w-3.5 h-3.5" />
+								</button>
 								<button
 									type="button"
 									className="text-slate-400 hover:text-teal-500 transition"
