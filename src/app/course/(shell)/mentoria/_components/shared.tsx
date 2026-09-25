@@ -63,8 +63,23 @@ export function apiErrorCode(e: unknown): string | null {
 		const resp = (
 			e as { response?: { data?: { error?: unknown; message?: unknown } } }
 		).response;
-		const code = resp?.data?.error ?? resp?.data?.message;
+		// `message` traz o código da regra (ex.: required_fields_missing); `error`
+		// é só o texto HTTP ("Conflict"). Lendo `error` primeiro, nenhum código
+		// específico batia e o aluno via sempre a mensagem genérica.
+		const code = resp?.data?.message ?? resp?.data?.error;
 		return typeof code === 'string' ? code : null;
+	}
+	return null;
+}
+
+/** `details` do erro da API (ex.: `{ missing: [...] }`), quando houver. */
+export function apiErrorDetails(e: unknown): Record<string, unknown> | null {
+	if (typeof e === 'object' && e !== null && 'response' in e) {
+		const details = (e as { response?: { data?: { details?: unknown } } })
+			.response?.data?.details;
+		return details && typeof details === 'object'
+			? (details as Record<string, unknown>)
+			: null;
 	}
 	return null;
 }
