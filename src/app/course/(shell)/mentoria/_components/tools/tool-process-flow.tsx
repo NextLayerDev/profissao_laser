@@ -116,7 +116,16 @@ export function ToolProcessFlow({ instanceId }: { instanceId: string }) {
 					<FlowCard
 						key={flow.id}
 						flow={flow}
-						onDelete={() => removeFlow.mutate(flow.id)}
+						onDelete={() => {
+							// Apaga todas as etapas junto, sem desfazer.
+							if (
+								confirm(
+									`Excluir o fluxograma "${flow.name}" e suas ${flow.steps.length} etapa(s)?`,
+								)
+							) {
+								removeFlow.mutate(flow.id);
+							}
+						}}
 						onChanged={invalidate}
 					/>
 				))
@@ -300,7 +309,11 @@ function FlowCard({
 								<button
 									type="button"
 									className="text-slate-400 hover:text-red-500 transition"
-									onClick={() => removeStep.mutate(step.id)}
+									onClick={() => {
+										if (confirm(`Remover a etapa "${step.name}"?`)) {
+											removeStep.mutate(step.id);
+										}
+									}}
 									title="Remover etapa"
 								>
 									<Trash2 className="w-3.5 h-3.5" />

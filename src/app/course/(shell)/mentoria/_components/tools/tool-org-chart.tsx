@@ -84,10 +84,9 @@ export function ToolOrgChart({ instanceId }: { instanceId: string }) {
 	const remove = useMutation({
 		mutationFn: deleteOrgPosition,
 		onSuccess: invalidate,
-		onError: () =>
-			toast.error(
-				'Não foi possível remover o cargo. Remova primeiro os cargos abaixo dele.',
-			),
+		// parent_id é ON DELETE SET NULL: a exclusão não falha por causa dos
+		// filhos, então o erro aqui é rede/permissão.
+		onError: () => toast.error('Não foi possível remover o cargo.'),
 	});
 
 	if (isLoading) return <MntSkeleton />;
@@ -162,7 +161,14 @@ export function ToolOrgChart({ instanceId }: { instanceId: string }) {
 					<button
 						type="button"
 						className="text-slate-400 hover:text-red-500 transition"
-						onClick={() => remove.mutate(p.id)}
+						onClick={() => {
+							// Excluir não tem desfazer; os subordinados sobem para o topo.
+							const subs = childrenOf(p.id).length;
+							const msg = subs
+								? `Remover o cargo "${p.title}"? Os ${subs} cargo(s) abaixo dele vão para o topo do organograma.`
+								: `Remover o cargo "${p.title}"?`;
+							if (confirm(msg)) remove.mutate(p.id);
+						}}
 						title="Remover cargo"
 					>
 						<Trash2 className="w-3.5 h-3.5" />

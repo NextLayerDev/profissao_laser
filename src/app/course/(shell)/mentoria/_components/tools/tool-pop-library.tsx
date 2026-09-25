@@ -122,7 +122,14 @@ export function ToolPopLibrary({ instanceId }: { instanceId: string }) {
 					<PopCard
 						key={pop.id}
 						pop={pop}
-						onDelete={() => remove.mutate(pop.id)}
+						onDelete={() => {
+							// Apaga em cascata passos e anexos, sem desfazer.
+							const n = pop.attachments.length;
+							const extra = n ? ` e seus ${n} anexo(s)` : '';
+							if (confirm(`Excluir o POP "${pop.title}"${extra}?`)) {
+								remove.mutate(pop.id);
+							}
+						}}
 						onChanged={invalidate}
 					/>
 				))
