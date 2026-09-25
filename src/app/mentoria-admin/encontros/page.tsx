@@ -180,6 +180,7 @@ export default function EncontrosPage() {
 			{editing && (
 				<MeetingTemplateModal
 					template={editing.template}
+					takenPositions={grouped.map(([position]) => position)}
 					onClose={() => setEditing(null)}
 				/>
 			)}
@@ -189,9 +190,11 @@ export default function EncontrosPage() {
 
 function MeetingTemplateModal({
 	template,
+	takenPositions,
 	onClose,
 }: {
 	template: MntMeetingTemplate | null;
+	takenPositions: number[];
 	onClose: () => void;
 }) {
 	const { create } = useMeetingTemplateMutations();
@@ -217,6 +220,14 @@ function MeetingTemplateModal({
 			toast.error('A posição deve estar entre 1 e 10');
 			return;
 		}
+		// "Novo" numa posição ocupada virava versão nova do encontro existente,
+		// sem aviso: o caminho certo é o Editar daquela posição.
+		if (!template && takenPositions.includes(form.position)) {
+			toast.error(
+				`O Encontro ${form.position} já existe. Use "Editar (nova versão)" nele.`,
+			);
+			return;
+		}
 		try {
 			await create.mutateAsync({
 				program_key: PROGRAM_KEY,
@@ -228,6 +239,16 @@ function MeetingTemplateModal({
 				content_md: form.content_md || null,
 				expected_result: form.expected_result.trim() || null,
 				is_final: form.is_final,
+				// O modal não edita os vínculos; sem reenviá-los a nova versão nascia
+				// sem exercício (diagnóstico), ferramentas e tarefas sugeridas.
+				...(template
+					? {
+							tool_definition_ids: template.tool_definition_ids,
+							exercise_form_template_id: template.exercise_form_template_id,
+							task_prompts: template.task_prompts,
+							indicator_hint: template.indicator_hint,
+						}
+					: {}),
 			});
 			toast.success(
 				template
@@ -252,12 +273,16 @@ function MeetingTemplateModal({
 		>
 			<div className="space-y-4">
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+					{/* Travada na edição: trocar gerava a versão em OUTRO encontro e o
+					    publish levava este conteúdo para aquela posição. */}
 					<Field label="Posição (1–10)" required>
 						<input
 							type="number"
 							min={1}
 							max={10}
 							className={inputClass}
+							readOnly={!!template}
+							disabled={!!template}
 							value={form.position}
 							onChange={(e) => set('position', Number(e.target.value))}
 						/>
