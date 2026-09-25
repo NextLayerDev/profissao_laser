@@ -111,7 +111,7 @@ export function TarefasView({
 	})).filter((g) => g.tasks.length > 0);
 
 	return (
-		<div className="p-4 md:p-8 max-w-5xl mx-auto">
+		<div className="max-w-5xl mx-auto">
 			<MntHeader
 				title="Minhas tarefas"
 				subtitle="Ações geradas pelos encontros, ferramentas e metas"

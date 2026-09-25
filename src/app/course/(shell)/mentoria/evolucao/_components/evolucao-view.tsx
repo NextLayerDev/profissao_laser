@@ -96,7 +96,7 @@ export function EvolucaoView({
 	onGenerate: () => void;
 }) {
 	return (
-		<div className="p-4 md:p-8 max-w-5xl mx-auto">
+		<div className="max-w-5xl mx-auto">
 			<MntHeader
 				title="Evolução da empresa"
 				subtitle="Compare períodos e gere o Raio-X Empresarial 360°"

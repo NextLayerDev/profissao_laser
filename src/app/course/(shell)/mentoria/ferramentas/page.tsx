@@ -70,7 +70,7 @@ function FerramentasContent({ journeyId }: { journeyId: string }) {
 	const hasDevTools = (tools ?? []).some((t) => DEV_KINDS.has(t.kind));
 
 	return (
-		<div className="p-4 md:p-8 space-y-6">
+		<div className="space-y-6">
 			<MntHeader
 				title="Ferramentas de Gestão"
 				subtitle="As ferramentas práticas que constroem o Mapa da Minha Empresa"

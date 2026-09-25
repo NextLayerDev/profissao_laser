@@ -62,7 +62,7 @@ export function LiveView({
 	chat?: ReactNode;
 }) {
 	return (
-		<div className="p-4 md:p-8 max-w-6xl mx-auto">
+		<div className="max-w-6xl mx-auto">
 			<MntHeader
 				title={live.title}
 				subtitle={live.description ?? undefined}
@@ -102,7 +102,7 @@ export function LiveView({
  */
 export function LiveNotFound() {
 	return (
-		<div className="p-4 md:p-8 max-w-5xl mx-auto">
+		<div className="max-w-5xl mx-auto">
 			<MntHeader
 				title="Live não encontrada"
 				icon={Video}

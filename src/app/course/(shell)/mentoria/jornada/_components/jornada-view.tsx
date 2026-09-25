@@ -42,7 +42,7 @@ const MEETING_STATUS_TONE: Record<
 
 export function JornadaView({ meetings }: { meetings: MntJourneyMeeting[] }) {
 	return (
-		<div className="p-4 md:p-8 max-w-3xl mx-auto">
+		<div className="max-w-3xl mx-auto">
 			<MntHeader
 				title="Jornada da Mentoria"
 				subtitle="10 encontros para enxergar sua empresa por inteiro"

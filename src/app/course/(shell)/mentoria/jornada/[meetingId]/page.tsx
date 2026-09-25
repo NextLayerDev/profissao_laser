@@ -59,7 +59,7 @@ function EncontroContent({
 
 	if (!meeting) {
 		return (
-			<div className="p-4 md:p-8">
+			<div>
 				<MntHeader
 					title="Encontro"
 					icon={BookOpen}
@@ -80,7 +80,7 @@ function EncontroContent({
 	// Barra o acesso direto por URL a um encontro que a lista nem deixa clicar.
 	if (meeting.status === 'locked') {
 		return (
-			<div className="p-4 md:p-8">
+			<div>
 				<MntHeader
 					title={meeting.template?.title ?? `Encontro ${meeting.position}`}
 					icon={BookOpen}

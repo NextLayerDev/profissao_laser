@@ -59,7 +59,7 @@ export function EncontroView({
 	const tpl = meeting.template;
 
 	return (
-		<div className="p-4 md:p-8 max-w-3xl mx-auto space-y-6">
+		<div className="max-w-3xl mx-auto space-y-6">
 			<MntHeader
 				title={`${meeting.position}. ${tpl?.title ?? 'Encontro'}`}
 				subtitle={tpl?.subtitle ?? meetingStatusLabel(meeting.status)}

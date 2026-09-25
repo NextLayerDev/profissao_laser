@@ -81,7 +81,7 @@ function ToolDetail({
 
 	if (!tool) {
 		return (
-			<div className="p-4 md:p-8">
+			<div>
 				<MntHeader
 					title="Ferramenta"
 					icon={Wrench}
@@ -98,7 +98,7 @@ function ToolDetail({
 	if (!tool.instance) return <MntSkeleton />;
 
 	return (
-		<div className="p-4 md:p-8 space-y-6">
+		<div className="space-y-6">
 			<MntHeader
 				title={tool.name}
 				subtitle={`${areaLabel(tool.area)}${tool.description ? ` — ${tool.description}` : ''}`}

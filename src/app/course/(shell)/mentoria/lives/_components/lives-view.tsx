@@ -82,7 +82,7 @@ export function LivesView({ lives }: { lives: MntLiveRoom[] }) {
 	})).filter((g) => g.lives.length > 0);
 
 	return (
-		<div className="p-4 md:p-8 max-w-5xl mx-auto">
+		<div className="max-w-5xl mx-auto">
 			<MntHeader
 				title="Lives da mentoria"
 				subtitle="Transmissões fechadas para a sua turma — ao vivo e gravações"

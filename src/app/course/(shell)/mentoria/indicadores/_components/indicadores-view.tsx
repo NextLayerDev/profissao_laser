@@ -186,7 +186,7 @@ export function IndicadoresView({
 	};
 
 	return (
-		<div className="p-4 md:p-8 max-w-5xl mx-auto">
+		<div className="max-w-5xl mx-auto">
 			<MntHeader
 				title="Central de indicadores"
 				subtitle="KPIs com semáforo e histórico — medir é o primeiro passo"
