@@ -133,6 +133,9 @@ function Dashboard({
 }) {
 	const { company, cohort, progress } = bootstrap;
 	const [period, setPeriod] = useState<Period>('12m');
+	// A lista cortava em 8 sem "ver todos": como a API ordena do mais novo, os
+	// primeiros materiais (ex.: do Encontro 1) sumiam de todas as telas.
+	const [allMaterials, setAllMaterials] = useState(false);
 
 	const { data: tasks } = useTasks(journeyId);
 	const { data: kpis } = useKpis(journeyId);
@@ -409,7 +412,10 @@ function Dashboard({
 						</p>
 					) : (
 						<ul className="space-y-2">
-							{(materials ?? []).slice(0, 8).map((mat) => (
+							{(allMaterials
+								? (materials ?? [])
+								: (materials ?? []).slice(0, 8)
+							).map((mat) => (
 								<li key={mat.id}>
 									<a
 										href={mat.url}
@@ -442,6 +448,17 @@ function Dashboard({
 								</li>
 							))}
 						</ul>
+					)}
+					{(materials ?? []).length > 8 && (
+						<button
+							type="button"
+							onClick={() => setAllMaterials((v) => !v)}
+							className="mt-3 inline-flex items-center gap-1 text-body text-brand dark:text-violet-400 hover:underline"
+						>
+							{allMaterials
+								? 'Mostrar menos'
+								: `Ver todos (${(materials ?? []).length})`}
+						</button>
 					)}
 				</SectionCard>
 			</div>
