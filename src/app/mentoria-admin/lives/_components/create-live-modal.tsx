@@ -18,6 +18,7 @@
 import { Loader2, Radio } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { normalizeUrl } from '@/app/course/(shell)/mentoria/_components/shared';
 import type { LiveSource } from '@/modules/mentoria/types';
 import {
 	mentoriaErrorMessage,
@@ -69,6 +70,15 @@ export function CreateLiveModal({ onClose }: { onClose: () => void }) {
 			toast.error('Informe o link da live');
 			return;
 		}
+		// 'meet.google.com/abc' sem https:// voltava 400 com mensagem crua do Zod:
+		// prefixa o protocolo e barra o que não for link.
+		const externalUrl = isExternal ? normalizeUrl(form.external_url) : null;
+		if (isExternal && !externalUrl) {
+			toast.error(
+				'Link da live inválido. Use o endereço completo (https://...)',
+			);
+			return;
+		}
 		try {
 			await create.mutateAsync({
 				title: form.title.trim(),
@@ -77,7 +87,7 @@ export function CreateLiveModal({ onClose }: { onClose: () => void }) {
 					? new Date(form.scheduled_at).toISOString()
 					: null,
 				source: form.source,
-				...(isExternal ? { external_url: form.external_url.trim() } : {}),
+				...(isExternal ? { external_url: externalUrl } : {}),
 				...(form.cohort_id ? { cohort_id: form.cohort_id } : {}),
 			});
 			toast.success('Live criada');
