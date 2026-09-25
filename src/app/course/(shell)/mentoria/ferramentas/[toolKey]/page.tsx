@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle2, Wrench } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Wrench } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
@@ -28,12 +28,14 @@ import { ToolOrgChart } from '../../_components/tools/tool-org-chart';
 import { ToolPopLibrary } from '../../_components/tools/tool-pop-library';
 import { ToolProcessFlow } from '../../_components/tools/tool-process-flow';
 
+// `?aba=`: sem ela Desenvolvimento abria sempre em Boas Notícias, e quem
+// clicava em Plano de Negócios ou Maslow achava que o link estava quebrado.
 const REDIRECTS: Record<string, string> = {
 	kpi_board: '/course/mentoria/indicadores',
-	goal_action: '/course/mentoria/desenvolvimento',
-	maslow: '/course/mentoria/desenvolvimento',
-	good_news: '/course/mentoria/desenvolvimento',
-	business_plan: '/course/mentoria/desenvolvimento',
+	goal_action: '/course/mentoria/desenvolvimento?aba=metas',
+	maslow: '/course/mentoria/desenvolvimento?aba=maslow',
+	good_news: '/course/mentoria/desenvolvimento?aba=boas-noticias',
+	business_plan: '/course/mentoria/desenvolvimento?aba=plano',
 };
 
 export default function FerramentaDetalhePage() {
@@ -92,6 +94,27 @@ function ToolDetail({
 					description="Volte à lista de ferramentas e escolha uma disponível."
 				/>
 			</div>
+		);
+	}
+
+	// Sem isto, um start que falhou (rede, 403, definição inativa) deixava o
+	// esqueleto pulsando para sempre: `startedRef` impede nova tentativa.
+	if (!tool.instance && start.isError) {
+		return (
+			<EmptyState
+				icon={AlertTriangle}
+				title="Não foi possível abrir a ferramenta"
+				description="Houve uma falha ao preparar a ferramenta. Tente de novo em instantes."
+			>
+				<button
+					type="button"
+					className={BTN_PRIMARY}
+					disabled={start.isPending}
+					onClick={() => start.mutate(tool.id)}
+				>
+					Tentar de novo
+				</button>
+			</EmptyState>
 		);
 	}
 
