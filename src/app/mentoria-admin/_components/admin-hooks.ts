@@ -196,7 +196,9 @@ export function useCohortMutations() {
 			cohortId: string;
 			userIds: string[];
 		}) => svc.enrollStudentsBatch(cohortId, userIds),
-		onSuccess: (_data, vars) => {
+		// onSettled: um 500 no meio do lote deixa os anteriores matriculados, e
+		// a fila precisa refletir isso mesmo com o erro.
+		onSettled: (_data, _err, vars) => {
 			invalidate();
 			qc.invalidateQueries({
 				queryKey: [...MNT, 'cohort-dashboard', vars.cohortId],

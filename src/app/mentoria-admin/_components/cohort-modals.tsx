@@ -432,7 +432,10 @@ export function EnrollBatchModal({
 	const open = cohorts.filter(
 		(c) => c.status === 'active' || c.status === 'draft',
 	);
-	const [cohortId, setCohortId] = useState(open[0]?.id ?? '');
+	const [picked, setCohortId] = useState('');
+	// Sem escolha explícita vale a 1ª aberta — também quando as turmas chegam
+	// depois de o modal abrir (o <select> já mostraria essa opção).
+	const cohortId = picked || open[0]?.id || '';
 	const [result, setResult] = useState<EnrollBatchResult | null>(null);
 	const label = (id: string) => {
 		const s = students.find((x) => x.user_id === id);
