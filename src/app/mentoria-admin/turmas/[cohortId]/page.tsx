@@ -48,7 +48,12 @@ const SORTS: Record<
 	progress: (a, b) => a.progress_pct - b.progress_pct,
 };
 
+/** Sem os sinais (API sem a migration do dashboard): não dá para dizer "Em dia". */
+const hasRiskSignals = (row: CohortDashboardRow) =>
+	row.diagnostic_pending != null;
+
 function RiskBadges({ row }: { row: CohortDashboardRow }) {
+	if (!hasRiskSignals(row)) return null;
 	const flags = row.risk_flags ?? [];
 	if (!flags.length) {
 		return row.status === 'active' ? <Badge tone="green">Em dia</Badge> : null;
@@ -98,7 +103,7 @@ export default function CohortDashboardPage() {
 	);
 	const count = (flag: 'stalled' | 'diagnostic_pending' | 'overdue_tasks') =>
 		rows.filter((r) => r.risk_flags?.includes(flag)).length;
-	const hasSignals = rows.some((r) => r.risk_flags !== undefined);
+	const hasSignals = rows.some(hasRiskSignals);
 
 	return (
 		<div className="min-h-screen text-slate-900 dark:text-white">
