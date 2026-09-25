@@ -4,6 +4,7 @@ import type {
 	CohortDashboardRow,
 	CompanyMap,
 	Comparison,
+	DiagnosticReopen,
 	DiagnosticState,
 	EnrollBatchResult,
 	GoodNewsState,
@@ -12,6 +13,7 @@ import type {
 	MentoriaAccessAdmin,
 	MentoriaBootstrap,
 	MentoriaWaitingStudent,
+	MentorToolContent,
 	MntBusinessPlanVersion,
 	MntCohort,
 	MntCohortMentor,
@@ -40,6 +42,7 @@ import type {
 	MntReport,
 	MntSnapshot,
 	MntTask,
+	MntTaskComment,
 	MntToolDefinition,
 	MntToolInstance,
 	MyMentoriaAccess,
@@ -700,9 +703,10 @@ export async function getJourneyOverview(
 	return data;
 }
 
+/** Vazio ou null apaga o feedback. */
 export async function setMeetingFeedback(
 	meetingId: string,
-	feedback: string,
+	feedback: string | null,
 ): Promise<MntJourneyMeeting> {
 	const { data } = await api.post(
 		`/v1/mentoria/meeting/${meetingId}/feedback`,
@@ -727,13 +731,21 @@ export async function listJourneyTasksAsMentor(
 	return data;
 }
 
+/** Entra no histórico e vira o atual; vazio/null só limpa o atual. */
 export async function commentTaskAsMentor(
 	taskId: string,
-	comment: string,
+	comment: string | null,
 ): Promise<MntTask> {
 	const { data } = await api.post(`/v1/mentoria/task/${taskId}/comment`, {
 		comment,
 	});
+	return data;
+}
+
+export async function listTaskCommentsAsMentor(
+	taskId: string,
+): Promise<MntTaskComment[]> {
+	const { data } = await api.get(`/v1/mentoria/task/${taskId}/comments`);
 	return data;
 }
 
@@ -796,7 +808,92 @@ export async function getDiagnosticAsMentor(
 	return data;
 }
 
+// Visão 360° do mentor: as mesmas leituras do aluno, só leitura.
+export async function listDiagnosticReopensAsMentor(
+	journeyId: string,
+): Promise<DiagnosticReopen[]> {
+	const { data } = await api.get(
+		`/v1/mentoria/journey/${journeyId}/diagnostic/reopens`,
+	);
+	return data;
+}
+
+export async function getToolContentAsMentor(
+	journeyId: string,
+): Promise<MentorToolContent> {
+	const { data } = await api.get(
+		`/v1/mentoria/journey/${journeyId}/tool-content`,
+	);
+	return data;
+}
+
+export async function getGoodNewsAsMentor(
+	journeyId: string,
+): Promise<GoodNewsState> {
+	const { data } = await api.get(`/v1/mentoria/journey/${journeyId}/good-news`);
+	return data;
+}
+
+export async function listGoalsAsMentor(journeyId: string): Promise<MntGoal[]> {
+	const { data } = await api.get(`/v1/mentoria/journey/${journeyId}/goals`);
+	return data;
+}
+
+export async function getMaslowHistoryAsMentor(
+	journeyId: string,
+): Promise<MntMaslowTest[]> {
+	const { data } = await api.get(
+		`/v1/mentoria/journey/${journeyId}/maslow/history`,
+	);
+	return data;
+}
+
+export async function listBusinessPlansAsMentor(
+	journeyId: string,
+): Promise<MntBusinessPlanVersion[]> {
+	const { data } = await api.get(
+		`/v1/mentoria/journey/${journeyId}/business-plan/versions`,
+	);
+	return data;
+}
+
+export async function listSnapshotsAsMentor(
+	journeyId: string,
+): Promise<MntSnapshot[]> {
+	const { data } = await api.get(`/v1/mentoria/journey/${journeyId}/snapshots`);
+	return data;
+}
+
+export async function compareAsMentor(
+	journeyId: string,
+	from: string,
+	to: string,
+): Promise<Comparison> {
+	const { data } = await api.get(`/v1/mentoria/journey/${journeyId}/compare`, {
+		params: { from, to },
+	});
+	return data;
+}
+
+export async function listReportsAsMentor(
+	journeyId: string,
+): Promise<MntReport[]> {
+	const { data } = await api.get(`/v1/mentoria/journey/${journeyId}/reports`);
+	return data;
+}
+
 // ── Admin ────────────────────────────────────────────────────────────────────
+/** Encerra (completed) ou reativa (active) a jornada. */
+export async function setJourneyStatus(
+	journeyId: string,
+	status: MntJourney['status'],
+): Promise<MntJourney> {
+	const { data } = await api.patch(`/v1/admin/mentoria/journey/${journeyId}`, {
+		status,
+	});
+	return data;
+}
+
 /** Reabre o diagnóstico: apaga a Foto Zero e devolve o envio para rascunho. */
 export async function reopenDiagnostic(
 	journeyId: string,

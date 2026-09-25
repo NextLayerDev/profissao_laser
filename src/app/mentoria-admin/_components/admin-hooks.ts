@@ -63,6 +63,8 @@ const KNOWN: Record<string, string> = {
 		'Recurso ainda não disponível no banco (migration pendente). Avise o suporte técnico.',
 	tool_definition_not_found: 'Ferramenta não encontrada.',
 	task_not_found: 'Tarefa não encontrada.',
+	report_not_found: 'Relatório não encontrado.',
+	snapshot_not_found: 'Snapshot não encontrado.',
 	task_not_done: 'Só dá para validar uma tarefa que o aluno concluiu.',
 	material_url_locked:
 		'O link de um material enviado como arquivo não pode ser trocado.',
@@ -324,6 +326,9 @@ export function useReopenDiagnostic(journeyId: string | undefined) {
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: [...ROOT, 'diagnostic', journeyId] });
 			qc.invalidateQueries({ queryKey: [...ROOT, 'submissions', journeyId] });
+			qc.invalidateQueries({
+				queryKey: [...ROOT, 'diagnostic-reopens', journeyId],
+			});
 			qc.invalidateQueries({ queryKey: [...MNT] });
 		},
 	});
@@ -345,7 +350,7 @@ export function useMentorMeetingMutations(journeyId: string | undefined) {
 			feedback: fb,
 		}: {
 			meetingId: string;
-			feedback: string;
+			feedback: string | null;
 		}) => svc.setMeetingFeedback(meetingId, fb),
 		onSuccess: invalidate,
 	});
@@ -355,10 +360,124 @@ export function useMentorMeetingMutations(journeyId: string | undefined) {
 export function useMentorCommentTask(journeyId: string | undefined) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ taskId, comment }: { taskId: string; comment: string }) =>
-			svc.commentTaskAsMentor(taskId, comment),
-		onSuccess: () =>
-			qc.invalidateQueries({ queryKey: [...ROOT, 'journey-tasks', journeyId] }),
+		mutationFn: ({
+			taskId,
+			comment,
+		}: {
+			taskId: string;
+			comment: string | null;
+		}) => svc.commentTaskAsMentor(taskId, comment),
+		onSuccess: (_task, { taskId }) => {
+			qc.invalidateQueries({ queryKey: [...ROOT, 'journey-tasks', journeyId] });
+			qc.invalidateQueries({ queryKey: [...ROOT, 'task-comments', taskId] });
+		},
+	});
+}
+
+/** Histórico dos comentários: só busca quando o mentor abre. */
+export function useMentorTaskComments(taskId: string, enabled: boolean) {
+	return useQuery({
+		queryKey: [...ROOT, 'task-comments', taskId],
+		queryFn: () => svc.listTaskCommentsAsMentor(taskId),
+		enabled,
+	});
+}
+
+// ── Visão 360° (só leitura; cada aba só busca quando está aberta) ──────────
+function mentorRead<T>(
+	key: string,
+	journeyId: string | undefined,
+	fn: (journeyId: string) => Promise<T>,
+) {
+	return {
+		queryKey: [...ROOT, key, journeyId],
+		queryFn: () => fn(journeyId as string),
+		enabled: !!journeyId,
+	};
+}
+
+export function useMentorDiagnosticReopens(journeyId: string | undefined) {
+	return useQuery(
+		mentorRead(
+			'diagnostic-reopens',
+			journeyId,
+			svc.listDiagnosticReopensAsMentor,
+		),
+	);
+}
+
+export function useMentorToolContent(journeyId: string | undefined) {
+	return useQuery(
+		mentorRead('tool-content', journeyId, svc.getToolContentAsMentor),
+	);
+}
+
+export function useMentorGoodNews(journeyId: string | undefined) {
+	return useQuery(mentorRead('good-news', journeyId, svc.getGoodNewsAsMentor));
+}
+
+export function useMentorGoals(journeyId: string | undefined) {
+	return useQuery(mentorRead('goals', journeyId, svc.listGoalsAsMentor));
+}
+
+export function useMentorMaslow(journeyId: string | undefined) {
+	return useQuery(
+		mentorRead('maslow', journeyId, svc.getMaslowHistoryAsMentor),
+	);
+}
+
+export function useMentorBusinessPlans(journeyId: string | undefined) {
+	return useQuery(
+		mentorRead('business-plans', journeyId, svc.listBusinessPlansAsMentor),
+	);
+}
+
+export function useMentorSnapshots(journeyId: string | undefined) {
+	return useQuery(
+		mentorRead('snapshots', journeyId, svc.listSnapshotsAsMentor),
+	);
+}
+
+export function useMentorReports(journeyId: string | undefined) {
+	return useQuery(mentorRead('reports', journeyId, svc.listReportsAsMentor));
+}
+
+export function useMentorComparison(
+	journeyId: string | undefined,
+	from: string,
+	to: string,
+	enabled: boolean,
+) {
+	return useQuery({
+		queryKey: [...ROOT, 'compare', journeyId, from, to],
+		queryFn: () => svc.compareAsMentor(journeyId as string, from, to),
+		enabled: !!journeyId && enabled,
+	});
+}
+
+/** Template do Plano de Negócios (rótulos das versões). */
+export function useBusinessPlanTemplate(enabled: boolean) {
+	return useQuery({
+		queryKey: [...ROOT, 'form-template', 'plano_negocios'],
+		queryFn: () => svc.getFormTemplate('plano_negocios'),
+		enabled,
+		retry: false,
+	});
+}
+
+/** Admin: encerrar/reativar. Recarrega a visão e as listas da turma. */
+export function useSetJourneyStatus(journeyId: string | undefined) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (status: 'active' | 'completed') =>
+			svc.setJourneyStatus(journeyId as string, status),
+		onSuccess: () => {
+			qc.invalidateQueries({
+				queryKey: [...MNT, 'journey-overview', journeyId],
+			});
+			qc.invalidateQueries({ queryKey: [...MNT] });
+			qc.invalidateQueries({ queryKey: [...ROOT] });
+		},
 	});
 }
 

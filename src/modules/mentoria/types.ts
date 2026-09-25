@@ -256,6 +256,18 @@ export type DiagnosticState = {
 	foto_zero: MntSnapshot | null;
 };
 
+/** Auditoria de uma reabertura do diagnóstico (visão do mentor). */
+export type DiagnosticReopen = {
+	id: string;
+	journey_id: string;
+	reopened_by: string | null;
+	reopened_by_name: string | null;
+	reason: string | null;
+	reopened_at: string;
+	foto_zero_taken_at: string | null;
+	answers: Record<string, unknown> | null;
+};
+
 // ── Ferramentas ──────────────────────────────────────────────────────────────
 export type ToolArea =
 	| 'estrategia'
@@ -427,6 +439,16 @@ export type MntImprovementCycle = {
 	status: 'open' | 'in_progress' | 'done';
 };
 
+/** Conteúdo das ferramentas estruturadas da jornada (leitura do mentor). */
+export type MentorToolContent = {
+	process_flows: MntProcessFlow[];
+	org_positions: MntOrgPosition[];
+	pops: MntPop[];
+	financial_entries: MntFinancialEntry[];
+	funnel_stages: MntFunnelStage[];
+	improvements: MntImprovementCycle[];
+};
+
 // ── Tarefas ──────────────────────────────────────────────────────────────────
 export type TaskStatus =
 	| 'pending'
@@ -512,6 +534,16 @@ export type MntKpi = {
 };
 
 // ── Desenvolvimento pessoal ──────────────────────────────────────────────────
+/** Histórico append-only dos comentários do mentor numa tarefa. */
+export type MntTaskComment = {
+	id: string;
+	task_id: string;
+	author_id: string | null;
+	author_name: string | null;
+	body: string;
+	created_at: string;
+};
+
 export type MntGoodNews = {
 	id: string;
 	journey_id: string;
