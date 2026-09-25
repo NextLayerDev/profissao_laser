@@ -61,6 +61,7 @@ import {
 	BTN_PRIMARY,
 	EmptyState,
 	fmtDate,
+	LoadErrorState,
 	MntHeader,
 	MntSkeleton,
 } from './_components/shared';
@@ -74,9 +75,13 @@ export default function MentoriaHomePage() {
 }
 
 function HomeContent() {
-	const { data, isLoading } = useMentoriaBootstrap();
+	const { data, isLoading, isError, refetch } = useMentoriaBootstrap();
 
 	if (isLoading) return <MntSkeleton />;
+
+	// Erro sem dados é a api fora do ar, não falta de matrícula: sem isto o
+	// aluno matriculado lia "você ainda não está matriculado".
+	if (isError && !data) return <LoadErrorState onRetry={() => refetch()} />;
 
 	if (!data?.journey) {
 		return (

@@ -170,6 +170,21 @@ export function EmptyState({
 	);
 }
 
+/** Falha ao carregar o bootstrap (api fora do ar) — não é falta de matrícula. */
+export function LoadErrorState({ onRetry }: { onRetry: () => void }) {
+	return (
+		<EmptyState
+			icon={AlertTriangle}
+			title="Não foi possível carregar sua mentoria"
+			description="Houve uma falha ao falar com o servidor. Tente novamente em instantes."
+		>
+			<button type="button" className={BTN_PRIMARY} onClick={onRetry}>
+				Tentar novamente
+			</button>
+		</EmptyState>
+	);
+}
+
 /**
  * Garante que o aluno tem uma jornada ativa antes de renderizar a tela.
  * Sem jornada → manda para Configurações, onde mora o cadastro da empresa: é a
@@ -183,7 +198,7 @@ export function JourneyGate({
 		bootstrap: MentoriaBootstrap;
 	}) => ReactNode;
 }) {
-	const { data, isLoading, isError } = useMentoriaBootstrap();
+	const { data, isLoading, isError, refetch } = useMentoriaBootstrap();
 
 	if (isLoading) return <MntSkeleton />;
 
@@ -191,15 +206,10 @@ export function JourneyGate({
 	// o 403 do gate já foi capturado pelo `MentoriaAccessGate`, no layout, e nem
 	// chega aqui. Então um erro neste ponto é a api fora do ar — mandar cadastrar
 	// a empresa seria mentir sobre a causa, e a rota de cadastro falharia igual.
-	if (isError) {
-		return (
-			<EmptyState
-				icon={AlertTriangle}
-				title="Não foi possível carregar sua mentoria"
-				description="Houve uma falha ao falar com o servidor. Tente recarregar a página em instantes."
-			/>
-		);
-	}
+	// `&& !data`: com o bootstrap em cache, um refetch que falha (reconnect,
+	// invalidação) não pode trocar a página inteira — e descartar formulários
+	// em edição — pelo aviso.
+	if (isError && !data) return <LoadErrorState onRetry={() => refetch()} />;
 
 	if (!data?.journey) {
 		return (
