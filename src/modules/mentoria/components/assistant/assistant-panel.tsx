@@ -83,7 +83,8 @@ export function AssistantPanel({
 	// Foco entra junto com o painel. Imperativo em vez de `autoFocus` porque o
 	// composer só monta quando `open` vira true.
 	useEffect(() => {
-		if (open) composerRef.current?.focus();
+		// `preventScroll`: o foco não pode arrastar a página até o painel.
+		if (open) composerRef.current?.focus({ preventScroll: true });
 	}, [open]);
 
 	const growComposer = () => {
