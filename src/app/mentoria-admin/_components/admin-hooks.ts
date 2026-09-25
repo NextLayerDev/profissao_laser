@@ -7,6 +7,7 @@ import { AxiosError } from 'axios';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { useMe } from '@/modules/account';
 import * as svc from '@/modules/mentoria/service';
+import type { UploadMaterialParams } from '@/modules/mentoria/types';
 import { listStudents } from '@/services/students';
 import { getApiErrorMessage } from '@/shared/lib/api-error';
 
@@ -70,6 +71,16 @@ const KNOWN: Record<string, string> = {
 		'O link de um material enviado como arquivo não pode ser trocado.',
 	tool_definition_key_exists:
 		'Já existe uma ferramenta com esse nome (key). Use outro nome.',
+	template_not_published: 'Esta versão não está publicada.',
+	template_last_published:
+		'É a única versão publicada deste encontro. Publique outra antes de despublicar.',
+	template_published:
+		'Versão publicada não pode ser excluída. Despublique antes.',
+	template_in_use:
+		'Ainda há alunos neste rascunho. Publique outra versão antes.',
+	exercise_form_template_not_found:
+		'O exercício precisa ser um formulário publicado.',
+	material_link_invalid: 'Turma ou encontro não encontrado.',
 	tool_definition_protected:
 		'Esta é uma ferramenta-base da metodologia e não pode ser excluída. Desative-a, se preciso.',
 };
@@ -521,15 +532,37 @@ export function useMeetingTemplateMutations() {
 		mutationFn: svc.createMeetingTemplate,
 		onSuccess: invalidate,
 	});
+	// Publicar/despublicar/excluir mexem nas jornadas em andamento (visão do
+	// mentor/aluno) e nos materiais vinculados ao encontro.
+	const afterJourneyChange = () => {
+		invalidate();
+		qc.invalidateQueries({ queryKey: MNT });
+		qc.invalidateQueries({ queryKey: [...ROOT, 'materials'] });
+	};
 	const publish = useMutation({
 		mutationFn: svc.publishMeetingTemplate,
-		onSuccess: () => {
-			invalidate();
-			// Publicar mexe nas jornadas em andamento (visão do mentor/aluno).
-			qc.invalidateQueries({ queryKey: MNT });
-		},
+		onSuccess: afterJourneyChange,
 	});
-	return { create, publish };
+	const unpublish = useMutation({
+		mutationFn: svc.unpublishMeetingTemplate,
+		onSuccess: afterJourneyChange,
+	});
+	const remove = useMutation({
+		mutationFn: svc.deleteMeetingTemplate,
+		onSuccess: afterJourneyChange,
+	});
+	return { create, publish, unpublish, remove };
+}
+
+/** "Vai atualizar N alunos": lido na hora de confirmar o publish. */
+export function useMeetingTemplatePublishImpact(id: string | null) {
+	return useQuery({
+		queryKey: [...ROOT, 'meeting-template-impact', id],
+		queryFn: () => svc.getMeetingTemplatePublishImpact(id as string),
+		enabled: !!id,
+		staleTime: 0,
+		gcTime: 0,
+	});
 }
 
 // ── Templates de formulário ──────────────────────────────────────────────────
@@ -630,17 +663,29 @@ export function useMaterialMutations() {
 		mutationFn: ({
 			file,
 			params,
+			onProgress,
 		}: {
 			file: File;
-			params: { title: string; cohort_id?: string };
-		}) => svc.uploadMaterial(file, params),
+			params: UploadMaterialParams;
+			onProgress?: (pct: number) => void;
+		}) => svc.uploadMaterial(file, params, onProgress),
+		onSuccess: invalidate,
+	});
+	const update = useMutation({
+		mutationFn: ({
+			id,
+			body,
+		}: {
+			id: string;
+			body: Parameters<typeof svc.updateMaterial>[1];
+		}) => svc.updateMaterial(id, body),
 		onSuccess: invalidate,
 	});
 	const remove = useMutation({
 		mutationFn: svc.deleteMaterial,
 		onSuccess: invalidate,
 	});
-	return { createLink, upload, remove };
+	return { createLink, upload, update, remove };
 }
 
 // ── Lives ────────────────────────────────────────────────────────────────────

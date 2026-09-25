@@ -76,6 +76,14 @@ export type MntMeetingTemplate = {
 	updated_at: string;
 };
 
+/** Quantas jornadas ativas o publish de uma versão vai atualizar. */
+export type MeetingTemplatePublishImpact = { journeys: number };
+
+export type UnpublishedMeetingTemplate = MntMeetingTemplate & {
+	journeys_updated: number;
+	fallback_template_id: string;
+};
+
 export type MntJourneyMeeting = {
 	id: string;
 	journey_id: string;
@@ -155,6 +163,9 @@ export type MentoriaBootstrap = {
 	};
 };
 
+/** Sinais de risco do aluno (só em jornada ativa). */
+export type CohortRiskFlag = 'stalled' | 'diagnostic_pending' | 'overdue_tasks';
+
 export type CohortDashboardRow = {
 	journey_id: string;
 	company: MntCompany;
@@ -164,6 +175,17 @@ export type CohortDashboardRow = {
 	meetings_done: number;
 	progress_pct: number;
 	status: string;
+	// null só enquanto a migration do dashboard não roda na API.
+	started_at?: string | null;
+	last_activity_at?: string | null;
+	last_access_at?: string | null;
+	days_inactive?: number | null;
+	diagnostic_pending?: boolean | null;
+	overdue_tasks?: number | null;
+	open_tasks?: number | null;
+	risk_flags?: CohortRiskFlag[];
+	/** Maior = mais urgente. */
+	risk_score?: number;
 };
 
 // ── Formulários data-driven ──────────────────────────────────────────────────
@@ -194,6 +216,18 @@ export type FormBlock = {
 	title: string;
 	description?: string;
 	fields: FormField[];
+};
+
+/** Campo nas listas do "Comparar versões" do builder. */
+export type FormDiffField = { key: string; label: string; block: string };
+export type FormDiffChange = FormDiffField & {
+	/** O que mudou, em pt-BR curto ("rótulo", "tipo", "obrigatório"…). */
+	changes: string[];
+};
+export type FormSchemaDiff = {
+	added: FormDiffField[];
+	removed: FormDiffField[];
+	changed: FormDiffChange[];
 };
 
 export type MntFormTemplate = {
@@ -599,8 +633,18 @@ export type MntMaterial = {
 	description: string | null;
 	kind: 'photo' | 'video' | 'doc' | 'link';
 	url: string;
+	/** Preenchido quando é arquivo enviado (a url não pode ser trocada). */
+	storage_path?: string | null;
 	published: boolean;
 	created_at: string;
+};
+
+/** Campos extras do upload de material (vão na querystring). */
+export type UploadMaterialParams = {
+	title: string;
+	description?: string;
+	cohort_id?: string;
+	meeting_template_id?: string;
 };
 
 export type Comparison = {

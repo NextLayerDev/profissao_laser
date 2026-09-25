@@ -10,6 +10,7 @@ import type {
 	GoodNewsState,
 	LiveCredentials,
 	LivePlayback,
+	MeetingTemplatePublishImpact,
 	MentoriaAccessAdmin,
 	MentoriaBootstrap,
 	MentoriaWaitingStudent,
@@ -47,6 +48,8 @@ import type {
 	MntToolInstance,
 	MyMentoriaAccess,
 	ToolWithInstance,
+	UnpublishedMeetingTemplate,
+	UploadMaterialParams,
 } from './types';
 
 // ── Mentorado: núcleo ────────────────────────────────────────────────────────
@@ -1007,6 +1010,28 @@ export async function publishMeetingTemplate(
 	return data;
 }
 
+export async function getMeetingTemplatePublishImpact(
+	id: string,
+): Promise<MeetingTemplatePublishImpact> {
+	const { data } = await api.get(
+		`/v1/admin/mentoria/meeting-template/${id}/publish-impact`,
+	);
+	return data;
+}
+
+export async function unpublishMeetingTemplate(
+	id: string,
+): Promise<UnpublishedMeetingTemplate> {
+	const { data } = await api.post(
+		`/v1/admin/mentoria/meeting-template/${id}/unpublish`,
+	);
+	return data;
+}
+
+export async function deleteMeetingTemplate(id: string): Promise<void> {
+	await api.delete(`/v1/admin/mentoria/meeting-template/${id}`);
+}
+
 export async function listFormTemplatesAdmin(): Promise<MntFormTemplate[]> {
 	const { data } = await api.get('/v1/admin/mentoria/form-templates');
 	return data;
@@ -1081,15 +1106,35 @@ export async function createMaterialLink(
 	return data;
 }
 
+/** `onProgress` recebe 0–100 enquanto o arquivo sobe. */
 export async function uploadMaterial(
 	file: File,
-	params: { title: string; cohort_id?: string; meeting_template_id?: string },
+	params: UploadMaterialParams,
+	onProgress?: (pct: number) => void,
 ): Promise<MntMaterial> {
 	const form = new FormData();
 	form.append('file', file);
 	const { data } = await api.post('/v1/admin/mentoria/materials', form, {
 		params,
+		onUploadProgress: (e) => {
+			if (onProgress && e.total) {
+				onProgress(Math.round((e.loaded / e.total) * 100));
+			}
+		},
 	});
+	return data;
+}
+
+export async function updateMaterial(
+	id: string,
+	body: Partial<
+		Pick<
+			MntMaterial,
+			'title' | 'description' | 'cohort_id' | 'meeting_template_id' | 'url'
+		>
+	>,
+): Promise<MntMaterial> {
+	const { data } = await api.patch(`/v1/admin/mentoria/material/${id}`, body);
 	return data;
 }
 
