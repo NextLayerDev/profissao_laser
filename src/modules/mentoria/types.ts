@@ -581,6 +581,8 @@ export type Comparison = {
 			to: number | null;
 			delta: number | null;
 			delta_pct: number | null;
+			/** Rótulo das chaves achatadas (maturidade.<área>, kpis.<nome>). */
+			label?: string;
 		}
 	>;
 };

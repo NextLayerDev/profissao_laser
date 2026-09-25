@@ -259,7 +259,8 @@ function ComparisonBlock({
 	const rows: DeltaRow[] = Object.entries(comparison.deltas).map(
 		([key, d]) => ({
 			key,
-			label: METRIC_LABEL[key] ?? key,
+			// A API rotula as chaves achatadas (maturidade.<área>, kpis.<nome>).
+			label: METRIC_LABEL[key] ?? d.label ?? key,
 			from: d.from,
 			to: d.to,
 			delta: d.delta,
