@@ -873,6 +873,35 @@ export async function listToolDefinitionsAdmin(): Promise<MntToolDefinition[]> {
 	return data;
 }
 
+/** Edita nome/descrição/área/posição/ativa. key e kind são fixos. */
+export async function patchToolDefinition(
+	id: string,
+	body: Partial<
+		Pick<
+			MntToolDefinition,
+			'name' | 'description' | 'area' | 'position' | 'active'
+		>
+	>,
+): Promise<MntToolDefinition> {
+	const { data } = await api.patch(
+		`/v1/admin/mentoria/tool-definition/${id}`,
+		body,
+	);
+	return data;
+}
+
+/** 409 tool_definition_in_use (details.instances) → confirmar com force. */
+export async function deleteToolDefinition(
+	id: string,
+	force = false,
+): Promise<{ deleted: true; instances_removed: number }> {
+	const { data } = await api.delete(
+		`/v1/admin/mentoria/tool-definition/${id}`,
+		{ params: force ? { force: 'true' } : undefined },
+	);
+	return data;
+}
+
 export async function upsertToolDefinition(
 	body: Record<string, unknown> & { key: string; name: string },
 ): Promise<MntToolDefinition> {

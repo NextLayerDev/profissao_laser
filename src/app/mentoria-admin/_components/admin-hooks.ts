@@ -34,6 +34,10 @@ export function mentoriaErrorMessage(err: unknown, fallback: string): string {
 		migration_pending:
 			'Recurso ainda não disponível no banco (migration pendente). Avise o suporte técnico.',
 		not_mentor_of_cohort: 'Você não é mentor da turma deste aluno.',
+		tool_definition_key_exists:
+			'Já existe uma ferramenta com esse nome (key). Use outro nome.',
+		tool_definition_protected:
+			'Esta é uma ferramenta-base da metodologia e não pode ser excluída. Desative-a, se preciso.',
 	};
 	if (err instanceof AxiosError) {
 		const body = err.response?.data as
@@ -282,6 +286,44 @@ export function useToolDefinitionsAdmin() {
 		queryKey: [...ROOT, 'tool-definitions'],
 		queryFn: svc.listToolDefinitionsAdmin,
 	});
+}
+
+export function usePatchToolDefinition() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			id,
+			body,
+		}: {
+			id: string;
+			body: Parameters<typeof svc.patchToolDefinition>[1];
+		}) => svc.patchToolDefinition(id, body),
+		onSuccess: () =>
+			qc.invalidateQueries({ queryKey: [...ROOT, 'tool-definitions'] }),
+	});
+}
+
+export function useDeleteToolDefinition() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({ id, force }: { id: string; force?: boolean }) =>
+			svc.deleteToolDefinition(id, force),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: [...ROOT, 'tool-definitions'] });
+			qc.invalidateQueries({ queryKey: [...MNT] });
+		},
+	});
+}
+
+/** Nº de alunos que já iniciaram a ferramenta, quando o 409 é "em uso". */
+export function toolInUseCount(err: unknown): number | null {
+	if (!(err instanceof AxiosError)) return null;
+	const body = err.response?.data as
+		| { message?: string; details?: { instances?: number } }
+		| undefined;
+	return body?.message === 'tool_definition_in_use'
+		? (body.details?.instances ?? 0)
+		: null;
 }
 
 export function useUpsertToolDefinition() {

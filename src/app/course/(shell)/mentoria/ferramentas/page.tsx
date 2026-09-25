@@ -24,6 +24,13 @@ import {
 	MntSkeleton,
 } from '../_components/shared';
 
+const DEV_KINDS = new Set([
+	'goal_action',
+	'maslow',
+	'good_news',
+	'business_plan',
+]);
+
 export default function FerramentasPage() {
 	return (
 		<SubscriptionGate toolKey="mentoria_360">
@@ -54,7 +61,13 @@ function FerramentasContent({ journeyId }: { journeyId: string }) {
 		});
 	};
 
-	const sorted = [...(tools ?? [])].sort((a, b) => a.position - b.position);
+	// Meta e Ação, Maslow, Boas Notícias e Plano de Negócios são usados em
+	// Desenvolvimento: o card aqui só redirecionava e confundia (o mentor achava
+	// que precisava mantê-los em Ferramentas). Continuam contando no Mapa.
+	const sorted = [...(tools ?? [])]
+		.filter((t) => !DEV_KINDS.has(t.kind))
+		.sort((a, b) => a.position - b.position);
+	const hasDevTools = (tools ?? []).some((t) => DEV_KINDS.has(t.kind));
 
 	return (
 		<div className="p-4 md:p-8 space-y-6">
@@ -64,6 +77,19 @@ function FerramentasContent({ journeyId }: { journeyId: string }) {
 				icon={Wrench}
 				backHref="/course/mentoria"
 			/>
+
+			{hasDevTools && (
+				<p className="text-sm text-slate-500 dark:text-gray-400">
+					Meta e Ação, Maslow, Boas Notícias e Plano de Negócios ficam em{' '}
+					<Link
+						href="/course/mentoria/desenvolvimento"
+						className="font-medium text-violet-600 dark:text-violet-400 hover:underline"
+					>
+						Desenvolvimento
+					</Link>
+					.
+				</p>
+			)}
 
 			{sorted.length === 0 ? (
 				<EmptyState

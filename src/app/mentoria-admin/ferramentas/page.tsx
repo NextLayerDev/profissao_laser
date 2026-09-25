@@ -1,13 +1,16 @@
 'use client';
 
-import { CheckCircle2, Loader2, Pencil, Plus } from 'lucide-react';
+import { CheckCircle2, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Header } from '@/components/dashboard/header';
 import type { MntToolDefinition, ToolArea } from '@/modules/mentoria/types';
 import {
 	mentoriaErrorMessage,
+	toolInUseCount,
+	useDeleteToolDefinition,
 	useFormTemplatesAdmin,
+	usePatchToolDefinition,
 	useToolDefinitionsAdmin,
 	useUpsertToolDefinition,
 } from '../_components/admin-hooks';
@@ -37,6 +40,31 @@ const AREAS: Array<{ value: ToolArea; label: string }> = [
 
 const areaLabel = (a: string) => AREAS.find((x) => x.value === a)?.label ?? a;
 
+/** As 12 ferramentas da metodologia: a API recusa excluir (mesma lista). */
+const BASE_TOOL_KEYS = new Set([
+	'planejamento_estrategico',
+	'fluxograma_processos',
+	'organograma',
+	'kpis',
+	'pops',
+	'gestao_financeira',
+	'gestao_comercial',
+	'melhoria_continua',
+	'meta_acao',
+	'maslow',
+	'boas_noticias',
+	'plano_negocios',
+]);
+
+/** Onde o aluno usa a ferramenta, quando não é a tela de Ferramentas. */
+const SHOWN_IN: Partial<Record<string, string>> = {
+	kpi_board: 'Indicadores',
+	goal_action: 'Desenvolvimento',
+	maslow: 'Desenvolvimento',
+	good_news: 'Desenvolvimento',
+	business_plan: 'Desenvolvimento',
+};
+
 /** nome → key snake_case (sem acentos). */
 function toSnakeCase(label: string): string {
 	return label
@@ -50,6 +78,7 @@ function toSnakeCase(label: string): string {
 
 type Editing =
 	| { mode: 'edit'; tool: MntToolDefinition }
+	| { mode: 'delete'; tool: MntToolDefinition }
 	| { mode: 'create' }
 	| null;
 
@@ -115,6 +144,11 @@ export default function FerramentasPage() {
 											</td>
 											<td className="px-5 py-3 font-medium text-slate-900 dark:text-white">
 												{t.name}
+												{SHOWN_IN[t.kind] && (
+													<span className="block text-xs font-normal text-slate-500 dark:text-gray-400">
+														Aparece em {SHOWN_IN[t.kind]}
+													</span>
+												)}
 											</td>
 											<td className="px-5 py-3">{areaLabel(t.area)}</td>
 											<td className="px-5 py-3">
@@ -128,15 +162,38 @@ export default function FerramentasPage() {
 													{t.active ? 'Ativa' : 'Inativa'}
 												</Badge>
 											</td>
-											<td className="px-5 py-3 text-right">
-												<button
-													type="button"
-													className={secondaryBtn}
-													onClick={() => setEditing({ mode: 'edit', tool: t })}
-												>
-													<Pencil className="w-3.5 h-3.5" />
-													Editar
-												</button>
+											<td className="px-5 py-3">
+												<div className="flex justify-end gap-2">
+													<button
+														type="button"
+														className={secondaryBtn}
+														onClick={() =>
+															setEditing({ mode: 'edit', tool: t })
+														}
+													>
+														<Pencil className="w-3.5 h-3.5" />
+														Editar
+													</button>
+													{BASE_TOOL_KEYS.has(t.key) ? (
+														<span
+															className="inline-flex items-center px-2 text-xs text-slate-400 dark:text-gray-500"
+															title="Ferramenta-base da metodologia: não pode ser excluída"
+														>
+															Base
+														</span>
+													) : (
+														<button
+															type="button"
+															className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
+															onClick={() =>
+																setEditing({ mode: 'delete', tool: t })
+															}
+															aria-label={`Excluir ${t.name}`}
+														>
+															<Trash2 className="w-4 h-4" />
+														</button>
+													)}
+												</div>
 											</td>
 										</tr>
 									))}
@@ -149,6 +206,9 @@ export default function FerramentasPage() {
 
 			{editing?.mode === 'edit' && (
 				<EditToolModal tool={editing.tool} onClose={() => setEditing(null)} />
+			)}
+			{editing?.mode === 'delete' && (
+				<DeleteToolModal tool={editing.tool} onClose={() => setEditing(null)} />
 			)}
 			{editing?.mode === 'create' && (
 				<CreateFormToolModal onClose={() => setEditing(null)} />
@@ -164,7 +224,8 @@ function EditToolModal({
 	tool: MntToolDefinition;
 	onClose: () => void;
 }) {
-	const upsert = useUpsertToolDefinition();
+	// PATCH por id: o upsert antigo exigia `kind` e todo "Salvar" dava 400.
+	const patch = usePatchToolDefinition();
 	const [form, setForm] = useState({
 		name: tool.name,
 		description: tool.description ?? '',
@@ -181,13 +242,15 @@ function EditToolModal({
 			return;
 		}
 		try {
-			await upsert.mutateAsync({
-				key: tool.key,
-				name: form.name.trim(),
-				description: form.description.trim() || null,
-				area: form.area,
-				position: form.position,
-				active: form.active,
+			await patch.mutateAsync({
+				id: tool.id,
+				body: {
+					name: form.name.trim(),
+					description: form.description.trim() || null,
+					area: form.area,
+					position: form.position,
+					active: form.active,
+				},
 			});
 			toast.success('Ferramenta atualizada');
 			onClose();
@@ -254,14 +317,76 @@ function EditToolModal({
 						type="button"
 						className={primaryBtn}
 						onClick={save}
-						disabled={upsert.isPending}
+						disabled={patch.isPending}
 					>
-						{upsert.isPending ? (
+						{patch.isPending ? (
 							<Loader2 className="w-4 h-4 animate-spin" />
 						) : (
 							<CheckCircle2 className="w-4 h-4" />
 						)}
 						Salvar
+					</button>
+				</div>
+			</div>
+		</Modal>
+	);
+}
+
+function DeleteToolModal({
+	tool,
+	onClose,
+}: {
+	tool: MntToolDefinition;
+	onClose: () => void;
+}) {
+	const del = useDeleteToolDefinition();
+	// Preenchido quando a API avisa que alunos já usam a ferramenta.
+	const [inUse, setInUse] = useState<number | null>(null);
+
+	const run = async () => {
+		try {
+			await del.mutateAsync({ id: tool.id, force: inUse !== null });
+			toast.success(`Ferramenta "${tool.name}" excluída`);
+			onClose();
+		} catch (err) {
+			const count = toolInUseCount(err);
+			if (count !== null) {
+				setInUse(count);
+				return;
+			}
+			toast.error(mentoriaErrorMessage(err, 'Erro ao excluir a ferramenta'));
+		}
+	};
+
+	return (
+		<Modal title={`Excluir "${tool.name}"?`} onClose={onClose}>
+			<div className="space-y-4">
+				{inUse === null ? (
+					<p className="text-sm text-slate-600 dark:text-gray-300">
+						Ela sai do catálogo e dos encontros. Não dá para desfazer.
+					</p>
+				) : (
+					<p className="text-sm text-red-600 dark:text-red-400">
+						{inUse} aluno(s) já começaram esta ferramenta. Excluir apaga o que
+						eles preencheram nela. Prefere só desativar?
+					</p>
+				)}
+				<div className="flex justify-end gap-2">
+					<button type="button" className={secondaryBtn} onClick={onClose}>
+						Cancelar
+					</button>
+					<button
+						type="button"
+						className="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white text-sm font-medium px-4 py-2"
+						onClick={run}
+						disabled={del.isPending}
+					>
+						{del.isPending ? (
+							<Loader2 className="w-4 h-4 animate-spin" />
+						) : (
+							<Trash2 className="w-4 h-4" />
+						)}
+						{inUse === null ? 'Excluir' : 'Excluir mesmo assim'}
 					</button>
 				</div>
 			</div>
