@@ -60,15 +60,59 @@ function toSnakeCase(label: string): string {
 		.slice(0, 60);
 }
 
+// Campos e blocos do builder carregam um id de cliente (`cid`) só para a
+// `key` do React. Antes a key do card vinha do título do bloco, que muda a cada
+// tecla: o card remontava e o input perdia o foco.
+// `locked` marca o que já existe na versão base: a key desses NÃO muda ao
+// editar o rótulo, senão as respostas e métricas antigas deixam de casar com a
+// nova versão. `optionsText` guarda o texto cru das opções enquanto se digita.
+type BuilderField = FormField & {
+	cid: string;
+	locked: boolean;
+	optionsText?: string;
+};
+type BuilderBlock = Omit<FormBlock, 'fields'> & {
+	cid: string;
+	locked: boolean;
+	fields: BuilderField[];
+};
+
 type BuilderState = {
 	/** null = template totalmente novo (key editável). */
 	baseKey: string | null;
 	key: string;
 	title: string;
 	description: string;
-	blocks: FormBlock[];
+	blocks: BuilderBlock[];
 	baseVersion: number | null;
 };
+
+let cidSeq = 0;
+const newCid = () => `c${++cidSeq}`;
+
+function toBuilderBlocks(blocks: FormBlock[]): BuilderBlock[] {
+	return structuredClone(blocks).map((b) => ({
+		...b,
+		cid: newCid(),
+		locked: true,
+		fields: b.fields.map((f) => ({ ...f, cid: newCid(), locked: true })),
+	}));
+}
+
+/** Remove os campos internos do builder antes de salvar/pré-visualizar. */
+function toSchemaBlocks(blocks: BuilderBlock[]): FormBlock[] {
+	return blocks.map(({ cid: _c, locked: _l, fields, ...b }) => ({
+		...b,
+		fields: fields.map(({ cid: _fc, locked: _fl, optionsText: _o, ...f }) => f),
+	}));
+}
+
+function parseOptions(text: string): string[] {
+	return text
+		.split('\n')
+		.map((o) => o.trim())
+		.filter(Boolean);
+}
 
 export default function FormulariosPage() {
 	const templates = useFormTemplatesAdmin();
@@ -106,7 +150,7 @@ export default function FormulariosPage() {
 						key: t.key,
 						title: t.title,
 						description: t.description ?? '',
-						blocks: structuredClone(t.schema.blocks),
+						blocks: toBuilderBlocks(t.schema.blocks),
 						baseVersion: t.version,
 					}
 				: {
@@ -253,7 +297,7 @@ function FormBuilder({
 	const set = (patch: Partial<BuilderState>) =>
 		setState({ ...state, ...patch });
 
-	const setBlock = (idx: number, patch: Partial<FormBlock>) => {
+	const setBlock = (idx: number, patch: Partial<BuilderBlock>) => {
 		const blocks = state.blocks.map((b, i) =>
 			i === idx ? { ...b, ...patch } : b,
 		);
@@ -265,7 +309,13 @@ function FormBuilder({
 		set({
 			blocks: [
 				...state.blocks,
-				{ key: `bloco_${n}`, title: `Bloco ${n}`, fields: [] },
+				{
+					key: `bloco_${n}`,
+					title: `Bloco ${n}`,
+					fields: [],
+					cid: newCid(),
+					locked: false,
+				},
 			],
 		});
 	};
@@ -278,7 +328,14 @@ function FormBuilder({
 		setBlock(blockIdx, {
 			fields: [
 				...block.fields,
-				{ key: '', label: '', type: 'text', required: false },
+				{
+					key: '',
+					label: '',
+					type: 'text',
+					required: false,
+					cid: newCid(),
+					locked: false,
+				},
 			],
 		});
 	};
@@ -286,7 +343,7 @@ function FormBuilder({
 	const setField = (
 		blockIdx: number,
 		fieldIdx: number,
-		patch: Partial<FormField>,
+		patch: Partial<BuilderField>,
 	) => {
 		const block = state.blocks[blockIdx];
 		setBlock(blockIdx, {
@@ -311,7 +368,7 @@ function FormBuilder({
 			version: (state.baseVersion ?? 0) + 1,
 			title: state.title || 'Sem título',
 			description: state.description || null,
-			schema: { blocks: state.blocks },
+			schema: { blocks: toSchemaBlocks(state.blocks) },
 			published: false,
 			created_at: '',
 			updated_at: '',
@@ -333,7 +390,16 @@ function FormBuilder({
 			toast.error('Adicione pelo menos um bloco');
 			return;
 		}
+		const blockKeys = new Set<string>();
+		const fieldKeys = new Set<string>();
 		for (const block of state.blocks) {
+			if (blockKeys.has(block.key)) {
+				toast.error(
+					`Há dois blocos com a key "${block.key}". Renomeie um deles.`,
+				);
+				return;
+			}
+			blockKeys.add(block.key);
 			if (!block.fields.length) {
 				toast.error(`O bloco "${block.title}" não tem campos`);
 				return;
@@ -343,6 +409,13 @@ function FormBuilder({
 					toast.error(`Há campo sem rótulo no bloco "${block.title}"`);
 					return;
 				}
+				if (fieldKeys.has(f.key)) {
+					toast.error(
+						`Há dois campos com a key "${f.key}": as respostas se sobreporiam. Renomeie um deles.`,
+					);
+					return;
+				}
+				fieldKeys.add(f.key);
 				if (f.type === 'select' && !(f.options?.length ?? 0)) {
 					toast.error(`O campo "${f.label}" (seleção) precisa de opções`);
 					return;
@@ -354,7 +427,7 @@ function FormBuilder({
 				key,
 				title: state.title.trim(),
 				description: state.description.trim() || null,
-				schema: { blocks: state.blocks },
+				schema: { blocks: toSchemaBlocks(state.blocks) },
 			});
 			toast.success(
 				'Formulário salvo como nova versão (rascunho). Publique quando estiver pronto.',
@@ -439,17 +512,19 @@ function FormBuilder({
 						</Card>
 
 						{state.blocks.map((block, bi) => (
-							<Card key={`block-${bi}-${block.key}`} className="p-5 space-y-4">
+							<Card key={block.cid} className="p-5 space-y-4">
 								<div className="flex items-center gap-2">
 									<input
 										className={`${inputClass} font-semibold`}
 										value={block.title}
 										onChange={(e) => {
 											const title = e.target.value;
-											setBlock(bi, {
-												title,
-												key: toSnakeCase(title) || block.key,
-											});
+											setBlock(
+												bi,
+												block.locked
+													? { title }
+													: { title, key: toSnakeCase(title) || block.key },
+											);
 										}}
 										placeholder="Nome do bloco"
 									/>
@@ -465,7 +540,7 @@ function FormBuilder({
 
 								{block.fields.map((field, fi) => (
 									<div
-										key={`field-${bi}-${fi}`}
+										key={field.cid}
 										className="rounded-xl border border-slate-200 dark:border-white/10 p-3 space-y-3"
 									>
 										<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -473,19 +548,27 @@ function FormBuilder({
 												label="Rótulo"
 												required
 												hint={
-													field.key
-														? `key: ${field.key}`
-														: 'key gerada do rótulo'
+													field.locked
+														? `key: ${field.key} (fixa)`
+														: field.key
+															? `key: ${field.key}`
+															: 'key gerada do rótulo'
 												}
 											>
 												<input
 													className={inputClass}
 													value={field.label}
 													onChange={(e) =>
-														setField(bi, fi, {
-															label: e.target.value,
-															key: toSnakeCase(e.target.value),
-														})
+														setField(
+															bi,
+															fi,
+															field.locked
+																? { label: e.target.value }
+																: {
+																		label: e.target.value,
+																		key: toSnakeCase(e.target.value),
+																	},
+														)
 													}
 													placeholder="Faturamento mensal"
 												/>
@@ -501,9 +584,15 @@ function FormBuilder({
 																e.target.value === 'select'
 																	? (field.options ?? [])
 																	: undefined,
+															optionsText: undefined,
 														})
 													}
 												>
+													{/* Tipo que o builder não oferece (ex.: multiselect
+														    vindo do seed) continua visível e preservado. */}
+													{!FIELD_TYPES.some((t) => t.value === field.type) && (
+														<option value={field.type}>{field.type}</option>
+													)}
 													{FIELD_TYPES.map((t) => (
 														<option key={t.value} value={t.value}>
 															{t.label}
@@ -520,13 +609,17 @@ function FormBuilder({
 											>
 												<textarea
 													className={`${inputClass} min-h-16`}
-													value={(field.options ?? []).join('\n')}
+													// Texto cru enquanto digita: parsear a cada tecla
+													// comia o Enter e o espaço final, e não dava para
+													// escrever a 2ª opção.
+													value={
+														field.optionsText ??
+														(field.options ?? []).join('\n')
+													}
 													onChange={(e) =>
 														setField(bi, fi, {
-															options: e.target.value
-																.split('\n')
-																.map((o) => o.trim())
-																.filter(Boolean),
+															optionsText: e.target.value,
+															options: parseOptions(e.target.value),
 														})
 													}
 												/>
