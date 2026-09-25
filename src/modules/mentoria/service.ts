@@ -994,6 +994,19 @@ export async function endLive(
 	return data;
 }
 
+/**
+ * Edita a sala (título, agenda, turma e, no link externo, os links). Numa sala
+ * externa já encerrada, `recording_url` publica a gravação (vira `vod_ready`)
+ * ou, com null, a despublica.
+ */
+export async function updateLive(
+	id: string,
+	body: Record<string, unknown>,
+): Promise<MntLiveRoom> {
+	const { data } = await api.patch(`/v1/admin/mentoria/live/${id}`, body);
+	return data;
+}
+
 export async function listMaturityConfigs(): Promise<MntMaturityConfig[]> {
 	const { data } = await api.get('/v1/admin/mentoria/maturity-configs');
 	return data;

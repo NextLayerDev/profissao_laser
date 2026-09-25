@@ -467,7 +467,12 @@ export function useLiveMutations() {
 			svc.endLive(v.id, v.recordingUrl),
 		onSuccess: invalidate,
 	});
-	return { create, start, end };
+	const update = useMutation({
+		mutationFn: (v: { id: string; body: Record<string, unknown> }) =>
+			svc.updateLive(v.id, v.body),
+		onSuccess: invalidate,
+	});
+	return { create, start, end, update };
 }
 
 export function useLiveCredentials(

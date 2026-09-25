@@ -5,6 +5,7 @@ import {
 	Copy,
 	ExternalLink,
 	KeyRound,
+	Pencil,
 	PlayCircle,
 	Plus,
 	Square,
@@ -36,6 +37,7 @@ import {
 	secondaryBtn,
 } from '../_components/ui';
 import { CreateLiveModal } from './_components/create-live-modal';
+import { EditLiveModal } from './_components/edit-live-modal';
 import { EndLiveModal } from './_components/end-live-modal';
 
 function LiveStatusBadge({ status }: { status: LiveStatus }) {
@@ -71,6 +73,7 @@ export default function LivesAdminPage() {
 		null,
 	);
 	const [ending, setEnding] = useState<MntLiveRoom | null>(null);
+	const [editing, setEditing] = useState<MntLiveRoom | null>(null);
 
 	const cohortName = useMemo(() => {
 		const map = new Map<string, string>();
@@ -178,7 +181,11 @@ export default function LivesAdminPage() {
 												Iniciar live
 											</button>
 										)}
-										{live.status === 'active' && (
+										{/* Sala do Mux que nunca recebeu sinal fica 'idle' para
+										    sempre: sem este caminho não dava para encerrá-la. */}
+										{(live.status === 'active' ||
+											(live.source !== 'external' &&
+												live.status === 'idle')) && (
 											<button
 												type="button"
 												className={dangerBtn}
@@ -195,6 +202,18 @@ export default function LivesAdminPage() {
 											<ExternalLink className="w-3.5 h-3.5" />
 											Ver como aluno
 										</Link>
+										{/* Corrigir título/data/link e colar a gravação depois de
+										    encerrar (o encerramento promete isso). */}
+										<button
+											type="button"
+											className={secondaryBtn}
+											onClick={() => setEditing(live)}
+										>
+											<Pencil className="w-3.5 h-3.5" />
+											{live.source === 'external' && live.status === 'ended'
+												? 'Adicionar gravação'
+												: 'Editar'}
+										</button>
 									</div>
 								</div>
 							</Card>
@@ -213,6 +232,10 @@ export default function LivesAdminPage() {
 			)}
 
 			{ending && <EndLiveModal live={ending} onClose={() => setEnding(null)} />}
+
+			{editing && (
+				<EditLiveModal live={editing} onClose={() => setEditing(null)} />
+			)}
 		</div>
 	);
 }
