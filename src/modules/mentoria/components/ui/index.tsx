@@ -20,6 +20,7 @@
 // app/globals.css. Onde sobrar um par `dark:`, há comentário no ponto.
 
 import { ArrowDownRight, ArrowUpRight, type LucideIcon } from 'lucide-react';
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 // ── Coluna flutuante ─────────────────────────────────────────────────────────
@@ -157,13 +158,15 @@ export function StatCard({
 
 	if (!href) return <div className={shell}>{body}</div>;
 
+	// `Link` e não `<a>`: o `<a>` cru recarregava o app inteiro a cada clique,
+	// refazendo os gates e descartando o cache.
 	return (
-		<a
+		<Link
 			href={href}
 			className={`${shell} transition-colors hover:border-brand-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus`}
 		>
 			{body}
-		</a>
+		</Link>
 	);
 }
 
@@ -394,9 +397,9 @@ export function ListRow({
 
 	if (href) {
 		return (
-			<a href={href} className={`${shell} ${focusRing}`}>
+			<Link href={href} className={`${shell} ${focusRing}`}>
 				{body}
-			</a>
+			</Link>
 		);
 	}
 
