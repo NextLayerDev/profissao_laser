@@ -63,6 +63,10 @@ export function mentoriaErrorMessage(err: unknown, fallback: string): string {
 		migration_pending:
 			'Recurso ainda não disponível no banco (migration pendente). Avise o suporte técnico.',
 		tool_definition_not_found: 'Ferramenta não encontrada.',
+		task_not_found: 'Tarefa não encontrada.',
+		task_not_done: 'Só dá para validar uma tarefa que o aluno concluiu.',
+		material_url_locked:
+			'O link de um material enviado como arquivo não pode ser trocado.',
 		tool_definition_key_exists:
 			'Já existe uma ferramenta com esse nome (key). Use outro nome.',
 		tool_definition_protected:
@@ -105,11 +109,14 @@ export function useIsMentoriaAdmin(): { isAdmin: boolean; ready: boolean } {
  * os selects de turma de Lives/Materiais ficavam vazios. */
 export function useCohortsAdmin() {
 	const { isAdmin, ready } = useIsMentoriaAdmin();
-	return useQuery({
+	const query = useQuery({
 		queryKey: [...ROOT, 'cohorts', isAdmin ? 'all' : 'mine'],
 		queryFn: isAdmin ? svc.listCohortsAdmin : svc.listMyCohorts,
 		enabled: ready,
 	});
+	// Query desabilitada tem `isLoading` false: enquanto /me não chega, Turmas
+	// mostrava "Nenhuma turma criada ainda." em vez do spinner.
+	return ready ? query : { ...query, isLoading: true };
 }
 
 export function useCohortMentors(cohortId: string) {

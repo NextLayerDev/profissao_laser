@@ -670,8 +670,8 @@ export function BusinessPlanView({
 	const unchanged = JSON.stringify(answers) === base;
 
 	const save = () => {
-		// A versão é imutável: sem isto, um clique criava uma versão vazia
-		// para sempre (a API não valida os obrigatórios do plano).
+		// A versão é imutável: aponta os obrigatórios vazios pelo nome antes de
+		// enviar (a API também recusa, mas só com 409 genérico nesta tela).
 		const empty = (template?.schema.blocks ?? [])
 			.flatMap((b) => b.fields)
 			.filter((f) => {
