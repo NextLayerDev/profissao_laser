@@ -390,7 +390,8 @@ export function useLivePlayback(liveId: string | undefined, enabled: boolean) {
 		queryKey: [...ROOT, 'live-playback', liveId],
 		queryFn: () => svc.getLivePlayback(liveId as string),
 		enabled: !!liveId && enabled,
-		// Renova antes do token de 1h expirar
+		// Renova antes do token de 1h expirar. O LivePlayer não troca o `src` do
+		// iframe tocando (recarregaria o vídeo); o token novo vale no remount.
 		refetchInterval: 45 * 60_000,
 	});
 }

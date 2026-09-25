@@ -2,6 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
+import { toast } from 'sonner';
 import { getActiveToken } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { useLiveChat, usePostLiveChat } from '../hooks';
@@ -51,7 +52,15 @@ export function LiveChat({ liveId }: { liveId: string }) {
 		<LiveChatView
 			messages={messages}
 			sending={post.isPending}
-			onSend={(body) => post.mutate(body)}
+			// Sem onError a mensagem sumia do campo e não chegava ao chat, calada.
+			onSend={(body, cb) =>
+				post.mutate(body, {
+					onError: () => {
+						toast.error('Mensagem não enviada. Tente de novo.');
+						cb?.onError?.();
+					},
+				})
+			}
 		/>
 	);
 }
