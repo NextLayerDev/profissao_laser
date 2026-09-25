@@ -445,13 +445,17 @@ function DeleteToolModal({
 function CreateFormToolModal({ onClose }: { onClose: () => void }) {
 	const upsert = useUpsertToolDefinition();
 	const templates = useFormTemplatesAdmin();
+	const tools = useToolDefinitionsAdmin();
 
-	// Só a última versão de cada key.
+	// Só a última versão PUBLICADA de cada key: o aluno busca o template
+	// publicado, e um rascunho deixaria a ferramenta abrindo "indisponível".
 	const templateKeys = useMemo(() => {
 		return [
 			...new Map(
 				[...(templates.data ?? [])]
-					.sort((a, b) => b.version - a.version)
+					.filter((t) => t.published)
+					// Crescente: no Map a última versão escrita (a mais nova) vence.
+					.sort((a, b) => a.version - b.version)
 					.map((t) => [t.key, t.title] as const),
 			).entries(),
 		].sort(([a], [b]) => a.localeCompare(b));
@@ -475,6 +479,14 @@ function CreateFormToolModal({ onClose }: { onClose: () => void }) {
 		}
 		if (!form.form_template_key) {
 			toast.error('Escolha o template de formulário da ferramenta');
+			return;
+		}
+		// Nome que vira key existente ('KPIs' → kpis) sobrescrevia a ferramenta
+		// nativa no upsert da API; barra antes de enviar.
+		if (tools.data?.some((t) => t.key === form.key)) {
+			toast.error(
+				'Já existe uma ferramenta com esse nome (key). Use outro nome.',
+			);
 			return;
 		}
 		try {
