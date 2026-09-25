@@ -4,6 +4,7 @@ import { Button } from '@upvox-dev/ui';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Header } from '@/components/dashboard/header';
+import { parseBrNumber } from '@/modules/mentoria/numbers';
 import {
 	mentoriaErrorMessage,
 	useCreateMaturityConfig,
@@ -31,7 +32,7 @@ const AREAS = [
 ] as const;
 
 export default function ConfiguracoesMentoriaPage() {
-	const { data: configs, isLoading } = useMaturityConfigs();
+	const { data: configs, isLoading, isError } = useMaturityConfigs();
 	const create = useCreateMaturityConfig();
 	const [weights, setWeights] = useState<Record<string, string>>({});
 
@@ -53,12 +54,23 @@ export default function ConfiguracoesMentoriaPage() {
 	const save = () => {
 		const area_weights: Record<string, number> = {};
 		for (const area of AREAS) {
-			const value = Number(weights[area.key] ?? 1);
-			if (Number.isNaN(value) || value < 0) {
+			// Number('') é 0: campo apagado excluía a área do score sem aviso. E
+			// '1,5' em type=number (Firefox pt-BR) chegava vazio.
+			const raw = (weights[area.key] ?? '1').trim();
+			if (raw === '') {
+				toast.error(`Informe o peso de ${area.label}.`);
+				return;
+			}
+			const value = parseBrNumber(raw);
+			if (value === null || value < 0) {
 				toast.error(`Peso inválido em ${area.label}.`);
 				return;
 			}
 			area_weights[area.key] = value;
+		}
+		if (!Object.values(area_weights).some((v) => v > 0)) {
+			toast.error('Pelo menos uma área precisa ter peso maior que 0.');
+			return;
 		}
 		create.mutate(
 			{ formula: { area_weights }, active: true },
@@ -83,6 +95,15 @@ export default function ConfiguracoesMentoriaPage() {
 
 				{isLoading ? (
 					<Spinner label="Carregando metodologia..." />
+				) : isError ? (
+					// Sem a metodologia real, a tela mostrava peso 1 em tudo e salvar
+					// sobrescrevia os pesos vigentes.
+					<Card className="p-5">
+						<p className="text-sm text-slate-500 dark:text-gray-400">
+							Não foi possível carregar a metodologia atual. Recarregue a página
+							antes de alterar os pesos.
+						</p>
+					</Card>
 				) : (
 					<div className="space-y-6">
 						<Card className="p-5">
@@ -102,9 +123,8 @@ export default function ConfiguracoesMentoriaPage() {
 								{AREAS.map((area) => (
 									<Field key={area.key} label={area.label}>
 										<input
-											type="number"
-											min={0}
-											step={0.1}
+											type="text"
+											inputMode="decimal"
 											className={inputClass}
 											value={weights[area.key] ?? '1'}
 											onChange={(e) =>
