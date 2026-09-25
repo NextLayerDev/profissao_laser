@@ -59,6 +59,33 @@ export function fmtMoney(value: number | null | undefined): string {
 	return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+/**
+ * 'www.drive.com/x' sem protocolo virava href relativo (rota 404 da própria
+ * plataforma): prefixa https:// e valida. Inválido → null.
+ */
+export function normalizeUrl(raw: string): string | null {
+	const t = raw.trim();
+	if (!t) return null;
+	const withProto = /^[a-z][a-z\d+.-]*:\/\//i.test(t) ? t : `https://${t}`;
+	try {
+		const u = new URL(withProto);
+		if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+		if (!u.hostname.includes('.')) return null;
+		return u.toString();
+	} catch {
+		return null;
+	}
+}
+
+/** Domínio do link, para rótulo ('link' não dizia nada). */
+export function linkLabel(url: string): string {
+	try {
+		return new URL(url).hostname.replace(/^www\./, '');
+	} catch {
+		return 'link';
+	}
+}
+
 /** Extrai o código de erro da resposta da API (ex.: required_fields_missing). */
 export function apiErrorCode(e: unknown): string | null {
 	if (typeof e === 'object' && e !== null && 'response' in e) {

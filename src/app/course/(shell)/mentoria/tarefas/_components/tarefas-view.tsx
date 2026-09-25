@@ -28,7 +28,9 @@ import {
 	fmtDate,
 	INPUT,
 	LABEL,
+	linkLabel,
 	MntHeader,
+	normalizeUrl,
 } from '../../_components/shared';
 
 const STATUS_META: Record<TaskStatus, { label: string; tone: Tone }> = {
@@ -63,6 +65,9 @@ export type NewTaskInput = {
 	priority: string;
 };
 
+/** O form só fecha/limpa quando o container confirma o sucesso. */
+export type MutationCallbacks = { onSuccess?: () => void };
+
 export function TarefasView({
 	tasks,
 	creating,
@@ -79,10 +84,10 @@ export function TarefasView({
 	updatingTaskId: string | null;
 	uploadingTaskId: string | null;
 	addingLinkTaskId: string | null;
-	onCreate: (input: NewTaskInput) => void;
+	onCreate: (input: NewTaskInput, cb?: MutationCallbacks) => void;
 	onStatusChange: (taskId: string, status: TaskStatus) => void;
 	onUpload: (taskId: string, file: File) => void;
-	onAddLink: (taskId: string, url: string) => void;
+	onAddLink: (taskId: string, url: string, cb?: MutationCallbacks) => void;
 }) {
 	const [filter, setFilter] = useState<TaskStatus | 'all'>('all');
 	const [showForm, setShowForm] = useState(false);
@@ -93,15 +98,28 @@ export function TarefasView({
 		priority: 'medium',
 	});
 
+	// Fecha e limpa só no sucesso: antes o form sumia antes da validação e do
+	// resultado da API, e a descrição digitada se perdia.
 	const submit = () => {
-		onCreate({
-			title: form.title,
-			description: form.description || null,
-			due_date: form.due_date || null,
-			priority: form.priority,
-		});
-		setShowForm(false);
-		setForm({ title: '', description: '', due_date: '', priority: 'medium' });
+		onCreate(
+			{
+				title: form.title,
+				description: form.description || null,
+				due_date: form.due_date || null,
+				priority: form.priority,
+			},
+			{
+				onSuccess: () => {
+					setShowForm(false);
+					setForm({
+						title: '',
+						description: '',
+						due_date: '',
+						priority: 'medium',
+					});
+				},
+			},
+		);
 	};
 
 	const visible = tasks.filter((t) => filter === 'all' || t.status === filter);
@@ -173,7 +191,11 @@ export function TarefasView({
 							</select>
 						</div>
 					</div>
-					<Button variant="primary" onPress={submit} disabled={creating}>
+					<Button
+						variant="primary"
+						onPress={submit}
+						disabled={creating || !form.title.trim()}
+					>
 						<Text className={buttonLabel({ variant: 'primary' })}>
 							{creating ? 'Criando...' : 'Criar tarefa'}
 						</Text>
@@ -225,7 +247,7 @@ export function TarefasView({
 										addingLink={addingLinkTaskId === task.id}
 										onStatus={(status) => onStatusChange(task.id, status)}
 										onUpload={(file) => onUpload(task.id, file)}
-										onAddLink={(url) => onAddLink(task.id, url)}
+										onAddLink={(url, cb) => onAddLink(task.id, url, cb)}
 									/>
 								))}
 							</div>
@@ -276,11 +298,12 @@ function TaskCard({
 	addingLink: boolean;
 	onStatus: (status: TaskStatus) => void;
 	onUpload: (file: File) => void;
-	onAddLink: (url: string) => void;
+	onAddLink: (url: string, cb?: MutationCallbacks) => void;
 }) {
 	const fileRef = useRef<HTMLInputElement>(null);
 	const [linkUrl, setLinkUrl] = useState('');
 	const [showLink, setShowLink] = useState(false);
+	const [linkInvalid, setLinkInvalid] = useState(false);
 
 	return (
 		<div className={`${CARD} p-4`}>
@@ -322,13 +345,21 @@ function TaskCard({
 								ev.url ? (
 									<a
 										key={ev.id}
-										href={ev.url}
+										href={
+											ev.kind === 'link'
+												? (normalizeUrl(ev.url) ?? ev.url)
+												: ev.url
+										}
 										target="_blank"
 										rel="noreferrer"
 										className="inline-flex items-center gap-1 text-caption text-brand hover:underline dark:text-violet-400"
 									>
 										<Paperclip className="w-3 h-3" aria-hidden />
-										{ev.note ?? ev.kind}
+										{/* Rótulo 'link' não dizia nada ao mentor: mostra o domínio. */}
+										{ev.note ??
+											(ev.kind === 'link'
+												? linkLabel(normalizeUrl(ev.url) ?? ev.url)
+												: ev.kind)}
 									</a>
 								) : (
 									<span key={ev.id} className="text-caption text-muted">
@@ -388,24 +419,41 @@ function TaskCard({
 			{showLink && (
 				<div className="mt-3 flex gap-2">
 					<input
-						className={INPUT}
+						className={`${INPUT} ${linkInvalid ? 'border-red-500' : ''}`}
 						placeholder="https://..."
 						value={linkUrl}
-						onChange={(e) => setLinkUrl(e.target.value)}
+						aria-invalid={linkInvalid || undefined}
+						onChange={(e) => {
+							setLinkUrl(e.target.value);
+							setLinkInvalid(false);
+						}}
 					/>
 					<Button
 						variant="primary"
 						disabled={addingLink}
 						onPress={() => {
 							if (!linkUrl.trim()) return;
-							onAddLink(linkUrl);
-							setLinkUrl('');
-							setShowLink(false);
+							const url = normalizeUrl(linkUrl);
+							if (!url) {
+								setLinkInvalid(true);
+								return;
+							}
+							onAddLink(url, {
+								onSuccess: () => {
+									setLinkUrl('');
+									setShowLink(false);
+								},
+							});
 						}}
 					>
 						<Text className={buttonLabel({ variant: 'primary' })}>Anexar</Text>
 					</Button>
 				</div>
+			)}
+			{showLink && linkInvalid && (
+				<p className="mt-1 text-caption text-red-600 dark:text-red-400">
+					Link inválido. Ex.: https://drive.google.com/...
+				</p>
 			)}
 		</div>
 	);

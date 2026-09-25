@@ -32,6 +32,7 @@ import {
 	INPUT,
 	LABEL,
 	MntSkeleton,
+	normalizeUrl,
 } from '../shared';
 
 type PopForm = {
@@ -248,8 +249,9 @@ function PopCard({
 	const fileRef = useRef<HTMLInputElement>(null);
 
 	const addLink = useMutation({
-		mutationFn: () =>
-			addPopAttachmentLink(pop.id, { kind: 'link', url: linkUrl.trim() }),
+		// Sem protocolo, 'www.x.com' virava href relativo (404 da plataforma).
+		mutationFn: (url: string) =>
+			addPopAttachmentLink(pop.id, { kind: 'link', url }),
 		onSuccess: () => {
 			setLinkUrl('');
 			onChanged();
@@ -366,7 +368,16 @@ function PopCard({
 							type="button"
 							className={BTN_GHOST}
 							disabled={!linkUrl.trim() || addLink.isPending}
-							onClick={() => addLink.mutate()}
+							onClick={() => {
+								const url = normalizeUrl(linkUrl);
+								if (!url) {
+									toast.error(
+										'Link inválido. Ex.: https://drive.google.com/...',
+									);
+									return;
+								}
+								addLink.mutate(url);
+							}}
 						>
 							<Link2 className="w-4 h-4" />
 							Anexar link
