@@ -12,6 +12,7 @@ import {
 } from '@/modules/mentoria/service';
 import type { MntOrgPosition } from '@/modules/mentoria/types';
 import {
+	apiErrorCode,
 	BTN_GHOST,
 	BTN_PRIMARY,
 	CARD,
@@ -72,7 +73,12 @@ export function ToolOrgChart({ instanceId }: { instanceId: string }) {
 			invalidate();
 			toast.success('Cargo salvo!');
 		},
-		onError: () => toast.error('Não foi possível salvar o cargo.'),
+		onError: (e) =>
+			toast.error(
+				apiErrorCode(e) === 'org_parent_cycle'
+					? 'Um cargo não pode responder a alguém que está abaixo dele.'
+					: 'Não foi possível salvar o cargo.',
+			),
 	});
 
 	const remove = useMutation({
@@ -91,6 +97,19 @@ export function ToolOrgChart({ instanceId }: { instanceId: string }) {
 		(p) => !p.parent_id || !all.some((o) => o.id === p.parent_id),
 	);
 	const childrenOf = (id: string) => all.filter((p) => p.parent_id === id);
+
+	// O cargo editado e toda a subárvore dele: escolher um subordinado como
+	// chefe formava ciclo, e o ciclo tirava o ramo inteiro da tela.
+	const blocked = new Set<string>();
+	if (editing) {
+		const stack = [editing.id];
+		while (stack.length) {
+			const id = stack.pop() as string;
+			if (blocked.has(id)) continue;
+			blocked.add(id);
+			for (const c of childrenOf(id)) stack.push(c.id);
+		}
+	}
 
 	const startEdit = (p: MntOrgPosition) => {
 		setAdding(false);
@@ -235,7 +254,7 @@ export function ToolOrgChart({ instanceId }: { instanceId: string }) {
 						>
 							<option value="">Ninguém (topo do organograma)</option>
 							{all
-								.filter((p) => p.id !== editing?.id)
+								.filter((p) => !blocked.has(p.id))
 								.map((p) => (
 									<option key={p.id} value={p.id}>
 										{p.title}
