@@ -104,6 +104,8 @@ export function useSubmitDiagnostic(journeyId: string | undefined) {
 			qc.invalidateQueries({ queryKey: [...ROOT, 'diagnostic', journeyId] });
 			qc.invalidateQueries({ queryKey: [...ROOT, 'bootstrap'] });
 			qc.invalidateQueries({ queryKey: [...ROOT, 'compare', journeyId] });
+			// A Foto Zero acabou de nascer: a lista de fotos ficava sem ela.
+			qc.invalidateQueries({ queryKey: [...ROOT, 'snapshots', journeyId] });
 		},
 	});
 }
@@ -121,8 +123,11 @@ export function useStartTool(journeyId: string | undefined) {
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (defId: string) => svc.startTool(journeyId as string, defId),
-		onSuccess: () =>
-			qc.invalidateQueries({ queryKey: [...ROOT, 'tools', journeyId] }),
+		// O mapa da empresa lê o status das ferramentas: ficava velho ao iniciar.
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: [...ROOT, 'tools', journeyId] });
+			qc.invalidateQueries({ queryKey: [...ROOT, 'company-map', journeyId] });
+		},
 	});
 }
 
