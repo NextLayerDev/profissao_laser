@@ -11,7 +11,11 @@ import {
 	saveSubmissionDraft,
 	submitSubmission,
 } from '@/modules/mentoria/service';
-import type { ToolWithInstance } from '@/modules/mentoria/types';
+import type {
+	MntFormTemplate,
+	SubmissionContext,
+	ToolWithInstance,
+} from '@/modules/mentoria/types';
 import {
 	apiErrorCode,
 	BTN_GHOST,
@@ -30,33 +34,67 @@ export function ToolForm({
 	tool: ToolWithInstance;
 	journeyId: string;
 }) {
-	const qc = useQueryClient();
-	const instanceId = tool.instance?.id as string;
 	const templateKey = tool.form_template_key;
-	const answersRef = useRef<Record<string, unknown> | null>(null);
 
-	const { data: template, isLoading: tplLoading } = useQuery({
+	const { data: template, isLoading } = useQuery({
 		queryKey: ['mentoria', 'form-template', templateKey],
 		queryFn: () => getFormTemplate(templateKey as string),
 		enabled: !!templateKey,
 	});
 
-	const subsKey = ['mentoria', 'tool-submissions', journeyId, instanceId];
+	if (isLoading) return <MntSkeleton />;
+	if (!templateKey || !template) {
+		return (
+			<EmptyState
+				title="Formulário indisponível"
+				description="O modelo deste formulário ainda não foi publicado. Fale com seu mentor."
+			/>
+		);
+	}
+	return (
+		<FormSubmissionPanel
+			journeyId={journeyId}
+			template={template}
+			context="tool"
+			contextRefId={tool.instance?.id ?? null}
+		/>
+	);
+}
+
+/**
+ * Formulário data-driven com rascunho, envio e novas versões. Usado pela
+ * ferramenta kind=form e pelo exercício do encontro / avaliação final.
+ */
+export function FormSubmissionPanel({
+	journeyId,
+	template,
+	context,
+	contextRefId,
+}: {
+	journeyId: string;
+	template: MntFormTemplate;
+	context: SubmissionContext;
+	contextRefId: string | null;
+}) {
+	const qc = useQueryClient();
+	const answersRef = useRef<Record<string, unknown> | null>(null);
+
+	const subsKey = ['mentoria', 'submissions', journeyId, context, contextRefId];
 	const { data: submissions, isLoading: subsLoading } = useQuery({
 		queryKey: subsKey,
 		queryFn: () =>
 			listSubmissions(journeyId, {
-				context: 'tool',
-				context_ref_id: instanceId,
+				context,
+				...(contextRefId ? { context_ref_id: contextRefId } : {}),
 			}),
 	});
 
 	const saveDraft = useMutation({
 		mutationFn: (answers: Record<string, unknown>) =>
 			saveSubmissionDraft(journeyId, {
-				form_template_id: (template as { id: string }).id,
-				context: 'tool',
-				context_ref_id: instanceId,
+				form_template_id: template.id,
+				context,
+				context_ref_id: contextRefId,
 				answers,
 			}),
 		onSuccess: () => qc.invalidateQueries({ queryKey: subsKey }),
@@ -68,16 +106,7 @@ export function ToolForm({
 		onSuccess: () => qc.invalidateQueries({ queryKey: subsKey }),
 	});
 
-	if (tplLoading || subsLoading) return <MntSkeleton />;
-
-	if (!templateKey || !template) {
-		return (
-			<EmptyState
-				title="Formulário indisponível"
-				description="O modelo deste formulário ainda não foi publicado. Fale com seu mentor."
-			/>
-		);
-	}
+	if (subsLoading) return <MntSkeleton />;
 
 	// Lista vem por created_at desc: o primeiro 'submitted' é a última versão.
 	const submitted = (submissions ?? []).find((s) => s.status === 'submitted');

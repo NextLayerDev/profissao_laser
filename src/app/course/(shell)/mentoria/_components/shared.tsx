@@ -121,6 +121,8 @@ const STUDENT_ERRORS: Record<string, string> = {
 		'As ferramentas estão em atualização pelo seu mentor. Volte em breve.',
 	journey_not_active: 'Sua jornada não está ativa.',
 	meeting_locked: 'Este encontro ainda está bloqueado.',
+	due_date_in_past: 'O prazo já passou. Ajuste a data para reabrir a tarefa.',
+	task_not_done: 'A tarefa ainda não foi concluída.',
 };
 
 /** Mensagem amigável para o erro da API, ou `fallback`. */

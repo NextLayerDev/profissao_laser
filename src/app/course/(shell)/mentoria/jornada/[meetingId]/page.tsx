@@ -26,6 +26,7 @@ import {
 	MntSkeleton,
 } from '../../_components/shared';
 import { EncontroView } from './_components/encontro-view';
+import { MeetingExercise } from './_components/meeting-exercise';
 
 export default function EncontroPage() {
 	const params = useParams<{ meetingId: string }>();
@@ -145,6 +146,7 @@ function EncontroContent({
 					? { templateId: diag.template?.id ?? null, done: !!diag.foto_zero }
 					: undefined
 			}
+			exercise={<MeetingExercise journeyId={journeyId} meeting={meeting} />}
 		/>
 	);
 }

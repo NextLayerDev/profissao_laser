@@ -121,6 +121,14 @@ export async function getFormTemplate(key: string): Promise<MntFormTemplate> {
 	return data;
 }
 
+/** Template publicado por id (exercício do encontro / avaliação final). */
+export async function getFormTemplateById(
+	id: string,
+): Promise<MntFormTemplate> {
+	const { data } = await api.get(`/v1/mentoria/form-template/id/${id}`);
+	return data;
+}
+
 export async function listSubmissions(
 	journeyId: string,
 	params?: { context?: string; context_ref_id?: string },

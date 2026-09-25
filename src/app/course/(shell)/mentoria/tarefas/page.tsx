@@ -51,7 +51,10 @@ function Content({ journeyId }: { journeyId: string }) {
 		// O select voltava ao valor antigo sem explicação quando falhava.
 		update.mutate(
 			{ taskId, body: { status } },
-			{ onError: () => toast.error('Não foi possível atualizar a tarefa.') },
+			{
+				onError: (e) =>
+					toast.error(mntErrorText(e, 'Não foi possível atualizar a tarefa.')),
+			},
 		);
 	};
 

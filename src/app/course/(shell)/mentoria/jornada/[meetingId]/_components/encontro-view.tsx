@@ -48,7 +48,10 @@ export function EncontroView({
 	addingTask,
 	onAddTask,
 	diagnostic,
+	exercise,
 }: {
+	/** Formulário do exercício, montado pelo container (a view não busca dados). */
+	exercise?: ReactNode;
 	meeting: MntJourneyMeeting;
 	/** Tarefas já filtradas pela origem deste encontro. */
 	meetingTasks: MntTask[];
@@ -126,6 +129,7 @@ export function EncontroView({
 			)}
 
 			<ExerciseSection
+				exercise={exercise}
 				meeting={meeting}
 				isDiagnostic={isDiagnostic}
 				diagnosticDone={diagnostic?.done === true}
@@ -188,6 +192,7 @@ function TemplateSection({
 }
 
 function ExerciseSection({
+	exercise,
 	meeting,
 	isDiagnostic,
 	diagnosticDone,
@@ -201,6 +206,7 @@ function ExerciseSection({
 	meetingTasks: MntTask[];
 	addingTask: boolean;
 	onAddTask: (prompt: MeetingTaskPrompt) => void;
+	exercise?: ReactNode;
 }) {
 	const tpl = meeting.template;
 	const prompts: MeetingTaskPrompt[] = tpl?.task_prompts ?? [];
@@ -236,10 +242,13 @@ function ExerciseSection({
 			)}
 
 			{hasExercise && !isDiagnostic && (
-				<p className="mb-4 text-body text-muted">
-					O exercício prático deste encontro é feito junto com o mentor. As
-					tarefas sugeridas abaixo ajudam a colocá-lo em prática.
-				</p>
+				<div className="mb-4">
+					{exercise ?? (
+						<p className="text-body text-muted">
+							O exercício deste encontro é feito junto com o mentor.
+						</p>
+					)}
+				</div>
 			)}
 
 			{prompts.length > 0 && (
