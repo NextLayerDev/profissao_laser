@@ -537,7 +537,14 @@ export function IndicadoresView({
 function targetProgressPct(kpi: MntKpi) {
 	const value = kpi.latest_measurement?.value;
 	if (value === null || value === undefined || !kpi.target) return null;
-	return Math.max(0, Math.min(100, (value / kpi.target) * 100));
+	// "Quanto menor, melhor": atingir é ficar abaixo da meta — mesma conta do
+	// semáforo da API (target/valor). Com value/target a barra enchia justo
+	// quando o semáforo ficava vermelho.
+	const pct =
+		kpi.direction === 'down_good'
+			? (kpi.target / Math.max(value, Number.EPSILON)) * 100
+			: (value / kpi.target) * 100;
+	return Math.max(0, Math.min(100, pct));
 }
 
 const PROGRESS_TONE_CLASS: Record<string, string> = {
