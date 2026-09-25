@@ -1,6 +1,7 @@
 'use client';
 
-// Modais da gestão de turmas: criar/editar turma, mentores e matrícula.
+// Modais da gestão de turmas: criar/editar turma, mentores, matrícula e
+// matrícula em lote (fila "Aguardando turma").
 //
 // `<select>` e `<input type="date">` continuam nativos — o Select do DS é só
 // o gatilho fechado (sem menu) e o Input é um TextInput genérico sem
@@ -10,9 +11,14 @@ import { Search, Trash2, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { Text } from 'react-native-css/components/Text';
 import { toast } from 'sonner';
-import type { MntCohort } from '@/modules/mentoria/types';
+import type {
+	EnrollBatchResult,
+	MentoriaWaitingStudent,
+	MntCohort,
+} from '@/modules/mentoria/types';
 import { useTeamUsers } from '@/modules/users';
 import {
+	mentoriaCodeMessage,
 	mentoriaErrorMessage,
 	studentSearchErrorMessage,
 	useCohortMentors,
@@ -389,7 +395,7 @@ export function EnrollStudentModal({
 
 				<Field
 					label="Nome da empresa"
-					hint="Cria/atualiza a empresa do aluno no programa (opcional se ele já tiver empresa cadastrada)."
+					hint="Opcional. Sem o plano da Mentoria, o aluno não acessa."
 				>
 					<Input
 						value={companyName}
@@ -407,6 +413,124 @@ export function EnrollStudentModal({
 					</Button>
 				</div>
 			</div>
+		</Modal>
+	);
+}
+
+// ── Matricular em lote (fila "Aguardando turma") ────────────────────────────
+export function EnrollBatchModal({
+	students,
+	cohorts,
+	onClose,
+}: {
+	students: MentoriaWaitingStudent[];
+	cohorts: MntCohort[];
+	onClose: () => void;
+}) {
+	const { enrollBatch } = useCohortMutations();
+	// Só turma aberta aceita matrícula (a API responde cohort_not_open).
+	const open = cohorts.filter(
+		(c) => c.status === 'active' || c.status === 'draft',
+	);
+	const [cohortId, setCohortId] = useState(open[0]?.id ?? '');
+	const [result, setResult] = useState<EnrollBatchResult | null>(null);
+	const label = (id: string) => {
+		const s = students.find((x) => x.user_id === id);
+		return s?.name?.trim() || s?.email || id;
+	};
+
+	const submit = async () => {
+		if (!cohortId) {
+			toast.error('Escolha a turma');
+			return;
+		}
+		try {
+			const res = await enrollBatch.mutateAsync({
+				cohortId,
+				userIds: students.map((s) => s.user_id),
+			});
+			if (res.failed === 0) {
+				toast.success(
+					res.enrolled === 1
+						? 'Aluno matriculado'
+						: `${res.enrolled} alunos matriculados`,
+				);
+				onClose();
+				return;
+			}
+			// Com falha, o modal fica aberto listando quem não entrou e por quê.
+			setResult(res);
+		} catch (err) {
+			toast.error(mentoriaErrorMessage(err, 'Erro ao matricular'));
+		}
+	};
+
+	const failures = result?.results.filter((r) => !r.ok) ?? [];
+
+	return (
+		<Modal title="Matricular na turma" onClose={onClose}>
+			{result ? (
+				<div className="space-y-4">
+					<p className="text-sm text-primary">
+						{result.enrolled} matriculado(s), {result.failed} com erro.
+					</p>
+					<ul className="space-y-2">
+						{failures.map((f) => (
+							<li
+								key={f.user_id}
+								className="rounded-control border border-subtle p-3 text-sm"
+							>
+								<p className="text-primary">{label(f.user_id)}</p>
+								<p className="text-xs text-danger">
+									{mentoriaCodeMessage(f.error, 'Não foi possível matricular.')}
+								</p>
+							</li>
+						))}
+					</ul>
+					<div className="flex justify-end pt-2">
+						<Button onPress={onClose}>Fechar</Button>
+					</div>
+				</div>
+			) : (
+				<div className="space-y-4">
+					<p className="text-sm text-muted">
+						{students.length === 1
+							? label(students[0]?.user_id ?? '')
+							: `${students.length} alunos selecionados`}
+					</p>
+					{open.length === 0 ? (
+						<p className="text-sm text-muted">
+							Nenhuma turma aberta. Crie uma ou mude o status para Ativa.
+						</p>
+					) : (
+						<Field label="Turma" required>
+							<select
+								className={inputClass}
+								value={cohortId}
+								onChange={(e) => setCohortId(e.target.value)}
+							>
+								{open.map((c) => (
+									<option key={c.id} value={c.id}>
+										{c.name}
+									</option>
+								))}
+							</select>
+						</Field>
+					)}
+					<div className="flex justify-end gap-2 pt-2">
+						<Button variant="secondary" onPress={onClose}>
+							Cancelar
+						</Button>
+						<Button
+							onPress={submit}
+							loading={enrollBatch.isPending}
+							disabled={open.length === 0}
+						>
+							Matricular
+						</Button>
+					</div>
+				</div>
+			)}
 		</Modal>
 	);
 }

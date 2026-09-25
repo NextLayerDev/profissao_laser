@@ -14,64 +14,73 @@ const ROOT = ['mentoria-admin'] as const;
 // Prefixo do módulo (usado pelos hooks prontos useMentorCohorts etc.)
 const MNT = ['mentoria'] as const;
 
+// Códigos que os services mentoria-* da API lançam de fato (o mapa antigo
+// tinha vários que ela nunca emite e deixava os reais chegarem crus).
+const KNOWN: Record<string, string> = {
+	journey_already_active: 'Este aluno já tem uma jornada ativa.',
+	enroll_not_customer: 'Staff e admin não podem ser matriculados como aluno.',
+	journey_not_found: 'Jornada não encontrada.',
+	journey_not_active: 'A jornada deste aluno não está ativa.',
+	user_not_found: 'Usuário não encontrado. Confira o ID informado.',
+	cohort_not_found: 'Turma não encontrada.',
+	cohort_not_open: 'A turma não está aberta para matrículas.',
+	cohort_dates_invalid: 'A data de término precisa ser depois do início.',
+	no_published_meeting_templates:
+		'Não há encontros publicados. Publique os encontros antes de matricular.',
+	mentor_must_be_staff:
+		'Só usuários da equipe (staff/admin) podem ser mentores.',
+	not_mentor_of_cohort: 'Você não é mentor da turma deste aluno.',
+	mentor_not_in_cohort: 'Esta pessoa não é mentora desta turma.',
+	forbidden: 'Você não tem permissão para esta ação.',
+	meeting_not_found: 'Encontro não encontrado.',
+	meeting_locked: 'Este encontro ainda está bloqueado.',
+	meeting_not_done: 'O encontro ainda não foi concluído.',
+	template_not_found: 'Modelo não encontrado.',
+	template_version_conflict:
+		'Outra pessoa salvou este modelo ao mesmo tempo. Recarregue e tente de novo.',
+	form_template_not_found: 'Formulário não encontrado ou não publicado.',
+	form_template_version_conflict:
+		'Outra pessoa salvou este formulário ao mesmo tempo. Recarregue e tente de novo.',
+	maturity_config_version_conflict:
+		'Outra pessoa salvou a metodologia ao mesmo tempo. Recarregue e tente de novo.',
+	live_not_found: 'Live não encontrada.',
+	live_already_ended: 'Esta live já foi encerrada.',
+	live_start_external_only: 'Só lives com link externo são iniciadas por aqui.',
+	live_links_external_only: 'Links só valem para lives externas.',
+	external_url_required: 'Informe o link da live externa.',
+	stream_key_missing: 'Esta live ainda não tem chave de transmissão.',
+	mux_not_configured:
+		'Transmissão pela plataforma indisponível (Mux não configurado).',
+	file_required: 'Selecione um arquivo.',
+	material_not_found: 'Material não encontrado.',
+	mentoria_access_invalid_students:
+		'Algum dos selecionados não é aluno. Revise a lista.',
+	foto_zero_missing: 'Este aluno ainda não enviou o diagnóstico.',
+	raiox_final_exists:
+		'Já existe Raio-X final calculado sobre esta Foto Zero; não dá para reabrir.',
+	migration_pending:
+		'Recurso ainda não disponível no banco (migration pendente). Avise o suporte técnico.',
+	tool_definition_not_found: 'Ferramenta não encontrada.',
+	task_not_found: 'Tarefa não encontrada.',
+	task_not_done: 'Só dá para validar uma tarefa que o aluno concluiu.',
+	material_url_locked:
+		'O link de um material enviado como arquivo não pode ser trocado.',
+	tool_definition_key_exists:
+		'Já existe uma ferramenta com esse nome (key). Use outro nome.',
+	tool_definition_protected:
+		'Esta é uma ferramenta-base da metodologia e não pode ser excluída. Desative-a, se preciso.',
+};
+
+/** Mensagem pt-BR de um código da API (ex.: resultado do enroll-batch). */
+export function mentoriaCodeMessage(
+	code: string | null | undefined,
+	fallback: string,
+): string {
+	return (code && KNOWN[code]) || fallback;
+}
+
 /** Traduz códigos de erro conhecidos da mentoria (409 etc.) p/ pt-BR. */
 export function mentoriaErrorMessage(err: unknown, fallback: string): string {
-	// Códigos que os services mentoria-* da API lançam de fato (o mapa antigo
-	// tinha vários que ela nunca emite e deixava os reais chegarem crus).
-	const KNOWN: Record<string, string> = {
-		journey_already_active: 'Este aluno já tem uma jornada ativa.',
-		journey_not_found: 'Jornada não encontrada.',
-		journey_not_active: 'A jornada deste aluno não está ativa.',
-		user_not_found: 'Usuário não encontrado. Confira o ID informado.',
-		cohort_not_found: 'Turma não encontrada.',
-		cohort_not_open: 'A turma não está aberta para matrículas.',
-		cohort_dates_invalid: 'A data de término precisa ser depois do início.',
-		no_published_meeting_templates:
-			'Não há encontros publicados. Publique os encontros antes de matricular.',
-		mentor_must_be_staff:
-			'Só usuários da equipe (staff/admin) podem ser mentores.',
-		not_mentor_of_cohort: 'Você não é mentor da turma deste aluno.',
-		mentor_not_in_cohort: 'Esta pessoa não é mentora desta turma.',
-		forbidden: 'Você não tem permissão para esta ação.',
-		meeting_not_found: 'Encontro não encontrado.',
-		meeting_locked: 'Este encontro ainda está bloqueado.',
-		meeting_not_done: 'O encontro ainda não foi concluído.',
-		template_not_found: 'Modelo não encontrado.',
-		template_version_conflict:
-			'Outra pessoa salvou este modelo ao mesmo tempo. Recarregue e tente de novo.',
-		form_template_not_found: 'Formulário não encontrado ou não publicado.',
-		form_template_version_conflict:
-			'Outra pessoa salvou este formulário ao mesmo tempo. Recarregue e tente de novo.',
-		maturity_config_version_conflict:
-			'Outra pessoa salvou a metodologia ao mesmo tempo. Recarregue e tente de novo.',
-		live_not_found: 'Live não encontrada.',
-		live_already_ended: 'Esta live já foi encerrada.',
-		live_start_external_only:
-			'Só lives com link externo são iniciadas por aqui.',
-		live_links_external_only: 'Links só valem para lives externas.',
-		external_url_required: 'Informe o link da live externa.',
-		stream_key_missing: 'Esta live ainda não tem chave de transmissão.',
-		mux_not_configured:
-			'Transmissão pela plataforma indisponível (Mux não configurado).',
-		file_required: 'Selecione um arquivo.',
-		material_not_found: 'Material não encontrado.',
-		mentoria_access_invalid_students:
-			'Algum dos selecionados não é aluno. Revise a lista.',
-		foto_zero_missing: 'Este aluno ainda não enviou o diagnóstico.',
-		raiox_final_exists:
-			'Já existe Raio-X final calculado sobre esta Foto Zero; não dá para reabrir.',
-		migration_pending:
-			'Recurso ainda não disponível no banco (migration pendente). Avise o suporte técnico.',
-		tool_definition_not_found: 'Ferramenta não encontrada.',
-		task_not_found: 'Tarefa não encontrada.',
-		task_not_done: 'Só dá para validar uma tarefa que o aluno concluiu.',
-		material_url_locked:
-			'O link de um material enviado como arquivo não pode ser trocado.',
-		tool_definition_key_exists:
-			'Já existe uma ferramenta com esse nome (key). Use outro nome.',
-		tool_definition_protected:
-			'Esta é uma ferramenta-base da metodologia e não pode ser excluída. Desative-a, se preciso.',
-	};
 	if (err instanceof AxiosError) {
 		const body = err.response?.data as
 			| { message?: string; code?: string; error?: string }
@@ -132,6 +141,8 @@ export function useCohortMutations() {
 		qc.invalidateQueries({ queryKey: [...ROOT, 'cohorts'] });
 		qc.invalidateQueries({ queryKey: [...ROOT, 'cohort-mentors'] });
 		qc.invalidateQueries({ queryKey: [...MNT, 'mentor-cohorts'] });
+		// Matricular tira o aluno da fila "Aguardando turma".
+		qc.invalidateQueries({ queryKey: [...ROOT, 'waiting-students'] });
 	};
 	const create = useMutation({
 		mutationFn: svc.createCohort,
@@ -177,7 +188,32 @@ export function useCohortMutations() {
 			});
 		},
 	});
-	return { create, update, addMentor, removeMentor, enroll };
+	const enrollBatch = useMutation({
+		mutationFn: ({
+			cohortId,
+			userIds,
+		}: {
+			cohortId: string;
+			userIds: string[];
+		}) => svc.enrollStudentsBatch(cohortId, userIds),
+		onSuccess: (_data, vars) => {
+			invalidate();
+			qc.invalidateQueries({
+				queryKey: [...MNT, 'cohort-dashboard', vars.cohortId],
+			});
+		},
+	});
+	return { create, update, addMentor, removeMentor, enroll, enrollBatch };
+}
+
+/** Fila "Aguardando turma": só admin (a rota é requireRole('admin')). */
+export function useWaitingStudents() {
+	const { isAdmin, ready } = useIsMentoriaAdmin();
+	return useQuery({
+		queryKey: [...ROOT, 'waiting-students'],
+		queryFn: svc.listWaitingStudents,
+		enabled: ready && isAdmin,
+	});
 }
 
 /** Busca de alunos p/ matrícula (endpoint admin de students do upvox). */

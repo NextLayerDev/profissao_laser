@@ -102,7 +102,8 @@ export type MentoriaAccessStudent = {
 
 /**
  * `reason='restricted'`: o admin limitou a Mentoria e o aluno não está na
- * lista — some do menu. `'required'`: sem plano/matrícula — o menu continua
+ * lista — some do menu. `'required'`: sem o plano (a matrícula sozinha não
+ * basta) — o menu continua
  * mostrando e o SubscriptionGate oferece o plano.
  */
 export type MyMentoriaAccess = {
@@ -110,6 +111,29 @@ export type MyMentoriaAccess = {
 	reason: 'required' | 'restricted' | null;
 	/** Seção Ferramentas bloqueada pelo admin (ausente em API antiga). */
 	tools_locked?: boolean;
+};
+
+/** Fila "Aguardando turma": aluno com o plano da Mentoria e sem jornada ativa. */
+export type MentoriaWaitingStudent = {
+	user_id: string;
+	name: string | null;
+	email: string;
+	company_name: string | null;
+	plan_name: string | null;
+	/** Início da assinatura mais antiga com a Mentoria. */
+	since: string;
+};
+
+export type EnrollBatchResult = {
+	enrolled: number;
+	failed: number;
+	results: Array<{
+		user_id: string;
+		ok: boolean;
+		journey_id: string | null;
+		/** Código do erro da API (ex.: `journey_already_active`). */
+		error: string | null;
+	}>;
 };
 
 export type MentoriaAccessAdmin = {

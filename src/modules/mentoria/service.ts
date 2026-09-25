@@ -5,11 +5,13 @@ import type {
 	CompanyMap,
 	Comparison,
 	DiagnosticState,
+	EnrollBatchResult,
 	GoodNewsState,
 	LiveCredentials,
 	LivePlayback,
 	MentoriaAccessAdmin,
 	MentoriaBootstrap,
+	MentoriaWaitingStudent,
 	MntBusinessPlanVersion,
 	MntCohort,
 	MntCohortMentor,
@@ -845,6 +847,24 @@ export async function enrollStudent(
 		`/v1/admin/mentoria/cohort/${cohortId}/enroll`,
 		body,
 	);
+	return data;
+}
+
+/** Matrícula em lote: um erro não para os outros (resultado por aluno). */
+export async function enrollStudentsBatch(
+	cohortId: string,
+	userIds: string[],
+): Promise<EnrollBatchResult> {
+	const { data } = await api.post(
+		`/v1/admin/mentoria/cohort/${cohortId}/enroll-batch`,
+		{ user_ids: userIds },
+	);
+	return data;
+}
+
+/** Fila "Aguardando turma" (admin). */
+export async function listWaitingStudents(): Promise<MentoriaWaitingStudent[]> {
+	const { data } = await api.get('/v1/admin/mentoria/waiting-students');
 	return data;
 }
 
