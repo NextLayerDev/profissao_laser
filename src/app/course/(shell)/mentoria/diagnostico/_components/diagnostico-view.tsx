@@ -74,9 +74,8 @@ export function DiagnosticoView({
 					    mesma ressalva das outras telas da Mentoria. */}
 					<Lock className="h-4 w-4 shrink-0 text-brand dark:text-violet-400" />
 					<p className="text-body text-secondary">
-						A Foto Zero está congelada e não pode ser alterada. Ela é a
-						referência do &quot;antes&quot; para medir toda a sua evolução na
-						mentoria.
+						Somente leitura: é o seu ponto de partida. Precisa corrigir? Fale
+						com seu mentor.
 					</p>
 				</div>
 				<FotoZeroView
@@ -260,6 +259,16 @@ function FotoZeroView({
 		answers ??
 		((snapshot.payload.answers ?? snapshot.payload) as Record<string, unknown>);
 
+	// Respostas cujas keys não estão no template exibido (versão diferente) não
+	// podem sumir da tela: aparecem num bloco à parte.
+	const shown = new Set(
+		templateBlocks.flatMap((b) => b.fields.map((f) => f.key)),
+	);
+	const extra = Object.entries(source ?? {}).filter(
+		([key, value]) =>
+			!shown.has(key) && value !== undefined && value !== null && value !== '',
+	);
+
 	return (
 		<div className="space-y-5">
 			{templateBlocks.map((block) => (
@@ -284,6 +293,22 @@ function FotoZeroView({
 					</dl>
 				</SectionCard>
 			))}
+			{extra.length > 0 && (
+				<SectionCard title="Outras respostas" className="@container">
+					<dl className="grid grid-cols-1 gap-x-6 gap-y-3 @2xl:grid-cols-2">
+						{extra.map(([key, value]) => (
+							<div key={key}>
+								<dt className="text-caption uppercase tracking-wide text-muted">
+									{key.replaceAll('_', ' ')}
+								</dt>
+								<dd className="mt-0.5 whitespace-pre-wrap text-body text-primary">
+									{renderAnswer(value)}
+								</dd>
+							</div>
+						))}
+					</dl>
+				</SectionCard>
+			)}
 		</div>
 	);
 }

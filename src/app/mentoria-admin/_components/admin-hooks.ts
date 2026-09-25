@@ -28,6 +28,12 @@ export function mentoriaErrorMessage(err: unknown, fallback: string): string {
 		live_not_active: 'A live não está ativa.',
 		mentoria_access_invalid_students:
 			'Algum dos selecionados não é aluno. Revise a lista.',
+		foto_zero_missing: 'Este aluno ainda não enviou o diagnóstico.',
+		raiox_final_exists:
+			'Já existe Raio-X final calculado sobre esta Foto Zero; não dá para reabrir.',
+		migration_pending:
+			'Recurso ainda não disponível no banco (migration pendente). Avise o suporte técnico.',
+		not_mentor_of_cohort: 'Você não é mentor da turma deste aluno.',
 	};
 	if (err instanceof AxiosError) {
 		const body = err.response?.data as
@@ -163,6 +169,27 @@ export function useMentorSubmissions(journeyId: string | undefined) {
 		queryKey: [...ROOT, 'submissions', journeyId],
 		queryFn: () => svc.listSubmissionsAsMentor(journeyId as string),
 		enabled: !!journeyId,
+	});
+}
+
+export function useMentorDiagnostic(journeyId: string | undefined) {
+	return useQuery({
+		queryKey: [...ROOT, 'diagnostic', journeyId],
+		queryFn: () => svc.getDiagnosticAsMentor(journeyId as string),
+		enabled: !!journeyId,
+	});
+}
+
+export function useReopenDiagnostic(journeyId: string | undefined) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (reason: string | null) =>
+			svc.reopenDiagnostic(journeyId as string, reason),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: [...ROOT, 'diagnostic', journeyId] });
+			qc.invalidateQueries({ queryKey: [...ROOT, 'submissions', journeyId] });
+			qc.invalidateQueries({ queryKey: [...MNT] });
+		},
 	});
 }
 

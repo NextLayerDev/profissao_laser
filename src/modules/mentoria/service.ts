@@ -751,7 +751,28 @@ export async function listSubmissionsAsMentor(
 	return data;
 }
 
+export async function getDiagnosticAsMentor(
+	journeyId: string,
+): Promise<DiagnosticState> {
+	const { data } = await api.get(
+		`/v1/mentoria/journey/${journeyId}/diagnostic`,
+	);
+	return data;
+}
+
 // ── Admin ────────────────────────────────────────────────────────────────────
+/** Reabre o diagnóstico: apaga a Foto Zero e devolve o envio para rascunho. */
+export async function reopenDiagnostic(
+	journeyId: string,
+	reason: string | null,
+): Promise<DiagnosticState> {
+	const { data } = await api.post(
+		`/v1/admin/mentoria/journey/${journeyId}/diagnostic/reopen`,
+		{ reason },
+	);
+	return data;
+}
+
 export async function listCohortsAdmin(): Promise<MntCohort[]> {
 	const { data } = await api.get('/v1/admin/mentoria/cohorts');
 	return data;

@@ -1,13 +1,16 @@
 'use client';
 
+import { AxiosError } from 'axios';
 import {
 	Building2,
+	Camera,
 	CheckCircle2,
 	ClipboardList,
 	ListTodo,
 	Loader2,
 	MessageSquare,
 	Radar as RadarIcon,
+	RotateCcw,
 	Target,
 } from 'lucide-react';
 import { useParams } from 'next/navigation';
@@ -18,6 +21,7 @@ import { CompanyMapRadar } from '@/modules/mentoria/components/company-map-radar
 import { SemaphoreBadge } from '@/modules/mentoria/components/semaphore-badge';
 import { useJourneyOverview } from '@/modules/mentoria/hooks';
 import type {
+	DiagnosticState,
 	MntFormSubmission,
 	MntJourneyMeeting,
 	MntKpi,
@@ -28,10 +32,12 @@ import {
 	mentoriaErrorMessage,
 	useMentorCommentTask,
 	useMentorCompanyMap,
+	useMentorDiagnostic,
 	useMentorJourneyKpis,
 	useMentorJourneyTasks,
 	useMentorMeetingMutations,
 	useMentorSubmissions,
+	useReopenDiagnostic,
 } from '../../_components/admin-hooks';
 import {
 	Badge,
@@ -101,6 +107,10 @@ export default function JourneyDrilldownPage() {
 	const tasks = useMentorJourneyTasks(journeyId);
 	const kpis = useMentorJourneyKpis(journeyId);
 	const submissions = useMentorSubmissions(journeyId);
+	const diagnostic = useMentorDiagnostic(journeyId);
+	const [reopening, setReopening] = useState(false);
+	// Rótulos do diagnóstico: as respostas chegam por key (ex.: gargalo_principal).
+	const diagnosticLabels = labelsOf(diagnostic.data);
 	const { validate, feedback } = useMentorMeetingMutations(journeyId);
 	const commentTask = useMentorCommentTask(journeyId);
 
@@ -415,6 +425,15 @@ export default function JourneyDrilldownPage() {
 							</Card>
 						</section>
 
+						<section>
+							<SectionTitle icon={Camera}>Diagnóstico (Foto Zero)</SectionTitle>
+							<DiagnosticCard
+								state={diagnostic.data}
+								loading={diagnostic.isLoading}
+								onReopen={() => setReopening(true)}
+							/>
+						</section>
+
 						{/* Submissões de formulário */}
 						<section>
 							<SectionTitle icon={ClipboardList}>
@@ -431,7 +450,15 @@ export default function JourneyDrilldownPage() {
 							) : (
 								<div className="space-y-3">
 									{submissions.data.map((s) => (
-										<SubmissionCard key={s.id} submission={s} />
+										<SubmissionCard
+											key={s.id}
+											submission={s}
+											labels={
+												s.form_template_id === diagnostic.data?.template?.id
+													? diagnosticLabels
+													: undefined
+											}
+										/>
 									))}
 								</div>
 							)}
@@ -439,6 +466,13 @@ export default function JourneyDrilldownPage() {
 					</div>
 				)}
 			</main>
+
+			{reopening && (
+				<ReopenDiagnosticModal
+					journeyId={journeyId}
+					onClose={() => setReopening(false)}
+				/>
+			)}
 
 			{feedbackFor && (
 				<FeedbackModal
@@ -570,7 +604,120 @@ function CommentModal({
 	);
 }
 
-function SubmissionCard({ submission }: { submission: MntFormSubmission }) {
+function labelsOf(state: DiagnosticState | undefined): Record<string, string> {
+	const labels: Record<string, string> = {};
+	for (const block of state?.template?.schema.blocks ?? []) {
+		for (const field of block.fields) labels[field.key] = field.label;
+	}
+	return labels;
+}
+
+function DiagnosticCard({
+	state,
+	loading,
+	onReopen,
+}: {
+	state: DiagnosticState | undefined;
+	loading: boolean;
+	onReopen: () => void;
+}) {
+	if (loading) {
+		return (
+			<Card>
+				<Spinner />
+			</Card>
+		);
+	}
+	const status = state?.foto_zero
+		? {
+				tone: 'green' as const,
+				label: `Congelada em ${formatDateTime(state.foto_zero.taken_at)}`,
+			}
+		: state?.draft
+			? {
+					tone: 'amber' as const,
+					label: `Rascunho salvo em ${formatDateTime(state.draft.updated_at)}`,
+				}
+			: { tone: 'slate' as const, label: 'Não iniciado' };
+	return (
+		<Card className="p-4 flex flex-wrap items-center justify-between gap-3">
+			<Badge tone={status.tone}>{status.label}</Badge>
+			{state?.foto_zero && (
+				<button type="button" className={secondaryBtn} onClick={onReopen}>
+					<RotateCcw className="w-3.5 h-3.5" />
+					Reabrir diagnóstico
+				</button>
+			)}
+		</Card>
+	);
+}
+
+function ReopenDiagnosticModal({
+	journeyId,
+	onClose,
+}: {
+	journeyId: string;
+	onClose: () => void;
+}) {
+	const reopen = useReopenDiagnostic(journeyId);
+	const [reason, setReason] = useState('');
+	const submit = async () => {
+		try {
+			await reopen.mutateAsync(reason.trim() || null);
+			toast.success(
+				'Diagnóstico reaberto. O aluno já pode revisar e reenviar.',
+			);
+			onClose();
+		} catch (err) {
+			toast.error(
+				err instanceof AxiosError && err.response?.status === 403
+					? 'Só administradores podem reabrir o diagnóstico.'
+					: mentoriaErrorMessage(err, 'Erro ao reabrir o diagnóstico'),
+			);
+		}
+	};
+	return (
+		<Modal title="Reabrir diagnóstico?" onClose={onClose}>
+			<div className="space-y-4">
+				<p className="text-sm text-slate-600 dark:text-gray-300">
+					A Foto Zero atual é arquivada e o aluno volta ao formulário com as
+					respostas preenchidas.
+				</p>
+				<Field label="Motivo (opcional)">
+					<textarea
+						className={`${inputClass} min-h-16`}
+						value={reason}
+						maxLength={500}
+						onChange={(e) => setReason(e.target.value)}
+						placeholder="Ex.: enviado vazio por engano"
+					/>
+				</Field>
+				<div className="flex justify-end gap-2">
+					<button type="button" className={secondaryBtn} onClick={onClose}>
+						Cancelar
+					</button>
+					<button
+						type="button"
+						className={primaryBtn}
+						disabled={reopen.isPending}
+						onClick={submit}
+					>
+						{reopen.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+						Reabrir
+					</button>
+				</div>
+			</div>
+		</Modal>
+	);
+}
+
+function SubmissionCard({
+	submission,
+	labels,
+}: {
+	submission: MntFormSubmission;
+	labels?: Record<string, string>;
+}) {
 	const [open, setOpen] = useState(false);
 	const entries = Object.entries(submission.answers ?? {});
 	return (
@@ -605,7 +752,7 @@ function SubmissionCard({ submission }: { submission: MntFormSubmission }) {
 					{entries.map(([key, value]) => (
 						<div key={key}>
 							<dt className="text-xs uppercase tracking-wide text-slate-400 dark:text-gray-500">
-								{key.replaceAll('_', ' ')}
+								{labels?.[key] ?? key.replaceAll('_', ' ')}
 							</dt>
 							<dd className="text-sm text-slate-800 dark:text-slate-200 mt-0.5 break-words">
 								{renderAnswer(value)}

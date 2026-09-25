@@ -20,6 +20,7 @@ import {
 	BookOpen,
 	Building2,
 	CheckSquare,
+	ClipboardList,
 	Compass,
 	FileText,
 	Link2,
@@ -46,6 +47,7 @@ import {
 } from '@/modules/mentoria/components/ui';
 import {
 	useCompanyMap,
+	useDiagnostic,
 	useJourneyTools,
 	useKpiHistories,
 	useKpis,
@@ -132,6 +134,9 @@ function Dashboard({
 	const { data: tools } = useJourneyTools(journeyId);
 	const { data: map } = useCompanyMap(journeyId);
 	const { data: materials } = useMyMaterials();
+	const { data: diagnostic } = useDiagnostic(journeyId);
+	// O diagnóstico é o 1º passo e antes só tinha atalho dentro do encontro 1.
+	const diagnosticPending = !!diagnostic?.template && !diagnostic.foto_zero;
 
 	// Os quatro cards de topo e as séries do gráfico saem dos mesmos KPIs.
 	const topKpis = useMemo(
@@ -186,6 +191,26 @@ function Dashboard({
 				}
 				icon={Building2}
 			/>
+
+			{diagnosticPending && (
+				<div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-subtle bg-surface p-4">
+					<div className="flex items-center gap-3">
+						<ClipboardList className="h-5 w-5 shrink-0 text-brand dark:text-violet-400" />
+						<div>
+							<p className="text-body font-medium text-primary">
+								Diagnóstico pendente
+							</p>
+							<p className="text-caption text-muted">
+								Primeiro passo da mentoria: vira a sua Foto Zero.
+							</p>
+						</div>
+					</div>
+					<Link href="/course/mentoria/diagnostico" className={BTN_PRIMARY}>
+						{diagnostic?.draft ? 'Continuar diagnóstico' : 'Preencher agora'}
+						<ArrowRight className="h-4 w-4" />
+					</Link>
+				</div>
+			)}
 
 			{/* Resumo do período */}
 			<SectionCard
