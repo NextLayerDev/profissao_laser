@@ -42,11 +42,17 @@ function Content({ journeyId }: { journeyId: string }) {
 		useSnapshots(journeyId);
 	const [from, setFrom] = useState('foto_zero');
 	const [to, setTo] = useState('current');
+	// Sem Foto Zero, comparar com ela só dá 404: mostra direto o CTA do
+	// diagnóstico em vez de disparar a consulta.
+	const missingFotoZero =
+		!!snapshots &&
+		!snapshots.some((s) => s.kind === 'foto_zero') &&
+		(from === 'foto_zero' || to === 'foto_zero');
 	const {
 		data: comparison,
 		isLoading: loadingCompare,
 		isError,
-	} = useComparison(journeyId, from, to);
+	} = useComparison(journeyId, from, to, !missingFotoZero);
 	const { data: reports } = useReports(journeyId);
 	const [openReport, setOpenReport] = useState<MntReport | null>(null);
 
@@ -94,13 +100,15 @@ function Content({ journeyId }: { journeyId: string }) {
 
 	// Os quatro estados do comparador viram um só valor: a view não deve
 	// remontar essa regra a partir de flags soltas.
-	const comparisonState: ComparisonState = loadingCompare
-		? 'loading'
-		: isError || !comparison
-			? 'error'
-			: Object.keys(comparison.deltas).length === 0
-				? 'empty'
-				: 'ready';
+	const comparisonState: ComparisonState = missingFotoZero
+		? 'no_foto_zero'
+		: loadingCompare
+			? 'loading'
+			: isError || !comparison
+				? 'error'
+				: Object.keys(comparison.deltas).length === 0
+					? 'empty'
+					: 'ready';
 
 	return (
 		<EvolucaoView

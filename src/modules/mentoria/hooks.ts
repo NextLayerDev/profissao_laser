@@ -351,11 +351,12 @@ export function useComparison(
 	journeyId: string | undefined,
 	from: string,
 	to: string,
+	enabled = true,
 ) {
 	return useQuery({
 		queryKey: [...ROOT, 'compare', journeyId, from, to],
 		queryFn: () => svc.compare(journeyId as string, from, to),
-		enabled: !!journeyId,
+		enabled: !!journeyId && enabled,
 	});
 }
 

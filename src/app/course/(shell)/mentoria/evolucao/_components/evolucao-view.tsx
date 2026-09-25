@@ -11,6 +11,7 @@
 
 import { Badge, Button, buttonLabel, Table } from '@upvox-dev/ui';
 import { Camera, FileText, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
 import { Text } from 'react-native-css/components/Text';
 import {
 	DeltaPill,
@@ -51,7 +52,12 @@ const METRIC_LABEL: Record<string, string> = {
 const DOWN_IS_GOOD = new Set(['custos_fixos']);
 
 /** Os quatro estados do comparador, resolvidos no container. */
-export type ComparisonState = 'loading' | 'error' | 'empty' | 'ready';
+export type ComparisonState =
+	| 'loading'
+	| 'no_foto_zero'
+	| 'error'
+	| 'empty'
+	| 'ready';
 
 export type PeriodOption = { value: string; label: string };
 
@@ -218,11 +224,26 @@ function ComparisonBlock({
 		);
 	}
 
+	if (state === 'no_foto_zero') {
+		return (
+			<p className="text-body text-muted">
+				A comparação parte da Foto Zero.{' '}
+				<Link
+					href="/course/mentoria/diagnostico"
+					className="text-brand font-medium hover:underline"
+				>
+					Envie o diagnóstico
+				</Link>{' '}
+				para começar.
+			</p>
+		);
+	}
+
+	// Aqui a Foto Zero existe: culpá-la por um 500/timeout confundia o aluno.
 	if (state === 'error' || !comparison) {
 		return (
 			<p className="text-body text-muted">
-				Não foi possível comparar esses períodos. Envie o diagnóstico (Foto
-				Zero) primeiro.
+				Não foi possível comparar esses períodos. Tente novamente em instantes.
 			</p>
 		);
 	}
