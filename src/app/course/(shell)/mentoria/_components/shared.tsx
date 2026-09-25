@@ -247,9 +247,25 @@ export function LoadErrorState({ onRetry }: { onRetry: () => void }) {
 }
 
 /**
+ * Aluno com o plano e ainda sem turma: a compra não matricula — ele entra na
+ * fila "Aguardando turma" do admin. Enquanto isso, só adianta a empresa.
+ */
+export function WaitingForCohortState({ hasCompany }: { hasCompany: boolean }) {
+	return (
+		<EmptyState
+			title="Você está na fila da próxima turma"
+			description="Sua jornada aparece aqui quando a turma abrir."
+		>
+			<Link href={MENTORIA_SETTINGS} className={BTN_PRIMARY}>
+				{hasCompany ? 'Configurações da empresa' : 'Cadastrar empresa'}
+			</Link>
+		</EmptyState>
+	);
+}
+
+/**
  * Garante que o aluno tem uma jornada ativa antes de renderizar a tela.
- * Sem jornada → manda para Configurações, onde mora o cadastro da empresa: é a
- * única coisa que o aluno consegue adiantar antes de a matrícula sair.
+ * Sem jornada → "fila da próxima turma" (o plano já foi checado no layout).
  */
 export function JourneyGate({
 	children,
@@ -273,18 +289,7 @@ export function JourneyGate({
 	if (isError && !data) return <LoadErrorState onRetry={() => refetch()} />;
 
 	if (!data?.journey) {
-		return (
-			<div>
-				<EmptyState
-					title="Você ainda não está matriculado em uma turma de mentoria"
-					description="Assim que sua matrícula for feita pela equipe, sua jornada aparece aqui. Enquanto isso, você pode cadastrar os dados da sua empresa."
-				>
-					<Link href={MENTORIA_SETTINGS} className={BTN_PRIMARY}>
-						Cadastrar empresa
-					</Link>
-				</EmptyState>
-			</div>
-		);
+		return <WaitingForCohortState hasCompany={!!data?.company} />;
 	}
 
 	return <>{children({ journeyId: data.journey.id, bootstrap: data })}</>;

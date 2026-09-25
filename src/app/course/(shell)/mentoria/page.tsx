@@ -55,15 +55,14 @@ import {
 	useMyMaterials,
 	useTasks,
 } from '@/modules/mentoria/hooks';
-import { MENTORIA_SETTINGS } from '@/modules/mentoria/nav';
 import type { MentoriaBootstrap, MntTask } from '@/modules/mentoria/types';
 import {
 	BTN_PRIMARY,
-	EmptyState,
 	fmtDate,
 	LoadErrorState,
 	MntHeader,
 	MntSkeleton,
+	WaitingForCohortState,
 } from './_components/shared';
 
 export default function MentoriaHomePage() {
@@ -91,18 +90,7 @@ function HomeContent() {
 					subtitle="Profissão Laser 360° — sua empresa vista por inteiro"
 					icon={Compass}
 				/>
-				<EmptyState
-					title="Você ainda não está matriculado em uma turma de mentoria"
-					description="Assim que sua matrícula for confirmada pela equipe, sua jornada de 10 encontros aparece aqui. Enquanto isso, adiante o cadastro da sua empresa."
-				>
-					{/* O formulário ficava aqui embaixo. Passou a ter rota própria em
-					    Configurações, então o bloqueio virou o que já era: um convite
-					    com um destino. O rótulo distingue criar de editar — não é a
-					    mesma promessa para quem lê. */}
-					<Link href={MENTORIA_SETTINGS} className={BTN_PRIMARY}>
-						{data?.company ? 'Editar dados da empresa' : 'Cadastrar empresa'}
-					</Link>
-				</EmptyState>
+				<WaitingForCohortState hasCompany={!!data?.company} />
 			</div>
 		);
 	}
