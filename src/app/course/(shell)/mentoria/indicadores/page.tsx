@@ -20,9 +20,10 @@ import {
 	useKpis,
 } from '@/modules/mentoria/hooks';
 import type { MntKpiMeasurement } from '@/modules/mentoria/types';
-import { JourneyGate, MntSkeleton } from '../_components/shared';
+import { JourneyGate, MntSkeleton, mntErrorText } from '../_components/shared';
 import {
 	IndicadoresView,
+	type KpiPatchBody,
 	type NewKpiBody,
 	type NewMeasurementBody,
 } from './_components/indicadores-view';
@@ -39,7 +40,7 @@ export default function IndicadoresPage() {
 
 function IndicadoresContent({ journeyId }: { journeyId: string }) {
 	const { data: kpis, isLoading } = useKpis(journeyId);
-	const { create, addMeasurement } = useKpiMutations(journeyId);
+	const { create, update, addMeasurement } = useKpiMutations(journeyId);
 	const histories = useKpiHistories((kpis ?? []).map((k) => k.id));
 
 	if (isLoading) return <MntSkeleton />;
@@ -60,8 +61,25 @@ function IndicadoresContent({ journeyId }: { journeyId: string }) {
 						toast.success('Indicador criado!');
 						onSuccess();
 					},
-					onError: () => toast.error('Não foi possível criar o indicador.'),
+					onError: (e) =>
+						toast.error(mntErrorText(e, 'Não foi possível criar o indicador.')),
 				})
+			}
+			updating={update.isPending}
+			onUpdateKpi={(kpiId: string, body: KpiPatchBody, { onSuccess }) =>
+				update.mutate(
+					{ kpiId, body },
+					{
+						onSuccess: () => {
+							toast.success('Indicador salvo!');
+							onSuccess();
+						},
+						onError: (e) =>
+							toast.error(
+								mntErrorText(e, 'Não foi possível salvar o indicador.'),
+							),
+					},
+				)
 			}
 			addingMeasurement={addMeasurement.isPending}
 			onAddMeasurement={(

@@ -107,6 +107,8 @@ export function apiErrorCode(e: unknown): string | null {
 
 /** Códigos da API que o aluno pode encontrar, em pt-BR. */
 const STUDENT_ERRORS: Record<string, string> = {
+	kpi_metric_key_taken:
+		'Outro indicador já usa essa chave no comparador. Escolha outra.',
 	file_type_not_allowed:
 		'Formato de arquivo não aceito. Envie imagem, PDF, planilha ou documento.',
 	file_required: 'Escolha um arquivo para enviar.',
