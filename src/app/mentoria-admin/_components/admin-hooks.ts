@@ -30,6 +30,7 @@ export function mentoriaErrorMessage(err: unknown, fallback: string): string {
 		mentor_must_be_staff:
 			'Só usuários da equipe (staff/admin) podem ser mentores.',
 		not_mentor_of_cohort: 'Você não é mentor da turma deste aluno.',
+		mentor_not_in_cohort: 'Esta pessoa não é mentora desta turma.',
 		forbidden: 'Você não tem permissão para esta ação.',
 		meeting_not_found: 'Encontro não encontrado.',
 		meeting_locked: 'Este encontro ainda está bloqueado.',
@@ -92,10 +93,18 @@ export function useCohortsAdmin() {
 	});
 }
 
+export function useCohortMentors(cohortId: string) {
+	return useQuery({
+		queryKey: [...ROOT, 'cohort-mentors', cohortId],
+		queryFn: () => svc.listCohortMentors(cohortId),
+	});
+}
+
 export function useCohortMutations() {
 	const qc = useQueryClient();
 	const invalidate = () => {
 		qc.invalidateQueries({ queryKey: [...ROOT, 'cohorts'] });
+		qc.invalidateQueries({ queryKey: [...ROOT, 'cohort-mentors'] });
 		qc.invalidateQueries({ queryKey: [...MNT, 'mentor-cohorts'] });
 	};
 	const create = useMutation({

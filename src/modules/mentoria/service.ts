@@ -12,6 +12,7 @@ import type {
 	MentoriaBootstrap,
 	MntBusinessPlanVersion,
 	MntCohort,
+	MntCohortMentor,
 	MntCompany,
 	MntFinancialEntry,
 	MntFormSubmission,
@@ -800,6 +801,15 @@ export async function addCohortMentor(
 	const { data } = await api.post(
 		`/v1/admin/mentoria/cohort/${cohortId}/mentors`,
 		body,
+	);
+	return data;
+}
+
+export async function listCohortMentors(
+	cohortId: string,
+): Promise<MntCohortMentor[]> {
+	const { data } = await api.get(
+		`/v1/admin/mentoria/cohort/${cohortId}/mentors`,
 	);
 	return data;
 }

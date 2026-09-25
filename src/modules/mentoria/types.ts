@@ -29,6 +29,14 @@ export type MntCohort = {
 	updated_at: string;
 };
 
+export type MntCohortMentor = {
+	cohort_id: string;
+	mentor_user_id: string;
+	role: 'lead' | 'assistant';
+	created_at: string;
+	user: { id: string; name: string | null; email: string } | null;
+};
+
 export type MntJourney = {
 	id: string;
 	company_id: string;

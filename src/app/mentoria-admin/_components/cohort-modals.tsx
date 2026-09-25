@@ -15,6 +15,7 @@ import { useTeamUsers } from '@/modules/users';
 import {
 	mentoriaErrorMessage,
 	studentSearchErrorMessage,
+	useCohortMentors,
 	useCohortMutations,
 	useStudentSearch,
 } from './admin-hooks';
@@ -140,8 +141,9 @@ export function CohortMentorsModal({
 	const [mentorId, setMentorId] = useState('');
 	const [mentorLabel, setMentorLabel] = useState('');
 	const [role, setRole] = useState<'lead' | 'assistant'>('lead');
-	const [removeId, setRemoveId] = useState('');
-	const [removeLabel, setRemoveLabel] = useState('');
+	// Mentores atuais vêm da API: antes o admin escolhia qualquer staff para
+	// remover e via "removido" mesmo quando a pessoa não era mentora.
+	const mentors = useCohortMentors(cohort.id);
 	// Uma query só para as duas metades — mesmo cache, mesma lista. São os
 	// staff/admin: é exatamente quem a api aceita como mentor, então não dá para
 	// escolher alguém que ela vá recusar com `mentor_must_be_staff`.
@@ -166,19 +168,11 @@ export function CohortMentorsModal({
 		}
 	};
 
-	const remove = async () => {
-		if (!removeId.trim()) {
-			toast.error('Informe o user_id do mentor a remover');
-			return;
-		}
+	const remove = async (mentorUserId: string, label: string) => {
+		if (!confirm(`Remover ${label} dos mentores da turma?`)) return;
 		try {
-			await removeMentor.mutateAsync({
-				cohortId: cohort.id,
-				mentorUserId: removeId.trim(),
-			});
+			await removeMentor.mutateAsync({ cohortId: cohort.id, mentorUserId });
 			toast.success('Mentor removido da turma');
-			setRemoveId('');
-			setRemoveLabel('');
 		} catch (err) {
 			toast.error(mentoriaErrorMessage(err, 'Erro ao remover mentor'));
 		}
@@ -238,45 +232,48 @@ export function CohortMentorsModal({
 				</div>
 
 				<div className="border-t border-subtle pt-4 space-y-3">
-					<Field
-						label="Remover mentor"
-						hint="A API não expõe a listagem de mentores da turma, então aqui você escolhe a PESSOA — não há como marcar entre os mentores atuais."
-					>
-						<UserPicker
-							users={users}
-							isLoading={team.isLoading}
-							selectedId={removeId}
-							onSelect={(u) => {
-								setRemoveId(u.id);
-								setRemoveLabel(u.name?.trim() || u.email);
-							}}
-							emptyLabel="Nenhum mentor encontrado."
-						/>
-					</Field>
-					<Field
-						label="ID do usuário (UUID)"
-						hint={
-							removeLabel
-								? `Selecionado: ${removeLabel}`
-								: 'Preenchido pela busca acima, ou cole o UUID manualmente.'
-						}
-					>
-						<Input
-							value={removeId}
-							onChangeText={setRemoveId}
-							placeholder="user_id do mentor"
-						/>
-					</Field>
-					<Button
-						variant="secondary"
-						onPress={remove}
-						loading={removeMentor.isPending}
-					>
-						<Trash2 className="w-4 h-4" />
-						<Text className={buttonLabel({ variant: 'secondary' })}>
-							Remover da turma
-						</Text>
-					</Button>
+					<p className="text-sm font-medium text-primary">Mentores atuais</p>
+					{mentors.isLoading ? (
+						<p className="text-sm text-muted">Carregando...</p>
+					) : mentors.isError ? (
+						<p className="text-sm text-muted">
+							Não foi possível carregar os mentores da turma.
+						</p>
+					) : (mentors.data ?? []).length === 0 ? (
+						<p className="text-sm text-muted">Nenhum mentor nesta turma.</p>
+					) : (
+						<ul className="space-y-2">
+							{(mentors.data ?? []).map((m) => {
+								const label =
+									m.user?.name?.trim() || m.user?.email || m.mentor_user_id;
+								return (
+									<li
+										key={m.mentor_user_id}
+										className="flex items-center justify-between gap-3 rounded-control border border-subtle p-3"
+									>
+										<div className="min-w-0">
+											<p className="truncate text-sm text-primary">{label}</p>
+											<p className="text-xs text-muted">
+												{m.role === 'lead'
+													? 'Mentor líder'
+													: 'Mentor assistente'}
+											</p>
+										</div>
+										<Button
+											variant="secondary"
+											onPress={() => remove(m.mentor_user_id, label)}
+											disabled={removeMentor.isPending}
+										>
+											<Trash2 className="w-4 h-4" />
+											<Text className={buttonLabel({ variant: 'secondary' })}>
+												Remover
+											</Text>
+										</Button>
+									</li>
+								);
+							})}
+						</ul>
+					)}
 				</div>
 			</div>
 		</Modal>
