@@ -31,12 +31,15 @@ export function DiagnosticoView({
 	savingDraft,
 	submitting,
 	onSaveDraft,
+	onAutoSave,
 	onSubmit,
 }: {
 	data: DiagnosticState | null | undefined;
 	savingDraft: boolean;
 	submitting: boolean;
 	onSaveDraft: (answers: Record<string, unknown>) => void;
+	/** Salvamento silencioso do rascunho; `done` só no sucesso. */
+	onAutoSave?: (answers: Record<string, unknown>, done: () => void) => void;
 	/** `null` quando o aluno não tocou no formulário nesta sessão. */
 	onSubmit: (answers: Record<string, unknown> | null) => void;
 }) {
@@ -44,6 +47,47 @@ export function DiagnosticoView({
 	// próprio estado, e espelhá-lo aqui re-renderizaria a tela a cada tecla.
 	const answersRef = useRef<Record<string, unknown> | null>(null);
 	const [confirming, setConfirming] = useState(false);
+
+	// Autosave: são 45 campos e o rascunho só era salvo no botão do fim — sair
+	// pelo menu ou fechar a aba perdia tudo. `editsRef` conta as edições para
+	// não marcar "salvo" se o aluno digitou durante o save.
+	const autosaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const editsRef = useRef(0);
+	const [dirty, setDirty] = useState(false);
+	const [autoSavedAt, setAutoSavedAt] = useState<Date | null>(null);
+
+	const flushAutosave = () => {
+		if (autosaveRef.current) clearTimeout(autosaveRef.current);
+		autosaveRef.current = null;
+		const answers = answersRef.current;
+		if (!onAutoSave || !answers) return;
+		const edits = editsRef.current;
+		onAutoSave(answers, () => {
+			if (editsRef.current !== edits) return;
+			setDirty(false);
+			setAutoSavedAt(new Date());
+		});
+	};
+	const flushRef = useRef(flushAutosave);
+	useEffect(() => {
+		flushRef.current = flushAutosave;
+	});
+
+	// Saída pelo menu (desmonta): salva o que estiver pendente.
+	useEffect(
+		() => () => {
+			if (autosaveRef.current) flushRef.current();
+		},
+		[],
+	);
+
+	// Fechar/recarregar a aba com alteração não salva: o browser pergunta.
+	useEffect(() => {
+		if (!dirty) return;
+		const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+		window.addEventListener('beforeunload', warn);
+		return () => window.removeEventListener('beforeunload', warn);
+	}, [dirty]);
 
 	// Sem `p-4 md:p-8` em nenhum dos três retornos: o `mentoria/layout.tsx` já
 	// aplica o padding da área. Antes esta tela aplicava de novo, e o conteúdo
@@ -111,14 +155,23 @@ export function DiagnosticoView({
 				initialAnswers={initialAnswers}
 				onChange={(answers) => {
 					answersRef.current = answers;
+					editsRef.current += 1;
+					setDirty(true);
+					if (!onAutoSave) return;
+					if (autosaveRef.current) clearTimeout(autosaveRef.current);
+					autosaveRef.current = setTimeout(flushAutosave, 2000);
 				}}
 			/>
 
 			<div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-subtle bg-surface p-4">
 				<p className="text-body text-muted">
-					{data.draft
-						? `Rascunho salvo por último em ${fmtDate(data.draft.updated_at)}.`
-						: 'Nenhum rascunho salvo ainda.'}
+					{dirty
+						? 'Alterações ainda não salvas…'
+						: autoSavedAt
+							? `Rascunho salvo automaticamente às ${autoSavedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.`
+							: data.draft
+								? `Rascunho salvo por último em ${fmtDate(data.draft.updated_at)}.`
+								: 'Nenhum rascunho salvo ainda.'}
 				</p>
 				<div className="flex gap-2">
 					{/* Ícone + texto é um ARRAY de children, e array bypassa o wrap
@@ -128,7 +181,12 @@ export function DiagnosticoView({
 					    só o <Text>. */}
 					<Button
 						variant="secondary"
-						onPress={() => onSaveDraft(answersRef.current ?? initialAnswers)}
+						onPress={() => {
+							if (autosaveRef.current) clearTimeout(autosaveRef.current);
+							autosaveRef.current = null;
+							setDirty(false);
+							onSaveDraft(answersRef.current ?? initialAnswers);
+						}}
 						disabled={savingDraft}
 					>
 						<Save className="h-4 w-4 text-primary" aria-hidden />
@@ -155,6 +213,9 @@ export function DiagnosticoView({
 					onCancel={() => setConfirming(false)}
 					onConfirm={() => {
 						setConfirming(false);
+						if (autosaveRef.current) clearTimeout(autosaveRef.current);
+						autosaveRef.current = null;
+						setDirty(false);
 						onSubmit(answersRef.current);
 					}}
 				/>

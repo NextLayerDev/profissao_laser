@@ -77,6 +77,16 @@ function DiagnosticoContent({ journeyId }: { journeyId: string }) {
 					onError: () => toast.error('Não foi possível salvar o rascunho.'),
 				})
 			}
+			onAutoSave={(answers, done) =>
+				saveDraft.mutate(answers, {
+					onSuccess: done,
+					// `id` fixo: falhas seguidas não empilham toasts.
+					onError: () =>
+						toast.error('Não foi possível salvar o rascunho automaticamente.', {
+							id: 'mnt-diagnostic-autosave',
+						}),
+				})
+			}
 			onSubmit={(answers) => {
 				// Salva o último estado do formulário ANTES de congelar: o que não
 				// estiver no rascunho não entra na Foto Zero, e não há segunda chance.
