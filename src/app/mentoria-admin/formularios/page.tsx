@@ -219,6 +219,10 @@ export default function FormulariosPage() {
 					<Card>
 						<Spinner />
 					</Card>
+				) : templates.isError ? (
+					<Card>
+						<EmptyState message="Não foi possível carregar os formulários." />
+					</Card>
 				) : !grouped.length ? (
 					<Card>
 						<EmptyState message="Nenhum template de formulário cadastrado." />

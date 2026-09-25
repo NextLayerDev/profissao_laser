@@ -103,6 +103,8 @@ export default function MateriaisPage() {
 				<Card>
 					{materials.isLoading ? (
 						<Spinner />
+					) : materials.isError ? (
+						<EmptyState message="Não foi possível carregar os materiais." />
 					) : !materials.data?.length ? (
 						<EmptyState message="Nenhum material cadastrado." />
 					) : (

@@ -121,6 +121,8 @@ export default function FerramentasPage() {
 				<Card>
 					{tools.isLoading ? (
 						<Spinner />
+					) : tools.isError ? (
+						<EmptyState message="Não foi possível carregar as ferramentas." />
 					) : !sorted.length ? (
 						<EmptyState message="Nenhuma ferramenta cadastrada." />
 					) : (

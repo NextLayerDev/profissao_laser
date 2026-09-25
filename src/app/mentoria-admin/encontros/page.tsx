@@ -99,6 +99,10 @@ export default function EncontrosPage() {
 					<Card>
 						<Spinner />
 					</Card>
+				) : templates.isError ? (
+					<Card>
+						<EmptyState message="Não foi possível carregar os encontros." />
+					</Card>
 				) : !grouped.length ? (
 					<Card>
 						<EmptyState message="Nenhum template de encontro cadastrado." />

@@ -6,6 +6,10 @@ import { useParams } from 'next/navigation';
 import { Header } from '@/components/dashboard/header';
 import { useCohortDashboard, useMentorCohorts } from '@/modules/mentoria/hooks';
 import {
+	useCohortsAdmin,
+	useIsMentoriaAdmin,
+} from '../../_components/admin-hooks';
+import {
 	Badge,
 	Card,
 	EmptyState,
@@ -31,7 +35,13 @@ export default function CohortDashboardPage() {
 	const { cohortId } = useParams<{ cohortId: string }>();
 	const dashboard = useCohortDashboard(cohortId);
 	const cohorts = useMentorCohorts();
-	const cohort = cohorts.data?.find((c) => c.id === cohortId);
+	// Admin que não é mentor da turma não a acha em useMentorCohorts: cai na
+	// lista de todas (para staff, useCohortsAdmin já devolve as dele).
+	const allCohorts = useCohortsAdmin();
+	const { isAdmin } = useIsMentoriaAdmin();
+	const cohort =
+		cohorts.data?.find((c) => c.id === cohortId) ??
+		allCohorts.data?.find((c) => c.id === cohortId);
 
 	return (
 		<div className="min-h-screen text-slate-900 dark:text-white">
@@ -40,7 +50,7 @@ export default function CohortDashboardPage() {
 				<PageTitle
 					title={cohort ? `Turma — ${cohort.name}` : 'Dashboard da turma'}
 					description="Acompanhamento das empresas da turma: progresso na jornada e acesso ao detalhe de cada mentoria."
-					backHref="/mentoria-admin/turmas"
+					backHref={isAdmin ? '/mentoria-admin/turmas' : '/mentoria-admin'}
 				/>
 
 				<Card>

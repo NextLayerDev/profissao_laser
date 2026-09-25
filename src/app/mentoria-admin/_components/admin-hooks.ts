@@ -5,6 +5,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
+import { useMe } from '@/modules/account';
 import * as svc from '@/modules/mentoria/service';
 import { listStudents } from '@/services/students';
 import { getApiErrorMessage } from '@/shared/lib/api-error';
@@ -85,11 +86,29 @@ export function mentoriaErrorMessage(err: unknown, fallback: string): string {
 	return getApiErrorMessage(err, fallback);
 }
 
+/**
+ * O painel aceita qualquer token de equipe, mas Turmas, Encontros, Formulários,
+ * Ferramentas, Acesso e Configurações são requireRole('admin') na API: o mentor
+ * staff caía em 403 mostrado como "vazio". Enquanto /me não chega (ou falha),
+ * assume admin para não esconder nada de quem pode.
+ */
+export function useIsMentoriaAdmin(): { isAdmin: boolean; ready: boolean } {
+	const me = useMe();
+	return {
+		isAdmin: me.data ? me.data.role === 'admin' : true,
+		ready: !me.isLoading,
+	};
+}
+
 // ── Turmas ───────────────────────────────────────────────────────────────────
+/** Admin: todas as turmas. Staff (mentor): só as dele — a rota admin dá 403 e
+ * os selects de turma de Lives/Materiais ficavam vazios. */
 export function useCohortsAdmin() {
+	const { isAdmin, ready } = useIsMentoriaAdmin();
 	return useQuery({
-		queryKey: [...ROOT, 'cohorts'],
-		queryFn: svc.listCohortsAdmin,
+		queryKey: [...ROOT, 'cohorts', isAdmin ? 'all' : 'mine'],
+		queryFn: isAdmin ? svc.listCohortsAdmin : svc.listMyCohorts,
+		enabled: ready,
 	});
 }
 
