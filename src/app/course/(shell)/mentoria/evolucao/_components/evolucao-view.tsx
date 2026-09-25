@@ -17,6 +17,7 @@ import {
 	ListRow,
 	SectionCard,
 } from '@/modules/mentoria/components/ui';
+import { formatBrPlain, formatMetricValue } from '@/modules/mentoria/numbers';
 import type { Comparison, MntReport } from '@/modules/mentoria/types';
 import {
 	EmptyState,
@@ -265,11 +266,12 @@ function ComparisonBlock({
 						},
 						{
 							header: comparison.from.label,
-							cell: (row) => (row.from === null ? '—' : String(row.from)),
+							// R$ e separador de milhar: '15000' cru não serve no relatório.
+							cell: (row) => formatMetricValue(row.key, row.from),
 						},
 						{
 							header: comparison.to.label,
-							cell: (row) => (row.to === null ? '—' : String(row.to)),
+							cell: (row) => formatMetricValue(row.key, row.to),
 						},
 						{
 							header: 'Variação',
@@ -282,7 +284,9 @@ function ComparisonBlock({
 										unit=""
 										upIsGood={!DOWN_IS_GOOD.has(row.key)}
 										caption={
-											row.deltaPct === null ? undefined : `(${row.deltaPct}%)`
+											row.deltaPct === null
+												? undefined
+												: `(${formatBrPlain(row.deltaPct)}%)`
 										}
 									/>
 								),

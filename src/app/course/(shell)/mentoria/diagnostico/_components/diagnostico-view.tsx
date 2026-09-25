@@ -312,7 +312,7 @@ function FotoZeroView({
 	templateBlocks: Array<{
 		key: string;
 		title: string;
-		fields: Array<{ key: string; label: string }>;
+		fields: Array<{ key: string; label: string; type?: string }>;
 	}>;
 }) {
 	// Preferimos as respostas da submissão; o payload do snapshot é o fallback.
@@ -346,7 +346,7 @@ function FotoZeroView({
 										{field.label}
 									</dt>
 									<dd className="mt-0.5 whitespace-pre-wrap text-body text-primary">
-										{renderAnswer(value)}
+										{renderAnswer(value, field.type)}
 									</dd>
 								</div>
 							);
@@ -374,10 +374,16 @@ function FotoZeroView({
 	);
 }
 
-function renderAnswer(value: unknown): string {
+function renderAnswer(value: unknown, type?: string): string {
 	if (value === undefined || value === null || value === '') return '—';
 	if (isUnknownAnswer(value)) return '[ A LEVANTAR / NÃO MEDIDO ]';
 	if (typeof value === 'boolean') return value ? 'Sim' : 'Não';
+	// Moeda em R$ e número com milhar pt-BR ('15000' cru confundia).
+	if (typeof value === 'number') {
+		return type === 'currency'
+			? value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+			: value.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+	}
 	if (Array.isArray(value)) return value.map(String).join(', ');
 	if (typeof value === 'object') return JSON.stringify(value);
 	return String(value);

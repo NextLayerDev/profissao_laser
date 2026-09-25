@@ -13,11 +13,13 @@
 
 import { Badge, type Tone } from '@upvox-dev/ui';
 import { Printer } from 'lucide-react';
+import { areaLabel } from '@/modules/mentoria/components/company-map-radar';
 import {
 	DonutProgress,
 	ListRow,
 	StatCard,
 } from '@/modules/mentoria/components/ui';
+import { formatBrPlain, formatMetricValue } from '@/modules/mentoria/numbers';
 import type { MntReport } from '@/modules/mentoria/types';
 import { CARD, fmtDate } from '../../_components/shared';
 
@@ -47,6 +49,24 @@ const SEMAPHORE_LABEL: Record<string, string> = {
 	yellow: 'Atenção',
 	red: 'Crítico',
 	unmeasured: 'Não medido',
+};
+
+// O relatório vai impresso para o cliente: status cru ('active', 'pending')
+// não pode aparecer. Desconhecido cai no próprio valor.
+const GOAL_STATUS_LABEL: Record<string, string> = {
+	not_started: 'Não iniciada',
+	in_progress: 'Em andamento',
+	done: 'Concluída',
+	late: 'Atrasada',
+	cancelled: 'Cancelada',
+};
+
+const TASK_STATUS_LABEL: Record<string, string> = {
+	pending: 'Pendente',
+	in_progress: 'Em andamento',
+	done: 'Concluída',
+	overdue: 'Atrasada',
+	cancelled: 'Cancelada',
 };
 
 export function RaioxView({ report }: { report: MntReport }) {
@@ -125,10 +145,13 @@ export function RaioxView({ report }: { report: MntReport }) {
 						<p className="text-muted">Nenhuma meta registrada.</p>
 					) : (
 						<ul className="space-y-1">
-							{metas.map((m) => (
-								<li key={m.title} className="text-secondary">
+							{/* key por índice: metas/tarefas homônimas duplicavam a key. */}
+							{metas.map((m, i) => (
+								<li key={`${i}-${m.title}`} className="text-secondary">
 									• {m.title}{' '}
-									<span className="text-caption text-muted">({m.status})</span>
+									<span className="text-caption text-muted">
+										({GOAL_STATUS_LABEL[m.status] ?? m.status})
+									</span>
 								</li>
 							))}
 						</ul>
@@ -145,7 +168,7 @@ export function RaioxView({ report }: { report: MntReport }) {
 					<div className="flex flex-wrap gap-2">
 						{ferramentas.map((f) => (
 							<Badge key={f.area} tone="brand">
-								{`${f.area}: ${f.maturity_pct}%`}
+								{`${areaLabel(f.area)}: ${formatBrPlain(f.maturity_pct)}%`}
 							</Badge>
 						))}
 					</div>
@@ -156,11 +179,11 @@ export function RaioxView({ report }: { report: MntReport }) {
 						<p className="text-muted">Nenhum indicador registrado.</p>
 					) : (
 						<div className="divide-y divide-subtle">
-							{indicadores.map((k) => (
+							{indicadores.map((k, i) => (
 								<ListRow
-									key={k.name}
+									key={`${i}-${k.name}`}
 									title={k.name}
-									description={`Atual ${k.latest ?? '—'} · meta ${k.target ?? '—'}`}
+									description={`Atual ${formatBrPlain(k.latest)} · meta ${formatBrPlain(k.target)}`}
 									trailing={
 										<Badge tone={SEMAPHORE_TONE[k.semaphore] ?? 'neutral'}>
 											{SEMAPHORE_LABEL[k.semaphore] ?? k.semaphore}
@@ -177,14 +200,18 @@ export function RaioxView({ report }: { report: MntReport }) {
 						<p className="text-muted">Nenhuma pendência. 🎉</p>
 					) : (
 						<div className="divide-y divide-subtle">
-							{pendencias.map((t) => (
+							{pendencias.map((t, i) => (
 								<ListRow
-									key={t.title}
+									key={`${i}-${t.title}`}
 									title={t.title}
 									description={
 										t.due_date ? `Prazo ${fmtDate(t.due_date)}` : undefined
 									}
-									trailing={<Badge tone="neutral">{t.status}</Badge>}
+									trailing={
+										<Badge tone="neutral">
+											{TASK_STATUS_LABEL[t.status] ?? t.status}
+										</Badge>
+									}
 								/>
 							))}
 						</div>
@@ -248,11 +275,7 @@ function MetricGrid({ metrics }: { metrics: Record<string, unknown> }) {
 				<StatCard
 					key={key}
 					label={METRIC_LABEL[key] ?? key}
-					value={
-						value === null || value === undefined || value === ''
-							? '—'
-							: String(value)
-					}
+					value={formatMetricValue(key, value)}
 				/>
 			))}
 		</div>
