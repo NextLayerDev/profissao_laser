@@ -103,6 +103,7 @@ export function useSubmitDiagnostic(journeyId: string | undefined) {
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: [...ROOT, 'diagnostic', journeyId] });
 			qc.invalidateQueries({ queryKey: [...ROOT, 'bootstrap'] });
+			qc.invalidateQueries({ queryKey: [...ROOT, 'compare', journeyId] });
 		},
 	});
 }
@@ -138,6 +139,7 @@ export function useCompleteTool(journeyId: string | undefined) {
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: [...ROOT, 'tools', journeyId] });
 			qc.invalidateQueries({ queryKey: [...ROOT, 'company-map', journeyId] });
+			qc.invalidateQueries({ queryKey: [...ROOT, 'compare', journeyId] });
 		},
 	});
 }
@@ -220,7 +222,13 @@ export function useKpiMutations(journeyId: string | undefined) {
 			kpiId: string;
 			body: { value: number | null; measured_at: string; note?: string | null };
 		}) => svc.addKpiMeasurement(kpiId, body),
-		onSuccess: invalidate,
+		// O gráfico e o delta "vs medição anterior" vêm do histórico, e o
+		// comparador "Agora" lê a última medição: sem invalidar, ficavam velhos.
+		onSuccess: (_data, { kpiId }) => {
+			invalidate();
+			qc.invalidateQueries({ queryKey: [...ROOT, 'kpi-history', kpiId] });
+			qc.invalidateQueries({ queryKey: [...ROOT, 'compare', journeyId] });
+		},
 	});
 	return { create, addMeasurement };
 }
