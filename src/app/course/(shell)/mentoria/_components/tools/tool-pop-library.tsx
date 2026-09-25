@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { useInvalidateToolProgress } from '@/modules/mentoria/hooks';
 import {
 	addPopAttachmentLink,
 	createPop,
@@ -60,7 +61,13 @@ const EMPTY_FORM: PopForm = {
 export function ToolPopLibrary({ instanceId }: { instanceId: string }) {
 	const qc = useQueryClient();
 	const queryKey = ['mentoria', 'pops', instanceId];
-	const invalidate = () => qc.invalidateQueries({ queryKey });
+	const invalidateProgress = useInvalidateToolProgress();
+	// A API recalcula o % da ferramenta a cada escrita: o card e o Mapa
+	// também precisam recarregar.
+	const invalidate = () => {
+		qc.invalidateQueries({ queryKey });
+		invalidateProgress();
+	};
 
 	const { data: pops, isLoading } = useQuery({
 		queryKey,

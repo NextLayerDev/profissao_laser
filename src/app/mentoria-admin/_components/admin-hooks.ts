@@ -30,6 +30,7 @@ const KNOWN: Record<string, string> = {
 	mentor_must_be_staff:
 		'Só usuários da equipe (staff/admin) podem ser mentores.',
 	not_mentor_of_cohort: 'Você não é mentor da turma deste aluno.',
+	tool_instance_not_found: 'O aluno ainda não abriu esta ferramenta.',
 	mentor_not_in_cohort: 'Esta pessoa não é mentora desta turma.',
 	forbidden: 'Você não tem permissão para esta ação.',
 	meeting_not_found: 'Encontro não encontrado.',
@@ -274,6 +275,29 @@ export function useMentorCompanyMap(journeyId: string | undefined) {
 		queryFn: () => svc.getCompanyMapAsMentor(journeyId as string),
 		enabled: !!journeyId,
 	});
+}
+
+/**
+ * Selo do mentor por ferramenta. Com uma validada, o Mapa e o score contam
+ * só as validadas: recarrega o Mapa e o overview (maturity_score).
+ */
+export function useMentorToolValidation(journeyId: string | undefined) {
+	const qc = useQueryClient();
+	const invalidate = () => {
+		qc.invalidateQueries({ queryKey: [...ROOT, 'company-map', journeyId] });
+		qc.invalidateQueries({
+			queryKey: [...MNT, 'journey-overview', journeyId],
+		});
+	};
+	const validate = useMutation({
+		mutationFn: svc.validateToolInstance,
+		onSuccess: invalidate,
+	});
+	const unvalidate = useMutation({
+		mutationFn: svc.unvalidateToolInstance,
+		onSuccess: invalidate,
+	});
+	return { validate, unvalidate };
 }
 
 export function useMentorSubmissions(journeyId: string | undefined) {

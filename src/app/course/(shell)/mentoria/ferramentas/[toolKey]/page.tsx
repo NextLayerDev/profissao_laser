@@ -5,7 +5,10 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { SubscriptionGate } from '@/components/course/subscription-gate';
-import { areaLabel } from '@/modules/mentoria/components/company-map-radar';
+import {
+	areaLabel,
+	ValidatedMark,
+} from '@/modules/mentoria/components/company-map-radar';
 import {
 	useCompleteTool,
 	useJourneyTools,
@@ -169,6 +172,10 @@ function ToolBody({
 	}
 }
 
+/**
+ * Progresso calculado pela API a partir do que foi preenchido. "Marcar como
+ * concluída" segue como override manual (reabrir volta ao calculado).
+ */
 function CompleteToolFooter({
 	tool,
 	journeyId,
@@ -181,21 +188,38 @@ function CompleteToolFooter({
 	if (!instance) return null;
 
 	const done = instance.status === 'completed';
+	const pct = Math.round(instance.completion_pct);
 
 	return (
 		<div
 			className={`${CARD} p-4 flex flex-wrap items-center justify-between gap-3`}
 		>
-			<p className="text-sm text-slate-500 dark:text-gray-400">
-				{done
-					? 'Ferramenta concluída — ela conta 100% no Mapa da Minha Empresa.'
-					: 'Terminou de aplicar esta ferramenta na sua empresa? Marque como concluída.'}
-			</p>
+			<div className="flex-1 min-w-48" data-testid="tool-progress">
+				<div className="flex items-center justify-between gap-2 text-sm mb-1">
+					<span className="inline-flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
+						{done ? 'Concluída' : 'Progresso'}
+						{instance.mentor_validated_at && (
+							<span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400">
+								<ValidatedMark className="w-3 h-3" />
+								Validada
+							</span>
+						)}
+					</span>
+					<span className="text-slate-500 dark:text-gray-400">{pct}%</span>
+				</div>
+				<div className="h-1.5 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
+					<div
+						className="h-full rounded-full bg-teal-500"
+						style={{ width: `${Math.min(100, pct)}%` }}
+					/>
+				</div>
+			</div>
 			{!done && (
 				<button
 					type="button"
 					className={BTN_PRIMARY}
 					disabled={complete.isPending}
+					title="Conta 100% no Mapa"
 					onClick={() =>
 						complete.mutate(
 							{ instanceId: instance.id, completionPct: 100 },
@@ -208,9 +232,7 @@ function CompleteToolFooter({
 					}
 				>
 					<CheckCircle2 className="w-4 h-4" />
-					{complete.isPending
-						? 'Concluindo...'
-						: 'Marcar ferramenta como concluída'}
+					{complete.isPending ? 'Concluindo...' : 'Marcar como concluída'}
 				</button>
 			)}
 		</div>

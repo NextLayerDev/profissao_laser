@@ -22,10 +22,16 @@ import {
 	normalizeUrl,
 } from '@/app/course/(shell)/mentoria/_components/shared';
 import { Header } from '@/components/dashboard/header';
-import { CompanyMapRadar } from '@/modules/mentoria/components/company-map-radar';
+import {
+	areaLabel,
+	CompanyMapRadar,
+	MaturityBasisBadge,
+	ValidatedMark,
+} from '@/modules/mentoria/components/company-map-radar';
 import { SemaphoreBadge } from '@/modules/mentoria/components/semaphore-badge';
 import { useJourneyOverview } from '@/modules/mentoria/hooks';
 import type {
+	CompanyMap,
 	DiagnosticState,
 	MntFormSubmission,
 	MntJourneyMeeting,
@@ -42,6 +48,7 @@ import {
 	useMentorJourneyTasks,
 	useMentorMeetingMutations,
 	useMentorSubmissions,
+	useMentorToolValidation,
 	useMentorValidateTask,
 	useReopenDiagnostic,
 } from '../../_components/admin-hooks';
@@ -322,31 +329,40 @@ export default function JourneyDrilldownPage() {
 								) : companyMap.isError ? (
 									<EmptyState message="Não foi possível carregar o mapa da empresa." />
 								) : companyMap.data ? (
-									<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
-										<CompanyMapRadar map={companyMap.data} />
-										<div>
-											<p className="text-sm text-slate-500 dark:text-gray-400 mb-3">
-												Maturidade geral:{' '}
-												<span className="font-semibold text-slate-900 dark:text-white">
-													{Math.round(companyMap.data.overall_pct)}%
-												</span>
-											</p>
-											<ul className="space-y-2">
-												{companyMap.data.areas.map((a) => (
-													<li
-														key={a.area}
-														className="flex items-center gap-3 text-sm"
-													>
-														<span className="w-28 text-slate-600 dark:text-gray-400 capitalize">
-															{a.area}
+									<div className="space-y-6">
+										<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+											<CompanyMapRadar map={companyMap.data} />
+											<div>
+												<div className="flex flex-wrap items-center gap-2 mb-3">
+													<p className="text-sm text-slate-500 dark:text-gray-400">
+														Maturidade geral:{' '}
+														<span className="font-semibold text-slate-900 dark:text-white">
+															{Math.round(companyMap.data.overall_pct)}%
 														</span>
-														<div className="flex-1">
-															<ProgressBar pct={a.maturity_pct} />
-														</div>
-													</li>
-												))}
-											</ul>
+													</p>
+													<MaturityBasisBadge map={companyMap.data} />
+												</div>
+												<ul className="space-y-2">
+													{companyMap.data.areas.map((a) => (
+														<li
+															key={a.area}
+															className="flex items-center gap-3 text-sm"
+														>
+															<span className="w-28 text-slate-600 dark:text-gray-400">
+																{areaLabel(a.area)}
+															</span>
+															<div className="flex-1">
+																<ProgressBar pct={a.maturity_pct} />
+															</div>
+														</li>
+													))}
+												</ul>
+											</div>
 										</div>
+										<ToolValidationList
+											journeyId={journeyId}
+											map={companyMap.data}
+										/>
 									</div>
 								) : (
 									<EmptyState message="Mapa da empresa indisponível." />
@@ -875,4 +891,78 @@ function renderAnswer(value: unknown): string {
 	if (Array.isArray(value)) return value.map(String).join(', ');
 	if (typeof value === 'object') return JSON.stringify(value);
 	return String(value);
+}
+
+/** Ferramentas do aluno com o selo do mentor (Validar / Desfazer). */
+function ToolValidationList({
+	journeyId,
+	map,
+}: {
+	journeyId: string;
+	map: CompanyMap;
+}) {
+	const { validate, unvalidate } = useMentorToolValidation(journeyId);
+	const tools = map.areas.flatMap((a) => a.tools);
+	const busy = validate.isPending || unvalidate.isPending;
+	const onError = (e: unknown) =>
+		toast.error(mentoriaErrorMessage(e, 'Não foi possível salvar o selo.'));
+
+	return (
+		<ul
+			className="divide-y divide-slate-100 dark:divide-white/5 border-t border-slate-100 dark:border-white/5"
+			data-testid="tool-validation-list"
+		>
+			{tools.map((t) => (
+				<li
+					key={t.key}
+					className="flex items-center justify-between gap-3 py-2 text-sm"
+					data-tool-key={t.key}
+				>
+					<div className="min-w-0 flex-1">
+						<p className="inline-flex items-center gap-1.5 text-slate-800 dark:text-slate-200">
+							{t.validated && <ValidatedMark />}
+							{t.name}
+						</p>
+						<div className="max-w-40 mt-1">
+							<ProgressBar pct={t.completion_pct} />
+						</div>
+					</div>
+					{t.validated ? (
+						<button
+							type="button"
+							className={secondaryBtn}
+							disabled={busy || !t.instance_id}
+							onClick={() =>
+								t.instance_id &&
+								unvalidate.mutate(t.instance_id, {
+									onSuccess: () => toast.success('Validação desfeita.'),
+									onError,
+								})
+							}
+						>
+							<RotateCcw className="w-3.5 h-3.5" />
+							Desfazer
+						</button>
+					) : (
+						<button
+							type="button"
+							className={primaryBtn}
+							disabled={busy || !t.instance_id}
+							title={t.instance_id ? undefined : 'Ainda não iniciada'}
+							onClick={() =>
+								t.instance_id &&
+								validate.mutate(t.instance_id, {
+									onSuccess: () => toast.success('Ferramenta validada!'),
+									onError,
+								})
+							}
+						>
+							<CheckCircle2 className="w-4 h-4" />
+							Validar ferramenta
+						</button>
+					)}
+				</li>
+			))}
+		</ul>
+	);
 }

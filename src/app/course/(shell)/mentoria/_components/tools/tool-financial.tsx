@@ -14,6 +14,7 @@ import {
 	YAxis,
 } from 'recharts';
 import { toast } from 'sonner';
+import { useInvalidateToolProgress } from '@/modules/mentoria/hooks';
 import { parseBrNumber } from '@/modules/mentoria/numbers';
 import {
 	createFinancialEntry,
@@ -83,6 +84,7 @@ function fmtMonth(month: string): string {
 export function ToolFinancialPanel({ journeyId }: { journeyId: string }) {
 	const qc = useQueryClient();
 	const queryKey = ['mentoria', 'financial-entries', journeyId];
+	const invalidateProgress = useInvalidateToolProgress();
 
 	const { data: entries, isLoading } = useQuery({
 		queryKey,
@@ -110,6 +112,7 @@ export function ToolFinancialPanel({ journeyId }: { journeyId: string }) {
 			setForm(EMPTY_FORM);
 			setAdding(false);
 			qc.invalidateQueries({ queryKey });
+			invalidateProgress();
 			toast.success('Fechamento do mês registrado!');
 		},
 		onError: () => toast.error('Não foi possível registrar o fechamento.'),

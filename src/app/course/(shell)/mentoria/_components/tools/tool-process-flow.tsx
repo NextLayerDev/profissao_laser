@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useInvalidateToolProgress } from '@/modules/mentoria/hooks';
 import {
 	createProcessFlow,
 	createProcessStep,
@@ -52,7 +53,13 @@ const EMPTY_STEP: StepForm = {
 export function ToolProcessFlow({ instanceId }: { instanceId: string }) {
 	const qc = useQueryClient();
 	const queryKey = ['mentoria', 'process-flows', instanceId];
-	const invalidate = () => qc.invalidateQueries({ queryKey });
+	const invalidateProgress = useInvalidateToolProgress();
+	// A API recalcula o % da ferramenta a cada escrita: o card e o Mapa
+	// também precisam recarregar.
+	const invalidate = () => {
+		qc.invalidateQueries({ queryKey });
+		invalidateProgress();
+	};
 
 	const { data: flows, isLoading } = useQuery({
 		queryKey,

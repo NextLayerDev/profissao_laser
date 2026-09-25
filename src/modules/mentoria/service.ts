@@ -750,6 +750,25 @@ export async function listJourneyKpisAsMentor(
 	return data;
 }
 
+/** Selo do mentor na ferramenta (entra no score de maturidade). */
+export async function validateToolInstance(
+	instanceId: string,
+): Promise<MntToolInstance> {
+	const { data } = await api.post(
+		`/v1/mentoria/tool-instance/${instanceId}/validate`,
+	);
+	return data;
+}
+
+export async function unvalidateToolInstance(
+	instanceId: string,
+): Promise<MntToolInstance> {
+	const { data } = await api.delete(
+		`/v1/mentoria/tool-instance/${instanceId}/validate`,
+	);
+	return data;
+}
+
 export async function getCompanyMapAsMentor(
 	journeyId: string,
 ): Promise<CompanyMap> {

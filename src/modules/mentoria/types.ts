@@ -300,8 +300,14 @@ export type MntToolInstance = {
 	journey_id: string;
 	tool_definition_id: string;
 	status: 'not_started' | 'in_progress' | 'completed';
+	/** Calculado pela API a partir do que foi preenchido. */
 	completion_pct: number;
 	completed_at: string | null;
+	/** "Marcar como concluída" à mão (override do cálculo). */
+	manual_completed_at?: string | null;
+	/** Selo do mentor. */
+	mentor_validated_at?: string | null;
+	mentor_validated_by?: string | null;
 };
 
 export type ToolWithInstance = MntToolDefinition & {
@@ -315,11 +321,19 @@ export type CompanyMap = {
 		tools: Array<{
 			key: string;
 			name: string;
+			kind?: ToolKind;
+			instance_id?: string | null;
 			completion_pct: number;
 			status: string;
+			validated?: boolean;
+			validated_at?: string | null;
 		}>;
 	}>;
 	overall_pct: number;
+	/** Com ferramenta validada, o geral conta só as validadas. */
+	basis?: 'validated' | 'self_declared';
+	validated_count?: number;
+	self_declared_pct?: number;
 };
 
 export type MntProcessStep = {
@@ -465,6 +479,19 @@ export type MntKpiMeasurement = {
 	created_at: string;
 };
 
+/** Chaves que o comparador entende (as mesmas da Foto Zero). */
+export const KPI_METRIC_OPTIONS = [
+	{ value: 'faturamento', label: 'Faturamento' },
+	{ value: 'ticket', label: 'Ticket médio' },
+	{ value: 'vendas', label: 'Vendas' },
+	{ value: 'margem', label: 'Margem' },
+	{ value: 'recorrencia', label: 'Recorrência' },
+	{ value: 'funcionarios', label: 'Funcionários' },
+	{ value: 'custos_fixos', label: 'Custos fixos' },
+	{ value: 'equipamentos', label: 'Equipamentos' },
+] as const;
+export type KpiMetricKey = (typeof KPI_METRIC_OPTIONS)[number]['value'];
+
 export type MntKpi = {
 	id: string;
 	journey_id: string;
@@ -478,6 +505,8 @@ export type MntKpi = {
 	owner_name: string | null;
 	semaphore: { green_pct: number; yellow_pct: number };
 	active: boolean;
+	/** Chave do comparador ("Agora") — ver KPI_METRIC_OPTIONS. */
+	metric_key?: KpiMetricKey | null;
 	latest_measurement?: MntKpiMeasurement | null;
 	current_semaphore?: Semaphore;
 };

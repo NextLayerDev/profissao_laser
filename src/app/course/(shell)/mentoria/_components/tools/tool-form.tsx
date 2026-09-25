@@ -5,6 +5,7 @@ import { CheckCircle2, History, Save, Send } from 'lucide-react';
 import { useRef } from 'react';
 import { toast } from 'sonner';
 import { DynamicForm } from '@/modules/mentoria/components/dynamic-form';
+import { useInvalidateToolProgress } from '@/modules/mentoria/hooks';
 import {
 	getFormTemplate,
 	listSubmissions,
@@ -80,6 +81,12 @@ export function FormSubmissionPanel({
 	const answersRef = useRef<Record<string, unknown> | null>(null);
 
 	const subsKey = ['mentoria', 'submissions', journeyId, context, contextRefId];
+	const invalidateProgress = useInvalidateToolProgress();
+	// Rascunho (50%) e envio (100%) mudam o % da ferramenta.
+	const invalidate = () => {
+		qc.invalidateQueries({ queryKey: subsKey });
+		if (context === 'tool') invalidateProgress();
+	};
 	const { data: submissions, isLoading: subsLoading } = useQuery({
 		queryKey: subsKey,
 		queryFn: () =>
@@ -97,13 +104,13 @@ export function FormSubmissionPanel({
 				context_ref_id: contextRefId,
 				answers,
 			}),
-		onSuccess: () => qc.invalidateQueries({ queryKey: subsKey }),
+		onSuccess: invalidate,
 	});
 
 	const submit = useMutation({
 		mutationFn: (submissionId: string) =>
 			submitSubmission(journeyId, submissionId),
-		onSuccess: () => qc.invalidateQueries({ queryKey: subsKey }),
+		onSuccess: invalidate,
 	});
 
 	if (subsLoading) return <MntSkeleton />;

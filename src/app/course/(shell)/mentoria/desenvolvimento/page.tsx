@@ -19,6 +19,7 @@ import {
 	useGoalMutations,
 	useGoals,
 	useGoodNews,
+	useInvalidateToolProgress,
 	useMaslowHistory,
 	usePostGoodNews,
 	useSubmitMaslow,
@@ -214,6 +215,7 @@ function MaslowTab({ journeyId }: { journeyId: string }) {
 // ── Plano de Negócios ────────────────────────────────────────────────────────
 function BusinessPlanTab({ journeyId }: { journeyId: string }) {
 	const qc = useQueryClient();
+	const invalidateProgress = useInvalidateToolProgress();
 	const { data: versions, isLoading } = useBusinessPlans(journeyId);
 	const { data: template } = useQuery({
 		queryKey: ['mentoria', 'form-template', 'plano_negocios'],
@@ -227,6 +229,8 @@ function BusinessPlanTab({ journeyId }: { journeyId: string }) {
 			qc.invalidateQueries({
 				queryKey: ['mentoria', 'business-plans', journeyId],
 			});
+			// 1ª versão conclui o Plano de Negócios no Mapa.
+			invalidateProgress();
 			toast.success('Nova versão do plano salva!');
 		},
 		// A API valida os obrigatórios do formulário plano_negocios: dizer quais.

@@ -29,7 +29,10 @@ import {
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { SubscriptionGate } from '@/components/course/subscription-gate';
-import { CompanyMapRadar } from '@/modules/mentoria/components/company-map-radar';
+import {
+	CompanyMapRadar,
+	MaturityBasisBadge,
+} from '@/modules/mentoria/components/company-map-radar';
 import {
 	computeDelta,
 	formatKpiValue,
@@ -373,7 +376,8 @@ function Dashboard({
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 				<SectionCard
 					title="Saúde das áreas"
-					description="Maturidade da empresa por área (Mapa da Minha Empresa)"
+					description="Maturidade por área"
+					action={map ? <MaturityBasisBadge map={map} /> : undefined}
 				>
 					{map && map.areas.length > 0 ? (
 						<CompanyMapRadar map={map} />

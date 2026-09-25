@@ -111,6 +111,20 @@ export function useSubmitDiagnostic(journeyId: string | undefined) {
 }
 
 // ── Ferramentas ──────────────────────────────────────────────────────────────
+/**
+ * A API recalcula o progresso das ferramentas depois de cada escrita (KPI,
+ * Maslow, meta, cargo, POP…): sem invalidar, a lista, o Mapa e o comparador
+ * mostravam o % antigo. Prefixo sem journeyId: vale para qualquer jornada.
+ */
+export function useInvalidateToolProgress() {
+	const qc = useQueryClient();
+	return () => {
+		for (const resource of ['tools', 'company-map', 'compare']) {
+			qc.invalidateQueries({ queryKey: [...ROOT, resource] });
+		}
+	};
+}
+
 export function useJourneyTools(journeyId: string | undefined) {
 	return useQuery({
 		queryKey: [...ROOT, 'tools', journeyId],
@@ -212,11 +226,25 @@ export function useKpis(journeyId: string | undefined, category?: string) {
 
 export function useKpiMutations(journeyId: string | undefined) {
 	const qc = useQueryClient();
-	const invalidate = () =>
+	const invalidateProgress = useInvalidateToolProgress();
+	// KPIs medidos concluem a ferramenta Indicadores no Mapa.
+	const invalidate = () => {
 		qc.invalidateQueries({ queryKey: [...ROOT, 'kpis', journeyId] });
+		invalidateProgress();
+	};
 	const create = useMutation({
 		mutationFn: (body: Record<string, unknown> & { name: string }) =>
 			svc.createKpi(journeyId as string, body),
+		onSuccess: invalidate,
+	});
+	const update = useMutation({
+		mutationFn: ({
+			kpiId,
+			body,
+		}: {
+			kpiId: string;
+			body: Record<string, unknown>;
+		}) => svc.updateKpi(kpiId, body),
 		onSuccess: invalidate,
 	});
 	const addMeasurement = useMutation({
@@ -232,10 +260,9 @@ export function useKpiMutations(journeyId: string | undefined) {
 		onSuccess: (_data, { kpiId }) => {
 			invalidate();
 			qc.invalidateQueries({ queryKey: [...ROOT, 'kpi-history', kpiId] });
-			qc.invalidateQueries({ queryKey: [...ROOT, 'compare', journeyId] });
 		},
 	});
-	return { create, addMeasurement };
+	return { create, update, addMeasurement };
 }
 
 /**
@@ -273,10 +300,13 @@ export function useGoodNews(journeyId: string | undefined) {
 
 export function usePostGoodNews(journeyId: string | undefined) {
 	const qc = useQueryClient();
+	const invalidateProgress = useInvalidateToolProgress();
 	return useMutation({
 		mutationFn: (news: string[]) => svc.postGoodNews(journeyId as string, news),
-		onSuccess: () =>
-			qc.invalidateQueries({ queryKey: [...ROOT, 'good-news', journeyId] }),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: [...ROOT, 'good-news', journeyId] });
+			invalidateProgress();
+		},
 	});
 }
 
@@ -290,8 +320,11 @@ export function useGoals(journeyId: string | undefined) {
 
 export function useGoalMutations(journeyId: string | undefined) {
 	const qc = useQueryClient();
-	const invalidate = () =>
+	const invalidateProgress = useInvalidateToolProgress();
+	const invalidate = () => {
 		qc.invalidateQueries({ queryKey: [...ROOT, 'goals', journeyId] });
+		invalidateProgress();
+	};
 	const create = useMutation({
 		mutationFn: (body: Record<string, unknown> & { title: string }) =>
 			svc.createGoal(journeyId as string, body),
@@ -320,11 +353,14 @@ export function useMaslowHistory(journeyId: string | undefined) {
 
 export function useSubmitMaslow(journeyId: string | undefined) {
 	const qc = useQueryClient();
+	const invalidateProgress = useInvalidateToolProgress();
 	return useMutation({
 		mutationFn: (answers: number[]) =>
 			svc.submitMaslow(journeyId as string, answers),
-		onSuccess: () =>
-			qc.invalidateQueries({ queryKey: [...ROOT, 'maslow', journeyId] }),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: [...ROOT, 'maslow', journeyId] });
+			invalidateProgress();
+		},
 	});
 }
 

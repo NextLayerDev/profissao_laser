@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Filter } from 'lucide-react';
 import { toast } from 'sonner';
+import { useInvalidateToolProgress } from '@/modules/mentoria/hooks';
 import { listFunnelStages, seedFunnelStages } from '@/modules/mentoria/service';
 import { BTN_PRIMARY, CARD, EmptyState, MntSkeleton } from '../shared';
 
@@ -10,6 +11,7 @@ import { BTN_PRIMARY, CARD, EmptyState, MntSkeleton } from '../shared';
 export function ToolSalesFunnel({ instanceId }: { instanceId: string }) {
 	const qc = useQueryClient();
 	const queryKey = ['mentoria', 'funnel-stages', instanceId];
+	const invalidateProgress = useInvalidateToolProgress();
 
 	const { data: stages, isLoading } = useQuery({
 		queryKey,
@@ -20,6 +22,7 @@ export function ToolSalesFunnel({ instanceId }: { instanceId: string }) {
 		mutationFn: () => seedFunnelStages(instanceId),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey });
+			invalidateProgress();
 			toast.success('Funil criado com as etapas padrão!');
 		},
 		onError: () => toast.error('Não foi possível criar o funil.'),

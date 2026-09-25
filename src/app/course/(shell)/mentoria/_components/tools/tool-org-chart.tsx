@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Network, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useInvalidateToolProgress } from '@/modules/mentoria/hooks';
 import {
 	createOrgPosition,
 	deleteOrgPosition,
@@ -42,7 +43,13 @@ const EMPTY_FORM: PositionForm = {
 export function ToolOrgChart({ instanceId }: { instanceId: string }) {
 	const qc = useQueryClient();
 	const queryKey = ['mentoria', 'org-positions', instanceId];
-	const invalidate = () => qc.invalidateQueries({ queryKey });
+	const invalidateProgress = useInvalidateToolProgress();
+	// A API recalcula o % da ferramenta a cada escrita: o card e o Mapa
+	// também precisam recarregar.
+	const invalidate = () => {
+		qc.invalidateQueries({ queryKey });
+		invalidateProgress();
+	};
 
 	const { data: positions, isLoading } = useQuery({
 		queryKey,
