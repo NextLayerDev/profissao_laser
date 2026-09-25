@@ -15,6 +15,7 @@ import {
 	BTN_PRIMARY,
 	CARD,
 	EmptyState,
+	fmtDate,
 	INPUT,
 	LABEL,
 	MntSkeleton,
@@ -131,7 +132,7 @@ export function ToolImprovement({ instanceId }: { instanceId: string }) {
 								<p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
 									{c.owner_name ? `Responsável: ${c.owner_name}` : null}
 									{c.owner_name && c.deadline ? ' · ' : null}
-									{c.deadline ? `Prazo: ${c.deadline}` : null}
+									{c.deadline ? `Prazo: ${fmtDate(c.deadline)}` : null}
 								</p>
 							</div>
 							<div className="flex items-center gap-2 shrink-0">

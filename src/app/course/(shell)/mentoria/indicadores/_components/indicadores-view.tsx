@@ -36,6 +36,7 @@ import {
 	SegmentedControl,
 	StatCard,
 } from '@/modules/mentoria/components/ui';
+import { todayLocalISO } from '@/modules/mentoria/dates';
 import type { MntKpi, MntKpiMeasurement } from '@/modules/mentoria/types';
 import {
 	CARD,
@@ -107,7 +108,7 @@ export function IndicadoresView({
 	});
 	const [measurement, setMeasurement] = useState({
 		value: '',
-		measured_at: new Date().toISOString().slice(0, 10),
+		measured_at: todayLocalISO(),
 		note: '',
 	});
 
@@ -394,7 +395,15 @@ export function IndicadoresView({
 											</Button>
 											<Button
 												variant="primary"
-												onPress={() => setMeasuring(kpi)}
+												onPress={() => {
+													// Data recalculada a cada abertura: a aba pode ter
+													// virado a meia-noite aberta.
+													setMeasurement((m) => ({
+														...m,
+														measured_at: todayLocalISO(),
+													}));
+													setMeasuring(kpi);
+												}}
 											>
 												Medir
 											</Button>

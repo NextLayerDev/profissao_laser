@@ -26,6 +26,7 @@ import {
 	BTN_PRIMARY,
 	CARD,
 	EmptyState,
+	fmtDate,
 	INPUT,
 	LABEL,
 	MntSkeleton,
@@ -230,7 +231,7 @@ function FlowCard({
 								<p className="text-xs text-slate-500 dark:text-gray-400">
 									{step.owner_name ? `Responsável: ${step.owner_name}` : null}
 									{step.owner_name && step.deadline ? ' · ' : null}
-									{step.deadline ? `Prazo: ${step.deadline}` : null}
+									{step.deadline ? `Prazo: ${fmtDate(step.deadline)}` : null}
 								</p>
 								{step.problem_note && (
 									<p className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 mt-1">

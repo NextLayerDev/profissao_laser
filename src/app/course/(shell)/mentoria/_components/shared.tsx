@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import { AlertTriangle, ArrowLeft, Compass } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { parseLocalDate } from '@/modules/mentoria/dates';
 import { useMentoriaBootstrap } from '@/modules/mentoria/hooks';
 import { MENTORIA_SETTINGS } from '@/modules/mentoria/nav';
 import type { MentoriaBootstrap } from '@/modules/mentoria/types';
@@ -31,7 +32,8 @@ export const LABEL =
 
 export function fmtDate(iso: string | null | undefined): string {
 	if (!iso) return '—';
-	const d = new Date(iso);
+	// Colunas `date` ('2026-10-15') no fuso local; senão aparecem 1 dia antes.
+	const d = parseLocalDate(iso);
 	if (Number.isNaN(d.getTime())) return '—';
 	return d.toLocaleDateString('pt-BR');
 }

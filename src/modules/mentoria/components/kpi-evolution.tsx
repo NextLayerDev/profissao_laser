@@ -14,6 +14,7 @@ import {
 	XAxis,
 	YAxis,
 } from 'recharts';
+import { parseLocalDate } from '@/modules/mentoria/dates';
 import type { MntKpi, MntKpiMeasurement } from '@/modules/mentoria/types';
 
 // O recharts pinta com cor crua — `stroke` não aceita className —, então os
@@ -202,7 +203,8 @@ function buildSeries(
 
 		for (const m of measurements) {
 			if (m.value === null) continue;
-			const at = new Date(m.measured_at);
+			// measured_at é `date`: lido no fuso local (senão o dia 1 cai no mês anterior).
+			const at = parseLocalDate(m.measured_at);
 			if (Number.isNaN(at.getTime()) || at < cutoff) continue;
 
 			const monthKey = `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, '0')}`;
