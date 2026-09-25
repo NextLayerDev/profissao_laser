@@ -110,14 +110,18 @@ export function MeetingsTab({
 									</div>
 								</div>
 								<div className="flex gap-2">
-									<button
-										type="button"
-										className={secondaryBtn}
-										onClick={() => setFeedbackFor(m)}
-									>
-										<MessageSquare className="w-3.5 h-3.5" />
-										Feedback
-									</button>
+									{/* Bloqueado a API recusa (meeting_locked): o botão só
+									    levava a um erro depois de digitar. */}
+									{m.status !== 'locked' && (
+										<button
+											type="button"
+											className={secondaryBtn}
+											onClick={() => setFeedbackFor(m)}
+										>
+											<MessageSquare className="w-3.5 h-3.5" />
+											Feedback
+										</button>
+									)}
 									{/* Só o que o aluno concluiu: validar um encontro
 									    bloqueado marcava "Validado" no futuro. */}
 									{!m.mentor_validated_at && m.status === 'done' && (

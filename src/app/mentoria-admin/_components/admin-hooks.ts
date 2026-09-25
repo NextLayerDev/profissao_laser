@@ -329,6 +329,10 @@ export function useReopenDiagnostic(journeyId: string | undefined) {
 			qc.invalidateQueries({
 				queryKey: [...ROOT, 'diagnostic-reopens', journeyId],
 			});
+			// A Foto Zero sai: sem isso a Evolução seguia comparando com ela
+			// (cache de 1 min) até recarregar a página.
+			qc.invalidateQueries({ queryKey: [...ROOT, 'snapshots', journeyId] });
+			qc.invalidateQueries({ queryKey: [...ROOT, 'compare', journeyId] });
 			qc.invalidateQueries({ queryKey: [...MNT] });
 		},
 	});
