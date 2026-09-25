@@ -105,6 +105,34 @@ export function apiErrorCode(e: unknown): string | null {
 	return null;
 }
 
+/** Códigos da API que o aluno pode encontrar, em pt-BR. */
+const STUDENT_ERRORS: Record<string, string> = {
+	file_type_not_allowed:
+		'Formato de arquivo não aceito. Envie imagem, PDF, planilha ou documento.',
+	file_required: 'Escolha um arquivo para enviar.',
+	unsafe_url_scheme: 'Link inválido. Use um endereço que comece com https://',
+	chat_rate_limited:
+		'Você está enviando rápido demais. Aguarde alguns segundos.',
+	raiox_final_locked:
+		'O Raio-X final é liberado no último encontro da jornada.',
+	foto_zero_missing:
+		'Complete o diagnóstico inicial (Foto Zero) antes de gerar o relatório.',
+	mentoria_tools_locked:
+		'As ferramentas estão em atualização pelo seu mentor. Volte em breve.',
+	journey_not_active: 'Sua jornada não está ativa.',
+	meeting_locked: 'Este encontro ainda está bloqueado.',
+};
+
+/** Mensagem amigável para o erro da API, ou `fallback`. */
+export function mntErrorText(e: unknown, fallback: string): string {
+	const code = apiErrorCode(e);
+	if (code && STUDENT_ERRORS[code]) return STUDENT_ERRORS[code];
+	const status = (e as { response?: { status?: number } } | null)?.response
+		?.status;
+	if (status === 413) return 'Arquivo grande demais (máx. 50 MB).';
+	return fallback;
+}
+
 /** `details` do erro da API (ex.: `{ missing: [...] }`), quando houver. */
 export function apiErrorDetails(e: unknown): Record<string, unknown> | null {
 	if (typeof e === 'object' && e !== null && 'response' in e) {

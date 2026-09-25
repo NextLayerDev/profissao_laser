@@ -55,8 +55,13 @@ export function LiveChat({ liveId }: { liveId: string }) {
 			// Sem onError a mensagem sumia do campo e não chegava ao chat, calada.
 			onSend={(body, cb) =>
 				post.mutate(body, {
-					onError: () => {
-						toast.error('Mensagem não enviada. Tente de novo.');
+					onError: (e) => {
+						toast.error(
+							(e as { response?: { status?: number } })?.response?.status ===
+								429
+								? 'Você está enviando rápido demais. Aguarde alguns segundos.'
+								: 'Mensagem não enviada. Tente de novo.',
+						);
 						cb?.onError?.();
 					},
 				})

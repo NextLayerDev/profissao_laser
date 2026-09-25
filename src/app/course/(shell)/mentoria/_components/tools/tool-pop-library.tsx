@@ -32,6 +32,7 @@ import {
 	INPUT,
 	LABEL,
 	MntSkeleton,
+	mntErrorText,
 	normalizeUrl,
 } from '../shared';
 
@@ -264,7 +265,8 @@ function PopCard({
 			onChanged();
 			toast.success('Link anexado!');
 		},
-		onError: () => toast.error('Não foi possível anexar o link.'),
+		onError: (e) =>
+			toast.error(mntErrorText(e, 'Não foi possível anexar o link.')),
 	});
 
 	const upload = useMutation({
@@ -273,7 +275,8 @@ function PopCard({
 			onChanged();
 			toast.success('Arquivo anexado!');
 		},
-		onError: () => toast.error('Não foi possível enviar o arquivo.'),
+		onError: (e) =>
+			toast.error(mntErrorText(e, 'Não foi possível enviar o arquivo.')),
 	});
 
 	const steps = [...pop.steps].sort((a, b) => a.position - b.position);

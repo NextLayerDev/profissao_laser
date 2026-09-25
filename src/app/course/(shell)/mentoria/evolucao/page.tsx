@@ -18,10 +18,10 @@ import {
 import { createSnapshot, generateRaiox } from '@/modules/mentoria/service';
 import type { MntReport } from '@/modules/mentoria/types';
 import {
-	apiErrorCode,
 	fmtDate,
 	JourneyGate,
 	MntSkeleton,
+	mntErrorText,
 } from '../_components/shared';
 import type { ComparisonState } from './_components/evolucao-view';
 import { EvolucaoView } from './_components/evolucao-view';
@@ -73,11 +73,7 @@ function Content({ journeyId }: { journeyId: string }) {
 			toast.success('Raio-X Empresarial 360° gerado!');
 		},
 		onError: (e) =>
-			toast.error(
-				apiErrorCode(e) === 'foto_zero_missing'
-					? 'Complete o diagnóstico inicial (Foto Zero) antes de gerar o relatório.'
-					: 'Não foi possível gerar o relatório.',
-			),
+			toast.error(mntErrorText(e, 'Não foi possível gerar o relatório.')),
 	});
 
 	// Foto Zero e "Agora" são âncoras fixas; os snapshots mensais entram no meio,

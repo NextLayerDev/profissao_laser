@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { SubscriptionGate } from '@/components/course/subscription-gate';
 import { useTaskMutations, useTasks } from '@/modules/mentoria/hooks';
 import type { TaskStatus } from '@/modules/mentoria/types';
-import { JourneyGate, MntSkeleton } from '../_components/shared';
+import { JourneyGate, MntSkeleton, mntErrorText } from '../_components/shared';
 import type {
 	MutationCallbacks,
 	NewTaskInput,
@@ -60,7 +60,8 @@ function Content({ journeyId }: { journeyId: string }) {
 			{ taskId, file },
 			{
 				onSuccess: () => toast.success('Evidência anexada!'),
-				onError: () => toast.error('Falha ao anexar evidência.'),
+				onError: (e) =>
+					toast.error(mntErrorText(e, 'Falha ao anexar evidência.')),
 			},
 		);
 	};
@@ -77,7 +78,7 @@ function Content({ journeyId }: { journeyId: string }) {
 					toast.success('Link anexado!');
 					cb?.onSuccess?.();
 				},
-				onError: () => toast.error('Falha ao anexar link.'),
+				onError: (e) => toast.error(mntErrorText(e, 'Falha ao anexar link.')),
 			},
 		);
 	};
