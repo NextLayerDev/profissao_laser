@@ -44,7 +44,11 @@ import type {
 	MntGoal,
 	MntMaslowTest,
 } from '@/modules/mentoria/types';
+import { isUnknownAnswer } from '@/modules/mentoria/types';
 import { CARD, EmptyState, fmtDate } from '../../_components/shared';
+
+/** Os forms só fecham/limpam quando o container confirma o sucesso. */
+export type MutationCallbacks = { onSuccess?: () => void };
 
 /** Rótulo de campo — mesmo step do `dynamic-form`, que é o vizinho visual. */
 const FIELD_LABEL = 'mb-1.5 block text-label text-primary';
@@ -157,8 +161,9 @@ export function GoodNewsView({
 									{fmtDate(entry.posted_on)}
 								</p>
 								<ul className="space-y-0.5 text-body text-secondary">
-									{entry.news.map((n) => (
-										<li key={n}>• {n}</li>
+									{/* Texto repetido no mesmo dia duplicava a key. */}
+									{entry.news.map((n, idx) => (
+										<li key={`${entry.id}-${idx}`}>• {n}</li>
 									))}
 								</ul>
 							</div>
@@ -205,17 +210,23 @@ export function GoalsView({
 	onCreate,
 	onUpdateStatus,
 	onToggleFirstAction,
+	updatingGoalId = null,
 }: {
 	goals: MntGoal[];
 	creating: boolean;
-	onCreate: (body: {
-		title: string;
-		indicator_text: string | null;
-		deadline: string | null;
-		first_action_48h: string | null;
-	}) => void;
+	onCreate: (
+		body: {
+			title: string;
+			indicator_text: string | null;
+			deadline: string | null;
+			first_action_48h: string | null;
+		},
+		cb?: MutationCallbacks,
+	) => void;
 	onUpdateStatus: (goalId: string, status: string) => void;
 	onToggleFirstAction: (goalId: string, done: boolean) => void;
+	/** Meta com atualização em andamento: trava o select e o toggle dela. */
+	updatingGoalId?: string | null;
 }) {
 	const [showForm, setShowForm] = useState(false);
 	const fieldId = useId();
@@ -226,20 +237,27 @@ export function GoalsView({
 		first_action_48h: '',
 	});
 
+	// Fecha e limpa só no sucesso: com erro de rede a meta digitada sumia.
 	const submit = () => {
-		onCreate({
-			title: form.title,
-			indicator_text: form.indicator_text || null,
-			deadline: form.deadline || null,
-			first_action_48h: form.first_action_48h || null,
-		});
-		setShowForm(false);
-		setForm({
-			title: '',
-			indicator_text: '',
-			deadline: '',
-			first_action_48h: '',
-		});
+		onCreate(
+			{
+				title: form.title,
+				indicator_text: form.indicator_text || null,
+				deadline: form.deadline || null,
+				first_action_48h: form.first_action_48h || null,
+			},
+			{
+				onSuccess: () => {
+					setShowForm(false);
+					setForm({
+						title: '',
+						indicator_text: '',
+						deadline: '',
+						first_action_48h: '',
+					});
+				},
+			},
+		);
 	};
 
 	return (
@@ -354,6 +372,7 @@ export function GoalsView({
 									className={`${inputClass} w-auto`}
 									aria-label="Status da meta"
 									value={goal.status}
+									disabled={updatingGoalId === goal.id}
 									onChange={(e) => onUpdateStatus(goal.id, e.target.value)}
 								>
 									{GOAL_STATUS.map((s) => (
@@ -368,6 +387,7 @@ export function GoalsView({
 							<button
 								type="button"
 								aria-pressed={Boolean(goal.first_action_done_at)}
+								disabled={updatingGoalId === goal.id}
 								onClick={() =>
 									onToggleFirstAction(goal.id, !goal.first_action_done_at)
 								}
@@ -449,7 +469,7 @@ export function MaslowView({
 }: {
 	history: MntMaslowTest[];
 	submitting: boolean;
-	onSubmit: (answers: number[]) => void;
+	onSubmit: (answers: number[], cb?: MutationCallbacks) => void;
 }) {
 	const [answers, setAnswers] = useState<Array<number | null>>(
 		Array.from({ length: 15 }, () => null),
@@ -459,11 +479,13 @@ export function MaslowView({
 
 	const latest = history.at(-1) ?? null;
 
-	const send = () => {
-		onSubmit(answers as number[]);
+	const reset = () => {
 		setShowTest(false);
 		setAnswers(Array.from({ length: 15 }, () => null));
 	};
+
+	// Limpa só no sucesso: com erro, as 15 respostas sumiam.
+	const send = () => onSubmit(answers as number[], { onSuccess: reset });
 
 	return (
 		<div className="space-y-6">
@@ -551,13 +573,22 @@ export function MaslowView({
 							</div>
 						</div>
 					))}
-					<Button
-						variant="primary"
-						onPress={send}
-						disabled={submitting || answers.some((a) => a === null)}
-					>
-						Enviar teste
-					</Button>
+					<div className="flex flex-wrap gap-2">
+						<Button
+							variant="primary"
+							onPress={send}
+							disabled={submitting || answers.some((a) => a === null)}
+						>
+							Enviar teste
+						</Button>
+						{/* Quem clicou em "Refazer" só para rever as perguntas não tinha
+						    como voltar ao resultado. */}
+						{latest && showTest && (
+							<Button variant="secondary" onPress={reset} disabled={submitting}>
+								Cancelar
+							</Button>
+						)}
+					</div>
 				</div>
 			)}
 		</div>
@@ -622,11 +653,43 @@ export function BusinessPlanView({
 	template: MntFormTemplate | null | undefined;
 	versions: MntBusinessPlanVersion[];
 	creating: boolean;
-	onCreate: (answers: Record<string, unknown>) => void;
+	onCreate: (answers: Record<string, unknown>, cb?: MutationCallbacks) => void;
 }) {
 	const [editing, setEditing] = useState(false);
 	const [answers, setAnswers] = useState<Record<string, unknown>>({});
+	const [base, setBase] = useState<string>('{}');
+	const [missing, setMissing] = useState<string[]>([]);
 	const [viewing, setViewing] = useState<MntBusinessPlanVersion | null>(null);
+
+	// A nova versão parte da última: antes começava em branco e o aluno
+	// redigitava o plano inteiro para gerar a V2.
+	const latest = versions.reduce<MntBusinessPlanVersion | null>(
+		(acc, v) => (!acc || v.version > acc.version ? v : acc),
+		null,
+	);
+	const unchanged = JSON.stringify(answers) === base;
+
+	const save = () => {
+		// A versão é imutável: sem isto, um clique criava uma versão vazia
+		// para sempre (a API não valida os obrigatórios do plano).
+		const empty = (template?.schema.blocks ?? [])
+			.flatMap((b) => b.fields)
+			.filter((f) => {
+				if (!f.required) return false;
+				const v = answers[f.key];
+				if (isUnknownAnswer(v)) return false;
+				return v === undefined || v === null || String(v).trim() === '';
+			})
+			.map((f) => f.label);
+		setMissing(empty);
+		if (empty.length > 0) return;
+		onCreate(answers, {
+			onSuccess: () => {
+				setEditing(false);
+				setAnswers({});
+			},
+		});
+	};
 
 	return (
 		<div className="space-y-4">
@@ -639,6 +702,12 @@ export function BusinessPlanView({
 					<Button
 						variant="primary"
 						onPress={() => {
+							if (!editing) {
+								const start = { ...(latest?.content ?? {}) };
+								setAnswers(start);
+								setBase(JSON.stringify(start));
+								setMissing([]);
+							}
 							setEditing((v) => !v);
 							setViewing(null);
 						}}
@@ -658,14 +727,15 @@ export function BusinessPlanView({
 						initialAnswers={answers}
 						onChange={setAnswers}
 					/>
+					{missing.length > 0 && (
+						<p className="text-body text-red-600 dark:text-red-400">
+							Preencha antes de salvar: {missing.join(', ')}.
+						</p>
+					)}
 					<Button
 						variant="primary"
-						onPress={() => {
-							onCreate(answers);
-							setEditing(false);
-							setAnswers({});
-						}}
-						disabled={creating}
+						onPress={save}
+						disabled={creating || unchanged}
 					>
 						Salvar como nova versão
 					</Button>

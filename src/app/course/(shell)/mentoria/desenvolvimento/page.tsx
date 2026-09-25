@@ -153,21 +153,34 @@ function GoalsTab({ journeyId }: { journeyId: string }) {
 		<GoalsView
 			goals={goals ?? []}
 			creating={create.isPending}
-			onCreate={(body) => {
+			onCreate={(body, cb) => {
 				if (!body.title.trim()) {
 					toast.error('Descreva a sua meta.');
 					return;
 				}
 				create.mutate(body, {
-					onSuccess: () => toast.success('Meta cadastrada!'),
+					onSuccess: () => {
+						toast.success('Meta cadastrada!');
+						cb?.onSuccess?.();
+					},
 					onError: () => toast.error('Não foi possível salvar a meta.'),
 				});
 			}}
+			// Falha silenciosa voltava o select sem explicação.
+			updatingGoalId={
+				update.isPending ? (update.variables?.goalId ?? null) : null
+			}
 			onUpdateStatus={(goalId, status) =>
-				update.mutate({ goalId, body: { status } })
+				update.mutate(
+					{ goalId, body: { status } },
+					{ onError: () => toast.error('Não foi possível atualizar a meta.') },
+				)
 			}
 			onToggleFirstAction={(goalId, done) =>
-				update.mutate({ goalId, body: { first_action_done: done } })
+				update.mutate(
+					{ goalId, body: { first_action_done: done } },
+					{ onError: () => toast.error('Não foi possível atualizar a meta.') },
+				)
 			}
 		/>
 	);
@@ -184,9 +197,12 @@ function MaslowTab({ journeyId }: { journeyId: string }) {
 		<MaslowView
 			history={history ?? []}
 			submitting={submit.isPending}
-			onSubmit={(answers) =>
+			onSubmit={(answers, cb) =>
 				submit.mutate(answers, {
-					onSuccess: () => toast.success('Teste aplicado!'),
+					onSuccess: () => {
+						toast.success('Teste aplicado!');
+						cb?.onSuccess?.();
+					},
 					onError: () => toast.error('Não foi possível enviar o teste.'),
 				})
 			}
@@ -222,7 +238,9 @@ function BusinessPlanTab({ journeyId }: { journeyId: string }) {
 			template={template}
 			versions={versions ?? []}
 			creating={create.isPending}
-			onCreate={(answers) => create.mutate(answers)}
+			onCreate={(answers, cb) =>
+				create.mutate(answers, { onSuccess: () => cb?.onSuccess?.() })
+			}
 		/>
 	);
 }
