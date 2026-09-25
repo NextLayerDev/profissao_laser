@@ -100,10 +100,13 @@ export type MentoriaAccessStudent = {
 export type MyMentoriaAccess = {
 	has_access: boolean;
 	reason: 'required' | 'restricted' | null;
+	/** Seção Ferramentas bloqueada pelo admin (ausente em API antiga). */
+	tools_locked?: boolean;
 };
 
 export type MentoriaAccessAdmin = {
 	restricted: boolean;
+	tools_locked?: boolean;
 	students: MentoriaAccessStudent[];
 };
 

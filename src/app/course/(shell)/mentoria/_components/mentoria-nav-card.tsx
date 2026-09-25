@@ -8,13 +8,15 @@
 // simples e a lista canônica passou a morar em `src/modules/mentoria/nav.ts`.
 
 import { Button, buttonLabel } from '@upvox-dev/ui';
-import { Settings, Sparkles } from 'lucide-react';
+import { Lock, Settings, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Text } from 'react-native-css/components/Text';
 import { FLOATING_COLUMN } from '@/modules/mentoria/components/ui';
+import { useMentoriaToolsLocked } from '@/modules/mentoria/hooks';
 import {
 	isSectionActive,
+	MENTORIA_ROOT,
 	MENTORIA_SECTIONS,
 	MENTORIA_SETTINGS,
 } from '@/modules/mentoria/nav';
@@ -38,6 +40,7 @@ export function MentoriaNavCard({
 	onToggleAssistant: () => void;
 }) {
 	const pathname = usePathname();
+	const toolsLocked = useMentoriaToolsLocked();
 
 	return (
 		<nav
@@ -62,6 +65,13 @@ export function MentoriaNavCard({
 							>
 								<Icon className="w-4 h-4 shrink-0" aria-hidden />
 								<span className="truncate">{section.label}</span>
+								{toolsLocked &&
+									section.href === `${MENTORIA_ROOT}/ferramentas` && (
+										<Lock
+											className="ml-auto w-3.5 h-3.5 shrink-0 text-muted"
+											aria-label="Bloqueada"
+										/>
+									)}
 							</Link>
 						</li>
 					);

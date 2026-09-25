@@ -993,6 +993,14 @@ export async function createMaturityConfig(body: {
 }
 
 // ── Admin: liberação restrita ────────────────────────────────────────────────
+/** Bloqueia/libera a seção Ferramentas para todos os alunos. */
+export async function setToolsLock(
+	locked: boolean,
+): Promise<MentoriaAccessAdmin> {
+	const { data } = await api.put('/v1/admin/mentoria/tools-lock', { locked });
+	return data;
+}
+
 export async function getMentoriaAccessAdmin(): Promise<MentoriaAccessAdmin> {
 	const { data } = await api.get('/v1/admin/mentoria/access');
 	return data;

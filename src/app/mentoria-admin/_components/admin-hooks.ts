@@ -435,6 +435,17 @@ export function useMentoriaAccessAdmin() {
 	});
 }
 
+export function useSetToolsLock() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: svc.setToolsLock,
+		onSuccess: (data) => {
+			qc.setQueryData([...ROOT, 'access'], data);
+			qc.invalidateQueries({ queryKey: MNT });
+		},
+	});
+}
+
 export function useUpdateMentoriaAccess() {
 	const qc = useQueryClient();
 	return useMutation({

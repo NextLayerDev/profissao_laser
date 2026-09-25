@@ -10,7 +10,9 @@ import {
 	toolInUseCount,
 	useDeleteToolDefinition,
 	useFormTemplatesAdmin,
+	useMentoriaAccessAdmin,
 	usePatchToolDefinition,
+	useSetToolsLock,
 	useToolDefinitionsAdmin,
 	useUpsertToolDefinition,
 } from '../_components/admin-hooks';
@@ -113,6 +115,8 @@ export default function FerramentasPage() {
 						</button>
 					}
 				/>
+
+				<ToolsLockCard />
 
 				<Card>
 					{tools.isLoading ? (
@@ -329,6 +333,50 @@ function EditToolModal({
 				</div>
 			</div>
 		</Modal>
+	);
+}
+
+/** Chave global: fecha a seção Ferramentas para todos os alunos. */
+function ToolsLockCard() {
+	const access = useMentoriaAccessAdmin();
+	const setLock = useSetToolsLock();
+	const locked = access.data?.tools_locked === true;
+	const toggle = async () => {
+		try {
+			await setLock.mutateAsync(!locked);
+			toast.success(
+				locked
+					? 'Ferramentas liberadas para os alunos'
+					: 'Ferramentas bloqueadas para os alunos',
+			);
+		} catch (err) {
+			toast.error(mentoriaErrorMessage(err, 'Erro ao salvar'));
+		}
+	};
+	return (
+		<Card className="p-4 mb-4 flex flex-wrap items-center justify-between gap-3">
+			<div>
+				<p className="font-medium text-slate-900 dark:text-white">
+					{locked
+						? 'Ferramentas bloqueadas para os alunos'
+						: 'Ferramentas liberadas para os alunos'}
+				</p>
+				<p className="text-sm text-slate-500 dark:text-gray-400">
+					{locked
+						? 'O resto da Mentoria segue liberado. O aluno vê um atalho para o Plano de Negócios.'
+						: 'Bloqueie enquanto revisa as ferramentas.'}
+				</p>
+			</div>
+			<button
+				type="button"
+				className={locked ? primaryBtn : secondaryBtn}
+				onClick={toggle}
+				disabled={access.isLoading || setLock.isPending}
+			>
+				{setLock.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+				{locked ? 'Liberar ferramentas' : 'Bloquear ferramentas'}
+			</button>
+		</Card>
 	);
 }
 

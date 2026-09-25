@@ -11,7 +11,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Sparkles } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { SubscriptionGate } from '@/components/course/subscription-gate';
 import {
@@ -53,6 +53,13 @@ export default function DesenvolvimentoPage() {
 
 function Content({ journeyId }: { journeyId: string }) {
 	const [tab, setTab] = useState<string>('boas-noticias');
+	// `?aba=plano` abre direto numa aba (ex.: atalho "Ir para o Plano de
+	// Negócios" quando Ferramentas está bloqueada). Lido no mount — sem
+	// useSearchParams, que exigiria Suspense no build.
+	useEffect(() => {
+		const aba = new URLSearchParams(window.location.search).get('aba');
+		if (aba && DESENVOLVIMENTO_TABS.some((t) => t.key === aba)) setTab(aba);
+	}, []);
 
 	return (
 		// Sem `p-4 md:p-8`: o `mentoria/layout.tsx` já aplica o padding da área, e

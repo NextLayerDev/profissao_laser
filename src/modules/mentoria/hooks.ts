@@ -33,6 +33,11 @@ export function useMentoriaRestrictedOut(): boolean {
 	return useMyMentoriaAccess().data?.reason === 'restricted';
 }
 
+/** Admin bloqueou a seção Ferramentas para os alunos. Staff nunca vê bloqueio. */
+export function useMentoriaToolsLocked(): boolean {
+	return useMyMentoriaAccess().data?.tools_locked === true;
+}
+
 export function useMentoriaBootstrap() {
 	return useQuery({
 		queryKey: [...ROOT, 'bootstrap'],
