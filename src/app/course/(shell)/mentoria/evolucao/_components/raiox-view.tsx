@@ -97,6 +97,13 @@ export function RaioxView({ report }: { report: MntReport }) {
 	}>;
 	const metas = (p.metas ?? []) as Array<{ title: string; status: string }>;
 	const score = p.score_maturidade as number | undefined;
+	// Base do score (L2): com selo do mentor conta só o validado.
+	const scoreBase =
+		p.score_maturidade_base === 'validated'
+			? ' Validado pelo mentor.'
+			: p.score_maturidade_base === 'self_declared'
+				? ' Autodeclarado.'
+				: '';
 	const proximos = p.proximos_90_dias as string | null;
 
 	return (
@@ -224,7 +231,7 @@ export function RaioxView({ report }: { report: MntReport }) {
 						<p className="text-secondary flex-1 min-w-55">
 							{score === undefined
 								? 'Score de maturidade ainda não calculado.'
-								: `Score de maturidade: ${score}/100.`}{' '}
+								: `Score de maturidade: ${score}/100.${scoreBase}`}{' '}
 							Comparação completa disponível no comparador acima (Foto Zero vs
 							Agora).
 						</p>
