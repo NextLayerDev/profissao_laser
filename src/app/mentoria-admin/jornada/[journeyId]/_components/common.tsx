@@ -3,12 +3,14 @@
 // Peças comuns das abas da visão do mentor (jornada de um aluno).
 import type { Target } from 'lucide-react';
 import { useState } from 'react';
+import { DynamicForm } from '@/modules/mentoria/components/dynamic-form';
 import type {
 	DiagnosticState,
 	MntFormSubmission,
 	MntFormTemplate,
 } from '@/modules/mentoria/types';
 import { isUnknownAnswer } from '@/modules/mentoria/types';
+import { useFormTemplateById } from '../../../_components/admin-hooks';
 import {
 	Card,
 	EmptyState,
@@ -181,7 +183,11 @@ export function SubmissionCard({
 	labels?: Record<string, string>;
 }) {
 	const [open, setOpen] = useState(false);
+	// O template dá o nome do formulário e os blocos: sem ele o mentor lia
+	// "Ferramenta" em todos e as respostas pela key crua.
+	const template = useFormTemplateById(submission.form_template_id);
 	const count = Object.keys(submission.answers ?? {}).length;
+	const context = SUBMISSION_CONTEXT[submission.context] ?? submission.context;
 	return (
 		<Card className="p-4">
 			<button
@@ -191,7 +197,9 @@ export function SubmissionCard({
 			>
 				<div>
 					<p className="font-medium text-slate-900 dark:text-white">
-						{SUBMISSION_CONTEXT[submission.context] ?? submission.context}
+						{template.data && submission.context !== 'diagnostic'
+							? `${context} · ${template.data.title}`
+							: context}
 					</p>
 					<p className="text-xs text-slate-400 dark:text-gray-500 mt-0.5">
 						{submission.status === 'submitted'
@@ -206,7 +214,15 @@ export function SubmissionCard({
 			</button>
 			{open && (
 				<div className="mt-4 border-t border-slate-100 dark:border-white/5 pt-4">
-					<AnswersList answers={submission.answers ?? {}} labels={labels} />
+					{template.data ? (
+						<DynamicForm
+							template={template.data}
+							initialAnswers={submission.answers ?? {}}
+							readOnly
+						/>
+					) : (
+						<AnswersList answers={submission.answers ?? {}} labels={labels} />
+					)}
 				</div>
 			)}
 		</Card>

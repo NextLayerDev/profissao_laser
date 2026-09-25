@@ -35,7 +35,10 @@ export function DevelopmentTab({ journeyId }: { journeyId: string }) {
 	const maslow = useMentorMaslow(journeyId);
 	const plans = useMentorBusinessPlans(journeyId);
 
-	const latestMaslow = maslow.data?.at(-1) ?? null;
+	// Histórico: o mentor escolhe a aplicação (padrão: a última).
+	const [maslowId, setMaslowId] = useState<string | null>(null);
+	const latestMaslow =
+		maslow.data?.find((m) => m.id === maslowId) ?? maslow.data?.at(-1) ?? null;
 	const news = goodNews.data;
 
 	return (
@@ -130,15 +133,35 @@ export function DevelopmentTab({ journeyId }: { journeyId: string }) {
 				>
 					{latestMaslow && (
 						<Card className="p-5">
-							<p
-								className="text-sm text-muted mb-2"
-								data-testid="mentor-maslow"
-							>
-								Última aplicação: {formatDate(latestMaslow.taken_at)}
-								{(maslow.data?.length ?? 0) > 1
-									? ` · ${maslow.data?.length} no total`
-									: ''}
-							</p>
+							{(maslow.data?.length ?? 0) > 1 ? (
+								<div
+									className="flex flex-wrap gap-2 mb-3"
+									data-testid="mentor-maslow"
+								>
+									{[...(maslow.data ?? [])].reverse().map((m) => (
+										<button
+											key={m.id}
+											type="button"
+											aria-pressed={m.id === latestMaslow.id}
+											onClick={() => setMaslowId(m.id)}
+											className={`rounded-control border px-3 py-1.5 text-sm ${
+												m.id === latestMaslow.id
+													? 'border-brand bg-brand-wash text-primary'
+													: 'border-subtle bg-surface text-muted hover:border-brand-border'
+											}`}
+										>
+											{formatDate(m.taken_at)}
+										</button>
+									))}
+								</div>
+							) : (
+								<p
+									className="text-sm text-muted mb-2"
+									data-testid="mentor-maslow"
+								>
+									Aplicado em {formatDate(latestMaslow.taken_at)}
+								</p>
+							)}
 							<MaslowRadar scores={latestMaslow.scores} />
 							<LowestDimension scores={latestMaslow.scores} />
 						</Card>

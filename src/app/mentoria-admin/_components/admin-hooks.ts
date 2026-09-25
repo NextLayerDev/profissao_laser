@@ -459,6 +459,17 @@ export function useMentorComparison(
 	});
 }
 
+/** Template de um envio (rótulos e blocos para ler em DynamicForm). */
+export function useFormTemplateById(id: string | null | undefined) {
+	return useQuery({
+		queryKey: [...ROOT, 'form-template-id', id],
+		queryFn: () => svc.getFormTemplateById(id as string),
+		enabled: !!id,
+		staleTime: 10 * 60_000,
+		retry: false,
+	});
+}
+
 /** Template do Plano de Negócios (rótulos das versões). */
 export function useBusinessPlanTemplate(enabled: boolean) {
 	return useQuery({
