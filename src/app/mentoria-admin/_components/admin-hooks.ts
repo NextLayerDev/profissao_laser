@@ -101,6 +101,10 @@ export function mentoriaErrorMessage(err: unknown, fallback: string): string {
 			| undefined;
 		const raw = body?.message ?? body?.code ?? body?.error;
 		if (raw && KNOWN[raw]) return KNOWN[raw];
+		// A API recusa duas perguntas com a mesma métrica (vem dentro da
+		// mensagem de validação: 'body/schema duplicate_metric_key:<key>').
+		const metric = raw?.match(/duplicate_metric_key:(\w+)/)?.[1];
+		if (metric) return `Duas perguntas usam a métrica "${metric}".`;
 		// Validação do Fastify vinha como 'body/name Too small: expected…'.
 		if (body?.code === 'FST_ERR_VALIDATION') {
 			return 'Dados inválidos. Revise o formulário.';

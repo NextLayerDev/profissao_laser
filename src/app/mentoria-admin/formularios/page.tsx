@@ -647,6 +647,7 @@ function FormBuilder({
 		}
 		const blockKeys = new Set<string>();
 		const fieldKeys = new Set<string>();
+		const metricKeys = new Set<string>();
 		for (const block of state.blocks) {
 			if (blockKeys.has(block.key)) {
 				toast.error(
@@ -671,6 +672,12 @@ function FormBuilder({
 					return;
 				}
 				fieldKeys.add(f.key);
+				// Versão antiga pode trazer métrica repetida (a API recusa).
+				if (f.metric_key && metricKeys.has(f.metric_key)) {
+					toast.error(`Duas perguntas usam a métrica "${f.metric_key}".`);
+					return;
+				}
+				if (f.metric_key) metricKeys.add(f.metric_key);
 				if (f.type === 'select' && !(f.options?.length ?? 0)) {
 					toast.error(`O campo "${f.label}" (seleção) precisa de opções`);
 					return;
