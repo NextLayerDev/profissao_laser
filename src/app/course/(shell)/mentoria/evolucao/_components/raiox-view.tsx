@@ -234,7 +234,9 @@ export function RaioxView({ report }: { report: MntReport }) {
 				<ReportSection title="8. Próximos 90 dias">
 					<p className="text-secondary whitespace-pre-wrap">
 						{proximos ??
-							'Preencha a avaliação final do Encontro 10 para registrar o plano dos próximos 90 dias.'}
+							// A avaliação final ainda não tem tela para o aluno: não mandar
+							// preencher algo que ele não encontra.
+							'O plano dos próximos 90 dias é definido com o seu mentor no encerramento da jornada.'}
 					</p>
 				</ReportSection>
 			</div>
