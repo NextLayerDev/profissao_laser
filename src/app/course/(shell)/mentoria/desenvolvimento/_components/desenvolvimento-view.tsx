@@ -595,7 +595,8 @@ export function MaslowView({
 	);
 }
 
-function MaslowRadar({ scores }: { scores: Record<string, number> }) {
+/** Também usado na visão do mentor. */
+export function MaslowRadar({ scores }: { scores: Record<string, number> }) {
 	const data = Object.entries(scores).map(([key, value]) => ({
 		dimension: MASLOW_LABELS[key] ?? key,
 		pct: value,
@@ -623,7 +624,11 @@ function MaslowRadar({ scores }: { scores: Record<string, number> }) {
 	);
 }
 
-function LowestDimension({ scores }: { scores: Record<string, number> }) {
+export function LowestDimension({
+	scores,
+}: {
+	scores: Record<string, number>;
+}) {
 	const lowest = Object.entries(scores).sort((a, b) => a[1] - b[1])[0];
 	if (!lowest) return null;
 	return (

@@ -211,17 +211,24 @@ export function EvolucaoView({
 	);
 }
 
-function ComparisonBlock({
+/** Também usado na visão do mentor (só leitura), com o aviso trocado. */
+export function ComparisonBlock({
 	state,
 	comparison,
+	noFotoZeroText,
 }: {
 	state: ComparisonState;
 	comparison: Comparison | undefined;
+	noFotoZeroText?: string;
 }) {
 	if (state === 'loading') {
 		return (
 			<div className="h-40 rounded-control bg-surface-sunken animate-pulse" />
 		);
+	}
+
+	if (state === 'no_foto_zero' && noFotoZeroText) {
+		return <p className="text-body text-muted">{noFotoZeroText}</p>;
 	}
 
 	if (state === 'no_foto_zero') {
