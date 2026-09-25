@@ -274,6 +274,15 @@ export function useMentorCommentTask(journeyId: string | undefined) {
 	});
 }
 
+export function useMentorValidateTask(journeyId: string | undefined) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (taskId: string) => svc.validateTaskAsMentor(taskId),
+		onSuccess: () =>
+			qc.invalidateQueries({ queryKey: [...ROOT, 'journey-tasks', journeyId] }),
+	});
+}
+
 // ── Templates de encontro ────────────────────────────────────────────────────
 export function useMeetingTemplatesAdmin() {
 	return useQuery({

@@ -9,6 +9,7 @@ import {
 	ListTodo,
 	Loader2,
 	MessageSquare,
+	Paperclip,
 	Radar as RadarIcon,
 	RotateCcw,
 	Target,
@@ -16,6 +17,10 @@ import {
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import {
+	linkLabel,
+	normalizeUrl,
+} from '@/app/course/(shell)/mentoria/_components/shared';
 import { Header } from '@/components/dashboard/header';
 import { CompanyMapRadar } from '@/modules/mentoria/components/company-map-radar';
 import { SemaphoreBadge } from '@/modules/mentoria/components/semaphore-badge';
@@ -37,6 +42,7 @@ import {
 	useMentorJourneyTasks,
 	useMentorMeetingMutations,
 	useMentorSubmissions,
+	useMentorValidateTask,
 	useReopenDiagnostic,
 } from '../../_components/admin-hooks';
 import {
@@ -76,6 +82,20 @@ const TASK_STATUS: Record<
 	cancelled: { tone: 'slate', label: 'Cancelada' },
 };
 
+/** Meta/medição em pt-BR: '12500.5 R$' não é como o mentor lê dinheiro. */
+function formatKpiValue(value: number | null, unit: string | null): string {
+	if (value == null) return '—';
+	if (unit === 'R$') {
+		return value.toLocaleString('pt-BR', {
+			style: 'currency',
+			currency: 'BRL',
+		});
+	}
+	const n = value.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+	if (!unit) return n;
+	return unit === '%' ? `${n}%` : `${n} ${unit}`;
+}
+
 const SUBMISSION_CONTEXT: Record<string, string> = {
 	diagnostic: 'Diagnóstico (Foto Zero)',
 	meeting_exercise: 'Exercício de encontro',
@@ -113,6 +133,7 @@ export default function JourneyDrilldownPage() {
 	const diagnosticLabels = labelsOf(diagnostic.data);
 	const { validate, feedback } = useMentorMeetingMutations(journeyId);
 	const commentTask = useMentorCommentTask(journeyId);
+	const validateTask = useMentorValidateTask(journeyId);
 
 	const [feedbackFor, setFeedbackFor] = useState<MntJourneyMeeting | null>(
 		null,
@@ -131,6 +152,19 @@ export default function JourneyDrilldownPage() {
 		}
 	};
 
+	const doValidateTask = async (task: MntTask) => {
+		try {
+			await validateTask.mutateAsync(task.id);
+			toast.success('Tarefa validada');
+		} catch (err) {
+			toast.error(mentoriaErrorMessage(err, 'Erro ao validar a tarefa'));
+		}
+	};
+
+	// Volta para a turma do aluno: a lista de Turmas é só de admin e o mentor
+	// staff caía em "Erro ao carregar as turmas".
+	const cohortId = data?.cohort?.id ?? data?.journey?.cohort_id;
+
 	return (
 		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
@@ -138,7 +172,9 @@ export default function JourneyDrilldownPage() {
 				<PageTitle
 					title={company ? company.name : 'Mentoria da empresa'}
 					description="Visão do mentor: encontros, mapa da empresa, tarefas, indicadores e formulários respondidos."
-					backHref="/mentoria-admin/turmas"
+					backHref={
+						cohortId ? `/mentoria-admin/turmas/${cohortId}` : '/mentoria-admin'
+					}
 				/>
 
 				{overview.isLoading ? (
@@ -255,7 +291,9 @@ export default function JourneyDrilldownPage() {
 															<MessageSquare className="w-3.5 h-3.5" />
 															Feedback
 														</button>
-														{!m.mentor_validated_at && (
+														{/* Só o que o aluno concluiu: validar um encontro
+														    bloqueado marcava "Validado" no futuro. */}
+														{!m.mentor_validated_at && m.status === 'done' && (
 															<button
 																type="button"
 																className={primaryBtn}
@@ -281,6 +319,8 @@ export default function JourneyDrilldownPage() {
 							<Card className="p-5">
 								{companyMap.isLoading ? (
 									<Spinner />
+								) : companyMap.isError ? (
+									<EmptyState message="Não foi possível carregar o mapa da empresa." />
 								) : companyMap.data ? (
 									<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
 										<CompanyMapRadar map={companyMap.data} />
@@ -320,6 +360,10 @@ export default function JourneyDrilldownPage() {
 							<Card>
 								{tasks.isLoading ? (
 									<Spinner />
+								) : tasks.isError ? (
+									// Sem este ramo, um 403/500 virava "nenhuma tarefa" e o
+									// mentor achava que o aluno não tinha feito nada.
+									<EmptyState message="Não foi possível carregar as tarefas." />
 								) : !tasks.data?.length ? (
 									<EmptyState message="Nenhuma tarefa registrada." />
 								) : (
@@ -345,21 +389,76 @@ export default function JourneyDrilldownPage() {
 																	Prazo: {formatDate(t.due_date)}
 																</span>
 															)}
+															{t.mentor_validated_at && (
+																<span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+																	<CheckCircle2 className="w-3.5 h-3.5" />
+																	Validada em{' '}
+																	{formatDate(t.mentor_validated_at)}
+																</span>
+															)}
 														</div>
+														{/* Evidências que o aluno anexou: vinham da API mas não
+														    eram mostradas, e o mentor não tinha o que validar. */}
+														{(t.evidences?.length ?? 0) > 0 && (
+															<div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+																{t.evidences.map((ev) => {
+																	const href =
+																		ev.url &&
+																		(ev.kind === 'link'
+																			? normalizeUrl(ev.url)
+																			: ev.url);
+																	return href ? (
+																		<a
+																			key={ev.id}
+																			href={href}
+																			target="_blank"
+																			rel="noreferrer"
+																			className="inline-flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400 hover:underline"
+																		>
+																			<Paperclip className="w-3 h-3" />
+																			{ev.note ??
+																				(ev.kind === 'link'
+																					? linkLabel(href)
+																					: ev.kind)}
+																		</a>
+																	) : (
+																		<span
+																			key={ev.id}
+																			className="text-xs text-slate-500 dark:text-gray-400"
+																		>
+																			{ev.note ?? ev.url}
+																		</span>
+																	);
+																})}
+															</div>
+														)}
 														{t.mentor_comment && (
 															<p className="text-sm text-slate-600 dark:text-gray-400 mt-2 border-l-2 border-violet-400 pl-3">
 																{t.mentor_comment}
 															</p>
 														)}
 													</div>
-													<button
-														type="button"
-														className={secondaryBtn}
-														onClick={() => setCommentFor(t)}
-													>
-														<MessageSquare className="w-3.5 h-3.5" />
-														Comentar
-													</button>
+													<div className="flex gap-2">
+														<button
+															type="button"
+															className={secondaryBtn}
+															onClick={() => setCommentFor(t)}
+														>
+															<MessageSquare className="w-3.5 h-3.5" />
+															Comentar
+														</button>
+														{!t.mentor_validated_at && t.status === 'done' && (
+															<button
+																type="button"
+																className={primaryBtn}
+																onClick={() => doValidateTask(t)}
+																disabled={validateTask.isPending}
+															>
+																<CheckCircle2 className="w-4 h-4" />
+																Validar
+															</button>
+														)}
+													</div>
 												</li>
 											);
 										})}
@@ -374,6 +473,8 @@ export default function JourneyDrilldownPage() {
 							<Card>
 								{kpis.isLoading ? (
 									<Spinner />
+								) : kpis.isError ? (
+									<EmptyState message="Não foi possível carregar os indicadores." />
 								) : !kpis.data?.length ? (
 									<EmptyState message="Nenhum indicador cadastrado." />
 								) : (
@@ -402,13 +503,11 @@ export default function JourneyDrilldownPage() {
 															</p>
 														</td>
 														<td className="px-5 py-3 text-slate-600 dark:text-gray-400">
-															{k.target != null
-																? `${k.target}${k.unit ? ` ${k.unit}` : ''}`
-																: '—'}
+															{formatKpiValue(k.target, k.unit)}
 														</td>
 														<td className="px-5 py-3 text-slate-600 dark:text-gray-400">
 															{k.latest_measurement
-																? `${k.latest_measurement.value ?? '—'} (${formatDate(k.latest_measurement.measured_at)})`
+																? `${formatKpiValue(k.latest_measurement.value, k.unit)} (${formatDate(k.latest_measurement.measured_at)})`
 																: '—'}
 														</td>
 														<td className="px-5 py-3">
@@ -442,6 +541,10 @@ export default function JourneyDrilldownPage() {
 							{submissions.isLoading ? (
 								<Card>
 									<Spinner />
+								</Card>
+							) : submissions.isError ? (
+								<Card>
+									<EmptyState message="Não foi possível carregar os formulários." />
 								</Card>
 							) : !submissions.data?.length ? (
 								<Card>

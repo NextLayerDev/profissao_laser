@@ -727,6 +727,12 @@ export async function commentTaskAsMentor(
 	return data;
 }
 
+// Selo "Validada pelo mentor" da tela do aluno: não havia chamada no front.
+export async function validateTaskAsMentor(taskId: string): Promise<MntTask> {
+	const { data } = await api.post(`/v1/mentoria/task/${taskId}/validate`);
+	return data;
+}
+
 export async function listJourneyKpisAsMentor(
 	journeyId: string,
 ): Promise<MntKpi[]> {
