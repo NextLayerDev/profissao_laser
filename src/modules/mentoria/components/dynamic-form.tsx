@@ -135,7 +135,11 @@ function FieldInput({
 	// Grupos de botões não têm elemento rotulável para o `htmlFor` apontar, e a
 	// caixa "A LEVANTAR" não é um controle — nos dois casos o vínculo é por
 	// `aria-labelledby`.
-	const isGroup = unknown || field.type === 'boolean' || field.type === 'scale';
+	const isGroup =
+		unknown ||
+		field.type === 'boolean' ||
+		field.type === 'scale' ||
+		field.type === 'multiselect';
 
 	const labelContent = (
 		<>
@@ -238,6 +242,35 @@ function FieldInput({
 						</option>
 					))}
 				</select>
+			) : field.type === 'multiselect' ? (
+				// Caía no input de texto e gravava string livre; a API espera array
+				// (multiselect vazio não conta como resposta).
+				<fieldset aria-labelledby={labelId} className="flex flex-wrap gap-2">
+					{(field.options ?? []).map((opt) => {
+						const selected = Array.isArray(value) ? (value as string[]) : [];
+						const on = selected.includes(opt);
+						return (
+							<button
+								key={opt}
+								type="button"
+								disabled={readOnly}
+								aria-pressed={on}
+								onClick={() =>
+									onChange(
+										on ? selected.filter((o) => o !== opt) : [...selected, opt],
+									)
+								}
+								className={`rounded-control border px-3 py-1.5 text-label transition ${
+									on
+										? 'border-brand bg-brand-wash text-brand dark:text-violet-400'
+										: 'border-subtle text-muted'
+								}`}
+							>
+								{opt}
+							</button>
+						);
+					})}
+				</fieldset>
 			) : field.type === 'scale' ? (
 				// 0 a 10 (o seed usa "Nota (0-10)"); `flex-wrap` porque 11 botões
 				// de 32px passam de 400px e estouravam o card no celular.
@@ -270,7 +303,20 @@ function FieldInput({
 			) : (
 				<input
 					id={controlId}
-					type={field.type === 'date' ? 'date' : 'text'}
+					type={
+						field.type === 'date'
+							? 'date'
+							: field.type === 'file'
+								? 'url'
+								: 'text'
+					}
+					// Ainda não há upload em formulário: `file` pede o link do arquivo
+					// em vez de uma caixa de texto sem explicação.
+					placeholder={
+						field.type === 'file'
+							? 'Link do arquivo (Drive, Dropbox...)'
+							: undefined
+					}
 					className={inputClass}
 					value={(value as string | number) ?? ''}
 					disabled={readOnly}
