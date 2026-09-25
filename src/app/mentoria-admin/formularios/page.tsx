@@ -46,7 +46,7 @@ const FIELD_TYPES: Array<{ value: FormFieldType; label: string }> = [
 	{ value: 'select', label: 'Seleção (opções)' },
 	{ value: 'boolean', label: 'Sim / Não' },
 	{ value: 'date', label: 'Data' },
-	{ value: 'scale', label: 'Escala (1–5)' },
+	{ value: 'scale', label: 'Escala (0–10)' },
 ];
 
 /** label → key snake_case (sem acentos, minúsculas, `_`). */

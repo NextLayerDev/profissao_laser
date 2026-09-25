@@ -13,7 +13,8 @@
 // nunca se sustenta, e cada exceção está comentada no ponto:
 //
 //   number/currency  o `Input` do DS mascara em BRL e devolve string; aqui se
-//                    grava `Number`, e mudar isso mudaria o payload da API;
+//                    grava `Number` (texto pt-BR → `parseBrNumber`), e mudar
+//                    isso mudaria o payload da API;
 //   date             o `Input type="date"` do DS é um Pressable que abre um
 //                    calendário próprio, trocando o seletor nativo do browser;
 //   select           o `Select` do DS é só o gatilho fechado, sem opções;
@@ -35,7 +36,8 @@
 // referencia por `aria-labelledby`, que é a forma correta para esse caso.
 
 import { HelpCircle } from 'lucide-react';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { formatBrNumber, parseBrNumber } from '../numbers';
 import type { FormField, MntFormTemplate } from '../types';
 import { isUnknownAnswer, UNKNOWN_ANSWER } from '../types';
 import { SectionCard } from './ui';
@@ -65,12 +67,18 @@ export function DynamicForm({
 		initialAnswers ?? {},
 	);
 
+	// Re-hidrata só até o aluno digitar: depois de "Salvar rascunho" o refetch
+	// traz o snapshot do clique e, sem essa trava, apagava o que foi digitado
+	// enquanto o save estava em andamento.
+	const editedRef = useRef(false);
+
 	// biome-ignore lint/correctness/useExhaustiveDependencies: re-hidrata quando o rascunho carrega
 	useEffect(() => {
-		if (initialAnswers) setAnswers(initialAnswers);
+		if (initialAnswers && !editedRef.current) setAnswers(initialAnswers);
 	}, [JSON.stringify(initialAnswers ?? {})]);
 
 	const setAnswer = (key: string, value: unknown) => {
+		editedRef.current = true;
 		const next = { ...answers, [key]: value };
 		setAnswers(next);
 		onChange?.(next);
@@ -231,7 +239,9 @@ function FieldInput({
 					))}
 				</select>
 			) : field.type === 'scale' ? (
-				<fieldset aria-labelledby={labelId} className="flex gap-1.5">
+				// 0 a 10 (o seed usa "Nota (0-10)"); `flex-wrap` porque 11 botões
+				// de 32px passam de 400px e estouravam o card no celular.
+				<fieldset aria-labelledby={labelId} className="flex flex-wrap gap-1.5">
 					{Array.from({ length: 11 }, (_, i) => (
 						<button
 							key={String(i)}
@@ -249,31 +259,91 @@ function FieldInput({
 						</button>
 					))}
 				</fieldset>
+			) : field.type === 'number' || field.type === 'currency' ? (
+				<NumberField
+					id={controlId}
+					value={value}
+					currency={field.type === 'currency'}
+					readOnly={readOnly}
+					onChange={onChange}
+				/>
 			) : (
 				<input
 					id={controlId}
-					type={
-						field.type === 'number' || field.type === 'currency'
-							? 'number'
-							: field.type === 'date'
-								? 'date'
-								: 'text'
-					}
-					step={field.type === 'currency' ? '0.01' : undefined}
+					type={field.type === 'date' ? 'date' : 'text'}
 					className={inputClass}
 					value={(value as string | number) ?? ''}
 					disabled={readOnly}
-					onChange={(e) =>
-						onChange(
-							field.type === 'number' || field.type === 'currency'
-								? e.target.value === ''
-									? ''
-									: Number(e.target.value)
-								: e.target.value,
-						)
-					}
+					onChange={(e) => onChange(e.target.value)}
 				/>
 			)}
 		</div>
+	);
+}
+
+/**
+ * Número/moeda como texto pt-BR: '15.000' é 15000 (no `type="number"` virava
+ * 15) e '1500,50' não some no Firefox. Grava `Number` ou '' como antes.
+ */
+function NumberField({
+	id,
+	value,
+	currency,
+	readOnly,
+	onChange,
+}: {
+	id: string;
+	value: unknown;
+	currency: boolean;
+	readOnly: boolean;
+	onChange: (value: unknown) => void;
+}) {
+	const [text, setText] = useState(() => formatBrNumber(value));
+	const [synced, setSynced] = useState(value);
+	const [invalid, setInvalid] = useState(false);
+
+	// Valor trocado de fora (rascunho carregado): reescreve o texto, a menos que
+	// seja o próprio número que acabou de sair daqui.
+	if (value !== synced) {
+		setSynced(value);
+		const current = parseBrNumber(text);
+		const same =
+			typeof value === 'number' ? value === current : current === null;
+		if (!same) setText(formatBrNumber(value));
+	}
+
+	const parsed = parseBrNumber(text);
+	return (
+		<>
+			<input
+				id={id}
+				type="text"
+				inputMode="decimal"
+				className={`${inputClass} ${invalid ? 'border-red-500' : ''}`}
+				value={text}
+				disabled={readOnly}
+				placeholder={currency ? '0,00' : undefined}
+				aria-invalid={invalid || undefined}
+				onBlur={() => setInvalid(text.trim() !== '' && parsed === null)}
+				onChange={(e) => {
+					setText(e.target.value);
+					setInvalid(false);
+					onChange(parseBrNumber(e.target.value) ?? '');
+				}}
+			/>
+			{invalid && (
+				<p className="mt-1 text-caption text-red-600 dark:text-red-400">
+					Valor inválido. Use só números, ex.: 15.000,50
+				</p>
+			)}
+			{currency && !invalid && parsed !== null && !readOnly && (
+				<p className="mt-1 text-caption text-muted">
+					{parsed.toLocaleString('pt-BR', {
+						style: 'currency',
+						currency: 'BRL',
+					})}
+				</p>
+			)}
+		</>
 	);
 }

@@ -37,6 +37,7 @@ import {
 	StatCard,
 } from '@/modules/mentoria/components/ui';
 import { todayLocalISO } from '@/modules/mentoria/dates';
+import { parseBrNumber } from '@/modules/mentoria/numbers';
 import type { MntKpi, MntKpiMeasurement } from '@/modules/mentoria/types';
 import {
 	CARD,
@@ -133,12 +134,17 @@ export function IndicadoresView({
 			toast.error('Dê um nome ao indicador.');
 			return;
 		}
+		const target = parseBrNumber(form.target);
+		if (form.target.trim() !== '' && target === null) {
+			toast.error('Meta inválida. Use só números, ex.: 15.000,50');
+			return;
+		}
 		onCreateKpi(
 			{
 				name: form.name,
 				category: form.category,
 				unit: form.unit || null,
-				target: form.target === '' ? null : Number(form.target),
+				target,
 				direction: form.direction,
 				periodicity: form.periodicity,
 				semaphore: {
@@ -157,10 +163,16 @@ export function IndicadoresView({
 
 	const submitMeasurement = () => {
 		if (!measuring) return;
+		// Texto pt-BR: '1.500' é mil e quinhentos (o input number gravava 1.5).
+		const value = parseBrNumber(measurement.value);
+		if (measurement.value.trim() !== '' && value === null) {
+			toast.error('Valor inválido. Use só números, ex.: 15.000,50');
+			return;
+		}
 		onAddMeasurement(
 			measuring.id,
 			{
-				value: measurement.value === '' ? null : Number(measurement.value),
+				value,
 				measured_at: measurement.measured_at,
 				note: measurement.note || null,
 			},
@@ -229,7 +241,8 @@ export function IndicadoresView({
 					<div>
 						<span className={LABEL}>Meta</span>
 						<input
-							type="number"
+							type="text"
+							inputMode="decimal"
 							className={INPUT}
 							value={form.target}
 							onChange={(e) => setForm({ ...form, target: e.target.value })}
@@ -464,7 +477,8 @@ export function IndicadoresView({
 								vazio para "não medido"
 							</span>
 							<input
-								type="number"
+								type="text"
+								inputMode="decimal"
 								className={INPUT}
 								value={measurement.value}
 								onChange={(e) =>
