@@ -69,6 +69,30 @@ const STATUS_META: Record<LiveStatus, StatusMeta> = {
 
 const ORDER: LiveStatus[] = ['active', 'idle', 'ended', 'vod_ready'];
 
+// Live por link externo (Zoom/Meet) não tem player nem VOD automático: a
+// gravação só aparece se o mentor colar o link. As notas acima são do Mux e,
+// para externa, prometiam "o player abre sozinho" e "em alguns minutos".
+const EXTERNAL_NOTE: Partial<Record<LiveStatus, string>> = {
+	idle: 'Abra a live no horário marcado para ver o link ou o player.',
+	ended:
+		'Encerradas. Quando houver gravação publicada, ela aparece em Gravações.',
+};
+
+function sectionMeta(status: LiveStatus, group: MntLiveRoom[]): StatusMeta {
+	const meta = STATUS_META[status];
+	const note = EXTERNAL_NOTE[status];
+	return note && group.some((l) => l.source === 'external')
+		? { ...meta, note }
+		: meta;
+}
+
+function cardBadge(live: MntLiveRoom): StatusMeta['badge'] {
+	if (live.status === 'ended' && live.source === 'external') {
+		return { label: 'ENCERRADA', tone: 'neutral' };
+	}
+	return STATUS_META[live.status].badge;
+}
+
 /** Agendada mostra quando vai ser; as demais, quando começou. */
 function liveDate(live: MntLiveRoom): string {
 	if (live.status === 'idle') return fmtDateTime(live.scheduled_at);
@@ -76,10 +100,17 @@ function liveDate(live: MntLiveRoom): string {
 }
 
 export function LivesView({ lives }: { lives: MntLiveRoom[] }) {
-	const groups = ORDER.map((status) => ({
-		status,
-		lives: lives.filter((l) => l.status === status),
-	})).filter((g) => g.lives.length > 0);
+	const groups = ORDER.map((status) => {
+		const group = lives.filter((l) => l.status === status);
+		// A API ordena por scheduled_at desc; agendadas vão da mais próxima
+		// para a mais distante, senão a próxima live aparecia por último.
+		if (status === 'idle') {
+			group.sort((a, b) =>
+				(a.scheduled_at ?? '9999').localeCompare(b.scheduled_at ?? '9999'),
+			);
+		}
+		return { status, lives: group };
+	}).filter((g) => g.lives.length > 0);
 
 	return (
 		<div className="max-w-5xl mx-auto">
@@ -99,7 +130,7 @@ export function LivesView({ lives }: { lives: MntLiveRoom[] }) {
 			) : (
 				<div className="space-y-8">
 					{groups.map(({ status, lives: group }) => (
-						<Section key={status} meta={STATUS_META[status]}>
+						<Section key={status} meta={sectionMeta(status, group)}>
 							{group.map((live) => (
 								<LiveCard key={live.id} live={live} />
 							))}
@@ -142,7 +173,7 @@ function Section({
 // `onPress` — que não é link, então perderia o clique do meio e o "abrir em
 // nova aba". Mesma decisão já registrada em `encontro-view.tsx`.
 function LiveCard({ live }: { live: MntLiveRoom }) {
-	const meta = STATUS_META[live.status];
+	const badge = cardBadge(live);
 	const isLive = live.status === 'active';
 
 	return (
@@ -153,12 +184,12 @@ function LiveCard({ live }: { live: MntLiveRoom }) {
 			}`}
 		>
 			<div className="flex items-center gap-2 mb-1.5">
-				{meta.badge && (
+				{badge && (
 					<Badge
-						tone={meta.badge.tone}
+						tone={badge.tone}
 						className={isLive ? 'animate-pulse' : undefined}
 					>
-						{meta.badge.label}
+						{badge.label}
 					</Badge>
 				)}
 				<p className="text-label text-primary truncate">{live.title}</p>

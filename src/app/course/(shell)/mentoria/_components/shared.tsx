@@ -49,6 +49,10 @@ export function fmtDateTime(iso: string | null | undefined): string {
 	return d.toLocaleString('pt-BR', {
 		day: '2-digit',
 		month: '2-digit',
+		// Ano só quando não é o corrente: gravação de 2025 parecia deste ano.
+		...(d.getFullYear() !== new Date().getFullYear()
+			? { year: 'numeric' as const }
+			: {}),
 		hour: '2-digit',
 		minute: '2-digit',
 	});
