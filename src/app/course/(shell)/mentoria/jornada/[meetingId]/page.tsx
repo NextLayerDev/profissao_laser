@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { SubscriptionGate } from '@/components/course/subscription-gate';
 import {
 	useCompleteMeeting,
+	useDiagnostic,
 	useJourneyMeetings,
 	useTaskMutations,
 	useTasks,
@@ -52,6 +53,8 @@ function EncontroContent({
 	const complete = useCompleteMeeting(journeyId);
 	const { data: tasks } = useTasks(journeyId);
 	const { create } = useTaskMutations(journeyId);
+	// Identifica o encontro do diagnóstico e troca o CTA depois da Foto Zero.
+	const { data: diag } = useDiagnostic(journeyId);
 
 	if (isLoading) return <MntSkeleton />;
 
@@ -137,6 +140,11 @@ function EncontroContent({
 			onComplete={handleComplete}
 			addingTask={create.isPending}
 			onAddTask={handleAddTask}
+			diagnostic={
+				diag
+					? { templateId: diag.template?.id ?? null, done: !!diag.foto_zero }
+					: undefined
+			}
 		/>
 	);
 }

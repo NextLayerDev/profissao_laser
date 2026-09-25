@@ -24,7 +24,9 @@ import {
 	Target,
 } from 'lucide-react';
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import { Text } from 'react-native-css/components/Text';
+import { Markdown } from '@/modules/mentoria/components/markdown';
 import type {
 	MeetingTaskPrompt,
 	MntJourneyMeeting,
@@ -45,6 +47,7 @@ export function EncontroView({
 	onComplete,
 	addingTask,
 	onAddTask,
+	diagnostic,
 }: {
 	meeting: MntJourneyMeeting;
 	/** Tarefas já filtradas pela origem deste encontro. */
@@ -55,8 +58,19 @@ export function EncontroView({
 	addingTask: boolean;
 	/** O container monta o corpo da tarefa: só ele conhece a origem e a jornada. */
 	onAddTask: (prompt: MeetingTaskPrompt) => void;
+	/** Formulário do diagnóstico e se a Foto Zero já foi congelada. */
+	diagnostic?: { templateId: string | null; done: boolean };
 }) {
 	const tpl = meeting.template;
+	const hasExercise = !!tpl?.exercise_form_template_id;
+	// O encontro do diagnóstico é o que usa o formulário do diagnóstico. Sem
+	// essa informação (fixtures), cai na regra antiga: encontro 1.
+	const isDiagnostic =
+		hasExercise &&
+		(diagnostic?.templateId
+			? tpl?.exercise_form_template_id === diagnostic.templateId
+			: meeting.position === 1);
+	const diagnosticPending = isDiagnostic && diagnostic?.done === false;
 
 	return (
 		<div className="max-w-3xl mx-auto space-y-6">
@@ -101,7 +115,7 @@ export function EncontroView({
 
 			{tpl?.content_md && (
 				<TemplateSection icon={BookOpen} title="Conteúdo do encontro">
-					{tpl.content_md}
+					<Markdown source={tpl.content_md} />
 				</TemplateSection>
 			)}
 
@@ -113,6 +127,8 @@ export function EncontroView({
 
 			<ExerciseSection
 				meeting={meeting}
+				isDiagnostic={isDiagnostic}
+				diagnosticDone={diagnostic?.done === true}
 				meetingTasks={meetingTasks}
 				addingTask={addingTask}
 				onAddTask={onAddTask}
@@ -124,7 +140,9 @@ export function EncontroView({
 				<p className="text-body text-muted">
 					{meeting.status === 'done'
 						? 'Você concluiu este encontro.'
-						: 'Concluiu as atividades? Marque o encontro como concluído.'}
+						: diagnosticPending
+							? 'Envie o diagnóstico antes de concluir: ele é o exercício deste encontro.'
+							: 'Concluiu as atividades? Marque o encontro como concluído.'}
 				</p>
 				{canComplete && (
 					// Ícone + texto é um ARRAY de children, e array bypassa o wrap
@@ -150,7 +168,7 @@ function TemplateSection({
 }: {
 	icon: typeof Target;
 	title: string;
-	children: string;
+	children: ReactNode;
 }) {
 	return (
 		<section className={`${CARD} p-5`}>
@@ -158,20 +176,28 @@ function TemplateSection({
 				<Icon className="w-4 h-4 text-brand dark:text-violet-400" aria-hidden />
 				{title}
 			</h2>
-			<p className="text-body text-secondary whitespace-pre-wrap leading-relaxed">
-				{children}
-			</p>
+			{typeof children === 'string' ? (
+				<p className="text-body text-secondary whitespace-pre-wrap leading-relaxed">
+					{children}
+				</p>
+			) : (
+				children
+			)}
 		</section>
 	);
 }
 
 function ExerciseSection({
 	meeting,
+	isDiagnostic,
+	diagnosticDone,
 	meetingTasks,
 	addingTask,
 	onAddTask,
 }: {
 	meeting: MntJourneyMeeting;
+	isDiagnostic: boolean;
+	diagnosticDone: boolean;
 	meetingTasks: MntTask[];
 	addingTask: boolean;
 	onAddTask: (prompt: MeetingTaskPrompt) => void;
@@ -180,10 +206,6 @@ function ExerciseSection({
 	const prompts: MeetingTaskPrompt[] = tpl?.task_prompts ?? [];
 
 	const hasExercise = !!tpl?.exercise_form_template_id;
-	// TODO: dívida herdada — assume que o encontro 1 é sempre o Raio-X inicial.
-	// O certo seria o template dizer qual formulário é o diagnóstico, em vez de
-	// deduzir pela posição.
-	const isDiagnostic = hasExercise && meeting.position === 1;
 
 	if (!hasExercise && prompts.length === 0) return null;
 
@@ -200,14 +222,15 @@ function ExerciseSection({
 			{isDiagnostic && (
 				<div className="mb-4 rounded-control border border-subtle bg-brand-wash p-4">
 					<p className="mb-3 text-body text-secondary">
-						O exercício deste encontro é o <strong>Raio-X inicial</strong> da
-						sua empresa — o diagnóstico que vira a sua Foto Zero.
+						{diagnosticDone
+							? 'Diagnóstico enviado: sua Foto Zero está congelada.'
+							: 'O exercício deste encontro é o Raio-X inicial da sua empresa — o diagnóstico que vira a sua Foto Zero.'}
 					</p>
 					{/* Continua `<Link>` com as classes do botão: o `Button` do DS não
 					    navega, e trocar por `onPress` + router perderia o clique do meio. */}
 					<Link href="/course/mentoria/diagnostico" className={BTN_PRIMARY}>
 						<ClipboardList className="w-4 h-4" aria-hidden />
-						Fazer o diagnóstico
+						{diagnosticDone ? 'Ver Foto Zero' : 'Fazer o diagnóstico'}
 					</Link>
 				</div>
 			)}
