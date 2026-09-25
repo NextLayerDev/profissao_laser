@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { saveRefreshToken, saveToken } from '@/lib/auth';
 import { loginCourses, signupCourses } from '@/services/courses-auth';
@@ -19,9 +19,12 @@ const PANEL_ROLES = ['admin', 'staff'];
  */
 export function useLogin() {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	return useMutation({
 		mutationFn: (payload: LoginCustomerPayload) => loginCourses(payload),
 		onSuccess: ({ accessToken, refreshToken, user }) => {
+			// Cache é por aba, não por usuário: descarta o do login anterior.
+			queryClient.removeQueries();
 			if (refreshToken) saveRefreshToken(refreshToken);
 			if (PANEL_ROLES.includes(user?.role ?? '')) {
 				saveToken('user', accessToken);
@@ -36,9 +39,12 @@ export function useLogin() {
 
 export function useRegisterCustomer() {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	return useMutation({
 		mutationFn: (payload: RegisterCustomerPayload) => signupCourses(payload),
 		onSuccess: ({ accessToken, refreshToken, user }) => {
+			// Cache é por aba, não por usuário: descarta o do login anterior.
+			queryClient.removeQueries();
 			if (refreshToken) saveRefreshToken(refreshToken);
 			if (PANEL_ROLES.includes(user?.role ?? '')) {
 				saveToken('user', accessToken);
