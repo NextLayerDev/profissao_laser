@@ -34,10 +34,10 @@ import {
 	MaturityBasisBadge,
 } from '@/modules/mentoria/components/company-map-radar';
 import {
-	computeDelta,
 	formatKpiValue,
 	KpiEvolutionChart,
 	SEMAPHORE_TONE,
+	summarizePeriod,
 } from '@/modules/mentoria/components/kpi-evolution';
 import {
 	DonutProgress,
@@ -214,7 +214,7 @@ function Dashboard({
 			{/* Resumo do período */}
 			<SectionCard
 				title="Resumo do período"
-				description={`${currentMonthLabel()} — atualizado agora`}
+				description={`Últimos ${PERIOD_MONTHS[period]} meses`}
 				action={
 					<SegmentedControl
 						label="Período"
@@ -236,24 +236,39 @@ function Dashboard({
 					</p>
 				) : (
 					<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-						{topKpis.map((kpi, i) => (
-							<StatCard
-								key={kpi.id}
-								label={kpi.name}
-								value={formatKpiValue(kpi.latest_measurement?.value, kpi.unit)}
-								sub={
-									kpi.target !== null
-										? `Meta: ${formatKpiValue(kpi.target, kpi.unit)}`
-										: kpi.latest_measurement
-											? `Medido em ${fmtDate(kpi.latest_measurement.measured_at)}`
-											: 'Sem medição'
-								}
-								icon={KPI_ICONS[i % KPI_ICONS.length]}
-								tone={SEMAPHORE_TONE[kpi.current_semaphore ?? 'unmeasured']}
-								delta={computeDelta(kpi, histories[i]?.data)}
-								href="/course/mentoria/indicadores"
-							/>
-						))}
+						{topKpis.map((kpi, i) => {
+							// O seletor vale para os cards também: valor e variação são
+							// do período escolhido, não da última medição de sempre.
+							const { latest, delta } = summarizePeriod(
+								kpi,
+								histories[i]?.data,
+								PERIOD_MONTHS[period],
+							);
+							const loaded = !!histories[i]?.data;
+							const shown = loaded ? latest : kpi.latest_measurement;
+							return (
+								<StatCard
+									key={kpi.id}
+									label={kpi.name}
+									value={formatKpiValue(shown?.value, kpi.unit)}
+									sub={
+										!shown
+											? 'Sem medição no período'
+											: kpi.target !== null
+												? `Meta: ${formatKpiValue(kpi.target, kpi.unit)}`
+												: `Medido em ${fmtDate(shown.measured_at)}`
+									}
+									icon={KPI_ICONS[i % KPI_ICONS.length]}
+									tone={
+										shown
+											? SEMAPHORE_TONE[kpi.current_semaphore ?? 'unmeasured']
+											: SEMAPHORE_TONE.unmeasured
+									}
+									delta={delta}
+									href="/course/mentoria/indicadores"
+								/>
+							);
+						})}
 					</div>
 				)}
 			</SectionCard>
@@ -495,12 +510,4 @@ function compareDueDate(a: MntTask, b: MntTask) {
 	if (!a.due_date) return 1;
 	if (!b.due_date) return -1;
 	return a.due_date.localeCompare(b.due_date);
-}
-
-function currentMonthLabel() {
-	const label = new Date().toLocaleDateString('pt-BR', {
-		month: 'long',
-		year: 'numeric',
-	});
-	return label.charAt(0).toUpperCase() + label.slice(1);
 }

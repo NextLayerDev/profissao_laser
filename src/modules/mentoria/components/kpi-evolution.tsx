@@ -84,6 +84,46 @@ export function computeDelta(
 	};
 }
 
+/**
+ * Resumo do KPI dentro dos últimos `months` meses: a última medição do período
+ * e a variação entre a primeira e a última dele. É o que faz o seletor
+ * 3m/6m/12m mudar os cards (antes só mudava o gráfico).
+ */
+export function summarizePeriod(
+	kpi: MntKpi,
+	history: MntKpiMeasurement[] | undefined,
+	months: number,
+): {
+	latest: MntKpiMeasurement | null;
+	delta: ReturnType<typeof computeDelta>;
+} {
+	const cutoff = new Date();
+	cutoff.setHours(0, 0, 0, 0);
+	cutoff.setMonth(cutoff.getMonth() - months);
+	const inPeriod = (history ?? [])
+		.filter((m) => {
+			const at = parseLocalDate(m.measured_at);
+			return !Number.isNaN(at.getTime()) && at >= cutoff;
+		})
+		.sort((a, b) => a.measured_at.localeCompare(b.measured_at));
+	const latest = inPeriod[inPeriod.length - 1] ?? null;
+	const measured = inPeriod.filter((m) => m.value !== null);
+	const first = measured[0]?.value;
+	const last = measured[measured.length - 1]?.value;
+	const delta =
+		measured.length >= 2 &&
+		typeof first === 'number' &&
+		typeof last === 'number' &&
+		first !== 0
+			? {
+					pct: ((last - first) / Math.abs(first)) * 100,
+					caption: `em ${months} meses`,
+					upIsGood: kpi.direction === 'up_good',
+				}
+			: null;
+	return { latest, delta };
+}
+
 export function KpiEvolutionChart({
 	kpis,
 	histories,
