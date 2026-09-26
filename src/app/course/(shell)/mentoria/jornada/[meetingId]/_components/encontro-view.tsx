@@ -31,6 +31,7 @@ import {
 import Link from 'next/link';
 import { type ReactNode, useState } from 'react';
 import { Text } from 'react-native-css/components/Text';
+import { HelpTip } from '@/modules/mentoria/components/help-tip';
 import { Markdown } from '@/modules/mentoria/components/markdown';
 import type {
 	MeetingTaskPrompt,
@@ -106,7 +107,11 @@ export function EncontroView({
 		<div className="max-w-3xl mx-auto space-y-6">
 			<MntHeader
 				title={`${meeting.position}. ${tpl?.title ?? 'Encontro'}`}
-				subtitle={tpl?.subtitle ?? meetingStatusLabel(meeting.status)}
+				subtitle={
+					filled(tpl?.subtitle)
+						? (tpl?.subtitle ?? undefined)
+						: meetingStatusLabel(meeting.status)
+				}
 				icon={BookOpen}
 				backHref="/course/mentoria/jornada"
 			/>
@@ -144,21 +149,21 @@ export function EncontroView({
 				</section>
 			)}
 
-			{tpl?.objectives && (
+			{filled(tpl?.objectives) && (
 				<TemplateSection icon={Target} title="Objetivos">
-					{tpl.objectives}
+					{tpl?.objectives}
 				</TemplateSection>
 			)}
 
-			{tpl?.content_md && (
+			{filled(tpl?.content_md) && (
 				<TemplateSection icon={BookOpen} title="Conteúdo do encontro">
-					<Markdown source={tpl.content_md} />
+					<Markdown source={tpl?.content_md ?? ''} />
 				</TemplateSection>
 			)}
 
-			{tpl?.expected_result && (
+			{filled(tpl?.expected_result) && (
 				<TemplateSection icon={Flag} title="Resultado esperado">
-					{tpl.expected_result}
+					{tpl?.expected_result}
 				</TemplateSection>
 			)}
 
@@ -204,6 +209,7 @@ export function EncontroView({
 									href={m.url}
 									target="_blank"
 									rel="noreferrer"
+									title={m.description || undefined}
 									className="flex items-center justify-between gap-2 rounded-control border border-subtle p-3 transition hover:border-brand-border"
 								>
 									<span className="min-w-0">
@@ -211,7 +217,7 @@ export function EncontroView({
 											{m.title}
 										</span>
 										<span className="block truncate text-caption text-muted">
-											{m.description || linkLabel(m.url)}
+											{linkLabel(m.url)}
 										</span>
 									</span>
 									<ArrowRight
@@ -240,10 +246,10 @@ export function EncontroView({
 			>
 				<p className="text-body text-muted">
 					{meeting.status === 'done'
-						? 'Você concluiu este encontro.'
+						? 'Encontro concluído.'
 						: diagnosticPending
-							? 'Envie o diagnóstico antes de concluir: ele é o exercício deste encontro.'
-							: 'Concluiu as atividades? Marque o encontro como concluído.'}
+							? 'Envie o diagnóstico antes de concluir.'
+							: 'Terminou as atividades?'}
 				</p>
 				{canComplete && (
 					// Ícone + texto é um ARRAY de children, e array bypassa o wrap
@@ -282,6 +288,16 @@ export function EncontroView({
 			)}
 		</div>
 	);
+}
+
+// Placeholder que seeds antigos gravaram nos encontros 4–8 (a migration
+// 20260925196000 limpa; aqui só evita mostrá-lo se voltar por cópia).
+const SEED_PLACEHOLDER = 'Conteúdo configurável pelo administrador.';
+
+/** Texto do template que vale mostrar: vazio/só espaço/placeholder some. */
+function filled(text: string | null | undefined): boolean {
+	const t = text?.trim();
+	return !!t && t !== SEED_PLACEHOLDER;
 }
 
 /** Atalho para o encontro seguinte (bloqueado vira só o cartaz). */
@@ -388,8 +404,8 @@ function ExerciseSection({
 				<div className="mb-4 rounded-control border border-subtle bg-brand-wash p-4">
 					<p className="mb-3 text-body text-secondary">
 						{diagnosticDone
-							? 'Diagnóstico enviado: sua Foto Zero está congelada.'
-							: 'O exercício deste encontro é o Raio-X inicial da sua empresa — o diagnóstico que vira a sua Foto Zero.'}
+							? 'Foto Zero congelada.'
+							: 'Raio-X inicial da empresa: vira a sua Foto Zero.'}
 					</p>
 					{/* Continua `<Link>` com as classes do botão: o `Button` do DS não
 					    navega, e trocar por `onPress` + router perderia o clique do meio. */}
@@ -403,9 +419,7 @@ function ExerciseSection({
 			{hasExercise && !isDiagnostic && (
 				<div className="mb-4">
 					{exercise ?? (
-						<p className="text-body text-muted">
-							O exercício deste encontro é feito junto com o mentor.
-						</p>
+						<p className="text-body text-muted">Feito junto com o mentor.</p>
 					)}
 				</div>
 			)}
@@ -425,14 +439,14 @@ function ExerciseSection({
 								key={p.title}
 								className="flex items-start justify-between gap-3 rounded-control border border-subtle p-3"
 							>
-								<div className="min-w-0">
-									<p className="text-label text-primary">{p.title}</p>
-									{p.description && (
-										<p className="mt-0.5 text-caption text-muted">
+								<p className="min-w-0 inline-flex items-center gap-1 text-label text-primary">
+									{p.title}
+									{filled(p.description) && (
+										<HelpTip label={`Sobre: ${p.title}`}>
 											{p.description}
-										</p>
+										</HelpTip>
 									)}
-								</div>
+								</p>
 								{alreadyAdded ? (
 									<span className="shrink-0 inline-flex items-center gap-1 text-caption text-emerald-600 dark:text-emerald-400">
 										<CheckCircle2 className="w-3.5 h-3.5" aria-hidden />
