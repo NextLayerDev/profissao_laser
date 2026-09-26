@@ -153,6 +153,7 @@ export function DiagnosticoView({
 			<DynamicForm
 				template={data.template}
 				initialAnswers={initialAnswers}
+				showProgress
 				onChange={(answers) => {
 					answersRef.current = answers;
 					editsRef.current += 1;

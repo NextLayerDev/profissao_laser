@@ -52,16 +52,30 @@ import { SectionCard } from './ui';
 export const inputClass =
 	'w-full rounded-control border border-subtle bg-surface px-3 py-2 text-body text-primary placeholder:text-muted focus:outline-none focus:border-focus disabled:bg-surface-sunken disabled:opacity-60';
 
+/**
+ * Campo respondido: "A LEVANTAR" conta (não saber também é resposta); vazio,
+ * texto em branco e multiselect sem opção não contam.
+ */
+export function isAnswered(value: unknown): boolean {
+	if (value === undefined || value === null) return false;
+	if (typeof value === 'string') return value.trim() !== '';
+	if (Array.isArray(value)) return value.length > 0;
+	return true;
+}
+
 export function DynamicForm({
 	template,
 	initialAnswers,
 	readOnly = false,
 	onChange,
+	showProgress = false,
 }: {
 	template: MntFormTemplate;
 	initialAnswers?: Record<string, unknown>;
 	readOnly?: boolean;
 	onChange?: (answers: Record<string, unknown>) => void;
+	/** Formulário longo (diagnóstico): x/y por bloco e barra geral no topo. */
+	showProgress?: boolean;
 }) {
 	const [answers, setAnswers] = useState<Record<string, unknown>>(
 		initialAnswers ?? {},
@@ -84,9 +98,33 @@ export function DynamicForm({
 		onChange?.(next);
 	};
 
+	const blocks = template.schema.blocks;
+	const answeredIn = (fields: FormField[]) =>
+		fields.filter((f) => isAnswered(answers[f.key])).length;
+	const total = blocks.reduce((n, b) => n + b.fields.length, 0);
+	const done = blocks.reduce((n, b) => n + answeredIn(b.fields), 0);
+	const pct = total ? Math.round((done / total) * 100) : 0;
+
 	return (
 		<div className="space-y-8">
-			{template.schema.blocks.map((block) => (
+			{showProgress && total > 0 && (
+				// Fica grudado no topo ao rolar: são ~45 campos em vários blocos.
+				<div className="sticky top-0 z-10 rounded-card border border-subtle bg-surface p-3">
+					<div className="mb-1.5 flex items-center justify-between text-caption text-muted">
+						<span>
+							{done} de {total} respondidas
+						</span>
+						<span className="text-label text-primary">{pct}%</span>
+					</div>
+					<div className="h-1.5 overflow-hidden rounded-full bg-surface-sunken">
+						<div
+							className="h-full rounded-full bg-brand transition-all"
+							style={{ width: `${pct}%` }}
+						/>
+					</div>
+				</div>
+			)}
+			{blocks.map((block) => (
 				// `@container` + `@2xl:` em vez de `md:`: o painel do Assistente rouba
 				// 384px da coluna de conteúdo, e breakpoint de viewport não enxerga
 				// isso — dois campos lado a lado numa coluna estreita ficam apertados.
@@ -95,6 +133,14 @@ export function DynamicForm({
 					title={block.title}
 					description={block.description}
 					className="@container"
+					action={
+						showProgress ? (
+							<BlockProgress
+								done={answeredIn(block.fields)}
+								total={block.fields.length}
+							/>
+						) : undefined
+					}
 				>
 					<div className="grid grid-cols-1 gap-4 @2xl:grid-cols-2">
 						{block.fields.map((field) => (
@@ -110,6 +156,21 @@ export function DynamicForm({
 				</SectionCard>
 			))}
 		</div>
+	);
+}
+
+function BlockProgress({ done, total }: { done: number; total: number }) {
+	const complete = total > 0 && done >= total;
+	return (
+		<span
+			className={`rounded-chip px-2 py-0.5 text-caption ${
+				complete
+					? 'bg-success-wash text-emerald-600 dark:text-emerald-400'
+					: 'bg-surface-sunken text-muted'
+			}`}
+		>
+			{done}/{total}
+		</span>
 	);
 }
 
@@ -272,26 +333,33 @@ function FieldInput({
 					})}
 				</fieldset>
 			) : field.type === 'scale' ? (
-				// 0 a 10 (o seed usa "Nota (0-10)"); `flex-wrap` porque 11 botões
-				// de 32px passam de 400px e estouravam o card no celular.
-				<fieldset aria-labelledby={labelId} className="flex flex-wrap gap-1.5">
-					{Array.from({ length: 11 }, (_, i) => (
-						<button
-							key={String(i)}
-							type="button"
-							disabled={readOnly}
-							aria-pressed={value === i}
-							onClick={() => onChange(i)}
-							className={`h-8 w-8 rounded-chip border text-caption transition ${
-								value === i
-									? 'border-brand bg-brand text-on-brand'
-									: 'border-subtle text-muted'
-							}`}
-						>
-							{i}
-						</button>
-					))}
-				</fieldset>
+				// 0 a 10 (o seed usa "Nota (0-10)"). 11 botões de 32px pedem ~412px:
+				// na coluna estreita (celular, 2 colunas) vira 2 linhas iguais de 6
+				// (0–5 / 6–10) em vez de quebrar torto; o `@container` mede a coluna
+				// do campo, não a tela.
+				<div className="@container">
+					<fieldset
+						aria-labelledby={labelId}
+						className="grid grid-cols-6 gap-1.5 @md:grid-cols-11"
+					>
+						{Array.from({ length: 11 }, (_, i) => (
+							<button
+								key={String(i)}
+								type="button"
+								disabled={readOnly}
+								aria-pressed={value === i}
+								onClick={() => onChange(i)}
+								className={`h-9 min-w-0 rounded-chip border text-caption transition ${
+									value === i
+										? 'border-brand bg-brand text-on-brand'
+										: 'border-subtle text-muted'
+								}`}
+							>
+								{i}
+							</button>
+						))}
+					</fieldset>
+				</div>
 			) : field.type === 'number' || field.type === 'currency' ? (
 				<NumberField
 					id={controlId}
