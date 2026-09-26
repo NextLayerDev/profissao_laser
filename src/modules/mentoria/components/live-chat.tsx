@@ -10,8 +10,9 @@ import { LiveChatView } from './live-chat-view';
 /**
  * Container do chat da live: mensagens persistidas via API; tempo real via
  * Supabase Realtime (postgres_changes em mnt_live_chat_messages, protegido por
- * RLS, com o JWT do aluno — ver `userRealtimeDb`). O polling de 5s só liga quando a inscrição não está ativa (falhou,
- * caiu ou ainda conectando) — antes rodava junto com o Realtime o tempo todo.
+ * RLS, com o JWT do aluno — ver `userRealtimeDb`). O polling de 5s só liga
+ * quando a inscrição não está ativa (falhou, caiu ou ainda conectando) — antes
+ * rodava junto com o Realtime o tempo todo.
  *
  * Continua uma ilha com busca própria em vez de receber os dados do container
  * da rota: o chat atualizar não deve reavaliar a tela inteira.
