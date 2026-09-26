@@ -5,6 +5,7 @@ import { Search, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Header } from '@/components/dashboard/header';
+import { HelpTip } from '@/modules/mentoria/components/help-tip';
 import type { MentoriaAccessStudent } from '@/modules/mentoria/types';
 import {
 	mentoriaErrorMessage,
@@ -72,7 +73,7 @@ export default function AcessoMentoriaPage() {
 			<main className="px-4 md:px-8 py-6 max-w-4xl mx-auto">
 				<PageTitle
 					title="Acesso"
-					description="Quem pode ver a Mentoria 360° na área do aluno"
+					description="Quem vê a Mentoria na área do aluno"
 					backHref="/mentoria-admin"
 				/>
 
@@ -97,17 +98,19 @@ export default function AcessoMentoriaPage() {
 								>
 									Limitar acesso à Mentoria
 								</Switch>
-								{data?.restricted ? (
-									<Badge tone="amber">restrita</Badge>
-								) : (
-									<Badge tone="green">liberada pelo plano</Badge>
-								)}
+								<span className="inline-flex items-center gap-2">
+									{data?.restricted ? (
+										<Badge tone="amber">restrita</Badge>
+									) : (
+										<Badge tone="green">pelo plano</Badge>
+									)}
+									<HelpTip label="Como funciona o acesso">
+										Desligado: vê a Mentoria quem tem plano com a Mentoria 360°
+										ou está matriculado numa turma. Ligado: além disso, o aluno
+										precisa estar na lista abaixo. Staff e admin sempre veem.
+									</HelpTip>
+								</span>
 							</div>
-							<p className="text-sm text-slate-500 dark:text-gray-400 mt-3">
-								Desligado: vê a Mentoria quem tem plano com a Mentoria 360° ou
-								está matriculado numa turma. Ligado: além disso, o aluno precisa
-								estar na lista abaixo. Staff e admin sempre veem.
-							</p>
 						</Card>
 
 						{restricted && (
@@ -119,10 +122,7 @@ export default function AcessoMentoriaPage() {
 									<Badge tone="violet">{selected.length}</Badge>
 								</div>
 
-								<Field
-									label="Adicionar aluno"
-									hint="Busque por nome ou email (mín. 2 caracteres)."
-								>
+								<Field label="Adicionar aluno" hint="Mín. 2 caracteres.">
 									<Input
 										leadingIcon={<Search className="w-4 h-4 text-muted" />}
 										value={query}
@@ -180,7 +180,7 @@ export default function AcessoMentoriaPage() {
 
 								{selected.length === 0 ? (
 									<p className="text-sm text-slate-500 dark:text-gray-400">
-										Nenhum aluno na lista ainda.
+										Lista vazia.
 									</p>
 								) : (
 									<ul className="flex flex-wrap gap-2">

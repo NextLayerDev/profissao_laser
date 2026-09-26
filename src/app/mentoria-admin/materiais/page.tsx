@@ -105,7 +105,8 @@ export default function MateriaisPage() {
 			<main className="px-4 md:px-8 py-6 max-w-5xl mx-auto">
 				<PageTitle
 					title="Materiais"
-					description="Arquivos e links de apoio. Sem turma = todos os alunos."
+					description="Arquivos e links de apoio."
+					help="Sem turma, o material vale para todos os alunos. Com encontro, aparece dentro dele."
 					backHref="/mentoria-admin"
 					actions={
 						<>
@@ -142,8 +143,15 @@ export default function MateriaisPage() {
 								const meta = KIND_META[m.kind] ?? KIND_META.doc;
 								return (
 									<li key={m.id} className="flex items-center gap-4 px-5 py-4">
-										<div className="w-9 h-9 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
-											<meta.icon className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+										{/* O ícone já diz o tipo: o badge com o nome saiu. */}
+										<div
+											className="w-9 h-9 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0"
+											title={meta.label}
+										>
+											<meta.icon
+												className="w-4 h-4 text-violet-600 dark:text-violet-400"
+												aria-label={meta.label}
+											/>
 										</div>
 										<div className="min-w-0 flex-1">
 											<a
@@ -160,11 +168,10 @@ export default function MateriaisPage() {
 												</p>
 											)}
 											<div className="flex items-center gap-2 mt-1 flex-wrap">
-												<Badge tone="blue">{meta.label}</Badge>
 												<Badge tone={m.cohort_id ? 'violet' : 'green'}>
 													{m.cohort_id
 														? (cohortName.get(m.cohort_id) ?? 'Turma')
-														: 'Global (todas as turmas)'}
+														: 'Todas as turmas'}
 												</Badge>
 												{m.meeting_template_id && (
 													<Badge tone="amber">

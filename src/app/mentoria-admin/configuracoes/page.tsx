@@ -4,6 +4,7 @@ import { Button } from '@upvox-dev/ui';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Header } from '@/components/dashboard/header';
+import { HelpTip } from '@/modules/mentoria/components/help-tip';
 import { parseBrNumber } from '@/modules/mentoria/numbers';
 import {
 	mentoriaErrorMessage,
@@ -89,7 +90,7 @@ export default function ConfiguracoesMentoriaPage() {
 			<main className="px-4 md:px-8 py-6 max-w-4xl mx-auto">
 				<PageTitle
 					title="Score de maturidade"
-					description="Metodologia do Score Profissão Laser — pesos por área (versionada)"
+					description="Pesos por área, versionados"
 					backHref="/mentoria-admin"
 				/>
 
@@ -100,24 +101,26 @@ export default function ConfiguracoesMentoriaPage() {
 					// sobrescrevia os pesos vigentes.
 					<Card className="p-5">
 						<p className="text-sm text-slate-500 dark:text-gray-400">
-							Não foi possível carregar a metodologia atual. Recarregue a página
-							antes de alterar os pesos.
+							Não foi possível carregar os pesos. Recarregue antes de alterar.
 						</p>
 					</Card>
 				) : (
 					<div className="space-y-6">
 						<Card className="p-5">
 							<div className="flex items-center justify-between mb-4">
-								<h3 className="font-semibold text-slate-900 dark:text-slate-100">
+								<h3 className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-slate-100">
 									Pesos por área
+									<HelpTip label="Como o score é calculado">
+										O score da jornada é a média das áreas do Mapa da Empresa
+										ponderada por estes pesos. Peso 0 exclui a área do cálculo.
+										Salvar cria uma NOVA versão ativa — versões antigas ficam
+										registradas (relatórios usam a versão da época).
+									</HelpTip>
 								</h3>
 								{active && <Badge tone="green">v{active.version} ativa</Badge>}
 							</div>
 							<p className="text-sm text-slate-500 dark:text-gray-400 mb-4">
-								O score da jornada é a média das áreas do Mapa da Empresa
-								ponderada por estes pesos. Peso 0 exclui a área do cálculo.
-								Salvar cria uma NOVA versão ativa — versões antigas ficam
-								registradas (relatórios usam a versão da época).
+								Peso 0 exclui a área.
 							</p>
 							<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 								{AREAS.map((area) => (
@@ -145,7 +148,7 @@ export default function ConfiguracoesMentoriaPage() {
 								disabled={create.isPending}
 								className="mt-5"
 							>
-								Salvar como nova versão ativa
+								Salvar nova versão
 							</Button>
 						</Card>
 

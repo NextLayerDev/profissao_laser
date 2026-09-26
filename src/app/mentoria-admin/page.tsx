@@ -99,7 +99,7 @@ export default function MentoriaAdminHubPage() {
 			<main className="px-4 md:px-8 py-6 max-w-6xl mx-auto">
 				<PageTitle
 					title="Mentoria 360°"
-					description="Administração do programa de mentoria: turmas, metodologia, materiais e acompanhamento das empresas."
+					description="Turmas, metodologia, materiais e acompanhamento."
 				/>
 
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

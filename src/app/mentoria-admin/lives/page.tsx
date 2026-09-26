@@ -96,7 +96,8 @@ export default function LivesAdminPage() {
 			<main className="px-4 md:px-8 py-6 max-w-5xl mx-auto">
 				<PageTitle
 					title="Lives"
-					description="Salas de transmissão ao vivo para as turmas. Transmita via OBS com as credenciais RTMP de cada sala."
+					description="Transmissões ao vivo para as turmas."
+					help="Transmita via OBS com as credenciais RTMP de cada sala, ou use um link externo (Meet, Zoom…)."
 					backHref="/mentoria-admin"
 					actions={
 						<button
@@ -142,11 +143,11 @@ export default function LivesAdminPage() {
 													: 'Todas as turmas'}
 											</Badge>
 											<Badge tone="slate">
-												{live.source === 'external'
-													? 'Link externo'
-													: 'Transmissão própria'}
+												{live.source === 'external' ? 'Link' : 'OBS'}
 											</Badge>
-											<span>Agendada: {formatDateTime(live.scheduled_at)}</span>
+											<span title="Agendada">
+												{formatDateTime(live.scheduled_at)}
+											</span>
 											{live.started_at && (
 												<span>· Início: {formatDateTime(live.started_at)}</span>
 											)}
@@ -167,7 +168,7 @@ export default function LivesAdminPage() {
 													onClick={() => setCredentialsFor(live)}
 												>
 													<KeyRound className="w-3.5 h-3.5" />
-													Credenciais de transmissão
+													Credenciais
 												</button>
 											)}
 										{live.source === 'external' && live.status === 'idle' && (
@@ -178,7 +179,7 @@ export default function LivesAdminPage() {
 												disabled={start.isPending}
 											>
 												<PlayCircle className="w-3.5 h-3.5" />
-												Iniciar live
+												Iniciar
 											</button>
 										)}
 										{/* Sala do Mux que nunca recebeu sinal fica 'idle' para
@@ -192,28 +193,39 @@ export default function LivesAdminPage() {
 												onClick={() => setEnding(live)}
 											>
 												<Square className="w-3.5 h-3.5" />
-												Encerrar live
+												Encerrar
 											</button>
 										)}
 										<Link
 											href={`/course/mentoria/lives/${live.id}`}
-											className={secondaryBtn}
+											className={ICON_BTN}
+											aria-label="Ver como aluno"
+											title="Ver como aluno"
 										>
-											<ExternalLink className="w-3.5 h-3.5" />
-											Ver como aluno
+											<ExternalLink className="w-4 h-4" />
 										</Link>
 										{/* Corrigir título/data/link e colar a gravação depois de
 										    encerrar (o encerramento promete isso). */}
-										<button
-											type="button"
-											className={secondaryBtn}
-											onClick={() => setEditing(live)}
-										>
-											<Pencil className="w-3.5 h-3.5" />
-											{live.source === 'external' && live.status === 'ended'
-												? 'Adicionar gravação'
-												: 'Editar'}
-										</button>
+										{live.source === 'external' && live.status === 'ended' ? (
+											<button
+												type="button"
+												className={secondaryBtn}
+												onClick={() => setEditing(live)}
+											>
+												<Pencil className="w-3.5 h-3.5" />
+												Adicionar gravação
+											</button>
+										) : (
+											<button
+												type="button"
+												className={ICON_BTN}
+												onClick={() => setEditing(live)}
+												aria-label="Editar"
+												title="Editar"
+											>
+												<Pencil className="w-4 h-4" />
+											</button>
+										)}
 									</div>
 								</div>
 							</Card>
@@ -239,6 +251,10 @@ export default function LivesAdminPage() {
 		</div>
 	);
 }
+
+// Ação secundária só com ícone (o nome vai no aria-label/title).
+const ICON_BTN =
+	'inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white';
 
 function CopyButton({ value, label }: { value: string; label: string }) {
 	const [copied, setCopied] = useState(false);

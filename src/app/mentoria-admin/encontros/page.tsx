@@ -81,7 +81,7 @@ export default function EncontrosPage() {
 			<main className="px-4 md:px-8 py-6 max-w-5xl mx-auto">
 				<PageTitle
 					title="Encontros"
-					description="Editar cria um rascunho; publicar leva aos alunos."
+					help="Editar cria um rascunho; publicar leva aos alunos."
 					backHref="/mentoria-admin"
 					actions={
 						<Button onPress={() => setEditing({ template: null })}>
@@ -134,10 +134,16 @@ export default function EncontrosPage() {
 															key={v.id}
 															className="inline-flex items-center gap-0.5"
 														>
-															<Badge tone={v.published ? 'green' : 'amber'}>
-																v{v.version}{' '}
-																{v.published ? 'publicada' : 'rascunho'}
-															</Badge>
+															{/* Publicada = só "vN" em verde (é o normal);
+															    rascunho segue por escrito: é o que pede ação. */}
+															<span
+																title={v.published ? 'publicada' : 'rascunho'}
+															>
+																<Badge tone={v.published ? 'green' : 'amber'}>
+																	v{v.version}
+																	{v.published ? '' : ' rascunho'}
+																</Badge>
+															</span>
 															{v.published ? (
 																// Só com outra publicada: a posição não pode
 																// ficar sem conteúdo para quem se matricula.
@@ -168,7 +174,7 @@ export default function EncontrosPage() {
 														</span>
 													))}
 													{latest.is_final && (
-														<Badge tone="violet">Encontro final</Badge>
+														<Badge tone="violet">Final</Badge>
 													)}
 												</div>
 											</div>
@@ -192,15 +198,12 @@ export default function EncontrosPage() {
 													</Text>
 												</Button>
 											)}
-											<Button
-												variant="secondary"
-												onPress={() => setEditing({ template: latest })}
+											<IconAction
+												label="Editar"
+												onClick={() => setEditing({ template: latest })}
 											>
-												<Pencil className="w-3.5 h-3.5" />
-												<Text className={buttonLabel({ variant: 'secondary' })}>
-													Editar
-												</Text>
-											</Button>
+												<Pencil className="w-4 h-4" />
+											</IconAction>
 										</div>
 									</div>
 								</Card>

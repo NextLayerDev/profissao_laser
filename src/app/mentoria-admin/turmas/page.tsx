@@ -30,6 +30,9 @@ import {
 	Spinner,
 } from '../_components/ui';
 
+const ICON_BTN =
+	'inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white';
+
 type ModalState =
 	| { kind: 'create' }
 	| { kind: 'edit'; cohort: MntCohort }
@@ -48,7 +51,7 @@ export default function TurmasPage() {
 			<main className="px-4 md:px-8 py-6 max-w-6xl mx-auto">
 				<PageTitle
 					title="Turmas"
-					description="Turmas do programa de mentoria: crie, defina datas e status, gerencie mentores e matricule alunos."
+					help="Crie turmas, defina datas e status, gerencie mentores e matricule alunos."
 					backHref="/mentoria-admin"
 					actions={
 						<Button onPress={() => setModal({ kind: 'create' })}>
@@ -94,15 +97,14 @@ export default function TurmasPage() {
 											className="hover:bg-slate-50 dark:hover:bg-white/[0.03]"
 										>
 											<td className="px-5 py-3.5">
+												{/* program_key é técnico: fica só no title. */}
 												<Link
 													href={`/mentoria-admin/turmas/${c.id}`}
 													className="font-medium text-slate-900 dark:text-white hover:text-violet-600 dark:hover:text-violet-400"
+													title={c.program_key}
 												>
 													{c.name}
 												</Link>
-												<p className="text-xs text-slate-400 dark:text-gray-500">
-													{c.program_key}
-												</p>
 											</td>
 											<td className="px-5 py-3.5 text-slate-600 dark:text-gray-400">
 												{formatDate(c.starts_at)} — {formatDate(c.ends_at)}
@@ -111,46 +113,42 @@ export default function TurmasPage() {
 												{cohortStatusBadge(c.status)}
 											</td>
 											<td className="px-5 py-3.5">
-												<div className="flex justify-end gap-2 flex-wrap">
-													<Button
-														variant="secondary"
-														onPress={() =>
+												{/* Três botões com texto por linha eram o grosso das
+												    palavras da tela: viram ícones com nome acessível. */}
+												<div className="flex justify-end gap-1">
+													<button
+														type="button"
+														className={ICON_BTN}
+														onClick={() =>
 															setModal({ kind: 'edit', cohort: c })
 														}
+														aria-label={`Editar ${c.name}`}
+														title="Editar"
 													>
-														<Pencil className="w-3.5 h-3.5" />
-														<Text
-															className={buttonLabel({ variant: 'secondary' })}
-														>
-															Editar
-														</Text>
-													</Button>
-													<Button
-														variant="secondary"
-														onPress={() =>
+														<Pencil className="w-4 h-4" />
+													</button>
+													<button
+														type="button"
+														className={ICON_BTN}
+														onClick={() =>
 															setModal({ kind: 'mentors', cohort: c })
 														}
+														aria-label={`Mentores de ${c.name}`}
+														title="Mentores"
 													>
-														<Users className="w-3.5 h-3.5" />
-														<Text
-															className={buttonLabel({ variant: 'secondary' })}
-														>
-															Mentores
-														</Text>
-													</Button>
-													<Button
-														variant="secondary"
-														onPress={() =>
+														<Users className="w-4 h-4" />
+													</button>
+													<button
+														type="button"
+														className={ICON_BTN}
+														onClick={() =>
 															setModal({ kind: 'enroll', cohort: c })
 														}
+														aria-label={`Matricular aluno em ${c.name}`}
+														title="Matricular aluno"
 													>
-														<UserPlus className="w-3.5 h-3.5" />
-														<Text
-															className={buttonLabel({ variant: 'secondary' })}
-														>
-															Matricular
-														</Text>
-													</Button>
+														<UserPlus className="w-4 h-4" />
+													</button>
 												</div>
 											</td>
 										</tr>

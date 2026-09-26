@@ -1,9 +1,18 @@
 'use client';
 
-import { CheckCircle2, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
+import {
+	CheckCircle2,
+	CornerDownRight,
+	Loader2,
+	Lock,
+	Pencil,
+	Plus,
+	Trash2,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Header } from '@/components/dashboard/header';
+import { HelpTip } from '@/modules/mentoria/components/help-tip';
 import type { MntToolDefinition, ToolArea } from '@/modules/mentoria/types';
 import {
 	mentoriaErrorMessage,
@@ -102,16 +111,17 @@ export default function FerramentasPage() {
 			<main className="px-4 md:px-8 py-6 max-w-6xl mx-auto">
 				<PageTitle
 					title="Ferramentas"
-					description="Catálogo de ferramentas da metodologia, organizadas por área da empresa."
+					help="Catálogo de ferramentas da metodologia, organizadas por área da empresa."
 					backHref="/mentoria-admin"
 					actions={
 						<button
 							type="button"
 							className={primaryBtn}
 							onClick={() => setEditing({ mode: 'create' })}
+							title="Ferramenta do tipo formulário"
 						>
 							<Plus className="w-4 h-4" />
-							Nova ferramenta (formulário)
+							Nova ferramenta
 						</button>
 					}
 				/>
@@ -130,12 +140,9 @@ export default function FerramentasPage() {
 							<table className="w-full text-sm">
 								<thead>
 									<tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-white/10">
-										<th className="px-5 py-3 font-medium">Key</th>
 										<th className="px-5 py-3 font-medium">Nome</th>
 										<th className="px-5 py-3 font-medium">Área</th>
-										<th className="px-5 py-3 font-medium">Kind</th>
 										<th className="px-5 py-3 font-medium">Posição</th>
-										<th className="px-5 py-3 font-medium">Status</th>
 										<th className="px-5 py-3" />
 									</tr>
 								</thead>
@@ -145,47 +152,52 @@ export default function FerramentasPage() {
 											key={t.id}
 											className="hover:bg-slate-50 dark:hover:bg-white/[0.04]"
 										>
-											<td className="px-5 py-3 font-mono text-xs text-slate-500 dark:text-gray-400">
-												{t.key}
-											</td>
-											<td className="px-5 py-3 font-medium text-slate-900 dark:text-white">
-												{t.name}
+											{/* Key e kind são técnicos: saíram da tabela e ficam no
+											    title (e no modal de edição). Status só quando inativa. */}
+											<td
+												className="px-5 py-3 font-medium text-slate-900 dark:text-white"
+												title={`${t.key} · ${t.kind}`}
+											>
+												<span className="inline-flex items-center gap-2">
+													{t.name}
+													{!t.active && <Badge tone="slate">Inativa</Badge>}
+												</span>
 												{SHOWN_IN[t.kind] && (
-													<span className="block text-xs font-normal text-slate-500 dark:text-gray-400">
-														Aparece em {SHOWN_IN[t.kind]}
+													<span
+														className="flex items-center gap-1 text-xs font-normal text-slate-500 dark:text-gray-400"
+														title={`Aparece em ${SHOWN_IN[t.kind]}`}
+													>
+														<CornerDownRight
+															className="w-3 h-3 shrink-0"
+															aria-label="Aparece em"
+														/>
+														{SHOWN_IN[t.kind]}
 													</span>
 												)}
 											</td>
 											<td className="px-5 py-3">{areaLabel(t.area)}</td>
-											<td className="px-5 py-3">
-												<Badge tone={t.kind === 'form' ? 'blue' : 'violet'}>
-													{t.kind}
-												</Badge>
-											</td>
 											<td className="px-5 py-3 tabular-nums">{t.position}</td>
-											<td className="px-5 py-3">
-												<Badge tone={t.active ? 'green' : 'slate'}>
-													{t.active ? 'Ativa' : 'Inativa'}
-												</Badge>
-											</td>
 											<td className="px-5 py-3">
 												<div className="flex justify-end gap-2">
 													<button
 														type="button"
-														className={secondaryBtn}
+														className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
 														onClick={() =>
 															setEditing({ mode: 'edit', tool: t })
 														}
+														aria-label={`Editar ${t.name}`}
+														title="Editar"
 													>
-														<Pencil className="w-3.5 h-3.5" />
-														Editar
+														<Pencil className="w-4 h-4" />
 													</button>
 													{BASE_TOOL_KEYS.has(t.key) ? (
 														<span
-															className="inline-flex items-center px-2 text-xs text-slate-400 dark:text-gray-500"
+															role="img"
+															className="inline-flex items-center p-2 text-slate-400 dark:text-gray-500"
+															aria-label="Base"
 															title="Ferramenta-base da metodologia: não pode ser excluída"
 														>
-															Base
+															<Lock className="w-4 h-4" />
 														</span>
 													) : (
 														<button
@@ -358,15 +370,15 @@ function ToolsLockCard() {
 	return (
 		<Card className="p-4 mb-4 flex flex-wrap items-center justify-between gap-3">
 			<div>
-				<p className="font-medium text-slate-900 dark:text-white">
+				<p className="inline-flex items-center gap-1 font-medium text-slate-900 dark:text-white">
 					{locked
 						? 'Ferramentas bloqueadas para os alunos'
 						: 'Ferramentas liberadas para os alunos'}
-				</p>
-				<p className="text-sm text-slate-500 dark:text-gray-400">
-					{locked
-						? 'O resto da Mentoria segue liberado. O aluno vê um atalho para o Plano de Negócios.'
-						: 'Bloqueie enquanto revisa as ferramentas.'}
+					<HelpTip label="Sobre o bloqueio">
+						{locked
+							? 'O resto da Mentoria segue liberado. O aluno vê um atalho para o Plano de Negócios.'
+							: 'Bloqueie enquanto revisa as ferramentas.'}
+					</HelpTip>
 				</p>
 			</div>
 			<button

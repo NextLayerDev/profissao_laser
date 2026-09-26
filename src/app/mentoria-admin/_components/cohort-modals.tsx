@@ -158,7 +158,7 @@ export function CohortMentorsModal({
 
 	const add = async () => {
 		if (!mentorId.trim()) {
-			toast.error('Informe o user_id (UUID) do mentor');
+			toast.error('Escolha o mentor na busca');
 			return;
 		}
 		try {
@@ -188,11 +188,7 @@ export function CohortMentorsModal({
 		<Modal title={`Mentores — ${cohort.name}`} onClose={onClose}>
 			<div className="space-y-6">
 				<div className="space-y-3">
-					<p className="text-sm text-slate-600 dark:text-gray-400">
-						Só quem é staff ou admin pode ser mentor — a lista abaixo já traz
-						esse time.
-					</p>
-					<Field label="Buscar mentor" hint="Busque por nome ou email.">
+					<Field label="Buscar mentor" hint="Só staff e admin.">
 						<UserPicker
 							users={users}
 							isLoading={team.isLoading}
@@ -204,21 +200,13 @@ export function CohortMentorsModal({
 							emptyLabel="Nenhum mentor encontrado."
 						/>
 					</Field>
-					<Field
-						label="ID do usuário (UUID)"
-						required
-						hint={
-							mentorLabel
-								? `Selecionado: ${mentorLabel}`
-								: 'Preenchido pela busca acima, ou cole o UUID manualmente.'
-						}
-					>
-						<Input
-							value={mentorId}
-							onChangeText={setMentorId}
-							placeholder="00000000-0000-0000-0000-000000000000"
-						/>
-					</Field>
+					{/* O campo de UUID manual saiu (texto técnico na tela do mentor):
+					    a busca acima já seleciona o id. */}
+					{mentorLabel && (
+						<p className="text-sm text-slate-600 dark:text-gray-400">
+							Selecionado: <b>{mentorLabel}</b>
+						</p>
+					)}
 					<Field label="Papel">
 						<select
 							className={inputClass}
@@ -303,7 +291,7 @@ export function EnrollStudentModal({
 
 	const submit = async () => {
 		if (!userId.trim()) {
-			toast.error('Selecione um aluno ou informe o user_id');
+			toast.error('Selecione um aluno na busca');
 			return;
 		}
 		try {
@@ -377,21 +365,12 @@ export function EnrollStudentModal({
 					</div>
 				)}
 
-				<Field
-					label="ID do usuário (UUID)"
-					required
-					hint={
-						selectedLabel
-							? `Selecionado: ${selectedLabel}`
-							: 'Preenchido pela busca acima, ou cole o UUID manualmente.'
-					}
-				>
-					<Input
-						value={userId}
-						onChangeText={setUserId}
-						placeholder="00000000-0000-0000-0000-000000000000"
-					/>
-				</Field>
+				{/* Sem o campo de UUID manual: a busca acima seleciona o aluno. */}
+				{selectedLabel && (
+					<p className="text-sm text-slate-600 dark:text-gray-400">
+						Selecionado: <b>{selectedLabel}</b>
+					</p>
+				)}
 
 				<Field
 					label="Nome da empresa"

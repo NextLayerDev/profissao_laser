@@ -22,7 +22,6 @@ import {
 	Eye,
 	GitCompare,
 	GripVertical,
-	Info,
 	Loader2,
 	Pencil,
 	Plus,
@@ -244,7 +243,8 @@ export default function FormulariosPage() {
 			<main className="px-4 md:px-8 py-6 max-w-5xl mx-auto">
 				<PageTitle
 					title="Formulários"
-					description="Diagnóstico e exercícios. Cada salvamento gera uma versão."
+					description="Diagnóstico e exercícios."
+					help="Cada salvamento gera uma versão. Respostas ficam presas à versão respondida."
 					backHref="/mentoria-admin"
 					actions={
 						<button
@@ -257,11 +257,6 @@ export default function FormulariosPage() {
 						</button>
 					}
 				/>
-
-				<div className="mb-6 flex items-start gap-2 rounded-xl border border-blue-300/50 dark:border-blue-500/30 bg-blue-500/5 px-4 py-3 text-sm text-blue-700 dark:text-blue-300">
-					<Info className="w-4 h-4 mt-0.5 shrink-0" />
-					<p>Respostas ficam presas à versão respondida.</p>
-				</div>
 
 				{templates.isLoading ? (
 					<Card>
@@ -281,14 +276,19 @@ export default function FormulariosPage() {
 							const latest = versions[0];
 							const previous = versions[1];
 							return (
+								// A key é técnica: sai do texto e fica no title e no
+								// `data-form-key` (é por ele que o E2E acha o card).
 								<Card key={key} className="p-5">
-									<div className="flex items-start justify-between gap-4 flex-wrap">
+									<div
+										className="flex items-start justify-between gap-4 flex-wrap"
+										data-form-key={key}
+									>
 										<div className="min-w-0">
-											<p className="font-semibold text-slate-900 dark:text-white">
+											<p
+												className="font-semibold text-slate-900 dark:text-white"
+												title={key}
+											>
 												{latest.title}
-											</p>
-											<p className="text-xs font-mono text-slate-500 dark:text-gray-400 mt-0.5">
-												{key}
 											</p>
 											{latest.description && (
 												<p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
@@ -297,21 +297,25 @@ export default function FormulariosPage() {
 											)}
 											<div className="flex items-center gap-2 mt-2 flex-wrap">
 												{versions.map((v) => (
-													<Badge
+													<span
 														key={v.id}
-														tone={v.published ? 'green' : 'amber'}
+														title={v.published ? 'publicada' : 'rascunho'}
 													>
-														v{v.version}{' '}
-														{v.published ? 'publicada' : 'rascunho'}
-													</Badge>
+														<Badge tone={v.published ? 'green' : 'amber'}>
+															v{v.version}
+															{v.published ? '' : ' rascunho'}
+														</Badge>
+													</span>
 												))}
-												<span className="text-xs text-slate-500 dark:text-gray-500">
-													{latest.schema.blocks.length} bloco(s) ·{' '}
+												<span
+													className="text-xs text-slate-500 dark:text-gray-500"
+													title={`${latest.schema.blocks.length} bloco(s)`}
+												>
 													{latest.schema.blocks.reduce(
 														(n, b) => n + b.fields.length,
 														0,
 													)}{' '}
-													campo(s)
+													campos
 												</span>
 											</div>
 										</div>
@@ -341,11 +345,12 @@ export default function FormulariosPage() {
 											)}
 											<button
 												type="button"
-												className={secondaryBtn}
+												className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
 												onClick={() => setBuilder(builderFor(latest))}
+												aria-label="Editar"
+												title="Editar"
 											>
-												<Pencil className="w-3.5 h-3.5" />
-												Editar
+												<Pencil className="w-4 h-4" />
 											</button>
 										</div>
 									</div>
@@ -708,7 +713,7 @@ function FormBuilder({
 							? `Editar ${state.baseKey} (gera v${(state.baseVersion ?? 0) + 1})`
 							: 'Novo formulário'
 					}
-					description="Arraste ⋮⋮ para reordenar. O preview é o que o aluno vê."
+					help="Arraste ⋮⋮ para reordenar. O preview é o que o aluno vê."
 					actions={
 						<>
 							{dirty && (
