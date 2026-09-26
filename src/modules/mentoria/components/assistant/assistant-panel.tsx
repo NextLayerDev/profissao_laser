@@ -53,6 +53,14 @@ const SUGGESTIONS = [
 /** A API aceita até 20 mensagens: manda só o fim da conversa. */
 const HISTORY_MAX = 20;
 const CONTENT_MAX = 2000;
+/** Teto da resposta na API; acima disso o histórico daria 400. */
+const REPLY_MAX = 4000;
+
+const forApi = (history: AssistantMessage[]) =>
+	history.slice(-HISTORY_MAX).map((m) => ({
+		role: m.role,
+		content: m.content.slice(0, m.role === 'user' ? CONTENT_MAX : REPLY_MAX),
+	}));
 
 const storageKey = (journeyId: string) => `mentoria-assistant:${journeyId}`;
 
@@ -173,7 +181,7 @@ export function AssistantPanel({
 		setDraft('');
 		commit(withQuestion);
 		requestAnimationFrame(growComposer);
-		ask.mutate(withQuestion.slice(-HISTORY_MAX), {
+		ask.mutate(forApi(withQuestion), {
 			onSuccess: ({ reply }) =>
 				commit([...withQuestion, { role: 'assistant', content: reply }]),
 			onError: (err) => {
