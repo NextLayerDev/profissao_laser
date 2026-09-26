@@ -386,7 +386,12 @@ function StageRow({
 					<button
 						type="button"
 						className={iconBtn}
-						onClick={() => setEditing(true)}
+						// Parte do nome salvo: depois de um renomear que falhou, o
+						// rascunho antigo reaparecia no campo.
+						onClick={() => {
+							setName(stage.name);
+							setEditing(true);
+						}}
 						aria-label={`Renomear ${stage.name}`}
 					>
 						<Pencil className="w-3.5 h-3.5" />
