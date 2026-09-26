@@ -14,9 +14,13 @@ import {
 	useCompleteMeeting,
 	useDiagnostic,
 	useJourneyMeetings,
+	useJourneyTools,
+	useMentoriaToolsLocked,
+	useMyMaterials,
 	useTaskMutations,
 	useTasks,
 } from '@/modules/mentoria/hooks';
+import { TOOL_OWN_PAGE, toolHref } from '@/modules/mentoria/nav';
 import type { MeetingTaskPrompt } from '@/modules/mentoria/types';
 import {
 	BTN_GHOST,
@@ -25,7 +29,7 @@ import {
 	MntHeader,
 	MntSkeleton,
 } from '../../_components/shared';
-import { EncontroView } from './_components/encontro-view';
+import { EncontroView, type MeetingTool } from './_components/encontro-view';
 import { MeetingExercise } from './_components/meeting-exercise';
 
 export default function EncontroPage() {
@@ -56,6 +60,9 @@ function EncontroContent({
 	const { create } = useTaskMutations(journeyId);
 	// Identifica o encontro do diagnóstico e troca o CTA depois da Foto Zero.
 	const { data: diag } = useDiagnostic(journeyId);
+	const { data: tools } = useJourneyTools(journeyId);
+	const { data: materials } = useMyMaterials();
+	const toolsLocked = useMentoriaToolsLocked();
 
 	if (isLoading) return <MntSkeleton />;
 
@@ -106,6 +113,30 @@ function EncontroContent({
 		(t) => t.origin_type === 'meeting' && t.origin_id === meeting.id,
 	);
 
+	// Ferramentas na ordem do encontro. Com Ferramentas bloqueada, as de página
+	// própria (KPIs, Desenvolvimento) seguem com link; as outras viram cartaz.
+	const meetingTools: MeetingTool[] = (
+		meeting.template?.tool_definition_ids ?? []
+	)
+		.map((id) => (tools ?? []).find((t) => t.id === id))
+		.filter((t) => t !== undefined)
+		.map((t) => ({
+			id: t.id,
+			name: t.name,
+			href: toolHref(t),
+			locked: toolsLocked && !TOOL_OWN_PAGE[t.kind],
+		}));
+	// Pela posição: publicar versão nova troca o meeting_template_id.
+	const meetingMaterials = (materials ?? []).filter((m) =>
+		m.meeting_position != null
+			? m.meeting_position === meeting.position
+			: m.meeting_template_id === meeting.meeting_template_id,
+	);
+	const nextMeeting =
+		[...(meetings ?? [])]
+			.filter((m) => m.position > meeting.position)
+			.sort((a, b) => a.position - b.position)[0] ?? null;
+
 	const canComplete =
 		meeting.status === 'available' || meeting.status === 'in_progress';
 
@@ -147,6 +178,9 @@ function EncontroContent({
 					: undefined
 			}
 			exercise={<MeetingExercise journeyId={journeyId} meeting={meeting} />}
+			tools={meetingTools}
+			materials={meetingMaterials}
+			nextMeeting={nextMeeting}
 		/>
 	);
 }

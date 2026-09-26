@@ -1,6 +1,12 @@
 'use client';
 
-import { CheckCircle2, Loader2, MessageSquare, Trash2 } from 'lucide-react';
+import {
+	CalendarClock,
+	CheckCircle2,
+	Loader2,
+	MessageSquare,
+	Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import type { MntJourneyMeeting } from '@/modules/mentoria/types';
@@ -29,10 +35,28 @@ export function MeetingsTab({
 	journeyId: string;
 	meetings: MntJourneyMeeting[];
 }) {
-	const { validate, feedback } = useMentorMeetingMutations(journeyId);
+	const { validate, feedback, schedule } = useMentorMeetingMutations(journeyId);
 	const [feedbackFor, setFeedbackFor] = useState<MntJourneyMeeting | null>(
 		null,
 	);
+	const [scheduleFor, setScheduleFor] = useState<MntJourneyMeeting | null>(
+		null,
+	);
+
+	// null tira o agendamento. O aluno vê a data e a hora na jornada.
+	const saveSchedule = async (iso: string | null) => {
+		if (!scheduleFor) return;
+		try {
+			await schedule.mutateAsync({
+				meetingId: scheduleFor.id,
+				scheduledAt: iso,
+			});
+			toast.success(iso ? 'Encontro agendado' : 'Agendamento removido');
+			setScheduleFor(null);
+		} catch (err) {
+			toast.error(mentoriaErrorMessage(err, 'Erro ao agendar o encontro'));
+		}
+	};
 
 	const doValidate = async (meeting: MntJourneyMeeting) => {
 		try {
@@ -90,6 +114,17 @@ export function MeetingsTab({
 										</p>
 										<div className="flex items-center gap-2 mt-1 flex-wrap">
 											<Badge tone={st.tone}>{st.label}</Badge>
+											{m.scheduled_at && (
+												<span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-gray-400">
+													<CalendarClock className="w-3.5 h-3.5" />
+													{new Date(m.scheduled_at).toLocaleString('pt-BR', {
+														day: '2-digit',
+														month: '2-digit',
+														hour: '2-digit',
+														minute: '2-digit',
+													})}
+												</span>
+											)}
 											{m.student_completed_at && (
 												<span className="text-xs text-slate-400 dark:text-gray-500">
 													Aluno concluiu em {formatDate(m.student_completed_at)}
@@ -109,7 +144,17 @@ export function MeetingsTab({
 										)}
 									</div>
 								</div>
-								<div className="flex gap-2">
+								<div className="flex gap-2 flex-wrap">
+									{m.status !== 'done' && (
+										<button
+											type="button"
+											className={secondaryBtn}
+											onClick={() => setScheduleFor(m)}
+										>
+											<CalendarClock className="w-3.5 h-3.5" />
+											Agendar
+										</button>
+									)}
 									{/* Bloqueado a API recusa (meeting_locked): o botão só
 									    levava a um erro depois de digitar. */}
 									{m.status !== 'locked' && (
@@ -141,6 +186,15 @@ export function MeetingsTab({
 					);
 				})}
 			</div>
+
+			{scheduleFor && (
+				<ScheduleModal
+					meeting={scheduleFor}
+					onClose={() => setScheduleFor(null)}
+					onSave={saveSchedule}
+					pending={schedule.isPending}
+				/>
+			)}
 
 			{feedbackFor && (
 				<FeedbackModal
@@ -201,6 +255,73 @@ function FeedbackModal({
 							className={primaryBtn}
 							disabled={pending || !text.trim()}
 							onClick={() => onSave(text.trim())}
+						>
+							{pending && <Loader2 className="w-4 h-4 animate-spin" />}
+							Salvar
+						</button>
+					</div>
+				</div>
+			</div>
+		</Modal>
+	);
+}
+
+/** 'YYYY-MM-DDTHH:mm' no fuso do navegador (o que o datetime-local espera). */
+function toLocalInput(iso: string | null): string {
+	if (!iso) return '';
+	const d = new Date(iso);
+	if (Number.isNaN(d.getTime())) return '';
+	const pad = (n: number) => String(n).padStart(2, '0');
+	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function ScheduleModal({
+	meeting,
+	onClose,
+	onSave,
+	pending,
+}: {
+	meeting: MntJourneyMeeting;
+	onClose: () => void;
+	onSave: (iso: string | null) => void;
+	pending: boolean;
+}) {
+	const [value, setValue] = useState(toLocalInput(meeting.scheduled_at));
+	return (
+		<Modal title={`Agendar — Encontro ${meeting.position}`} onClose={onClose}>
+			<div className="space-y-4">
+				<Field label="Data e hora">
+					<input
+						type="datetime-local"
+						className={inputClass}
+						value={value}
+						onChange={(e) => setValue(e.target.value)}
+					/>
+				</Field>
+				<div className="flex justify-between gap-2 flex-wrap">
+					{meeting.scheduled_at ? (
+						<button
+							type="button"
+							className={dangerBtn}
+							disabled={pending}
+							onClick={() => onSave(null)}
+						>
+							<Trash2 className="w-3.5 h-3.5" />
+							Remover
+						</button>
+					) : (
+						<span />
+					)}
+					<div className="flex gap-2">
+						<button type="button" className={secondaryBtn} onClick={onClose}>
+							Cancelar
+						</button>
+						<button
+							type="button"
+							className={primaryBtn}
+							disabled={pending || !value}
+							// datetime-local não tem fuso: o Date lê no do navegador.
+							onClick={() => onSave(new Date(value).toISOString())}
 						>
 							{pending && <Loader2 className="w-4 h-4 animate-spin" />}
 							Salvar

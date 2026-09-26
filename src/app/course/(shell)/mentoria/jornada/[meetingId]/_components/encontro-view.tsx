@@ -13,31 +13,49 @@
 
 import { Button, buttonLabel } from '@upvox-dev/ui';
 import {
+	ArrowRight,
 	BadgeCheck,
 	BookOpen,
+	CalendarClock,
 	CheckCircle2,
 	ClipboardList,
+	FileText,
 	Flag,
 	ListChecks,
+	Lock,
 	MessageSquareQuote,
 	Plus,
 	Target,
+	Wrench,
 } from 'lucide-react';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Text } from 'react-native-css/components/Text';
 import { Markdown } from '@/modules/mentoria/components/markdown';
 import type {
 	MeetingTaskPrompt,
 	MntJourneyMeeting,
+	MntMaterial,
 	MntTask,
 } from '@/modules/mentoria/types';
 import {
 	BTN_PRIMARY,
 	CARD,
+	ConfirmDialog,
+	fmtDateTime,
+	linkLabel,
 	MntHeader,
 	meetingStatusLabel,
 } from '../../../_components/shared';
+
+/** Ferramenta ligada ao encontro, já com o link resolvido pelo container. */
+export type MeetingTool = {
+	id: string;
+	name: string;
+	href: string;
+	/** Seção Ferramentas bloqueada pelo admin: mostra o card sem link. */
+	locked: boolean;
+};
 
 export function EncontroView({
 	meeting,
@@ -49,9 +67,16 @@ export function EncontroView({
 	onAddTask,
 	diagnostic,
 	exercise,
+	tools = [],
+	materials = [],
+	nextMeeting = null,
 }: {
 	/** Formulário do exercício, montado pelo container (a view não busca dados). */
 	exercise?: ReactNode;
+	tools?: MeetingTool[];
+	materials?: MntMaterial[];
+	/** Encontro seguinte da jornada (null no último). */
+	nextMeeting?: MntJourneyMeeting | null;
 	meeting: MntJourneyMeeting;
 	/** Tarefas já filtradas pela origem deste encontro. */
 	meetingTasks: MntTask[];
@@ -74,6 +99,8 @@ export function EncontroView({
 			? tpl?.exercise_form_template_id === diagnostic.templateId
 			: meeting.position === 1);
 	const diagnosticPending = isDiagnostic && diagnostic?.done === false;
+	// Concluir libera o próximo e não tem volta pelo aluno: pede confirmação.
+	const [confirming, setConfirming] = useState(false);
 
 	return (
 		<div className="max-w-3xl mx-auto space-y-6">
@@ -83,6 +110,13 @@ export function EncontroView({
 				icon={BookOpen}
 				backHref="/course/mentoria/jornada"
 			/>
+
+			{meeting.scheduled_at && (
+				<p className="-mt-6 inline-flex items-center gap-1.5 text-body text-secondary">
+					<CalendarClock className="w-4 h-4 text-brand dark:text-violet-400" />
+					{fmtDateTime(meeting.scheduled_at)}
+				</p>
+			)}
 
 			{meeting.mentor_validated_at && (
 				<div className={`${CARD} p-4 flex items-center gap-3`}>
@@ -128,6 +162,69 @@ export function EncontroView({
 				</TemplateSection>
 			)}
 
+			{tools.length > 0 && (
+				<TemplateSection icon={Wrench} title="Ferramentas do encontro">
+					<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+						{tools.map((t) =>
+							t.locked ? (
+								<div
+									key={t.id}
+									className="flex items-center justify-between gap-2 rounded-control border border-subtle p-3 opacity-70"
+								>
+									<span className="text-label text-primary">{t.name}</span>
+									<span className="inline-flex shrink-0 items-center gap-1 text-caption text-muted">
+										<Lock className="w-3.5 h-3.5" aria-hidden />
+										Em breve
+									</span>
+								</div>
+							) : (
+								<Link
+									key={t.id}
+									href={t.href}
+									className="flex items-center justify-between gap-2 rounded-control border border-subtle p-3 transition hover:border-brand-border"
+								>
+									<span className="text-label text-primary">{t.name}</span>
+									<ArrowRight
+										className="w-4 h-4 shrink-0 text-brand dark:text-violet-400"
+										aria-hidden
+									/>
+								</Link>
+							),
+						)}
+					</div>
+				</TemplateSection>
+			)}
+
+			{materials.length > 0 && (
+				<TemplateSection icon={FileText} title="Materiais">
+					<ul className="space-y-2">
+						{materials.map((m) => (
+							<li key={m.id}>
+								<a
+									href={m.url}
+									target="_blank"
+									rel="noreferrer"
+									className="flex items-center justify-between gap-2 rounded-control border border-subtle p-3 transition hover:border-brand-border"
+								>
+									<span className="min-w-0">
+										<span className="block truncate text-label text-primary">
+											{m.title}
+										</span>
+										<span className="block truncate text-caption text-muted">
+											{m.description || linkLabel(m.url)}
+										</span>
+									</span>
+									<ArrowRight
+										className="w-4 h-4 shrink-0 text-brand dark:text-violet-400"
+										aria-hidden
+									/>
+								</a>
+							</li>
+						))}
+					</ul>
+				</TemplateSection>
+			)}
+
 			<ExerciseSection
 				exercise={exercise}
 				meeting={meeting}
@@ -152,7 +249,11 @@ export function EncontroView({
 					// Ícone + texto é um ARRAY de children, e array bypassa o wrap
 					// automático do Button em <Text> — o texto cru quebraria em runtime.
 					// Daí o <Text> explícito; `buttonLabel` veste só ele.
-					<Button variant="primary" onPress={onComplete} disabled={completing}>
+					<Button
+						variant="primary"
+						onPress={() => setConfirming(true)}
+						disabled={completing}
+					>
 						<CheckCircle2 className="h-4 w-4 text-on-brand" aria-hidden />
 						<Text className={buttonLabel({ variant: 'primary' })}>
 							{completing ? 'Concluindo...' : 'Concluir encontro'}
@@ -160,7 +261,65 @@ export function EncontroView({
 					</Button>
 				)}
 			</div>
+
+			{nextMeeting && <NextMeetingCard meeting={nextMeeting} />}
+
+			{confirming && (
+				<ConfirmDialog
+					title="Concluir encontro?"
+					confirmLabel="Concluir"
+					busy={completing}
+					onCancel={() => setConfirming(false)}
+					onConfirm={() => {
+						setConfirming(false);
+						onComplete();
+					}}
+				>
+					{diagnosticPending
+						? 'O diagnóstico ainda não foi enviado.'
+						: 'O próximo encontro será liberado.'}
+				</ConfirmDialog>
+			)}
 		</div>
+	);
+}
+
+/** Atalho para o encontro seguinte (bloqueado vira só o cartaz). */
+function NextMeetingCard({ meeting }: { meeting: MntJourneyMeeting }) {
+	const locked = meeting.status === 'locked';
+	const body = (
+		<div className="min-w-0">
+			<p className="text-caption uppercase tracking-wide text-muted">
+				Próximo encontro
+			</p>
+			<p className="truncate text-label text-primary">
+				{meeting.position}. {meeting.template?.title ?? 'Encontro'}
+			</p>
+			<p className="text-caption text-muted">
+				{meeting.scheduled_at
+					? fmtDateTime(meeting.scheduled_at)
+					: locked
+						? 'Libera ao concluir este'
+						: meetingStatusLabel(meeting.status)}
+			</p>
+		</div>
+	);
+	return locked ? (
+		<div className={`${CARD} flex items-center justify-between gap-3 p-4`}>
+			{body}
+			<Lock className="w-4 h-4 shrink-0 text-muted" aria-hidden />
+		</div>
+	) : (
+		<Link
+			href={`/course/mentoria/jornada/${meeting.id}`}
+			className={`${CARD} flex items-center justify-between gap-3 p-4 transition hover:border-brand-border`}
+		>
+			{body}
+			<ArrowRight
+				className="w-4 h-4 shrink-0 text-brand dark:text-violet-400"
+				aria-hidden
+			/>
+		</Link>
 	);
 }
 

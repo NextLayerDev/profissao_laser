@@ -373,7 +373,17 @@ export function useMentorMeetingMutations(journeyId: string | undefined) {
 		}) => svc.setMeetingFeedback(meetingId, fb),
 		onSuccess: invalidate,
 	});
-	return { validate, feedback };
+	const schedule = useMutation({
+		mutationFn: ({
+			meetingId,
+			scheduledAt,
+		}: {
+			meetingId: string;
+			scheduledAt: string | null;
+		}) => svc.scheduleMeeting(meetingId, scheduledAt),
+		onSuccess: invalidate,
+	});
+	return { validate, feedback, schedule };
 }
 
 export function useMentorCommentTask(journeyId: string | undefined) {
