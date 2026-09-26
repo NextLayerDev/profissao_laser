@@ -12,7 +12,8 @@
 // a leitura é por cast — o contrato das 8 seções mora aqui, não no tipo.
 
 import { Badge, type Tone } from '@upvox-dev/ui';
-import { Printer } from 'lucide-react';
+import { FileDown, Printer } from 'lucide-react';
+import Link from 'next/link';
 import { areaLabel } from '@/modules/mentoria/components/company-map-radar';
 import {
 	DonutProgress,
@@ -22,6 +23,9 @@ import {
 import { formatBrPlain, formatMetricValue } from '@/modules/mentoria/numbers';
 import type { MntReport } from '@/modules/mentoria/types';
 import { CARD, fmtDate } from '../../_components/shared';
+
+const PRINT_BTN =
+	'inline-flex items-center gap-2 rounded-control border border-subtle px-3 py-2 text-label text-secondary transition-colors hover:border-brand-border hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus';
 
 /** Rótulos das métricas da Foto Zero. Chave desconhecida cai na própria chave. */
 const METRIC_LABEL: Record<string, string> = {
@@ -69,7 +73,20 @@ const TASK_STATUS_LABEL: Record<string, string> = {
 	cancelled: 'Cancelada',
 };
 
-export function RaioxView({ report }: { report: MntReport }) {
+/**
+ * `printHref`: o botão leva à página de PDF (folha A4 sem navegação) em vez
+ * de imprimir a tela. `sheet`: modo folha, sem cartão nem cabeçalho próprio —
+ * quem desenha o cabeçalho (empresa, data) é a página de PDF.
+ */
+export function RaioxView({
+	report,
+	printHref,
+	sheet = false,
+}: {
+	report: MntReport;
+	printHref?: string;
+	sheet?: boolean;
+}) {
 	const p = report.payload as Record<string, unknown>;
 	const fotoZero = p.foto_zero as
 		| { taken_at?: string; metrics?: Record<string, unknown> }
@@ -105,29 +122,51 @@ export function RaioxView({ report }: { report: MntReport }) {
 				? ' Autodeclarado.'
 				: '';
 	const proximos = p.proximos_90_dias as string | null;
+	// Versão dos pesos com que o score saiu (relatórios antigos não têm).
+	const metodologia = p.metodologia as { version?: number | null } | undefined;
+	const scoreRule = metodologia?.version
+		? ` Metodologia v${metodologia.version}.`
+		: '';
 
 	return (
 		// `print-root` é o escopo da impressão: o `@media print` de globals.css
 		// esconde o resto do documento (shell, nav, Assistente, rodapé, toasts) e
 		// revela só esta subárvore.
 		<div
-			className={`${CARD} print-root p-6 mt-6 print:border-0 print:shadow-none`}
+			className={
+				sheet
+					? ''
+					: `${CARD} print-root p-6 mt-6 print:border-0 print:shadow-none`
+			}
 		>
 			{/* `flex-wrap`: o título é longo e o botão não pode ser espremido —
 			    em celular os dois viram duas linhas. */}
-			<div className="flex flex-wrap items-center justify-between gap-3 mb-6 print:hidden">
-				<h3 className="font-display text-lg font-bold text-primary">
-					RAIO-X EMPRESARIAL — Profissão Laser 360°
-				</h3>
-				<button
-					type="button"
-					onClick={() => window.print()}
-					className="inline-flex items-center gap-2 rounded-control border border-subtle px-3 py-2 text-label text-secondary transition-colors hover:border-brand-border hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-				>
-					<Printer className="w-4 h-4" aria-hidden />
-					Imprimir
-				</button>
-			</div>
+			{!sheet && (
+				<div className="flex flex-wrap items-center justify-between gap-3 mb-6 print:hidden">
+					<h3 className="font-display text-lg font-bold text-primary">
+						RAIO-X EMPRESARIAL — Profissão Laser 360°
+					</h3>
+					{printHref ? (
+						<Link
+							href={printHref}
+							data-testid="raiox-pdf-link"
+							className={PRINT_BTN}
+						>
+							<FileDown className="w-4 h-4" aria-hidden />
+							Baixar PDF
+						</Link>
+					) : (
+						<button
+							type="button"
+							onClick={() => window.print()}
+							className={PRINT_BTN}
+						>
+							<Printer className="w-4 h-4" aria-hidden />
+							Imprimir
+						</button>
+					)}
+				</div>
+			)}
 
 			<div className="space-y-6 text-body">
 				<ReportSection title="1. Onde comecei (Foto Zero)">
@@ -231,9 +270,7 @@ export function RaioxView({ report }: { report: MntReport }) {
 						<p className="text-secondary flex-1 min-w-55">
 							{score === undefined
 								? 'Score de maturidade ainda não calculado.'
-								: `Score de maturidade: ${score}/100.${scoreBase}`}{' '}
-							Comparação completa disponível no comparador acima (Foto Zero vs
-							Agora).
+								: `Score de maturidade: ${score}/100.${scoreBase}${scoreRule}`}
 						</p>
 					</div>
 				</ReportSection>

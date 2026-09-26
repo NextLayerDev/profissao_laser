@@ -203,7 +203,9 @@ export function EvolucaoView({
 				)}
 			</SectionCard>
 
-			{openReport && <RaioxView report={openReport} />}
+			{openReport && (
+				<RaioxView report={openReport} printHref={`/raiox/${openReport.id}`} />
+			)}
 		</div>
 	);
 }

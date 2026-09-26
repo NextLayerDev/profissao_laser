@@ -120,7 +120,12 @@ export function EvolutionTab({ journeyId }: { journeyId: string }) {
 							</button>
 						))}
 					</div>
-					{openReport && <RaioxView report={openReport} />}
+					{openReport && (
+						<RaioxView
+							report={openReport}
+							printHref={`/mentoria-admin/raiox/${openReport.id}`}
+						/>
+					)}
 				</QueryState>
 			</section>
 		</div>

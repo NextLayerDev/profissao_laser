@@ -960,6 +960,12 @@ export async function compareAsMentor(
 	return data;
 }
 
+/** Um relatório pela rota do mentor (checa a turma, não a posse). */
+export async function getReportAsMentor(reportId: string): Promise<MntReport> {
+	const { data } = await api.get(`/v1/mentoria/report/${reportId}`);
+	return data;
+}
+
 export async function listReportsAsMentor(
 	journeyId: string,
 ): Promise<MntReport[]> {

@@ -471,6 +471,11 @@ export function useMentorReports(journeyId: string | undefined) {
 	return useQuery(mentorRead('reports', journeyId, svc.listReportsAsMentor));
 }
 
+/** Um Raio-X pela rota do mentor (página de PDF). */
+export function useMentorReport(reportId: string | undefined) {
+	return useQuery(mentorRead('report', reportId, svc.getReportAsMentor));
+}
+
 export function useMentorComparison(
 	journeyId: string | undefined,
 	from: string,

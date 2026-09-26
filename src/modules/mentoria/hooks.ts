@@ -419,6 +419,15 @@ export function useReports(journeyId: string | undefined) {
 	});
 }
 
+/** Um relatório (página de PDF do Raio-X). */
+export function useReport(reportId: string | undefined) {
+	return useQuery({
+		queryKey: [...ROOT, 'report', reportId],
+		queryFn: () => svc.getReport(reportId as string),
+		enabled: !!reportId,
+	});
+}
+
 // ── Assistente de IA ─────────────────────────────────────────────────────────
 export function useAssistantUsage(journeyId: string | undefined) {
 	return useQuery({
