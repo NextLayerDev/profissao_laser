@@ -385,6 +385,44 @@ export async function seedFunnelStages(
 	return data;
 }
 
+export async function createFunnelStage(
+	instanceId: string,
+	body: { name: string; description?: string | null },
+): Promise<MntFunnelStage> {
+	const { data } = await api.post(
+		`/v1/me/mentoria/tool-instance/${instanceId}/funnel-stages`,
+		body,
+	);
+	return data;
+}
+
+export async function updateFunnelStage(
+	stageId: string,
+	body: { name?: string; description?: string | null },
+): Promise<MntFunnelStage> {
+	const { data } = await api.patch(
+		`/v1/me/mentoria/funnel-stage/${stageId}`,
+		body,
+	);
+	return data;
+}
+
+export async function deleteFunnelStage(stageId: string): Promise<void> {
+	await api.delete(`/v1/me/mentoria/funnel-stage/${stageId}`);
+}
+
+/** Ordem nova, com todos os ids da ferramenta (do topo para o fundo). */
+export async function reorderFunnelStages(
+	instanceId: string,
+	ids: string[],
+): Promise<MntFunnelStage[]> {
+	const { data } = await api.put(
+		`/v1/me/mentoria/tool-instance/${instanceId}/funnel-stages/order`,
+		{ ids },
+	);
+	return data;
+}
+
 export async function listImprovements(
 	instanceId: string,
 ): Promise<MntImprovementCycle[]> {
@@ -475,6 +513,14 @@ export async function listKpis(
 	const { data } = await api.get(`/v1/me/mentoria/journey/${journeyId}/kpis`, {
 		params: category ? { category } : undefined,
 	});
+	return data;
+}
+
+/** KPIs arquivados (active=false), para reativar. */
+export async function listArchivedKpis(journeyId: string): Promise<MntKpi[]> {
+	const { data } = await api.get(
+		`/v1/me/mentoria/journey/${journeyId}/kpis/archived`,
+	);
 	return data;
 }
 
@@ -717,6 +763,17 @@ export async function setMeetingFeedback(
 			feedback,
 		},
 	);
+	return data;
+}
+
+/** ISO com fuso; null tira o agendamento. */
+export async function scheduleMeeting(
+	meetingId: string,
+	scheduledAt: string | null,
+): Promise<MntJourneyMeeting> {
+	const { data } = await api.put(`/v1/mentoria/meeting/${meetingId}/schedule`, {
+		scheduled_at: scheduledAt,
+	});
 	return data;
 }
 

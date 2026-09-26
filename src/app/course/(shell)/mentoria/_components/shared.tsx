@@ -3,7 +3,8 @@
 import type { LucideIcon } from 'lucide-react';
 import { AlertTriangle, ArrowLeft, Compass } from 'lucide-react';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect, useId } from 'react';
+import { ModalPortal } from '@/components/ui/modal-portal';
 import { parseLocalDate } from '@/modules/mentoria/dates';
 import { useMentoriaBootstrap } from '@/modules/mentoria/hooks';
 import { MENTORIA_SETTINGS } from '@/modules/mentoria/nav';
@@ -125,12 +126,28 @@ const STUDENT_ERRORS: Record<string, string> = {
 	meeting_locked: 'Este encontro ainda está bloqueado.',
 	due_date_in_past: 'O prazo já passou. Ajuste a data para reabrir a tarefa.',
 	task_not_done: 'A tarefa ainda não foi concluída.',
+	snapshot_exists: 'Você já gerou o snapshot deste mês.',
+	funnel_order_mismatch: 'O funil mudou. Recarregue a página.',
+	cnpj_invalid: 'CNPJ inválido.',
+	phone_invalid: 'Telefone inválido. Use DDD + número.',
+	website_invalid: 'Site inválido. Ex.: https://seusite.com.br',
+	instagram_invalid: 'Instagram inválido. Ex.: @suaempresa',
 };
+
+/** 400 do Zod traz o código dentro do texto (ex.: "body/cnpj cnpj_invalid"). */
+const FIELD_ERROR_CODES = [
+	'cnpj_invalid',
+	'phone_invalid',
+	'website_invalid',
+	'instagram_invalid',
+] as const;
 
 /** Mensagem amigável para o erro da API, ou `fallback`. */
 export function mntErrorText(e: unknown, fallback: string): string {
 	const code = apiErrorCode(e);
 	if (code && STUDENT_ERRORS[code]) return STUDENT_ERRORS[code];
+	const inText = code && FIELD_ERROR_CODES.find((c) => code.includes(c));
+	if (inText) return STUDENT_ERRORS[inText] ?? fallback;
 	const status = (e as { response?: { status?: number } } | null)?.response
 		?.status;
 	if (status === 413) return 'Arquivo grande demais (máx. 50 MB).';
@@ -306,4 +323,81 @@ const MEETING_STATUS_LABEL: Record<string, string> = {
 
 export function meetingStatusLabel(status: string): string {
 	return MEETING_STATUS_LABEL[status] ?? status;
+}
+
+/**
+ * Confirmação curta antes de uma ação sem volta (concluir encontro, gerar
+ * snapshot, excluir etapa). Em `ModalPortal` pelo mesmo motivo do diagnóstico:
+ * o <main> do shell tem `transform`, e o `fixed` ancoraria nele. Esc e clique
+ * fora cancelam.
+ */
+export function ConfirmDialog({
+	title,
+	children,
+	confirmLabel,
+	busy = false,
+	danger = false,
+	onCancel,
+	onConfirm,
+}: {
+	title: string;
+	children?: ReactNode;
+	confirmLabel: string;
+	busy?: boolean;
+	danger?: boolean;
+	onCancel: () => void;
+	onConfirm: () => void;
+}) {
+	const titleId = useId();
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') onCancel();
+		};
+		document.addEventListener('keydown', onKey);
+		return () => document.removeEventListener('keydown', onKey);
+	}, [onCancel]);
+
+	return (
+		<ModalPortal>
+			<div
+				className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-overlay p-4 backdrop-blur-sm md:p-8"
+				onClick={onCancel}
+				onKeyDown={(e) => e.key === 'Escape' && onCancel()}
+				role="presentation"
+			>
+				<div
+					className="my-auto w-full max-w-sm rounded-card border border-subtle bg-surface p-5 shadow-overlay"
+					onClick={(e) => e.stopPropagation()}
+					onKeyDown={(e) => e.stopPropagation()}
+					role="alertdialog"
+					aria-modal="true"
+					aria-labelledby={titleId}
+				>
+					<h3 id={titleId} className="mb-1 text-title text-primary">
+						{title}
+					</h3>
+					{children && (
+						<div className="mb-4 text-body text-secondary">{children}</div>
+					)}
+					<div className="mt-4 flex justify-end gap-2">
+						<button type="button" className={BTN_GHOST} onClick={onCancel}>
+							Cancelar
+						</button>
+						<button
+							type="button"
+							className={
+								danger
+									? 'inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white text-sm font-medium px-4 py-2 transition'
+									: BTN_PRIMARY
+							}
+							disabled={busy}
+							onClick={onConfirm}
+						>
+							{busy ? 'Aguarde...' : confirmLabel}
+						</button>
+					</div>
+				</div>
+			</div>
+		</ModalPortal>
+	);
 }

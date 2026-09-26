@@ -14,6 +14,7 @@ import {
 	useJourneyTools,
 	useStartTool,
 } from '@/modules/mentoria/hooks';
+import { TOOL_OWN_PAGE } from '@/modules/mentoria/nav';
 import type { ToolWithInstance } from '@/modules/mentoria/types';
 import {
 	BTN_PRIMARY,
@@ -31,15 +32,8 @@ import { ToolOrgChart } from '../../_components/tools/tool-org-chart';
 import { ToolPopLibrary } from '../../_components/tools/tool-pop-library';
 import { ToolProcessFlow } from '../../_components/tools/tool-process-flow';
 
-// `?aba=`: sem ela Desenvolvimento abria sempre em Boas Notícias, e quem
-// clicava em Plano de Negócios ou Maslow achava que o link estava quebrado.
-const REDIRECTS: Record<string, string> = {
-	kpi_board: '/course/mentoria/indicadores',
-	goal_action: '/course/mentoria/desenvolvimento?aba=metas',
-	maslow: '/course/mentoria/desenvolvimento?aba=maslow',
-	good_news: '/course/mentoria/desenvolvimento?aba=boas-noticias',
-	business_plan: '/course/mentoria/desenvolvimento?aba=plano',
-};
+// KPIs e desenvolvimento pessoal moram em páginas próprias (nav.ts).
+const REDIRECTS = TOOL_OWN_PAGE;
 
 export default function FerramentaDetalhePage() {
 	const params = useParams<{ toolKey: string }>();

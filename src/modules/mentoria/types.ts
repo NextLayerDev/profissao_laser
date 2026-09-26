@@ -637,6 +637,8 @@ export type MntMaterial = {
 	storage_path?: string | null;
 	published: boolean;
 	created_at: string;
+	/** Só na lista do aluno: posição do encontro vinculado (qualquer versão). */
+	meeting_position?: number | null;
 };
 
 /** Campos extras do upload de material (vão na querystring). */

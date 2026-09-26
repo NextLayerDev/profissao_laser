@@ -224,6 +224,15 @@ export function useKpis(journeyId: string | undefined, category?: string) {
 	});
 }
 
+/** Mesmo prefixo de `useKpis`: arquivar/reativar invalida as duas listas. */
+export function useArchivedKpis(journeyId: string | undefined, enabled = true) {
+	return useQuery({
+		queryKey: [...ROOT, 'kpis', journeyId, 'archived'],
+		queryFn: () => svc.listArchivedKpis(journeyId as string),
+		enabled: !!journeyId && enabled,
+	});
+}
+
 export function useKpiMutations(journeyId: string | undefined) {
 	const qc = useQueryClient();
 	const invalidateProgress = useInvalidateToolProgress();
