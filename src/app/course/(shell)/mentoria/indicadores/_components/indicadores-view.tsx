@@ -13,6 +13,8 @@
 
 import { Button, buttonLabel, Table } from '@upvox-dev/ui';
 import {
+	Archive,
+	ArchiveRestore,
 	BarChart3,
 	LineChart as LineChartIcon,
 	Pencil,
@@ -50,6 +52,7 @@ import {
 } from '@/modules/mentoria/types';
 import {
 	CARD,
+	ConfirmDialog,
 	EmptyState,
 	fmtDate,
 	INPUT,
@@ -136,8 +139,11 @@ export function IndicadoresView({
 	onAddMeasurement,
 	updating = false,
 	onUpdateKpi,
+	archivedKpis = [],
 }: {
 	kpis: MntKpi[];
+	/** Arquivados (active=false): saem da Central e podem ser reativados. */
+	archivedKpis?: MntKpi[];
 	historyByKpiId: Record<string, MntKpiMeasurement[] | undefined>;
 	creating: boolean;
 	onCreateKpi: (body: NewKpiBody, opts: { onSuccess: () => void }) => void;
@@ -173,10 +179,15 @@ export function IndicadoresView({
 	const [editing, setEditing] = useState<MntKpi | null>(null);
 	const [editForm, setEditForm] = useState({
 		name: '',
+		category: 'geral',
 		unit: '',
 		target: '',
+		direction: 'up_good',
+		periodicity: 'monthly',
 		metric_key: '',
 	});
+	const [archiving, setArchiving] = useState<MntKpi | null>(null);
+	const [showArchived, setShowArchived] = useState(false);
 	const [measurement, setMeasurement] = useState({
 		value: '',
 		measured_at: todayLocalISO(),
@@ -235,7 +246,10 @@ export function IndicadoresView({
 	const openEdit = (kpi: MntKpi) => {
 		setEditForm({
 			name: kpi.name,
+			category: kpi.category,
 			unit: kpi.unit ?? '',
+			direction: kpi.direction,
+			periodicity: kpi.periodicity,
 			target:
 				kpi.target === null
 					? ''
@@ -262,8 +276,11 @@ export function IndicadoresView({
 			editing.id,
 			{
 				name: editForm.name.trim(),
+				category: editForm.category,
 				unit: editForm.unit || null,
 				target,
+				direction: editForm.direction,
+				periodicity: editForm.periodicity,
 				...(metricChanged ? { metric_key: editForm.metric_key || null } : {}),
 			},
 			{ onSuccess: () => setEditing(null) },
@@ -631,6 +648,51 @@ export function IndicadoresView({
 								/>
 							</div>
 						</div>
+						<div className="grid grid-cols-2 gap-3">
+							<div>
+								<span className={LABEL}>Categoria</span>
+								<select
+									className={INPUT}
+									value={editForm.category}
+									onChange={(e) =>
+										setEditForm({ ...editForm, category: e.target.value })
+									}
+								>
+									{Object.entries(CATEGORY_LABEL).map(([value, label]) => (
+										<option key={value} value={value}>
+											{label}
+										</option>
+									))}
+								</select>
+							</div>
+							<div>
+								<span className={LABEL}>Periodicidade</span>
+								<select
+									className={INPUT}
+									value={editForm.periodicity}
+									onChange={(e) =>
+										setEditForm({ ...editForm, periodicity: e.target.value })
+									}
+								>
+									<option value="daily">Diária</option>
+									<option value="weekly">Semanal</option>
+									<option value="monthly">Mensal</option>
+								</select>
+							</div>
+						</div>
+						<div>
+							<span className={LABEL}>Direção</span>
+							<select
+								className={INPUT}
+								value={editForm.direction}
+								onChange={(e) =>
+									setEditForm({ ...editForm, direction: e.target.value })
+								}
+							>
+								<option value="up_good">Quanto maior, melhor</option>
+								<option value="down_good">Quanto menor, melhor</option>
+							</select>
+						</div>
 						<MetricKeySelect
 							value={editForm.metric_key}
 							onChange={(metric_key) =>
@@ -640,6 +702,18 @@ export function IndicadoresView({
 							currentId={editing.id}
 						/>
 						<div className="flex gap-2 justify-end">
+							<Button
+								variant="secondary"
+								onPress={() => setArchiving(editing)}
+								disabled={updating}
+								accessibilityLabel={`Arquivar ${editing.name}`}
+							>
+								<Archive className="w-4 h-4" aria-hidden />
+								<span className={buttonLabel({ variant: 'secondary' })}>
+									Arquivar
+								</span>
+							</Button>
+							<span className="flex-1" />
 							<Button variant="secondary" onPress={() => setEditing(null)}>
 								Cancelar
 							</Button>
@@ -652,6 +726,73 @@ export function IndicadoresView({
 							</Button>
 						</div>
 					</div>
+				</div>
+			)}
+
+			{archiving && onUpdateKpi && (
+				<ConfirmDialog
+					title={`Arquivar "${archiving.name}"?`}
+					confirmLabel="Arquivar"
+					busy={updating}
+					onCancel={() => setArchiving(null)}
+					onConfirm={() =>
+						onUpdateKpi(
+							archiving.id,
+							{ active: false },
+							{
+								onSuccess: () => {
+									setArchiving(null);
+									setEditing(null);
+								},
+							},
+						)
+					}
+				>
+					Sai da Central. O histórico fica guardado e dá para reativar.
+				</ConfirmDialog>
+			)}
+
+			{archivedKpis.length > 0 && onUpdateKpi && (
+				<div className="mt-6">
+					<button
+						type="button"
+						className="text-caption text-muted hover:text-primary"
+						onClick={() => setShowArchived((v) => !v)}
+					>
+						{showArchived ? 'Ocultar' : 'Ver'} arquivados ({archivedKpis.length}
+						)
+					</button>
+					{showArchived && (
+						<ul className="mt-2 space-y-2" data-testid="kpis-archived">
+							{archivedKpis.map((k) => (
+								<li
+									key={k.id}
+									className={`${CARD} flex items-center justify-between gap-3 p-3`}
+								>
+									<span className="min-w-0 truncate text-body text-secondary">
+										{k.name}
+									</span>
+									<Button
+										variant="secondary"
+										disabled={updating}
+										onPress={() =>
+											onUpdateKpi(
+												k.id,
+												{ active: true },
+												{ onSuccess: () => {} },
+											)
+										}
+										accessibilityLabel={`Reativar ${k.name}`}
+									>
+										<ArchiveRestore className="w-4 h-4" aria-hidden />
+										<span className={buttonLabel({ variant: 'secondary' })}>
+											Reativar
+										</span>
+									</Button>
+								</li>
+							))}
+						</ul>
+					)}
 				</div>
 			)}
 

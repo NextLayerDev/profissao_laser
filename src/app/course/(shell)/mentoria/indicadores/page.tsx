@@ -15,6 +15,7 @@
 import { toast } from 'sonner';
 import { SubscriptionGate } from '@/components/course/subscription-gate';
 import {
+	useArchivedKpis,
 	useKpiHistories,
 	useKpiMutations,
 	useKpis,
@@ -42,6 +43,7 @@ function IndicadoresContent({ journeyId }: { journeyId: string }) {
 	const { data: kpis, isLoading } = useKpis(journeyId);
 	const { create, update, addMeasurement } = useKpiMutations(journeyId);
 	const histories = useKpiHistories((kpis ?? []).map((k) => k.id));
+	const { data: archived } = useArchivedKpis(journeyId);
 
 	if (isLoading) return <MntSkeleton />;
 
@@ -53,6 +55,7 @@ function IndicadoresContent({ journeyId }: { journeyId: string }) {
 	return (
 		<IndicadoresView
 			kpis={kpis ?? []}
+			archivedKpis={archived ?? []}
 			historyByKpiId={historyByKpiId}
 			creating={create.isPending}
 			onCreateKpi={(body: NewKpiBody, { onSuccess }) =>

@@ -184,6 +184,18 @@ function GoalsTab({ journeyId }: { journeyId: string }) {
 					{ onError: () => toast.error('Não foi possível atualizar a meta.') },
 				)
 			}
+			onEdit={(goalId, body, cb) =>
+				update.mutate(
+					{ goalId, body },
+					{
+						onSuccess: () => {
+							toast.success('Meta salva!');
+							cb?.onSuccess?.();
+						},
+						onError: () => toast.error('Não foi possível salvar a meta.'),
+					},
+				)
+			}
 		/>
 	);
 }

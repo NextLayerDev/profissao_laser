@@ -12,6 +12,8 @@
 
 import { Badge, Button, buttonLabel } from '@upvox-dev/ui';
 import {
+	Archive,
+	ArchiveRestore,
 	Briefcase,
 	Check,
 	CheckCircle2,
@@ -19,6 +21,7 @@ import {
 	Flag,
 	Lightbulb,
 	Lock,
+	Pencil,
 	Plus,
 	Smile,
 	Triangle,
@@ -45,7 +48,12 @@ import type {
 	MntMaslowTest,
 } from '@/modules/mentoria/types';
 import { isUnknownAnswer } from '@/modules/mentoria/types';
-import { CARD, EmptyState, fmtDate } from '../../_components/shared';
+import {
+	CARD,
+	ConfirmDialog,
+	EmptyState,
+	fmtDate,
+} from '../../_components/shared';
 
 /** Os forms só fecham/limpam quando o container confirma o sucesso. */
 export type MutationCallbacks = { onSuccess?: () => void };
@@ -181,8 +189,17 @@ const GOAL_STATUS: Array<{ value: MntGoal['status']; label: string }> = [
 	{ value: 'in_progress', label: 'Em andamento' },
 	{ value: 'done', label: 'Concluída' },
 	{ value: 'late', label: 'Atrasada' },
-	{ value: 'cancelled', label: 'Cancelada' },
+	// "Arquivar" grava cancelled: a meta sai da lista e dá para reativar.
+	{ value: 'cancelled', label: 'Arquivada' },
 ];
+
+/** Campos editáveis da meta (os mesmos do cadastro). */
+export type GoalFields = {
+	title: string;
+	indicator_text: string | null;
+	deadline: string | null;
+	first_action_48h: string | null;
+};
 
 /**
  * Tom do `Badge` por status. O `<select>` continua sendo quem ALTERA (o
@@ -211,25 +228,25 @@ export function GoalsView({
 	onUpdateStatus,
 	onToggleFirstAction,
 	updatingGoalId = null,
+	onEdit,
 }: {
 	goals: MntGoal[];
 	creating: boolean;
-	onCreate: (
-		body: {
-			title: string;
-			indicator_text: string | null;
-			deadline: string | null;
-			first_action_48h: string | null;
-		},
-		cb?: MutationCallbacks,
-	) => void;
+	onCreate: (body: GoalFields, cb?: MutationCallbacks) => void;
+	/** Sem ele, a meta não mostra "Editar". */
+	onEdit?: (goalId: string, body: GoalFields, cb?: MutationCallbacks) => void;
 	onUpdateStatus: (goalId: string, status: string) => void;
 	onToggleFirstAction: (goalId: string, done: boolean) => void;
 	/** Meta com atualização em andamento: trava o select e o toggle dela. */
 	updatingGoalId?: string | null;
 }) {
 	const [showForm, setShowForm] = useState(false);
+	const [editingId, setEditingId] = useState<string | null>(null);
+	const [archiving, setArchiving] = useState<MntGoal | null>(null);
+	const [showArchived, setShowArchived] = useState(false);
 	const fieldId = useId();
+	const active = goals.filter((g) => g.status !== 'cancelled');
+	const archived = goals.filter((g) => g.status === 'cancelled');
 	const [form, setForm] = useState({
 		title: '',
 		indicator_text: '',
@@ -339,73 +356,253 @@ export function GoalsView({
 				</div>
 			)}
 
-			{goals.length === 0 && !showForm ? (
+			{active.length === 0 && !showForm ? (
 				<EmptyState
 					icon={Flag}
 					title="Nenhuma meta cadastrada"
 					description="Cadastre sua meta com o indicador que comprova o resultado e a primeira ação das próximas 48 horas."
 				/>
 			) : (
-				goals.map((goal) => (
-					<div key={goal.id} className={`${CARD} p-5`}>
-						<div className="flex flex-wrap items-start justify-between gap-3">
-							<div className="min-w-0 flex-1">
-								<p className="text-body font-semibold text-primary">
-									{goal.title}
-								</p>
-								{goal.indicator_text && (
-									<p className="mt-1 text-body text-muted">
-										Indicador: {goal.indicator_text}
+				active.map((goal) =>
+					editingId === goal.id && onEdit ? (
+						<GoalEditCard
+							key={goal.id}
+							goal={goal}
+							saving={updatingGoalId === goal.id}
+							onCancel={() => setEditingId(null)}
+							onSave={(body) =>
+								onEdit(goal.id, body, { onSuccess: () => setEditingId(null) })
+							}
+						/>
+					) : (
+						<div key={goal.id} className={`${CARD} p-5`}>
+							<div className="flex flex-wrap items-start justify-between gap-3">
+								<div className="min-w-0 flex-1">
+									<p className="text-body font-semibold text-primary">
+										{goal.title}
 									</p>
-								)}
-								<p className="mt-1 text-caption text-muted">
-									Prazo: {fmtDate(goal.deadline)}
-								</p>
-							</div>
-							<div className="flex items-center gap-2">
-								<Badge tone={GOAL_STATUS_TONE[goal.status]}>
-									{goalStatusLabel(goal.status)}
-								</Badge>
-								{/* O badge já mostra o status por escrito, então o select fica
+									{goal.indicator_text && (
+										<p className="mt-1 text-body text-muted">
+											Indicador: {goal.indicator_text}
+										</p>
+									)}
+									<p className="mt-1 text-caption text-muted">
+										Prazo: {fmtDate(goal.deadline)}
+									</p>
+								</div>
+								<div className="flex items-center gap-2">
+									<Badge tone={GOAL_STATUS_TONE[goal.status]}>
+										{goalStatusLabel(goal.status)}
+									</Badge>
+									{/* O badge já mostra o status por escrito, então o select fica
 								    com `aria-label` em vez de um rótulo visível duplicado. */}
-								<select
-									className={`${inputClass} w-auto`}
-									aria-label="Status da meta"
-									value={goal.status}
-									disabled={updatingGoalId === goal.id}
-									onChange={(e) => onUpdateStatus(goal.id, e.target.value)}
-								>
-									{GOAL_STATUS.map((s) => (
-										<option key={s.value} value={s.value}>
-											{s.label}
-										</option>
-									))}
-								</select>
+									<select
+										className={`${inputClass} w-auto`}
+										aria-label="Status da meta"
+										value={goal.status}
+										disabled={updatingGoalId === goal.id}
+										onChange={(e) => onUpdateStatus(goal.id, e.target.value)}
+									>
+										{GOAL_STATUS.filter((s) => s.value !== 'cancelled').map(
+											(s) => (
+												<option key={s.value} value={s.value}>
+													{s.label}
+												</option>
+											),
+										)}
+									</select>
+									{onEdit && (
+										<button
+											type="button"
+											className="rounded-control p-2 text-muted hover:bg-surface-sunken hover:text-primary"
+											aria-label={`Editar meta: ${goal.title}`}
+											onClick={() => setEditingId(goal.id)}
+										>
+											<Pencil className="h-4 w-4" aria-hidden />
+										</button>
+									)}
+									<button
+										type="button"
+										className="rounded-control p-2 text-muted hover:bg-surface-sunken hover:text-primary"
+										aria-label={`Arquivar meta: ${goal.title}`}
+										disabled={updatingGoalId === goal.id}
+										onClick={() => setArchiving(goal)}
+									>
+										<Archive className="h-4 w-4" aria-hidden />
+									</button>
+								</div>
 							</div>
+							{goal.first_action_48h && (
+								<button
+									type="button"
+									aria-pressed={Boolean(goal.first_action_done_at)}
+									disabled={updatingGoalId === goal.id}
+									onClick={() =>
+										onToggleFirstAction(goal.id, !goal.first_action_done_at)
+									}
+									className={`mt-3 inline-flex items-center gap-2 rounded-control border px-3 py-2 text-label transition ${
+										goal.first_action_done_at
+											? // Verde de "feito", não roxo de marca — mesma leitura do
+												// "já postei hoje". Par `dark:` pela lacuna A.3.
+												'border-emerald-500/40 bg-success-wash text-emerald-600 dark:text-emerald-400'
+											: 'border-subtle text-secondary hover:text-primary'
+									}`}
+								>
+									<Check className="h-4 w-4" aria-hidden />
+									Ação 48h: {goal.first_action_48h}
+								</button>
+							)}
 						</div>
-						{goal.first_action_48h && (
-							<button
-								type="button"
-								aria-pressed={Boolean(goal.first_action_done_at)}
-								disabled={updatingGoalId === goal.id}
-								onClick={() =>
-									onToggleFirstAction(goal.id, !goal.first_action_done_at)
-								}
-								className={`mt-3 inline-flex items-center gap-2 rounded-control border px-3 py-2 text-label transition ${
-									goal.first_action_done_at
-										? // Verde de "feito", não roxo de marca — mesma leitura do
-											// "já postei hoje". Par `dark:` pela lacuna A.3.
-											'border-emerald-500/40 bg-success-wash text-emerald-600 dark:text-emerald-400'
-										: 'border-subtle text-secondary hover:text-primary'
-								}`}
-							>
-								<Check className="h-4 w-4" aria-hidden />
-								Ação 48h: {goal.first_action_48h}
-							</button>
-						)}
-					</div>
-				))
+					),
+				)
 			)}
+
+			{archived.length > 0 && (
+				<div>
+					<button
+						type="button"
+						className="text-caption text-muted hover:text-primary"
+						onClick={() => setShowArchived((v) => !v)}
+					>
+						{showArchived ? 'Ocultar' : 'Ver'} arquivadas ({archived.length})
+					</button>
+					{showArchived && (
+						<ul className="mt-2 space-y-2" data-testid="goals-archived">
+							{archived.map((g) => (
+								<li
+									key={g.id}
+									className={`${CARD} flex items-center justify-between gap-3 p-3`}
+								>
+									<span className="min-w-0 truncate text-body text-secondary">
+										{g.title}
+									</span>
+									<button
+										type="button"
+										className="inline-flex shrink-0 items-center gap-1.5 rounded-control border border-subtle px-3 py-1.5 text-label text-primary hover:bg-surface-sunken"
+										disabled={updatingGoalId === g.id}
+										onClick={() =>
+											onUpdateStatus(
+												g.id,
+												g.first_action_done_at ? 'in_progress' : 'not_started',
+											)
+										}
+									>
+										<ArchiveRestore className="h-4 w-4" aria-hidden />
+										Reativar
+									</button>
+								</li>
+							))}
+						</ul>
+					)}
+				</div>
+			)}
+
+			{archiving && (
+				<ConfirmDialog
+					title="Arquivar esta meta?"
+					confirmLabel="Arquivar"
+					onCancel={() => setArchiving(null)}
+					onConfirm={() => {
+						onUpdateStatus(archiving.id, 'cancelled');
+						setArchiving(null);
+					}}
+				>
+					Sai da lista. Dá para reativar depois.
+				</ConfirmDialog>
+			)}
+		</div>
+	);
+}
+
+/** Edição no próprio card (mesmos campos do cadastro). */
+function GoalEditCard({
+	goal,
+	saving,
+	onCancel,
+	onSave,
+}: {
+	goal: MntGoal;
+	saving: boolean;
+	onCancel: () => void;
+	onSave: (body: GoalFields) => void;
+}) {
+	const fieldId = useId();
+	const [form, setForm] = useState({
+		title: goal.title,
+		indicator_text: goal.indicator_text ?? '',
+		deadline: goal.deadline?.slice(0, 10) ?? '',
+		first_action_48h: goal.first_action_48h ?? '',
+	});
+	return (
+		<div className={`${CARD} p-5 space-y-4`}>
+			<div>
+				<label htmlFor={`${fieldId}-title`} className={FIELD_LABEL}>
+					Minha meta
+				</label>
+				<textarea
+					id={`${fieldId}-title`}
+					className={`${inputClass} min-h-20`}
+					value={form.title}
+					onChange={(e) => setForm({ ...form, title: e.target.value })}
+				/>
+			</div>
+			<div>
+				<label htmlFor={`${fieldId}-indicator`} className={FIELD_LABEL}>
+					Indicador
+				</label>
+				<input
+					id={`${fieldId}-indicator`}
+					className={inputClass}
+					value={form.indicator_text}
+					onChange={(e) => setForm({ ...form, indicator_text: e.target.value })}
+				/>
+			</div>
+			<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+				<div>
+					<label htmlFor={`${fieldId}-deadline`} className={FIELD_LABEL}>
+						Prazo
+					</label>
+					<input
+						id={`${fieldId}-deadline`}
+						type="date"
+						className={inputClass}
+						value={form.deadline}
+						onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+					/>
+				</div>
+				<div>
+					<label htmlFor={`${fieldId}-action`} className={FIELD_LABEL}>
+						Primeira ação (48h)
+					</label>
+					<input
+						id={`${fieldId}-action`}
+						className={inputClass}
+						value={form.first_action_48h}
+						onChange={(e) =>
+							setForm({ ...form, first_action_48h: e.target.value })
+						}
+					/>
+				</div>
+			</div>
+			<div className="flex justify-end gap-2">
+				<Button variant="secondary" onPress={onCancel}>
+					Cancelar
+				</Button>
+				<Button
+					variant="primary"
+					disabled={saving || !form.title.trim()}
+					onPress={() =>
+						onSave({
+							title: form.title.trim(),
+							indicator_text: form.indicator_text || null,
+							deadline: form.deadline || null,
+							first_action_48h: form.first_action_48h || null,
+						})
+					}
+				>
+					{saving ? 'Salvando...' : 'Salvar'}
+				</Button>
+			</div>
 		</div>
 	);
 }
