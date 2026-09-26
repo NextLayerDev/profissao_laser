@@ -474,7 +474,15 @@ export function useLive(liveId: string | undefined) {
 		queryKey: [...ROOT, 'live', liveId],
 		queryFn: () => svc.getLive(liveId as string),
 		enabled: !!liveId,
-		refetchInterval: 30_000,
+		// Gravação pronta (ou live externa encerrada) não muda mais: parar de
+		// consultar a sala a cada 30s enquanto o aluno assiste.
+		refetchInterval: (q) => {
+			const room = q.state.data;
+			const settled =
+				room?.status === 'vod_ready' ||
+				(room?.source === 'external' && room.status === 'ended');
+			return settled ? false : 30_000;
+		},
 	});
 }
 
@@ -489,13 +497,19 @@ export function useLivePlayback(liveId: string | undefined, enabled: boolean) {
 	});
 }
 
-export function useLiveChat(liveId: string | undefined) {
+/**
+ * `poll`: só quando a inscrição no Realtime não está ativa (falhou, caiu ou
+ * ainda não conectou) — com ela no ar, as mensagens chegam pelo evento.
+ */
+export function useLiveChat(
+	liveId: string | undefined,
+	{ poll = true }: { poll?: boolean } = {},
+) {
 	return useQuery({
 		queryKey: [...ROOT, 'live-chat', liveId],
 		queryFn: () => svc.listLiveChat(liveId as string),
 		enabled: !!liveId,
-		// Fallback de tempo real (Realtime do Supabase complementa no componente)
-		refetchInterval: 5_000,
+		refetchInterval: poll ? 5_000 : false,
 	});
 }
 
