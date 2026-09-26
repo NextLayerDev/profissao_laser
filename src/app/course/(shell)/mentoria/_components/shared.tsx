@@ -132,6 +132,9 @@ const STUDENT_ERRORS: Record<string, string> = {
 	phone_invalid: 'Telefone inválido. Use DDD + número.',
 	website_invalid: 'Site inválido. Ex.: https://seusite.com.br',
 	instagram_invalid: 'Instagram inválido. Ex.: @suaempresa',
+	assistant_daily_limit: 'Você usou as perguntas de hoje. Volte amanhã.',
+	assistant_unavailable: 'Assistente indisponível no momento.',
+	assistant_failed: 'Não consegui responder agora. Tente de novo.',
 };
 
 /** 400 do Zod traz o código dentro do texto (ex.: "body/cnpj cnpj_invalid"). */

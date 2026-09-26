@@ -12,17 +12,23 @@
 // saem de `FLOATING_COLUMN`, compartilhado com a navegação da coluna 1 — as
 // duas colunas têm de bater lado a lado.
 //
-// Casca de UI: o painel abre, anima, sugere perguntas e deixa escrever — mas
-// ainda NÃO conversa. Não existe endpoint de assistente conversacional para a
-// Mentoria (ver docs/mentoria-360-design-system.md, seção B), e inventar uma
-// resposta seria pior que anunciar a ausência. As bolhas de mensagem, o stream
-// e o histórico entram junto com o backend.
+// Conversa de verdade com a upvox-api (POST .../assistant): o servidor monta o
+// contexto da jornada e aplica o limite diário. O histórico fica na sessão do
+// navegador (sessionStorage por jornada): sobrevive a trocar de página e ao
+// F5, some ao fechar a aba — não guardamos conversa no servidor.
 
 import { Button, Card } from '@upvox-dev/ui';
-import { ArrowUp, FileText, Globe, Sparkles, X } from 'lucide-react';
+import { ArrowUp, FileText, Globe, RotateCcw, Sparkles, X } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { mntErrorText } from '@/app/course/(shell)/mentoria/_components/shared';
+import {
+	useAskAssistant,
+	useAssistantUsage,
+	useMentoriaBootstrap,
+} from '../../hooks';
+import type { AssistantMessage } from '../../types';
+import { Markdown } from '../markdown';
 import { FLOATING_COLUMN, ListRow } from '../ui';
 import {
 	ASSISTANT_DURATION,
@@ -30,20 +36,56 @@ import {
 	ASSISTANT_EASE,
 } from './motion';
 
-/** Atalhos do desenho. Preenchem o composer em vez de enviar direto — sem
- *  backend, enviar não levaria a lugar nenhum, mas escrever já mostra a ideia. */
+/** Atalhos do desenho: enviam a pergunta completa direto. */
 const SUGGESTIONS = [
-	{ icon: FileText, label: 'Métricas importantes' },
-	{ icon: Globe, label: 'Liste as prioridades' },
+	{
+		icon: FileText,
+		label: 'Métricas importantes',
+		question: 'Quais métricas da minha empresa merecem atenção agora?',
+	},
+	{
+		icon: Globe,
+		label: 'Liste as prioridades',
+		question: 'Liste minhas 3 prioridades para esta semana.',
+	},
 ];
+
+/** A API aceita até 20 mensagens: manda só o fim da conversa. */
+const HISTORY_MAX = 20;
+const CONTENT_MAX = 2000;
+
+const storageKey = (journeyId: string) => `mentoria-assistant:${journeyId}`;
+
+function loadHistory(journeyId: string): AssistantMessage[] {
+	try {
+		const raw = sessionStorage.getItem(storageKey(journeyId));
+		const parsed: unknown = raw ? JSON.parse(raw) : [];
+		return Array.isArray(parsed)
+			? parsed.filter(
+					(m): m is AssistantMessage =>
+						(m?.role === 'user' || m?.role === 'assistant') &&
+						typeof m?.content === 'string',
+				)
+			: [];
+	} catch {
+		return [];
+	}
+}
+
+function saveHistory(journeyId: string, messages: AssistantMessage[]) {
+	try {
+		sessionStorage.setItem(storageKey(journeyId), JSON.stringify(messages));
+	} catch {
+		// Aba privada/cota cheia: a conversa segue só na memória.
+	}
+}
 
 /** Teto do auto-grow do composer, em px. Acima disso ele rola. */
 const COMPOSER_MAX_HEIGHT = 160;
 
 /**
  * Escalonamento do miolo. O card chega inteiro num piscar; escalonar as partes
- * dá a leitura de "montando" em vez de "colado", e é o que sobra de vida num
- * painel que ainda não conversa.
+ * dá a leitura de "montando" em vez de "colado".
  *
  * Os atrasos entram DEPOIS do meio do percurso do card (0.42s): antes disso a
  * coluna ainda está abrindo, e conteúdo entrando dentro de uma faixa que se
@@ -65,8 +107,31 @@ export function AssistantPanel({
 	onClose: () => void;
 }) {
 	const [draft, setDraft] = useState('');
+	const [messages, setMessages] = useState<AssistantMessage[]>([]);
+	const [error, setError] = useState<string | null>(null);
 	const composerRef = useRef<HTMLTextAreaElement>(null);
+	const scrollRef = useRef<HTMLDivElement>(null);
 	const reduceMotion = useReducedMotion();
+
+	const journeyId = useMentoriaBootstrap().data?.journey?.id;
+	const usage = useAssistantUsage(open ? journeyId : undefined);
+	const ask = useAskAssistant(journeyId);
+	const remaining = usage.data?.remaining_today;
+	const exhausted = remaining === 0;
+
+	// Histórico da sessão por jornada (a jornada chega depois do bootstrap).
+	useEffect(() => {
+		setMessages(journeyId ? loadHistory(journeyId) : []);
+	}, [journeyId]);
+
+	// Nova mensagem ou "pensando": rola até o fim.
+	useEffect(() => {
+		if (!open) return;
+		const el = scrollRef.current;
+		if (el && (messages.length || ask.isPending)) {
+			el.scrollTo({ top: el.scrollHeight });
+		}
+	}, [open, messages.length, ask.isPending]);
 
 	// Esc fecha. O listener vai em `document`, e não num `onKeyDown` de div: o
 	// resto do app faz assim e só funciona quando a div está focada — por isso
@@ -95,20 +160,35 @@ export function AssistantPanel({
 		el.style.height = `${Math.min(el.scrollHeight, COMPOSER_MAX_HEIGHT)}px`;
 	};
 
-	const send = () => {
-		if (!draft.trim()) return;
-		toast('Em breve', {
-			description:
-				'O Assistente ainda não está conectado — estamos preparando as respostas.',
+	const commit = (next: AssistantMessage[]) => {
+		setMessages(next);
+		if (journeyId) saveHistory(journeyId, next);
+	};
+
+	const send = (text = draft) => {
+		const content = text.trim().slice(0, CONTENT_MAX);
+		if (!content || !journeyId || ask.isPending || exhausted) return;
+		const withQuestion = [...messages, { role: 'user' as const, content }];
+		setError(null);
+		setDraft('');
+		commit(withQuestion);
+		requestAnimationFrame(growComposer);
+		ask.mutate(withQuestion.slice(-HISTORY_MAX), {
+			onSuccess: ({ reply }) =>
+				commit([...withQuestion, { role: 'assistant', content: reply }]),
+			onError: (err) => {
+				// A pergunta volta para o composer: nada se perde.
+				commit(messages);
+				setDraft(content);
+				requestAnimationFrame(growComposer);
+				setError(mntErrorText(err, 'Não consegui responder agora.'));
+			},
 		});
 	};
 
-	const useSuggestion = (label: string) => {
-		setDraft(label);
-		composerRef.current?.focus();
-		// O valor só chega ao DOM no próximo paint; medir antes devolve a altura
-		// antiga.
-		requestAnimationFrame(growComposer);
+	const reset = () => {
+		commit([]);
+		setError(null);
 	};
 
 	return (
@@ -154,12 +234,28 @@ export function AssistantPanel({
 						aria-label="Assistente Empresarial"
 						className={`${FLOATING_COLUMN.surface} ${FLOATING_COLUMN.stickyXl} flex flex-col overflow-hidden xl:w-90`}
 					>
-						<Header onClose={onClose} />
+						<Header
+							onClose={onClose}
+							onReset={messages.length ? reset : undefined}
+						/>
 
-						{/* É aqui que as bolhas entram quando houver stream. Hoje o corpo
-						    é só as boas-vindas. */}
-						<div className="min-h-0 flex-1 overflow-y-auto p-4">
-							<Welcome onSuggestion={useSuggestion} />
+						<div
+							ref={scrollRef}
+							className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4"
+							aria-live="polite"
+						>
+							{messages.length === 0 ? (
+								<Welcome
+									disabled={!journeyId || exhausted || ask.isPending}
+									onSuggestion={(q) => send(q)}
+								/>
+							) : (
+								messages.map((m, i) => (
+									// Lista só cresce ou zera: o índice é estável.
+									<Bubble key={i} message={m} />
+								))
+							)}
+							{ask.isPending && <Thinking />}
 						</div>
 
 						<Composer
@@ -167,9 +263,24 @@ export function AssistantPanel({
 							value={draft}
 							onChange={(v) => {
 								setDraft(v);
+								// Voltou a escrever: o aviso de erro dá lugar ao contador.
+								setError(null);
 								growComposer();
 							}}
-							onSend={send}
+							onSend={() => send()}
+							disabled={!journeyId || exhausted}
+							busy={ask.isPending}
+							status={
+								error ??
+								(!journeyId
+									? 'Disponível quando sua jornada começar.'
+									: exhausted
+										? 'Você usou as perguntas de hoje. Volte amanhã.'
+										: remaining !== undefined
+											? `${remaining} ${remaining === 1 ? 'pergunta restante' : 'perguntas restantes'} hoje`
+											: null)
+							}
+							isError={!!error}
 						/>
 					</aside>
 				</motion.div>
@@ -180,7 +291,13 @@ export function AssistantPanel({
 
 // ── Cabeçalho ────────────────────────────────────────────────────────────────
 
-function Header({ onClose }: { onClose: () => void }) {
+function Header({
+	onClose,
+	onReset,
+}: {
+	onClose: () => void;
+	onReset?: () => void;
+}) {
 	return (
 		<div className="flex shrink-0 items-center gap-3 border-subtle border-b px-4 py-3">
 			<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-brand-wash">
@@ -193,9 +310,19 @@ function Header({ onClose }: { onClose: () => void }) {
 					Assistente de IA
 				</span>
 				<span className="block truncate text-caption text-secondary">
-					Assistente de Inteligência Artificial
+					Usa os dados da sua jornada
 				</span>
 			</span>
+			{onReset && (
+				<Button
+					variant="ghost"
+					onPress={onReset}
+					accessibilityLabel="Nova conversa"
+					className="h-8 w-8 shrink-0 rounded-full px-0"
+				>
+					<RotateCcw className="h-4 w-4 text-secondary" />
+				</Button>
+			)}
 			<Button
 				variant="ghost"
 				onPress={onClose}
@@ -212,7 +339,13 @@ function Header({ onClose }: { onClose: () => void }) {
 
 // ── Boas-vindas ──────────────────────────────────────────────────────────────
 
-function Welcome({ onSuggestion }: { onSuggestion: (label: string) => void }) {
+function Welcome({
+	onSuggestion,
+	disabled,
+}: {
+	onSuggestion: (question: string) => void;
+	disabled: boolean;
+}) {
 	const reduceMotion = useReducedMotion();
 
 	// Sem `exit`: na saída o card inteiro já esvanece de uma vez, e escalonar a
@@ -232,16 +365,12 @@ function Welcome({ onSuggestion }: { onSuggestion: (label: string) => void }) {
 			<motion.div {...rise(STAGGER.welcome)}>
 				<h2 className="text-page text-primary">Assistente Empresarial</h2>
 				<p className="text-body text-secondary">
-					Nosso Assistente de IA pode cometer erros. Verifique se as informações
-					estão corretas.{' '}
-					{/* O desenho traz "Sujeito aos Termos" como link, mas o app não tem
-					    rota de termos — link morto é pior que ausência, então fica texto. */}
-					Sujeito aos Termos.
+					Pergunte sobre sua empresa. Posso errar: confira.
 				</p>
 			</motion.div>
 
 			<div className="mt-2 space-y-2">
-				{SUGGESTIONS.map(({ icon: Icon, label }, i) => (
+				{SUGGESTIONS.map(({ icon: Icon, label, question }, i) => (
 					<motion.div
 						key={label}
 						{...rise(STAGGER.suggestion + i * STAGGER_STEP)}
@@ -250,12 +379,40 @@ function Welcome({ onSuggestion }: { onSuggestion: (label: string) => void }) {
 							boxed
 							leading={<Icon className="h-4 w-4 text-secondary" />}
 							title={label}
-							onSelect={() => onSuggestion(label)}
+							onSelect={disabled ? undefined : () => onSuggestion(question)}
 						/>
 					</motion.div>
 				))}
 			</div>
 		</Card>
+	);
+}
+
+// ── Mensagens ────────────────────────────────────────────────────────────────
+
+function Bubble({ message }: { message: AssistantMessage }) {
+	if (message.role === 'user') {
+		return (
+			<div className="flex justify-end">
+				<p className="max-w-[85%] whitespace-pre-line rounded-card bg-brand-wash px-3 py-2 text-body text-primary">
+					{message.content}
+				</p>
+			</div>
+		);
+	}
+	// Resposta do modelo vem em Markdown; o componente não interpreta HTML.
+	return (
+		<div className="max-w-[95%] rounded-card bg-surface-sunken px-3 py-2">
+			<Markdown source={message.content} />
+		</div>
+	);
+}
+
+function Thinking() {
+	return (
+		<output className="block animate-pulse px-1 text-caption text-secondary">
+			Pensando…
+		</output>
 	);
 }
 
@@ -270,44 +427,64 @@ function Composer({
 	value,
 	onChange,
 	onSend,
+	disabled,
+	busy,
+	status,
+	isError,
 }: {
 	ref: React.RefObject<HTMLTextAreaElement | null>;
 	value: string;
 	onChange: (value: string) => void;
 	onSend: () => void;
+	disabled: boolean;
+	busy: boolean;
+	status: string | null;
+	isError: boolean;
 }) {
 	return (
-		<div className="flex shrink-0 items-end gap-2 border-subtle border-t p-3">
-			<textarea
-				ref={ref}
-				rows={1}
-				value={value}
-				onChange={(e) => onChange(e.target.value)}
-				onKeyDown={(e) => {
-					// Enter envia, Shift+Enter quebra linha — mesma convenção do
-					// support-chat-widget e do tool-agent-chat.
-					if (e.key === 'Enter' && !e.shiftKey) {
-						e.preventDefault();
-						onSend();
-					}
-				}}
-				placeholder="Digite suas dúvidas..."
-				aria-label="Mensagem para o assistente"
-				className="max-h-40 min-w-0 flex-1 resize-none bg-transparent px-2 py-2 text-body text-primary placeholder:text-muted focus-visible:outline-none"
-			/>
+		<div className="shrink-0 border-subtle border-t p-3">
+			{status && (
+				<p
+					className={`px-2 pb-2 text-caption ${isError ? 'text-red-600 dark:text-red-400' : 'text-secondary'}`}
+					role={isError ? 'alert' : undefined}
+				>
+					{status}
+				</p>
+			)}
+			<div className="flex items-end gap-2">
+				<textarea
+					ref={ref}
+					rows={1}
+					value={value}
+					onChange={(e) => onChange(e.target.value)}
+					onKeyDown={(e) => {
+						// Enter envia, Shift+Enter quebra linha — mesma convenção do
+						// support-chat-widget e do tool-agent-chat.
+						if (e.key === 'Enter' && !e.shiftKey) {
+							e.preventDefault();
+							onSend();
+						}
+					}}
+					placeholder="Digite suas dúvidas..."
+					aria-label="Mensagem para o assistente"
+					maxLength={CONTENT_MAX}
+					disabled={disabled}
+					className="max-h-40 min-w-0 flex-1 resize-none bg-transparent px-2 py-2 text-body text-primary placeholder:text-muted focus-visible:outline-none"
+				/>
 
-			<Button
-				variant="primary"
-				onPress={onSend}
-				disabled={!value.trim()}
-				accessibilityLabel="Enviar mensagem"
-				// O DS não tem botão circular: `rounded-control` é fixo no
-				// `buttonContainer`. O `cn` do DS é tailwind-merge, então a
-				// sobrescrita por className vence. Gap em A.5.
-				className="h-9 w-9 shrink-0 rounded-full px-0"
-			>
-				<ArrowUp className="h-4 w-4 text-white" />
-			</Button>
+				<Button
+					variant="primary"
+					onPress={onSend}
+					disabled={disabled || busy || !value.trim()}
+					accessibilityLabel="Enviar mensagem"
+					// O DS não tem botão circular: `rounded-control` é fixo no
+					// `buttonContainer`. O `cn` do DS é tailwind-merge, então a
+					// sobrescrita por className vence. Gap em A.5.
+					className="h-9 w-9 shrink-0 rounded-full px-0"
+				>
+					<ArrowUp className="h-4 w-4 text-white" />
+				</Button>
+			</div>
 		</div>
 	);
 }

@@ -98,13 +98,9 @@ export function MentoriaNavCard({
 				</ul>
 
 				{/* Abre e fecha a coluna do Assistente, que mora no `MentoriaShell` — o
-			    painel é irmão desta navegação na grade, não um overlay. A conversa em
-			    si ainda não tem backend; o gap está em
-			    docs/mentoria-360-design-system.md.
+			    painel é irmão desta navegação na grade, não um overlay.
 			    Só a partir do xl: abaixo disso o painel vira a última linha da grade,
-			    depois de todo o conteúdo, e abrir jogava a página para o rodapé. E
-			    secundário + "Em breve": o destaque primário prometia algo que ainda
-			    só responde "Em breve". */}
+			    depois de todo o conteúdo, e abrir jogava a página para o rodapé. */}
 				<div className="mt-4 hidden shrink-0 xl:block">
 					<Button
 						variant="secondary"
@@ -122,7 +118,7 @@ export function MentoriaNavCard({
 					    o <Text> explícito, como nas telas do admin. */}
 						<Sparkles className="w-4 h-4 text-primary" aria-hidden />
 						<Text className={buttonLabel({ variant: 'secondary' })}>
-							Assistente de IA · Em breve
+							Assistente de IA
 						</Text>
 					</Button>
 				</div>

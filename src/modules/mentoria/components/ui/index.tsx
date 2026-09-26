@@ -365,7 +365,7 @@ export function ListRow({
 	trailing?: ReactNode;
 	href?: string;
 	/**
-	 * Ação em vez de navegação — os atalhos do Assistente preenchem o composer,
+	 * Ação em vez de navegação — os atalhos do Assistente enviam a pergunta,
 	 * não levam a lugar nenhum. Ignorado quando `href` está presente: uma linha
 	 * é link OU botão, nunca os dois.
 	 */

@@ -739,3 +739,10 @@ export type MntLiveChatMessage = {
 	body: string;
 	created_at: string;
 };
+
+// ── Assistente de IA ─────────────────────────────────────────────────────────
+export type AssistantMessage = { role: 'user' | 'assistant'; content: string };
+
+export type AssistantUsage = { remaining_today: number; daily_limit: number };
+
+export type AssistantReply = AssistantUsage & { reply: string };

@@ -1,6 +1,9 @@
 // Chamadas HTTP da aba Mentoria — TODAS na upvox-api (/v1) via apiCourses.
 import { apiCourses as api } from '@/shared/lib/api-courses';
 import type {
+	AssistantMessage,
+	AssistantReply,
+	AssistantUsage,
 	CohortDashboardRow,
 	CompanyMap,
 	Comparison,
@@ -690,6 +693,28 @@ export async function generateRaiox(journeyId: string): Promise<MntReport> {
 export async function listReports(journeyId: string): Promise<MntReport[]> {
 	const { data } = await api.get(
 		`/v1/me/mentoria/journey/${journeyId}/reports`,
+	);
+	return data;
+}
+
+// ── Assistente de IA ─────────────────────────────────────────────────────────
+/** Manda a conversa da sessão; a API monta o contexto da jornada. */
+export async function askAssistant(
+	journeyId: string,
+	messages: AssistantMessage[],
+): Promise<AssistantReply> {
+	const { data } = await api.post(
+		`/v1/me/mentoria/journey/${journeyId}/assistant`,
+		{ messages },
+	);
+	return data;
+}
+
+export async function getAssistantUsage(
+	journeyId: string,
+): Promise<AssistantUsage> {
+	const { data } = await api.get(
+		`/v1/me/mentoria/journey/${journeyId}/assistant/usage`,
 	);
 	return data;
 }

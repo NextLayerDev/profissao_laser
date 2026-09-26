@@ -11,6 +11,7 @@ import {
 import { getToken } from '@/lib/auth';
 import { isMentoriaAccessDenied } from './access';
 import * as svc from './service';
+import type { AssistantMessage, AssistantUsage } from './types';
 
 const ROOT = ['mentoria'] as const;
 
@@ -415,6 +416,38 @@ export function useReports(journeyId: string | undefined) {
 		queryKey: [...ROOT, 'reports', journeyId],
 		queryFn: () => svc.listReports(journeyId as string),
 		enabled: !!journeyId,
+	});
+}
+
+// ── Assistente de IA ─────────────────────────────────────────────────────────
+export function useAssistantUsage(journeyId: string | undefined) {
+	return useQuery({
+		queryKey: [...ROOT, 'assistant-usage', journeyId],
+		queryFn: () => svc.getAssistantUsage(journeyId as string),
+		enabled: !!journeyId,
+		staleTime: 60_000,
+	});
+}
+
+export function useAskAssistant(journeyId: string | undefined) {
+	const qc = useQueryClient();
+	const key = [...ROOT, 'assistant-usage', journeyId];
+	return useMutation({
+		mutationFn: (messages: AssistantMessage[]) =>
+			svc.askAssistant(journeyId as string, messages),
+		// A resposta já traz o que sobrou: sem refetch do contador.
+		onSuccess: ({ remaining_today, daily_limit }) =>
+			qc.setQueryData<AssistantUsage>(key, { remaining_today, daily_limit }),
+		// 429 do limite: o contador vai a zero na hora.
+		onError: (err) => {
+			const status = (err as { response?: { status?: number } } | null)
+				?.response?.status;
+			if (status === 429) {
+				qc.setQueryData<AssistantUsage>(key, (old) =>
+					old ? { ...old, remaining_today: 0 } : old,
+				);
+			}
+		},
 	});
 }
 
