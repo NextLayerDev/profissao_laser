@@ -312,10 +312,7 @@ export function EnrollStudentModal({
 	return (
 		<Modal title={`Matricular aluno — ${cohort.name}`} onClose={onClose}>
 			<div className="space-y-4">
-				<Field
-					label="Buscar aluno"
-					hint="Busque por nome ou email (mín. 2 caracteres)."
-				>
+				<Field label="Buscar aluno" hint="Nome ou email, mín. 2 caracteres.">
 					{/* leadingIcon é a prop do Input pra isto — aposenta o `Search`
 					    absoluto + o hack `pl-9` que existia só por causa dele. */}
 					<Input

@@ -16,7 +16,14 @@
 //   3. Foto Zero congelada     → modo leitura, para sempre.
 
 import { Button, buttonLabel } from '@upvox-dev/ui';
-import { Camera, ClipboardList, Lock, Save, Send } from 'lucide-react';
+import {
+	Camera,
+	CircleDashed,
+	ClipboardList,
+	Lock,
+	Save,
+	Send,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Text } from 'react-native-css/components/Text';
 import { ModalPortal } from '@/components/ui/modal-portal';
@@ -145,8 +152,15 @@ export function DiagnosticoView({
 				subtitle={data.template.description ?? 'Vira a sua Foto Zero.'}
 				help={
 					<>
+						{/* A pílula virou só o ícone: a ajuda mostra o mesmo ícone, senão
+						    "A LEVANTAR" não bate com nada visível na tela. */}
 						Responda com sinceridade: não saber também é diagnóstico. Sem o
-						dado? Marque "A LEVANTAR" no campo.
+						dado? Toque em{' '}
+						<CircleDashed
+							className="inline h-3.5 w-3.5 align-text-bottom"
+							aria-hidden
+						/>{' '}
+						no campo (A LEVANTAR).
 					</>
 				}
 				icon={ClipboardList}
