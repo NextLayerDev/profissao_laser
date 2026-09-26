@@ -11,7 +11,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Sparkles } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { SubscriptionGate } from '@/components/course/subscription-gate';
 import {
@@ -19,6 +19,7 @@ import {
 	useGoalMutations,
 	useGoals,
 	useGoodNews,
+	useInvalidateToolProgress,
 	useMaslowHistory,
 	usePostGoodNews,
 	useSubmitMaslow,
@@ -29,6 +30,7 @@ import {
 } from '@/modules/mentoria/service';
 import {
 	apiErrorCode,
+	apiErrorDetails,
 	JourneyGate,
 	MntHeader,
 	MntSkeleton,
@@ -53,14 +55,21 @@ export default function DesenvolvimentoPage() {
 
 function Content({ journeyId }: { journeyId: string }) {
 	const [tab, setTab] = useState<string>('boas-noticias');
+	// `?aba=plano` abre direto numa aba (ex.: atalho "Ir para o Plano de
+	// Negócios" quando Ferramentas está bloqueada). Lido no mount — sem
+	// useSearchParams, que exigiria Suspense no build.
+	useEffect(() => {
+		const aba = new URLSearchParams(window.location.search).get('aba');
+		if (aba && DESENVOLVIMENTO_TABS.some((t) => t.key === aba)) setTab(aba);
+	}, []);
 
 	return (
 		// Sem `p-4 md:p-8`: o `mentoria/layout.tsx` já aplica o padding da área, e
 		// aplicar de novo aqui dobrava a margem em relação às telas irmãs.
 		<div className="max-w-5xl mx-auto">
 			<MntHeader
-				title="Desenvolvimento pessoal e direção"
-				subtitle="Boas notícias, metas, autopercepção e plano de negócios"
+				title="Desenvolvimento"
+				subtitle="Você e a direção do negócio"
 				icon={Sparkles}
 				backHref="/course/mentoria"
 			/>
@@ -146,21 +155,46 @@ function GoalsTab({ journeyId }: { journeyId: string }) {
 		<GoalsView
 			goals={goals ?? []}
 			creating={create.isPending}
-			onCreate={(body) => {
+			onCreate={(body, cb) => {
 				if (!body.title.trim()) {
 					toast.error('Descreva a sua meta.');
 					return;
 				}
 				create.mutate(body, {
-					onSuccess: () => toast.success('Meta cadastrada!'),
+					onSuccess: () => {
+						toast.success('Meta cadastrada!');
+						cb?.onSuccess?.();
+					},
 					onError: () => toast.error('Não foi possível salvar a meta.'),
 				});
 			}}
+			// Falha silenciosa voltava o select sem explicação.
+			updatingGoalId={
+				update.isPending ? (update.variables?.goalId ?? null) : null
+			}
 			onUpdateStatus={(goalId, status) =>
-				update.mutate({ goalId, body: { status } })
+				update.mutate(
+					{ goalId, body: { status } },
+					{ onError: () => toast.error('Não foi possível atualizar a meta.') },
+				)
 			}
 			onToggleFirstAction={(goalId, done) =>
-				update.mutate({ goalId, body: { first_action_done: done } })
+				update.mutate(
+					{ goalId, body: { first_action_done: done } },
+					{ onError: () => toast.error('Não foi possível atualizar a meta.') },
+				)
+			}
+			onEdit={(goalId, body, cb) =>
+				update.mutate(
+					{ goalId, body },
+					{
+						onSuccess: () => {
+							toast.success('Meta salva!');
+							cb?.onSuccess?.();
+						},
+						onError: () => toast.error('Não foi possível salvar a meta.'),
+					},
+				)
 			}
 		/>
 	);
@@ -177,9 +211,12 @@ function MaslowTab({ journeyId }: { journeyId: string }) {
 		<MaslowView
 			history={history ?? []}
 			submitting={submit.isPending}
-			onSubmit={(answers) =>
+			onSubmit={(answers, cb) =>
 				submit.mutate(answers, {
-					onSuccess: () => toast.success('Teste aplicado!'),
+					onSuccess: () => {
+						toast.success('Teste aplicado!');
+						cb?.onSuccess?.();
+					},
 					onError: () => toast.error('Não foi possível enviar o teste.'),
 				})
 			}
@@ -190,6 +227,7 @@ function MaslowTab({ journeyId }: { journeyId: string }) {
 // ── Plano de Negócios ────────────────────────────────────────────────────────
 function BusinessPlanTab({ journeyId }: { journeyId: string }) {
 	const qc = useQueryClient();
+	const invalidateProgress = useInvalidateToolProgress();
 	const { data: versions, isLoading } = useBusinessPlans(journeyId);
 	const { data: template } = useQuery({
 		queryKey: ['mentoria', 'form-template', 'plano_negocios'],
@@ -203,9 +241,31 @@ function BusinessPlanTab({ journeyId }: { journeyId: string }) {
 			qc.invalidateQueries({
 				queryKey: ['mentoria', 'business-plans', journeyId],
 			});
+			// 1ª versão conclui o Plano de Negócios no Mapa.
+			invalidateProgress();
 			toast.success('Nova versão do plano salva!');
 		},
-		onError: () => toast.error('Não foi possível salvar o plano.'),
+		// A API valida os obrigatórios do formulário plano_negocios: dizer quais.
+		onError: (e) => {
+			if (apiErrorCode(e) !== 'required_fields_missing') {
+				toast.error('Não foi possível salvar o plano.');
+				return;
+			}
+			const missing = apiErrorDetails(e)?.missing;
+			const labels = new Map(
+				(template?.schema.blocks ?? []).flatMap((b) =>
+					b.fields.map((f) => [f.key, f.label] as const),
+				),
+			);
+			const names = Array.isArray(missing)
+				? missing.map((k) => labels.get(String(k)) ?? String(k))
+				: [];
+			toast.error(
+				names.length
+					? `Falta responder: ${names.join(', ')}.`
+					: 'Há campos obrigatórios sem resposta.',
+			);
+		},
 	});
 
 	if (isLoading) return <MntSkeleton />;
@@ -215,7 +275,9 @@ function BusinessPlanTab({ journeyId }: { journeyId: string }) {
 			template={template}
 			versions={versions ?? []}
 			creating={create.isPending}
-			onCreate={(answers) => create.mutate(answers)}
+			onCreate={(answers, cb) =>
+				create.mutate(answers, { onSuccess: () => cb?.onSuccess?.() })
+			}
 		/>
 	);
 }

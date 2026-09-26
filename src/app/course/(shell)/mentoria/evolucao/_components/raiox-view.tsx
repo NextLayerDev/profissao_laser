@@ -12,14 +12,20 @@
 // a leitura é por cast — o contrato das 8 seções mora aqui, não no tipo.
 
 import { Badge, type Tone } from '@upvox-dev/ui';
-import { Printer } from 'lucide-react';
+import { FileDown, Printer } from 'lucide-react';
+import Link from 'next/link';
+import { areaLabel } from '@/modules/mentoria/components/company-map-radar';
 import {
 	DonutProgress,
 	ListRow,
 	StatCard,
 } from '@/modules/mentoria/components/ui';
+import { formatBrPlain, formatMetricValue } from '@/modules/mentoria/numbers';
 import type { MntReport } from '@/modules/mentoria/types';
 import { CARD, fmtDate } from '../../_components/shared';
+
+const PRINT_BTN =
+	'inline-flex items-center gap-2 rounded-control border border-subtle px-3 py-2 text-label text-secondary transition-colors hover:border-brand-border hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus';
 
 /** Rótulos das métricas da Foto Zero. Chave desconhecida cai na própria chave. */
 const METRIC_LABEL: Record<string, string> = {
@@ -49,7 +55,38 @@ const SEMAPHORE_LABEL: Record<string, string> = {
 	unmeasured: 'Não medido',
 };
 
-export function RaioxView({ report }: { report: MntReport }) {
+// O relatório vai impresso para o cliente: status cru ('active', 'pending')
+// não pode aparecer. Desconhecido cai no próprio valor.
+const GOAL_STATUS_LABEL: Record<string, string> = {
+	not_started: 'Não iniciada',
+	in_progress: 'Em andamento',
+	done: 'Concluída',
+	late: 'Atrasada',
+	cancelled: 'Cancelada',
+};
+
+const TASK_STATUS_LABEL: Record<string, string> = {
+	pending: 'Pendente',
+	in_progress: 'Em andamento',
+	done: 'Concluída',
+	overdue: 'Atrasada',
+	cancelled: 'Cancelada',
+};
+
+/**
+ * `printHref`: o botão leva à página de PDF (folha A4 sem navegação) em vez
+ * de imprimir a tela. `sheet`: modo folha, sem cartão nem cabeçalho próprio —
+ * quem desenha o cabeçalho (empresa, data) é a página de PDF.
+ */
+export function RaioxView({
+	report,
+	printHref,
+	sheet = false,
+}: {
+	report: MntReport;
+	printHref?: string;
+	sheet?: boolean;
+}) {
 	const p = report.payload as Record<string, unknown>;
 	const fotoZero = p.foto_zero as
 		| { taken_at?: string; metrics?: Record<string, unknown> }
@@ -77,30 +114,59 @@ export function RaioxView({ report }: { report: MntReport }) {
 	}>;
 	const metas = (p.metas ?? []) as Array<{ title: string; status: string }>;
 	const score = p.score_maturidade as number | undefined;
+	// Base do score (L2): com selo do mentor conta só o validado.
+	const scoreBase =
+		p.score_maturidade_base === 'validated'
+			? ' Validado pelo mentor.'
+			: p.score_maturidade_base === 'self_declared'
+				? ' Autodeclarado.'
+				: '';
 	const proximos = p.proximos_90_dias as string | null;
+	// Versão dos pesos com que o score saiu (relatórios antigos não têm).
+	const metodologia = p.metodologia as { version?: number | null } | undefined;
+	const scoreRule = metodologia?.version
+		? ` Metodologia v${metodologia.version}.`
+		: '';
 
 	return (
 		// `print-root` é o escopo da impressão: o `@media print` de globals.css
 		// esconde o resto do documento (shell, nav, Assistente, rodapé, toasts) e
 		// revela só esta subárvore.
 		<div
-			className={`${CARD} print-root p-6 mt-6 print:border-0 print:shadow-none`}
+			className={
+				sheet
+					? ''
+					: `${CARD} print-root p-6 mt-6 print:border-0 print:shadow-none`
+			}
 		>
 			{/* `flex-wrap`: o título é longo e o botão não pode ser espremido —
 			    em celular os dois viram duas linhas. */}
-			<div className="flex flex-wrap items-center justify-between gap-3 mb-6 print:hidden">
-				<h3 className="font-display text-lg font-bold text-primary">
-					RAIO-X EMPRESARIAL — Profissão Laser 360°
-				</h3>
-				<button
-					type="button"
-					onClick={() => window.print()}
-					className="inline-flex items-center gap-2 rounded-control border border-subtle px-3 py-2 text-label text-secondary transition-colors hover:border-brand-border hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-				>
-					<Printer className="w-4 h-4" aria-hidden />
-					Imprimir
-				</button>
-			</div>
+			{!sheet && (
+				<div className="flex flex-wrap items-center justify-between gap-3 mb-6 print:hidden">
+					<h3 className="font-display text-lg font-bold text-primary">
+						RAIO-X EMPRESARIAL — Profissão Laser 360°
+					</h3>
+					{printHref ? (
+						<Link
+							href={printHref}
+							data-testid="raiox-pdf-link"
+							className={PRINT_BTN}
+						>
+							<FileDown className="w-4 h-4" aria-hidden />
+							Baixar PDF
+						</Link>
+					) : (
+						<button
+							type="button"
+							onClick={() => window.print()}
+							className={PRINT_BTN}
+						>
+							<Printer className="w-4 h-4" aria-hidden />
+							Imprimir
+						</button>
+					)}
+				</div>
+			)}
 
 			<div className="space-y-6 text-body">
 				<ReportSection title="1. Onde comecei (Foto Zero)">
@@ -125,10 +191,13 @@ export function RaioxView({ report }: { report: MntReport }) {
 						<p className="text-muted">Nenhuma meta registrada.</p>
 					) : (
 						<ul className="space-y-1">
-							{metas.map((m) => (
-								<li key={m.title} className="text-secondary">
+							{/* key por índice: metas/tarefas homônimas duplicavam a key. */}
+							{metas.map((m, i) => (
+								<li key={`${i}-${m.title}`} className="text-secondary">
 									• {m.title}{' '}
-									<span className="text-caption text-muted">({m.status})</span>
+									<span className="text-caption text-muted">
+										({GOAL_STATUS_LABEL[m.status] ?? m.status})
+									</span>
 								</li>
 							))}
 						</ul>
@@ -145,7 +214,7 @@ export function RaioxView({ report }: { report: MntReport }) {
 					<div className="flex flex-wrap gap-2">
 						{ferramentas.map((f) => (
 							<Badge key={f.area} tone="brand">
-								{`${f.area}: ${f.maturity_pct}%`}
+								{`${areaLabel(f.area)}: ${formatBrPlain(f.maturity_pct)}%`}
 							</Badge>
 						))}
 					</div>
@@ -156,11 +225,11 @@ export function RaioxView({ report }: { report: MntReport }) {
 						<p className="text-muted">Nenhum indicador registrado.</p>
 					) : (
 						<div className="divide-y divide-subtle">
-							{indicadores.map((k) => (
+							{indicadores.map((k, i) => (
 								<ListRow
-									key={k.name}
+									key={`${i}-${k.name}`}
 									title={k.name}
-									description={`Atual ${k.latest ?? '—'} · meta ${k.target ?? '—'}`}
+									description={`Atual ${formatBrPlain(k.latest)} · meta ${formatBrPlain(k.target)}`}
 									trailing={
 										<Badge tone={SEMAPHORE_TONE[k.semaphore] ?? 'neutral'}>
 											{SEMAPHORE_LABEL[k.semaphore] ?? k.semaphore}
@@ -177,14 +246,18 @@ export function RaioxView({ report }: { report: MntReport }) {
 						<p className="text-muted">Nenhuma pendência. 🎉</p>
 					) : (
 						<div className="divide-y divide-subtle">
-							{pendencias.map((t) => (
+							{pendencias.map((t, i) => (
 								<ListRow
-									key={t.title}
+									key={`${i}-${t.title}`}
 									title={t.title}
 									description={
 										t.due_date ? `Prazo ${fmtDate(t.due_date)}` : undefined
 									}
-									trailing={<Badge tone="neutral">{t.status}</Badge>}
+									trailing={
+										<Badge tone="neutral">
+											{TASK_STATUS_LABEL[t.status] ?? t.status}
+										</Badge>
+									}
 								/>
 							))}
 						</div>
@@ -197,9 +270,7 @@ export function RaioxView({ report }: { report: MntReport }) {
 						<p className="text-secondary flex-1 min-w-55">
 							{score === undefined
 								? 'Score de maturidade ainda não calculado.'
-								: `Score de maturidade: ${score}/100.`}{' '}
-							Comparação completa disponível no comparador acima (Foto Zero vs
-							Agora).
+								: `Score de maturidade: ${score}/100.${scoreBase}${scoreRule}`}
 						</p>
 					</div>
 				</ReportSection>
@@ -207,7 +278,9 @@ export function RaioxView({ report }: { report: MntReport }) {
 				<ReportSection title="8. Próximos 90 dias">
 					<p className="text-secondary whitespace-pre-wrap">
 						{proximos ??
-							'Preencha a avaliação final do Encontro 10 para registrar o plano dos próximos 90 dias.'}
+							// A avaliação final ainda não tem tela para o aluno: não mandar
+							// preencher algo que ele não encontra.
+							'O plano dos próximos 90 dias é definido com o seu mentor no encerramento da jornada.'}
 					</p>
 				</ReportSection>
 			</div>
@@ -248,11 +321,7 @@ function MetricGrid({ metrics }: { metrics: Record<string, unknown> }) {
 				<StatCard
 					key={key}
 					label={METRIC_LABEL[key] ?? key}
-					value={
-						value === null || value === undefined || value === ''
-							? '—'
-							: String(value)
-					}
+					value={formatMetricValue(key, value)}
 				/>
 			))}
 		</div>

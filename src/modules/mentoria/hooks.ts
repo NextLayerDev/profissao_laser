@@ -11,6 +11,7 @@ import {
 import { getToken } from '@/lib/auth';
 import { isMentoriaAccessDenied } from './access';
 import * as svc from './service';
+import type { AssistantMessage, AssistantUsage } from './types';
 
 const ROOT = ['mentoria'] as const;
 
@@ -31,6 +32,11 @@ export function useMyMentoriaAccess() {
 /** true quando o admin limitou a Mentoria e este aluno não está na lista. */
 export function useMentoriaRestrictedOut(): boolean {
 	return useMyMentoriaAccess().data?.reason === 'restricted';
+}
+
+/** Admin bloqueou a seção Ferramentas para os alunos. Staff nunca vê bloqueio. */
+export function useMentoriaToolsLocked(): boolean {
+	return useMyMentoriaAccess().data?.tools_locked === true;
 }
 
 export function useMentoriaBootstrap() {
@@ -98,11 +104,28 @@ export function useSubmitDiagnostic(journeyId: string | undefined) {
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: [...ROOT, 'diagnostic', journeyId] });
 			qc.invalidateQueries({ queryKey: [...ROOT, 'bootstrap'] });
+			qc.invalidateQueries({ queryKey: [...ROOT, 'compare', journeyId] });
+			// A Foto Zero acabou de nascer: a lista de fotos ficava sem ela.
+			qc.invalidateQueries({ queryKey: [...ROOT, 'snapshots', journeyId] });
 		},
 	});
 }
 
 // ── Ferramentas ──────────────────────────────────────────────────────────────
+/**
+ * A API recalcula o progresso das ferramentas depois de cada escrita (KPI,
+ * Maslow, meta, cargo, POP…): sem invalidar, a lista, o Mapa e o comparador
+ * mostravam o % antigo. Prefixo sem journeyId: vale para qualquer jornada.
+ */
+export function useInvalidateToolProgress() {
+	const qc = useQueryClient();
+	return () => {
+		for (const resource of ['tools', 'company-map', 'compare']) {
+			qc.invalidateQueries({ queryKey: [...ROOT, resource] });
+		}
+	};
+}
+
 export function useJourneyTools(journeyId: string | undefined) {
 	return useQuery({
 		queryKey: [...ROOT, 'tools', journeyId],
@@ -115,8 +138,11 @@ export function useStartTool(journeyId: string | undefined) {
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (defId: string) => svc.startTool(journeyId as string, defId),
-		onSuccess: () =>
-			qc.invalidateQueries({ queryKey: [...ROOT, 'tools', journeyId] }),
+		// O mapa da empresa lê o status das ferramentas: ficava velho ao iniciar.
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: [...ROOT, 'tools', journeyId] });
+			qc.invalidateQueries({ queryKey: [...ROOT, 'company-map', journeyId] });
+		},
 	});
 }
 
@@ -133,6 +159,7 @@ export function useCompleteTool(journeyId: string | undefined) {
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: [...ROOT, 'tools', journeyId] });
 			qc.invalidateQueries({ queryKey: [...ROOT, 'company-map', journeyId] });
+			qc.invalidateQueries({ queryKey: [...ROOT, 'compare', journeyId] });
 		},
 	});
 }
@@ -198,13 +225,36 @@ export function useKpis(journeyId: string | undefined, category?: string) {
 	});
 }
 
+/** Mesmo prefixo de `useKpis`: arquivar/reativar invalida as duas listas. */
+export function useArchivedKpis(journeyId: string | undefined, enabled = true) {
+	return useQuery({
+		queryKey: [...ROOT, 'kpis', journeyId, 'archived'],
+		queryFn: () => svc.listArchivedKpis(journeyId as string),
+		enabled: !!journeyId && enabled,
+	});
+}
+
 export function useKpiMutations(journeyId: string | undefined) {
 	const qc = useQueryClient();
-	const invalidate = () =>
+	const invalidateProgress = useInvalidateToolProgress();
+	// KPIs medidos concluem a ferramenta Indicadores no Mapa.
+	const invalidate = () => {
 		qc.invalidateQueries({ queryKey: [...ROOT, 'kpis', journeyId] });
+		invalidateProgress();
+	};
 	const create = useMutation({
 		mutationFn: (body: Record<string, unknown> & { name: string }) =>
 			svc.createKpi(journeyId as string, body),
+		onSuccess: invalidate,
+	});
+	const update = useMutation({
+		mutationFn: ({
+			kpiId,
+			body,
+		}: {
+			kpiId: string;
+			body: Record<string, unknown>;
+		}) => svc.updateKpi(kpiId, body),
 		onSuccess: invalidate,
 	});
 	const addMeasurement = useMutation({
@@ -215,9 +265,14 @@ export function useKpiMutations(journeyId: string | undefined) {
 			kpiId: string;
 			body: { value: number | null; measured_at: string; note?: string | null };
 		}) => svc.addKpiMeasurement(kpiId, body),
-		onSuccess: invalidate,
+		// O gráfico e o delta "vs medição anterior" vêm do histórico, e o
+		// comparador "Agora" lê a última medição: sem invalidar, ficavam velhos.
+		onSuccess: (_data, { kpiId }) => {
+			invalidate();
+			qc.invalidateQueries({ queryKey: [...ROOT, 'kpi-history', kpiId] });
+		},
 	});
-	return { create, addMeasurement };
+	return { create, update, addMeasurement };
 }
 
 /**
@@ -255,10 +310,13 @@ export function useGoodNews(journeyId: string | undefined) {
 
 export function usePostGoodNews(journeyId: string | undefined) {
 	const qc = useQueryClient();
+	const invalidateProgress = useInvalidateToolProgress();
 	return useMutation({
 		mutationFn: (news: string[]) => svc.postGoodNews(journeyId as string, news),
-		onSuccess: () =>
-			qc.invalidateQueries({ queryKey: [...ROOT, 'good-news', journeyId] }),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: [...ROOT, 'good-news', journeyId] });
+			invalidateProgress();
+		},
 	});
 }
 
@@ -272,8 +330,11 @@ export function useGoals(journeyId: string | undefined) {
 
 export function useGoalMutations(journeyId: string | undefined) {
 	const qc = useQueryClient();
-	const invalidate = () =>
+	const invalidateProgress = useInvalidateToolProgress();
+	const invalidate = () => {
 		qc.invalidateQueries({ queryKey: [...ROOT, 'goals', journeyId] });
+		invalidateProgress();
+	};
 	const create = useMutation({
 		mutationFn: (body: Record<string, unknown> & { title: string }) =>
 			svc.createGoal(journeyId as string, body),
@@ -302,11 +363,14 @@ export function useMaslowHistory(journeyId: string | undefined) {
 
 export function useSubmitMaslow(journeyId: string | undefined) {
 	const qc = useQueryClient();
+	const invalidateProgress = useInvalidateToolProgress();
 	return useMutation({
 		mutationFn: (answers: number[]) =>
 			svc.submitMaslow(journeyId as string, answers),
-		onSuccess: () =>
-			qc.invalidateQueries({ queryKey: [...ROOT, 'maslow', journeyId] }),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: [...ROOT, 'maslow', journeyId] });
+			invalidateProgress();
+		},
 	});
 }
 
@@ -338,11 +402,12 @@ export function useComparison(
 	journeyId: string | undefined,
 	from: string,
 	to: string,
+	enabled = true,
 ) {
 	return useQuery({
 		queryKey: [...ROOT, 'compare', journeyId, from, to],
 		queryFn: () => svc.compare(journeyId as string, from, to),
-		enabled: !!journeyId,
+		enabled: !!journeyId && enabled,
 	});
 }
 
@@ -351,6 +416,47 @@ export function useReports(journeyId: string | undefined) {
 		queryKey: [...ROOT, 'reports', journeyId],
 		queryFn: () => svc.listReports(journeyId as string),
 		enabled: !!journeyId,
+	});
+}
+
+/** Um relatório (página de PDF do Raio-X). */
+export function useReport(reportId: string | undefined) {
+	return useQuery({
+		queryKey: [...ROOT, 'report', reportId],
+		queryFn: () => svc.getReport(reportId as string),
+		enabled: !!reportId,
+	});
+}
+
+// ── Assistente de IA ─────────────────────────────────────────────────────────
+export function useAssistantUsage(journeyId: string | undefined) {
+	return useQuery({
+		queryKey: [...ROOT, 'assistant-usage', journeyId],
+		queryFn: () => svc.getAssistantUsage(journeyId as string),
+		enabled: !!journeyId,
+		staleTime: 60_000,
+	});
+}
+
+export function useAskAssistant(journeyId: string | undefined) {
+	const qc = useQueryClient();
+	const key = [...ROOT, 'assistant-usage', journeyId];
+	return useMutation({
+		mutationFn: (messages: AssistantMessage[]) =>
+			svc.askAssistant(journeyId as string, messages),
+		// A resposta já traz o que sobrou: sem refetch do contador.
+		onSuccess: ({ remaining_today, daily_limit }) =>
+			qc.setQueryData<AssistantUsage>(key, { remaining_today, daily_limit }),
+		// 429 do limite: o contador vai a zero na hora.
+		onError: (err) => {
+			const status = (err as { response?: { status?: number } } | null)
+				?.response?.status;
+			if (status === 429) {
+				qc.setQueryData<AssistantUsage>(key, (old) =>
+					old ? { ...old, remaining_today: 0 } : old,
+				);
+			}
+		},
 	});
 }
 
@@ -368,7 +474,15 @@ export function useLive(liveId: string | undefined) {
 		queryKey: [...ROOT, 'live', liveId],
 		queryFn: () => svc.getLive(liveId as string),
 		enabled: !!liveId,
-		refetchInterval: 30_000,
+		// Gravação pronta (ou live externa encerrada) não muda mais: parar de
+		// consultar a sala a cada 30s enquanto o aluno assiste.
+		refetchInterval: (q) => {
+			const room = q.state.data;
+			const settled =
+				room?.status === 'vod_ready' ||
+				(room?.source === 'external' && room.status === 'ended');
+			return settled ? false : 30_000;
+		},
 	});
 }
 
@@ -377,18 +491,25 @@ export function useLivePlayback(liveId: string | undefined, enabled: boolean) {
 		queryKey: [...ROOT, 'live-playback', liveId],
 		queryFn: () => svc.getLivePlayback(liveId as string),
 		enabled: !!liveId && enabled,
-		// Renova antes do token de 1h expirar
+		// Renova antes do token de 1h expirar. O LivePlayer não troca o `src` do
+		// iframe tocando (recarregaria o vídeo); o token novo vale no remount.
 		refetchInterval: 45 * 60_000,
 	});
 }
 
-export function useLiveChat(liveId: string | undefined) {
+/**
+ * `poll`: só quando a inscrição no Realtime não está ativa (falhou, caiu ou
+ * ainda não conectou) — com ela no ar, as mensagens chegam pelo evento.
+ */
+export function useLiveChat(
+	liveId: string | undefined,
+	{ poll = true }: { poll?: boolean } = {},
+) {
 	return useQuery({
 		queryKey: [...ROOT, 'live-chat', liveId],
 		queryFn: () => svc.listLiveChat(liveId as string),
 		enabled: !!liveId,
-		// Fallback de tempo real (Realtime do Supabase complementa no componente)
-		refetchInterval: 5_000,
+		refetchInterval: poll ? 5_000 : false,
 	});
 }
 

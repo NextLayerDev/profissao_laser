@@ -14,6 +14,7 @@ import {
 import Link from 'next/link';
 import { Header } from '@/components/dashboard/header';
 import { useMentorCohorts } from '@/modules/mentoria/hooks';
+import { useIsMentoriaAdmin } from './_components/admin-hooks';
 import {
 	Card,
 	cohortStatusBadge,
@@ -23,29 +24,40 @@ import {
 	Spinner,
 } from './_components/ui';
 
-const SECTIONS = [
+// `adminOnly`: rotas requireRole('admin') na API; o mentor staff só dava 403.
+const SECTIONS: Array<{
+	href: string;
+	icon: typeof Users;
+	title: string;
+	description: string;
+	adminOnly?: boolean;
+}> = [
 	{
 		href: '/mentoria-admin/turmas',
 		icon: Users,
 		title: 'Turmas',
+		adminOnly: true,
 		description: 'Criar turmas, gerenciar mentores e matricular alunos.',
 	},
 	{
 		href: '/mentoria-admin/encontros',
 		icon: CalendarDays,
 		title: 'Encontros',
+		adminOnly: true,
 		description: 'Templates dos 10 encontros da metodologia (versões).',
 	},
 	{
 		href: '/mentoria-admin/formularios',
 		icon: ClipboardList,
 		title: 'Formulários',
+		adminOnly: true,
 		description: 'Form-builder do diagnóstico e exercícios.',
 	},
 	{
 		href: '/mentoria-admin/ferramentas',
 		icon: Wrench,
 		title: 'Ferramentas',
+		adminOnly: true,
 		description: 'Catálogo de ferramentas por área da empresa.',
 	},
 	{
@@ -64,18 +76,22 @@ const SECTIONS = [
 		href: '/mentoria-admin/acesso',
 		icon: Lock,
 		title: 'Acesso',
+		adminOnly: true,
 		description: 'Liberar a Mentoria só para alunos escolhidos.',
 	},
 	{
 		href: '/mentoria-admin/configuracoes',
 		icon: Settings,
 		title: 'Configurações',
+		adminOnly: true,
 		description: 'Pesos da fórmula de maturidade por área.',
 	},
-] as const;
+];
 
 export default function MentoriaAdminHubPage() {
 	const cohorts = useMentorCohorts();
+	const { isAdmin } = useIsMentoriaAdmin();
+	const sections = SECTIONS.filter((s) => isAdmin || !s.adminOnly);
 
 	return (
 		<div className="min-h-screen text-slate-900 dark:text-white">
@@ -83,11 +99,11 @@ export default function MentoriaAdminHubPage() {
 			<main className="px-4 md:px-8 py-6 max-w-6xl mx-auto">
 				<PageTitle
 					title="Mentoria 360°"
-					description="Administração do programa de mentoria: turmas, metodologia, materiais e acompanhamento das empresas."
+					description="Turmas, metodologia, materiais e acompanhamento."
 				/>
 
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-					{SECTIONS.map((s) => (
+					{sections.map((s) => (
 						<Link key={s.href} href={s.href}>
 							<Card className="p-5 h-full hover:border-violet-400 dark:hover:border-violet-500/50 transition-colors">
 								<div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center mb-3">

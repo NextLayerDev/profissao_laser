@@ -165,12 +165,16 @@ Onde faltou, a tela foi alimentada com o dado real equivalente — nada de mock.
 | Bloco "Prioridades Atuais" | Não existe. `MntGoal` **não tem** `priority` | Derivado das **tarefas abertas** ordenadas por `priority` + vencimento | `priority` em `MntGoal`, ou um conceito próprio de prioridade da jornada |
 | Breakdown do donut (Encontros/Ferramentas/Tarefas/Indicadores) | Não vem agregado | Contado no cliente a partir de 4 queries já existentes | Contadores agregados no `bootstrap` — hoje o dashboard dispara 6 requisições |
 | Rotas "Metas", "Relatórios", "Configuração" na barra lateral | **Não existem** | Omitidas da navegação — link morto é pior que ausência | Definir se viram rotas próprias ou seções de `desenvolvimento`/`evolucao` |
-| Assistente Empresarial | **UI pronta, backend inexistente.** Não há endpoint conversacional para a Mentoria | Coluna com boas-vindas, atalhos e composer; enviar anuncia "em breve" via toast. Nenhuma resposta simulada | Endpoint multi-turno com streaming, e persistência de conversa. Ver nota abaixo |
+| Assistente Empresarial | **Ligado.** `POST /v1/me/mentoria/journey/:id/assistant` (multi-turno, sem streaming) monta o contexto da jornada no servidor; limite diário por aluno | Bolhas com Markdown, "Pensando…", erros traduzidos e "N perguntas restantes hoje". Histórico no `sessionStorage` por jornada | Streaming e conversa salva no servidor. Ver nota abaixo |
 | "Sujeito aos Termos" no aviso do Assistente | **Não existe rota de termos** no app (`find`/`grep` vazios) | Renderizado como texto puro, sem link | Criar a página de termos e ligar o link |
 
-### Nota — o que já existe para o backend do Assistente
+### Nota — backend do Assistente
 
-Nada disso foi usado nesta rodada (que é só front), mas evita começar do zero:
+Ligado no L6: `upvox-api` módulo `mentoria-assistant` (contexto: empresa, Foto
+Zero, KPIs com semáforo, tarefas, encontros e Mapa), `openrouterChat` com
+`messages[]`, limite em `mnt_assistant_usage` (429 `assistant_daily_limit`,
+503 `assistant_unavailable`/`assistant_failed`). O que segue abaixo continua
+valendo para quando entrar streaming:
 
 - **Aterramento já pronto**: `POST /v1/ai-knowledge/search` na `upvox-api` é
   `requireAuth` e o próprio comentário da rota diz que foi feito para a IA do
@@ -181,9 +185,8 @@ Nada disso foi usado nesta rodada (que é só front), mas evita começar do zero
   `res.body.getReader()`, porque `EventSource` é GET-only) mais
   `use-tool-agent.ts`, que tem sessão, histórico, `AbortController` e trava de
   reentrância. É o molde das bolhas quando a hora chegar.
-- **O que falta mesmo**: `openrouterChat` (`upvox-api/src/lib/openrouter.ts`) é
-  single-turn (um system + um user, sem `messages[]`) e **não streama**; e não há
-  nenhuma tabela de conversa/mensagem para a IA. Os dois são trabalho novo.
+- **O que falta**: `openrouterChat` **não streama**, e a conversa não é salva
+  no servidor (só na sessão do navegador).
 
 ### Nota — revisão de conteúdo do Diagnóstico (levantada, adiada)
 

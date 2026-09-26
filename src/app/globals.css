@@ -1058,7 +1058,10 @@
    Onde `:has()` não existir, o seletor simplesmente não casa: volta ao
    comportamento de hoje, nunca a uma folha em branco. */
 @media print {
+	/* A4 (o papel daqui): a página de PDF do Raio-X é desenhada nessa
+	   largura. Página nomeada não serve: a folha sai do fluxo na impressão. */
 	@page {
+		size: A4;
 		margin: 1.5cm;
 	}
 

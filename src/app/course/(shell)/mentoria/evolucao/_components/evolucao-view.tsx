@@ -11,12 +11,14 @@
 
 import { Badge, Button, buttonLabel, Table } from '@upvox-dev/ui';
 import { Camera, FileText, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
 import { Text } from 'react-native-css/components/Text';
 import {
 	DeltaPill,
 	ListRow,
 	SectionCard,
 } from '@/modules/mentoria/components/ui';
+import { formatBrPlain, formatMetricValue } from '@/modules/mentoria/numbers';
 import type { Comparison, MntReport } from '@/modules/mentoria/types';
 import {
 	EmptyState,
@@ -50,7 +52,12 @@ const METRIC_LABEL: Record<string, string> = {
 const DOWN_IS_GOOD = new Set(['custos_fixos']);
 
 /** Os quatro estados do comparador, resolvidos no container. */
-export type ComparisonState = 'loading' | 'error' | 'empty' | 'ready';
+export type ComparisonState =
+	| 'loading'
+	| 'no_foto_zero'
+	| 'error'
+	| 'empty'
+	| 'ready';
 
 export type PeriodOption = { value: string; label: string };
 
@@ -95,10 +102,10 @@ export function EvolucaoView({
 	onGenerate: () => void;
 }) {
 	return (
-		<div className="p-4 md:p-8 max-w-5xl mx-auto">
+		<div className="max-w-5xl mx-auto">
 			<MntHeader
 				title="Evolução da empresa"
-				subtitle="Compare períodos e gere o Raio-X Empresarial 360°"
+				subtitle="Compare períodos e gere o Raio-X"
 				icon={TrendingUp}
 				backHref="/course/mentoria"
 				actions={
@@ -164,6 +171,7 @@ export function EvolucaoView({
 
 			<SectionCard
 				title="Raio-X Empresarial 360°"
+				help="Consolida: onde comecei, o que diagnosticamos, o que planejamos, o que foi executado, resultados, pendências, evolução e os próximos 90 dias."
 				action={
 					<Button variant="primary" onPress={onGenerate} disabled={generating}>
 						<FileText className="h-4 w-4 text-on-brand" aria-hidden />
@@ -174,11 +182,7 @@ export function EvolucaoView({
 				}
 			>
 				{reports.length === 0 ? (
-					<EmptyState
-						icon={FileText}
-						title="Nenhum relatório gerado ainda"
-						description="O Raio-X consolida: onde comecei, o que diagnosticamos, o que planejamos, o que foi executado, resultados, pendências, evolução e os próximos 90 dias."
-					/>
+					<EmptyState icon={FileText} title="Nenhum relatório ainda" />
 				) : (
 					<div className="space-y-2">
 						{reports.map((report) => (
@@ -199,17 +203,22 @@ export function EvolucaoView({
 				)}
 			</SectionCard>
 
-			{openReport && <RaioxView report={openReport} />}
+			{openReport && (
+				<RaioxView report={openReport} printHref={`/raiox/${openReport.id}`} />
+			)}
 		</div>
 	);
 }
 
-function ComparisonBlock({
+/** Também usado na visão do mentor (só leitura), com o aviso trocado. */
+export function ComparisonBlock({
 	state,
 	comparison,
+	noFotoZeroText,
 }: {
 	state: ComparisonState;
 	comparison: Comparison | undefined;
+	noFotoZeroText?: string;
 }) {
 	if (state === 'loading') {
 		return (
@@ -217,27 +226,42 @@ function ComparisonBlock({
 		);
 	}
 
+	if (state === 'no_foto_zero' && noFotoZeroText) {
+		return <p className="text-body text-muted">{noFotoZeroText}</p>;
+	}
+
+	if (state === 'no_foto_zero') {
+		return (
+			<p className="text-body text-muted">
+				<Link
+					href="/course/mentoria/diagnostico"
+					className="text-brand font-medium hover:underline"
+				>
+					Envie o diagnóstico
+				</Link>{' '}
+				para comparar.
+			</p>
+		);
+	}
+
+	// Aqui a Foto Zero existe: culpá-la por um 500/timeout confundia o aluno.
 	if (state === 'error' || !comparison) {
 		return (
 			<p className="text-body text-muted">
-				Não foi possível comparar esses períodos. Envie o diagnóstico (Foto
-				Zero) primeiro.
+				Não foi possível comparar. Tente de novo.
 			</p>
 		);
 	}
 
 	if (state === 'empty') {
-		return (
-			<p className="text-body text-muted">
-				Sem métricas numéricas em comum entre os dois períodos ainda.
-			</p>
-		);
+		return <p className="text-body text-muted">Sem métricas em comum ainda.</p>;
 	}
 
 	const rows: DeltaRow[] = Object.entries(comparison.deltas).map(
 		([key, d]) => ({
 			key,
-			label: METRIC_LABEL[key] ?? key,
+			// A API rotula as chaves achatadas (maturidade.<área>, kpis.<nome>).
+			label: METRIC_LABEL[key] ?? d.label ?? key,
 			from: d.from,
 			to: d.to,
 			delta: d.delta,
@@ -265,11 +289,12 @@ function ComparisonBlock({
 						},
 						{
 							header: comparison.from.label,
-							cell: (row) => (row.from === null ? '—' : String(row.from)),
+							// R$ e separador de milhar: '15000' cru não serve no relatório.
+							cell: (row) => formatMetricValue(row.key, row.from),
 						},
 						{
 							header: comparison.to.label,
-							cell: (row) => (row.to === null ? '—' : String(row.to)),
+							cell: (row) => formatMetricValue(row.key, row.to),
 						},
 						{
 							header: 'Variação',
@@ -282,7 +307,9 @@ function ComparisonBlock({
 										unit=""
 										upIsGood={!DOWN_IS_GOOD.has(row.key)}
 										caption={
-											row.deltaPct === null ? undefined : `(${row.deltaPct}%)`
+											row.deltaPct === null
+												? undefined
+												: `(${formatBrPlain(row.deltaPct)}%)`
 										}
 									/>
 								),

@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
 	AlertTriangle,
 	ArrowDown,
+	ChevronDown,
+	ChevronUp,
 	GitBranch,
 	Pencil,
 	Plus,
@@ -12,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useInvalidateToolProgress } from '@/modules/mentoria/hooks';
 import {
 	createProcessFlow,
 	createProcessStep,
@@ -26,6 +29,7 @@ import {
 	BTN_PRIMARY,
 	CARD,
 	EmptyState,
+	fmtDate,
 	INPUT,
 	LABEL,
 	MntSkeleton,
@@ -49,7 +53,13 @@ const EMPTY_STEP: StepForm = {
 export function ToolProcessFlow({ instanceId }: { instanceId: string }) {
 	const qc = useQueryClient();
 	const queryKey = ['mentoria', 'process-flows', instanceId];
-	const invalidate = () => qc.invalidateQueries({ queryKey });
+	const invalidateProgress = useInvalidateToolProgress();
+	// A API recalcula o % da ferramenta a cada escrita: o card e o Mapa
+	// também precisam recarregar.
+	const invalidate = () => {
+		qc.invalidateQueries({ queryKey });
+		invalidateProgress();
+	};
 
 	const { data: flows, isLoading } = useQuery({
 		queryKey,
@@ -113,7 +123,16 @@ export function ToolProcessFlow({ instanceId }: { instanceId: string }) {
 					<FlowCard
 						key={flow.id}
 						flow={flow}
-						onDelete={() => removeFlow.mutate(flow.id)}
+						onDelete={() => {
+							// Apaga todas as etapas junto, sem desfazer.
+							if (
+								confirm(
+									`Excluir o fluxograma "${flow.name}" e suas ${flow.steps.length} etapa(s)?`,
+								)
+							) {
+								removeFlow.mutate(flow.id);
+							}
+						}}
 						onChanged={invalidate}
 					/>
 				))
@@ -140,9 +159,18 @@ function FlowCard({
 	const [editingStep, setEditingStep] = useState<MntProcessStep | null>(null);
 	const [form, setForm] = useState<StepForm>(EMPTY_STEP);
 
+	// Ordem estável: `position` primeiro e `id` no empate. Etapas antigas
+	// nasceram todas com position 0 e a ordem física do Postgres mudava depois
+	// de um UPDATE — a etapa editada pulava para o fim.
+	const steps = [...flow.steps].sort(
+		(a, b) => a.position - b.position || a.id.localeCompare(b.id),
+	);
+
 	const addStep = useMutation({
 		mutationFn: () =>
 			createProcessStep(flow.id, {
+				// Sem `position` toda etapa nascia com 0 (default da coluna).
+				position: steps.reduce((max, st) => Math.max(max, st.position), -1) + 1,
 				name: form.name.trim(),
 				owner_name: form.owner_name || null,
 				deadline: form.deadline || null,
@@ -178,7 +206,24 @@ function FlowCard({
 		onError: () => toast.error('Não foi possível remover a etapa.'),
 	});
 
-	const steps = [...flow.steps].sort((a, b) => a.position - b.position);
+	// Subir/descer: renumera 0..n-1 e só grava as etapas que mudaram.
+	const moveStep = useMutation({
+		mutationFn: async ({ from, to }: { from: number; to: number }) => {
+			const ordered = [...steps];
+			const [moved] = ordered.splice(from, 1);
+			if (!moved) return;
+			ordered.splice(to, 0, moved);
+			await Promise.all(
+				ordered.map((st, i) =>
+					st.position === i
+						? null
+						: updateProcessStep(st.id, { name: st.name, position: i }),
+				),
+			);
+		},
+		onSettled: onChanged,
+		onError: () => toast.error('Não foi possível reordenar as etapas.'),
+	});
 
 	const startEdit = (step: MntProcessStep) => {
 		setAdding(false);
@@ -230,7 +275,7 @@ function FlowCard({
 								<p className="text-xs text-slate-500 dark:text-gray-400">
 									{step.owner_name ? `Responsável: ${step.owner_name}` : null}
 									{step.owner_name && step.deadline ? ' · ' : null}
-									{step.deadline ? `Prazo: ${step.deadline}` : null}
+									{step.deadline ? `Prazo: ${fmtDate(step.deadline)}` : null}
 								</p>
 								{step.problem_note && (
 									<p className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 mt-1">
@@ -242,6 +287,26 @@ function FlowCard({
 							<div className="flex gap-1 shrink-0">
 								<button
 									type="button"
+									className="text-slate-400 hover:text-teal-500 transition disabled:opacity-30"
+									disabled={idx === 0 || moveStep.isPending}
+									onClick={() => moveStep.mutate({ from: idx, to: idx - 1 })}
+									title="Subir etapa"
+									aria-label="Subir etapa"
+								>
+									<ChevronUp className="w-3.5 h-3.5" />
+								</button>
+								<button
+									type="button"
+									className="text-slate-400 hover:text-teal-500 transition disabled:opacity-30"
+									disabled={idx === steps.length - 1 || moveStep.isPending}
+									onClick={() => moveStep.mutate({ from: idx, to: idx + 1 })}
+									title="Descer etapa"
+									aria-label="Descer etapa"
+								>
+									<ChevronDown className="w-3.5 h-3.5" />
+								</button>
+								<button
+									type="button"
 									className="text-slate-400 hover:text-teal-500 transition"
 									onClick={() => startEdit(step)}
 									title="Editar etapa"
@@ -251,7 +316,11 @@ function FlowCard({
 								<button
 									type="button"
 									className="text-slate-400 hover:text-red-500 transition"
-									onClick={() => removeStep.mutate(step.id)}
+									onClick={() => {
+										if (confirm(`Remover a etapa "${step.name}"?`)) {
+											removeStep.mutate(step.id);
+										}
+									}}
 									title="Remover etapa"
 								>
 									<Trash2 className="w-3.5 h-3.5" />

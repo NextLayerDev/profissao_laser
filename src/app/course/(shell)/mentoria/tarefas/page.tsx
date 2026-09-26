@@ -9,8 +9,11 @@ import { toast } from 'sonner';
 import { SubscriptionGate } from '@/components/course/subscription-gate';
 import { useTaskMutations, useTasks } from '@/modules/mentoria/hooks';
 import type { TaskStatus } from '@/modules/mentoria/types';
-import { JourneyGate, MntSkeleton } from '../_components/shared';
-import type { NewTaskInput } from './_components/tarefas-view';
+import { JourneyGate, MntSkeleton, mntErrorText } from '../_components/shared';
+import type {
+	MutationCallbacks,
+	NewTaskInput,
+} from './_components/tarefas-view';
 import { TarefasView } from './_components/tarefas-view';
 
 export default function TarefasPage() {
@@ -30,19 +33,29 @@ function Content({ journeyId }: { journeyId: string }) {
 
 	if (isLoading) return <MntSkeleton />;
 
-	const handleCreate = (input: NewTaskInput) => {
+	const handleCreate = (input: NewTaskInput, cb?: MutationCallbacks) => {
 		if (!input.title.trim()) {
 			toast.error('Dê um título à tarefa.');
 			return;
 		}
 		create.mutate(input, {
-			onSuccess: () => toast.success('Tarefa criada!'),
+			onSuccess: () => {
+				toast.success('Tarefa criada!');
+				cb?.onSuccess?.();
+			},
 			onError: () => toast.error('Não foi possível criar a tarefa.'),
 		});
 	};
 
 	const handleStatusChange = (taskId: string, status: TaskStatus) => {
-		update.mutate({ taskId, body: { status } });
+		// O select voltava ao valor antigo sem explicação quando falhava.
+		update.mutate(
+			{ taskId, body: { status } },
+			{
+				onError: (e) =>
+					toast.error(mntErrorText(e, 'Não foi possível atualizar a tarefa.')),
+			},
+		);
 	};
 
 	const handleUpload = (taskId: string, file: File) => {
@@ -50,17 +63,25 @@ function Content({ journeyId }: { journeyId: string }) {
 			{ taskId, file },
 			{
 				onSuccess: () => toast.success('Evidência anexada!'),
-				onError: () => toast.error('Falha ao anexar evidência.'),
+				onError: (e) =>
+					toast.error(mntErrorText(e, 'Falha ao anexar evidência.')),
 			},
 		);
 	};
 
-	const handleAddLink = (taskId: string, url: string) => {
+	const handleAddLink = (
+		taskId: string,
+		url: string,
+		cb?: MutationCallbacks,
+	) => {
 		addLink.mutate(
 			{ taskId, url },
 			{
-				onSuccess: () => toast.success('Link anexado!'),
-				onError: () => toast.error('Falha ao anexar link.'),
+				onSuccess: () => {
+					toast.success('Link anexado!');
+					cb?.onSuccess?.();
+				},
+				onError: (e) => toast.error(mntErrorText(e, 'Falha ao anexar link.')),
 			},
 		);
 	};
