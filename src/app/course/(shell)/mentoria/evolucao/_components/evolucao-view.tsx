@@ -105,7 +105,7 @@ export function EvolucaoView({
 		<div className="max-w-5xl mx-auto">
 			<MntHeader
 				title="Evolução da empresa"
-				subtitle="Compare períodos e gere o Raio-X Empresarial 360°"
+				subtitle="Compare períodos e gere o Raio-X"
 				icon={TrendingUp}
 				backHref="/course/mentoria"
 				actions={
@@ -171,6 +171,7 @@ export function EvolucaoView({
 
 			<SectionCard
 				title="Raio-X Empresarial 360°"
+				help="Consolida: onde comecei, o que diagnosticamos, o que planejamos, o que foi executado, resultados, pendências, evolução e os próximos 90 dias."
 				action={
 					<Button variant="primary" onPress={onGenerate} disabled={generating}>
 						<FileText className="h-4 w-4 text-on-brand" aria-hidden />
@@ -181,11 +182,7 @@ export function EvolucaoView({
 				}
 			>
 				{reports.length === 0 ? (
-					<EmptyState
-						icon={FileText}
-						title="Nenhum relatório gerado ainda"
-						description="O Raio-X consolida: onde comecei, o que diagnosticamos, o que planejamos, o que foi executado, resultados, pendências, evolução e os próximos 90 dias."
-					/>
+					<EmptyState icon={FileText} title="Nenhum relatório ainda" />
 				) : (
 					<div className="space-y-2">
 						{reports.map((report) => (
@@ -234,14 +231,13 @@ export function ComparisonBlock({
 	if (state === 'no_foto_zero') {
 		return (
 			<p className="text-body text-muted">
-				A comparação parte da Foto Zero.{' '}
 				<Link
 					href="/course/mentoria/diagnostico"
 					className="text-brand font-medium hover:underline"
 				>
 					Envie o diagnóstico
 				</Link>{' '}
-				para começar.
+				para comparar.
 			</p>
 		);
 	}
@@ -250,17 +246,13 @@ export function ComparisonBlock({
 	if (state === 'error' || !comparison) {
 		return (
 			<p className="text-body text-muted">
-				Não foi possível comparar esses períodos. Tente novamente em instantes.
+				Não foi possível comparar. Tente de novo.
 			</p>
 		);
 	}
 
 	if (state === 'empty') {
-		return (
-			<p className="text-body text-muted">
-				Sem métricas numéricas em comum entre os dois períodos ainda.
-			</p>
-		);
+		return <p className="text-body text-muted">Sem métricas em comum ainda.</p>;
 	}
 
 	const rows: DeltaRow[] = Object.entries(comparison.deltas).map(

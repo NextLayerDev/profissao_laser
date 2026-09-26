@@ -68,8 +68,8 @@ function Content({ journeyId }: { journeyId: string }) {
 		// aplicar de novo aqui dobrava a margem em relação às telas irmãs.
 		<div className="max-w-5xl mx-auto">
 			<MntHeader
-				title="Desenvolvimento pessoal e direção"
-				subtitle="Boas notícias, metas, autopercepção e plano de negócios"
+				title="Desenvolvimento"
+				subtitle="Você e a direção do negócio"
 				icon={Sparkles}
 				backHref="/course/mentoria"
 			/>

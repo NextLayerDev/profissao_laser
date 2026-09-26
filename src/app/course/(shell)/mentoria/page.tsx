@@ -33,6 +33,7 @@ import {
 	CompanyMapRadar,
 	MaturityBasisBadge,
 } from '@/modules/mentoria/components/company-map-radar';
+import { HelpTip } from '@/modules/mentoria/components/help-tip';
 import {
 	formatKpiValue,
 	KpiEvolutionChart,
@@ -183,11 +184,7 @@ function Dashboard({
 		<div className="space-y-6">
 			<MntHeader
 				title={company?.name ?? 'Minha Empresa'}
-				subtitle={
-					cohort
-						? `Visão geral de faturamento, clientes e margem — Turma ${cohort.name}`
-						: 'Visão geral de faturamento, clientes e margem'
-				}
+				subtitle={cohort ? cohort.name : undefined}
 				icon={Building2}
 			/>
 
@@ -195,14 +192,12 @@ function Dashboard({
 				<div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-subtle bg-surface p-4">
 					<div className="flex items-center gap-3">
 						<ClipboardList className="h-5 w-5 shrink-0 text-brand dark:text-violet-400" />
-						<div>
-							<p className="text-body font-medium text-primary">
-								Diagnóstico pendente
-							</p>
-							<p className="text-caption text-muted">
+						<p className="inline-flex items-center gap-1 text-body font-medium text-primary">
+							Diagnóstico pendente
+							<HelpTip label="Sobre o diagnóstico">
 								Primeiro passo da mentoria: vira a sua Foto Zero.
-							</p>
-						</div>
+							</HelpTip>
+						</p>
 					</div>
 					<Link href="/course/mentoria/diagnostico" className={BTN_PRIMARY}>
 						{diagnostic?.draft ? 'Continuar diagnóstico' : 'Preencher agora'}
@@ -214,7 +209,6 @@ function Dashboard({
 			{/* Resumo do período */}
 			<SectionCard
 				title="Resumo do período"
-				description={`Últimos ${PERIOD_MONTHS[period]} meses`}
 				action={
 					<SegmentedControl
 						label="Período"
@@ -226,12 +220,11 @@ function Dashboard({
 			>
 				{topKpis.length === 0 ? (
 					<p className="text-body text-muted py-6 text-center">
-						Nenhum indicador cadastrado ainda.{' '}
 						<Link
 							href="/course/mentoria/indicadores"
 							className="text-brand dark:text-violet-400 hover:underline"
 						>
-							Criar meu primeiro indicador
+							Criar primeiro indicador
 						</Link>
 					</p>
 				) : (
@@ -278,7 +271,7 @@ function Dashboard({
 				<SectionCard title="Prioridades Atuais" bodyClassName="px-5 pb-5 pt-0">
 					{priorities.length === 0 ? (
 						<p className="text-body text-muted py-6 text-center">
-							Nenhuma prioridade em aberto. Bom trabalho!
+							Nada em aberto.
 						</p>
 					) : (
 						<ul className="space-y-3">
@@ -338,7 +331,7 @@ function Dashboard({
 				<SectionCard title="Próximas Ações" bodyClassName="px-5 pb-5 pt-0">
 					{nextActions.length === 0 ? (
 						<p className="text-body text-muted py-6 text-center">
-							Nenhuma tarefa em aberto.
+							Nada em aberto.
 						</p>
 					) : (
 						<>
@@ -371,14 +364,7 @@ function Dashboard({
 					)}
 				</SectionCard>
 
-				<SectionCard
-					title="Evolução dos Principais Indicadores"
-					action={
-						<span className="text-caption text-muted">
-							Últimos {PERIOD_MONTHS[period]} meses
-						</span>
-					}
-				>
+				<SectionCard title="Evolução dos indicadores">
 					<KpiEvolutionChart
 						kpis={topKpis}
 						histories={histories.map((h) => h.data)}
@@ -391,14 +377,13 @@ function Dashboard({
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 				<SectionCard
 					title="Saúde das áreas"
-					description="Maturidade por área"
 					action={map ? <MaturityBasisBadge map={map} /> : undefined}
 				>
 					{map && map.areas.length > 0 ? (
 						<CompanyMapRadar map={map} />
 					) : (
 						<p className="text-body text-muted py-10 text-center">
-							Comece a usar as ferramentas para ver o mapa da sua empresa.
+							Use as ferramentas para ver o mapa.
 						</p>
 					)}
 					<Link
@@ -415,13 +400,13 @@ function Dashboard({
 				>
 					{(materials ?? []).length === 0 ? (
 						<p className="text-body text-muted py-8 text-center">
-							Nenhum material disponível ainda.
+							Nenhum material ainda.
 						</p>
 					) : (
 						<ul className="space-y-2">
 							{(allMaterials
 								? (materials ?? [])
-								: (materials ?? []).slice(0, 8)
+								: (materials ?? []).slice(0, 5)
 							).map((mat) => (
 								<li key={mat.id}>
 									<a
@@ -441,22 +426,20 @@ function Dashboard({
 												aria-hidden
 											/>
 										)}
-										<div className="min-w-0">
+										<div
+											className="min-w-0"
+											title={mat.description ?? undefined}
+										>
 											<p className="text-body text-primary truncate">
 												{mat.title}
 											</p>
-											{mat.description && (
-												<p className="text-caption text-muted truncate">
-													{mat.description}
-												</p>
-											)}
 										</div>
 									</a>
 								</li>
 							))}
 						</ul>
 					)}
-					{(materials ?? []).length > 8 && (
+					{(materials ?? []).length > 5 && (
 						<button
 							type="button"
 							onClick={() => setAllMaterials((v) => !v)}

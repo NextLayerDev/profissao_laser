@@ -35,7 +35,7 @@
 // "rotulável" para apontar, então o rótulo vira `<span>` com id e o grupo o
 // referencia por `aria-labelledby`, que é a forma correta para esse caso.
 
-import { HelpCircle } from 'lucide-react';
+import { CircleDashed } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { formatBrNumber, parseBrNumber } from '../numbers';
 import type { FormField, MntFormTemplate } from '../types';
@@ -233,9 +233,14 @@ function FieldInput({
 					// Pílula, não `Button` do DS: o Button tem altura mínima
 					// `h-control-sm` (32px), que estouraria a linha do rótulo, e não
 					// encaminha `aria-pressed` — que é justamente o que um toggle pede.
+					// Só ícone: 17 pílulas "A LEVANTAR" repetidas eram boa parte do
+					// texto do diagnóstico. O nome segue no aria-label/title, e marcado
+					// o campo já mostra a caixa "[ A LEVANTAR / NÃO MEDIDO ]".
 					<button
 						type="button"
 						aria-pressed={unknown}
+						aria-label="A levantar"
+						title="A levantar (não sei / não medido)"
 						onClick={() => onChange(unknown ? '' : UNKNOWN_ANSWER)}
 						className={`inline-flex items-center gap-1 rounded-chip border px-2 py-0.5 text-[11px] transition ${
 							unknown
@@ -243,7 +248,7 @@ function FieldInput({
 								: 'border-subtle text-muted hover:text-amber-600 dark:hover:text-amber-400'
 						}`}
 					>
-						<HelpCircle className="h-3 w-3" />A LEVANTAR
+						<CircleDashed className="h-3.5 w-3.5" aria-hidden />
 					</button>
 				)}
 			</div>

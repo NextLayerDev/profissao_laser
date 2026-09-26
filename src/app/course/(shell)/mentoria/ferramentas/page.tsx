@@ -11,6 +11,7 @@ import {
 	MaturityBasisBadge,
 	ValidatedMark,
 } from '@/modules/mentoria/components/company-map-radar';
+import { HelpTip } from '@/modules/mentoria/components/help-tip';
 import {
 	useCompanyMap,
 	useJourneyTools,
@@ -81,21 +82,22 @@ function FerramentasContent({ journeyId }: { journeyId: string }) {
 		<div className="space-y-6">
 			<MntHeader
 				title="Ferramentas de Gestão"
-				subtitle="As ferramentas práticas que constroem o Mapa da Minha Empresa"
+				subtitle="Constroem o Mapa da Minha Empresa"
 				icon={Wrench}
 				backHref="/course/mentoria"
 			/>
 
 			{hasDevTools && (
-				<p className="text-sm text-slate-500 dark:text-gray-400">
-					Meta e Ação, Maslow, Boas Notícias e Plano de Negócios ficam em{' '}
+				<p className="inline-flex items-center gap-1 text-sm text-slate-500 dark:text-gray-400">
 					<Link
 						href="/course/mentoria/desenvolvimento"
 						className="font-medium text-violet-600 dark:text-violet-400 hover:underline"
 					>
-						Desenvolvimento
+						Mais em Desenvolvimento
 					</Link>
-					.
+					<HelpTip label="O que fica em Desenvolvimento">
+						Meta e Ação, Maslow, Boas Notícias e Plano de Negócios.
+					</HelpTip>
 				</p>
 			)}
 
@@ -122,18 +124,20 @@ function FerramentasContent({ journeyId }: { journeyId: string }) {
 									{validatedKeys.has(tool.key) && <ValidatedMark />}
 								</span>
 							</div>
-							<p className="font-semibold text-slate-900 dark:text-slate-100">
-								{tool.name}
+							{/* A descrição virou "?": 8 cards × 2 linhas era o grosso do texto. */}
+							<p className="inline-flex items-center gap-1.5 font-semibold text-slate-900 dark:text-slate-100">
+								<span>{tool.name}</span>
+								{tool.description && (
+									<HelpTip label={`Sobre ${tool.name}`}>
+										{tool.description}
+									</HelpTip>
+								)}
 							</p>
-							{tool.description && (
-								<p className="text-xs text-slate-500 dark:text-gray-400 mt-1 line-clamp-2">
-									{tool.description}
-								</p>
-							)}
 							<div className="mt-3 mb-3">
-								<div className="flex items-center justify-between text-xs text-slate-500 dark:text-gray-400 mb-1">
-									<span>Progresso</span>
-									<span>{Math.round(tool.instance?.completion_pct ?? 0)}%</span>
+								<div className="flex items-center justify-end text-xs text-slate-500 dark:text-gray-400 mb-1">
+									<span aria-label="Progresso">
+										{Math.round(tool.instance?.completion_pct ?? 0)}%
+									</span>
 								</div>
 								<div className="h-1.5 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
 									<div
@@ -167,12 +171,12 @@ function FerramentasContent({ journeyId }: { journeyId: string }) {
 					<h2 className="inline-flex items-center gap-2 font-semibold text-slate-900 dark:text-slate-100">
 						<MapIcon className="w-4 h-4 text-teal-600 dark:text-teal-400" />
 						Mapa da Minha Empresa
+						<HelpTip label="Sobre o Mapa">
+							Cresce conforme você preenche as ferramentas.
+						</HelpTip>
 					</h2>
 					{map && <MaturityBasisBadge map={map} />}
 				</div>
-				<p className="text-sm text-slate-500 dark:text-gray-400 mb-3">
-					Cresce conforme você preenche as ferramentas.
-				</p>
 				{map && map.areas.length > 0 ? (
 					<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
 						<CompanyMapRadar map={map} />
@@ -180,8 +184,28 @@ function FerramentasContent({ journeyId }: { journeyId: string }) {
 							{map.areas.map((area) => (
 								<div key={area.area}>
 									<div className="flex items-center justify-between text-sm mb-1">
-										<span className="font-medium text-slate-700 dark:text-slate-300">
+										<span className="inline-flex items-center gap-1 font-medium text-slate-700 dark:text-slate-300">
 											{areaLabel(area.area)}
+											{area.tools.length > 0 && (
+												<HelpTip
+													label={`Ferramentas de ${areaLabel(area.area)}`}
+												>
+													<span className="flex flex-col gap-1">
+														{area.tools.map((t) => (
+															<Link
+																key={t.key}
+																href={`/course/mentoria/ferramentas/${t.key}`}
+																className="inline-flex items-center gap-1 hover:text-teal-600 dark:hover:text-teal-400"
+															>
+																{t.validated && (
+																	<ValidatedMark className="w-3 h-3" />
+																)}
+																{t.name} · {Math.round(t.completion_pct)}%
+															</Link>
+														))}
+													</span>
+												</HelpTip>
+											)}
 										</span>
 										<span className="text-slate-500 dark:text-gray-400">
 											{Math.round(area.maturity_pct)}%
@@ -193,20 +217,6 @@ function FerramentasContent({ journeyId }: { journeyId: string }) {
 											style={{ width: `${Math.min(100, area.maturity_pct)}%` }}
 										/>
 									</div>
-									{area.tools.length > 0 && (
-										<div className="mt-1 flex flex-wrap gap-1.5">
-											{area.tools.map((t) => (
-												<Link
-													key={t.key}
-													href={`/course/mentoria/ferramentas/${t.key}`}
-													className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border border-slate-200 dark:border-white/10 text-slate-500 dark:text-gray-400 hover:border-teal-500/50 hover:text-teal-600 dark:hover:text-teal-400 transition"
-												>
-													{t.validated && <ValidatedMark className="w-3 h-3" />}
-													{t.name} · {Math.round(t.completion_pct)}%
-												</Link>
-											))}
-										</div>
-									)}
 								</div>
 							))}
 							<p className="text-sm font-semibold text-slate-900 dark:text-slate-100 pt-1">

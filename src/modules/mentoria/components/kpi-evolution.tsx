@@ -141,7 +141,7 @@ export function KpiEvolutionChart({
 	if (series.length === 0 || rows.length === 0) {
 		return (
 			<p className="text-body text-muted py-12 text-center">
-				Ainda não há medições suficientes para desenhar a evolução.
+				Sem medições suficientes ainda.
 			</p>
 		);
 	}

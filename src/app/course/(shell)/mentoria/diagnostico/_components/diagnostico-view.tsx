@@ -98,7 +98,7 @@ export function DiagnosticoView({
 				<MntHeader title="Diagnóstico — Raio-X inicial" icon={ClipboardList} />
 				<EmptyState
 					title="Diagnóstico indisponível"
-					description="O formulário de diagnóstico ainda não foi publicado para a sua turma. Fale com seu mentor."
+					description="Ainda não publicado. Fale com seu mentor."
 				/>
 			</div>
 		);
@@ -110,7 +110,7 @@ export function DiagnosticoView({
 			<div className="space-y-6">
 				<MntHeader
 					title="Diagnóstico — Foto Zero"
-					subtitle={`Congelada em ${fmtDate(data.foto_zero.taken_at)} — este é o seu ponto de partida`}
+					subtitle={`Congelada em ${fmtDate(data.foto_zero.taken_at)}`}
 					icon={Camera}
 				/>
 				<div className="flex items-center gap-3 rounded-card border border-subtle bg-surface p-4">
@@ -118,8 +118,7 @@ export function DiagnosticoView({
 					    mesma ressalva das outras telas da Mentoria. */}
 					<Lock className="h-4 w-4 shrink-0 text-brand dark:text-violet-400" />
 					<p className="text-body text-secondary">
-						Somente leitura: é o seu ponto de partida. Precisa corrigir? Fale
-						com seu mentor.
+						Precisa corrigir? Fale com seu mentor.
 					</p>
 				</div>
 				<FotoZeroView
@@ -143,9 +142,12 @@ export function DiagnosticoView({
 		<div className="space-y-6">
 			<MntHeader
 				title={data.template.title || 'Diagnóstico — Raio-X inicial'}
-				subtitle={
-					data.template.description ??
-					'Responda com sinceridade: não saber também é diagnóstico. Use "A LEVANTAR" quando não tiver o dado.'
+				subtitle={data.template.description ?? 'Vira a sua Foto Zero.'}
+				help={
+					<>
+						Responda com sinceridade: não saber também é diagnóstico. Sem o
+						dado? Marque "A LEVANTAR" no campo.
+					</>
 				}
 				icon={ClipboardList}
 			/>
@@ -167,12 +169,12 @@ export function DiagnosticoView({
 			<div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-subtle bg-surface p-4">
 				<p className="text-body text-muted">
 					{dirty
-						? 'Alterações ainda não salvas…'
+						? 'Não salvo…'
 						: autoSavedAt
-							? `Rascunho salvo automaticamente às ${autoSavedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.`
+							? `Salvo às ${autoSavedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
 							: data.draft
-								? `Rascunho salvo por último em ${fmtDate(data.draft.updated_at)}.`
-								: 'Nenhum rascunho salvo ainda.'}
+								? `Rascunho de ${fmtDate(data.draft.updated_at)}`
+								: 'Sem rascunho'}
 				</p>
 				<div className="flex gap-2">
 					{/* Ícone + texto é um ARRAY de children, e array bypassa o wrap
@@ -202,7 +204,7 @@ export function DiagnosticoView({
 					>
 						<Send className="h-4 w-4 text-on-brand" aria-hidden />
 						<Text className={buttonLabel({ variant: 'primary' })}>
-							Enviar diagnóstico e congelar Foto Zero
+							Congelar Foto Zero
 						</Text>
 					</Button>
 				</div>

@@ -40,6 +40,7 @@ import {
 	DynamicForm,
 	inputClass,
 } from '@/modules/mentoria/components/dynamic-form';
+import { HelpTip } from '@/modules/mentoria/components/help-tip';
 import type {
 	GoodNewsState,
 	MntBusinessPlanVersion,
@@ -127,7 +128,7 @@ export function GoodNewsView({
 					// marca. `text-success` também não tem tom escuro no DS (A.3).
 					<p className="mt-2 flex items-center gap-2 text-body text-emerald-600 dark:text-emerald-400">
 						<CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
-						Você já registrou as boas notícias de hoje. Volte amanhã!
+						Registradas hoje. Volte amanhã!
 					</p>
 				) : (
 					<div className="space-y-3 mt-4">
@@ -360,7 +361,7 @@ export function GoalsView({
 				<EmptyState
 					icon={Flag}
 					title="Nenhuma meta cadastrada"
-					description="Cadastre sua meta com o indicador que comprova o resultado e a primeira ação das próximas 48 horas."
+					description="Meta, indicador e a 1ª ação em 48h."
 				/>
 			) : (
 				active.map((goal) =>
@@ -686,11 +687,15 @@ export function MaslowView({
 
 	return (
 		<div className="space-y-6">
-			<div className={`${CARD} p-4 text-caption text-muted`}>
-				O Teste de Maslow é uma ferramenta educacional de autopercepção — não é
-				um diagnóstico psicológico. Pontue cada afirmação de 0 (discordo
-				totalmente) a 4 (concordo totalmente).
-			</div>
+			{/* O aviso "não é diagnóstico" fica visível (curto); a escala explicada
+			    vai no "?" e a legenda vira as pontas da régua. */}
+			<p className="inline-flex items-center gap-1 text-caption text-muted">
+				Autopercepção, não diagnóstico psicológico.
+				<HelpTip label="Sobre o Teste de Maslow">
+					Ferramenta educacional de autopercepção. Pontue cada afirmação de 0
+					(discordo totalmente) a 4 (concordo totalmente).
+				</HelpTip>
+			</p>
 
 			{latest && !showTest && (
 				<div className={`${CARD} p-5`}>
@@ -718,6 +723,23 @@ export function MaslowView({
 
 			{(!latest || showTest) && (
 				<div className={`${CARD} p-5 space-y-6`}>
+					{/* Legenda única da régua: repetir 0–4 em 15 linhas era ruído. */}
+					<p
+						className="flex items-center gap-2 text-caption text-muted"
+						aria-hidden
+					>
+						Discordo
+						<span className="flex gap-1">
+							{[0, 1, 2, 3, 4].map((n) => (
+								<span
+									key={n}
+									className="h-2.5 w-2.5 rounded-full bg-violet-500"
+									style={{ opacity: 0.2 + n * 0.2 }}
+								/>
+							))}
+						</span>
+						Concordo
+					</p>
 					{MASLOW_STATEMENTS.map((group, g) => (
 						<div key={group.dimension}>
 							{/* `text-brand` não tem tom escuro no DS — par `dark:` (A.3). */}
@@ -748,19 +770,22 @@ export function MaslowView({
 													<button
 														key={score}
 														type="button"
+														// Número só no escolhido; a régua tem legenda.
+														aria-label={`${score} de 4`}
+														title={`${score} de 4`}
 														aria-pressed={answers[index] === score}
 														onClick={() =>
 															setAnswers((prev) =>
 																prev.map((p, j) => (j === index ? score : p)),
 															)
 														}
-														className={`h-9 w-9 rounded-chip border text-caption transition ${
+														className={`h-8 w-8 rounded-full border text-caption transition ${
 															answers[index] === score
 																? 'border-brand bg-brand text-on-brand'
-																: 'border-subtle text-muted'
+																: 'border-slate-300 text-muted hover:border-brand-border dark:border-white/25'
 														}`}
 													>
-														{score}
+														{answers[index] === score ? score : null}
 													</button>
 												))}
 											</fieldset>
@@ -838,8 +863,8 @@ export function LowestDimension({
 				aria-hidden
 			/>
 			<p className="text-body text-amber-600 dark:text-amber-400">
-				A dimensão que merece maior atenção agora é{' '}
-				<b>{MASLOW_LABELS[lowest[0]] ?? lowest[0]}</b> ({lowest[1]}%).
+				Mais atenção agora: <b>{MASLOW_LABELS[lowest[0]] ?? lowest[0]}</b> (
+				{lowest[1]}%).
 			</p>
 		</div>
 	);
@@ -896,9 +921,12 @@ export function BusinessPlanView({
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between gap-3">
-				<p className="text-body text-muted">
-					Cada envio gera uma nova versão imutável — assim dá pra comparar V1,
-					V2... ao longo dos anos.
+				<p className="inline-flex items-center gap-1 text-body text-muted">
+					Versões imutáveis
+					<HelpTip label="Sobre as versões">
+						Cada envio gera uma nova versão imutável — assim dá pra comparar V1,
+						V2... ao longo dos anos.
+					</HelpTip>
 				</p>
 				{template && (
 					<Button
@@ -948,7 +976,7 @@ export function BusinessPlanView({
 				<EmptyState
 					icon={Briefcase}
 					title="Nenhuma versão do plano de negócios"
-					description="Crie a V1 do seu plano — ela fica registrada para sempre e vira base de comparação."
+					description="A V1 vira a base de comparação."
 				/>
 			) : (
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
