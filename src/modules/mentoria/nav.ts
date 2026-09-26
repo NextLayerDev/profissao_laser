@@ -71,3 +71,22 @@ export function isSectionActive(section: MentoriaSection, pathname: string) {
 	if (section.href === MENTORIA_ROOT) return pathname === MENTORIA_ROOT;
 	return pathname.startsWith(section.href);
 }
+
+/**
+ * Ferramentas que moram fora de Ferramentas (página própria). O detalhe
+ * `/ferramentas/[toolKey]` redireciona para cá, e os atalhos do encontro
+ * apontam direto — assim também não esbarram no bloqueio de Ferramentas.
+ * `?aba=`: sem ela Desenvolvimento abria sempre em Boas Notícias.
+ */
+export const TOOL_OWN_PAGE: Record<string, string> = {
+	kpi_board: `${MENTORIA_ROOT}/indicadores`,
+	goal_action: `${MENTORIA_ROOT}/desenvolvimento?aba=metas`,
+	maslow: `${MENTORIA_ROOT}/desenvolvimento?aba=maslow`,
+	good_news: `${MENTORIA_ROOT}/desenvolvimento?aba=boas-noticias`,
+	business_plan: `${MENTORIA_ROOT}/desenvolvimento?aba=plano`,
+};
+
+/** Link da ferramenta para o aluno (página própria ou o detalhe). */
+export function toolHref(tool: { key: string; kind: string }): string {
+	return TOOL_OWN_PAGE[tool.kind] ?? `${MENTORIA_ROOT}/ferramentas/${tool.key}`;
+}

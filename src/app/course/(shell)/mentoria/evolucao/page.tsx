@@ -18,10 +18,11 @@ import {
 import { createSnapshot, generateRaiox } from '@/modules/mentoria/service';
 import type { MntReport } from '@/modules/mentoria/types';
 import {
-	apiErrorCode,
+	ConfirmDialog,
 	fmtDate,
 	JourneyGate,
 	MntSkeleton,
+	mntErrorText,
 } from '../_components/shared';
 import type { ComparisonState } from './_components/evolucao-view';
 import { EvolucaoView } from './_components/evolucao-view';
@@ -42,36 +43,50 @@ function Content({ journeyId }: { journeyId: string }) {
 		useSnapshots(journeyId);
 	const [from, setFrom] = useState('foto_zero');
 	const [to, setTo] = useState('current');
+	// Sem Foto Zero, comparar com ela só dá 404: mostra direto o CTA do
+	// diagnóstico em vez de disparar a consulta.
+	const missingFotoZero =
+		!!snapshots &&
+		!snapshots.some((s) => s.kind === 'foto_zero') &&
+		(from === 'foto_zero' || to === 'foto_zero');
 	const {
 		data: comparison,
 		isLoading: loadingCompare,
 		isError,
-	} = useComparison(journeyId, from, to);
+	} = useComparison(journeyId, from, to, !missingFotoZero);
 	const { data: reports } = useReports(journeyId);
 	const [openReport, setOpenReport] = useState<MntReport | null>(null);
+	// Snapshot e Raio-X ficam gravados para sempre: confirma antes.
+	const [confirming, setConfirming] = useState<'snapshot' | 'raiox' | null>(
+		null,
+	);
 
 	const snapshot = useMutation({
 		mutationFn: () => createSnapshot(journeyId, { kind: 'monthly' }),
 		onSuccess: () => {
+			setConfirming(null);
 			qc.invalidateQueries({ queryKey: ['mentoria', 'snapshots', journeyId] });
-			toast.success('Snapshot congelado! Ele fica disponível no comparador.');
+			toast.success('Snapshot congelado!');
 		},
-		onError: () => toast.error('Não foi possível congelar o snapshot.'),
+		// 409 snapshot_exists: um mensal por mês.
+		onError: (e) => {
+			setConfirming(null);
+			toast.error(mntErrorText(e, 'Não foi possível congelar o snapshot.'));
+		},
 	});
 
 	const raiox = useMutation({
 		mutationFn: () => generateRaiox(journeyId),
 		onSuccess: (report) => {
+			setConfirming(null);
 			qc.invalidateQueries({ queryKey: ['mentoria', 'reports', journeyId] });
 			setOpenReport(report);
 			toast.success('Raio-X Empresarial 360° gerado!');
 		},
-		onError: (e) =>
-			toast.error(
-				apiErrorCode(e) === 'foto_zero_missing'
-					? 'Complete o diagnóstico inicial (Foto Zero) antes de gerar o relatório.'
-					: 'Não foi possível gerar o relatório.',
-			),
+		onError: (e) => {
+			setConfirming(null);
+			toast.error(mntErrorText(e, 'Não foi possível gerar o relatório.'));
+		},
 	});
 
 	// Foto Zero e "Agora" são âncoras fixas; os snapshots mensais entram no meio,
@@ -94,32 +109,58 @@ function Content({ journeyId }: { journeyId: string }) {
 
 	// Os quatro estados do comparador viram um só valor: a view não deve
 	// remontar essa regra a partir de flags soltas.
-	const comparisonState: ComparisonState = loadingCompare
-		? 'loading'
-		: isError || !comparison
-			? 'error'
-			: Object.keys(comparison.deltas).length === 0
-				? 'empty'
-				: 'ready';
+	const comparisonState: ComparisonState = missingFotoZero
+		? 'no_foto_zero'
+		: loadingCompare
+			? 'loading'
+			: isError || !comparison
+				? 'error'
+				: Object.keys(comparison.deltas).length === 0
+					? 'empty'
+					: 'ready';
 
 	return (
-		<EvolucaoView
-			options={options}
-			from={from}
-			to={to}
-			onFromChange={setFrom}
-			onToChange={setTo}
-			comparisonState={comparisonState}
-			comparison={comparison}
-			reports={reports ?? []}
-			openReport={openReport}
-			onToggleReport={(report) =>
-				setOpenReport((open) => (open?.id === report.id ? null : report))
-			}
-			snapshotting={snapshot.isPending}
-			onSnapshot={() => snapshot.mutate()}
-			generating={raiox.isPending}
-			onGenerate={() => raiox.mutate()}
-		/>
+		<>
+			<EvolucaoView
+				options={options}
+				from={from}
+				to={to}
+				onFromChange={setFrom}
+				onToChange={setTo}
+				comparisonState={comparisonState}
+				comparison={comparison}
+				reports={reports ?? []}
+				openReport={openReport}
+				onToggleReport={(report) =>
+					setOpenReport((open) => (open?.id === report.id ? null : report))
+				}
+				snapshotting={snapshot.isPending}
+				onSnapshot={() => setConfirming('snapshot')}
+				generating={raiox.isPending}
+				onGenerate={() => setConfirming('raiox')}
+			/>
+			{confirming === 'snapshot' && (
+				<ConfirmDialog
+					title="Congelar o snapshot do mês?"
+					confirmLabel="Congelar"
+					busy={snapshot.isPending}
+					onCancel={() => setConfirming(null)}
+					onConfirm={() => snapshot.mutate()}
+				>
+					Fica salvo no comparador e não muda depois. Um por mês.
+				</ConfirmDialog>
+			)}
+			{confirming === 'raiox' && (
+				<ConfirmDialog
+					title="Gerar o Raio-X 360°?"
+					confirmLabel="Gerar"
+					busy={raiox.isPending}
+					onCancel={() => setConfirming(null)}
+					onConfirm={() => raiox.mutate()}
+				>
+					Vira um relatório fixo com os dados de hoje.
+				</ConfirmDialog>
+			)}
+		</>
 	);
 }

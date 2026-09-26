@@ -15,7 +15,9 @@
 // arquivos que importam daqui não mudaram uma linha.
 import { ArrowLeft, Loader2, X } from 'lucide-react';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
+import { HelpTip } from '@/modules/mentoria/components/help-tip';
+import { parseLocalDate } from '@/modules/mentoria/dates';
 
 // Sem altura fixa (`h-control-md`) de propósito: esta string também veste
 // `<textarea>` e `<select>`, e uma altura travada achataria os textareas.
@@ -54,11 +56,15 @@ export function Card({
 export function PageTitle({
 	title,
 	description,
+	help,
 	backHref,
 	actions,
 }: {
 	title: string;
+	/** No máximo 1 linha; o detalhe vai em `help`. */
 	description?: string;
+	/** Explicação longa, atrás do "?" ao lado do título. */
+	help?: ReactNode;
 	backHref?: string;
 	actions?: ReactNode;
 }) {
@@ -74,7 +80,10 @@ export function PageTitle({
 						Voltar
 					</Link>
 				)}
-				<h2 className="text-page text-primary">{title}</h2>
+				<h2 className="text-page text-primary flex items-center gap-2">
+					{title}
+					{help && <HelpTip label={`Sobre ${title}`}>{help}</HelpTip>}
+				</h2>
 				{description && (
 					<p className="text-body text-muted mt-1 max-w-2xl">{description}</p>
 				)}
@@ -95,11 +104,29 @@ export function Modal({
 	children: ReactNode;
 	wide?: boolean;
 }) {
+	// Fecha só se o clique COMEÇOU no fundo: selecionar texto num campo e soltar
+	// o mouse fora do card caía no backdrop e descartava o formulário.
+	const downOnBackdrop = useRef(false);
+
+	// Esc no document: o card engolia o keydown e o Esc nunca fechava.
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') onClose();
+		};
+		document.addEventListener('keydown', onKey);
+		return () => document.removeEventListener('keydown', onKey);
+	}, [onClose]);
+
 	return (
 		<div
 			className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-overlay backdrop-blur-sm p-4 md:p-8"
-			onClick={onClose}
-			onKeyDown={(e) => e.key === 'Escape' && onClose()}
+			onMouseDown={(e) => {
+				downOnBackdrop.current = e.target === e.currentTarget;
+			}}
+			onClick={(e) => {
+				if (downOnBackdrop.current && e.target === e.currentTarget) onClose();
+				downOnBackdrop.current = false;
+			}}
 			role="presentation"
 		>
 			{/* `overflow-y-auto` no pai e `my-auto` aqui continuam iguais: é o que
@@ -107,8 +134,6 @@ export function Modal({
 			    não rola, e por isso não foi adotado nesta fatia. */}
 			<div
 				className={`w-full ${wide ? 'max-w-3xl' : 'max-w-lg'} rounded-card border border-subtle bg-surface shadow-overlay my-auto`}
-				onClick={(e) => e.stopPropagation()}
-				onKeyDown={(e) => e.stopPropagation()}
 				role="dialog"
 				aria-modal="true"
 			>
@@ -244,7 +269,9 @@ export function cohortStatusBadge(status: string) {
 export function formatDate(iso: string | null | undefined): string {
 	if (!iso) return '—';
 	try {
-		return new Date(iso).toLocaleDateString('pt-BR');
+		// Colunas `date` ('2026-10-15') no fuso local; senão, em UTC-3, o período
+		// da turma e o prazo das tarefas aparecem um dia antes.
+		return parseLocalDate(iso).toLocaleDateString('pt-BR');
 	} catch {
 		return iso;
 	}

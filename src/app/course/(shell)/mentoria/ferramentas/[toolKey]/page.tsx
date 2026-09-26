@@ -1,16 +1,20 @@
 'use client';
 
-import { CheckCircle2, Wrench } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Wrench } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { SubscriptionGate } from '@/components/course/subscription-gate';
-import { areaLabel } from '@/modules/mentoria/components/company-map-radar';
+import {
+	areaLabel,
+	ValidatedMark,
+} from '@/modules/mentoria/components/company-map-radar';
 import {
 	useCompleteTool,
 	useJourneyTools,
 	useStartTool,
 } from '@/modules/mentoria/hooks';
+import { TOOL_OWN_PAGE } from '@/modules/mentoria/nav';
 import type { ToolWithInstance } from '@/modules/mentoria/types';
 import {
 	BTN_PRIMARY,
@@ -28,13 +32,8 @@ import { ToolOrgChart } from '../../_components/tools/tool-org-chart';
 import { ToolPopLibrary } from '../../_components/tools/tool-pop-library';
 import { ToolProcessFlow } from '../../_components/tools/tool-process-flow';
 
-const REDIRECTS: Record<string, string> = {
-	kpi_board: '/course/mentoria/indicadores',
-	goal_action: '/course/mentoria/desenvolvimento',
-	maslow: '/course/mentoria/desenvolvimento',
-	good_news: '/course/mentoria/desenvolvimento',
-	business_plan: '/course/mentoria/desenvolvimento',
-};
+// KPIs e desenvolvimento pessoal moram em páginas próprias (nav.ts).
+const REDIRECTS = TOOL_OWN_PAGE;
 
 export default function FerramentaDetalhePage() {
 	const params = useParams<{ toolKey: string }>();
@@ -81,7 +80,7 @@ function ToolDetail({
 
 	if (!tool) {
 		return (
-			<div className="p-4 md:p-8">
+			<div>
 				<MntHeader
 					title="Ferramenta"
 					icon={Wrench}
@@ -95,10 +94,31 @@ function ToolDetail({
 		);
 	}
 
+	// Sem isto, um start que falhou (rede, 403, definição inativa) deixava o
+	// esqueleto pulsando para sempre: `startedRef` impede nova tentativa.
+	if (!tool.instance && start.isError) {
+		return (
+			<EmptyState
+				icon={AlertTriangle}
+				title="Não foi possível abrir a ferramenta"
+				description="Houve uma falha ao preparar a ferramenta. Tente de novo em instantes."
+			>
+				<button
+					type="button"
+					className={BTN_PRIMARY}
+					disabled={start.isPending}
+					onClick={() => start.mutate(tool.id)}
+				>
+					Tentar de novo
+				</button>
+			</EmptyState>
+		);
+	}
+
 	if (!tool.instance) return <MntSkeleton />;
 
 	return (
-		<div className="p-4 md:p-8 space-y-6">
+		<div className="space-y-6">
 			<MntHeader
 				title={tool.name}
 				subtitle={`${areaLabel(tool.area)}${tool.description ? ` — ${tool.description}` : ''}`}
@@ -146,6 +166,10 @@ function ToolBody({
 	}
 }
 
+/**
+ * Progresso calculado pela API a partir do que foi preenchido. "Marcar como
+ * concluída" segue como override manual (reabrir volta ao calculado).
+ */
 function CompleteToolFooter({
 	tool,
 	journeyId,
@@ -158,21 +182,38 @@ function CompleteToolFooter({
 	if (!instance) return null;
 
 	const done = instance.status === 'completed';
+	const pct = Math.round(instance.completion_pct);
 
 	return (
 		<div
 			className={`${CARD} p-4 flex flex-wrap items-center justify-between gap-3`}
 		>
-			<p className="text-sm text-slate-500 dark:text-gray-400">
-				{done
-					? 'Ferramenta concluída — ela conta 100% no Mapa da Minha Empresa.'
-					: 'Terminou de aplicar esta ferramenta na sua empresa? Marque como concluída.'}
-			</p>
+			<div className="flex-1 min-w-48" data-testid="tool-progress">
+				<div className="flex items-center justify-between gap-2 text-sm mb-1">
+					<span className="inline-flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
+						{done ? 'Concluída' : 'Progresso'}
+						{instance.mentor_validated_at && (
+							<span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400">
+								<ValidatedMark className="w-3 h-3" />
+								Validada
+							</span>
+						)}
+					</span>
+					<span className="text-slate-500 dark:text-gray-400">{pct}%</span>
+				</div>
+				<div className="h-1.5 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
+					<div
+						className="h-full rounded-full bg-teal-500"
+						style={{ width: `${Math.min(100, pct)}%` }}
+					/>
+				</div>
+			</div>
 			{!done && (
 				<button
 					type="button"
 					className={BTN_PRIMARY}
 					disabled={complete.isPending}
+					title="Conta 100% no Mapa"
 					onClick={() =>
 						complete.mutate(
 							{ instanceId: instance.id, completionPct: 100 },
@@ -185,9 +226,7 @@ function CompleteToolFooter({
 					}
 				>
 					<CheckCircle2 className="w-4 h-4" />
-					{complete.isPending
-						? 'Concluindo...'
-						: 'Marcar ferramenta como concluída'}
+					{complete.isPending ? 'Concluindo...' : 'Marcar como concluída'}
 				</button>
 			)}
 		</div>

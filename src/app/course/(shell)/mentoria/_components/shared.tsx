@@ -3,7 +3,10 @@
 import type { LucideIcon } from 'lucide-react';
 import { AlertTriangle, ArrowLeft, Compass } from 'lucide-react';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect, useId } from 'react';
+import { ModalPortal } from '@/components/ui/modal-portal';
+import { HelpTip } from '@/modules/mentoria/components/help-tip';
+import { parseLocalDate } from '@/modules/mentoria/dates';
 import { useMentoriaBootstrap } from '@/modules/mentoria/hooks';
 import { MENTORIA_SETTINGS } from '@/modules/mentoria/nav';
 import type { MentoriaBootstrap } from '@/modules/mentoria/types';
@@ -31,7 +34,8 @@ export const LABEL =
 
 export function fmtDate(iso: string | null | undefined): string {
 	if (!iso) return '—';
-	const d = new Date(iso);
+	// Colunas `date` ('2026-10-15') no fuso local; senão aparecem 1 dia antes.
+	const d = parseLocalDate(iso);
 	if (Number.isNaN(d.getTime())) return '—';
 	return d.toLocaleDateString('pt-BR');
 }
@@ -47,6 +51,10 @@ export function fmtDateTime(iso: string | null | undefined): string {
 	return d.toLocaleString('pt-BR', {
 		day: '2-digit',
 		month: '2-digit',
+		// Ano só quando não é o corrente: gravação de 2025 parecia deste ano.
+		...(d.getFullYear() !== new Date().getFullYear()
+			? { year: 'numeric' as const }
+			: {}),
 		hour: '2-digit',
 		minute: '2-digit',
 	});
@@ -57,14 +65,107 @@ export function fmtMoney(value: number | null | undefined): string {
 	return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+/**
+ * 'www.drive.com/x' sem protocolo virava href relativo (rota 404 da própria
+ * plataforma): prefixa https:// e valida. Inválido → null.
+ */
+export function normalizeUrl(raw: string): string | null {
+	const t = raw.trim();
+	if (!t) return null;
+	const withProto = /^[a-z][a-z\d+.-]*:\/\//i.test(t) ? t : `https://${t}`;
+	try {
+		const u = new URL(withProto);
+		if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+		if (!u.hostname.includes('.')) return null;
+		return u.toString();
+	} catch {
+		return null;
+	}
+}
+
+/** Domínio do link, para rótulo ('link' não dizia nada). */
+export function linkLabel(url: string): string {
+	try {
+		return new URL(url).hostname.replace(/^www\./, '');
+	} catch {
+		return 'link';
+	}
+}
+
 /** Extrai o código de erro da resposta da API (ex.: required_fields_missing). */
 export function apiErrorCode(e: unknown): string | null {
 	if (typeof e === 'object' && e !== null && 'response' in e) {
 		const resp = (
 			e as { response?: { data?: { error?: unknown; message?: unknown } } }
 		).response;
-		const code = resp?.data?.error ?? resp?.data?.message;
+		// `message` traz o código da regra (ex.: required_fields_missing); `error`
+		// é só o texto HTTP ("Conflict"). Lendo `error` primeiro, nenhum código
+		// específico batia e o aluno via sempre a mensagem genérica.
+		const code = resp?.data?.message ?? resp?.data?.error;
 		return typeof code === 'string' ? code : null;
+	}
+	return null;
+}
+
+/** Códigos da API que o aluno pode encontrar, em pt-BR. */
+const STUDENT_ERRORS: Record<string, string> = {
+	kpi_metric_key_taken:
+		'Outro indicador já usa essa chave no comparador. Escolha outra.',
+	file_type_not_allowed:
+		'Formato de arquivo não aceito. Envie imagem, PDF, planilha ou documento.',
+	file_required: 'Escolha um arquivo para enviar.',
+	unsafe_url_scheme: 'Link inválido. Use um endereço que comece com https://',
+	chat_rate_limited:
+		'Você está enviando rápido demais. Aguarde alguns segundos.',
+	raiox_final_locked:
+		'O Raio-X final é liberado no último encontro da jornada.',
+	foto_zero_missing:
+		'Complete o diagnóstico inicial (Foto Zero) antes de gerar o relatório.',
+	mentoria_tools_locked:
+		'As ferramentas estão em atualização pelo seu mentor. Volte em breve.',
+	journey_not_active: 'Sua jornada não está ativa.',
+	meeting_locked: 'Este encontro ainda está bloqueado.',
+	due_date_in_past: 'O prazo já passou. Ajuste a data para reabrir a tarefa.',
+	task_not_done: 'A tarefa ainda não foi concluída.',
+	snapshot_exists: 'Você já gerou o snapshot deste mês.',
+	funnel_order_mismatch: 'O funil mudou. Recarregue a página.',
+	cnpj_invalid: 'CNPJ inválido.',
+	phone_invalid: 'Telefone inválido. Use DDD + número.',
+	website_invalid: 'Site inválido. Ex.: https://seusite.com.br',
+	instagram_invalid: 'Instagram inválido. Ex.: @suaempresa',
+	assistant_daily_limit: 'Você usou as perguntas de hoje. Volte amanhã.',
+	assistant_unavailable: 'Assistente indisponível no momento.',
+	assistant_failed: 'Não consegui responder agora. Tente de novo.',
+};
+
+/** 400 do Zod traz o código dentro do texto (ex.: "body/cnpj cnpj_invalid"). */
+const FIELD_ERROR_CODES = [
+	'cnpj_invalid',
+	'phone_invalid',
+	'website_invalid',
+	'instagram_invalid',
+] as const;
+
+/** Mensagem amigável para o erro da API, ou `fallback`. */
+export function mntErrorText(e: unknown, fallback: string): string {
+	const code = apiErrorCode(e);
+	if (code && STUDENT_ERRORS[code]) return STUDENT_ERRORS[code];
+	const inText = code && FIELD_ERROR_CODES.find((c) => code.includes(c));
+	if (inText) return STUDENT_ERRORS[inText] ?? fallback;
+	const status = (e as { response?: { status?: number } } | null)?.response
+		?.status;
+	if (status === 413) return 'Arquivo grande demais (máx. 50 MB).';
+	return fallback;
+}
+
+/** `details` do erro da API (ex.: `{ missing: [...] }`), quando houver. */
+export function apiErrorDetails(e: unknown): Record<string, unknown> | null {
+	if (typeof e === 'object' && e !== null && 'response' in e) {
+		const details = (e as { response?: { data?: { details?: unknown } } })
+			.response?.data?.details;
+		return details && typeof details === 'object'
+			? (details as Record<string, unknown>)
+			: null;
 	}
 	return null;
 }
@@ -72,12 +173,16 @@ export function apiErrorCode(e: unknown): string | null {
 export function MntHeader({
 	title,
 	subtitle,
+	help,
 	icon: Icon,
 	backHref,
 	actions,
 }: {
 	title: string;
+	/** No máximo 1 linha; o detalhe vai em `help`. */
 	subtitle?: string;
+	/** Explicação longa, atrás do "?" ao lado do título. */
+	help?: ReactNode;
 	icon?: LucideIcon;
 	backHref?: string;
 	actions?: ReactNode;
@@ -99,7 +204,10 @@ export function MntHeader({
 				</div>
 			)}
 			<div className="min-w-0 flex-1">
-				<h1 className="font-display text-page text-primary">{title}</h1>
+				<h1 className="font-display text-page text-primary flex items-center gap-2">
+					{title}
+					{help && <HelpTip label={`Sobre ${title}`}>{help}</HelpTip>}
+				</h1>
 				{subtitle && <p className="text-body text-muted">{subtitle}</p>}
 			</div>
 			{actions && <div className="flex items-center gap-2">{actions}</div>}
@@ -153,10 +261,41 @@ export function EmptyState({
 	);
 }
 
+/** Falha ao carregar o bootstrap (api fora do ar) — não é falta de matrícula. */
+export function LoadErrorState({ onRetry }: { onRetry: () => void }) {
+	return (
+		<EmptyState
+			icon={AlertTriangle}
+			title="Não foi possível carregar sua mentoria"
+			description="Houve uma falha ao falar com o servidor. Tente novamente em instantes."
+		>
+			<button type="button" className={BTN_PRIMARY} onClick={onRetry}>
+				Tentar novamente
+			</button>
+		</EmptyState>
+	);
+}
+
+/**
+ * Aluno com o plano e ainda sem turma: a compra não matricula — ele entra na
+ * fila "Aguardando turma" do admin. Enquanto isso, só adianta a empresa.
+ */
+export function WaitingForCohortState({ hasCompany }: { hasCompany: boolean }) {
+	return (
+		<EmptyState
+			title="Você está na fila da próxima turma"
+			description="Sua jornada aparece aqui quando a turma abrir."
+		>
+			<Link href={MENTORIA_SETTINGS} className={BTN_PRIMARY}>
+				{hasCompany ? 'Configurações da empresa' : 'Cadastrar empresa'}
+			</Link>
+		</EmptyState>
+	);
+}
+
 /**
  * Garante que o aluno tem uma jornada ativa antes de renderizar a tela.
- * Sem jornada → manda para Configurações, onde mora o cadastro da empresa: é a
- * única coisa que o aluno consegue adiantar antes de a matrícula sair.
+ * Sem jornada → "fila da próxima turma" (o plano já foi checado no layout).
  */
 export function JourneyGate({
 	children,
@@ -166,7 +305,7 @@ export function JourneyGate({
 		bootstrap: MentoriaBootstrap;
 	}) => ReactNode;
 }) {
-	const { data, isLoading, isError } = useMentoriaBootstrap();
+	const { data, isLoading, isError, refetch } = useMentoriaBootstrap();
 
 	if (isLoading) return <MntSkeleton />;
 
@@ -174,29 +313,13 @@ export function JourneyGate({
 	// o 403 do gate já foi capturado pelo `MentoriaAccessGate`, no layout, e nem
 	// chega aqui. Então um erro neste ponto é a api fora do ar — mandar cadastrar
 	// a empresa seria mentir sobre a causa, e a rota de cadastro falharia igual.
-	if (isError) {
-		return (
-			<EmptyState
-				icon={AlertTriangle}
-				title="Não foi possível carregar sua mentoria"
-				description="Houve uma falha ao falar com o servidor. Tente recarregar a página em instantes."
-			/>
-		);
-	}
+	// `&& !data`: com o bootstrap em cache, um refetch que falha (reconnect,
+	// invalidação) não pode trocar a página inteira — e descartar formulários
+	// em edição — pelo aviso.
+	if (isError && !data) return <LoadErrorState onRetry={() => refetch()} />;
 
 	if (!data?.journey) {
-		return (
-			<div>
-				<EmptyState
-					title="Você ainda não está matriculado em uma turma de mentoria"
-					description="Assim que sua matrícula for feita pela equipe, sua jornada aparece aqui. Enquanto isso, você pode cadastrar os dados da sua empresa."
-				>
-					<Link href={MENTORIA_SETTINGS} className={BTN_PRIMARY}>
-						Cadastrar empresa
-					</Link>
-				</EmptyState>
-			</div>
-		);
+		return <WaitingForCohortState hasCompany={!!data?.company} />;
 	}
 
 	return <>{children({ journeyId: data.journey.id, bootstrap: data })}</>;
@@ -211,4 +334,81 @@ const MEETING_STATUS_LABEL: Record<string, string> = {
 
 export function meetingStatusLabel(status: string): string {
 	return MEETING_STATUS_LABEL[status] ?? status;
+}
+
+/**
+ * Confirmação curta antes de uma ação sem volta (concluir encontro, gerar
+ * snapshot, excluir etapa). Em `ModalPortal` pelo mesmo motivo do diagnóstico:
+ * o <main> do shell tem `transform`, e o `fixed` ancoraria nele. Esc e clique
+ * fora cancelam.
+ */
+export function ConfirmDialog({
+	title,
+	children,
+	confirmLabel,
+	busy = false,
+	danger = false,
+	onCancel,
+	onConfirm,
+}: {
+	title: string;
+	children?: ReactNode;
+	confirmLabel: string;
+	busy?: boolean;
+	danger?: boolean;
+	onCancel: () => void;
+	onConfirm: () => void;
+}) {
+	const titleId = useId();
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') onCancel();
+		};
+		document.addEventListener('keydown', onKey);
+		return () => document.removeEventListener('keydown', onKey);
+	}, [onCancel]);
+
+	return (
+		<ModalPortal>
+			<div
+				className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-overlay p-4 backdrop-blur-sm md:p-8"
+				onClick={onCancel}
+				onKeyDown={(e) => e.key === 'Escape' && onCancel()}
+				role="presentation"
+			>
+				<div
+					className="my-auto w-full max-w-sm rounded-card border border-subtle bg-surface p-5 shadow-overlay"
+					onClick={(e) => e.stopPropagation()}
+					onKeyDown={(e) => e.stopPropagation()}
+					role="alertdialog"
+					aria-modal="true"
+					aria-labelledby={titleId}
+				>
+					<h3 id={titleId} className="mb-1 text-title text-primary">
+						{title}
+					</h3>
+					{children && (
+						<div className="mb-4 text-body text-secondary">{children}</div>
+					)}
+					<div className="mt-4 flex justify-end gap-2">
+						<button type="button" className={BTN_GHOST} onClick={onCancel}>
+							Cancelar
+						</button>
+						<button
+							type="button"
+							className={
+								danger
+									? 'inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white text-sm font-medium px-4 py-2 transition'
+									: BTN_PRIMARY
+							}
+							disabled={busy}
+							onClick={onConfirm}
+						>
+							{busy ? 'Aguarde...' : confirmLabel}
+						</button>
+					</div>
+				</div>
+			</div>
+		</ModalPortal>
+	);
 }

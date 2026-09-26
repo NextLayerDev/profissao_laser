@@ -1,17 +1,26 @@
 // Chamadas HTTP da aba Mentoria — TODAS na upvox-api (/v1) via apiCourses.
 import { apiCourses as api } from '@/shared/lib/api-courses';
 import type {
+	AssistantMessage,
+	AssistantReply,
+	AssistantUsage,
 	CohortDashboardRow,
 	CompanyMap,
 	Comparison,
+	DiagnosticReopen,
 	DiagnosticState,
+	EnrollBatchResult,
 	GoodNewsState,
 	LiveCredentials,
 	LivePlayback,
+	MeetingTemplatePublishImpact,
 	MentoriaAccessAdmin,
 	MentoriaBootstrap,
+	MentoriaWaitingStudent,
+	MentorToolContent,
 	MntBusinessPlanVersion,
 	MntCohort,
+	MntCohortMentor,
 	MntCompany,
 	MntFinancialEntry,
 	MntFormSubmission,
@@ -37,10 +46,13 @@ import type {
 	MntReport,
 	MntSnapshot,
 	MntTask,
+	MntTaskComment,
 	MntToolDefinition,
 	MntToolInstance,
 	MyMentoriaAccess,
 	ToolWithInstance,
+	UnpublishedMeetingTemplate,
+	UploadMaterialParams,
 } from './types';
 
 // ── Mentorado: núcleo ────────────────────────────────────────────────────────
@@ -117,6 +129,14 @@ export async function submitDiagnostic(
 
 export async function getFormTemplate(key: string): Promise<MntFormTemplate> {
 	const { data } = await api.get(`/v1/mentoria/form-template/${key}`);
+	return data;
+}
+
+/** Template publicado por id (exercício do encontro / avaliação final). */
+export async function getFormTemplateById(
+	id: string,
+): Promise<MntFormTemplate> {
+	const { data } = await api.get(`/v1/mentoria/form-template/id/${id}`);
 	return data;
 }
 
@@ -368,6 +388,44 @@ export async function seedFunnelStages(
 	return data;
 }
 
+export async function createFunnelStage(
+	instanceId: string,
+	body: { name: string; description?: string | null },
+): Promise<MntFunnelStage> {
+	const { data } = await api.post(
+		`/v1/me/mentoria/tool-instance/${instanceId}/funnel-stages`,
+		body,
+	);
+	return data;
+}
+
+export async function updateFunnelStage(
+	stageId: string,
+	body: { name?: string; description?: string | null },
+): Promise<MntFunnelStage> {
+	const { data } = await api.patch(
+		`/v1/me/mentoria/funnel-stage/${stageId}`,
+		body,
+	);
+	return data;
+}
+
+export async function deleteFunnelStage(stageId: string): Promise<void> {
+	await api.delete(`/v1/me/mentoria/funnel-stage/${stageId}`);
+}
+
+/** Ordem nova, com todos os ids da ferramenta (do topo para o fundo). */
+export async function reorderFunnelStages(
+	instanceId: string,
+	ids: string[],
+): Promise<MntFunnelStage[]> {
+	const { data } = await api.put(
+		`/v1/me/mentoria/tool-instance/${instanceId}/funnel-stages/order`,
+		{ ids },
+	);
+	return data;
+}
+
 export async function listImprovements(
 	instanceId: string,
 ): Promise<MntImprovementCycle[]> {
@@ -458,6 +516,14 @@ export async function listKpis(
 	const { data } = await api.get(`/v1/me/mentoria/journey/${journeyId}/kpis`, {
 		params: category ? { category } : undefined,
 	});
+	return data;
+}
+
+/** KPIs arquivados (active=false), para reativar. */
+export async function listArchivedKpis(journeyId: string): Promise<MntKpi[]> {
+	const { data } = await api.get(
+		`/v1/me/mentoria/journey/${journeyId}/kpis/archived`,
+	);
 	return data;
 }
 
@@ -631,6 +697,28 @@ export async function listReports(journeyId: string): Promise<MntReport[]> {
 	return data;
 }
 
+// ── Assistente de IA ─────────────────────────────────────────────────────────
+/** Manda a conversa da sessão; a API monta o contexto da jornada. */
+export async function askAssistant(
+	journeyId: string,
+	messages: AssistantMessage[],
+): Promise<AssistantReply> {
+	const { data } = await api.post(
+		`/v1/me/mentoria/journey/${journeyId}/assistant`,
+		{ messages },
+	);
+	return data;
+}
+
+export async function getAssistantUsage(
+	journeyId: string,
+): Promise<AssistantUsage> {
+	const { data } = await api.get(
+		`/v1/me/mentoria/journey/${journeyId}/assistant/usage`,
+	);
+	return data;
+}
+
 export async function getReport(reportId: string): Promise<MntReport> {
 	const { data } = await api.get(`/v1/me/mentoria/report/${reportId}`);
 	return data;
@@ -689,9 +777,10 @@ export async function getJourneyOverview(
 	return data;
 }
 
+/** Vazio ou null apaga o feedback. */
 export async function setMeetingFeedback(
 	meetingId: string,
-	feedback: string,
+	feedback: string | null,
 ): Promise<MntJourneyMeeting> {
 	const { data } = await api.post(
 		`/v1/mentoria/meeting/${meetingId}/feedback`,
@@ -699,6 +788,17 @@ export async function setMeetingFeedback(
 			feedback,
 		},
 	);
+	return data;
+}
+
+/** ISO com fuso; null tira o agendamento. */
+export async function scheduleMeeting(
+	meetingId: string,
+	scheduledAt: string | null,
+): Promise<MntJourneyMeeting> {
+	const { data } = await api.put(`/v1/mentoria/meeting/${meetingId}/schedule`, {
+		scheduled_at: scheduledAt,
+	});
 	return data;
 }
 
@@ -716,9 +816,10 @@ export async function listJourneyTasksAsMentor(
 	return data;
 }
 
+/** Entra no histórico e vira o atual; vazio/null só limpa o atual. */
 export async function commentTaskAsMentor(
 	taskId: string,
-	comment: string,
+	comment: string | null,
 ): Promise<MntTask> {
 	const { data } = await api.post(`/v1/mentoria/task/${taskId}/comment`, {
 		comment,
@@ -726,10 +827,42 @@ export async function commentTaskAsMentor(
 	return data;
 }
 
+export async function listTaskCommentsAsMentor(
+	taskId: string,
+): Promise<MntTaskComment[]> {
+	const { data } = await api.get(`/v1/mentoria/task/${taskId}/comments`);
+	return data;
+}
+
+// Selo "Validada pelo mentor" da tela do aluno: não havia chamada no front.
+export async function validateTaskAsMentor(taskId: string): Promise<MntTask> {
+	const { data } = await api.post(`/v1/mentoria/task/${taskId}/validate`);
+	return data;
+}
+
 export async function listJourneyKpisAsMentor(
 	journeyId: string,
 ): Promise<MntKpi[]> {
 	const { data } = await api.get(`/v1/mentoria/journey/${journeyId}/kpis`);
+	return data;
+}
+
+/** Selo do mentor na ferramenta (entra no score de maturidade). */
+export async function validateToolInstance(
+	instanceId: string,
+): Promise<MntToolInstance> {
+	const { data } = await api.post(
+		`/v1/mentoria/tool-instance/${instanceId}/validate`,
+	);
+	return data;
+}
+
+export async function unvalidateToolInstance(
+	instanceId: string,
+): Promise<MntToolInstance> {
+	const { data } = await api.delete(
+		`/v1/mentoria/tool-instance/${instanceId}/validate`,
+	);
 	return data;
 }
 
@@ -751,7 +884,119 @@ export async function listSubmissionsAsMentor(
 	return data;
 }
 
+export async function getDiagnosticAsMentor(
+	journeyId: string,
+): Promise<DiagnosticState> {
+	const { data } = await api.get(
+		`/v1/mentoria/journey/${journeyId}/diagnostic`,
+	);
+	return data;
+}
+
+// Visão 360° do mentor: as mesmas leituras do aluno, só leitura.
+export async function listDiagnosticReopensAsMentor(
+	journeyId: string,
+): Promise<DiagnosticReopen[]> {
+	const { data } = await api.get(
+		`/v1/mentoria/journey/${journeyId}/diagnostic/reopens`,
+	);
+	return data;
+}
+
+export async function getToolContentAsMentor(
+	journeyId: string,
+): Promise<MentorToolContent> {
+	const { data } = await api.get(
+		`/v1/mentoria/journey/${journeyId}/tool-content`,
+	);
+	return data;
+}
+
+export async function getGoodNewsAsMentor(
+	journeyId: string,
+): Promise<GoodNewsState> {
+	const { data } = await api.get(`/v1/mentoria/journey/${journeyId}/good-news`);
+	return data;
+}
+
+export async function listGoalsAsMentor(journeyId: string): Promise<MntGoal[]> {
+	const { data } = await api.get(`/v1/mentoria/journey/${journeyId}/goals`);
+	return data;
+}
+
+export async function getMaslowHistoryAsMentor(
+	journeyId: string,
+): Promise<MntMaslowTest[]> {
+	const { data } = await api.get(
+		`/v1/mentoria/journey/${journeyId}/maslow/history`,
+	);
+	return data;
+}
+
+export async function listBusinessPlansAsMentor(
+	journeyId: string,
+): Promise<MntBusinessPlanVersion[]> {
+	const { data } = await api.get(
+		`/v1/mentoria/journey/${journeyId}/business-plan/versions`,
+	);
+	return data;
+}
+
+export async function listSnapshotsAsMentor(
+	journeyId: string,
+): Promise<MntSnapshot[]> {
+	const { data } = await api.get(`/v1/mentoria/journey/${journeyId}/snapshots`);
+	return data;
+}
+
+export async function compareAsMentor(
+	journeyId: string,
+	from: string,
+	to: string,
+): Promise<Comparison> {
+	const { data } = await api.get(`/v1/mentoria/journey/${journeyId}/compare`, {
+		params: { from, to },
+	});
+	return data;
+}
+
+/** Um relatório pela rota do mentor (checa a turma, não a posse). */
+export async function getReportAsMentor(reportId: string): Promise<MntReport> {
+	const { data } = await api.get(`/v1/mentoria/report/${reportId}`);
+	return data;
+}
+
+export async function listReportsAsMentor(
+	journeyId: string,
+): Promise<MntReport[]> {
+	const { data } = await api.get(`/v1/mentoria/journey/${journeyId}/reports`);
+	return data;
+}
+
 // ── Admin ────────────────────────────────────────────────────────────────────
+/** Encerra (completed) ou reativa (active) a jornada. */
+export async function setJourneyStatus(
+	journeyId: string,
+	status: MntJourney['status'],
+): Promise<MntJourney> {
+	const { data } = await api.patch(`/v1/admin/mentoria/journey/${journeyId}`, {
+		status,
+	});
+	return data;
+}
+
+/** Reabre o diagnóstico: apaga a Foto Zero e devolve o envio para rascunho. */
+export async function reopenDiagnostic(
+	journeyId: string,
+	reason: string | null,
+): Promise<DiagnosticState> {
+	const { data } = await api.post(
+		`/v1/admin/mentoria/journey/${journeyId}/diagnostic/reopen`,
+		{ reason },
+	);
+	return data;
+}
+
 export async function listCohortsAdmin(): Promise<MntCohort[]> {
 	const { data } = await api.get('/v1/admin/mentoria/cohorts');
 	return data;
@@ -783,6 +1028,15 @@ export async function addCohortMentor(
 	return data;
 }
 
+export async function listCohortMentors(
+	cohortId: string,
+): Promise<MntCohortMentor[]> {
+	const { data } = await api.get(
+		`/v1/admin/mentoria/cohort/${cohortId}/mentors`,
+	);
+	return data;
+}
+
 export async function removeCohortMentor(
 	cohortId: string,
 	mentorUserId: string,
@@ -800,6 +1054,24 @@ export async function enrollStudent(
 		`/v1/admin/mentoria/cohort/${cohortId}/enroll`,
 		body,
 	);
+	return data;
+}
+
+/** Matrícula em lote: um erro não para os outros (resultado por aluno). */
+export async function enrollStudentsBatch(
+	cohortId: string,
+	userIds: string[],
+): Promise<EnrollBatchResult> {
+	const { data } = await api.post(
+		`/v1/admin/mentoria/cohort/${cohortId}/enroll-batch`,
+		{ user_ids: userIds },
+	);
+	return data;
+}
+
+/** Fila "Aguardando turma" (admin). */
+export async function listWaitingStudents(): Promise<MentoriaWaitingStudent[]> {
+	const { data } = await api.get('/v1/admin/mentoria/waiting-students');
 	return data;
 }
 
@@ -824,6 +1096,28 @@ export async function publishMeetingTemplate(
 		`/v1/admin/mentoria/meeting-template/${id}/publish`,
 	);
 	return data;
+}
+
+export async function getMeetingTemplatePublishImpact(
+	id: string,
+): Promise<MeetingTemplatePublishImpact> {
+	const { data } = await api.get(
+		`/v1/admin/mentoria/meeting-template/${id}/publish-impact`,
+	);
+	return data;
+}
+
+export async function unpublishMeetingTemplate(
+	id: string,
+): Promise<UnpublishedMeetingTemplate> {
+	const { data } = await api.post(
+		`/v1/admin/mentoria/meeting-template/${id}/unpublish`,
+	);
+	return data;
+}
+
+export async function deleteMeetingTemplate(id: string): Promise<void> {
+	await api.delete(`/v1/admin/mentoria/meeting-template/${id}`);
 }
 
 export async function listFormTemplatesAdmin(): Promise<MntFormTemplate[]> {
@@ -852,6 +1146,35 @@ export async function listToolDefinitionsAdmin(): Promise<MntToolDefinition[]> {
 	return data;
 }
 
+/** Edita nome/descrição/área/posição/ativa. key e kind são fixos. */
+export async function patchToolDefinition(
+	id: string,
+	body: Partial<
+		Pick<
+			MntToolDefinition,
+			'name' | 'description' | 'area' | 'position' | 'active'
+		>
+	>,
+): Promise<MntToolDefinition> {
+	const { data } = await api.patch(
+		`/v1/admin/mentoria/tool-definition/${id}`,
+		body,
+	);
+	return data;
+}
+
+/** 409 tool_definition_in_use (details.instances) → confirmar com force. */
+export async function deleteToolDefinition(
+	id: string,
+	force = false,
+): Promise<{ deleted: true; instances_removed: number }> {
+	const { data } = await api.delete(
+		`/v1/admin/mentoria/tool-definition/${id}`,
+		{ params: force ? { force: 'true' } : undefined },
+	);
+	return data;
+}
+
 export async function upsertToolDefinition(
 	body: Record<string, unknown> & { key: string; name: string },
 ): Promise<MntToolDefinition> {
@@ -871,15 +1194,35 @@ export async function createMaterialLink(
 	return data;
 }
 
+/** `onProgress` recebe 0–100 enquanto o arquivo sobe. */
 export async function uploadMaterial(
 	file: File,
-	params: { title: string; cohort_id?: string; meeting_template_id?: string },
+	params: UploadMaterialParams,
+	onProgress?: (pct: number) => void,
 ): Promise<MntMaterial> {
 	const form = new FormData();
 	form.append('file', file);
 	const { data } = await api.post('/v1/admin/mentoria/materials', form, {
 		params,
+		onUploadProgress: (e) => {
+			if (onProgress && e.total) {
+				onProgress(Math.round((e.loaded / e.total) * 100));
+			}
+		},
 	});
+	return data;
+}
+
+export async function updateMaterial(
+	id: string,
+	body: Partial<
+		Pick<
+			MntMaterial,
+			'title' | 'description' | 'cohort_id' | 'meeting_template_id' | 'url'
+		>
+	>,
+): Promise<MntMaterial> {
+	const { data } = await api.patch(`/v1/admin/mentoria/material/${id}`, body);
 	return data;
 }
 
@@ -928,6 +1271,19 @@ export async function endLive(
 	return data;
 }
 
+/**
+ * Edita a sala (título, agenda, turma e, no link externo, os links). Numa sala
+ * externa já encerrada, `recording_url` publica a gravação (vira `vod_ready`)
+ * ou, com null, a despublica.
+ */
+export async function updateLive(
+	id: string,
+	body: Record<string, unknown>,
+): Promise<MntLiveRoom> {
+	const { data } = await api.patch(`/v1/admin/mentoria/live/${id}`, body);
+	return data;
+}
+
 export async function listMaturityConfigs(): Promise<MntMaturityConfig[]> {
 	const { data } = await api.get('/v1/admin/mentoria/maturity-configs');
 	return data;
@@ -943,6 +1299,14 @@ export async function createMaturityConfig(body: {
 }
 
 // ── Admin: liberação restrita ────────────────────────────────────────────────
+/** Bloqueia/libera a seção Ferramentas para todos os alunos. */
+export async function setToolsLock(
+	locked: boolean,
+): Promise<MentoriaAccessAdmin> {
+	const { data } = await api.put('/v1/admin/mentoria/tools-lock', { locked });
+	return data;
+}
+
 export async function getMentoriaAccessAdmin(): Promise<MentoriaAccessAdmin> {
 	const { data } = await api.get('/v1/admin/mentoria/access');
 	return data;

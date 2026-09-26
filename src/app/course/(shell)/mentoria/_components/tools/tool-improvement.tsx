@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Plus, RefreshCw, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useInvalidateToolProgress } from '@/modules/mentoria/hooks';
 import {
 	createImprovement,
 	listImprovements,
@@ -15,6 +16,7 @@ import {
 	BTN_PRIMARY,
 	CARD,
 	EmptyState,
+	fmtDate,
 	INPUT,
 	LABEL,
 	MntSkeleton,
@@ -58,7 +60,13 @@ const EMPTY_FORM: CycleForm = {
 export function ToolImprovement({ instanceId }: { instanceId: string }) {
 	const qc = useQueryClient();
 	const queryKey = ['mentoria', 'improvements', instanceId];
-	const invalidate = () => qc.invalidateQueries({ queryKey });
+	const invalidateProgress = useInvalidateToolProgress();
+	// A API recalcula o % da ferramenta a cada escrita: o card e o Mapa
+	// também precisam recarregar.
+	const invalidate = () => {
+		qc.invalidateQueries({ queryKey });
+		invalidateProgress();
+	};
 
 	const { data: cycles, isLoading } = useQuery({
 		queryKey,
@@ -131,7 +139,7 @@ export function ToolImprovement({ instanceId }: { instanceId: string }) {
 								<p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
 									{c.owner_name ? `Responsável: ${c.owner_name}` : null}
 									{c.owner_name && c.deadline ? ' · ' : null}
-									{c.deadline ? `Prazo: ${c.deadline}` : null}
+									{c.deadline ? `Prazo: ${fmtDate(c.deadline)}` : null}
 								</p>
 							</div>
 							<div className="flex items-center gap-2 shrink-0">

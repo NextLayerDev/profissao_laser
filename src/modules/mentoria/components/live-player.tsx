@@ -2,6 +2,7 @@
 
 import { Badge } from '@upvox-dev/ui';
 import { Radio } from 'lucide-react';
+import { useState } from 'react';
 import type { LivePlayback } from '../types';
 
 /**
@@ -13,7 +14,18 @@ import type { LivePlayback } from '../types';
  * se o que está tocando é a transmissão ou a gravação.
  */
 export function LivePlayer({ playback }: { playback: LivePlayback }) {
-	const src = `https://player.mux.com/${playback.playback_id}?playback-token=${playback.token}`;
+	// O `src` fica preso ao primeiro token de cada playback_id: o hook renova o
+	// token a cada 45 min e trocar o `src` recarregava o iframe — a gravação
+	// voltava para 0:00 e a live reconectava no meio do encontro. O Mux só
+	// confere o token no início da sessão; um remount já pega o token novo.
+	const [frame, setFrame] = useState(() => ({
+		id: playback.playback_id,
+		src: buildSrc(playback),
+	}));
+	if (frame.id !== playback.playback_id) {
+		setFrame({ id: playback.playback_id, src: buildSrc(playback) });
+	}
+	const src = frame.src;
 	return (
 		// `bg-black` fica: é moldura de vídeo, não superfície de tema.
 		<div className="relative w-full aspect-video rounded-card overflow-hidden bg-black border border-subtle">
@@ -37,4 +49,8 @@ export function LivePlayer({ playback }: { playback: LivePlayback }) {
 			)}
 		</div>
 	);
+}
+
+function buildSrc(playback: LivePlayback): string {
+	return `https://player.mux.com/${playback.playback_id}?playback-token=${playback.token}`;
 }
