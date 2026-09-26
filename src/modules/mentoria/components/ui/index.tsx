@@ -22,6 +22,7 @@
 import { ArrowDownRight, ArrowUpRight, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { HelpTip } from '../help-tip';
 
 // ── Coluna flutuante ─────────────────────────────────────────────────────────
 
@@ -60,6 +61,7 @@ export const FLOATING_COLUMN = {
 export function SectionCard({
 	title,
 	description,
+	help,
 	action,
 	children,
 	className = '',
@@ -67,6 +69,8 @@ export function SectionCard({
 }: {
 	title?: string;
 	description?: string;
+	/** Explicação longa, atrás do "?" ao lado do título. */
+	help?: ReactNode;
 	/** Canto superior direito: filtro, link "ver todos", contador. */
 	action?: ReactNode;
 	children: ReactNode;
@@ -80,7 +84,12 @@ export function SectionCard({
 			{(title || action) && (
 				<div className="flex flex-wrap items-start justify-between gap-3 p-5">
 					<div className="min-w-0">
-						{title && <h2 className="text-title text-primary">{title}</h2>}
+						{title && (
+							<h2 className="text-title text-primary flex items-center gap-2">
+								{title}
+								{help && <HelpTip label={`Sobre ${title}`}>{help}</HelpTip>}
+							</h2>
+						)}
 						{description && (
 							<p className="text-caption text-muted mt-0.5">{description}</p>
 						)}

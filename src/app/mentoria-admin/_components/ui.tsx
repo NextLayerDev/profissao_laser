@@ -16,6 +16,7 @@
 import { ArrowLeft, Loader2, X } from 'lucide-react';
 import Link from 'next/link';
 import { type ReactNode, useEffect, useRef } from 'react';
+import { HelpTip } from '@/modules/mentoria/components/help-tip';
 import { parseLocalDate } from '@/modules/mentoria/dates';
 
 // Sem altura fixa (`h-control-md`) de propósito: esta string também veste
@@ -55,11 +56,15 @@ export function Card({
 export function PageTitle({
 	title,
 	description,
+	help,
 	backHref,
 	actions,
 }: {
 	title: string;
+	/** No máximo 1 linha; o detalhe vai em `help`. */
 	description?: string;
+	/** Explicação longa, atrás do "?" ao lado do título. */
+	help?: ReactNode;
 	backHref?: string;
 	actions?: ReactNode;
 }) {
@@ -75,7 +80,10 @@ export function PageTitle({
 						Voltar
 					</Link>
 				)}
-				<h2 className="text-page text-primary">{title}</h2>
+				<h2 className="text-page text-primary flex items-center gap-2">
+					{title}
+					{help && <HelpTip label={`Sobre ${title}`}>{help}</HelpTip>}
+				</h2>
 				{description && (
 					<p className="text-body text-muted mt-1 max-w-2xl">{description}</p>
 				)}

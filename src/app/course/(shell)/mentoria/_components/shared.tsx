@@ -5,6 +5,7 @@ import { AlertTriangle, ArrowLeft, Compass } from 'lucide-react';
 import Link from 'next/link';
 import { type ReactNode, useEffect, useId } from 'react';
 import { ModalPortal } from '@/components/ui/modal-portal';
+import { HelpTip } from '@/modules/mentoria/components/help-tip';
 import { parseLocalDate } from '@/modules/mentoria/dates';
 import { useMentoriaBootstrap } from '@/modules/mentoria/hooks';
 import { MENTORIA_SETTINGS } from '@/modules/mentoria/nav';
@@ -172,12 +173,16 @@ export function apiErrorDetails(e: unknown): Record<string, unknown> | null {
 export function MntHeader({
 	title,
 	subtitle,
+	help,
 	icon: Icon,
 	backHref,
 	actions,
 }: {
 	title: string;
+	/** No máximo 1 linha; o detalhe vai em `help`. */
 	subtitle?: string;
+	/** Explicação longa, atrás do "?" ao lado do título. */
+	help?: ReactNode;
 	icon?: LucideIcon;
 	backHref?: string;
 	actions?: ReactNode;
@@ -199,7 +204,10 @@ export function MntHeader({
 				</div>
 			)}
 			<div className="min-w-0 flex-1">
-				<h1 className="font-display text-page text-primary">{title}</h1>
+				<h1 className="font-display text-page text-primary flex items-center gap-2">
+					{title}
+					{help && <HelpTip label={`Sobre ${title}`}>{help}</HelpTip>}
+				</h1>
 				{subtitle && <p className="text-body text-muted">{subtitle}</p>}
 			</div>
 			{actions && <div className="flex items-center gap-2">{actions}</div>}
