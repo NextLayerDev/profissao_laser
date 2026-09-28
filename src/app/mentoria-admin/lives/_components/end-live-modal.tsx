@@ -14,6 +14,7 @@
 import { Loader2, Square } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { normalizeUrl } from '@/app/course/(shell)/mentoria/_components/shared';
 import type { MntLiveRoom } from '@/modules/mentoria/types';
 import {
 	mentoriaErrorMessage,
@@ -33,11 +34,17 @@ export function EndLiveModal({
 	const isExternal = live.source === 'external';
 
 	const doEnd = async () => {
+		// Mesmo tratamento do link da live: sem https:// a API dava 400 cru.
+		const raw = isExternal ? recordingUrl.trim() : '';
+		const recording = raw ? normalizeUrl(raw) : null;
+		if (raw && !recording) {
+			toast.error(
+				'Link da gravação inválido. Use o endereço completo (https://...)',
+			);
+			return;
+		}
 		try {
-			await end.mutateAsync({
-				id: live.id,
-				recordingUrl: isExternal ? recordingUrl.trim() || null : null,
-			});
+			await end.mutateAsync({ id: live.id, recordingUrl: recording });
 			toast.success('Live encerrada');
 			onClose();
 		} catch (err) {

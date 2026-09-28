@@ -12,7 +12,14 @@
 // mesmo padrão de `desenvolvimento-view.tsx` e `diagnostico-view.tsx`.
 
 import { Button, buttonLabel, Table } from '@upvox-dev/ui';
-import { BarChart3, LineChart as LineChartIcon, Plus } from 'lucide-react';
+import {
+	Archive,
+	ArchiveRestore,
+	BarChart3,
+	LineChart as LineChartIcon,
+	Pencil,
+	Plus,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import {
 	CartesianGrid,
@@ -36,9 +43,16 @@ import {
 	SegmentedControl,
 	StatCard,
 } from '@/modules/mentoria/components/ui';
-import type { MntKpi, MntKpiMeasurement } from '@/modules/mentoria/types';
+import { todayLocalISO } from '@/modules/mentoria/dates';
+import { parseBrNumber } from '@/modules/mentoria/numbers';
+import {
+	KPI_METRIC_OPTIONS,
+	type MntKpi,
+	type MntKpiMeasurement,
+} from '@/modules/mentoria/types';
 import {
 	CARD,
+	ConfirmDialog,
 	EmptyState,
 	fmtDate,
 	INPUT,
@@ -65,6 +79,51 @@ const PERIOD_OPTIONS: Array<{ value: Period; label: string }> = [
 const PERIOD_MONTHS: Record<Period, number> = { '3m': 3, '6m': 6, '12m': 12 };
 
 export type NewKpiBody = Record<string, unknown> & { name: string };
+export type KpiPatchBody = Record<string, unknown>;
+
+const metricLabel = (key: string | null | undefined) =>
+	KPI_METRIC_OPTIONS.find((o) => o.value === key)?.label ?? null;
+
+/**
+ * "Usar no comparador como…": a última medição entra no "Agora" do
+ * comparador com a mesma chave da Foto Zero. Uma chave por jornada.
+ */
+function MetricKeySelect({
+	value,
+	onChange,
+	kpis,
+	currentId,
+}: {
+	value: string;
+	onChange: (value: string) => void;
+	kpis: MntKpi[];
+	currentId?: string;
+}) {
+	const taken = new Set(
+		kpis
+			.filter((k) => k.id !== currentId && k.metric_key)
+			.map((k) => k.metric_key as string),
+	);
+	return (
+		<div>
+			<span className={LABEL}>Usar no comparador como…</span>
+			<select
+				className={INPUT}
+				value={value}
+				onChange={(e) => onChange(e.target.value)}
+				aria-label="Usar no comparador como"
+			>
+				<option value="">Não usar</option>
+				{KPI_METRIC_OPTIONS.map((o) => (
+					<option key={o.value} value={o.value} disabled={taken.has(o.value)}>
+						{o.label}
+						{taken.has(o.value) ? ' (em uso)' : ''}
+					</option>
+				))}
+			</select>
+		</div>
+	);
+}
 export type NewMeasurementBody = {
 	value: number | null;
 	measured_at: string;
@@ -78,11 +137,22 @@ export function IndicadoresView({
 	onCreateKpi,
 	addingMeasurement,
 	onAddMeasurement,
+	updating = false,
+	onUpdateKpi,
+	archivedKpis = [],
 }: {
 	kpis: MntKpi[];
+	/** Arquivados (active=false): saem da Central e podem ser reativados. */
+	archivedKpis?: MntKpi[];
 	historyByKpiId: Record<string, MntKpiMeasurement[] | undefined>;
 	creating: boolean;
 	onCreateKpi: (body: NewKpiBody, opts: { onSuccess: () => void }) => void;
+	updating?: boolean;
+	onUpdateKpi?: (
+		kpiId: string,
+		body: KpiPatchBody,
+		opts: { onSuccess: () => void },
+	) => void;
 	addingMeasurement: boolean;
 	onAddMeasurement: (
 		kpiId: string,
@@ -104,10 +174,23 @@ export function IndicadoresView({
 		periodicity: 'monthly',
 		green_pct: '100',
 		yellow_pct: '70',
+		metric_key: '',
 	});
+	const [editing, setEditing] = useState<MntKpi | null>(null);
+	const [editForm, setEditForm] = useState({
+		name: '',
+		category: 'geral',
+		unit: '',
+		target: '',
+		direction: 'up_good',
+		periodicity: 'monthly',
+		metric_key: '',
+	});
+	const [archiving, setArchiving] = useState<MntKpi | null>(null);
+	const [showArchived, setShowArchived] = useState(false);
 	const [measurement, setMeasurement] = useState({
 		value: '',
-		measured_at: new Date().toISOString().slice(0, 10),
+		measured_at: todayLocalISO(),
 		note: '',
 	});
 
@@ -132,34 +215,90 @@ export function IndicadoresView({
 			toast.error('Dê um nome ao indicador.');
 			return;
 		}
+		const target = parseBrNumber(form.target);
+		if (form.target.trim() !== '' && target === null) {
+			toast.error('Meta inválida. Use só números, ex.: 15.000,50');
+			return;
+		}
 		onCreateKpi(
 			{
 				name: form.name,
 				category: form.category,
 				unit: form.unit || null,
-				target: form.target === '' ? null : Number(form.target),
+				target,
 				direction: form.direction,
 				periodicity: form.periodicity,
 				semaphore: {
 					green_pct: Number(form.green_pct),
 					yellow_pct: Number(form.yellow_pct),
 				},
+				...(form.metric_key ? { metric_key: form.metric_key } : {}),
 			},
 			{
 				onSuccess: () => {
 					setShowForm(false);
-					setForm({ ...form, name: '', unit: '', target: '' });
+					setForm({ ...form, name: '', unit: '', target: '', metric_key: '' });
 				},
 			},
 		);
 	};
 
+	const openEdit = (kpi: MntKpi) => {
+		setEditForm({
+			name: kpi.name,
+			category: kpi.category,
+			unit: kpi.unit ?? '',
+			direction: kpi.direction,
+			periodicity: kpi.periodicity,
+			target:
+				kpi.target === null
+					? ''
+					: kpi.target.toLocaleString('pt-BR', { maximumFractionDigits: 2 }),
+			metric_key: kpi.metric_key ?? '',
+		});
+		setEditing(kpi);
+	};
+
+	const submitEdit = () => {
+		if (!editing || !onUpdateKpi) return;
+		if (!editForm.name.trim()) {
+			toast.error('Dê um nome ao indicador.');
+			return;
+		}
+		const target = parseBrNumber(editForm.target);
+		if (editForm.target.trim() !== '' && target === null) {
+			toast.error('Meta inválida. Use só números, ex.: 15.000,50');
+			return;
+		}
+		// Só manda metric_key quando mudou: sem a migration a API recusa a coluna.
+		const metricChanged = (editing.metric_key ?? '') !== editForm.metric_key;
+		onUpdateKpi(
+			editing.id,
+			{
+				name: editForm.name.trim(),
+				category: editForm.category,
+				unit: editForm.unit || null,
+				target,
+				direction: editForm.direction,
+				periodicity: editForm.periodicity,
+				...(metricChanged ? { metric_key: editForm.metric_key || null } : {}),
+			},
+			{ onSuccess: () => setEditing(null) },
+		);
+	};
+
 	const submitMeasurement = () => {
 		if (!measuring) return;
+		// Texto pt-BR: '1.500' é mil e quinhentos (o input number gravava 1.5).
+		const value = parseBrNumber(measurement.value);
+		if (measurement.value.trim() !== '' && value === null) {
+			toast.error('Valor inválido. Use só números, ex.: 15.000,50');
+			return;
+		}
 		onAddMeasurement(
 			measuring.id,
 			{
-				value: measurement.value === '' ? null : Number(measurement.value),
+				value,
 				measured_at: measurement.measured_at,
 				note: measurement.note || null,
 			},
@@ -173,7 +312,7 @@ export function IndicadoresView({
 	};
 
 	return (
-		<div className="p-4 md:p-8 max-w-5xl mx-auto">
+		<div className="max-w-5xl mx-auto">
 			<MntHeader
 				title="Central de indicadores"
 				subtitle="KPIs com semáforo e histórico — medir é o primeiro passo"
@@ -228,7 +367,8 @@ export function IndicadoresView({
 					<div>
 						<span className={LABEL}>Meta</span>
 						<input
-							type="number"
+							type="text"
+							inputMode="decimal"
 							className={INPUT}
 							value={form.target}
 							onChange={(e) => setForm({ ...form, target: e.target.value })}
@@ -259,6 +399,11 @@ export function IndicadoresView({
 							<option value="monthly">Mensal</option>
 						</select>
 					</div>
+					<MetricKeySelect
+						value={form.metric_key}
+						onChange={(metric_key) => setForm({ ...form, metric_key })}
+						kpis={kpis}
+					/>
 					<div className="grid grid-cols-2 gap-3">
 						<div>
 							<span className={LABEL}>🟢 a partir de (% da meta)</span>
@@ -351,6 +496,9 @@ export function IndicadoresView({
 											<p className="text-body text-primary">{kpi.name}</p>
 											<p className="text-caption text-muted">
 												{CATEGORY_LABEL[kpi.category] ?? kpi.category}
+												{kpi.metric_key
+													? ` · Comparador: ${metricLabel(kpi.metric_key) ?? kpi.metric_key}`
+													: ''}
 											</p>
 										</div>
 									),
@@ -392,9 +540,26 @@ export function IndicadoresView({
 											>
 												<LineChartIcon className="w-4 h-4" aria-hidden />
 											</Button>
+											{onUpdateKpi && (
+												<Button
+													variant="secondary"
+													onPress={() => openEdit(kpi)}
+													accessibilityLabel={`Editar ${kpi.name}`}
+												>
+													<Pencil className="w-4 h-4" aria-hidden />
+												</Button>
+											)}
 											<Button
 												variant="primary"
-												onPress={() => setMeasuring(kpi)}
+												onPress={() => {
+													// Data recalculada a cada abertura: a aba pode ter
+													// virado a meia-noite aberta.
+													setMeasurement((m) => ({
+														...m,
+														measured_at: todayLocalISO(),
+													}));
+													setMeasuring(kpi);
+												}}
 											>
 												Medir
 											</Button>
@@ -434,6 +599,203 @@ export function IndicadoresView({
 				</div>
 			)}
 
+			{/* Modal de edição */}
+			{editing && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+					<button
+						type="button"
+						aria-label="Fechar"
+						className="absolute inset-0 bg-black/50"
+						onClick={() => setEditing(null)}
+					/>
+					<div
+						className={`${CARD} relative w-full max-w-md p-5 space-y-4 bg-white dark:bg-[#101114]`}
+					>
+						<h3 className="font-semibold text-slate-900 dark:text-slate-100">
+							Editar: {editing.name}
+						</h3>
+						<div>
+							<span className={LABEL}>Nome</span>
+							<input
+								className={INPUT}
+								value={editForm.name}
+								onChange={(e) =>
+									setEditForm({ ...editForm, name: e.target.value })
+								}
+							/>
+						</div>
+						<div className="grid grid-cols-2 gap-3">
+							<div>
+								<span className={LABEL}>Unidade</span>
+								<input
+									className={INPUT}
+									value={editForm.unit}
+									onChange={(e) =>
+										setEditForm({ ...editForm, unit: e.target.value })
+									}
+								/>
+							</div>
+							<div>
+								<span className={LABEL}>Meta</span>
+								<input
+									type="text"
+									inputMode="decimal"
+									className={INPUT}
+									value={editForm.target}
+									onChange={(e) =>
+										setEditForm({ ...editForm, target: e.target.value })
+									}
+								/>
+							</div>
+						</div>
+						<div className="grid grid-cols-2 gap-3">
+							<div>
+								<span className={LABEL}>Categoria</span>
+								<select
+									className={INPUT}
+									value={editForm.category}
+									onChange={(e) =>
+										setEditForm({ ...editForm, category: e.target.value })
+									}
+								>
+									{Object.entries(CATEGORY_LABEL).map(([value, label]) => (
+										<option key={value} value={value}>
+											{label}
+										</option>
+									))}
+								</select>
+							</div>
+							<div>
+								<span className={LABEL}>Periodicidade</span>
+								<select
+									className={INPUT}
+									value={editForm.periodicity}
+									onChange={(e) =>
+										setEditForm({ ...editForm, periodicity: e.target.value })
+									}
+								>
+									<option value="daily">Diária</option>
+									<option value="weekly">Semanal</option>
+									<option value="monthly">Mensal</option>
+								</select>
+							</div>
+						</div>
+						<div>
+							<span className={LABEL}>Direção</span>
+							<select
+								className={INPUT}
+								value={editForm.direction}
+								onChange={(e) =>
+									setEditForm({ ...editForm, direction: e.target.value })
+								}
+							>
+								<option value="up_good">Quanto maior, melhor</option>
+								<option value="down_good">Quanto menor, melhor</option>
+							</select>
+						</div>
+						<MetricKeySelect
+							value={editForm.metric_key}
+							onChange={(metric_key) =>
+								setEditForm({ ...editForm, metric_key })
+							}
+							kpis={kpis}
+							currentId={editing.id}
+						/>
+						<div className="flex gap-2 justify-end">
+							<Button
+								variant="secondary"
+								onPress={() => setArchiving(editing)}
+								disabled={updating}
+								accessibilityLabel={`Arquivar ${editing.name}`}
+							>
+								<Archive className="w-4 h-4" aria-hidden />
+								<span className={buttonLabel({ variant: 'secondary' })}>
+									Arquivar
+								</span>
+							</Button>
+							<span className="flex-1" />
+							<Button variant="secondary" onPress={() => setEditing(null)}>
+								Cancelar
+							</Button>
+							<Button
+								variant="primary"
+								onPress={submitEdit}
+								disabled={updating}
+							>
+								Salvar
+							</Button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{archiving && onUpdateKpi && (
+				<ConfirmDialog
+					title={`Arquivar "${archiving.name}"?`}
+					confirmLabel="Arquivar"
+					busy={updating}
+					onCancel={() => setArchiving(null)}
+					onConfirm={() =>
+						onUpdateKpi(
+							archiving.id,
+							{ active: false },
+							{
+								onSuccess: () => {
+									setArchiving(null);
+									setEditing(null);
+								},
+							},
+						)
+					}
+				>
+					Sai da Central. O histórico fica guardado e dá para reativar.
+				</ConfirmDialog>
+			)}
+
+			{archivedKpis.length > 0 && onUpdateKpi && (
+				<div className="mt-6">
+					<button
+						type="button"
+						className="text-caption text-muted hover:text-primary"
+						onClick={() => setShowArchived((v) => !v)}
+					>
+						{showArchived ? 'Ocultar' : 'Ver'} arquivados ({archivedKpis.length}
+						)
+					</button>
+					{showArchived && (
+						<ul className="mt-2 space-y-2" data-testid="kpis-archived">
+							{archivedKpis.map((k) => (
+								<li
+									key={k.id}
+									className={`${CARD} flex items-center justify-between gap-3 p-3`}
+								>
+									<span className="min-w-0 truncate text-body text-secondary">
+										{k.name}
+									</span>
+									<Button
+										variant="secondary"
+										disabled={updating}
+										onPress={() =>
+											onUpdateKpi(
+												k.id,
+												{ active: true },
+												{ onSuccess: () => {} },
+											)
+										}
+										accessibilityLabel={`Reativar ${k.name}`}
+									>
+										<ArchiveRestore className="w-4 h-4" aria-hidden />
+										<span className={buttonLabel({ variant: 'secondary' })}>
+											Reativar
+										</span>
+									</Button>
+								</li>
+							))}
+						</ul>
+					)}
+				</div>
+			)}
+
 			{/* Modal de medição */}
 			{measuring && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -455,7 +817,8 @@ export function IndicadoresView({
 								vazio para "não medido"
 							</span>
 							<input
-								type="number"
+								type="text"
+								inputMode="decimal"
 								className={INPUT}
 								value={measurement.value}
 								onChange={(e) =>
@@ -514,7 +877,14 @@ export function IndicadoresView({
 function targetProgressPct(kpi: MntKpi) {
 	const value = kpi.latest_measurement?.value;
 	if (value === null || value === undefined || !kpi.target) return null;
-	return Math.max(0, Math.min(100, (value / kpi.target) * 100));
+	// "Quanto menor, melhor": atingir é ficar abaixo da meta — mesma conta do
+	// semáforo da API (target/valor). Com value/target a barra enchia justo
+	// quando o semáforo ficava vermelho.
+	const pct =
+		kpi.direction === 'down_good'
+			? (kpi.target / Math.max(value, Number.EPSILON)) * 100
+			: (value / kpi.target) * 100;
+	return Math.max(0, Math.min(100, pct));
 }
 
 const PROGRESS_TONE_CLASS: Record<string, string> = {

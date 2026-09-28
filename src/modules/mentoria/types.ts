@@ -29,6 +29,14 @@ export type MntCohort = {
 	updated_at: string;
 };
 
+export type MntCohortMentor = {
+	cohort_id: string;
+	mentor_user_id: string;
+	role: 'lead' | 'assistant';
+	created_at: string;
+	user: { id: string; name: string | null; email: string } | null;
+};
+
 export type MntJourney = {
 	id: string;
 	company_id: string;
@@ -68,6 +76,14 @@ export type MntMeetingTemplate = {
 	updated_at: string;
 };
 
+/** Quantas jornadas ativas o publish de uma versão vai atualizar. */
+export type MeetingTemplatePublishImpact = { journeys: number };
+
+export type UnpublishedMeetingTemplate = MntMeetingTemplate & {
+	journeys_updated: number;
+	fallback_template_id: string;
+};
+
 export type MntJourneyMeeting = {
 	id: string;
 	journey_id: string;
@@ -94,16 +110,43 @@ export type MentoriaAccessStudent = {
 
 /**
  * `reason='restricted'`: o admin limitou a Mentoria e o aluno não está na
- * lista — some do menu. `'required'`: sem plano/matrícula — o menu continua
+ * lista — some do menu. `'required'`: sem o plano (a matrícula sozinha não
+ * basta) — o menu continua
  * mostrando e o SubscriptionGate oferece o plano.
  */
 export type MyMentoriaAccess = {
 	has_access: boolean;
 	reason: 'required' | 'restricted' | null;
+	/** Seção Ferramentas bloqueada pelo admin (ausente em API antiga). */
+	tools_locked?: boolean;
+};
+
+/** Fila "Aguardando turma": aluno com o plano da Mentoria e sem jornada ativa. */
+export type MentoriaWaitingStudent = {
+	user_id: string;
+	name: string | null;
+	email: string;
+	company_name: string | null;
+	plan_name: string | null;
+	/** Início da assinatura mais antiga com a Mentoria. */
+	since: string;
+};
+
+export type EnrollBatchResult = {
+	enrolled: number;
+	failed: number;
+	results: Array<{
+		user_id: string;
+		ok: boolean;
+		journey_id: string | null;
+		/** Código do erro da API (ex.: `journey_already_active`). */
+		error: string | null;
+	}>;
 };
 
 export type MentoriaAccessAdmin = {
 	restricted: boolean;
+	tools_locked?: boolean;
 	students: MentoriaAccessStudent[];
 };
 
@@ -120,6 +163,9 @@ export type MentoriaBootstrap = {
 	};
 };
 
+/** Sinais de risco do aluno (só em jornada ativa). */
+export type CohortRiskFlag = 'stalled' | 'diagnostic_pending' | 'overdue_tasks';
+
 export type CohortDashboardRow = {
 	journey_id: string;
 	company: MntCompany;
@@ -129,6 +175,17 @@ export type CohortDashboardRow = {
 	meetings_done: number;
 	progress_pct: number;
 	status: string;
+	// null só enquanto a migration do dashboard não roda na API.
+	started_at?: string | null;
+	last_activity_at?: string | null;
+	last_access_at?: string | null;
+	days_inactive?: number | null;
+	diagnostic_pending?: boolean | null;
+	overdue_tasks?: number | null;
+	open_tasks?: number | null;
+	risk_flags?: CohortRiskFlag[];
+	/** Maior = mais urgente. */
+	risk_score?: number;
 };
 
 // ── Formulários data-driven ──────────────────────────────────────────────────
@@ -159,6 +216,18 @@ export type FormBlock = {
 	title: string;
 	description?: string;
 	fields: FormField[];
+};
+
+/** Campo nas listas do "Comparar versões" do builder. */
+export type FormDiffField = { key: string; label: string; block: string };
+export type FormDiffChange = FormDiffField & {
+	/** O que mudou, em pt-BR curto ("rótulo", "tipo", "obrigatório"…). */
+	changes: string[];
+};
+export type FormSchemaDiff = {
+	added: FormDiffField[];
+	removed: FormDiffField[];
+	changed: FormDiffChange[];
 };
 
 export type MntFormTemplate = {
@@ -221,6 +290,18 @@ export type DiagnosticState = {
 	foto_zero: MntSnapshot | null;
 };
 
+/** Auditoria de uma reabertura do diagnóstico (visão do mentor). */
+export type DiagnosticReopen = {
+	id: string;
+	journey_id: string;
+	reopened_by: string | null;
+	reopened_by_name: string | null;
+	reason: string | null;
+	reopened_at: string;
+	foto_zero_taken_at: string | null;
+	answers: Record<string, unknown> | null;
+};
+
 // ── Ferramentas ──────────────────────────────────────────────────────────────
 export type ToolArea =
 	| 'estrategia'
@@ -265,8 +346,14 @@ export type MntToolInstance = {
 	journey_id: string;
 	tool_definition_id: string;
 	status: 'not_started' | 'in_progress' | 'completed';
+	/** Calculado pela API a partir do que foi preenchido. */
 	completion_pct: number;
 	completed_at: string | null;
+	/** "Marcar como concluída" à mão (override do cálculo). */
+	manual_completed_at?: string | null;
+	/** Selo do mentor. */
+	mentor_validated_at?: string | null;
+	mentor_validated_by?: string | null;
 };
 
 export type ToolWithInstance = MntToolDefinition & {
@@ -280,11 +367,19 @@ export type CompanyMap = {
 		tools: Array<{
 			key: string;
 			name: string;
+			kind?: ToolKind;
+			instance_id?: string | null;
 			completion_pct: number;
 			status: string;
+			validated?: boolean;
+			validated_at?: string | null;
 		}>;
 	}>;
 	overall_pct: number;
+	/** Com ferramenta validada, o geral conta só as validadas. */
+	basis?: 'validated' | 'self_declared';
+	validated_count?: number;
+	self_declared_pct?: number;
 };
 
 export type MntProcessStep = {
@@ -378,6 +473,16 @@ export type MntImprovementCycle = {
 	status: 'open' | 'in_progress' | 'done';
 };
 
+/** Conteúdo das ferramentas estruturadas da jornada (leitura do mentor). */
+export type MentorToolContent = {
+	process_flows: MntProcessFlow[];
+	org_positions: MntOrgPosition[];
+	pops: MntPop[];
+	financial_entries: MntFinancialEntry[];
+	funnel_stages: MntFunnelStage[];
+	improvements: MntImprovementCycle[];
+};
+
 // ── Tarefas ──────────────────────────────────────────────────────────────────
 export type TaskStatus =
 	| 'pending'
@@ -430,6 +535,19 @@ export type MntKpiMeasurement = {
 	created_at: string;
 };
 
+/** Chaves que o comparador entende (as mesmas da Foto Zero). */
+export const KPI_METRIC_OPTIONS = [
+	{ value: 'faturamento', label: 'Faturamento' },
+	{ value: 'ticket', label: 'Ticket médio' },
+	{ value: 'vendas', label: 'Vendas' },
+	{ value: 'margem', label: 'Margem' },
+	{ value: 'recorrencia', label: 'Recorrência' },
+	{ value: 'funcionarios', label: 'Funcionários' },
+	{ value: 'custos_fixos', label: 'Custos fixos' },
+	{ value: 'equipamentos', label: 'Equipamentos' },
+] as const;
+export type KpiMetricKey = (typeof KPI_METRIC_OPTIONS)[number]['value'];
+
 export type MntKpi = {
 	id: string;
 	journey_id: string;
@@ -443,11 +561,23 @@ export type MntKpi = {
 	owner_name: string | null;
 	semaphore: { green_pct: number; yellow_pct: number };
 	active: boolean;
+	/** Chave do comparador ("Agora") — ver KPI_METRIC_OPTIONS. */
+	metric_key?: KpiMetricKey | null;
 	latest_measurement?: MntKpiMeasurement | null;
 	current_semaphore?: Semaphore;
 };
 
 // ── Desenvolvimento pessoal ──────────────────────────────────────────────────
+/** Histórico append-only dos comentários do mentor numa tarefa. */
+export type MntTaskComment = {
+	id: string;
+	task_id: string;
+	author_id: string | null;
+	author_name: string | null;
+	body: string;
+	created_at: string;
+};
+
 export type MntGoodNews = {
 	id: string;
 	journey_id: string;
@@ -503,8 +633,20 @@ export type MntMaterial = {
 	description: string | null;
 	kind: 'photo' | 'video' | 'doc' | 'link';
 	url: string;
+	/** Preenchido quando é arquivo enviado (a url não pode ser trocada). */
+	storage_path?: string | null;
 	published: boolean;
 	created_at: string;
+	/** Só na lista do aluno: posição do encontro vinculado (qualquer versão). */
+	meeting_position?: number | null;
+};
+
+/** Campos extras do upload de material (vão na querystring). */
+export type UploadMaterialParams = {
+	title: string;
+	description?: string;
+	cohort_id?: string;
+	meeting_template_id?: string;
 };
 
 export type Comparison = {
@@ -517,6 +659,8 @@ export type Comparison = {
 			to: number | null;
 			delta: number | null;
 			delta_pct: number | null;
+			/** Rótulo das chaves achatadas (maturidade.<área>, kpis.<nome>). */
+			label?: string;
 		}
 	>;
 };
@@ -595,3 +739,10 @@ export type MntLiveChatMessage = {
 	body: string;
 	created_at: string;
 };
+
+// ── Assistente de IA ─────────────────────────────────────────────────────────
+export type AssistantMessage = { role: 'user' | 'assistant'; content: string };
+
+export type AssistantUsage = { remaining_today: number; daily_limit: number };
+
+export type AssistantReply = AssistantUsage & { reply: string };

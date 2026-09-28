@@ -3,9 +3,26 @@
 import { Building2, Save } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import {
+	companyFieldErrors,
+	maskCnpj,
+	maskPhone,
+	normalizeInstagram,
+	normalizeWebsite,
+} from '@/modules/mentoria/company-fields';
 import { useUpsertCompany } from '@/modules/mentoria/hooks';
 import type { MntCompany } from '@/modules/mentoria/types';
-import { BTN_PRIMARY, CARD, INPUT, LABEL } from './shared';
+import { BTN_PRIMARY, CARD, INPUT, LABEL, mntErrorText } from './shared';
+
+/** Mensagem do campo, abaixo do input (só depois de sair dele ou salvar). */
+function FieldError({ id, text }: { id: string; text?: string }) {
+	if (!text) return null;
+	return (
+		<p id={id} className="mt-1 text-caption text-red-600 dark:text-red-400">
+			{text}
+		</p>
+	);
+}
 
 const UFS = [
 	'AC',
@@ -45,18 +62,31 @@ export function CompanyForm({ company }: { company: MntCompany | null }) {
 		segment: company?.segment ?? '',
 		city: company?.city ?? '',
 		state: company?.state ?? '',
-		phone: company?.phone ?? '',
+		phone: company?.phone ? maskPhone(company.phone) : '',
 		instagram: company?.instagram ?? '',
 		website: company?.website ?? '',
-		cnpj: company?.cnpj ?? '',
+		cnpj: company?.cnpj ? maskCnpj(company.cnpj) : '',
 	});
+	// Erro aparece ao sair do campo (ou ao salvar), não a cada tecla.
+	const [touched, setTouched] = useState<Record<string, boolean>>({});
 
 	const set = (key: keyof typeof form) => (value: string) =>
 		setForm((f) => ({ ...f, [key]: value }));
+	const touch = (key: string) => () =>
+		setTouched((t) => ({ ...t, [key]: true }));
+
+	const errors = companyFieldErrors(form);
+	const shown = (key: keyof typeof errors) =>
+		touched[key] ? errors[key] : undefined;
 
 	const save = () => {
 		if (!form.name.trim()) {
 			toast.error('Informe o nome da empresa.');
+			return;
+		}
+		if (Object.keys(errors).length > 0) {
+			setTouched({ cnpj: true, phone: true, website: true, instagram: true });
+			toast.error('Confira os campos destacados.');
 			return;
 		}
 		upsert.mutate(
@@ -66,13 +96,15 @@ export function CompanyForm({ company }: { company: MntCompany | null }) {
 				city: form.city || null,
 				state: form.state || null,
 				phone: form.phone || null,
-				instagram: form.instagram || null,
-				website: form.website || null,
+				instagram: normalizeInstagram(form.instagram) || null,
+				website: normalizeWebsite(form.website) || null,
 				cnpj: form.cnpj || null,
 			},
 			{
 				onSuccess: () => toast.success('Dados da empresa salvos!'),
-				onError: () => toast.error('Não foi possível salvar a empresa.'),
+				// 400 cnpj_invalid/phone_invalid… vira o texto do campo.
+				onError: (e) =>
+					toast.error(mntErrorText(e, 'Não foi possível salvar a empresa.')),
 			},
 		);
 	};
@@ -117,10 +149,17 @@ export function CompanyForm({ company }: { company: MntCompany | null }) {
 					<input
 						id="mnt-company-cnpj"
 						className={INPUT}
+						inputMode="numeric"
 						value={form.cnpj}
-						onChange={(e) => set('cnpj')(e.target.value)}
+						onChange={(e) => set('cnpj')(maskCnpj(e.target.value))}
+						onBlur={touch('cnpj')}
+						aria-invalid={!!shown('cnpj') || undefined}
+						aria-describedby={
+							shown('cnpj') ? 'mnt-company-cnpj-err' : undefined
+						}
 						placeholder="00.000.000/0000-00"
 					/>
+					<FieldError id="mnt-company-cnpj-err" text={shown('cnpj')} />
 				</div>
 				<div>
 					<label className={LABEL} htmlFor="mnt-company-city">
@@ -158,10 +197,18 @@ export function CompanyForm({ company }: { company: MntCompany | null }) {
 					<input
 						id="mnt-company-phone"
 						className={INPUT}
+						type="tel"
+						inputMode="tel"
 						value={form.phone}
-						onChange={(e) => set('phone')(e.target.value)}
+						onChange={(e) => set('phone')(maskPhone(e.target.value))}
+						onBlur={touch('phone')}
+						aria-invalid={!!shown('phone') || undefined}
+						aria-describedby={
+							shown('phone') ? 'mnt-company-phone-err' : undefined
+						}
 						placeholder="(00) 00000-0000"
 					/>
+					<FieldError id="mnt-company-phone-err" text={shown('phone')} />
 				</div>
 				<div>
 					<label className={LABEL} htmlFor="mnt-company-instagram">
@@ -172,7 +219,20 @@ export function CompanyForm({ company }: { company: MntCompany | null }) {
 						className={INPUT}
 						value={form.instagram}
 						onChange={(e) => set('instagram')(e.target.value)}
+						onBlur={() => {
+							const v = normalizeInstagram(form.instagram);
+							if (v) set('instagram')(v);
+							touch('instagram')();
+						}}
+						aria-invalid={!!shown('instagram') || undefined}
+						aria-describedby={
+							shown('instagram') ? 'mnt-company-instagram-err' : undefined
+						}
 						placeholder="@minhaempresa"
+					/>
+					<FieldError
+						id="mnt-company-instagram-err"
+						text={shown('instagram')}
 					/>
 				</div>
 				<div className="md:col-span-2">
@@ -182,10 +242,22 @@ export function CompanyForm({ company }: { company: MntCompany | null }) {
 					<input
 						id="mnt-company-website"
 						className={INPUT}
+						type="url"
+						inputMode="url"
 						value={form.website}
 						onChange={(e) => set('website')(e.target.value)}
+						onBlur={() => {
+							const v = normalizeWebsite(form.website);
+							if (v) set('website')(v);
+							touch('website')();
+						}}
+						aria-invalid={!!shown('website') || undefined}
+						aria-describedby={
+							shown('website') ? 'mnt-company-website-err' : undefined
+						}
 						placeholder="https://..."
 					/>
+					<FieldError id="mnt-company-website-err" text={shown('website')} />
 				</div>
 			</div>
 			<div className="mt-5 flex justify-end">

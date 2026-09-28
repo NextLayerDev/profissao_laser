@@ -14,6 +14,7 @@ import {
 	XAxis,
 	YAxis,
 } from 'recharts';
+import { parseLocalDate } from '@/modules/mentoria/dates';
 import type { MntKpi, MntKpiMeasurement } from '@/modules/mentoria/types';
 
 // O recharts pinta com cor crua — `stroke` não aceita className —, então os
@@ -83,6 +84,46 @@ export function computeDelta(
 	};
 }
 
+/**
+ * Resumo do KPI dentro dos últimos `months` meses: a última medição do período
+ * e a variação entre a primeira e a última dele. É o que faz o seletor
+ * 3m/6m/12m mudar os cards (antes só mudava o gráfico).
+ */
+export function summarizePeriod(
+	kpi: MntKpi,
+	history: MntKpiMeasurement[] | undefined,
+	months: number,
+): {
+	latest: MntKpiMeasurement | null;
+	delta: ReturnType<typeof computeDelta>;
+} {
+	const cutoff = new Date();
+	cutoff.setHours(0, 0, 0, 0);
+	cutoff.setMonth(cutoff.getMonth() - months);
+	const inPeriod = (history ?? [])
+		.filter((m) => {
+			const at = parseLocalDate(m.measured_at);
+			return !Number.isNaN(at.getTime()) && at >= cutoff;
+		})
+		.sort((a, b) => a.measured_at.localeCompare(b.measured_at));
+	const latest = inPeriod[inPeriod.length - 1] ?? null;
+	const measured = inPeriod.filter((m) => m.value !== null);
+	const first = measured[0]?.value;
+	const last = measured[measured.length - 1]?.value;
+	const delta =
+		measured.length >= 2 &&
+		typeof first === 'number' &&
+		typeof last === 'number' &&
+		first !== 0
+			? {
+					pct: ((last - first) / Math.abs(first)) * 100,
+					caption: `em ${months} meses`,
+					upIsGood: kpi.direction === 'up_good',
+				}
+			: null;
+	return { latest, delta };
+}
+
 export function KpiEvolutionChart({
 	kpis,
 	histories,
@@ -100,7 +141,7 @@ export function KpiEvolutionChart({
 	if (series.length === 0 || rows.length === 0) {
 		return (
 			<p className="text-body text-muted py-12 text-center">
-				Ainda não há medições suficientes para desenhar a evolução.
+				Sem medições suficientes ainda.
 			</p>
 		);
 	}
@@ -202,7 +243,8 @@ function buildSeries(
 
 		for (const m of measurements) {
 			if (m.value === null) continue;
-			const at = new Date(m.measured_at);
+			// measured_at é `date`: lido no fuso local (senão o dia 1 cai no mês anterior).
+			const at = parseLocalDate(m.measured_at);
 			if (Number.isNaN(at.getTime()) || at < cutoff) continue;
 
 			const monthKey = `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, '0')}`;

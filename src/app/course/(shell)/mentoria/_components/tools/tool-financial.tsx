@@ -14,6 +14,8 @@ import {
 	YAxis,
 } from 'recharts';
 import { toast } from 'sonner';
+import { useInvalidateToolProgress } from '@/modules/mentoria/hooks';
+import { parseBrNumber } from '@/modules/mentoria/numbers';
 import {
 	createFinancialEntry,
 	listFinancialEntries,
@@ -67,10 +69,9 @@ const EMPTY_FORM: EntryForm = {
 	notes: '',
 };
 
+// Texto pt-BR ('1.500' é mil e quinhentos); vazio → null ("não sei").
 function num(v: string): number | null {
-	if (v.trim() === '') return null;
-	const n = Number(v.replace(',', '.'));
-	return Number.isFinite(n) ? n : null;
+	return parseBrNumber(v);
 }
 
 function fmtMonth(month: string): string {
@@ -83,6 +84,7 @@ function fmtMonth(month: string): string {
 export function ToolFinancialPanel({ journeyId }: { journeyId: string }) {
 	const qc = useQueryClient();
 	const queryKey = ['mentoria', 'financial-entries', journeyId];
+	const invalidateProgress = useInvalidateToolProgress();
 
 	const { data: entries, isLoading } = useQuery({
 		queryKey,
@@ -110,6 +112,7 @@ export function ToolFinancialPanel({ journeyId }: { journeyId: string }) {
 			setForm(EMPTY_FORM);
 			setAdding(false);
 			qc.invalidateQueries({ queryKey });
+			invalidateProgress();
 			toast.success('Fechamento do mês registrado!');
 		},
 		onError: () => toast.error('Não foi possível registrar o fechamento.'),
@@ -266,8 +269,8 @@ export function ToolFinancialPanel({ journeyId }: { journeyId: string }) {
 								</label>
 								<input
 									id={`mnt-fin-${field.key}`}
-									type="number"
-									step="0.01"
+									type="text"
+									inputMode="decimal"
 									className={INPUT}
 									value={form[field.key]}
 									onChange={(e) =>
@@ -275,6 +278,11 @@ export function ToolFinancialPanel({ journeyId }: { journeyId: string }) {
 									}
 									placeholder="Deixe vazio se não souber"
 								/>
+								{num(form[field.key]) !== null && (
+									<p className="mt-1 text-xs text-slate-500 dark:text-gray-400">
+										{fmtMoney(num(form[field.key]))}
+									</p>
+								)}
 							</div>
 						))}
 					</div>
@@ -289,7 +297,18 @@ export function ToolFinancialPanel({ journeyId }: { journeyId: string }) {
 						type="button"
 						className={BTN_PRIMARY}
 						disabled={!form.month || create.isPending}
-						onClick={() => create.mutate()}
+						onClick={() => {
+							// O fechamento é imutável: valor ilegível não pode virar
+							// "não sei" em silêncio.
+							const bad = MONEY_FIELDS.find(
+								(f) => form[f.key].trim() !== '' && num(form[f.key]) === null,
+							);
+							if (bad) {
+								toast.error(`Valor inválido em ${bad.label}. Ex.: 15.000,50`);
+								return;
+							}
+							create.mutate();
+						}}
 					>
 						{create.isPending ? 'Registrando...' : 'Registrar fechamento'}
 					</button>

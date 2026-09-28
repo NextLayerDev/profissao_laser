@@ -1,17 +1,22 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, Save, Send } from 'lucide-react';
+import { CheckCircle2, History, Save, Send } from 'lucide-react';
 import { useRef } from 'react';
 import { toast } from 'sonner';
 import { DynamicForm } from '@/modules/mentoria/components/dynamic-form';
+import { useInvalidateToolProgress } from '@/modules/mentoria/hooks';
 import {
 	getFormTemplate,
 	listSubmissions,
 	saveSubmissionDraft,
 	submitSubmission,
 } from '@/modules/mentoria/service';
-import type { ToolWithInstance } from '@/modules/mentoria/types';
+import type {
+	MntFormTemplate,
+	SubmissionContext,
+	ToolWithInstance,
+} from '@/modules/mentoria/types';
 import {
 	apiErrorCode,
 	BTN_GHOST,
@@ -30,46 +35,15 @@ export function ToolForm({
 	tool: ToolWithInstance;
 	journeyId: string;
 }) {
-	const qc = useQueryClient();
-	const instanceId = tool.instance?.id as string;
 	const templateKey = tool.form_template_key;
-	const answersRef = useRef<Record<string, unknown> | null>(null);
 
-	const { data: template, isLoading: tplLoading } = useQuery({
+	const { data: template, isLoading } = useQuery({
 		queryKey: ['mentoria', 'form-template', templateKey],
 		queryFn: () => getFormTemplate(templateKey as string),
 		enabled: !!templateKey,
 	});
 
-	const subsKey = ['mentoria', 'tool-submissions', journeyId, instanceId];
-	const { data: submissions, isLoading: subsLoading } = useQuery({
-		queryKey: subsKey,
-		queryFn: () =>
-			listSubmissions(journeyId, {
-				context: 'tool',
-				context_ref_id: instanceId,
-			}),
-	});
-
-	const saveDraft = useMutation({
-		mutationFn: (answers: Record<string, unknown>) =>
-			saveSubmissionDraft(journeyId, {
-				form_template_id: (template as { id: string }).id,
-				context: 'tool',
-				context_ref_id: instanceId,
-				answers,
-			}),
-		onSuccess: () => qc.invalidateQueries({ queryKey: subsKey }),
-	});
-
-	const submit = useMutation({
-		mutationFn: (submissionId: string) =>
-			submitSubmission(journeyId, submissionId),
-		onSuccess: () => qc.invalidateQueries({ queryKey: subsKey }),
-	});
-
-	if (tplLoading || subsLoading) return <MntSkeleton />;
-
+	if (isLoading) return <MntSkeleton />;
 	if (!templateKey || !template) {
 		return (
 			<EmptyState
@@ -78,19 +52,100 @@ export function ToolForm({
 			/>
 		);
 	}
+	return (
+		<FormSubmissionPanel
+			journeyId={journeyId}
+			template={template}
+			context="tool"
+			contextRefId={tool.instance?.id ?? null}
+		/>
+	);
+}
 
+/**
+ * Formulário data-driven com rascunho, envio e novas versões. Usado pela
+ * ferramenta kind=form e pelo exercício do encontro / avaliação final.
+ */
+export function FormSubmissionPanel({
+	journeyId,
+	template,
+	context,
+	contextRefId,
+}: {
+	journeyId: string;
+	template: MntFormTemplate;
+	context: SubmissionContext;
+	contextRefId: string | null;
+}) {
+	const qc = useQueryClient();
+	const answersRef = useRef<Record<string, unknown> | null>(null);
+
+	const subsKey = ['mentoria', 'submissions', journeyId, context, contextRefId];
+	const invalidateProgress = useInvalidateToolProgress();
+	// Rascunho (50%) e envio (100%) mudam o % da ferramenta.
+	const invalidate = () => {
+		qc.invalidateQueries({ queryKey: subsKey });
+		if (context === 'tool') invalidateProgress();
+	};
+	const { data: submissions, isLoading: subsLoading } = useQuery({
+		queryKey: subsKey,
+		queryFn: () =>
+			listSubmissions(journeyId, {
+				context,
+				...(contextRefId ? { context_ref_id: contextRefId } : {}),
+			}),
+	});
+
+	const saveDraft = useMutation({
+		mutationFn: (answers: Record<string, unknown>) =>
+			saveSubmissionDraft(journeyId, {
+				form_template_id: template.id,
+				context,
+				context_ref_id: contextRefId,
+				answers,
+			}),
+		onSuccess: invalidate,
+	});
+
+	const submit = useMutation({
+		mutationFn: (submissionId: string) =>
+			submitSubmission(journeyId, submissionId),
+		onSuccess: invalidate,
+	});
+
+	if (subsLoading) return <MntSkeleton />;
+
+	// Lista vem por created_at desc: o primeiro 'submitted' é a última versão.
 	const submitted = (submissions ?? []).find((s) => s.status === 'submitted');
 	const draft = (submissions ?? []).find((s) => s.status === 'draft');
 
-	if (submitted) {
+	// Reenvio = nova versão na API. Sem esse atalho, SWOT/planejamentos ficavam
+	// congelados na 1ª resposta durante os 10 encontros.
+	const startNewVersion = () => {
+		if (!submitted) return;
+		saveDraft.mutate(submitted.answers as Record<string, unknown>, {
+			onError: () => toast.error('Não foi possível abrir uma nova versão.'),
+		});
+	};
+
+	if (submitted && !draft) {
 		return (
 			<div className="space-y-4">
-				<div className={`${CARD} p-4 flex items-center gap-3`}>
+				<div className={`${CARD} p-4 flex flex-wrap items-center gap-3`}>
 					<CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0" />
-					<p className="text-sm text-slate-700 dark:text-slate-300">
-						Enviado em {fmtDate(submitted.submitted_at)}. Respostas em modo
-						leitura.
+					<p className="flex-1 min-w-0 text-sm text-slate-700 dark:text-slate-300">
+						Versão {submitted.version} enviada em{' '}
+						{fmtDate(submitted.submitted_at)}. Respostas em modo leitura.
 					</p>
+					<button
+						type="button"
+						className={BTN_GHOST}
+						onClick={startNewVersion}
+						disabled={saveDraft.isPending}
+					>
+						<History className="w-4 h-4" />
+						{saveDraft.isPending ? 'Abrindo...' : 'Atualizar (nova versão)'}
+					</button>
 				</div>
 				<DynamicForm
 					template={template}
@@ -132,6 +187,16 @@ export function ToolForm({
 
 	return (
 		<div className="space-y-4">
+			{submitted && (
+				<div className={`${CARD} p-4 flex items-center gap-3`}>
+					<History className="w-5 h-5 text-brand shrink-0" />
+					<p className="text-sm text-slate-700 dark:text-slate-300">
+						Editando a versão {submitted.version + 1}. A versão{' '}
+						{submitted.version}, enviada em {fmtDate(submitted.submitted_at)},
+						continua no histórico.
+					</p>
+				</div>
+			)}
 			<DynamicForm
 				template={template}
 				initialAnswers={(draft?.answers as Record<string, unknown>) ?? {}}

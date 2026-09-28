@@ -1,26 +1,17 @@
 // Leitura do acesso à Mentoria, do lado do front.
 //
-// A `upvox-api` protege as 9 rotas da aba com `requireMentoriaAccess`, e a regra
-// de lá é: staff/admin passam direto; o aluno precisa de matrícula ativa numa
-// turma **OU** de um plano com a tool `mentoria_360` (tabela `plan_tools`).
+// A `upvox-api` protege as rotas da aba com `requireMentoriaAccess`: staff e
+// admin passam direto; o aluno precisa de um plano ativo com a tool
+// `mentoria_360` marcada como ilimitada (`plan_tools.free_quota null`). A
+// matrícula sozinha NÃO libera (decisão "plano obrigatório"); conta de teste
+// (`is_test_unlimited`) passa.
 //
-// Esse "OU" é o problema que este módulo contorna. Quem foi matriculado numa
-// turma entra com QUALQUER plano — a api nem consulta o `plan_tools`. Então o
-// 403 sozinho não basta como sinal: ele nunca chega para o aluno matriculado,
-// mesmo que o plano dele não inclua a Mentoria.
+// Quem decide na tela é o `has_access` de `/me/mentoria/access`
+// (`MentoriaAccessGate`). Os helpers abaixo são a reserva:
 //
-// Por isso são DOIS sinais aqui:
-//
-//   1. `hasMentoriaInPlan` — o que o plano do aluno diz, via `/me/entitlements`.
-//      É o que decide.
-//   2. `isMentoriaAccessDenied` — o 403 da api. Rede de segurança: cobre quem
-//      não tem assinatura nenhuma, caso em que a tool nem aparece na lista.
-//
-// LIMITE: isto é barreira de UX, não de segurança. A api continua respondendo
-// 200 e servindo os dados para o aluno matriculado; quem chamar o endpoint
-// direto vê tudo. Fechar de verdade é tirar a saída de matrícula do
-// `assertMentoriaAccess` na `upvox-api` — trabalho de backend, com impacto em
-// quem já está matriculado.
+//   1. `hasMentoriaInPlan` — a MESMA regra, lida do `/me/entitlements`; vale
+//      quando `/access` falhou.
+//   2. `isMentoriaAccessDenied` — o 403 da api em qualquer rota da aba.
 
 import type { EntitlementTool } from '@/services/entitlements';
 

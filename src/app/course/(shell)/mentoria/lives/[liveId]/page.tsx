@@ -21,7 +21,7 @@ export default function LiveDetailPage() {
 }
 
 function Content({ liveId }: { liveId: string }) {
-	const { data: live, isLoading, isError } = useLive(liveId);
+	const { data: live, isLoading } = useLive(liveId);
 	// Sala de link externo não tem vídeo nosso: pedir o token seria 404 certo.
 	const isExternal = live?.source === 'external';
 	const playable =
@@ -32,7 +32,10 @@ function Content({ liveId }: { liveId: string }) {
 
 	// "Carregando" e "não existe" eram o mesmo `MntSkeleton`, então um id
 	// inválido na URL girava o esqueleto para sempre.
-	if (isError || !live) return <LiveNotFound />;
+	// Só sem dados: no TanStack v5 um refetch do polling que falha deixa
+	// `isError` ligado MESMO com a live em cache, e trocava o player no ar por
+	// "não encontrada".
+	if (!live) return <LiveNotFound />;
 
 	// A view não refaz a regra: só o container sabe se o token de playback já
 	// chegou (o `useLivePlayback` só roda quando a sala é tocável).

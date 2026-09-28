@@ -20,14 +20,14 @@
 // Envolve o shell POR FORA de propósito: sem acesso não há o que navegar, então
 // não faz sentido montar a navegação e o Assistente em volta do aviso.
 //
-// ── Por que o 403 não decide sozinho ─────────────────────────────────────────
+// ── Quem decide ──────────────────────────────────────────────────────────────
 //
-// A regra da api é "matrícula ativa OU plano com a tool", então o aluno que foi
-// matriculado numa turma entra com qualquer plano e NUNCA recebe o 403. Quem
-// decide aqui é o `/me/entitlements` (ver `modules/mentoria/access.ts`); o 403
-// fica como rede de segurança, para quem não tem assinatura nenhuma e por isso
-// nem aparece com a tool na lista.
-//
+// A api (`/me/mentoria/access`). Desde o "plano obrigatório" a regra de lá é a
+// mesma do `hasMentoriaInPlan` (plano com `mentoria_360` ilimitada; staff e
+// conta de teste passam) — a matrícula sozinha não libera mais. O
+// `/me/entitlements` virou só a reserva para quando `/access` falha, e o 403
+// do bootstrap continua como rede de segurança.
+
 // ── Liberação restrita ───────────────────────────────────────────────────────
 //
 // O admin pode limitar a Mentoria a uma lista de alunos (/mentoria-admin/acesso).
@@ -64,14 +64,16 @@ export function MentoriaAccessGate({ children }: { children: ReactNode }) {
 	const access = useMyMentoriaAccess();
 
 	if (isStaff) return <>{children}</>;
-	if (isLoading || access.isLoading) return <MntSkeleton />;
+	// Entitlements só importam como reserva: não segura a tela se `/access` já
+	// respondeu.
+	if (access.isLoading || (!access.data && isLoading)) return <MntSkeleton />;
 
 	if (access.data?.reason === 'restricted') {
 		return (
 			<EmptyState
 				icon={Lock}
 				title="Mentoria ainda não liberada para você"
-				description="A Mentoria 360° está sendo liberada aos poucos para um grupo de alunos. Assim que chegar a sua vez, ela aparece aqui."
+				description="Ela está sendo liberada aos poucos. Quando chegar sua vez, aparece aqui."
 			>
 				<Link href="/course" className={BTN_PRIMARY}>
 					Voltar ao início
@@ -80,20 +82,16 @@ export function MentoriaAccessGate({ children }: { children: ReactNode }) {
 		);
 	}
 
-	// Só decide pelo plano quando a lista REALMENTE chegou. `toolFor` devolve
-	// `undefined` tanto para "a tool não está na sua lista" quanto para "a lista
-	// não carregou", e tratar os dois igual transformava qualquer falha de
-	// `/me/entitlements` em CTA de upgrade para todo mundo — inclusive para quem
-	// tem o plano. Mesmo princípio do `JourneyGate`: falha de carregamento não é
-	// falta de acesso.
+	// `has_access` da api decide. Sem resposta de `/access` (falha de rede), cai
+	// na mesma regra lida do `/me/entitlements` — e só quando a lista REALMENTE
+	// chegou: `toolFor` devolve `undefined` também para "não carregou", e tratar
+	// isso como falta de plano virava CTA de upgrade para todo mundo.
 	const tool = isSuccess ? toolFor(MENTORIA_TOOL_KEY) : undefined;
-	const planSaysNo = isSuccess && !hasMentoriaInPlan(tool);
-
-	// O 403 da api é a rede de segurança: cobre quem não tem assinatura nenhuma,
-	// caso em que a tool nem vem na lista. Qualquer outra falha (500, rede fora)
-	// segue para dentro.
-	const blocked =
-		!isTestUnlimited && (planSaysNo || isMentoriaAccessDenied(error));
+	const apiSaysNo = access.data ? !access.data.has_access : false;
+	const planSaysNo =
+		!access.data && isSuccess && !isTestUnlimited && !hasMentoriaInPlan(tool);
+	// Qualquer outra falha (500, rede fora) segue para dentro.
+	const blocked = apiSaysNo || planSaysNo || isMentoriaAccessDenied(error);
 
 	if (blocked && process.env.NODE_ENV !== 'production') {
 		// Bloquear por engano é silencioso demais para depurar no olho: sem isto,
@@ -112,7 +110,7 @@ export function MentoriaAccessGate({ children }: { children: ReactNode }) {
 			<EmptyState
 				icon={Lock}
 				title="A Mentoria 360° não está no seu plano"
-				description="A Mentoria é liberada por plano. Veja os planos que incluem o acompanhamento e o prontuário da sua empresa."
+				description="Veja os planos que incluem a Mentoria."
 			>
 				<Link href="/course/store" className={BTN_PRIMARY}>
 					Ver planos

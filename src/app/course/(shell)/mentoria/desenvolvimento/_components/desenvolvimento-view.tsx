@@ -12,6 +12,8 @@
 
 import { Badge, Button, buttonLabel } from '@upvox-dev/ui';
 import {
+	Archive,
+	ArchiveRestore,
 	Briefcase,
 	Check,
 	CheckCircle2,
@@ -19,6 +21,7 @@ import {
 	Flag,
 	Lightbulb,
 	Lock,
+	Pencil,
 	Plus,
 	Smile,
 	Triangle,
@@ -37,6 +40,7 @@ import {
 	DynamicForm,
 	inputClass,
 } from '@/modules/mentoria/components/dynamic-form';
+import { HelpTip } from '@/modules/mentoria/components/help-tip';
 import type {
 	GoodNewsState,
 	MntBusinessPlanVersion,
@@ -44,7 +48,16 @@ import type {
 	MntGoal,
 	MntMaslowTest,
 } from '@/modules/mentoria/types';
-import { CARD, EmptyState, fmtDate } from '../../_components/shared';
+import { isUnknownAnswer } from '@/modules/mentoria/types';
+import {
+	CARD,
+	ConfirmDialog,
+	EmptyState,
+	fmtDate,
+} from '../../_components/shared';
+
+/** Os forms só fecham/limpam quando o container confirma o sucesso. */
+export type MutationCallbacks = { onSuccess?: () => void };
 
 /** Rótulo de campo — mesmo step do `dynamic-form`, que é o vizinho visual. */
 const FIELD_LABEL = 'mb-1.5 block text-label text-primary';
@@ -115,7 +128,7 @@ export function GoodNewsView({
 					// marca. `text-success` também não tem tom escuro no DS (A.3).
 					<p className="mt-2 flex items-center gap-2 text-body text-emerald-600 dark:text-emerald-400">
 						<CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
-						Você já registrou as boas notícias de hoje. Volte amanhã!
+						Registradas hoje. Volte amanhã!
 					</p>
 				) : (
 					<div className="space-y-3 mt-4">
@@ -157,8 +170,9 @@ export function GoodNewsView({
 									{fmtDate(entry.posted_on)}
 								</p>
 								<ul className="space-y-0.5 text-body text-secondary">
-									{entry.news.map((n) => (
-										<li key={n}>• {n}</li>
+									{/* Texto repetido no mesmo dia duplicava a key. */}
+									{entry.news.map((n, idx) => (
+										<li key={`${entry.id}-${idx}`}>• {n}</li>
 									))}
 								</ul>
 							</div>
@@ -176,8 +190,17 @@ const GOAL_STATUS: Array<{ value: MntGoal['status']; label: string }> = [
 	{ value: 'in_progress', label: 'Em andamento' },
 	{ value: 'done', label: 'Concluída' },
 	{ value: 'late', label: 'Atrasada' },
-	{ value: 'cancelled', label: 'Cancelada' },
+	// "Arquivar" grava cancelled: a meta sai da lista e dá para reativar.
+	{ value: 'cancelled', label: 'Arquivada' },
 ];
+
+/** Campos editáveis da meta (os mesmos do cadastro). */
+export type GoalFields = {
+	title: string;
+	indicator_text: string | null;
+	deadline: string | null;
+	first_action_48h: string | null;
+};
 
 /**
  * Tom do `Badge` por status. O `<select>` continua sendo quem ALTERA (o
@@ -205,20 +228,26 @@ export function GoalsView({
 	onCreate,
 	onUpdateStatus,
 	onToggleFirstAction,
+	updatingGoalId = null,
+	onEdit,
 }: {
 	goals: MntGoal[];
 	creating: boolean;
-	onCreate: (body: {
-		title: string;
-		indicator_text: string | null;
-		deadline: string | null;
-		first_action_48h: string | null;
-	}) => void;
+	onCreate: (body: GoalFields, cb?: MutationCallbacks) => void;
+	/** Sem ele, a meta não mostra "Editar". */
+	onEdit?: (goalId: string, body: GoalFields, cb?: MutationCallbacks) => void;
 	onUpdateStatus: (goalId: string, status: string) => void;
 	onToggleFirstAction: (goalId: string, done: boolean) => void;
+	/** Meta com atualização em andamento: trava o select e o toggle dela. */
+	updatingGoalId?: string | null;
 }) {
 	const [showForm, setShowForm] = useState(false);
+	const [editingId, setEditingId] = useState<string | null>(null);
+	const [archiving, setArchiving] = useState<MntGoal | null>(null);
+	const [showArchived, setShowArchived] = useState(false);
 	const fieldId = useId();
+	const active = goals.filter((g) => g.status !== 'cancelled');
+	const archived = goals.filter((g) => g.status === 'cancelled');
 	const [form, setForm] = useState({
 		title: '',
 		indicator_text: '',
@@ -226,20 +255,27 @@ export function GoalsView({
 		first_action_48h: '',
 	});
 
+	// Fecha e limpa só no sucesso: com erro de rede a meta digitada sumia.
 	const submit = () => {
-		onCreate({
-			title: form.title,
-			indicator_text: form.indicator_text || null,
-			deadline: form.deadline || null,
-			first_action_48h: form.first_action_48h || null,
-		});
-		setShowForm(false);
-		setForm({
-			title: '',
-			indicator_text: '',
-			deadline: '',
-			first_action_48h: '',
-		});
+		onCreate(
+			{
+				title: form.title,
+				indicator_text: form.indicator_text || null,
+				deadline: form.deadline || null,
+				first_action_48h: form.first_action_48h || null,
+			},
+			{
+				onSuccess: () => {
+					setShowForm(false);
+					setForm({
+						title: '',
+						indicator_text: '',
+						deadline: '',
+						first_action_48h: '',
+					});
+				},
+			},
+		);
 	};
 
 	return (
@@ -321,71 +357,253 @@ export function GoalsView({
 				</div>
 			)}
 
-			{goals.length === 0 && !showForm ? (
+			{active.length === 0 && !showForm ? (
 				<EmptyState
 					icon={Flag}
 					title="Nenhuma meta cadastrada"
-					description="Cadastre sua meta com o indicador que comprova o resultado e a primeira ação das próximas 48 horas."
+					description="Meta, indicador e a 1ª ação em 48h."
 				/>
 			) : (
-				goals.map((goal) => (
-					<div key={goal.id} className={`${CARD} p-5`}>
-						<div className="flex flex-wrap items-start justify-between gap-3">
-							<div className="min-w-0 flex-1">
-								<p className="text-body font-semibold text-primary">
-									{goal.title}
-								</p>
-								{goal.indicator_text && (
-									<p className="mt-1 text-body text-muted">
-										Indicador: {goal.indicator_text}
+				active.map((goal) =>
+					editingId === goal.id && onEdit ? (
+						<GoalEditCard
+							key={goal.id}
+							goal={goal}
+							saving={updatingGoalId === goal.id}
+							onCancel={() => setEditingId(null)}
+							onSave={(body) =>
+								onEdit(goal.id, body, { onSuccess: () => setEditingId(null) })
+							}
+						/>
+					) : (
+						<div key={goal.id} className={`${CARD} p-5`}>
+							<div className="flex flex-wrap items-start justify-between gap-3">
+								<div className="min-w-0 flex-1">
+									<p className="text-body font-semibold text-primary">
+										{goal.title}
 									</p>
-								)}
-								<p className="mt-1 text-caption text-muted">
-									Prazo: {fmtDate(goal.deadline)}
-								</p>
-							</div>
-							<div className="flex items-center gap-2">
-								<Badge tone={GOAL_STATUS_TONE[goal.status]}>
-									{goalStatusLabel(goal.status)}
-								</Badge>
-								{/* O badge já mostra o status por escrito, então o select fica
+									{goal.indicator_text && (
+										<p className="mt-1 text-body text-muted">
+											Indicador: {goal.indicator_text}
+										</p>
+									)}
+									<p className="mt-1 text-caption text-muted">
+										Prazo: {fmtDate(goal.deadline)}
+									</p>
+								</div>
+								<div className="flex items-center gap-2">
+									<Badge tone={GOAL_STATUS_TONE[goal.status]}>
+										{goalStatusLabel(goal.status)}
+									</Badge>
+									{/* O badge já mostra o status por escrito, então o select fica
 								    com `aria-label` em vez de um rótulo visível duplicado. */}
-								<select
-									className={`${inputClass} w-auto`}
-									aria-label="Status da meta"
-									value={goal.status}
-									onChange={(e) => onUpdateStatus(goal.id, e.target.value)}
-								>
-									{GOAL_STATUS.map((s) => (
-										<option key={s.value} value={s.value}>
-											{s.label}
-										</option>
-									))}
-								</select>
+									<select
+										className={`${inputClass} w-auto`}
+										aria-label="Status da meta"
+										value={goal.status}
+										disabled={updatingGoalId === goal.id}
+										onChange={(e) => onUpdateStatus(goal.id, e.target.value)}
+									>
+										{GOAL_STATUS.filter((s) => s.value !== 'cancelled').map(
+											(s) => (
+												<option key={s.value} value={s.value}>
+													{s.label}
+												</option>
+											),
+										)}
+									</select>
+									{onEdit && (
+										<button
+											type="button"
+											className="rounded-control p-2 text-muted hover:bg-surface-sunken hover:text-primary"
+											aria-label={`Editar meta: ${goal.title}`}
+											onClick={() => setEditingId(goal.id)}
+										>
+											<Pencil className="h-4 w-4" aria-hidden />
+										</button>
+									)}
+									<button
+										type="button"
+										className="rounded-control p-2 text-muted hover:bg-surface-sunken hover:text-primary"
+										aria-label={`Arquivar meta: ${goal.title}`}
+										disabled={updatingGoalId === goal.id}
+										onClick={() => setArchiving(goal)}
+									>
+										<Archive className="h-4 w-4" aria-hidden />
+									</button>
+								</div>
 							</div>
+							{goal.first_action_48h && (
+								<button
+									type="button"
+									aria-pressed={Boolean(goal.first_action_done_at)}
+									disabled={updatingGoalId === goal.id}
+									onClick={() =>
+										onToggleFirstAction(goal.id, !goal.first_action_done_at)
+									}
+									className={`mt-3 inline-flex items-center gap-2 rounded-control border px-3 py-2 text-label transition ${
+										goal.first_action_done_at
+											? // Verde de "feito", não roxo de marca — mesma leitura do
+												// "já postei hoje". Par `dark:` pela lacuna A.3.
+												'border-emerald-500/40 bg-success-wash text-emerald-600 dark:text-emerald-400'
+											: 'border-subtle text-secondary hover:text-primary'
+									}`}
+								>
+									<Check className="h-4 w-4" aria-hidden />
+									Ação 48h: {goal.first_action_48h}
+								</button>
+							)}
 						</div>
-						{goal.first_action_48h && (
-							<button
-								type="button"
-								aria-pressed={Boolean(goal.first_action_done_at)}
-								onClick={() =>
-									onToggleFirstAction(goal.id, !goal.first_action_done_at)
-								}
-								className={`mt-3 inline-flex items-center gap-2 rounded-control border px-3 py-2 text-label transition ${
-									goal.first_action_done_at
-										? // Verde de "feito", não roxo de marca — mesma leitura do
-											// "já postei hoje". Par `dark:` pela lacuna A.3.
-											'border-emerald-500/40 bg-success-wash text-emerald-600 dark:text-emerald-400'
-										: 'border-subtle text-secondary hover:text-primary'
-								}`}
-							>
-								<Check className="h-4 w-4" aria-hidden />
-								Ação 48h: {goal.first_action_48h}
-							</button>
-						)}
-					</div>
-				))
+					),
+				)
 			)}
+
+			{archived.length > 0 && (
+				<div>
+					<button
+						type="button"
+						className="text-caption text-muted hover:text-primary"
+						onClick={() => setShowArchived((v) => !v)}
+					>
+						{showArchived ? 'Ocultar' : 'Ver'} arquivadas ({archived.length})
+					</button>
+					{showArchived && (
+						<ul className="mt-2 space-y-2" data-testid="goals-archived">
+							{archived.map((g) => (
+								<li
+									key={g.id}
+									className={`${CARD} flex items-center justify-between gap-3 p-3`}
+								>
+									<span className="min-w-0 truncate text-body text-secondary">
+										{g.title}
+									</span>
+									<button
+										type="button"
+										className="inline-flex shrink-0 items-center gap-1.5 rounded-control border border-subtle px-3 py-1.5 text-label text-primary hover:bg-surface-sunken"
+										disabled={updatingGoalId === g.id}
+										onClick={() =>
+											onUpdateStatus(
+												g.id,
+												g.first_action_done_at ? 'in_progress' : 'not_started',
+											)
+										}
+									>
+										<ArchiveRestore className="h-4 w-4" aria-hidden />
+										Reativar
+									</button>
+								</li>
+							))}
+						</ul>
+					)}
+				</div>
+			)}
+
+			{archiving && (
+				<ConfirmDialog
+					title="Arquivar esta meta?"
+					confirmLabel="Arquivar"
+					onCancel={() => setArchiving(null)}
+					onConfirm={() => {
+						onUpdateStatus(archiving.id, 'cancelled');
+						setArchiving(null);
+					}}
+				>
+					Sai da lista. Dá para reativar depois.
+				</ConfirmDialog>
+			)}
+		</div>
+	);
+}
+
+/** Edição no próprio card (mesmos campos do cadastro). */
+function GoalEditCard({
+	goal,
+	saving,
+	onCancel,
+	onSave,
+}: {
+	goal: MntGoal;
+	saving: boolean;
+	onCancel: () => void;
+	onSave: (body: GoalFields) => void;
+}) {
+	const fieldId = useId();
+	const [form, setForm] = useState({
+		title: goal.title,
+		indicator_text: goal.indicator_text ?? '',
+		deadline: goal.deadline?.slice(0, 10) ?? '',
+		first_action_48h: goal.first_action_48h ?? '',
+	});
+	return (
+		<div className={`${CARD} p-5 space-y-4`}>
+			<div>
+				<label htmlFor={`${fieldId}-title`} className={FIELD_LABEL}>
+					Minha meta
+				</label>
+				<textarea
+					id={`${fieldId}-title`}
+					className={`${inputClass} min-h-20`}
+					value={form.title}
+					onChange={(e) => setForm({ ...form, title: e.target.value })}
+				/>
+			</div>
+			<div>
+				<label htmlFor={`${fieldId}-indicator`} className={FIELD_LABEL}>
+					Indicador
+				</label>
+				<input
+					id={`${fieldId}-indicator`}
+					className={inputClass}
+					value={form.indicator_text}
+					onChange={(e) => setForm({ ...form, indicator_text: e.target.value })}
+				/>
+			</div>
+			<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+				<div>
+					<label htmlFor={`${fieldId}-deadline`} className={FIELD_LABEL}>
+						Prazo
+					</label>
+					<input
+						id={`${fieldId}-deadline`}
+						type="date"
+						className={inputClass}
+						value={form.deadline}
+						onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+					/>
+				</div>
+				<div>
+					<label htmlFor={`${fieldId}-action`} className={FIELD_LABEL}>
+						Primeira ação (48h)
+					</label>
+					<input
+						id={`${fieldId}-action`}
+						className={inputClass}
+						value={form.first_action_48h}
+						onChange={(e) =>
+							setForm({ ...form, first_action_48h: e.target.value })
+						}
+					/>
+				</div>
+			</div>
+			<div className="flex justify-end gap-2">
+				<Button variant="secondary" onPress={onCancel}>
+					Cancelar
+				</Button>
+				<Button
+					variant="primary"
+					disabled={saving || !form.title.trim()}
+					onPress={() =>
+						onSave({
+							title: form.title.trim(),
+							indicator_text: form.indicator_text || null,
+							deadline: form.deadline || null,
+							first_action_48h: form.first_action_48h || null,
+						})
+					}
+				>
+					{saving ? 'Salvando...' : 'Salvar'}
+				</Button>
+			</div>
 		</div>
 	);
 }
@@ -449,7 +667,7 @@ export function MaslowView({
 }: {
 	history: MntMaslowTest[];
 	submitting: boolean;
-	onSubmit: (answers: number[]) => void;
+	onSubmit: (answers: number[], cb?: MutationCallbacks) => void;
 }) {
 	const [answers, setAnswers] = useState<Array<number | null>>(
 		Array.from({ length: 15 }, () => null),
@@ -459,19 +677,25 @@ export function MaslowView({
 
 	const latest = history.at(-1) ?? null;
 
-	const send = () => {
-		onSubmit(answers as number[]);
+	const reset = () => {
 		setShowTest(false);
 		setAnswers(Array.from({ length: 15 }, () => null));
 	};
 
+	// Limpa só no sucesso: com erro, as 15 respostas sumiam.
+	const send = () => onSubmit(answers as number[], { onSuccess: reset });
+
 	return (
 		<div className="space-y-6">
-			<div className={`${CARD} p-4 text-caption text-muted`}>
-				O Teste de Maslow é uma ferramenta educacional de autopercepção — não é
-				um diagnóstico psicológico. Pontue cada afirmação de 0 (discordo
-				totalmente) a 4 (concordo totalmente).
-			</div>
+			{/* O aviso "não é diagnóstico" fica visível (curto); a escala explicada
+			    vai no "?" e a legenda vira as pontas da régua. */}
+			<p className="inline-flex items-center gap-1 text-caption text-muted">
+				Autopercepção, não diagnóstico psicológico.
+				<HelpTip label="Sobre o Teste de Maslow">
+					Ferramenta educacional de autopercepção. Pontue cada afirmação de 0
+					(discordo totalmente) a 4 (concordo totalmente).
+				</HelpTip>
+			</p>
 
 			{latest && !showTest && (
 				<div className={`${CARD} p-5`}>
@@ -499,6 +723,23 @@ export function MaslowView({
 
 			{(!latest || showTest) && (
 				<div className={`${CARD} p-5 space-y-6`}>
+					{/* Legenda única da régua: repetir 0–4 em 15 linhas era ruído. */}
+					<p
+						className="flex items-center gap-2 text-caption text-muted"
+						aria-hidden
+					>
+						Discordo
+						<span className="flex gap-1">
+							{[0, 1, 2, 3, 4].map((n) => (
+								<span
+									key={n}
+									className="h-2.5 w-2.5 rounded-full bg-violet-500"
+									style={{ opacity: 0.2 + n * 0.2 }}
+								/>
+							))}
+						</span>
+						Concordo
+					</p>
 					{MASLOW_STATEMENTS.map((group, g) => (
 						<div key={group.dimension}>
 							{/* `text-brand` não tem tom escuro no DS — par `dark:` (A.3). */}
@@ -529,19 +770,22 @@ export function MaslowView({
 													<button
 														key={score}
 														type="button"
+														// Número só no escolhido; a régua tem legenda.
+														aria-label={`${score} de 4`}
+														title={`${score} de 4`}
 														aria-pressed={answers[index] === score}
 														onClick={() =>
 															setAnswers((prev) =>
 																prev.map((p, j) => (j === index ? score : p)),
 															)
 														}
-														className={`h-9 w-9 rounded-chip border text-caption transition ${
+														className={`h-8 w-8 rounded-full border text-caption transition ${
 															answers[index] === score
 																? 'border-brand bg-brand text-on-brand'
-																: 'border-subtle text-muted'
+																: 'border-slate-300 text-muted hover:border-brand-border dark:border-white/25'
 														}`}
 													>
-														{score}
+														{answers[index] === score ? score : null}
 													</button>
 												))}
 											</fieldset>
@@ -551,20 +795,30 @@ export function MaslowView({
 							</div>
 						</div>
 					))}
-					<Button
-						variant="primary"
-						onPress={send}
-						disabled={submitting || answers.some((a) => a === null)}
-					>
-						Enviar teste
-					</Button>
+					<div className="flex flex-wrap gap-2">
+						<Button
+							variant="primary"
+							onPress={send}
+							disabled={submitting || answers.some((a) => a === null)}
+						>
+							Enviar teste
+						</Button>
+						{/* Quem clicou em "Refazer" só para rever as perguntas não tinha
+						    como voltar ao resultado. */}
+						{latest && showTest && (
+							<Button variant="secondary" onPress={reset} disabled={submitting}>
+								Cancelar
+							</Button>
+						)}
+					</div>
 				</div>
 			)}
 		</div>
 	);
 }
 
-function MaslowRadar({ scores }: { scores: Record<string, number> }) {
+/** Também usado na visão do mentor. */
+export function MaslowRadar({ scores }: { scores: Record<string, number> }) {
 	const data = Object.entries(scores).map(([key, value]) => ({
 		dimension: MASLOW_LABELS[key] ?? key,
 		pct: value,
@@ -592,7 +846,11 @@ function MaslowRadar({ scores }: { scores: Record<string, number> }) {
 	);
 }
 
-function LowestDimension({ scores }: { scores: Record<string, number> }) {
+export function LowestDimension({
+	scores,
+}: {
+	scores: Record<string, number>;
+}) {
 	const lowest = Object.entries(scores).sort((a, b) => a[1] - b[1])[0];
 	if (!lowest) return null;
 	return (
@@ -605,8 +863,8 @@ function LowestDimension({ scores }: { scores: Record<string, number> }) {
 				aria-hidden
 			/>
 			<p className="text-body text-amber-600 dark:text-amber-400">
-				A dimensão que merece maior atenção agora é{' '}
-				<b>{MASLOW_LABELS[lowest[0]] ?? lowest[0]}</b> ({lowest[1]}%).
+				Mais atenção agora: <b>{MASLOW_LABELS[lowest[0]] ?? lowest[0]}</b> (
+				{lowest[1]}%).
 			</p>
 		</div>
 	);
@@ -622,23 +880,64 @@ export function BusinessPlanView({
 	template: MntFormTemplate | null | undefined;
 	versions: MntBusinessPlanVersion[];
 	creating: boolean;
-	onCreate: (answers: Record<string, unknown>) => void;
+	onCreate: (answers: Record<string, unknown>, cb?: MutationCallbacks) => void;
 }) {
 	const [editing, setEditing] = useState(false);
 	const [answers, setAnswers] = useState<Record<string, unknown>>({});
+	const [base, setBase] = useState<string>('{}');
+	const [missing, setMissing] = useState<string[]>([]);
 	const [viewing, setViewing] = useState<MntBusinessPlanVersion | null>(null);
+
+	// A nova versão parte da última: antes começava em branco e o aluno
+	// redigitava o plano inteiro para gerar a V2.
+	const latest = versions.reduce<MntBusinessPlanVersion | null>(
+		(acc, v) => (!acc || v.version > acc.version ? v : acc),
+		null,
+	);
+	const unchanged = JSON.stringify(answers) === base;
+
+	const save = () => {
+		// A versão é imutável: aponta os obrigatórios vazios pelo nome antes de
+		// enviar (a API também recusa, mas só com 409 genérico nesta tela).
+		const empty = (template?.schema.blocks ?? [])
+			.flatMap((b) => b.fields)
+			.filter((f) => {
+				if (!f.required) return false;
+				const v = answers[f.key];
+				if (isUnknownAnswer(v)) return false;
+				return v === undefined || v === null || String(v).trim() === '';
+			})
+			.map((f) => f.label);
+		setMissing(empty);
+		if (empty.length > 0) return;
+		onCreate(answers, {
+			onSuccess: () => {
+				setEditing(false);
+				setAnswers({});
+			},
+		});
+	};
 
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between gap-3">
-				<p className="text-body text-muted">
-					Cada envio gera uma nova versão imutável — assim dá pra comparar V1,
-					V2... ao longo dos anos.
+				<p className="inline-flex items-center gap-1 text-body text-muted">
+					Versões imutáveis
+					<HelpTip label="Sobre as versões">
+						Cada envio gera uma nova versão imutável — assim dá pra comparar V1,
+						V2... ao longo dos anos.
+					</HelpTip>
 				</p>
 				{template && (
 					<Button
 						variant="primary"
 						onPress={() => {
+							if (!editing) {
+								const start = { ...(latest?.content ?? {}) };
+								setAnswers(start);
+								setBase(JSON.stringify(start));
+								setMissing([]);
+							}
 							setEditing((v) => !v);
 							setViewing(null);
 						}}
@@ -658,14 +957,15 @@ export function BusinessPlanView({
 						initialAnswers={answers}
 						onChange={setAnswers}
 					/>
+					{missing.length > 0 && (
+						<p className="text-body text-red-600 dark:text-red-400">
+							Preencha antes de salvar: {missing.join(', ')}.
+						</p>
+					)}
 					<Button
 						variant="primary"
-						onPress={() => {
-							onCreate(answers);
-							setEditing(false);
-							setAnswers({});
-						}}
-						disabled={creating}
+						onPress={save}
+						disabled={creating || unchanged}
 					>
 						Salvar como nova versão
 					</Button>
@@ -676,7 +976,7 @@ export function BusinessPlanView({
 				<EmptyState
 					icon={Briefcase}
 					title="Nenhuma versão do plano de negócios"
-					description="Crie a V1 do seu plano — ela fica registrada para sempre e vira base de comparação."
+					description="A V1 vira a base de comparação."
 				/>
 			) : (
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
