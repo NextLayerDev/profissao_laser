@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { useInvalidateToolProgress } from '@/modules/mentoria/hooks';
 import {
 	addPopAttachmentLink,
 	createPop,
@@ -32,6 +33,8 @@ import {
 	INPUT,
 	LABEL,
 	MntSkeleton,
+	mntErrorText,
+	normalizeUrl,
 } from '../shared';
 
 type PopForm = {
@@ -58,7 +61,13 @@ const EMPTY_FORM: PopForm = {
 export function ToolPopLibrary({ instanceId }: { instanceId: string }) {
 	const qc = useQueryClient();
 	const queryKey = ['mentoria', 'pops', instanceId];
-	const invalidate = () => qc.invalidateQueries({ queryKey });
+	const invalidateProgress = useInvalidateToolProgress();
+	// A API recalcula o % da ferramenta a cada escrita: o card e o Mapa
+	// também precisam recarregar.
+	const invalidate = () => {
+		qc.invalidateQueries({ queryKey });
+		invalidateProgress();
+	};
 
 	const { data: pops, isLoading } = useQuery({
 		queryKey,
@@ -121,7 +130,14 @@ export function ToolPopLibrary({ instanceId }: { instanceId: string }) {
 					<PopCard
 						key={pop.id}
 						pop={pop}
-						onDelete={() => remove.mutate(pop.id)}
+						onDelete={() => {
+							// Apaga em cascata passos e anexos, sem desfazer.
+							const n = pop.attachments.length;
+							const extra = n ? ` e seus ${n} anexo(s)` : '';
+							if (confirm(`Excluir o POP "${pop.title}"${extra}?`)) {
+								remove.mutate(pop.id);
+							}
+						}}
 						onChanged={invalidate}
 					/>
 				))
@@ -248,14 +264,16 @@ function PopCard({
 	const fileRef = useRef<HTMLInputElement>(null);
 
 	const addLink = useMutation({
-		mutationFn: () =>
-			addPopAttachmentLink(pop.id, { kind: 'link', url: linkUrl.trim() }),
+		// Sem protocolo, 'www.x.com' virava href relativo (404 da plataforma).
+		mutationFn: (url: string) =>
+			addPopAttachmentLink(pop.id, { kind: 'link', url }),
 		onSuccess: () => {
 			setLinkUrl('');
 			onChanged();
 			toast.success('Link anexado!');
 		},
-		onError: () => toast.error('Não foi possível anexar o link.'),
+		onError: (e) =>
+			toast.error(mntErrorText(e, 'Não foi possível anexar o link.')),
 	});
 
 	const upload = useMutation({
@@ -264,7 +282,8 @@ function PopCard({
 			onChanged();
 			toast.success('Arquivo anexado!');
 		},
-		onError: () => toast.error('Não foi possível enviar o arquivo.'),
+		onError: (e) =>
+			toast.error(mntErrorText(e, 'Não foi possível enviar o arquivo.')),
 	});
 
 	const steps = [...pop.steps].sort((a, b) => a.position - b.position);
@@ -366,7 +385,16 @@ function PopCard({
 							type="button"
 							className={BTN_GHOST}
 							disabled={!linkUrl.trim() || addLink.isPending}
-							onClick={() => addLink.mutate()}
+							onClick={() => {
+								const url = normalizeUrl(linkUrl);
+								if (!url) {
+									toast.error(
+										'Link inválido. Ex.: https://drive.google.com/...',
+									);
+									return;
+								}
+								addLink.mutate(url);
+							}}
 						>
 							<Link2 className="w-4 h-4" />
 							Anexar link

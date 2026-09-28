@@ -1,6 +1,7 @@
 'use client';
 
-// Modais da gestão de turmas: criar/editar turma, mentores e matrícula.
+// Modais da gestão de turmas: criar/editar turma, mentores, matrícula e
+// matrícula em lote (fila "Aguardando turma").
 //
 // `<select>` e `<input type="date">` continuam nativos — o Select do DS é só
 // o gatilho fechado (sem menu) e o Input é um TextInput genérico sem
@@ -10,11 +11,17 @@ import { Search, Trash2, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { Text } from 'react-native-css/components/Text';
 import { toast } from 'sonner';
-import type { MntCohort } from '@/modules/mentoria/types';
+import type {
+	EnrollBatchResult,
+	MentoriaWaitingStudent,
+	MntCohort,
+} from '@/modules/mentoria/types';
 import { useTeamUsers } from '@/modules/users';
 import {
+	mentoriaCodeMessage,
 	mentoriaErrorMessage,
 	studentSearchErrorMessage,
+	useCohortMentors,
 	useCohortMutations,
 	useStudentSearch,
 } from './admin-hooks';
@@ -140,8 +147,9 @@ export function CohortMentorsModal({
 	const [mentorId, setMentorId] = useState('');
 	const [mentorLabel, setMentorLabel] = useState('');
 	const [role, setRole] = useState<'lead' | 'assistant'>('lead');
-	const [removeId, setRemoveId] = useState('');
-	const [removeLabel, setRemoveLabel] = useState('');
+	// Mentores atuais vêm da API: antes o admin escolhia qualquer staff para
+	// remover e via "removido" mesmo quando a pessoa não era mentora.
+	const mentors = useCohortMentors(cohort.id);
 	// Uma query só para as duas metades — mesmo cache, mesma lista. São os
 	// staff/admin: é exatamente quem a api aceita como mentor, então não dá para
 	// escolher alguém que ela vá recusar com `mentor_must_be_staff`.
@@ -150,7 +158,7 @@ export function CohortMentorsModal({
 
 	const add = async () => {
 		if (!mentorId.trim()) {
-			toast.error('Informe o user_id (UUID) do mentor');
+			toast.error('Escolha o mentor na busca');
 			return;
 		}
 		try {
@@ -166,19 +174,11 @@ export function CohortMentorsModal({
 		}
 	};
 
-	const remove = async () => {
-		if (!removeId.trim()) {
-			toast.error('Informe o user_id do mentor a remover');
-			return;
-		}
+	const remove = async (mentorUserId: string, label: string) => {
+		if (!confirm(`Remover ${label} dos mentores da turma?`)) return;
 		try {
-			await removeMentor.mutateAsync({
-				cohortId: cohort.id,
-				mentorUserId: removeId.trim(),
-			});
+			await removeMentor.mutateAsync({ cohortId: cohort.id, mentorUserId });
 			toast.success('Mentor removido da turma');
-			setRemoveId('');
-			setRemoveLabel('');
 		} catch (err) {
 			toast.error(mentoriaErrorMessage(err, 'Erro ao remover mentor'));
 		}
@@ -188,11 +188,7 @@ export function CohortMentorsModal({
 		<Modal title={`Mentores — ${cohort.name}`} onClose={onClose}>
 			<div className="space-y-6">
 				<div className="space-y-3">
-					<p className="text-sm text-slate-600 dark:text-gray-400">
-						Só quem é staff ou admin pode ser mentor — a lista abaixo já traz
-						esse time.
-					</p>
-					<Field label="Buscar mentor" hint="Busque por nome ou email.">
+					<Field label="Buscar mentor" hint="Só staff e admin.">
 						<UserPicker
 							users={users}
 							isLoading={team.isLoading}
@@ -204,21 +200,13 @@ export function CohortMentorsModal({
 							emptyLabel="Nenhum mentor encontrado."
 						/>
 					</Field>
-					<Field
-						label="ID do usuário (UUID)"
-						required
-						hint={
-							mentorLabel
-								? `Selecionado: ${mentorLabel}`
-								: 'Preenchido pela busca acima, ou cole o UUID manualmente.'
-						}
-					>
-						<Input
-							value={mentorId}
-							onChangeText={setMentorId}
-							placeholder="00000000-0000-0000-0000-000000000000"
-						/>
-					</Field>
+					{/* O campo de UUID manual saiu (texto técnico na tela do mentor):
+					    a busca acima já seleciona o id. */}
+					{mentorLabel && (
+						<p className="text-sm text-slate-600 dark:text-gray-400">
+							Selecionado: <b>{mentorLabel}</b>
+						</p>
+					)}
 					<Field label="Papel">
 						<select
 							className={inputClass}
@@ -238,45 +226,48 @@ export function CohortMentorsModal({
 				</div>
 
 				<div className="border-t border-subtle pt-4 space-y-3">
-					<Field
-						label="Remover mentor"
-						hint="A API não expõe a listagem de mentores da turma, então aqui você escolhe a PESSOA — não há como marcar entre os mentores atuais."
-					>
-						<UserPicker
-							users={users}
-							isLoading={team.isLoading}
-							selectedId={removeId}
-							onSelect={(u) => {
-								setRemoveId(u.id);
-								setRemoveLabel(u.name?.trim() || u.email);
-							}}
-							emptyLabel="Nenhum mentor encontrado."
-						/>
-					</Field>
-					<Field
-						label="ID do usuário (UUID)"
-						hint={
-							removeLabel
-								? `Selecionado: ${removeLabel}`
-								: 'Preenchido pela busca acima, ou cole o UUID manualmente.'
-						}
-					>
-						<Input
-							value={removeId}
-							onChangeText={setRemoveId}
-							placeholder="user_id do mentor"
-						/>
-					</Field>
-					<Button
-						variant="secondary"
-						onPress={remove}
-						loading={removeMentor.isPending}
-					>
-						<Trash2 className="w-4 h-4" />
-						<Text className={buttonLabel({ variant: 'secondary' })}>
-							Remover da turma
-						</Text>
-					</Button>
+					<p className="text-sm font-medium text-primary">Mentores atuais</p>
+					{mentors.isLoading ? (
+						<p className="text-sm text-muted">Carregando...</p>
+					) : mentors.isError ? (
+						<p className="text-sm text-muted">
+							Não foi possível carregar os mentores da turma.
+						</p>
+					) : (mentors.data ?? []).length === 0 ? (
+						<p className="text-sm text-muted">Nenhum mentor nesta turma.</p>
+					) : (
+						<ul className="space-y-2">
+							{(mentors.data ?? []).map((m) => {
+								const label =
+									m.user?.name?.trim() || m.user?.email || m.mentor_user_id;
+								return (
+									<li
+										key={m.mentor_user_id}
+										className="flex items-center justify-between gap-3 rounded-control border border-subtle p-3"
+									>
+										<div className="min-w-0">
+											<p className="truncate text-sm text-primary">{label}</p>
+											<p className="text-xs text-muted">
+												{m.role === 'lead'
+													? 'Mentor líder'
+													: 'Mentor assistente'}
+											</p>
+										</div>
+										<Button
+											variant="secondary"
+											onPress={() => remove(m.mentor_user_id, label)}
+											disabled={removeMentor.isPending}
+										>
+											<Trash2 className="w-4 h-4" />
+											<Text className={buttonLabel({ variant: 'secondary' })}>
+												Remover
+											</Text>
+										</Button>
+									</li>
+								);
+							})}
+						</ul>
+					)}
 				</div>
 			</div>
 		</Modal>
@@ -300,7 +291,7 @@ export function EnrollStudentModal({
 
 	const submit = async () => {
 		if (!userId.trim()) {
-			toast.error('Selecione um aluno ou informe o user_id');
+			toast.error('Selecione um aluno na busca');
 			return;
 		}
 		try {
@@ -321,10 +312,7 @@ export function EnrollStudentModal({
 	return (
 		<Modal title={`Matricular aluno — ${cohort.name}`} onClose={onClose}>
 			<div className="space-y-4">
-				<Field
-					label="Buscar aluno"
-					hint="Busque por nome ou email (mín. 2 caracteres)."
-				>
+				<Field label="Buscar aluno" hint="Nome ou email, mín. 2 caracteres.">
 					{/* leadingIcon é a prop do Input pra isto — aposenta o `Search`
 					    absoluto + o hack `pl-9` que existia só por causa dele. */}
 					<Input
@@ -374,25 +362,16 @@ export function EnrollStudentModal({
 					</div>
 				)}
 
-				<Field
-					label="ID do usuário (UUID)"
-					required
-					hint={
-						selectedLabel
-							? `Selecionado: ${selectedLabel}`
-							: 'Preenchido pela busca acima, ou cole o UUID manualmente.'
-					}
-				>
-					<Input
-						value={userId}
-						onChangeText={setUserId}
-						placeholder="00000000-0000-0000-0000-000000000000"
-					/>
-				</Field>
+				{/* Sem o campo de UUID manual: a busca acima seleciona o aluno. */}
+				{selectedLabel && (
+					<p className="text-sm text-slate-600 dark:text-gray-400">
+						Selecionado: <b>{selectedLabel}</b>
+					</p>
+				)}
 
 				<Field
 					label="Nome da empresa"
-					hint="Cria/atualiza a empresa do aluno no programa (opcional se ele já tiver empresa cadastrada)."
+					hint="Opcional. Sem o plano da Mentoria, o aluno não acessa."
 				>
 					<Input
 						value={companyName}
@@ -410,6 +389,127 @@ export function EnrollStudentModal({
 					</Button>
 				</div>
 			</div>
+		</Modal>
+	);
+}
+
+// ── Matricular em lote (fila "Aguardando turma") ────────────────────────────
+export function EnrollBatchModal({
+	students,
+	cohorts,
+	onClose,
+}: {
+	students: MentoriaWaitingStudent[];
+	cohorts: MntCohort[];
+	onClose: () => void;
+}) {
+	const { enrollBatch } = useCohortMutations();
+	// Só turma aberta aceita matrícula (a API responde cohort_not_open).
+	const open = cohorts.filter(
+		(c) => c.status === 'active' || c.status === 'draft',
+	);
+	const [picked, setCohortId] = useState('');
+	// Sem escolha explícita vale a 1ª aberta — também quando as turmas chegam
+	// depois de o modal abrir (o <select> já mostraria essa opção).
+	const cohortId = picked || open[0]?.id || '';
+	const [result, setResult] = useState<EnrollBatchResult | null>(null);
+	const label = (id: string) => {
+		const s = students.find((x) => x.user_id === id);
+		return s?.name?.trim() || s?.email || id;
+	};
+
+	const submit = async () => {
+		if (!cohortId) {
+			toast.error('Escolha a turma');
+			return;
+		}
+		try {
+			const res = await enrollBatch.mutateAsync({
+				cohortId,
+				userIds: students.map((s) => s.user_id),
+			});
+			if (res.failed === 0) {
+				toast.success(
+					res.enrolled === 1
+						? 'Aluno matriculado'
+						: `${res.enrolled} alunos matriculados`,
+				);
+				onClose();
+				return;
+			}
+			// Com falha, o modal fica aberto listando quem não entrou e por quê.
+			setResult(res);
+		} catch (err) {
+			toast.error(mentoriaErrorMessage(err, 'Erro ao matricular'));
+		}
+	};
+
+	const failures = result?.results.filter((r) => !r.ok) ?? [];
+
+	return (
+		<Modal title="Matricular na turma" onClose={onClose}>
+			{result ? (
+				<div className="space-y-4">
+					<p className="text-sm text-primary">
+						{result.enrolled} matriculado(s), {result.failed} com erro.
+					</p>
+					<ul className="space-y-2">
+						{failures.map((f) => (
+							<li
+								key={f.user_id}
+								className="rounded-control border border-subtle p-3 text-sm"
+							>
+								<p className="text-primary">{label(f.user_id)}</p>
+								<p className="text-xs text-danger">
+									{mentoriaCodeMessage(f.error, 'Não foi possível matricular.')}
+								</p>
+							</li>
+						))}
+					</ul>
+					<div className="flex justify-end pt-2">
+						<Button onPress={onClose}>Fechar</Button>
+					</div>
+				</div>
+			) : (
+				<div className="space-y-4">
+					<p className="text-sm text-muted">
+						{students.length === 1
+							? label(students[0]?.user_id ?? '')
+							: `${students.length} alunos selecionados`}
+					</p>
+					{open.length === 0 ? (
+						<p className="text-sm text-muted">
+							Nenhuma turma aberta. Crie uma ou mude o status para Ativa.
+						</p>
+					) : (
+						<Field label="Turma" required>
+							<select
+								className={inputClass}
+								value={cohortId}
+								onChange={(e) => setCohortId(e.target.value)}
+							>
+								{open.map((c) => (
+									<option key={c.id} value={c.id}>
+										{c.name}
+									</option>
+								))}
+							</select>
+						</Field>
+					)}
+					<div className="flex justify-end gap-2 pt-2">
+						<Button variant="secondary" onPress={onClose}>
+							Cancelar
+						</Button>
+						<Button
+							onPress={submit}
+							loading={enrollBatch.isPending}
+							disabled={open.length === 0}
+						>
+							Matricular
+						</Button>
+					</div>
+				</div>
+			)}
 		</Modal>
 	);
 }

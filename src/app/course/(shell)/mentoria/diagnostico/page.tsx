@@ -15,7 +15,12 @@ import {
 	useSaveDiagnosticDraft,
 	useSubmitDiagnostic,
 } from '@/modules/mentoria/hooks';
-import { apiErrorCode, JourneyGate, MntSkeleton } from '../_components/shared';
+import {
+	apiErrorCode,
+	apiErrorDetails,
+	JourneyGate,
+	MntSkeleton,
+} from '../_components/shared';
 import { DiagnosticoView } from './_components/diagnostico-view';
 
 export default function DiagnosticoPage() {
@@ -41,8 +46,19 @@ function DiagnosticoContent({ journeyId }: { journeyId: string }) {
 				toast.success('Diagnóstico enviado — Foto Zero congelada!'),
 			onError: (e) => {
 				if (apiErrorCode(e) === 'required_fields_missing') {
+					const missing = apiErrorDetails(e)?.missing;
+					const labels = new Map(
+						(data?.template?.schema.blocks ?? []).flatMap((b) =>
+							b.fields.map((f) => [f.key, f.label] as const),
+						),
+					);
+					const names = Array.isArray(missing)
+						? missing.map((k) => labels.get(String(k)) ?? String(k))
+						: [];
 					toast.error(
-						'Há campos obrigatórios sem resposta. Preencha (ou marque "A LEVANTAR") antes de enviar.',
+						names.length
+							? `Falta responder: ${names.slice(0, 5).join(', ')}${names.length > 5 ? ` e mais ${names.length - 5}` : ''}. Use "A LEVANTAR" se não souber.`
+							: 'Há campos obrigatórios sem resposta. Preencha (ou marque "A LEVANTAR") antes de enviar.',
 					);
 				} else {
 					toast.error('Não foi possível enviar o diagnóstico.');
@@ -59,6 +75,16 @@ function DiagnosticoContent({ journeyId }: { journeyId: string }) {
 				saveDraft.mutate(answers, {
 					onSuccess: () => toast.success('Rascunho salvo!'),
 					onError: () => toast.error('Não foi possível salvar o rascunho.'),
+				})
+			}
+			onAutoSave={(answers, done) =>
+				saveDraft.mutate(answers, {
+					onSuccess: done,
+					// `id` fixo: falhas seguidas não empilham toasts.
+					onError: () =>
+						toast.error('Não foi possível salvar o rascunho automaticamente.', {
+							id: 'mnt-diagnostic-autosave',
+						}),
 				})
 			}
 			onSubmit={(answers) => {

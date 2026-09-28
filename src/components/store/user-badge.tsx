@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { KeyRound, LogOut, User } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -16,6 +17,7 @@ import {
 
 export function UserBadge() {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const [user, setUser] = useState<JwtPayload | null>(null);
 	const [showChangePassword, setShowChangePassword] = useState(false);
 
@@ -26,6 +28,9 @@ export function UserBadge() {
 	function handleLogout() {
 		clearToken('customer');
 		clearToken('user');
+		// As queryKeys não levam o usuário (ex.: ['mentoria','bootstrap']): sem
+		// limpar, quem entra em seguida na mesma aba via os dados do anterior.
+		queryClient.removeQueries();
 		setUser(null);
 		router.replace('/login');
 	}

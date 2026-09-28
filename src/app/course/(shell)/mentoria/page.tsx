@@ -20,6 +20,7 @@ import {
 	BookOpen,
 	Building2,
 	CheckSquare,
+	ClipboardList,
 	Compass,
 	FileText,
 	Link2,
@@ -28,12 +29,16 @@ import {
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { SubscriptionGate } from '@/components/course/subscription-gate';
-import { CompanyMapRadar } from '@/modules/mentoria/components/company-map-radar';
 import {
-	computeDelta,
+	CompanyMapRadar,
+	MaturityBasisBadge,
+} from '@/modules/mentoria/components/company-map-radar';
+import { HelpTip } from '@/modules/mentoria/components/help-tip';
+import {
 	formatKpiValue,
 	KpiEvolutionChart,
 	SEMAPHORE_TONE,
+	summarizePeriod,
 } from '@/modules/mentoria/components/kpi-evolution';
 import {
 	DonutProgress,
@@ -46,6 +51,7 @@ import {
 } from '@/modules/mentoria/components/ui';
 import {
 	useCompanyMap,
+	useDiagnostic,
 	useJourneyTools,
 	useKpiHistories,
 	useKpis,
@@ -53,14 +59,14 @@ import {
 	useMyMaterials,
 	useTasks,
 } from '@/modules/mentoria/hooks';
-import { MENTORIA_SETTINGS } from '@/modules/mentoria/nav';
 import type { MentoriaBootstrap, MntTask } from '@/modules/mentoria/types';
 import {
 	BTN_PRIMARY,
-	EmptyState,
 	fmtDate,
+	LoadErrorState,
 	MntHeader,
 	MntSkeleton,
+	WaitingForCohortState,
 } from './_components/shared';
 
 export default function MentoriaHomePage() {
@@ -72,9 +78,13 @@ export default function MentoriaHomePage() {
 }
 
 function HomeContent() {
-	const { data, isLoading } = useMentoriaBootstrap();
+	const { data, isLoading, isError, refetch } = useMentoriaBootstrap();
 
 	if (isLoading) return <MntSkeleton />;
+
+	// Erro sem dados é a api fora do ar, não falta de matrícula: sem isto o
+	// aluno matriculado lia "você ainda não está matriculado".
+	if (isError && !data) return <LoadErrorState onRetry={() => refetch()} />;
 
 	if (!data?.journey) {
 		return (
@@ -84,18 +94,7 @@ function HomeContent() {
 					subtitle="Profissão Laser 360° — sua empresa vista por inteiro"
 					icon={Compass}
 				/>
-				<EmptyState
-					title="Você ainda não está matriculado em uma turma de mentoria"
-					description="Assim que sua matrícula for confirmada pela equipe, sua jornada de 10 encontros aparece aqui. Enquanto isso, adiante o cadastro da sua empresa."
-				>
-					{/* O formulário ficava aqui embaixo. Passou a ter rota própria em
-					    Configurações, então o bloqueio virou o que já era: um convite
-					    com um destino. O rótulo distingue criar de editar — não é a
-					    mesma promessa para quem lê. */}
-					<Link href={MENTORIA_SETTINGS} className={BTN_PRIMARY}>
-						{data?.company ? 'Editar dados da empresa' : 'Cadastrar empresa'}
-					</Link>
-				</EmptyState>
+				<WaitingForCohortState hasCompany={!!data?.company} />
 			</div>
 		);
 	}
@@ -126,12 +125,18 @@ function Dashboard({
 }) {
 	const { company, cohort, progress } = bootstrap;
 	const [period, setPeriod] = useState<Period>('12m');
+	// A lista cortava em 8 sem "ver todos": como a API ordena do mais novo, os
+	// primeiros materiais (ex.: do Encontro 1) sumiam de todas as telas.
+	const [allMaterials, setAllMaterials] = useState(false);
 
 	const { data: tasks } = useTasks(journeyId);
 	const { data: kpis } = useKpis(journeyId);
 	const { data: tools } = useJourneyTools(journeyId);
 	const { data: map } = useCompanyMap(journeyId);
 	const { data: materials } = useMyMaterials();
+	const { data: diagnostic } = useDiagnostic(journeyId);
+	// O diagnóstico é o 1º passo e antes só tinha atalho dentro do encontro 1.
+	const diagnosticPending = !!diagnostic?.template && !diagnostic.foto_zero;
 
 	// Os quatro cards de topo e as séries do gráfico saem dos mesmos KPIs.
 	const topKpis = useMemo(
@@ -179,18 +184,31 @@ function Dashboard({
 		<div className="space-y-6">
 			<MntHeader
 				title={company?.name ?? 'Minha Empresa'}
-				subtitle={
-					cohort
-						? `Visão geral de faturamento, clientes e margem — Turma ${cohort.name}`
-						: 'Visão geral de faturamento, clientes e margem'
-				}
+				subtitle={cohort ? cohort.name : undefined}
 				icon={Building2}
 			/>
+
+			{diagnosticPending && (
+				<div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-subtle bg-surface p-4">
+					<div className="flex items-center gap-3">
+						<ClipboardList className="h-5 w-5 shrink-0 text-brand dark:text-violet-400" />
+						<p className="inline-flex items-center gap-1 text-body font-medium text-primary">
+							Diagnóstico pendente
+							<HelpTip label="Sobre o diagnóstico">
+								Primeiro passo da mentoria: vira a sua Foto Zero.
+							</HelpTip>
+						</p>
+					</div>
+					<Link href="/course/mentoria/diagnostico" className={BTN_PRIMARY}>
+						{diagnostic?.draft ? 'Continuar diagnóstico' : 'Preencher agora'}
+						<ArrowRight className="h-4 w-4" />
+					</Link>
+				</div>
+			)}
 
 			{/* Resumo do período */}
 			<SectionCard
 				title="Resumo do período"
-				description={`${currentMonthLabel()} — atualizado agora`}
 				action={
 					<SegmentedControl
 						label="Período"
@@ -202,34 +220,48 @@ function Dashboard({
 			>
 				{topKpis.length === 0 ? (
 					<p className="text-body text-muted py-6 text-center">
-						Nenhum indicador cadastrado ainda.{' '}
 						<Link
 							href="/course/mentoria/indicadores"
 							className="text-brand dark:text-violet-400 hover:underline"
 						>
-							Criar meu primeiro indicador
+							Criar primeiro indicador
 						</Link>
 					</p>
 				) : (
 					<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-						{topKpis.map((kpi, i) => (
-							<StatCard
-								key={kpi.id}
-								label={kpi.name}
-								value={formatKpiValue(kpi.latest_measurement?.value, kpi.unit)}
-								sub={
-									kpi.target !== null
-										? `Meta: ${formatKpiValue(kpi.target, kpi.unit)}`
-										: kpi.latest_measurement
-											? `Medido em ${fmtDate(kpi.latest_measurement.measured_at)}`
-											: 'Sem medição'
-								}
-								icon={KPI_ICONS[i % KPI_ICONS.length]}
-								tone={SEMAPHORE_TONE[kpi.current_semaphore ?? 'unmeasured']}
-								delta={computeDelta(kpi, histories[i]?.data)}
-								href="/course/mentoria/indicadores"
-							/>
-						))}
+						{topKpis.map((kpi, i) => {
+							// O seletor vale para os cards também: valor e variação são
+							// do período escolhido, não da última medição de sempre.
+							const { latest, delta } = summarizePeriod(
+								kpi,
+								histories[i]?.data,
+								PERIOD_MONTHS[period],
+							);
+							const loaded = !!histories[i]?.data;
+							const shown = loaded ? latest : kpi.latest_measurement;
+							return (
+								<StatCard
+									key={kpi.id}
+									label={kpi.name}
+									value={formatKpiValue(shown?.value, kpi.unit)}
+									sub={
+										!shown
+											? 'Sem medição no período'
+											: kpi.target !== null
+												? `Meta: ${formatKpiValue(kpi.target, kpi.unit)}`
+												: `Medido em ${fmtDate(shown.measured_at)}`
+									}
+									icon={KPI_ICONS[i % KPI_ICONS.length]}
+									tone={
+										shown
+											? SEMAPHORE_TONE[kpi.current_semaphore ?? 'unmeasured']
+											: SEMAPHORE_TONE.unmeasured
+									}
+									delta={delta}
+									href="/course/mentoria/indicadores"
+								/>
+							);
+						})}
 					</div>
 				)}
 			</SectionCard>
@@ -239,7 +271,7 @@ function Dashboard({
 				<SectionCard title="Prioridades Atuais" bodyClassName="px-5 pb-5 pt-0">
 					{priorities.length === 0 ? (
 						<p className="text-body text-muted py-6 text-center">
-							Nenhuma prioridade em aberto. Bom trabalho!
+							Nada em aberto.
 						</p>
 					) : (
 						<ul className="space-y-3">
@@ -299,7 +331,7 @@ function Dashboard({
 				<SectionCard title="Próximas Ações" bodyClassName="px-5 pb-5 pt-0">
 					{nextActions.length === 0 ? (
 						<p className="text-body text-muted py-6 text-center">
-							Nenhuma tarefa em aberto.
+							Nada em aberto.
 						</p>
 					) : (
 						<>
@@ -332,14 +364,7 @@ function Dashboard({
 					)}
 				</SectionCard>
 
-				<SectionCard
-					title="Evolução dos Principais Indicadores"
-					action={
-						<span className="text-caption text-muted">
-							Últimos {PERIOD_MONTHS[period]} meses
-						</span>
-					}
-				>
+				<SectionCard title="Evolução dos indicadores">
 					<KpiEvolutionChart
 						kpis={topKpis}
 						histories={histories.map((h) => h.data)}
@@ -352,13 +377,13 @@ function Dashboard({
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 				<SectionCard
 					title="Saúde das áreas"
-					description="Maturidade da empresa por área (Mapa da Minha Empresa)"
+					action={map ? <MaturityBasisBadge map={map} /> : undefined}
 				>
 					{map && map.areas.length > 0 ? (
 						<CompanyMapRadar map={map} />
 					) : (
 						<p className="text-body text-muted py-10 text-center">
-							Comece a usar as ferramentas para ver o mapa da sua empresa.
+							Use as ferramentas para ver o mapa.
 						</p>
 					)}
 					<Link
@@ -375,11 +400,14 @@ function Dashboard({
 				>
 					{(materials ?? []).length === 0 ? (
 						<p className="text-body text-muted py-8 text-center">
-							Nenhum material disponível ainda.
+							Nenhum material ainda.
 						</p>
 					) : (
 						<ul className="space-y-2">
-							{(materials ?? []).slice(0, 8).map((mat) => (
+							{(allMaterials
+								? (materials ?? [])
+								: (materials ?? []).slice(0, 5)
+							).map((mat) => (
 								<li key={mat.id}>
 									<a
 										href={mat.url}
@@ -398,20 +426,29 @@ function Dashboard({
 												aria-hidden
 											/>
 										)}
-										<div className="min-w-0">
+										<div
+											className="min-w-0"
+											title={mat.description ?? undefined}
+										>
 											<p className="text-body text-primary truncate">
 												{mat.title}
 											</p>
-											{mat.description && (
-												<p className="text-caption text-muted truncate">
-													{mat.description}
-												</p>
-											)}
 										</div>
 									</a>
 								</li>
 							))}
 						</ul>
+					)}
+					{(materials ?? []).length > 5 && (
+						<button
+							type="button"
+							onClick={() => setAllMaterials((v) => !v)}
+							className="mt-3 inline-flex items-center gap-1 text-body text-brand dark:text-violet-400 hover:underline"
+						>
+							{allMaterials
+								? 'Mostrar menos'
+								: `Ver todos (${(materials ?? []).length})`}
+						</button>
 					)}
 				</SectionCard>
 			</div>
@@ -456,12 +493,4 @@ function compareDueDate(a: MntTask, b: MntTask) {
 	if (!a.due_date) return 1;
 	if (!b.due_date) return -1;
 	return a.due_date.localeCompare(b.due_date);
-}
-
-function currentMonthLabel() {
-	const label = new Date().toLocaleDateString('pt-BR', {
-		month: 'long',
-		year: 'numeric',
-	});
-	return label.charAt(0).toUpperCase() + label.slice(1);
 }

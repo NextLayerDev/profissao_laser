@@ -12,7 +12,9 @@
 
 import { Badge } from '@upvox-dev/ui';
 import {
+	ArrowRight,
 	BadgeCheck,
+	CalendarClock,
 	Check,
 	Compass,
 	Lock,
@@ -24,7 +26,7 @@ import type { MntJourneyMeeting } from '@/modules/mentoria/types';
 import {
 	CARD,
 	EmptyState,
-	fmtDate,
+	fmtDateTime,
 	MntHeader,
 	meetingStatusLabel,
 } from '../../_components/shared';
@@ -41,14 +43,45 @@ const MEETING_STATUS_TONE: Record<
 };
 
 export function JornadaView({ meetings }: { meetings: MntJourneyMeeting[] }) {
+	// O encontro em que o aluno está: o primeiro liberado e ainda não feito.
+	const current = meetings.find(
+		(m) => m.status === 'available' || m.status === 'in_progress',
+	);
 	return (
-		<div className="p-4 md:p-8 max-w-3xl mx-auto">
+		<div className="max-w-3xl mx-auto">
 			<MntHeader
 				title="Jornada da Mentoria"
 				subtitle="10 encontros para enxergar sua empresa por inteiro"
 				icon={Compass}
 				backHref="/course/mentoria"
 			/>
+
+			{current && (
+				<Link
+					href={`/course/mentoria/jornada/${current.id}`}
+					className={`${CARD} mb-6 flex items-center justify-between gap-3 border-brand-border p-4 transition hover:bg-brand-wash`}
+				>
+					<div className="min-w-0">
+						<p className="text-caption uppercase tracking-wide text-muted">
+							Próximo encontro
+						</p>
+						<p className="truncate text-label text-primary">
+							{current.position}.{' '}
+							{current.template?.title ?? `Encontro ${current.position}`}
+						</p>
+						{current.scheduled_at && (
+							<p className="inline-flex items-center gap-1 text-caption text-secondary">
+								<CalendarClock className="w-3.5 h-3.5" aria-hidden />
+								{fmtDateTime(current.scheduled_at)}
+							</p>
+						)}
+					</div>
+					<ArrowRight
+						className="w-4 h-4 shrink-0 text-brand dark:text-violet-400"
+						aria-hidden
+					/>
+				</Link>
+			)}
 
 			{meetings.length === 0 ? (
 				<EmptyState
@@ -98,8 +131,9 @@ function MeetingRow({ meeting }: { meeting: MntJourneyMeeting }) {
 				<p className="mt-1 text-body text-muted">{meeting.template.subtitle}</p>
 			)}
 			{meeting.scheduled_at && (
-				<p className="mt-1 text-caption text-muted">
-					Agendado para {fmtDate(meeting.scheduled_at)}
+				<p className="mt-1 inline-flex items-center gap-1 text-caption text-muted">
+					<CalendarClock className="w-3.5 h-3.5" aria-hidden />
+					{fmtDateTime(meeting.scheduled_at)}
 				</p>
 			)}
 			{meeting.mentor_feedback && (

@@ -16,7 +16,14 @@
 //   3. Foto Zero congelada     → modo leitura, para sempre.
 
 import { Button, buttonLabel } from '@upvox-dev/ui';
-import { Camera, ClipboardList, Lock, Save, Send } from 'lucide-react';
+import {
+	Camera,
+	CircleDashed,
+	ClipboardList,
+	Lock,
+	Save,
+	Send,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Text } from 'react-native-css/components/Text';
 import { ModalPortal } from '@/components/ui/modal-portal';
@@ -31,12 +38,15 @@ export function DiagnosticoView({
 	savingDraft,
 	submitting,
 	onSaveDraft,
+	onAutoSave,
 	onSubmit,
 }: {
 	data: DiagnosticState | null | undefined;
 	savingDraft: boolean;
 	submitting: boolean;
 	onSaveDraft: (answers: Record<string, unknown>) => void;
+	/** Salvamento silencioso do rascunho; `done` só no sucesso. */
+	onAutoSave?: (answers: Record<string, unknown>, done: () => void) => void;
 	/** `null` quando o aluno não tocou no formulário nesta sessão. */
 	onSubmit: (answers: Record<string, unknown> | null) => void;
 }) {
@@ -44,6 +54,47 @@ export function DiagnosticoView({
 	// próprio estado, e espelhá-lo aqui re-renderizaria a tela a cada tecla.
 	const answersRef = useRef<Record<string, unknown> | null>(null);
 	const [confirming, setConfirming] = useState(false);
+
+	// Autosave: são 45 campos e o rascunho só era salvo no botão do fim — sair
+	// pelo menu ou fechar a aba perdia tudo. `editsRef` conta as edições para
+	// não marcar "salvo" se o aluno digitou durante o save.
+	const autosaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const editsRef = useRef(0);
+	const [dirty, setDirty] = useState(false);
+	const [autoSavedAt, setAutoSavedAt] = useState<Date | null>(null);
+
+	const flushAutosave = () => {
+		if (autosaveRef.current) clearTimeout(autosaveRef.current);
+		autosaveRef.current = null;
+		const answers = answersRef.current;
+		if (!onAutoSave || !answers) return;
+		const edits = editsRef.current;
+		onAutoSave(answers, () => {
+			if (editsRef.current !== edits) return;
+			setDirty(false);
+			setAutoSavedAt(new Date());
+		});
+	};
+	const flushRef = useRef(flushAutosave);
+	useEffect(() => {
+		flushRef.current = flushAutosave;
+	});
+
+	// Saída pelo menu (desmonta): salva o que estiver pendente.
+	useEffect(
+		() => () => {
+			if (autosaveRef.current) flushRef.current();
+		},
+		[],
+	);
+
+	// Fechar/recarregar a aba com alteração não salva: o browser pergunta.
+	useEffect(() => {
+		if (!dirty) return;
+		const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+		window.addEventListener('beforeunload', warn);
+		return () => window.removeEventListener('beforeunload', warn);
+	}, [dirty]);
 
 	// Sem `p-4 md:p-8` em nenhum dos três retornos: o `mentoria/layout.tsx` já
 	// aplica o padding da área. Antes esta tela aplicava de novo, e o conteúdo
@@ -54,7 +105,7 @@ export function DiagnosticoView({
 				<MntHeader title="Diagnóstico — Raio-X inicial" icon={ClipboardList} />
 				<EmptyState
 					title="Diagnóstico indisponível"
-					description="O formulário de diagnóstico ainda não foi publicado para a sua turma. Fale com seu mentor."
+					description="Ainda não publicado. Fale com seu mentor."
 				/>
 			</div>
 		);
@@ -66,7 +117,7 @@ export function DiagnosticoView({
 			<div className="space-y-6">
 				<MntHeader
 					title="Diagnóstico — Foto Zero"
-					subtitle={`Congelada em ${fmtDate(data.foto_zero.taken_at)} — este é o seu ponto de partida`}
+					subtitle={`Congelada em ${fmtDate(data.foto_zero.taken_at)}`}
 					icon={Camera}
 				/>
 				<div className="flex items-center gap-3 rounded-card border border-subtle bg-surface p-4">
@@ -74,9 +125,7 @@ export function DiagnosticoView({
 					    mesma ressalva das outras telas da Mentoria. */}
 					<Lock className="h-4 w-4 shrink-0 text-brand dark:text-violet-400" />
 					<p className="text-body text-secondary">
-						A Foto Zero está congelada e não pode ser alterada. Ela é a
-						referência do &quot;antes&quot; para medir toda a sua evolução na
-						mentoria.
+						Precisa corrigir? Fale com seu mentor.
 					</p>
 				</div>
 				<FotoZeroView
@@ -100,9 +149,19 @@ export function DiagnosticoView({
 		<div className="space-y-6">
 			<MntHeader
 				title={data.template.title || 'Diagnóstico — Raio-X inicial'}
-				subtitle={
-					data.template.description ??
-					'Responda com sinceridade: não saber também é diagnóstico. Use "A LEVANTAR" quando não tiver o dado.'
+				subtitle={data.template.description ?? 'Vira a sua Foto Zero.'}
+				help={
+					<>
+						{/* A pílula virou só o ícone: a ajuda mostra o mesmo ícone, senão
+						    "A LEVANTAR" não bate com nada visível na tela. */}
+						Responda com sinceridade: não saber também é diagnóstico. Sem o
+						dado? Toque em{' '}
+						<CircleDashed
+							className="inline h-3.5 w-3.5 align-text-bottom"
+							aria-hidden
+						/>{' '}
+						no campo (A LEVANTAR).
+					</>
 				}
 				icon={ClipboardList}
 			/>
@@ -110,16 +169,26 @@ export function DiagnosticoView({
 			<DynamicForm
 				template={data.template}
 				initialAnswers={initialAnswers}
+				showProgress
 				onChange={(answers) => {
 					answersRef.current = answers;
+					editsRef.current += 1;
+					setDirty(true);
+					if (!onAutoSave) return;
+					if (autosaveRef.current) clearTimeout(autosaveRef.current);
+					autosaveRef.current = setTimeout(flushAutosave, 2000);
 				}}
 			/>
 
 			<div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-subtle bg-surface p-4">
 				<p className="text-body text-muted">
-					{data.draft
-						? `Rascunho salvo por último em ${fmtDate(data.draft.updated_at)}.`
-						: 'Nenhum rascunho salvo ainda.'}
+					{dirty
+						? 'Não salvo…'
+						: autoSavedAt
+							? `Salvo às ${autoSavedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+							: data.draft
+								? `Rascunho de ${fmtDate(data.draft.updated_at)}`
+								: 'Sem rascunho'}
 				</p>
 				<div className="flex gap-2">
 					{/* Ícone + texto é um ARRAY de children, e array bypassa o wrap
@@ -129,7 +198,12 @@ export function DiagnosticoView({
 					    só o <Text>. */}
 					<Button
 						variant="secondary"
-						onPress={() => onSaveDraft(answersRef.current ?? initialAnswers)}
+						onPress={() => {
+							if (autosaveRef.current) clearTimeout(autosaveRef.current);
+							autosaveRef.current = null;
+							setDirty(false);
+							onSaveDraft(answersRef.current ?? initialAnswers);
+						}}
 						disabled={savingDraft}
 					>
 						<Save className="h-4 w-4 text-primary" aria-hidden />
@@ -144,7 +218,7 @@ export function DiagnosticoView({
 					>
 						<Send className="h-4 w-4 text-on-brand" aria-hidden />
 						<Text className={buttonLabel({ variant: 'primary' })}>
-							Enviar diagnóstico e congelar Foto Zero
+							Congelar Foto Zero
 						</Text>
 					</Button>
 				</div>
@@ -156,6 +230,9 @@ export function DiagnosticoView({
 					onCancel={() => setConfirming(false)}
 					onConfirm={() => {
 						setConfirming(false);
+						if (autosaveRef.current) clearTimeout(autosaveRef.current);
+						autosaveRef.current = null;
+						setDirty(false);
 						onSubmit(answersRef.current);
 					}}
 				/>
@@ -252,13 +329,23 @@ function FotoZeroView({
 	templateBlocks: Array<{
 		key: string;
 		title: string;
-		fields: Array<{ key: string; label: string }>;
+		fields: Array<{ key: string; label: string; type?: string }>;
 	}>;
 }) {
 	// Preferimos as respostas da submissão; o payload do snapshot é o fallback.
 	const source =
 		answers ??
 		((snapshot.payload.answers ?? snapshot.payload) as Record<string, unknown>);
+
+	// Respostas cujas keys não estão no template exibido (versão diferente) não
+	// podem sumir da tela: aparecem num bloco à parte.
+	const shown = new Set(
+		templateBlocks.flatMap((b) => b.fields.map((f) => f.key)),
+	);
+	const extra = Object.entries(source ?? {}).filter(
+		([key, value]) =>
+			!shown.has(key) && value !== undefined && value !== null && value !== '',
+	);
 
 	return (
 		<div className="space-y-5">
@@ -276,7 +363,7 @@ function FotoZeroView({
 										{field.label}
 									</dt>
 									<dd className="mt-0.5 whitespace-pre-wrap text-body text-primary">
-										{renderAnswer(value)}
+										{renderAnswer(value, field.type)}
 									</dd>
 								</div>
 							);
@@ -284,14 +371,36 @@ function FotoZeroView({
 					</dl>
 				</SectionCard>
 			))}
+			{extra.length > 0 && (
+				<SectionCard title="Outras respostas" className="@container">
+					<dl className="grid grid-cols-1 gap-x-6 gap-y-3 @2xl:grid-cols-2">
+						{extra.map(([key, value]) => (
+							<div key={key}>
+								<dt className="text-caption uppercase tracking-wide text-muted">
+									{key.replaceAll('_', ' ')}
+								</dt>
+								<dd className="mt-0.5 whitespace-pre-wrap text-body text-primary">
+									{renderAnswer(value)}
+								</dd>
+							</div>
+						))}
+					</dl>
+				</SectionCard>
+			)}
 		</div>
 	);
 }
 
-function renderAnswer(value: unknown): string {
+function renderAnswer(value: unknown, type?: string): string {
 	if (value === undefined || value === null || value === '') return '—';
 	if (isUnknownAnswer(value)) return '[ A LEVANTAR / NÃO MEDIDO ]';
 	if (typeof value === 'boolean') return value ? 'Sim' : 'Não';
+	// Moeda em R$ e número com milhar pt-BR ('15000' cru confundia).
+	if (typeof value === 'number') {
+		return type === 'currency'
+			? value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+			: value.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+	}
 	if (Array.isArray(value)) return value.map(String).join(', ');
 	if (typeof value === 'object') return JSON.stringify(value);
 	return String(value);

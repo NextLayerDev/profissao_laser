@@ -29,24 +29,32 @@ export function LiveChatView({
 }: {
 	messages: MntLiveChatMessage[];
 	sending: boolean;
-	onSend: (body: string) => void;
+	/** `onError` devolve o texto ao campo quando o envio falha. */
+	onSend: (body: string, cb?: { onError?: () => void }) => void;
 }) {
 	const [text, setText] = useState('');
-	const bottomRef = useRef<HTMLDivElement>(null);
+	const listRef = useRef<HTMLDivElement>(null);
+	// Só acompanha o fim se o aluno já estava lá: quem rolou para ler o
+	// histórico não é puxado de volta.
+	const stickRef = useRef(true);
+	const lastId = messages.at(-1)?.id;
 
-	// Depende de `messages.length`: com a lista de dependências vazia o chat só
-	// rolava no mount, então toda mensagem que chegava durante a live ficava
-	// abaixo da dobra.
+	// Depende do id da última mensagem, não do `length`: a API devolve só as
+	// últimas 100, e a partir daí o length parava em 100 e o chat não rolava
+	// mais. E rola só o container: `scrollIntoView` arrastava a janela junto e,
+	// no celular, tirava o vídeo da tela a cada mensagem.
 	useEffect(() => {
-		if (messages.length === 0) return;
-		bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-	}, [messages.length]);
+		const el = listRef.current;
+		if (!el || !lastId || !stickRef.current) return;
+		el.scrollTop = el.scrollHeight;
+	}, [lastId]);
 
 	const send = () => {
 		const body = text.trim();
 		if (!body || sending) return;
 		setText('');
-		onSend(body);
+		stickRef.current = true;
+		onSend(body, { onError: () => setText((t) => t || body) });
 	};
 
 	return (
@@ -55,7 +63,15 @@ export function LiveChatView({
 				Chat da live
 			</div>
 
-			<div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+			<div
+				ref={listRef}
+				onScroll={(e) => {
+					const el = e.currentTarget;
+					stickRef.current =
+						el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+				}}
+				className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0"
+			>
 				{messages.length === 0 && (
 					<p className="text-caption text-muted text-center py-6">
 						Seja o primeiro a mandar uma mensagem!
@@ -86,7 +102,6 @@ export function LiveChatView({
 						</div>
 					);
 				})}
-				<div ref={bottomRef} />
 			</div>
 
 			<div className="p-3 border-t border-subtle flex items-center gap-2">
