@@ -26,7 +26,7 @@ import {
 	Smile,
 	Triangle,
 } from 'lucide-react';
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Text } from 'react-native-css/components/Text';
 import {
 	PolarAngleAxis,
@@ -38,17 +38,20 @@ import {
 } from 'recharts';
 import {
 	DynamicForm,
+	formatAnswer,
 	inputClass,
+	isAnswered,
 } from '@/modules/mentoria/components/dynamic-form';
 import { HelpTip } from '@/modules/mentoria/components/help-tip';
 import type {
+	FormBlock,
+	FormField,
 	GoodNewsState,
 	MntBusinessPlanVersion,
 	MntFormTemplate,
 	MntGoal,
 	MntMaslowTest,
 } from '@/modules/mentoria/types';
-import { isUnknownAnswer } from '@/modules/mentoria/types';
 import {
 	CARD,
 	ConfirmDialog,
@@ -871,174 +874,584 @@ export function LowestDimension({
 }
 
 // ── Plano de Negócios ────────────────────────────────────────────────────────
+//
+// O plano virou um formulário longo (o admin montou ~11 blocos e ~70
+// perguntas), e a tela antiga não aguentou:
+//
+// - a versão salva aparecia como o FORMULÁRIO com os campos desabilitados — o
+//   aluno clicava, "não digita nada", e não achava botão de salvar (o "Nova
+//   versão" ficava no canto). Agora a versão salva é LEITURA em blocos
+//   (pergunta → resposta), sem nenhum input, e o convite para editar é o CTA
+//   principal do topo;
+// - ~70 campos numa página só não têm ritmo. A edição vira um passo a passo
+//   por bloco: navegador com x/y por bloco, Anterior/Próximo e o salvar sempre
+//   visível na barra de baixo;
+// - perder 70 respostas por fechar a aba seria cruel: o rascunho fica salvo
+//   neste aparelho (localStorage) até virar versão;
+// - respostas de perguntas que o admin tirou do formulário não somem: aparecem
+//   em "Respostas de perguntas antigas" (mesmo padrão da Foto Zero).
+
+const DRAFT_PREFIX = 'mentoria:plano-negocios:rascunho:';
+
+type PlanDraft = {
+	answers: Record<string, unknown>;
+	step: number;
+	savedAt: string;
+};
+
+function readDraft(key: string | undefined): PlanDraft | null {
+	if (!key) return null;
+	try {
+		const raw = localStorage.getItem(DRAFT_PREFIX + key);
+		return raw ? (JSON.parse(raw) as PlanDraft) : null;
+	} catch {
+		return null;
+	}
+}
+
+function writeDraft(key: string | undefined, draft: PlanDraft | null) {
+	if (!key) return;
+	try {
+		if (draft) localStorage.setItem(DRAFT_PREFIX + key, JSON.stringify(draft));
+		else localStorage.removeItem(DRAFT_PREFIX + key);
+	} catch {
+		// Aba anônima / storage bloqueado: segue sem rascunho local.
+	}
+}
+
+function fmtTime(iso: string): string {
+	return new Date(iso).toLocaleString('pt-BR', {
+		day: '2-digit',
+		month: '2-digit',
+		hour: '2-digit',
+		minute: '2-digit',
+	});
+}
+
+/** Obrigatórios sem resposta ("A LEVANTAR" conta como resposta). */
+function missingRequired(
+	fields: FormField[],
+	answers: Record<string, unknown>,
+) {
+	return fields.filter((f) => f.required && !isAnswered(answers[f.key]));
+}
+
 export function BusinessPlanView({
 	template,
 	versions,
 	creating,
 	onCreate,
+	draftKey,
 }: {
 	template: MntFormTemplate | null | undefined;
 	versions: MntBusinessPlanVersion[];
 	creating: boolean;
 	onCreate: (answers: Record<string, unknown>, cb?: MutationCallbacks) => void;
+	/** Chave do rascunho local (ex.: id da jornada). Sem ela, não salva rascunho. */
+	draftKey?: string;
 }) {
-	const [editing, setEditing] = useState(false);
-	const [answers, setAnswers] = useState<Record<string, unknown>>({});
-	const [base, setBase] = useState<string>('{}');
-	const [missing, setMissing] = useState<string[]>([]);
-	const [viewing, setViewing] = useState<MntBusinessPlanVersion | null>(null);
+	const sorted = [...versions].sort((a, b) => b.version - a.version);
+	const latest = sorted[0] ?? null;
+	const blocks = template?.schema.blocks ?? [];
 
-	// A nova versão parte da última: antes começava em branco e o aluno
-	// redigitava o plano inteiro para gerar a V2.
-	const latest = versions.reduce<MntBusinessPlanVersion | null>(
-		(acc, v) => (!acc || v.version > acc.version ? v : acc),
-		null,
+	// Sem nenhuma versão, a tela já abre no preenchimento — é o único caminho.
+	const [mode, setMode] = useState<'view' | 'edit'>(() =>
+		sorted.length === 0 ? 'edit' : 'view',
 	);
-	const unchanged = JSON.stringify(answers) === base;
+	const [selectedId, setSelectedId] = useState<string | null>(null);
+	const selected = sorted.find((v) => v.id === selectedId) ?? latest;
 
-	const save = () => {
-		// A versão é imutável: aponta os obrigatórios vazios pelo nome antes de
-		// enviar (a API também recusa, mas só com 409 genérico nesta tela).
-		const empty = (template?.schema.blocks ?? [])
-			.flatMap((b) => b.fields)
-			.filter((f) => {
-				if (!f.required) return false;
-				const v = answers[f.key];
-				if (isUnknownAnswer(v)) return false;
-				return v === undefined || v === null || String(v).trim() === '';
-			})
-			.map((f) => f.label);
-		setMissing(empty);
-		if (empty.length > 0) return;
-		onCreate(answers, {
-			onSuccess: () => {
-				setEditing(false);
-				setAnswers({});
-			},
-		});
-	};
+	if (!template) {
+		return (
+			<EmptyState
+				icon={Briefcase}
+				title="Plano de negócios ainda não disponível"
+				description="O formulário do plano ainda não foi publicado pela mentoria."
+			/>
+		);
+	}
+
+	if (mode === 'edit') {
+		return (
+			<BusinessPlanEditor
+				template={template}
+				base={latest}
+				nextVersion={(latest?.version ?? 0) + 1}
+				creating={creating}
+				draftKey={draftKey}
+				canCancel={sorted.length > 0}
+				onCancel={() => setMode('view')}
+				onSave={(answers, done) =>
+					onCreate(answers, {
+						onSuccess: () => {
+							done();
+							setSelectedId(null);
+							setMode('view');
+						},
+					})
+				}
+			/>
+		);
+	}
+
+	if (!selected) return null;
+	const answered = blocks
+		.flatMap((b) => b.fields)
+		.filter((f) => isAnswered(selected.content[f.key])).length;
+	const total = blocks.reduce((n, b) => n + b.fields.length, 0);
+	const isLatest = selected.id === latest?.id;
 
 	return (
-		<div className="space-y-4">
-			<div className="flex items-center justify-between gap-3">
-				<p className="inline-flex items-center gap-1 text-body text-muted">
-					Versões imutáveis
-					<HelpTip label="Sobre as versões">
-						Cada envio gera uma nova versão imutável — assim dá pra comparar V1,
-						V2... ao longo dos anos.
-					</HelpTip>
-				</p>
-				{template && (
-					<Button
-						variant="primary"
-						onPress={() => {
-							if (!editing) {
-								const start = { ...(latest?.content ?? {}) };
-								setAnswers(start);
-								setBase(JSON.stringify(start));
-								setMissing([]);
-							}
-							setEditing((v) => !v);
-							setViewing(null);
-						}}
-					>
-						<Plus className="h-4 w-4 text-on-brand" aria-hidden />
+		<div className="space-y-5">
+			{/* Cabeçalho da versão aberta + o convite para atualizar (CTA principal). */}
+			<div className={`${CARD} p-5`}>
+				<div className="flex flex-wrap items-start justify-between gap-4">
+					<div className="min-w-0">
+						<p className="inline-flex items-center gap-1.5 text-caption uppercase tracking-wide text-muted">
+							<Lock className="h-3.5 w-3.5" aria-hidden />
+							Versão salva · somente leitura
+							<HelpTip label="Sobre as versões">
+								Cada vez que você salva, nasce uma versão nova e as anteriores
+								ficam guardadas — assim dá para comparar V1, V2... ao longo da
+								mentoria.
+							</HelpTip>
+						</p>
+						<h3 className="mt-1 text-title text-primary">
+							{selected.label ?? `V${selected.version}`}
+						</h3>
+						<p className="mt-0.5 text-caption text-muted">
+							Salva em {fmtDate(selected.created_at)} · {answered} de {total}{' '}
+							perguntas respondidas
+						</p>
+					</div>
+					<Button variant="primary" onPress={() => setMode('edit')}>
+						<Pencil className="h-4 w-4 text-on-brand" aria-hidden />
 						<Text className={buttonLabel({ variant: 'primary' })}>
-							Nova versão
+							{`Atualizar plano (criar V${(latest?.version ?? 0) + 1})`}
 						</Text>
 					</Button>
+				</div>
+				<ProgressLine done={answered} total={total} />
+
+				{sorted.length > 1 && (
+					<div className="mt-4 flex flex-wrap gap-2" aria-label="Versões">
+						{sorted.map((v) => {
+							const on = v.id === selected.id;
+							return (
+								<button
+									key={v.id}
+									type="button"
+									aria-pressed={on}
+									onClick={() => setSelectedId(v.id)}
+									className={`rounded-chip border px-3 py-1 text-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
+										on
+											? 'border-brand bg-brand-wash text-primary'
+											: 'border-subtle text-muted hover:border-brand-border'
+									}`}
+								>
+									V{v.version} · {fmtDate(v.created_at)}
+									{v.id === latest?.id && ' · atual'}
+								</button>
+							);
+						})}
+					</div>
+				)}
+				{!isLatest && (
+					<p className="mt-3 text-caption text-muted">
+						Você está vendo uma versão antiga. A atualização sempre parte da
+						versão atual (V{latest?.version}).
+					</p>
 				)}
 			</div>
 
-			{editing && template && (
-				<div className="space-y-4">
-					<DynamicForm
-						template={template}
-						initialAnswers={answers}
-						onChange={setAnswers}
-					/>
-					{missing.length > 0 && (
-						<p className="text-body text-red-600 dark:text-red-400">
-							Preencha antes de salvar: {missing.join(', ')}.
+			<PlanReadBlocks blocks={blocks} content={selected.content} />
+		</div>
+	);
+}
+
+function ProgressLine({ done, total }: { done: number; total: number }) {
+	const pct = total ? Math.round((done / total) * 100) : 0;
+	return (
+		<div
+			className="mt-4 h-1.5 overflow-hidden rounded-full bg-surface-sunken"
+			role="progressbar"
+			aria-valuemin={0}
+			aria-valuemax={100}
+			aria-valuenow={pct}
+			aria-label="Perguntas respondidas"
+		>
+			<div
+				className="h-full rounded-full bg-brand transition-all"
+				style={{ width: `${pct}%` }}
+			/>
+		</div>
+	);
+}
+
+/** Versão salva em blocos de leitura: pergunta → resposta, sem inputs. */
+function PlanReadBlocks({
+	blocks,
+	content,
+}: {
+	blocks: FormBlock[];
+	content: Record<string, unknown>;
+}) {
+	const shown = new Set(blocks.flatMap((b) => b.fields.map((f) => f.key)));
+	const orphans = Object.entries(content).filter(
+		([key, value]) => !shown.has(key) && isAnswered(value),
+	);
+
+	return (
+		<div className="space-y-3">
+			{blocks.map((block, i) => {
+				const done = block.fields.filter((f) =>
+					isAnswered(content[f.key]),
+				).length;
+				return (
+					// Bloco sem nenhuma resposta começa fechado: com 11 blocos, abrir
+					// tudo vazio só empurra o que interessa para baixo.
+					<details
+						key={block.key}
+						open={done > 0}
+						className={`${CARD} group @container`}
+					>
+						<summary className="flex cursor-pointer list-none items-center gap-3 p-4 [&::-webkit-details-marker]:hidden">
+							<span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-wash text-caption font-semibold text-brand dark:text-violet-400">
+								{i + 1}
+							</span>
+							<span className="min-w-0 flex-1 text-body font-semibold text-primary">
+								{block.title}
+							</span>
+							<BlockCount done={done} total={block.fields.length} />
+							<ChevronRight
+								className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-90"
+								aria-hidden
+							/>
+						</summary>
+						<dl className="grid grid-cols-1 gap-x-6 gap-y-4 px-4 pb-4 @2xl:grid-cols-2">
+							{block.fields.map((field) => {
+								const value = content[field.key];
+								const empty = !isAnswered(value);
+								return (
+									<div key={field.key}>
+										<dt className="text-caption text-muted">{field.label}</dt>
+										<dd
+											className={`mt-0.5 whitespace-pre-wrap text-body ${
+												empty ? 'italic text-muted' : 'text-primary'
+											}`}
+										>
+											{empty ? 'Sem resposta' : formatAnswer(value, field.type)}
+										</dd>
+									</div>
+								);
+							})}
+						</dl>
+					</details>
+				);
+			})}
+
+			{orphans.length > 0 && (
+				<details open className={`${CARD} group @container`}>
+					<summary className="flex cursor-pointer list-none items-center gap-3 p-4 [&::-webkit-details-marker]:hidden">
+						<span className="min-w-0 flex-1 text-body font-semibold text-primary">
+							Respostas de perguntas antigas
+						</span>
+						<ChevronRight
+							className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-90"
+							aria-hidden
+						/>
+					</summary>
+					<p className="px-4 text-caption text-muted">
+						Essas perguntas saíram do formulário depois que esta versão foi
+						salva. As respostas continuam guardadas aqui.
+					</p>
+					<dl className="grid grid-cols-1 gap-x-6 gap-y-4 p-4 @2xl:grid-cols-2">
+						{orphans.map(([key, value]) => (
+							<div key={key}>
+								<dt className="text-caption text-muted first-letter:uppercase">
+									{key.replaceAll('_', ' ')}
+								</dt>
+								<dd className="mt-0.5 whitespace-pre-wrap text-body text-primary">
+									{formatAnswer(value)}
+								</dd>
+							</div>
+						))}
+					</dl>
+				</details>
+			)}
+		</div>
+	);
+}
+
+function BlockCount({ done, total }: { done: number; total: number }) {
+	const complete = total > 0 && done >= total;
+	return (
+		<span
+			className={`inline-flex shrink-0 items-center gap-1 rounded-chip px-2 py-0.5 text-caption ${
+				complete
+					? 'bg-success-wash text-emerald-600 dark:text-emerald-400'
+					: 'bg-surface-sunken text-muted'
+			}`}
+		>
+			{complete && <Check className="h-3 w-3" aria-hidden />}
+			{done}/{total}
+		</span>
+	);
+}
+
+/** Preenchimento passo a passo, um bloco por vez. */
+function BusinessPlanEditor({
+	template,
+	base,
+	nextVersion,
+	creating,
+	draftKey,
+	canCancel,
+	onCancel,
+	onSave,
+}: {
+	template: MntFormTemplate;
+	base: MntBusinessPlanVersion | null;
+	nextVersion: number;
+	creating: boolean;
+	draftKey?: string;
+	canCancel: boolean;
+	onCancel: () => void;
+	onSave: (answers: Record<string, unknown>, done: () => void) => void;
+}) {
+	const blocks = template.schema.blocks;
+	// A nova versão parte da última (antes o aluno redigitava o plano inteiro);
+	// um rascunho local mais novo que ela tem prioridade.
+	const baseAnswers = base?.content ?? {};
+	const baseJson = JSON.stringify(baseAnswers);
+	const [restored] = useState(() => {
+		const d = readDraft(draftKey);
+		return d && JSON.stringify(d.answers) !== baseJson ? d : null;
+	});
+	const [answers, setAnswers] = useState<Record<string, unknown>>(
+		() => restored?.answers ?? { ...baseAnswers },
+	);
+	const [step, setStep] = useState(() =>
+		Math.min(restored?.step ?? 0, Math.max(blocks.length - 1, 0)),
+	);
+	const [savedAt, setSavedAt] = useState<string | null>(
+		restored?.savedAt ?? null,
+	);
+	const [showMissing, setShowMissing] = useState(false);
+	const [confirmDiscard, setConfirmDiscard] = useState(false);
+	const topRef = useRef<HTMLDivElement>(null);
+
+	const unchanged = JSON.stringify(answers) === baseJson;
+
+	// Rascunho local com debounce: fechar a aba no meio de 70 perguntas não
+	// pode custar o que já foi digitado.
+	useEffect(() => {
+		if (unchanged) return;
+		const t = setTimeout(() => {
+			const at = new Date().toISOString();
+			writeDraft(draftKey, { answers, step, savedAt: at });
+			setSavedAt(at);
+		}, 600);
+		return () => clearTimeout(t);
+	}, [answers, step, unchanged, draftKey]);
+
+	const block = blocks[step];
+	const allFields = blocks.flatMap((b) => b.fields);
+	const answered = allFields.filter((f) => isAnswered(answers[f.key])).length;
+	const missingByBlock = blocks.map((b) => missingRequired(b.fields, answers));
+	const missingTotal = missingByBlock.reduce((n, m) => n + m.length, 0);
+
+	const goTo = (i: number) => {
+		setStep(Math.max(0, Math.min(i, blocks.length - 1)));
+		topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	};
+
+	const save = () => {
+		if (missingTotal > 0) {
+			setShowMissing(true);
+			const first = missingByBlock.findIndex((m) => m.length > 0);
+			if (first >= 0) goTo(first);
+			return;
+		}
+		onSave(answers, () => writeDraft(draftKey, null));
+	};
+
+	const discard = () => {
+		writeDraft(draftKey, null);
+		setConfirmDiscard(false);
+		onCancel();
+	};
+
+	if (!block) {
+		return (
+			<EmptyState
+				icon={Briefcase}
+				title="Formulário sem perguntas"
+				description="O plano de negócios ainda não tem blocos publicados."
+			/>
+		);
+	}
+
+	const isLast = step === blocks.length - 1;
+	const blockMissing = showMissing ? (missingByBlock[step] ?? []) : [];
+
+	return (
+		<div ref={topRef} className="space-y-4 scroll-mt-4">
+			<div className={`${CARD} p-5`}>
+				<div className="flex flex-wrap items-start justify-between gap-3">
+					<div className="min-w-0">
+						<p className="text-caption uppercase tracking-wide text-muted">
+							{base
+								? `Atualizando o plano · vai virar V${nextVersion}`
+								: 'Seu primeiro plano · vai virar V1'}
 						</p>
+						<h3 className="mt-1 text-title text-primary">{template.title}</h3>
+						<p className="mt-0.5 text-caption text-muted">
+							{answered} de {allFields.length} perguntas respondidas
+							{savedAt &&
+								` · rascunho salvo neste aparelho às ${fmtTime(savedAt)}`}
+						</p>
+					</div>
+					{canCancel && (
+						<Button
+							variant="secondary"
+							onPress={() => (unchanged ? onCancel() : setConfirmDiscard(true))}
+						>
+							Voltar para a versão salva
+						</Button>
+					)}
+				</div>
+				<ProgressLine done={answered} total={allFields.length} />
+				{restored && (
+					<p className="mt-3 rounded-control border border-dashed border-brand-border bg-brand-wash px-3 py-2 text-caption text-primary">
+						Recuperamos o rascunho que você deixou em{' '}
+						{fmtTime(restored.savedAt)}.
+					</p>
+				)}
+
+				{/* Navegador de blocos: onde estou, o que falta, e pular direto. */}
+				<ol
+					className="mt-4 flex gap-2 overflow-x-auto pb-1"
+					aria-label="Blocos do plano"
+				>
+					{blocks.map((b, i) => {
+						const done = b.fields.filter((f) =>
+							isAnswered(answers[f.key]),
+						).length;
+						const complete = done === b.fields.length;
+						const hasMissing =
+							showMissing && (missingByBlock[i]?.length ?? 0) > 0;
+						const on = i === step;
+						return (
+							<li key={b.key} className="shrink-0">
+								<button
+									type="button"
+									aria-current={on ? 'step' : undefined}
+									onClick={() => goTo(i)}
+									title={b.title}
+									className={`flex max-w-[220px] items-center gap-2 rounded-control border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
+										on
+											? 'border-brand bg-brand-wash'
+											: hasMissing
+												? 'border-red-500/50 bg-red-500/5'
+												: 'border-subtle hover:border-brand-border'
+									}`}
+								>
+									<span
+										className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-caption font-semibold ${
+											complete
+												? 'bg-success-wash text-emerald-600 dark:text-emerald-400'
+												: 'bg-surface-sunken text-muted'
+										}`}
+									>
+										{complete ? (
+											<Check className="h-3.5 w-3.5" aria-hidden />
+										) : (
+											i + 1
+										)}
+									</span>
+									<span className="min-w-0">
+										<span className="block truncate text-caption font-semibold text-primary">
+											{b.title}
+										</span>
+										<span className="block text-caption text-muted">
+											{done}/{b.fields.length}
+										</span>
+									</span>
+								</button>
+							</li>
+						);
+					})}
+				</ol>
+			</div>
+
+			{/* Só o bloco atual. `key` por bloco: o DynamicForm hidrata do estado
+			    compartilhado ao trocar de bloco, e o onChange devolve TODAS as
+			    respostas (ele nasce com elas), então nada se perde entre blocos. */}
+			<DynamicForm
+				key={block.key}
+				template={{ ...template, schema: { blocks: [block] } }}
+				initialAnswers={answers}
+				onChange={setAnswers}
+			/>
+
+			{blockMissing.length > 0 && (
+				<p className="text-body text-red-600 dark:text-red-400">
+					Falta responder neste bloco:{' '}
+					{blockMissing.map((f) => f.label).join(', ')}.
+				</p>
+			)}
+
+			{/* Barra de ações sempre à vista: o "não acho botão de salvar" do
+			    vídeo não pode voltar a acontecer. */}
+			<div
+				className={`${CARD} sticky bottom-3 z-10 flex flex-wrap items-center justify-between gap-3 p-3 shadow-lg`}
+			>
+				<span className="text-caption text-muted">
+					Bloco {step + 1} de {blocks.length}
+					{showMissing && missingTotal > 0 && (
+						<span className="text-red-600 dark:text-red-400">
+							{' '}
+							· {missingTotal} obrigatória{missingTotal > 1 ? 's' : ''} sem
+							resposta
+						</span>
+					)}
+				</span>
+				<div className="flex flex-wrap items-center gap-2">
+					<Button
+						variant="secondary"
+						onPress={() => goTo(step - 1)}
+						disabled={step === 0}
+					>
+						Anterior
+					</Button>
+					{!isLast && (
+						<Button variant="secondary" onPress={() => goTo(step + 1)}>
+							Próximo bloco
+						</Button>
 					)}
 					<Button
 						variant="primary"
 						onPress={save}
 						disabled={creating || unchanged}
+						loading={creating}
 					>
-						Salvar como nova versão
+						{`Salvar como V${nextVersion}`}
 					</Button>
 				</div>
-			)}
+			</div>
 
-			{versions.length === 0 && !editing ? (
-				<EmptyState
-					icon={Briefcase}
-					title="Nenhuma versão do plano de negócios"
-					description="A V1 vira a base de comparação."
-				/>
-			) : (
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-					{versions.map((v) => {
-						const open = viewing?.id === v.id;
-						return (
-							<button
-								key={v.id}
-								type="button"
-								aria-pressed={open}
-								onClick={() => {
-									setViewing(open ? null : v);
-									setEditing(false);
-								}}
-								// Estado selecionado e anel de foco: antes nada indicava qual
-								// versão estava aberta no leitor abaixo, nem havia foco
-								// visível para quem navega por teclado.
-								className={`rounded-card border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
-									open
-										? 'border-brand bg-brand-wash'
-										: 'border-subtle bg-surface hover:border-brand-border'
-								}`}
-							>
-								<div className="flex items-center gap-2">
-									<div className="min-w-0 flex-1">
-										<p className="text-body font-semibold text-primary">
-											{v.label ?? `V${v.version}`}
-										</p>
-										<p className="mt-0.5 text-caption text-muted">
-											{fmtDate(v.created_at)}
-										</p>
-									</div>
-									<ChevronRight
-										className="h-4 w-4 shrink-0 text-muted"
-										aria-hidden
-									/>
-								</div>
-							</button>
-						);
-					})}
-				</div>
-			)}
-
-			{viewing && template && (
-				<div>
-					{/* Cadeado como no Diagnóstico congelado — mesmo vocabulário visual
-					    para "somente leitura" na feature inteira. */}
-					<div className="mb-3 flex items-center gap-2">
-						<Lock
-							className="h-4 w-4 shrink-0 text-brand dark:text-violet-400"
-							aria-hidden
-						/>
-						<h3 className="text-title text-primary">
-							{viewing.label ?? `V${viewing.version}`} (somente leitura)
-						</h3>
-					</div>
-					<DynamicForm
-						template={template}
-						initialAnswers={viewing.content}
-						readOnly
-					/>
-				</div>
+			{confirmDiscard && (
+				<ConfirmDialog
+					title="Descartar as alterações?"
+					confirmLabel="Descartar"
+					danger
+					onCancel={() => setConfirmDiscard(false)}
+					onConfirm={discard}
+				>
+					O que você preencheu agora e ainda não salvou como versão será
+					apagado, inclusive o rascunho deste aparelho.
+				</ConfirmDialog>
 			)}
 		</div>
 	);

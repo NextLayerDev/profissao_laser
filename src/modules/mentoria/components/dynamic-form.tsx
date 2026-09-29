@@ -63,6 +63,26 @@ export function isAnswered(value: unknown): boolean {
 	return true;
 }
 
+/**
+ * Resposta em texto para as telas SÓ LEITURA (Foto Zero, versões do Plano de
+ * Negócios): moeda em R$, milhar pt-BR, Sim/Não, listas separadas por vírgula e
+ * o marcador "A LEVANTAR". Vazio vira "—".
+ */
+export function formatAnswer(value: unknown, type?: string): string {
+	if (value === undefined || value === null || value === '') return '—';
+	if (isUnknownAnswer(value)) return '[ A LEVANTAR / NÃO MEDIDO ]';
+	if (typeof value === 'boolean') return value ? 'Sim' : 'Não';
+	// Moeda em R$ e número com milhar pt-BR ('15000' cru confundia).
+	if (typeof value === 'number') {
+		return type === 'currency'
+			? value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+			: value.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+	}
+	if (Array.isArray(value)) return value.map(String).join(', ');
+	if (typeof value === 'object') return JSON.stringify(value);
+	return String(value);
+}
+
 export function DynamicForm({
 	template,
 	initialAnswers,
