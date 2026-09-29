@@ -27,10 +27,12 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { Text } from 'react-native-css/components/Text';
 import { ModalPortal } from '@/components/ui/modal-portal';
-import { DynamicForm } from '@/modules/mentoria/components/dynamic-form';
+import {
+	DynamicForm,
+	formatAnswer,
+} from '@/modules/mentoria/components/dynamic-form';
 import { SectionCard } from '@/modules/mentoria/components/ui';
 import type { DiagnosticState, MntSnapshot } from '@/modules/mentoria/types';
-import { isUnknownAnswer } from '@/modules/mentoria/types';
 import { EmptyState, fmtDate, MntHeader } from '../../_components/shared';
 
 export function DiagnosticoView({
@@ -363,7 +365,7 @@ function FotoZeroView({
 										{field.label}
 									</dt>
 									<dd className="mt-0.5 whitespace-pre-wrap text-body text-primary">
-										{renderAnswer(value, field.type)}
+										{formatAnswer(value, field.type)}
 									</dd>
 								</div>
 							);
@@ -380,7 +382,7 @@ function FotoZeroView({
 									{key.replaceAll('_', ' ')}
 								</dt>
 								<dd className="mt-0.5 whitespace-pre-wrap text-body text-primary">
-									{renderAnswer(value)}
+									{formatAnswer(value)}
 								</dd>
 							</div>
 						))}
@@ -389,19 +391,4 @@ function FotoZeroView({
 			)}
 		</div>
 	);
-}
-
-function renderAnswer(value: unknown, type?: string): string {
-	if (value === undefined || value === null || value === '') return '—';
-	if (isUnknownAnswer(value)) return '[ A LEVANTAR / NÃO MEDIDO ]';
-	if (typeof value === 'boolean') return value ? 'Sim' : 'Não';
-	// Moeda em R$ e número com milhar pt-BR ('15000' cru confundia).
-	if (typeof value === 'number') {
-		return type === 'currency'
-			? value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-			: value.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
-	}
-	if (Array.isArray(value)) return value.map(String).join(', ');
-	if (typeof value === 'object') return JSON.stringify(value);
-	return String(value);
 }
