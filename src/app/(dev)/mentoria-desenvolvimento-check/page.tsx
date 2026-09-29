@@ -212,11 +212,12 @@ export default function DesenvolvimentoCheckPage() {
 
 					<Section
 						title="2. Template publicado, nenhuma versão"
-						note="Estado vazio + botão 'Nova versão' disponível."
+						note="Abre direto no preenchimento por blocos (não há o que ler ainda)."
 					>
 						<BusinessPlanView
 							template={businessPlanEmptyFixture.template}
 							versions={businessPlanEmptyFixture.versions}
+							draftKey="check-plano-vazio"
 							creating={pending}
 							onCreate={(answers) =>
 								console.log('[check] salvar plano', answers)
@@ -226,7 +227,7 @@ export default function DesenvolvimentoCheckPage() {
 
 					<Section
 						title="3. Múltiplas versões"
-						note="Lista de versões (mais recente com label) — clique num card para abrir em modo leitura."
+						note="Versão atual em blocos de leitura (sem inputs), CTA 'Atualizar plano', chips para trocar de versão. A V1 tem respostas de perguntas antigas."
 					>
 						<BusinessPlanView
 							template={businessPlanListFixture.template}

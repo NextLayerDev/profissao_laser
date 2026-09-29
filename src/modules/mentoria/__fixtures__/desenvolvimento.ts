@@ -176,8 +176,31 @@ export const businessPlanTemplateFixture: MntFormTemplate = {
 	schema: {
 		blocks: [
 			{
+				key: 'identificacao',
+				title: 'Identificação da Empresa',
+				fields: [
+					{
+						key: 'descricao',
+						label: 'Descreva a empresa em uma frase clara',
+						type: 'textarea',
+						required: true,
+					},
+					{
+						key: 'fonte_receita',
+						label: 'Qual é hoje a principal fonte de receita?',
+						type: 'textarea',
+						required: true,
+					},
+					{
+						key: 'maior_desafio',
+						label: 'Qual o maior desafio da sua empresa neste momento?',
+						type: 'textarea',
+					},
+				],
+			},
+			{
 				key: 'visao',
-				title: 'Visão',
+				title: 'Direção pessoal e visão',
 				fields: [
 					{ key: 'missao', label: 'Missão do negócio', type: 'textarea' },
 					{
@@ -188,13 +211,37 @@ export const businessPlanTemplateFixture: MntFormTemplate = {
 				],
 			},
 			{
+				key: 'mercado',
+				title: 'Cliente, problema e mercado',
+				fields: [
+					{
+						key: 'foco',
+						label: 'Seu foco principal é',
+						type: 'select',
+						options: ['Varejo', 'Corporativo (B2B)', 'Eventos'],
+					},
+					{
+						key: 'objecoes',
+						label: 'Quais são as três objeções mais frequentes?',
+						type: 'textarea',
+						allow_unknown: true,
+					},
+				],
+			},
+			{
 				key: 'metas',
-				title: 'Metas',
+				title: 'Metas e plano de ação de 90 dias',
 				fields: [
 					{
 						key: 'faturamento_alvo',
-						label: 'Faturamento mensal desejado em 12 meses',
+						label: 'Faturamento mensal desejado em 90 dias',
 						type: 'currency',
+						required: true,
+					},
+					{
+						key: 'primeira_acao',
+						label: 'Qual será a primeira ação nas próximas 72 horas?',
+						type: 'text',
 					},
 				],
 			},
@@ -222,10 +269,14 @@ const businessPlanV1: MntBusinessPlanVersion = {
 	journey_id: JOURNEY_ID,
 	version: 1,
 	label: null,
+	// Salva com o formulário ANTIGO: `proposta_valor` e `acoes_90d` não existem
+	// mais no template atual e têm de aparecer em "perguntas antigas".
 	content: {
 		missao: 'Ser referência em gravação a laser na região.',
 		publico: 'Pequenos comércios e autônomos que personalizam produtos.',
 		faturamento_alvo: 25000,
+		proposta_valor: 'Gravação premium com entrega em 48h.',
+		acoes_90d: 'Prospectar B2B',
 	},
 	created_at: '2026-02-01T12:00:00.000Z',
 };
@@ -236,6 +287,10 @@ const businessPlanV2: MntBusinessPlanVersion = {
 	version: 2,
 	label: 'Revisão pós-diagnóstico',
 	content: {
+		descricao: 'Estúdio de gravação a laser para brindes corporativos.',
+		fonte_receita: 'Brindes para empresas (70%) e varejo online (30%).',
+		foco: 'Corporativo (B2B)',
+		objecoes: { $unknown: true },
 		missao:
 			'Ser referência em gravação a laser na região, com atendimento consultivo.',
 		publico: 'Pequenos comércios, autônomos e pequenas indústrias locais.',

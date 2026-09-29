@@ -275,6 +275,7 @@ function BusinessPlanTab({ journeyId }: { journeyId: string }) {
 			template={template}
 			versions={versions ?? []}
 			creating={create.isPending}
+			draftKey={journeyId}
 			onCreate={(answers, cb) =>
 				create.mutate(answers, { onSuccess: () => cb?.onSuccess?.() })
 			}
