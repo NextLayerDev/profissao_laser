@@ -1,7 +1,16 @@
 'use client';
 
-import { Button, buttonLabel, Checkbox, Input } from '@upvox-dev/ui';
+import {
+	Button,
+	buttonLabel,
+	Card,
+	Checkbox,
+	EmptyState,
+	Input,
+	PageHeader,
+} from '@upvox-dev/ui';
 import { CheckCircle2, Info, Pencil, Plus, Upload } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { Text } from 'react-native-css/components/Text';
 import { toast } from 'sonner';
@@ -12,20 +21,12 @@ import {
 	useMeetingTemplateMutations,
 	useMeetingTemplatesAdmin,
 } from '../_components/admin-hooks';
-import {
-	Badge,
-	Card,
-	EmptyState,
-	Field,
-	inputClass,
-	Modal,
-	PageTitle,
-	Spinner,
-} from '../_components/ui';
+import { Badge, Field, inputClass, Modal, Spinner } from '../_components/ui';
 
 type Editing = { template: MntMeetingTemplate | null } | null;
 
 export default function EncontrosPage() {
+	const router = useRouter();
 	const templates = useMeetingTemplatesAdmin();
 	const { publish } = useMeetingTemplateMutations();
 	const [editing, setEditing] = useState<Editing>(null);
@@ -57,10 +58,10 @@ export default function EncontrosPage() {
 		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
 			<main className="px-4 md:px-8 py-6 max-w-5xl mx-auto">
-				<PageTitle
+				<PageHeader
 					title="Encontros"
-					description="Templates dos encontros da metodologia, agrupados por posição (1 a 10)."
-					backHref="/mentoria-admin"
+					subtitle="Templates dos encontros da metodologia, agrupados por posição (1 a 10)."
+					onBack={() => router.push('/mentoria-admin')}
 					actions={
 						<Button onPress={() => setEditing({ template: null })}>
 							<Plus className="w-4 h-4" />
@@ -88,7 +89,7 @@ export default function EncontrosPage() {
 					</Card>
 				) : !grouped.length ? (
 					<Card>
-						<EmptyState message="Nenhum template de encontro cadastrado." />
+						<EmptyState title="Nenhum template de encontro cadastrado." />
 					</Card>
 				) : (
 					<div className="space-y-4">

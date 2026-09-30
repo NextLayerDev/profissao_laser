@@ -10,10 +10,18 @@
 // propósito num ambiente real. Com as vistas puras, `app/(dev)/
 // mentoria-desenvolvimento-check` monta os casos com fixtures.
 
-import { Badge, Button, buttonLabel } from '@upvox-dev/ui';
+import {
+	ActionCheckButton,
+	Badge,
+	Button,
+	buttonLabel,
+	Callout,
+	RadarChart,
+	ScaleRating,
+	StreakTracker,
+} from '@upvox-dev/ui';
 import {
 	Briefcase,
-	Check,
 	CheckCircle2,
 	ChevronRight,
 	Flag,
@@ -25,14 +33,6 @@ import {
 } from 'lucide-react';
 import { useId, useState } from 'react';
 import { Text } from 'react-native-css/components/Text';
-import {
-	PolarAngleAxis,
-	PolarGrid,
-	PolarRadiusAxis,
-	Radar,
-	RadarChart,
-	ResponsiveContainer,
-} from 'recharts';
 import {
 	DynamicForm,
 	inputClass,
@@ -84,25 +84,12 @@ export function GoodNewsView({
 						<b>{data.longest_streak}</b>
 					</span>
 				</div>
-				<div className="flex flex-wrap gap-2">
-					{Array.from({ length: data.streak_goal }, (_, i) => {
-						const filled = i < data.current_streak;
-						return (
-							<div
-								key={String(i)}
-								className={`flex items-center gap-1.5 rounded-chip border px-3 py-1.5 text-caption ${
-									filled
-										? // `text-brand` não tem versão escura no DS e sumiria no
-											// fundo preto — daí o par `dark:` (lacuna A.3 da doc).
-											'border-brand bg-brand-wash text-brand dark:text-violet-400'
-										: 'border-subtle text-muted'
-								}`}
-							>
-								Dia {i + 1} {filled ? '✓' : '○'}
-							</div>
-						);
-					})}
-				</div>
+				<StreakTracker
+					total={data.streak_goal}
+					current={data.current_streak}
+					stepStyle="check"
+					accessibilityLabel={`Sequência de boas notícias: ${data.current_streak} de ${data.streak_goal} dias`}
+				/>
 			</div>
 
 			{/* Postar hoje */}
@@ -365,23 +352,13 @@ export function GoalsView({
 							</div>
 						</div>
 						{goal.first_action_48h && (
-							<button
-								type="button"
-								aria-pressed={Boolean(goal.first_action_done_at)}
-								onClick={() =>
-									onToggleFirstAction(goal.id, !goal.first_action_done_at)
-								}
-								className={`mt-3 inline-flex items-center gap-2 rounded-control border px-3 py-2 text-label transition ${
-									goal.first_action_done_at
-										? // Verde de "feito", não roxo de marca — mesma leitura do
-											// "já postei hoje". Par `dark:` pela lacuna A.3.
-											'border-emerald-500/40 bg-success-wash text-emerald-600 dark:text-emerald-400'
-										: 'border-subtle text-secondary hover:text-primary'
-								}`}
-							>
-								<Check className="h-4 w-4" aria-hidden />
-								Ação 48h: {goal.first_action_48h}
-							</button>
+							<div className="mt-3">
+								<ActionCheckButton
+									checked={Boolean(goal.first_action_done_at)}
+									onChange={(checked) => onToggleFirstAction(goal.id, checked)}
+									label={`Ação 48h: ${goal.first_action_48h}`}
+								/>
+							</div>
 						)}
 					</div>
 				))
@@ -455,7 +432,6 @@ export function MaslowView({
 		Array.from({ length: 15 }, () => null),
 	);
 	const [showTest, setShowTest] = useState(false);
-	const statementId = useId();
 
 	const latest = history.at(-1) ?? null;
 
@@ -467,11 +443,11 @@ export function MaslowView({
 
 	return (
 		<div className="space-y-6">
-			<div className={`${CARD} p-4 text-caption text-muted`}>
+			<Callout tone="neutral">
 				O Teste de Maslow é uma ferramenta educacional de autopercepção — não é
 				um diagnóstico psicológico. Pontue cada afirmação de 0 (discordo
 				totalmente) a 4 (concordo totalmente).
-			</div>
+			</Callout>
 
 			{latest && !showTest && (
 				<div className={`${CARD} p-5`}>
@@ -508,43 +484,20 @@ export function MaslowView({
 							<div className="space-y-4">
 								{group.items.map((statement, i) => {
 									const index = g * 3 + i;
-									const labelId = `${statementId}-${index}`;
 									return (
 										<div key={statement}>
-											{/* Grupo de botões não tem elemento rotulável para um
-											    `htmlFor` apontar, então o enunciado vira <span> com
-											    id e o fieldset o referencia — mesma solução do
-											    campo `scale` do dynamic-form. */}
-											<span
-												id={labelId}
-												className="mb-2 block text-body text-primary"
-											>
+											<span className="mb-2 block text-body text-primary">
 												{statement}
 											</span>
-											<fieldset
-												aria-labelledby={labelId}
-												className="flex gap-2"
-											>
-												{[0, 1, 2, 3, 4].map((score) => (
-													<button
-														key={score}
-														type="button"
-														aria-pressed={answers[index] === score}
-														onClick={() =>
-															setAnswers((prev) =>
-																prev.map((p, j) => (j === index ? score : p)),
-															)
-														}
-														className={`h-9 w-9 rounded-chip border text-caption transition ${
-															answers[index] === score
-																? 'border-brand bg-brand text-on-brand'
-																: 'border-subtle text-muted'
-														}`}
-													>
-														{score}
-													</button>
-												))}
-											</fieldset>
+											<ScaleRating
+												value={answers[index]}
+												onChange={(score) =>
+													setAnswers((prev) =>
+														prev.map((p, j) => (j === index ? score : p)),
+													)
+												}
+												accessibilityLabel={statement}
+											/>
 										</div>
 									);
 								})}
@@ -566,49 +519,33 @@ export function MaslowView({
 
 function MaslowRadar({ scores }: { scores: Record<string, number> }) {
 	const data = Object.entries(scores).map(([key, value]) => ({
-		dimension: MASLOW_LABELS[key] ?? key,
-		pct: value,
+		label: MASLOW_LABELS[key] ?? key,
+		value,
 	}));
-	return (
-		<ResponsiveContainer width="100%" height={280}>
-			<RadarChart data={data} outerRadius="70%">
-				<PolarGrid stroke="currentColor" className="text-subtle" />
-				<PolarAngleAxis
-					dataKey="dimension"
-					tick={{ fontSize: 11, fill: 'currentColor' }}
-				/>
-				<PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
-				{/* Hex cravado porque `stroke`/`fill` do recharts não aceitam
-				    `className` (lacuna A.4 da doc) — é o roxo da marca (#7c3aed), o
-				    mesmo que a home duplica em `SERIES_COLORS`. */}
-				<Radar
-					dataKey="pct"
-					stroke="#7c3aed"
-					fill="#7c3aed"
-					fillOpacity={0.35}
-				/>
-			</RadarChart>
-		</ResponsiveContainer>
-	);
+	return <RadarChart data={data} max={100} />;
 }
 
 function LowestDimension({ scores }: { scores: Record<string, number> }) {
 	const lowest = Object.entries(scores).sort((a, b) => a[1] - b[1])[0];
 	if (!lowest) return null;
 	return (
-		// Caixa de destaque, e não linha solta: é a única leitura acionável do
-		// radar. Mesma moldura âmbar do "A LEVANTAR" do dynamic-form; o par
-		// `dark:` do âmbar é a mesma lacuna A.3 dos outros tons semânticos.
-		<div className="mt-3 flex items-start gap-2 rounded-control border border-dashed border-amber-500/40 bg-amber-500/5 px-3 py-2">
-			<Lightbulb
-				className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400"
-				aria-hidden
-			/>
-			<p className="text-body text-amber-600 dark:text-amber-400">
+		<Callout
+			className="mt-3"
+			tone="warning"
+			icon={<Lightbulb className="h-4 w-4" aria-hidden />}
+		>
+			{/* `children` só vira <Text> sozinho quando é uma string pura — aqui é
+			    um array (texto + <Text> em negrito), então o Callout devolveria os
+			    nós direto pra dentro da View. Precisa do <Text> explícito, mesmo
+			    padrão do Button+buttonLabel logo acima. */}
+			<Text className="text-body text-warning-strong">
 				A dimensão que merece maior atenção agora é{' '}
-				<b>{MASLOW_LABELS[lowest[0]] ?? lowest[0]}</b> ({lowest[1]}%).
-			</p>
-		</div>
+				<Text className="font-semibold">
+					{MASLOW_LABELS[lowest[0]] ?? lowest[0]}
+				</Text>{' '}
+				({lowest[1]}%).
+			</Text>
+		</Callout>
 	);
 }
 

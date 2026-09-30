@@ -11,13 +11,14 @@
 // O `payload` vem do backend como JSON solto (`Record<string, unknown>`), então
 // a leitura é por cast — o contrato das 8 seções mora aqui, não no tipo.
 
-import { Badge, type Tone } from '@upvox-dev/ui';
-import { Printer } from 'lucide-react';
 import {
+	Badge,
 	DonutProgress,
 	ListRow,
 	StatCard,
-} from '@/modules/mentoria/components/ui';
+	type Tone,
+} from '@upvox-dev/ui';
+import { Printer } from 'lucide-react';
 import type { MntReport } from '@/modules/mentoria/types';
 import { CARD, fmtDate } from '../../_components/shared';
 

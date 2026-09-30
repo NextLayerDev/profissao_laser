@@ -1,5 +1,6 @@
 'use client';
 
+import { Card, EmptyState, PageHeader } from '@upvox-dev/ui';
 import {
 	Check,
 	Copy,
@@ -10,6 +11,7 @@ import {
 	Square,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Header } from '@/components/dashboard/header';
@@ -23,14 +25,11 @@ import {
 } from '../_components/admin-hooks';
 import {
 	Badge,
-	Card,
 	dangerBtn,
-	EmptyState,
 	Field,
 	formatDateTime,
 	inputClass,
 	Modal,
-	PageTitle,
 	primaryBtn,
 	Spinner,
 	secondaryBtn,
@@ -63,6 +62,7 @@ function LiveStatusBadge({ status }: { status: LiveStatus }) {
 }
 
 export default function LivesAdminPage() {
+	const router = useRouter();
 	const lives = useLivesAdmin();
 	const cohorts = useCohortsAdmin();
 	const { start } = useLiveMutations();
@@ -91,10 +91,10 @@ export default function LivesAdminPage() {
 		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
 			<main className="px-4 md:px-8 py-6 max-w-5xl mx-auto">
-				<PageTitle
+				<PageHeader
 					title="Lives"
-					description="Salas de transmissão ao vivo para as turmas. Transmita via OBS com as credenciais RTMP de cada sala."
-					backHref="/mentoria-admin"
+					subtitle="Salas de transmissão ao vivo para as turmas. Transmita via OBS com as credenciais RTMP de cada sala."
+					onBack={() => router.push('/mentoria-admin')}
 					actions={
 						<button
 							type="button"
@@ -113,7 +113,7 @@ export default function LivesAdminPage() {
 					</Card>
 				) : !lives.data?.length ? (
 					<Card>
-						<EmptyState message="Nenhuma live criada ainda." />
+						<EmptyState title="Nenhuma live criada ainda." />
 					</Card>
 				) : (
 					<div className="space-y-4">
@@ -263,7 +263,7 @@ function CredentialsModal({
 			{credentials.isLoading ? (
 				<Spinner label="Buscando credenciais..." />
 			) : credentials.isError || !credentials.data ? (
-				<EmptyState message="Não foi possível carregar as credenciais desta live." />
+				<EmptyState title="Não foi possível carregar as credenciais desta live." />
 			) : (
 				<div className="space-y-4">
 					<Field label="Servidor (RTMP URL)">

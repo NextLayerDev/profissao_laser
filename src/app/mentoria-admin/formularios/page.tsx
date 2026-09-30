@@ -1,5 +1,6 @@
 'use client';
 
+import { Card, EmptyState, PageHeader } from '@upvox-dev/ui';
 import {
 	CheckCircle2,
 	Eye,
@@ -10,6 +11,7 @@ import {
 	Trash2,
 	Upload,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Header } from '@/components/dashboard/header';
@@ -27,11 +29,8 @@ import {
 } from '../_components/admin-hooks';
 import {
 	Badge,
-	Card,
-	EmptyState,
 	Field,
 	inputClass,
-	PageTitle,
 	primaryBtn,
 	Spinner,
 	secondaryBtn,
@@ -71,6 +70,7 @@ type BuilderState = {
 };
 
 export default function FormulariosPage() {
+	const router = useRouter();
 	const templates = useFormTemplatesAdmin();
 	const { publish } = useFormTemplateMutations();
 	const [builder, setBuilder] = useState<BuilderState | null>(null);
@@ -134,10 +134,10 @@ export default function FormulariosPage() {
 		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
 			<main className="px-4 md:px-8 py-6 max-w-5xl mx-auto">
-				<PageTitle
+				<PageHeader
 					title="Formulários"
-					description="Templates data-driven do diagnóstico e exercícios. Cada salvamento gera uma nova versão."
-					backHref="/mentoria-admin"
+					subtitle="Templates data-driven do diagnóstico e exercícios. Cada salvamento gera uma nova versão."
+					onBack={() => router.push('/mentoria-admin')}
 					actions={
 						<button
 							type="button"
@@ -165,7 +165,7 @@ export default function FormulariosPage() {
 					</Card>
 				) : !grouped.length ? (
 					<Card>
-						<EmptyState message="Nenhum template de formulário cadastrado." />
+						<EmptyState title="Nenhum template de formulário cadastrado." />
 					</Card>
 				) : (
 					<div className="space-y-4">
@@ -369,13 +369,13 @@ function FormBuilder({
 		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
 			<main className="px-4 md:px-8 py-6 max-w-7xl mx-auto">
-				<PageTitle
+				<PageHeader
 					title={
 						state.baseKey
 							? `Editar formulário: ${state.baseKey} (gera v${(state.baseVersion ?? 0) + 1})`
 							: 'Novo formulário'
 					}
-					description="Monte blocos e campos; o preview ao lado usa o mesmo componente que o aluno vê. Salvar cria sempre uma nova versão em rascunho."
+					subtitle="Monte blocos e campos; o preview ao lado usa o mesmo componente que o aluno vê. Salvar cria sempre uma nova versão em rascunho."
 					actions={
 						<>
 							<button type="button" className={secondaryBtn} onClick={onClose}>
@@ -596,7 +596,7 @@ function FormBuilder({
 							<DynamicForm template={previewTemplate} />
 						) : (
 							<Card>
-								<EmptyState message="Adicione blocos e campos para ver o preview." />
+								<EmptyState title="Adicione blocos e campos para ver o preview." />
 							</Card>
 						)}
 					</div>

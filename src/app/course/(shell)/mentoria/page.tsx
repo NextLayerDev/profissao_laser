@@ -12,7 +12,16 @@
 // prioridades saem das tarefas (que TÊM `priority`). O que falta na API para
 // fechar 100% com o desenho está em docs/mentoria-360-design-system.md.
 
-import { Badge } from '@upvox-dev/ui';
+import {
+	Badge,
+	DonutProgress,
+	ListRow,
+	RowIndex,
+	SectionCard,
+	SegmentedControl,
+	StatCard,
+	StatLine,
+} from '@upvox-dev/ui';
 import {
 	Activity,
 	ArrowRight,
@@ -26,6 +35,7 @@ import {
 	Target,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { SubscriptionGate } from '@/components/course/subscription-gate';
 import { CompanyMapRadar } from '@/modules/mentoria/components/company-map-radar';
@@ -35,15 +45,6 @@ import {
 	KpiEvolutionChart,
 	SEMAPHORE_TONE,
 } from '@/modules/mentoria/components/kpi-evolution';
-import {
-	DonutProgress,
-	ListRow,
-	RowIndex,
-	SectionCard,
-	SegmentedControl,
-	StatCard,
-	StatLine,
-} from '@/modules/mentoria/components/ui';
 import {
 	useCompanyMap,
 	useJourneyTools,
@@ -126,6 +127,7 @@ function Dashboard({
 }) {
 	const { company, cohort, progress } = bootstrap;
 	const [period, setPeriod] = useState<Period>('12m');
+	const router = useRouter();
 
 	const { data: tasks } = useTasks(journeyId);
 	const { data: kpis } = useKpis(journeyId);
@@ -193,7 +195,7 @@ function Dashboard({
 				description={`${currentMonthLabel()} — atualizado agora`}
 				action={
 					<SegmentedControl
-						label="Período"
+						accessibilityLabel="Período"
 						value={period}
 						options={PERIOD_OPTIONS}
 						onChange={setPeriod}
@@ -212,31 +214,40 @@ function Dashboard({
 					</p>
 				) : (
 					<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-						{topKpis.map((kpi, i) => (
-							<StatCard
-								key={kpi.id}
-								label={kpi.name}
-								value={formatKpiValue(kpi.latest_measurement?.value, kpi.unit)}
-								sub={
-									kpi.target !== null
-										? `Meta: ${formatKpiValue(kpi.target, kpi.unit)}`
-										: kpi.latest_measurement
-											? `Medido em ${fmtDate(kpi.latest_measurement.measured_at)}`
-											: 'Sem medição'
-								}
-								icon={KPI_ICONS[i % KPI_ICONS.length]}
-								tone={SEMAPHORE_TONE[kpi.current_semaphore ?? 'unmeasured']}
-								delta={computeDelta(kpi, histories[i]?.data)}
-								href="/course/mentoria/indicadores"
-							/>
-						))}
+						{topKpis.map((kpi, i) => {
+							const Icon = KPI_ICONS[i % KPI_ICONS.length];
+							return (
+								<StatCard
+									key={kpi.id}
+									label={kpi.name}
+									value={formatKpiValue(
+										kpi.latest_measurement?.value,
+										kpi.unit,
+									)}
+									sub={
+										kpi.target !== null
+											? `Meta: ${formatKpiValue(kpi.target, kpi.unit)}`
+											: kpi.latest_measurement
+												? `Medido em ${fmtDate(kpi.latest_measurement.measured_at)}`
+												: 'Sem medição'
+									}
+									icon={<Icon className="w-4 h-4" />}
+									tone={SEMAPHORE_TONE[kpi.current_semaphore ?? 'unmeasured']}
+									delta={computeDelta(kpi, histories[i]?.data)}
+									onPress={() => router.push('/course/mentoria/indicadores')}
+								/>
+							);
+						})}
 					</div>
 				)}
 			</SectionCard>
 
 			{/* Prioridades + progresso da jornada */}
 			<div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-6 items-start">
-				<SectionCard title="Prioridades Atuais" bodyClassName="px-5 pb-5 pt-0">
+				<SectionCard
+					title="Prioridades Atuais"
+					contentClassName="px-5 pb-5 pt-0"
+				>
 					{priorities.length === 0 ? (
 						<p className="text-body text-muted py-6 text-center">
 							Nenhuma prioridade em aberto. Bom trabalho!
@@ -247,7 +258,7 @@ function Dashboard({
 								<li key={task.id}>
 									<ListRow
 										boxed
-										href="/course/mentoria/tarefas"
+										onPress={() => router.push('/course/mentoria/tarefas')}
 										leading={<RowIndex n={i + 1} />}
 										title={task.title}
 										description={task.description ?? undefined}
@@ -296,7 +307,7 @@ function Dashboard({
 
 			{/* Próximas ações + evolução dos indicadores */}
 			<div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-6 items-start">
-				<SectionCard title="Próximas Ações" bodyClassName="px-5 pb-5 pt-0">
+				<SectionCard title="Próximas Ações" contentClassName="px-5 pb-5 pt-0">
 					{nextActions.length === 0 ? (
 						<p className="text-body text-muted py-6 text-center">
 							Nenhuma tarefa em aberto.

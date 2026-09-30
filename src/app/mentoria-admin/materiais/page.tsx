@@ -1,5 +1,6 @@
 'use client';
 
+import { Card, EmptyState, PageHeader } from '@upvox-dev/ui';
 import {
 	FileText,
 	Film,
@@ -10,6 +11,7 @@ import {
 	Trash2,
 	Upload,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Header } from '@/components/dashboard/header';
@@ -22,13 +24,10 @@ import {
 } from '../_components/admin-hooks';
 import {
 	Badge,
-	Card,
-	EmptyState,
 	Field,
 	formatDate,
 	inputClass,
 	Modal,
-	PageTitle,
 	primaryBtn,
 	Spinner,
 	secondaryBtn,
@@ -47,6 +46,7 @@ const KIND_META: Record<
 type ModalState = 'upload' | 'link' | null;
 
 export default function MateriaisPage() {
+	const router = useRouter();
 	const materials = useMaterialsAdmin();
 	const cohorts = useCohortsAdmin();
 	const { remove } = useMaterialMutations();
@@ -74,10 +74,10 @@ export default function MateriaisPage() {
 		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
 			<main className="px-4 md:px-8 py-6 max-w-5xl mx-auto">
-				<PageTitle
+				<PageHeader
 					title="Materiais"
-					description="Arquivos e links de apoio. Materiais sem turma são globais — visíveis a todos os alunos."
-					backHref="/mentoria-admin"
+					subtitle="Arquivos e links de apoio. Materiais sem turma são globais — visíveis a todos os alunos."
+					onBack={() => router.push('/mentoria-admin')}
 					actions={
 						<>
 							<button
@@ -104,7 +104,7 @@ export default function MateriaisPage() {
 					{materials.isLoading ? (
 						<Spinner />
 					) : !materials.data?.length ? (
-						<EmptyState message="Nenhum material cadastrado." />
+						<EmptyState title="Nenhum material cadastrado." />
 					) : (
 						<ul className="divide-y divide-slate-100 dark:divide-white/5">
 							{materials.data.map((m) => {

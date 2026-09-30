@@ -1,6 +1,13 @@
 'use client';
 
 import {
+	Card,
+	EmptyState,
+	PageHeader,
+	ProgressBar,
+	SemaphoreBadge,
+} from '@upvox-dev/ui';
+import {
 	Building2,
 	CheckCircle2,
 	ClipboardList,
@@ -10,12 +17,12 @@ import {
 	Radar as RadarIcon,
 	Target,
 } from 'lucide-react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Header } from '@/components/dashboard/header';
 import { CompanyMapRadar } from '@/modules/mentoria/components/company-map-radar';
-import { SemaphoreBadge } from '@/modules/mentoria/components/semaphore-badge';
+import { SEMAPHORE_BADGE } from '@/modules/mentoria/components/kpi-evolution';
 import { useJourneyOverview } from '@/modules/mentoria/hooks';
 import type {
 	MntFormSubmission,
@@ -35,15 +42,11 @@ import {
 } from '../../_components/admin-hooks';
 import {
 	Badge,
-	Card,
-	EmptyState,
 	Field,
 	formatDate,
 	formatDateTime,
 	inputClass,
 	Modal,
-	PageTitle,
-	ProgressBar,
 	primaryBtn,
 	Spinner,
 	secondaryBtn,
@@ -95,6 +98,7 @@ function SectionTitle({
 }
 
 export default function JourneyDrilldownPage() {
+	const router = useRouter();
 	const { journeyId } = useParams<{ journeyId: string }>();
 	const overview = useJourneyOverview(journeyId);
 	const companyMap = useMentorCompanyMap(journeyId);
@@ -125,21 +129,21 @@ export default function JourneyDrilldownPage() {
 		<div className="min-h-screen text-slate-900 dark:text-white">
 			<Header />
 			<main className="px-4 md:px-8 py-6 max-w-6xl mx-auto">
-				<PageTitle
+				<PageHeader
 					title={company ? company.name : 'Mentoria da empresa'}
-					description="Visão do mentor: encontros, mapa da empresa, tarefas, indicadores e formulários respondidos."
-					backHref="/mentoria-admin/turmas"
+					subtitle="Visão do mentor: encontros, mapa da empresa, tarefas, indicadores e formulários respondidos."
+					onBack={() => router.push('/mentoria-admin/turmas')}
 				/>
 
 				{overview.isLoading ? (
 					<Spinner />
 				) : overview.isError ? (
 					<Card>
-						<EmptyState message="Erro ao carregar a jornada. Verifique se você é mentor da turma desta empresa." />
+						<EmptyState title="Erro ao carregar a jornada. Verifique se você é mentor da turma desta empresa." />
 					</Card>
 				) : !data ? (
 					<Card>
-						<EmptyState message="Jornada não encontrada." />
+						<EmptyState title="Jornada não encontrada." />
 					</Card>
 				) : (
 					<div className="space-y-10">
@@ -187,7 +191,7 @@ export default function JourneyDrilldownPage() {
 							<SectionTitle icon={Target}>Encontros</SectionTitle>
 							{!data.meetings.length ? (
 								<Card>
-									<EmptyState message="Nenhum encontro na jornada." />
+									<EmptyState title="Nenhum encontro na jornada." />
 								</Card>
 							) : (
 								<div className="space-y-3">
@@ -299,7 +303,7 @@ export default function JourneyDrilldownPage() {
 										</div>
 									</div>
 								) : (
-									<EmptyState message="Mapa da empresa indisponível." />
+									<EmptyState title="Mapa da empresa indisponível." />
 								)}
 							</Card>
 						</section>
@@ -311,7 +315,7 @@ export default function JourneyDrilldownPage() {
 								{tasks.isLoading ? (
 									<Spinner />
 								) : !tasks.data?.length ? (
-									<EmptyState message="Nenhuma tarefa registrada." />
+									<EmptyState title="Nenhuma tarefa registrada." />
 								) : (
 									<ul className="divide-y divide-slate-100 dark:divide-white/5">
 										{tasks.data.map((t) => {
@@ -365,7 +369,7 @@ export default function JourneyDrilldownPage() {
 								{kpis.isLoading ? (
 									<Spinner />
 								) : !kpis.data?.length ? (
-									<EmptyState message="Nenhum indicador cadastrado." />
+									<EmptyState title="Nenhum indicador cadastrado." />
 								) : (
 									<div className="overflow-x-auto">
 										<table className="w-full text-sm">
@@ -402,9 +406,18 @@ export default function JourneyDrilldownPage() {
 																: '—'}
 														</td>
 														<td className="px-5 py-3">
-															<SemaphoreBadge
-																value={k.current_semaphore ?? 'unmeasured'}
-															/>
+															{(() => {
+																const badge =
+																	SEMAPHORE_BADGE[
+																		k.current_semaphore ?? 'unmeasured'
+																	];
+																return (
+																	<SemaphoreBadge
+																		tone={badge.tone}
+																		label={badge.label}
+																	/>
+																);
+															})()}
 														</td>
 													</tr>
 												))}
@@ -426,7 +439,7 @@ export default function JourneyDrilldownPage() {
 								</Card>
 							) : !submissions.data?.length ? (
 								<Card>
-									<EmptyState message="Nenhum formulário respondido ainda." />
+									<EmptyState title="Nenhum formulário respondido ainda." />
 								</Card>
 							) : (
 								<div className="space-y-3">
@@ -607,7 +620,7 @@ function SubmissionCard({ submission }: { submission: MntFormSubmission }) {
 							<dt className="text-xs uppercase tracking-wide text-slate-400 dark:text-gray-500">
 								{key.replaceAll('_', ' ')}
 							</dt>
-							<dd className="text-sm text-slate-800 dark:text-slate-200 mt-0.5 break-words">
+							<dd className="text-sm text-slate-800 dark:text-slate-200 mt-0.5 wrap-break-word">
 								{renderAnswer(value)}
 							</dd>
 						</div>

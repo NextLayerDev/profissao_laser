@@ -1,6 +1,7 @@
 'use client';
 
-import { Button } from '@upvox-dev/ui';
+import { Button, Card, PageHeader } from '@upvox-dev/ui';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Header } from '@/components/dashboard/header';
@@ -11,11 +12,9 @@ import {
 } from '../_components/admin-hooks';
 import {
 	Badge,
-	Card,
 	Field,
 	formatDate,
 	inputClass,
-	PageTitle,
 	Spinner,
 } from '../_components/ui';
 
@@ -31,6 +30,7 @@ const AREAS = [
 ] as const;
 
 export default function ConfiguracoesMentoriaPage() {
+	const router = useRouter();
 	const { data: configs, isLoading } = useMaturityConfigs();
 	const create = useCreateMaturityConfig();
 	const [weights, setWeights] = useState<Record<string, string>>({});
@@ -75,10 +75,10 @@ export default function ConfiguracoesMentoriaPage() {
 		<div className="min-h-screen">
 			<Header />
 			<main className="px-4 md:px-8 py-6 max-w-4xl mx-auto">
-				<PageTitle
+				<PageHeader
 					title="Score de maturidade"
-					description="Metodologia do Score Profissão Laser — pesos por área (versionada)"
-					backHref="/mentoria-admin"
+					subtitle="Metodologia do Score Profissão Laser — pesos por área (versionada)"
+					onBack={() => router.push('/mentoria-admin')}
 				/>
 
 				{isLoading ? (

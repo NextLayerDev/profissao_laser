@@ -11,7 +11,16 @@
 // (`app/(dev)/mentoria-indicadores-check`) monta os estados com fixtures —
 // mesmo padrão de `desenvolvimento-view.tsx` e `diagnostico-view.tsx`.
 
-import { Button, buttonLabel, Table } from '@upvox-dev/ui';
+import {
+	Button,
+	buttonLabel,
+	ProgressBar,
+	SectionCard,
+	SegmentedControl,
+	SemaphoreBadge,
+	StatCard,
+	Table,
+} from '@upvox-dev/ui';
 import { BarChart3, LineChart as LineChartIcon, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import {
@@ -28,14 +37,9 @@ import {
 	computeDelta,
 	formatKpiValue,
 	KpiEvolutionChart,
+	SEMAPHORE_BADGE,
 	SEMAPHORE_TONE,
 } from '@/modules/mentoria/components/kpi-evolution';
-import { SemaphoreBadge } from '@/modules/mentoria/components/semaphore-badge';
-import {
-	SectionCard,
-	SegmentedControl,
-	StatCard,
-} from '@/modules/mentoria/components/ui';
 import type { MntKpi, MntKpiMeasurement } from '@/modules/mentoria/types';
 import {
 	CARD,
@@ -300,7 +304,7 @@ export function IndicadoresView({
 			) : (
 				<div className="space-y-6">
 					<SegmentedControl
-						label="Categoria"
+						accessibilityLabel="Categoria"
 						value={category}
 						onChange={setCategory}
 						options={[
@@ -336,7 +340,7 @@ export function IndicadoresView({
 						</div>
 					)}
 
-					<SectionCard title="Indicadores" bodyClassName="p-0">
+					<SectionCard title="Indicadores" contentClassName="p-0">
 						<Table
 							rows={visibleKpis}
 							keyExtractor={(kpi) => kpi.id}
@@ -366,19 +370,27 @@ export function IndicadoresView({
 								},
 								{
 									header: 'Status',
-									cell: (kpi) => (
-										<div className="flex flex-col items-center gap-1.5">
-											<SemaphoreBadge
-												value={kpi.current_semaphore ?? 'unmeasured'}
-											/>
-											<ProgressBar
-												pct={targetProgressPct(kpi)}
-												tone={
-													SEMAPHORE_TONE[kpi.current_semaphore ?? 'unmeasured']
-												}
-											/>
-										</div>
-									),
+									cell: (kpi) => {
+										const badge =
+											SEMAPHORE_BADGE[kpi.current_semaphore ?? 'unmeasured'];
+										const pct = targetProgressPct(kpi);
+										return (
+											<div className="flex flex-col items-center gap-1.5">
+												<SemaphoreBadge tone={badge.tone} label={badge.label} />
+												{pct !== null && (
+													<ProgressBar
+														pct={pct}
+														tone={
+															SEMAPHORE_TONE[
+																kpi.current_semaphore ?? 'unmeasured'
+															]
+														}
+														size="sm"
+													/>
+												)}
+											</div>
+										);
+									},
 								},
 								{
 									header: '',
@@ -418,7 +430,7 @@ export function IndicadoresView({
 						title="Evolução dos indicadores"
 						action={
 							<SegmentedControl
-								label="Período"
+								accessibilityLabel="Período"
 								value={period}
 								options={PERIOD_OPTIONS}
 								onChange={setPeriod}
@@ -515,25 +527,6 @@ function targetProgressPct(kpi: MntKpi) {
 	const value = kpi.latest_measurement?.value;
 	if (value === null || value === undefined || !kpi.target) return null;
 	return Math.max(0, Math.min(100, (value / kpi.target) * 100));
-}
-
-const PROGRESS_TONE_CLASS: Record<string, string> = {
-	success: 'bg-emerald-500',
-	warning: 'bg-amber-500',
-	danger: 'bg-red-500',
-	brand: 'bg-violet-500',
-};
-
-function ProgressBar({ pct, tone }: { pct: number | null; tone: string }) {
-	if (pct === null) return null;
-	return (
-		<div className="w-20 h-1.5 rounded-full bg-surface-sunken overflow-hidden">
-			<div
-				className={`h-full rounded-full ${PROGRESS_TONE_CLASS[tone] ?? 'bg-violet-500'}`}
-				style={{ width: `${pct}%` }}
-			/>
-		</div>
-	);
 }
 
 function KpiHistoryChart({
