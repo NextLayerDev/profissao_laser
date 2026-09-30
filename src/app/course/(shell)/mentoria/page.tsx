@@ -235,7 +235,7 @@ function Dashboard({
 			</SectionCard>
 
 			{/* Prioridades + progresso da jornada */}
-			<div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-6 items-start">
+			<div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-6">
 				<SectionCard title="Prioridades Atuais" bodyClassName="px-5 pb-5 pt-0">
 					{priorities.length === 0 ? (
 						<p className="text-body text-muted py-6 text-center">
@@ -295,7 +295,7 @@ function Dashboard({
 			</div>
 
 			{/* Próximas ações + evolução dos indicadores */}
-			<div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-6 items-start">
+			<div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-6">
 				<SectionCard title="Próximas Ações" bodyClassName="px-5 pb-5 pt-0">
 					{nextActions.length === 0 ? (
 						<p className="text-body text-muted py-6 text-center">
@@ -349,7 +349,7 @@ function Dashboard({
 			</div>
 
 			{/* Saúde das áreas + materiais */}
-			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 				<SectionCard
 					title="Saúde das áreas"
 					description="Maturidade da empresa por área (Mapa da Minha Empresa)"

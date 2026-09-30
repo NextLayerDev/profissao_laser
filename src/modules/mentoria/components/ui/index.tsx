@@ -74,7 +74,7 @@ export function SectionCard({
 }) {
 	return (
 		<section
-			className={`rounded-card border border-subtle bg-surface ${className}`}
+			className={`flex flex-col h-full rounded-card border border-subtle bg-surface ${className}`}
 		>
 			{(title || action) && (
 				<div className="flex flex-wrap items-start justify-between gap-3 p-5">
@@ -87,7 +87,7 @@ export function SectionCard({
 					{action && <div className="shrink-0">{action}</div>}
 				</div>
 			)}
-			<div className={bodyClassName}>{children}</div>
+			<div className={`flex-1 ${bodyClassName}`}>{children}</div>
 		</section>
 	);
 }
