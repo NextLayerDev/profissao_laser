@@ -35,6 +35,7 @@
 // "rotulável" para apontar, então o rótulo vira `<span>` com id e o grupo o
 // referencia por `aria-labelledby`, que é a forma correta para esse caso.
 
+import { Button } from '@upvox-dev/ui';
 import { CircleDashed } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { formatBrNumber, parseBrNumber } from '../numbers';
@@ -89,6 +90,8 @@ export function DynamicForm({
 	readOnly = false,
 	onChange,
 	showProgress = false,
+	onSave,
+	saving = false,
 }: {
 	template: MntFormTemplate;
 	initialAnswers?: Record<string, unknown>;
@@ -96,6 +99,10 @@ export function DynamicForm({
 	onChange?: (answers: Record<string, unknown>) => void;
 	/** Formulário longo (diagnóstico): x/y por bloco e barra geral no topo. */
 	showProgress?: boolean;
+	/** Presente → "Salvar rascunho" no fim de CADA bloco (pedido da mentoria:
+	 *  salvar por bloco, sem rolar até o fim). Salva o formulário inteiro. */
+	onSave?: (answers: Record<string, unknown>) => void;
+	saving?: boolean;
 }) {
 	const [answers, setAnswers] = useState<Record<string, unknown>>(
 		initialAnswers ?? {},
@@ -173,6 +180,17 @@ export function DynamicForm({
 							/>
 						))}
 					</div>
+					{onSave && !readOnly && (
+						<div className="mt-4 flex justify-end">
+							<Button
+								variant="secondary"
+								onPress={() => onSave(answers)}
+								disabled={saving}
+							>
+								{saving ? 'Salvando...' : 'Salvar rascunho'}
+							</Button>
+						</div>
+					)}
 				</SectionCard>
 			))}
 		</div>

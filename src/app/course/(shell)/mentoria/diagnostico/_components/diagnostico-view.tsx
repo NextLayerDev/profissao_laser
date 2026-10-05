@@ -147,6 +147,14 @@ export function DiagnosticoView({
 	const initialAnswers =
 		(data.draft?.answers as Record<string, unknown> | undefined) ?? {};
 
+	// Botão do fim e o de cada bloco: cancela o autosave pendente e salva já.
+	const saveNow = () => {
+		if (autosaveRef.current) clearTimeout(autosaveRef.current);
+		autosaveRef.current = null;
+		setDirty(false);
+		onSaveDraft(answersRef.current ?? initialAnswers);
+	};
+
 	return (
 		<div className="space-y-6">
 			<MntHeader
@@ -172,6 +180,8 @@ export function DiagnosticoView({
 				template={data.template}
 				initialAnswers={initialAnswers}
 				showProgress
+				onSave={saveNow}
+				saving={savingDraft}
 				onChange={(answers) => {
 					answersRef.current = answers;
 					editsRef.current += 1;
@@ -198,16 +208,7 @@ export function DiagnosticoView({
 					    ("A text node cannot be a child of a <View>"). Daí o <Text>
 					    explícito. A cor do ícone também vai à mão: `buttonLabel` veste
 					    só o <Text>. */}
-					<Button
-						variant="secondary"
-						onPress={() => {
-							if (autosaveRef.current) clearTimeout(autosaveRef.current);
-							autosaveRef.current = null;
-							setDirty(false);
-							onSaveDraft(answersRef.current ?? initialAnswers);
-						}}
-						disabled={savingDraft}
-					>
+					<Button variant="secondary" onPress={saveNow} disabled={savingDraft}>
 						<Save className="h-4 w-4 text-primary" aria-hidden />
 						<Text className={buttonLabel({ variant: 'secondary' })}>
 							{savingDraft ? 'Salvando...' : 'Salvar rascunho'}

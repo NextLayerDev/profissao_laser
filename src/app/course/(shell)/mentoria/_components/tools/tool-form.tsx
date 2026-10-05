@@ -203,6 +203,8 @@ export function FormSubmissionPanel({
 				onChange={(answers) => {
 					answersRef.current = answers;
 				}}
+				onSave={() => handleSave()}
+				saving={saveDraft.isPending}
 			/>
 			<div
 				className={`${CARD} p-4 flex flex-wrap items-center justify-end gap-2`}

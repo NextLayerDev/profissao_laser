@@ -45,7 +45,6 @@ import {
 import { HelpTip } from '@/modules/mentoria/components/help-tip';
 import type {
 	FormBlock,
-	FormField,
 	GoodNewsState,
 	MntBusinessPlanVersion,
 	MntFormTemplate,
@@ -928,14 +927,6 @@ function fmtTime(iso: string): string {
 	});
 }
 
-/** Obrigatórios sem resposta ("A LEVANTAR" conta como resposta). */
-function missingRequired(
-	fields: FormField[],
-	answers: Record<string, unknown>,
-) {
-	return fields.filter((f) => f.required && !isAnswered(answers[f.key]));
-}
-
 export function BusinessPlanView({
 	template,
 	versions,
@@ -1237,7 +1228,6 @@ function BusinessPlanEditor({
 	const [savedAt, setSavedAt] = useState<string | null>(
 		restored?.savedAt ?? null,
 	);
-	const [showMissing, setShowMissing] = useState(false);
 	const [confirmDiscard, setConfirmDiscard] = useState(false);
 	const topRef = useRef<HTMLDivElement>(null);
 
@@ -1258,23 +1248,15 @@ function BusinessPlanEditor({
 	const block = blocks[step];
 	const allFields = blocks.flatMap((b) => b.fields);
 	const answered = allFields.filter((f) => isAnswered(answers[f.key])).length;
-	const missingByBlock = blocks.map((b) => missingRequired(b.fields, answers));
-	const missingTotal = missingByBlock.reduce((n, m) => n + m.length, 0);
 
 	const goTo = (i: number) => {
 		setStep(Math.max(0, Math.min(i, blocks.length - 1)));
 		topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 	};
 
-	const save = () => {
-		if (missingTotal > 0) {
-			setShowMissing(true);
-			const first = missingByBlock.findIndex((m) => m.length > 0);
-			if (first >= 0) goTo(first);
-			return;
-		}
-		onSave(answers, () => writeDraft(draftKey, null));
-	};
+	// Sem trava de obrigatórios: o plano pode ser salvo incompleto e
+	// completado nas próximas versões (pedido da mentoria).
+	const save = () => onSave(answers, () => writeDraft(draftKey, null));
 
 	const discard = () => {
 		writeDraft(draftKey, null);
@@ -1293,7 +1275,6 @@ function BusinessPlanEditor({
 	}
 
 	const isLast = step === blocks.length - 1;
-	const blockMissing = showMissing ? (missingByBlock[step] ?? []) : [];
 
 	return (
 		<div ref={topRef} className="space-y-4 scroll-mt-4">
@@ -1339,8 +1320,6 @@ function BusinessPlanEditor({
 							isAnswered(answers[f.key]),
 						).length;
 						const complete = done === b.fields.length;
-						const hasMissing =
-							showMissing && (missingByBlock[i]?.length ?? 0) > 0;
 						const on = i === step;
 						return (
 							<li key={b.key} className="shrink-0">
@@ -1352,9 +1331,7 @@ function BusinessPlanEditor({
 									className={`flex max-w-[220px] items-center gap-2 rounded-control border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
 										on
 											? 'border-brand bg-brand-wash'
-											: hasMissing
-												? 'border-red-500/50 bg-red-500/5'
-												: 'border-subtle hover:border-brand-border'
+											: 'border-subtle hover:border-brand-border'
 									}`}
 								>
 									<span
@@ -1395,13 +1372,6 @@ function BusinessPlanEditor({
 				onChange={setAnswers}
 			/>
 
-			{blockMissing.length > 0 && (
-				<p className="text-body text-red-600 dark:text-red-400">
-					Falta responder neste bloco:{' '}
-					{blockMissing.map((f) => f.label).join(', ')}.
-				</p>
-			)}
-
 			{/* Barra de ações sempre à vista: o "não acho botão de salvar" do
 			    vídeo não pode voltar a acontecer. */}
 			<div
@@ -1409,13 +1379,6 @@ function BusinessPlanEditor({
 			>
 				<span className="text-caption text-muted">
 					Bloco {step + 1} de {blocks.length}
-					{showMissing && missingTotal > 0 && (
-						<span className="text-red-600 dark:text-red-400">
-							{' '}
-							· {missingTotal} obrigatória{missingTotal > 1 ? 's' : ''} sem
-							resposta
-						</span>
-					)}
 				</span>
 				<div className="flex flex-wrap items-center gap-2">
 					<Button
