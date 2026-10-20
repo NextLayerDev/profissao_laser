@@ -400,6 +400,7 @@ export default function CourseSlugPage() {
 		new Set(),
 	);
 	const [showEndScreen, setShowEndScreen] = useState(false);
+	const [mobileListOpen, setMobileListOpen] = useState(false);
 	const [autoPlay, setAutoPlay] = useState(() => {
 		if (typeof window === 'undefined') return false;
 		return localStorage.getItem('lesson-autoplay') === 'true';
@@ -553,6 +554,8 @@ export default function CourseSlugPage() {
 		}
 		setActiveLesson(lesson);
 		setShowEndScreen(false);
+		setMobileListOpen(false);
+		window.scrollTo({ top: 0, behavior: 'smooth' });
 		// Persiste a aula atual na URL: mantém a posição em reload/deep-link e
 		// impede o efeito de seleção inicial de reverter pra outra aula.
 		router.replace(`${pathname}?lesson=${lesson.id}`, { scroll: false });
@@ -601,6 +604,139 @@ export default function CourseSlugPage() {
 		: null;
 	const watchedCount = watchedLessonIds.size;
 
+	// Banner "Próxima aula" e lista de aulas: usados na barra lateral (lg+) e
+	// abaixo do player em telas menores, onde a barra lateral fica escondida.
+	const nextLessonBanner = nextLesson ? (
+		<div className="p-4 border-b border-slate-200 dark:border-white/10 bg-gradient-to-r from-violet-500/10 to-cyan-500/10 shrink-0">
+			<button
+				type="button"
+				onClick={() => handleSelectLesson(nextLesson)}
+				className="w-full p-4 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 text-white shadow-lg shadow-violet-500/20 hover:shadow-xl hover:scale-[1.02] transition-all flex items-center gap-3 text-left"
+			>
+				<div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center shrink-0">
+					<Play className="w-6 h-6 fill-current" />
+				</div>
+				<div className="flex-1 min-w-0">
+					<p className="text-white/80 text-xs font-medium">Próxima aula</p>
+					<p className="font-semibold truncate">{nextLesson.title}</p>
+				</div>
+				<ChevronRight className="w-5 h-5 text-white/80 shrink-0" />
+			</button>
+		</div>
+	) : null;
+
+	const lessonBrowser = (
+		<>
+			<div className="px-4 py-4 border-b border-slate-200 dark:border-white/10 shrink-0">
+				<div className="relative">
+					<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+					<input
+						type="text"
+						placeholder="Buscar aula..."
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+						className="w-full bg-slate-50 dark:bg-white/4 border border-slate-200 dark:border-white/[0.07] rounded-xl pl-9 pr-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-violet-500/50 transition-colors"
+					/>
+				</div>
+			</div>
+
+			{/* Module + lesson list */}
+			<div className="flex-1 overflow-y-auto">
+				{filteredModules.map((mod) => {
+					const isCollapsed = collapsedModules.has(mod.id);
+					return (
+						<div key={mod.id}>
+							{/* Module header */}
+							<button
+								type="button"
+								onClick={() => toggleModule(mod.id)}
+								className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-violet-500/10 to-cyan-500/10 dark:from-violet-500/20 dark:to-cyan-500/20 border-b border-slate-200 dark:border-white/6 hover:from-violet-500/15 hover:to-cyan-500/15 transition-colors"
+							>
+								<div className="flex items-center gap-2 min-w-0">
+									<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-lg">
+										{mod.order}
+									</div>
+									<span className="font-semibold text-sm truncate text-slate-900 dark:text-white">
+										{mod.title}
+									</span>
+								</div>
+								<div className="flex items-center gap-2 shrink-0 ml-2">
+									<span className="text-[10px] bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400 border border-violet-200 dark:border-violet-700/40 rounded-full px-2 py-0.5 font-semibold whitespace-nowrap">
+										{mod.lessons.length} aula
+										{mod.lessons.length !== 1 ? 's' : ''}
+									</span>
+									<ChevronDown
+										className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`}
+									/>
+								</div>
+							</button>
+
+							{/* Lessons */}
+							{!isCollapsed &&
+								mod.lessons.map((lesson) => {
+									const isActive = activeLesson?.id === lesson.id;
+									const isWatched = watchedLessonIds.has(lesson.id);
+									return (
+										<button
+											key={lesson.id}
+											type="button"
+											onClick={() => handleSelectLesson(lesson)}
+											className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-slate-100 dark:border-white/5 transition-all relative ${
+												isActive
+													? 'bg-violet-50 dark:bg-white/10'
+													: 'hover:bg-slate-50 dark:hover:bg-white/5'
+											}`}
+										>
+											{isActive && (
+												<div className="absolute left-0 top-0 bottom-0 w-0.5 bg-violet-400 rounded-r" />
+											)}
+
+											<div className="shrink-0">
+												{isActive ? (
+													<div className="w-7 h-7 rounded-full bg-violet-600 flex items-center justify-center">
+														<Play className="w-3 h-3 fill-current text-white" />
+													</div>
+												) : isWatched ? (
+													<div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-600/20 flex items-center justify-center">
+														<Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+													</div>
+												) : canPlay(lesson) ? (
+													<div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-600/20 flex items-center justify-center">
+														<Play className="w-3 h-3 text-emerald-600 dark:text-emerald-400 fill-current" />
+													</div>
+												) : (
+													<div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center">
+														<LockKeyhole className="w-3 h-3 text-slate-500" />
+													</div>
+												)}
+											</div>
+
+											<div className="flex-1 min-w-0">
+												<p
+													className={`text-sm truncate font-medium leading-tight ${isActive ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}
+												>
+													{lesson.title}
+												</p>
+											</div>
+
+											{lesson.isFree && !courseUnlocked && !isActive && (
+												<span className="shrink-0 text-xs px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded">
+													Grátis
+												</span>
+											)}
+											{isActive && (
+												<ChevronRight className="w-4 h-4 text-slate-500 dark:text-gray-400 shrink-0" />
+											)}
+										</button>
+									);
+								})}
+						</div>
+					);
+				})}
+			</div>
+		</>
+	);
+
 	return (
 		<div className="min-h-screen bg-slate-50 dark:bg-[#0d0d0f] text-slate-900 dark:text-white font-sans flex flex-col relative overflow-hidden">
 			{/* Background gradients */}
@@ -608,42 +744,43 @@ export default function CourseSlugPage() {
 			<div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-cyan-500/5 via-transparent to-transparent pointer-events-none" />
 
 			{/* ── Header ──────────────────────────────────────────────────────── */}
-			<header className="h-14 bg-white/80 dark:bg-[#0d0d0f]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/6 flex items-center justify-between px-5 shrink-0 sticky top-0 z-20">
-				<div className="flex items-center gap-4">
+			<header className="h-14 bg-white/80 dark:bg-[#0d0d0f]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/6 flex items-center justify-between gap-2 px-3 sm:px-5 shrink-0 sticky top-0 z-20">
+				<div className="flex items-center gap-2 sm:gap-4 min-w-0">
 					<Link
 						href="/course"
-						className="flex items-center gap-1.5 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors text-sm"
+						className="flex items-center gap-1.5 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors text-sm shrink-0"
 					>
 						<ArrowLeft className="w-4 h-4" />
 						Voltar
 					</Link>
-					<div className="w-px h-6 bg-slate-200 dark:bg-white/10" />
-					<div className="flex items-center gap-3">
-						<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-violet-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
+					<div className="w-px h-6 bg-slate-200 dark:bg-white/10 shrink-0" />
+					<div className="flex items-center gap-3 min-w-0">
+						<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-violet-600 hidden sm:flex items-center justify-center shadow-lg shadow-violet-500/20 shrink-0">
 							<BookOpen className="w-4 h-4 text-white" />
 						</div>
-						<div>
-							<p className="font-bold text-sm leading-tight text-slate-900 dark:text-white">
+						<div className="min-w-0">
+							<p className="font-bold text-sm leading-tight text-slate-900 dark:text-white truncate">
 								{course.name}
 							</p>
-							<p className="text-slate-500 dark:text-gray-400 text-xs">
+							<p className="text-slate-500 dark:text-gray-400 text-xs truncate">
 								{activeModule?.title ?? 'Sala de Aula'}
 							</p>
 						</div>
 					</div>
 				</div>
 
-				<div className="flex items-center gap-3">
+				<div className="flex items-center gap-2 sm:gap-3 shrink-0">
 					<button
 						type="button"
 						onClick={() => setSavedLessonsModalOpen(true)}
-						className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-sm font-medium transition-colors group"
+						aria-label="Aulas Salvas"
+						className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl px-2 sm:px-4 py-2 text-sm font-medium transition-colors group"
 					>
 						<div className="rounded-lg p-1 bg-linear-to-r from-orange-500 to-violet-600">
 							<Bookmark className="w-4 h-4 text-white" />
 						</div>
-						<span>Aulas Salvas</span>
-						<ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
+						<span className="hidden sm:inline">Aulas Salvas</span>
+						<ChevronRight className="hidden sm:block w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
 					</button>
 					<div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/20">
 						<Zap className="w-3.5 h-3.5 text-violet-600" />
@@ -725,8 +862,45 @@ export default function CourseSlugPage() {
 							}
 						/>
 
+						{/* Navegação entre aulas (celular/tablet): a barra lateral só aparece em
+						    telas lg+, então sem isso o aluno não conseguia trocar de aula. */}
+						<div className="lg:hidden px-3 sm:px-6 pt-4 space-y-3">
+							{nextLessonBanner && (
+								<div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10">
+									{nextLessonBanner}
+								</div>
+							)}
+							<div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden">
+								<button
+									type="button"
+									onClick={() => setMobileListOpen((open) => !open)}
+									aria-expanded={mobileListOpen}
+									className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left"
+								>
+									<div className="min-w-0">
+										<p className="font-semibold text-sm text-slate-900 dark:text-white">
+											Aulas do curso
+										</p>
+										<p className="text-xs text-slate-500 dark:text-gray-400">
+											{activeIdx >= 0
+												? `Aula ${activeIdx + 1} de ${totalLessons}`
+												: `${totalLessons} aulas`}
+										</p>
+									</div>
+									<ChevronDown
+										className={`w-4 h-4 text-slate-500 shrink-0 transition-transform duration-200 ${mobileListOpen ? 'rotate-180' : ''}`}
+									/>
+								</button>
+								{mobileListOpen && (
+									<div className="flex flex-col max-h-[60vh] border-t border-slate-200 dark:border-white/10">
+										{lessonBrowser}
+									</div>
+								)}
+							</div>
+						</div>
+
 						{/* Tabs row */}
-						<div className="px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/[0.02]">
+						<div className="px-3 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/[0.02]">
 							<div className="flex gap-1 border-b border-slate-200 dark:border-white/10 -mb-[1px]">
 								<button
 									type="button"
@@ -787,7 +961,7 @@ export default function CourseSlugPage() {
 						</div>
 
 						{/* Tab content */}
-						<div className="px-6 py-6">
+						<div className="px-3 sm:px-6 py-6">
 							<div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 backdrop-blur-sm overflow-hidden min-h-[280px]">
 								<div className="p-6">
 									{bottomTab === 'duvidas' &&
@@ -831,136 +1005,8 @@ export default function CourseSlugPage() {
 
 				{/* ── Sidebar ─────────────────────────────────────────────────── */}
 				<aside className="hidden lg:flex w-64 xl:w-[360px] border-l border-slate-200 dark:border-white/6 bg-white/80 dark:bg-[#0d0d0f]/95 backdrop-blur-sm flex-col shrink-0 overflow-hidden">
-					{/* Next lesson banner */}
-					{nextLesson && (
-						<div className="p-4 border-b border-slate-200 dark:border-white/10 bg-gradient-to-r from-violet-500/10 to-cyan-500/10 shrink-0">
-							<button
-								type="button"
-								onClick={() => handleSelectLesson(nextLesson)}
-								className="w-full p-4 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 text-white shadow-lg shadow-violet-500/20 hover:shadow-xl hover:scale-[1.02] transition-all flex items-center gap-3 text-left"
-							>
-								<div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center shrink-0">
-									<Play className="w-6 h-6 fill-current" />
-								</div>
-								<div className="flex-1 min-w-0">
-									<p className="text-white/80 text-xs font-medium">
-										Próxima aula
-									</p>
-									<p className="font-semibold truncate">{nextLesson.title}</p>
-								</div>
-								<ChevronRight className="w-5 h-5 text-white/80 shrink-0" />
-							</button>
-						</div>
-					)}
-
-					{/* Search */}
-					<div className="px-4 py-4 border-b border-slate-200 dark:border-white/10 shrink-0">
-						<div className="relative">
-							<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-							<input
-								type="text"
-								placeholder="Buscar aula..."
-								value={search}
-								onChange={(e) => setSearch(e.target.value)}
-								className="w-full bg-slate-50 dark:bg-white/4 border border-slate-200 dark:border-white/[0.07] rounded-xl pl-9 pr-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-violet-500/50 transition-colors"
-							/>
-						</div>
-					</div>
-
-					{/* Module + lesson list */}
-					<div className="flex-1 overflow-y-auto">
-						{filteredModules.map((mod) => {
-							const isCollapsed = collapsedModules.has(mod.id);
-							return (
-								<div key={mod.id}>
-									{/* Module header */}
-									<button
-										type="button"
-										onClick={() => toggleModule(mod.id)}
-										className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-violet-500/10 to-cyan-500/10 dark:from-violet-500/20 dark:to-cyan-500/20 border-b border-slate-200 dark:border-white/6 hover:from-violet-500/15 hover:to-cyan-500/15 transition-colors"
-									>
-										<div className="flex items-center gap-2 min-w-0">
-											<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-lg">
-												{mod.order}
-											</div>
-											<span className="font-semibold text-sm truncate text-slate-900 dark:text-white">
-												{mod.title}
-											</span>
-										</div>
-										<div className="flex items-center gap-2 shrink-0 ml-2">
-											<span className="text-[10px] bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400 border border-violet-200 dark:border-violet-700/40 rounded-full px-2 py-0.5 font-semibold whitespace-nowrap">
-												{mod.lessons.length} aula
-												{mod.lessons.length !== 1 ? 's' : ''}
-											</span>
-											<ChevronDown
-												className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`}
-											/>
-										</div>
-									</button>
-
-									{/* Lessons */}
-									{!isCollapsed &&
-										mod.lessons.map((lesson) => {
-											const isActive = activeLesson?.id === lesson.id;
-											const isWatched = watchedLessonIds.has(lesson.id);
-											return (
-												<button
-													key={lesson.id}
-													type="button"
-													onClick={() => handleSelectLesson(lesson)}
-													className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-slate-100 dark:border-white/5 transition-all relative ${
-														isActive
-															? 'bg-violet-50 dark:bg-white/10'
-															: 'hover:bg-slate-50 dark:hover:bg-white/5'
-													}`}
-												>
-													{isActive && (
-														<div className="absolute left-0 top-0 bottom-0 w-0.5 bg-violet-400 rounded-r" />
-													)}
-
-													<div className="shrink-0">
-														{isActive ? (
-															<div className="w-7 h-7 rounded-full bg-violet-600 flex items-center justify-center">
-																<Play className="w-3 h-3 fill-current text-white" />
-															</div>
-														) : isWatched ? (
-															<div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-600/20 flex items-center justify-center">
-																<Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-															</div>
-														) : canPlay(lesson) ? (
-															<div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-600/20 flex items-center justify-center">
-																<Play className="w-3 h-3 text-emerald-600 dark:text-emerald-400 fill-current" />
-															</div>
-														) : (
-															<div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center">
-																<LockKeyhole className="w-3 h-3 text-slate-500" />
-															</div>
-														)}
-													</div>
-
-													<div className="flex-1 min-w-0">
-														<p
-															className={`text-sm truncate font-medium leading-tight ${isActive ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}
-														>
-															{lesson.title}
-														</p>
-													</div>
-
-													{lesson.isFree && !courseUnlocked && !isActive && (
-														<span className="shrink-0 text-xs px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded">
-															Grátis
-														</span>
-													)}
-													{isActive && (
-														<ChevronRight className="w-4 h-4 text-slate-500 dark:text-gray-400 shrink-0" />
-													)}
-												</button>
-											);
-										})}
-								</div>
-							);
-						})}
-					</div>
+					{nextLessonBanner}
+					{lessonBrowser}
 				</aside>
 			</div>
 		</div>
