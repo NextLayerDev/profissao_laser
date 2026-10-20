@@ -114,7 +114,9 @@ function pickFromMap(map: LucideIconMap, rawName: string): LucideIcon | null {
  */
 function makeLazyToolIcon(rawName: string): LucideIcon {
 	const Lazy = forwardRef<SVGSVGElement, LucideProps>((props, ref) => {
-		const [Resolved, setResolved] = useState<LucideIcon | null>(() =>
+		// Valor direto, não inicializador lazy: o React Compiler do Next 16.4 içava
+		// a arrow pro topo do módulo e perdia o `rawName` da closure (ReferenceError).
+		const [Resolved, setResolved] = useState<LucideIcon | null>(
 			loadedIcons ? pickFromMap(loadedIcons, rawName) : null,
 		);
 
