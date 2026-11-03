@@ -266,11 +266,6 @@ function PlanCard({
 									,{annualP.cents}/ano
 								</span>
 							</div>
-							{p.installment != null && (
-								<div className="text-slate-500 text-xs mt-2 font-mono">
-									ou 12x de R$ {fmt(p.installment)}
-								</div>
-							)}
 							{p.monthly != null && (
 								<div className="text-slate-500 text-xs font-mono">
 									ou R$ {fmt(p.monthly)}/mês

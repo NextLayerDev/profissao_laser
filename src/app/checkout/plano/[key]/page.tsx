@@ -207,9 +207,7 @@ export default function PlanCheckoutPage() {
 											</div>
 											<p className="text-xs text-gray-500 mt-2">
 												{interval === 'yearly'
-													? plan.installment != null
-														? `Plano anual · ou 12x de R$ ${fmt(plan.installment)}`
-														: 'Plano anual'
+													? 'Plano anual · cobrado uma vez por ano'
 													: 'Plano mensal · cobrado todo mês'}
 											</p>
 										</>

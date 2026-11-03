@@ -227,7 +227,7 @@ export default function PackageCheckoutPage() {
 										{isLifetime
 											? 'Pagamento único · acesso ao curso para sempre'
 											: interval === 'yearly'
-												? `Cobrado uma vez por ano · ou 12x de R$ ${fmt((priceCents ?? 0) / 12)}`
+												? 'Cobrado uma vez por ano'
 												: 'Cobrado todo mês'}
 									</p>
 								</div>

@@ -41,8 +41,8 @@ const faqs = [
 		a: 'Cartão de crédito, PIX e boleto bancário. As opções podem variar conforme a plataforma de pagamento utilizada.',
 	},
 	{
-		q: 'O valor anual é descontado de uma única vez no cartão?',
-		a: 'Não necessariamente. Você pode escolher pagamento à vista ou parcelamento em até 12x no cartão de crédito. O parcelamento consome apenas o valor das parcelas no limite do cartão.',
+		q: 'O valor anual é cobrado de uma única vez?',
+		a: 'O valor anual é cobrado de uma única vez, no valor total do plano. Não há parcelamento em 12x. As formas de pagamento disponíveis são exibidas na tela de pagamento.',
 	},
 	{
 		q: 'A Comunidade Profissão Laser vende máquinas laser?',
