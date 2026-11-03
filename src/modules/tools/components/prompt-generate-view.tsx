@@ -718,6 +718,26 @@ function PromptHero({
 
 /* ─────────────────── Resolução de saída (opcional) ─────────────────── */
 
+/** Limites do `bankImageSizeSchema` da API (inteiro). Fora deles a API responde "image_size inválido". */
+const MIN_PX = 64;
+const MAX_PX = 4096;
+
+/**
+ * Converte o que o aluno digitou num tamanho que a API aceita. Acima do teto
+ * reduz os DOIS lados na mesma escala: o wrap 360° depende da proporção.
+ */
+function customPx(
+	w: string,
+	h: string,
+): { unit: 'px'; width: number; height: number } {
+	const rawW = Math.max(1, Number(w) || 1024);
+	const rawH = Math.max(1, Number(h) || 1024);
+	const scale = Math.min(1, MAX_PX / Math.max(rawW, rawH));
+	const fit = (n: number) =>
+		Math.min(MAX_PX, Math.max(MIN_PX, Math.round(n * scale)));
+	return { unit: 'px', width: fit(rawW), height: fit(rawH) };
+}
+
 /** Select de resolução: default da tool, um preset cadastrado, ou personalizado. */
 function ImageSizePicker({
 	value,
@@ -762,13 +782,8 @@ function ImageSizePicker({
 					const v = e.target.value;
 					if (v === 'default') onChange(null);
 					else if (v === 'native') onChange('native');
-					else if (v === 'custom') {
-						onChange({
-							unit: 'px',
-							width: Number(customW) || 1024,
-							height: Number(customH) || 1024,
-						});
-					} else
+					else if (v === 'custom') onChange(customPx(customW, customH));
+					else
 						onChange({ unit: 'preset', preset_id: v.slice('preset:'.length) });
 				}}
 				className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-[color-mix(in_srgb,var(--screen-accent)_50%,transparent)] focus:outline-none focus:ring-2 focus:ring-[color-mix(in_srgb,var(--screen-accent)_30%,transparent)] dark:border-white/10 dark:bg-[#111] dark:text-slate-200"
@@ -793,11 +808,7 @@ function ImageSizePicker({
 						value={customW}
 						onChange={(e) => {
 							setCustomW(e.target.value);
-							onChange({
-								unit: 'px',
-								width: Number(e.target.value) || 64,
-								height: Number(customH) || 64,
-							});
+							onChange(customPx(e.target.value, customH));
 						}}
 						placeholder="Largura"
 						className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none dark:border-white/10 dark:bg-[#111] dark:text-slate-200"
@@ -810,17 +821,21 @@ function ImageSizePicker({
 						value={customH}
 						onChange={(e) => {
 							setCustomH(e.target.value);
-							onChange({
-								unit: 'px',
-								width: Number(customW) || 64,
-								height: Number(e.target.value) || 64,
-							});
+							onChange(customPx(customW, e.target.value));
 						}}
 						placeholder="Altura"
 						className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none dark:border-white/10 dark:bg-[#111] dark:text-slate-200"
 					/>
 				</div>
 			)}
+			{customValue &&
+				(customValue.width !== Number(customW) ||
+					customValue.height !== Number(customH)) && (
+					<output className="block text-xs text-amber-600 dark:text-amber-400">
+						Será gerado em {customValue.width}×{customValue.height}px (limite{' '}
+						{MIN_PX}–{MAX_PX}px por lado, proporção mantida).
+					</output>
+				)}
 		</div>
 	);
 }
