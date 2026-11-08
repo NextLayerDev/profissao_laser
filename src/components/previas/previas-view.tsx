@@ -665,6 +665,8 @@ export function PreviasView() {
 	const [generatedPrevia, setGeneratedPrevia] = useState<{
 		previewUrl: string;
 		tipoVisualizacao: string;
+		productName: string;
+		productColor?: string;
 	} | null>(null);
 
 	const pickerRef = useRef<HTMLDivElement>(null);
@@ -847,6 +849,8 @@ export function PreviasView() {
 					setGeneratedPrevia({
 						previewUrl: result.previewUrl,
 						tipoVisualizacao: payload.laserSettings.tipoVisualizacao,
+						productName: result.productName,
+						productColor: result.productColor,
 					});
 					return result;
 				}),
@@ -1210,9 +1214,10 @@ export function PreviasView() {
 												Prévia pronta
 											</p>
 											<p className="text-xs text-slate-600 dark:text-gray-400">
-												{selectedProduct?.name}
-												{selectedVariant?.colorName
-													? ` · ${selectedVariant.colorName}`
+												{/* Da prévia gerada: a seleção atual pode já ser outra. */}
+												{generatedPrevia.productName}
+												{generatedPrevia.productColor
+													? ` · ${generatedPrevia.productColor}`
 													: ''}
 											</p>
 										</div>

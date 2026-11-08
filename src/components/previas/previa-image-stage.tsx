@@ -24,27 +24,41 @@ export const ACCEPTED_TYPES = [
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_IMAGE_DIM = 1024;
 const JPEG_QUALITY = 0.7;
+// Teto do data URL em PNG: o corpo do POST passa pelo limite padrão de 1 MiB.
+const MAX_PNG_DATA_URL = 700_000;
 
 function compressImage(file: File): Promise<string> {
 	return new Promise((resolve, reject) => {
 		const img = new window.Image();
 		img.onload = () => {
-			let { width, height } = img;
-			if (width > MAX_IMAGE_DIM || height > MAX_IMAGE_DIM) {
-				const ratio = Math.min(MAX_IMAGE_DIM / width, MAX_IMAGE_DIM / height);
-				width = Math.round(width * ratio);
-				height = Math.round(height * ratio);
-			}
 			const canvas = document.createElement('canvas');
-			canvas.width = width;
-			canvas.height = height;
 			const ctx = canvas.getContext('2d');
 			if (!ctx) {
 				reject(new Error('Canvas not supported'));
 				return;
 			}
-			ctx.drawImage(img, 0, 0, width, height);
-			resolve(canvas.toDataURL('image/jpeg', JPEG_QUALITY));
+			const draw = (maxDim: number) => {
+				const ratio = Math.min(1, maxDim / img.width, maxDim / img.height);
+				canvas.width = Math.round(img.width * ratio);
+				canvas.height = Math.round(img.height * ratio);
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+				ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+			};
+			draw(MAX_IMAGE_DIM);
+			// JPEG não tem alfa: o fundo transparente vira preto e some com logos
+			// escuras. PNG/WEBP seguem em PNG (reduzindo se passar do teto).
+			if (file.type !== 'image/png' && file.type !== 'image/webp') {
+				resolve(canvas.toDataURL('image/jpeg', JPEG_QUALITY));
+				return;
+			}
+			let dim = MAX_IMAGE_DIM;
+			let url = canvas.toDataURL('image/png');
+			while (url.length > MAX_PNG_DATA_URL && dim > 384) {
+				dim = Math.round(dim * 0.75);
+				draw(dim);
+				url = canvas.toDataURL('image/png');
+			}
+			resolve(url);
 		};
 		img.onerror = reject;
 		img.src = URL.createObjectURL(file);
@@ -307,7 +321,8 @@ export function PreviaImageStage({
 								<img
 									src={image}
 									alt="Sua arte"
-									className="max-h-[70%] max-w-[80%] object-contain"
+									// Fundo claro: arte com transparência (logo escura) some no tema escuro.
+									className="max-h-[70%] max-w-[80%] rounded-xl bg-white object-contain p-4"
 								/>
 							) : (
 								<Package
