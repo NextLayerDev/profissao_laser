@@ -85,6 +85,22 @@ export interface VectorizeResult {
 	 */
 	aiFallback?: boolean;
 	aiFallbackReason?: string;
+	/** Fluxo Automático: o que o servidor decidiu. */
+	auto?: AutoVectorizeInfo;
+}
+
+export interface AutoVectorizeInfo {
+	kind: 'photo' | 'logo';
+	kindSource: 'forced' | 'heuristic' | 'ai' | 'heuristic-fallback';
+	/** 'local' = traço sem IA; 'ai' = passou pelo modelo de imagem. */
+	engine: 'local' | 'ai';
+	route: string;
+	aiAttempts: number;
+	backgroundRemoved: boolean | null;
+	darkCup: boolean;
+	widthMm: number;
+	heightMm: number;
+	timeMs: number;
 }
 
 export type InvertMode = 'auto' | 'geometric' | 'silhouette';
@@ -186,6 +202,37 @@ export async function aiLineartVectorize(
 		// de 90s. Estourar aqui deixaria o servidor liquidar uma cobrança de um
 		// resultado que o cliente nunca veria.
 		{ timeout: 150_000 },
+	);
+	return data;
+}
+
+/**
+ * Vetorização AUTOMÁTICA (fluxo único). O servidor classifica foto × logo,
+ * traça o logo limpo sem IA e só usa a IA (modelo mais forte) quando precisa.
+ * Cobrada NA GERAÇÃO: o front invoca e manda o `invocation_id`; falha estorna.
+ * Foto com IA leva ~30–60s (duas gerações quando o fundo vem sujo), por isso o
+ * timeout longo — estourar aqui deixaria o servidor liquidar um resultado que o
+ * cliente nunca veria.
+ */
+export async function autoVectorize(
+	file: File,
+	opts: {
+		invocationId?: string;
+		kind?: 'photo' | 'logo';
+		darkCup?: boolean;
+		widthMm?: number;
+	},
+): Promise<VectorizeResult> {
+	const formData = new FormData();
+	formData.append('image', file);
+	if (opts.invocationId) formData.append('invocation_id', opts.invocationId);
+	if (opts.kind) formData.append('kind', opts.kind);
+	if (opts.darkCup) formData.append('darkCup', 'true');
+	if (opts.widthMm) formData.append('widthMm', String(opts.widthMm));
+	const { data } = await api.post<VectorizeResult>(
+		'/api/vectorize/auto',
+		formData,
+		{ timeout: 180_000 },
 	);
 	return data;
 }
