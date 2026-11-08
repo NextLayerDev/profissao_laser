@@ -23,6 +23,11 @@ import {
 } from 'react';
 import { useImageSizePresets } from '../hooks/use-image-size-presets';
 import {
+	activeModels,
+	effectiveTemplate,
+	groupModelsByBrand,
+} from '../lib/creation-template';
+import {
 	coverOf,
 	downloadUrl,
 	hasTextInput,
@@ -46,6 +51,7 @@ import type {
 	ToolRunResult,
 } from '../services/tool-definitions.service';
 import { ArtLicensePanel } from './art-license-panel';
+import { CreationTemplatePreview } from './creation-template-preview';
 import {
 	CAMPO_NEUTRO,
 	CARIMBO,
@@ -71,6 +77,12 @@ import {
 
 /** Cor de destaque sólida. */
 const ACCENT_BG: CSSProperties = { backgroundColor: 'var(--screen-accent)' };
+/** Xadrez de transparência (cinza neutro, funciona nos dois temas). */
+const CHECKER_BG: CSSProperties = {
+	backgroundImage:
+		'repeating-conic-gradient(rgb(148 163 184 / 0.25) 0% 25%, transparent 0% 50%)',
+	backgroundSize: '16px 16px',
+};
 /** Texto na cor de destaque. */
 const ACCENT_TEXT: CSSProperties = { color: 'var(--screen-accent)' };
 /** Fundo tingido. */
@@ -348,7 +360,12 @@ function BankResultImage({
 		<div className="space-y-4">
 			{result.license ? <ArtLicensePanel license={result.license} /> : null}
 			{shown ? (
-				<div className="flex max-h-[70vh] w-full items-center justify-center overflow-hidden rounded-lg bg-slate-100 dark:bg-[#111]">
+				// Xadrez atrás da arte: nos formatos com recorte (capinha, chaveiro)
+				// a câmera e os cantos saem transparentes, e é aqui que o aluno vê.
+				<div
+					className="flex max-h-[70vh] w-full items-center justify-center overflow-hidden rounded-lg bg-slate-100 dark:bg-[#111]"
+					style={CHECKER_BG}
+				>
 					{/* <img> intencional: preview de data URL / CDN dinâmico */}
 					<img
 						src={shown}
@@ -1058,6 +1075,9 @@ export interface PromptGenerateViewProps {
 	/** Id do card selecionado no Passo 1 (controlado pelo DynamicToolView). */
 	creationId?: string | null;
 	onCreationIdChange?: (id: string | null) => void;
+	/** Modelo escolhido dentro do formato (ex.: o celular da Capinha). */
+	creationModelId?: string | null;
+	onCreationModelIdChange?: (id: string | null) => void;
 	/** Variações oferecidas no Passo 3 (ex.: [1,2,4]) — da definition. Vazio = sem Passo 3. */
 	returnVariations?: number[];
 	/**
@@ -1109,6 +1129,8 @@ export function PromptGenerateView({
 	creations,
 	creationId,
 	onCreationIdChange,
+	creationModelId = null,
+	onCreationModelIdChange,
 	returnVariations,
 	variationCount,
 	onVariationCountChange,
@@ -1127,6 +1149,12 @@ export function PromptGenerateView({
 	// variações, sem resolução de saída. Sobra a tiragem e a própria arte.
 	const carimbo = isCarimbo(mode);
 	const hasCreations = !carimbo && !!creations && creations.length > 0;
+	const selectedCreation = hasCreations
+		? creations?.find((c) => c.id === creationId)
+		: undefined;
+	const modelos = activeModels(selectedCreation);
+	// Com molde, o tamanho é o da peça: o motor ignora a resolução pedida.
+	const molde = effectiveTemplate(selectedCreation, creationModelId);
 	const hasVariations =
 		!carimbo && !!returnVariations && returnVariations.length > 0;
 	const hasTiragem = !!printRunOptions && printRunOptions.length > 1;
@@ -1310,6 +1338,60 @@ export function PromptGenerateView({
 										);
 									})}
 							</div>
+							{modelos.length > 0 && (
+								<div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5">
+									<label className="min-w-0 flex-1 space-y-1.5">
+										<span className="block text-xs font-semibold text-slate-600 dark:text-slate-300">
+											Modelo do celular
+										</span>
+										<select
+											value={creationModelId ?? ''}
+											onChange={(e) =>
+												onCreationModelIdChange?.(e.target.value || null)
+											}
+											className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--screen-accent)_45%,transparent)] dark:border-white/10 dark:bg-[#111] dark:text-slate-200"
+										>
+											<option value="">Escolha o modelo…</option>
+											{groupModelsByBrand(modelos).map(([brand, lista]) => (
+												<optgroup key={brand} label={brand}>
+													{lista.map((m) => (
+														<option key={m.id} value={m.id}>
+															{m.label}
+														</option>
+													))}
+												</optgroup>
+											))}
+										</select>
+										<span className="block text-[11px] leading-snug text-slate-500 dark:text-slate-400">
+											A arte sai no tamanho da capa, com a área da câmera livre.
+										</span>
+									</label>
+									{molde && (
+										<CreationTemplatePreview
+											template={molde}
+											label={selectedCreation?.label}
+											className="h-24 w-auto shrink-0"
+										/>
+									)}
+								</div>
+							)}
+							{modelos.length === 0 &&
+								molde &&
+								(molde.zones?.length ?? 0) > 0 && (
+									<div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-[11px] leading-snug text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400">
+										<CreationTemplatePreview
+											template={molde}
+											label={selectedCreation?.label}
+											className="h-16 w-auto shrink-0"
+										/>
+										<span>
+											A área marcada em vermelho fica livre na arte
+											{selectedCreation?.mask === false
+												? '.'
+												: ' e sai recortada.'}
+										</span>
+									</div>
+								)}
 						</section>
 					)}
 
@@ -1565,7 +1647,7 @@ export function PromptGenerateView({
 
 			{/* Resolução de saída (opcional, largura total). Não no só-licenciar:
 			    a arte sai no tamanho em que entrou. */}
-			{!carimbo && (
+			{!carimbo && !molde && (
 				<section className={`${stepCardCls} space-y-3`}>
 					<ImageSizePicker value={imageSize} onChange={onImageSizeChange} />
 				</section>

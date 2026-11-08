@@ -157,3 +157,81 @@ export async function summarizePrompt(
 	});
 	return summarizePromptResultSchema.parse(data);
 }
+
+/**
+ * "Preencher com IA" do Estúdio de Prompts (admin). A IA só SUGERE: tudo volta
+ * para o formulário, que o admin revisa e salva pelo caminho de sempre.
+ */
+const assistTemplateSchema = z.object({
+	width_mm: z.number(),
+	height_mm: z.number(),
+	outline: z.enum(['rect', 'ellipse']).optional(),
+	corner_radius_mm: z.number().optional(),
+	safe_margin_mm: z.number().optional(),
+	zones: z
+		.array(
+			z.object({
+				label: z.string().optional(),
+				shape: z.enum(['rect', 'ellipse']),
+				x: z.number(),
+				y: z.number(),
+				w: z.number(),
+				h: z.number(),
+				r: z.number().optional(),
+			}),
+		)
+		.optional(),
+});
+
+export const cardSuggestionSchema = z.object({
+	title: z.string(),
+	category: z.string(),
+	description: z.string(),
+	mode: z.enum(['texto', 'imagem', 'texto_imagem']),
+	prompt_script: z.string(),
+	formats: z.array(z.string()),
+	example_temas: z.array(z.string()),
+});
+export type CardSuggestion = z.infer<typeof cardSuggestionSchema>;
+
+export const phoneSuggestionSchema = z.object({
+	label: z.string(),
+	brand: z.string(),
+	template: assistTemplateSchema,
+	note: z.string(),
+	sources: z.array(z.string()),
+});
+export type PhoneSuggestion = z.infer<typeof phoneSuggestionSchema>;
+
+export async function suggestCard(body: {
+	idea: string;
+	formats: { id: string; label: string }[];
+	categories: string[];
+}): Promise<CardSuggestion> {
+	const { data } = await api.post(
+		'/api/tools/prompt-assist',
+		{ kind: 'card', ...body },
+		{ timeout: 70_000 },
+	);
+	return cardSuggestionSchema.parse(data.card);
+}
+
+export async function suggestPhone(name: string): Promise<PhoneSuggestion> {
+	const { data } = await api.post(
+		'/api/tools/prompt-assist',
+		{ kind: 'phone', name },
+		{ timeout: 70_000 },
+	);
+	return phoneSuggestionSchema.parse(data.phone);
+}
+
+export async function suggestPopularPhones(
+	existing: string[],
+): Promise<string[]> {
+	const { data } = await api.post(
+		'/api/tools/prompt-assist',
+		{ kind: 'popular', existing },
+		{ timeout: 70_000 },
+	);
+	return z.array(z.string()).parse(data.models);
+}

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { type CSSProperties, useEffect } from 'react';
 import { Header } from '@/components/dashboard/header';
+import { PromptStudio } from '@/components/ferramentas/prompt-studio/prompt-studio';
 import { ToolBankAdmin } from '@/components/ferramentas/tool-bank-admin';
 import { usePermissions } from '@/modules/access';
 import { DynamicRoomView } from '@/modules/tools/components/dynamic-room-view';
@@ -35,6 +36,11 @@ export default function ToolAdminPage() {
 
 	const isRoom = def.data?.engine_runtime === 'room_v1';
 	const hasBank = Boolean(def.data?.definition.bank?.enabled);
+	// Tela única de Prompts Mágicos (cards + formatos), ligada pela definition.
+	const isPromptStudio =
+		hasBank &&
+		(def.data?.definition.ui as { admin_studio?: string } | undefined)
+			?.admin_studio === 'prompts';
 
 	useEffect(() => {
 		if (!permLoading && !allowed) router.replace('/dashboard');
@@ -89,7 +95,7 @@ export default function ToolAdminPage() {
 					<DynamicRoomView toolKey={key} />
 				) : hasBank && def.data ? (
 					<div
-						className={`mx-auto w-full max-w-3xl ${adminUi.themeClass} ${themedShell}`}
+						className={`mx-auto w-full ${isPromptStudio ? 'max-w-6xl' : 'max-w-3xl'} ${adminUi.themeClass} ${themedShell}`}
 						style={{ '--screen-accent': adminUi.accent } as CSSProperties}
 					>
 						{adminUi.notice && <ScreenNotice notice={adminUi.notice} />}
@@ -111,7 +117,9 @@ export default function ToolAdminPage() {
 									</h1>
 									<p className="text-xs text-slate-500 dark:text-gray-400">
 										{adminUi.subtitle ??
-											'Banco do Admin · alimente os itens que o cliente usa'}
+											(isPromptStudio
+												? 'Cards que o aluno escolhe e os formatos onde a arte vai'
+												: 'Banco do Admin · alimente os itens que o cliente usa')}
 									</p>
 								</div>
 							</div>
@@ -122,7 +130,11 @@ export default function ToolAdminPage() {
 								<Pencil className="h-4 w-4" /> Editar na fábrica
 							</Link>
 						</div>
-						<ToolBankAdmin definition={def.data} />
+						{isPromptStudio ? (
+							<PromptStudio definition={def.data} />
+						) : (
+							<ToolBankAdmin definition={def.data} />
+						)}
 					</div>
 				) : (
 					<p className="text-sm text-slate-500 dark:text-gray-400">

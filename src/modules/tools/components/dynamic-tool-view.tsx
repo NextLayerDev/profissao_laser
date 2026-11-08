@@ -15,6 +15,7 @@ import { usePermissions } from '@/modules/access';
 import { useToolBank } from '../hooks/use-tool-bank';
 import { useToolBilling } from '../hooks/use-tool-billing';
 import { useToolDefinition } from '../hooks/use-tool-definition';
+import { activeModels, formatsForEntry } from '../lib/creation-template';
 import {
 	downloadUrl,
 	hasTextInput,
@@ -193,6 +194,8 @@ export function DynamicToolView({
 	// Passo 1/3 (Prompts Mágicos redesign): tipo de criação + variações. Vêm da
 	// definition da tool; ausentes → o cliente não vê essas etapas (tool legada).
 	const [creationId, setCreationId] = useState<string | null>(null);
+	/** Modelo dentro do formato (ex.: o celular da Capinha). */
+	const [creationModelId, setCreationModelId] = useState<string | null>(null);
 	const [variationCount, setVariationCount] = useState<number | null>(null);
 	/**
 	 * TIRAGEM: quantas peças licenciadas esta rodada vai produzir. Uma por
@@ -212,7 +215,26 @@ export function DynamicToolView({
 		atual: number;
 		total: number;
 	} | null>(null);
-	const creations = def?.definition.creations;
+	/**
+	 * Formatos que ESTE card aceita (`data.formats`; vazio = todos). Um prompt
+	 * de capinha não deveria aparecer como opção de quadro — e o motor recusa
+	 * a combinação antes de cobrar, então a tela não pode oferecê-la.
+	 */
+	const creations = useMemo(
+		() =>
+			def?.definition.creations
+				? formatsForEntry(def.definition.creations, selectedEntry?.data)
+				: undefined,
+		[def?.definition.creations, selectedEntry?.data],
+	);
+	// Formato escolhido que o card novo não aceita sai da seleção.
+	useEffect(() => {
+		if (creationId && creations && !creations.some((c) => c.id === creationId))
+			setCreationId(null);
+	}, [creations, creationId]);
+	const modelosDoFormato = activeModels(
+		creations?.find((c) => c.id === creationId),
+	);
 	const returnVariations = def?.definition.return_variations;
 	const printRunOptions = def?.definition.print_run;
 	// Billing scale por variação (vox_cost × N): precisa ser lido DEPOIS do estado
@@ -256,6 +278,7 @@ export function DynamicToolView({
 		setReferencias([null, null, null]);
 		setImageSize(null);
 		setCreationId(null);
+		setCreationModelId(null);
 		setPrintRun(1);
 		setPecas(null);
 		setPecaEmCurso(null);
@@ -388,6 +411,8 @@ export function DynamicToolView({
 		// não tem Passo 1 — a arte já vem no tamanho dela — e o motor recusa
 		// `creation_id` que não pediu.
 		if (creationId && !carimbo) bankInputs.creation_id = creationId;
+		if (creationId && creationModelId && !carimbo)
+			bankInputs.creation_model_id = creationModelId;
 		/**
 		 * `variation_count` NÃO acompanha a lista de peças.
 		 *
@@ -482,6 +507,7 @@ export function DynamicToolView({
 		billing,
 		pecas,
 		creationId,
+		creationModelId,
 		variationCount,
 	]);
 
@@ -914,6 +940,9 @@ export function DynamicToolView({
 		const canGenerate =
 			meetsInputRequirement &&
 			(carimbo || !hasCreations || !!creationId) &&
+			(carimbo ||
+				modelosDoFormato.length === 0 ||
+				modelosDoFormato.some((m) => m.id === creationModelId)) &&
 			(carimbo || !hasVariations || !!variationCount);
 
 		return (
@@ -968,6 +997,8 @@ export function DynamicToolView({
 						creations={creations}
 						creationId={creationId}
 						onCreationIdChange={setCreationId}
+						creationModelId={creationModelId}
+						onCreationModelIdChange={setCreationModelId}
 						returnVariations={returnVariations}
 						variationCount={variationCount}
 						printRunOptions={printRunOptions}
