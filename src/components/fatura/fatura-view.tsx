@@ -35,6 +35,7 @@ import {
 	type MonthRow,
 	type Slice,
 } from '@/components/fatura/finance-charts';
+import { VoxUseSection } from '@/components/fatura/vox-use-section';
 import { VoxxysIcon } from '@/components/ui/voxxys-icon';
 import {
 	INVOICE_PAGE_SIZE,
@@ -977,6 +978,7 @@ export function FaturaView() {
 				<LastroVoxxysSection voxxy={voxxy} />
 			) : (
 				<div className="space-y-6">
+					<VoxUseSection from={filters.from} to={filters.to} />
 					{analysis && <FinanceAnalysisPanel analysis={analysis} />}
 
 					{/* Filtro de período — controla a página inteira */}
