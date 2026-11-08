@@ -619,7 +619,10 @@ function StepResult({
 				</span>
 				{[
 					{ key: 'normal' as const, label: 'Normal' },
-					{ key: 'inverted' as const, label: 'Invertido (silhueta)' },
+					{
+						key: 'inverted' as const,
+						label: result.auto ? 'Invertido' : 'Invertido (silhueta)',
+					},
 				].map((p) => {
 					// Multi-cor não tem negativo geométrico — o backend também recusa.
 					const blocked = p.key === 'inverted' && result.isColor;
@@ -650,7 +653,15 @@ function StepResult({
 				})}
 			</div>
 
-			{showingInverted && (
+			{showingInverted && inverted.mode === 'geometric' && result.auto && (
+				<p className="rounded-lg bg-slate-100 dark:bg-white/5 px-3 py-2 text-xs text-slate-600 dark:text-gray-400">
+					Negativo real, como o Inverter da Comunidade Laser: o fundo vira preto
+					e a arte fica vazada, num vetor só. O Corel/LightBurn e o laser leem a
+					polaridade trocada.
+				</p>
+			)}
+
+			{showingInverted && !result.auto && (
 				<div className="rounded-lg bg-slate-100 dark:bg-white/5 px-3 py-2 space-y-1">
 					<p className="text-xs text-slate-600 dark:text-gray-400">
 						Negativo real: o Corel/LightBurn e o laser leem a polaridade
