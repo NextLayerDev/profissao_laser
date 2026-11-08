@@ -7,6 +7,7 @@ import { useEntitlements } from '@/hooks/use-entitlements';
 import { usePermissions } from '@/modules/access';
 import { quickAccessItems } from '@/utils/constants/quick-access';
 import { TOOL_COLORS, type ToolColorKey } from '@/utils/constants/tool-colors';
+import { isToolEnabled } from '../enabled-tools';
 import { categoryColor, categoryToSection } from '../lib/tool-categories';
 import { resolveToolIcon } from '../lib/tool-icons';
 import {
@@ -367,6 +368,14 @@ function useStudentCatalog(): UseToolCatalog {
 	const missingKey = keys
 		.filter((_, i) => isNotFound(defs[i]?.error))
 		.join('|');
+	// Fora da allowlist (`NEXT_PUBLIC_ENABLED_TOOLS`) sai do catálogo — menos as
+	// salas de mentoria (`room_v1`), que não são ferramenta e nunca são cortadas.
+	const disabledKey = keys
+		.filter(
+			(key, i) =>
+				!isToolEnabled(key) && defs[i]?.data?.engine_runtime !== 'room_v1',
+		)
+		.join('|');
 
 	// String estável `key→ui` (evita objetos novos como dependência do memo).
 	const uiKey = keys
@@ -401,12 +410,14 @@ function useStudentCatalog(): UseToolCatalog {
 		// dinâmicas mudam — o registry já foi atualizado pelo `useToolCategories`.
 		void categories;
 		const missing = new Set(missingKey.split('|').filter(Boolean));
+		const disabled = new Set(disabledKey.split('|').filter(Boolean));
 		return entTools
 			.filter(
 				(t) =>
 					!known.has(t.key) &&
 					!PAGE_GATE_KEYS.has(t.key) &&
-					!missing.has(t.key),
+					!missing.has(t.key) &&
+					!disabled.has(t.key),
 			)
 			.map((t): CatalogTool => {
 				const ui = uiByKey.get(t.key) ?? {};
@@ -425,7 +436,7 @@ function useStudentCatalog(): UseToolCatalog {
 			})
 			.filter((t) => t.audience !== 'admin')
 			.sort(sortTools);
-	}, [entTools, uiKey, categories, missingKey]);
+	}, [entTools, uiKey, categories, missingKey, disabledKey]);
 
 	return { tools, isLoading };
 }

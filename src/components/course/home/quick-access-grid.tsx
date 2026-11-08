@@ -11,7 +11,7 @@ import { useExtraToolNav } from '@/modules/tools/hooks/use-extra-tool-nav';
 import { useToolColorByKey } from '@/modules/tools/hooks/use-tool-colors';
 import {
 	type QuickAccessItem,
-	quickAccessItems,
+	visibleQuickAccessItems,
 } from '@/utils/constants/quick-access';
 import { TOOL_COLORS } from '@/utils/constants/tool-colors';
 
@@ -82,7 +82,7 @@ function useMergedQuickAccess(): QuickAccessItem[] {
 	const mentoriaRestrictedOut = useMentoriaRestrictedOut();
 	return useMemo(() => {
 		const byKey = new Map<string, QuickAccessItem>();
-		for (const it of quickAccessItems) byKey.set(norm(it.label), it);
+		for (const it of visibleQuickAccessItems) byKey.set(norm(it.label), it);
 		for (const t of dynamic) {
 			const k = norm(t.label);
 			const existing = byKey.get(k);

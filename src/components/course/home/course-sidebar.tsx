@@ -10,7 +10,7 @@ import { useMentoriaRestrictedOut } from '@/modules/mentoria/hooks';
 import { useExtraToolNav } from '@/modules/tools/hooks/use-extra-tool-nav';
 import {
 	type QuickAccessItem,
-	quickAccessItems,
+	visibleQuickAccessItems,
 } from '@/utils/constants/quick-access';
 
 interface CourseSidebarProps {
@@ -43,7 +43,7 @@ export function CourseSidebar({
 	// clique leva à página, e é o `SubscriptionGate` de lá que barra/libera
 	// (mostrando "assine um plano" pra quem não tem acesso).
 	const seenLabels = new Set<string>();
-	const allItems = [...quickAccessItems, ...extraTools]
+	const allItems = [...visibleQuickAccessItems, ...extraTools]
 		.filter((i) => !i.hideWhenSubscribed || !hasFullAccess)
 		.filter((i) => !(mentoriaRestrictedOut && i.toolKey === 'mentoria_360'))
 		.filter((i) => {
