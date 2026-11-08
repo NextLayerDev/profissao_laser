@@ -655,9 +655,8 @@ function StepResult({
 
 			{showingInverted && inverted.mode === 'geometric' && result.auto && (
 				<p className="rounded-lg bg-slate-100 dark:bg-white/5 px-3 py-2 text-xs text-slate-600 dark:text-gray-400">
-					Negativo real, como o Inverter da Comunidade Laser: o fundo vira preto
-					e a arte fica vazada, num vetor só. O Corel/LightBurn e o laser leem a
-					polaridade trocada.
+					Negativo real: o fundo vira preto e a arte fica vazada, num vetor só.
+					O Corel/LightBurn e o laser leem a polaridade trocada.
 				</p>
 			)}
 
