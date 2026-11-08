@@ -14,6 +14,7 @@ import {
 	Package,
 	Palette,
 	Pencil,
+	Plus,
 	RotateCcw,
 	Ruler,
 	SlidersHorizontal,
@@ -56,6 +57,7 @@ import type {
 	PersonalizationType,
 	Previa,
 	PreviaFontOption,
+	PreviaLayout,
 	PreviaOptionItem,
 	PreviaOptions,
 } from '@/types/previas';
@@ -633,6 +635,15 @@ export function PreviasView() {
 	);
 	const [imageLogo, setImageLogo] = useState<string | null>(null);
 	const [customName, setCustomName] = useState('');
+	const [texto2, setTexto2] = useState('');
+	const [showTexto2, setShowTexto2] = useState(false);
+	// Posição marcada pelo aluno no editor; null = automática.
+	const [layout, setLayout] = useState<PreviaLayout | null>(null);
+	// O que está na tela (automático ou do aluno) — vai no payload se manual.
+	const resolvedLayout = useRef<PreviaLayout>({});
+	const handleResolvedLayout = useCallback((l: PreviaLayout) => {
+		resolvedLayout.current = l;
+	}, []);
 
 	const { data: selectedProduct, isError: selectedProductError } =
 		useLaserProduct(selectedProductId, !!selectedProductId);
@@ -691,6 +702,12 @@ export function PreviasView() {
 
 	const hasImage = !!imageLogo;
 	const hasText = customName.trim().length > 0;
+	const hasTexto2 = hasText && texto2.trim().length > 0;
+	// 360° e lentes têm posição própria no motor: o editor fica só de vista.
+	const layoutEditable =
+		laserSettings.posicao !== 'envolvente-360' && !modoLentes;
+	// O 2º texto só existe no layout manual (o motor só o grava com caixa).
+	const layoutManual = layoutEditable && (!!layout || hasTexto2);
 	const personalizationType = personalizationFor(hasImage, hasText);
 	const canGenerate = !!selectedVariant && (hasImage || hasText);
 	const missingHint = !selectedVariant
@@ -781,7 +798,12 @@ export function PreviasView() {
 			textoLenteEsquerda: textoLenteEsquerda.trim() || undefined,
 			// O motor só grava o nome com `comNome: 'com'` (ou só-texto). Antes
 			// isso era um toggle separado e "Logo + Texto" saía sem o nome.
-			laserSettings: { ...laserSettings, comNome: hasText ? 'com' : 'sem' },
+			laserSettings: {
+				...laserSettings,
+				comNome: hasText ? 'com' : 'sem',
+				layout: layoutManual ? resolvedLayout.current : null,
+				texto2: hasTexto2 ? texto2.trim() : undefined,
+			},
 			useWatermark: useWatermarkFlag || undefined,
 			watermarkMode: useWatermarkFlag ? watermarkMode : undefined,
 		};
@@ -791,6 +813,9 @@ export function PreviasView() {
 		personalizationType,
 		customName,
 		hasText,
+		hasTexto2,
+		texto2,
+		layoutManual,
 		instrucoesPersonalizadas,
 		modoLentes,
 		textoLenteDireita,
@@ -855,6 +880,8 @@ export function PreviasView() {
 	const handleSelectProduct = useCallback((id: string | null) => {
 		setSelectedProductId(id);
 		setSelectedVariantId(null);
+		// Outro produto, outra forma: volta para a posição automática.
+		setLayout(null);
 	}, []);
 
 	const handleSelectVariant = useCallback(
@@ -880,6 +907,9 @@ export function PreviasView() {
 	const handleNewPrevia = useCallback(() => {
 		setImageLogo(null);
 		setCustomName('');
+		setTexto2('');
+		setShowTexto2(false);
+		setLayout(null);
 		setGeneratedPrevia(null);
 		window.scrollTo({ top: 0, behavior: 'smooth' });
 	}, []);
@@ -897,6 +927,10 @@ export function PreviasView() {
 	const updateLS = useCallback(
 		(key: keyof LaserSettings, value: LaserSettings[keyof LaserSettings]) => {
 			setLaserSettings((prev) => ({ ...prev, [key]: value }));
+			// Mexeu no tamanho/posição/rotação automáticos → larga a marcação.
+			if (key === 'tamanho' || key === 'posicao' || key === 'rotacao') {
+				setLayout(null);
+			}
 		},
 		[],
 	);
@@ -1004,9 +1038,19 @@ export function PreviasView() {
 							}
 							darkProduct={selectedVariant?.colorHex ?? null}
 							text={customName}
+							text2={hasTexto2 ? texto2 : ''}
+							fontFamily={
+								options?.fontes.find(
+									(f) => f.value === laserSettings.fonteFamilia,
+								)?.family
+							}
 							tamanho={laserSettings.tamanho}
 							posicao={laserSettings.posicao}
 							rotacao={laserSettings.rotacao}
+							editable={layoutEditable}
+							layout={layoutEditable ? layout : null}
+							onLayoutChange={setLayout}
+							onResolvedLayout={handleResolvedLayout}
 						/>
 						<div>
 							<label
@@ -1028,6 +1072,42 @@ export function PreviasView() {
 								className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
 							/>
 						</div>
+						{hasText && layoutEditable && (showTexto2 || texto2) ? (
+							<div>
+								<label
+									htmlFor={`${textId}-2`}
+									className="mb-1 block text-xs font-medium text-slate-700 dark:text-slate-300"
+								>
+									Outro texto{' '}
+									<span className="font-normal text-slate-500 dark:text-gray-400">
+										(frase, data…)
+									</span>
+								</label>
+								<input
+									id={`${textId}-2`}
+									type="text"
+									value={texto2}
+									onChange={(e) => setTexto2(e.target.value)}
+									placeholder="Ex.: Desde 2020"
+									maxLength={80}
+									// biome-ignore lint/a11y/noAutofocus: aparece porque o aluno pediu
+									autoFocus={!texto2}
+									className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+								/>
+							</div>
+						) : (
+							hasText &&
+							layoutEditable && (
+								<button
+									type="button"
+									onClick={() => setShowTexto2(true)}
+									className="inline-flex items-center gap-1 text-xs font-semibold text-violet-700 underline-offset-2 hover:underline dark:text-violet-300"
+								>
+									<Plus className="h-3.5 w-3.5" aria-hidden="true" />
+									Adicionar outro texto
+								</button>
+							)
+						)}
 					</section>
 
 					{/* 2. Produto + cor */}

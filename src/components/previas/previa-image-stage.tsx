@@ -1,8 +1,19 @@
 'use client';
 
 import { ImagePlus, Package, RefreshCw, X } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import {
+	LayoutCanvas,
+	LayoutToolbar,
+} from '@/components/previas/previa-layout-editor';
+import type { PreviaLayout, PreviaLayoutBox } from '@/types/previas';
+import {
+	autoLayout,
+	LAYOUT_KEYS,
+	type LayoutKey,
+	measureProductWidth,
+} from '@/utils/previa-layout';
 
 export const ACCEPTED_TYPES = [
 	'image/png',
@@ -40,25 +51,6 @@ function compressImage(file: File): Promise<string> {
 	});
 }
 
-/* ─────────── Onde a arte cai no produto (só a prévia local) ─────────── */
-
-/** Largura da arte em % da foto do produto, por `tamanho`. */
-const WIDTH_BY_SIZE: Record<string, number> = {
-	pequeno: 22,
-	medio: 34,
-	grande: 48,
-	custom: 34,
-};
-
-/** Centro da arte (left/top em %) por `posicao`. */
-const CENTER_BY_POSITION: Record<string, { left: number; top: number }> = {
-	central: { left: 50, top: 52 },
-	superior: { left: 50, top: 34 },
-	inferior: { left: 50, top: 68 },
-	lateral: { left: 36, top: 52 },
-	'envolvente-360': { left: 50, top: 52 },
-};
-
 /** Produto escuro? Decide se a marca do laser aparece clara ou escura. */
 function isDarkHex(hex: string | null | undefined): boolean {
 	const m = hex?.trim().match(/^#?([0-9a-f]{6})$/i);
@@ -70,10 +62,33 @@ function isDarkHex(hex: string | null | undefined): boolean {
 	return 0.2126 * r + 0.7152 * g + 0.0722 * b < 110;
 }
 
+/** Proporção (largura/altura) de uma imagem; null até carregar. */
+function useImageAspect(src: string | null): number | null {
+	const [aspect, setAspect] = useState<{ src: string; value: number } | null>(
+		null,
+	);
+	useEffect(() => {
+		if (!src) return;
+		let alive = true;
+		const img = new window.Image();
+		img.onload = () => {
+			if (alive && img.naturalWidth && img.naturalHeight) {
+				setAspect({ src, value: img.naturalWidth / img.naturalHeight });
+			}
+		};
+		img.src = src;
+		return () => {
+			alive = false;
+		};
+	}, [src]);
+	return src && aspect?.src === src ? aspect.value : null;
+}
+
 /**
- * Área principal da Prévia: recebe a imagem (soltar, colar ou clicar) e já
- * mostra a arte posicionada sobre a foto do produto escolhido. É uma prévia
- * aproximada no navegador — a foto final quem faz é a IA.
+ * Área principal da Prévia: recebe a imagem (soltar, colar ou clicar) e mostra
+ * a arte sobre a foto do produto escolhido. Cada elemento (imagem, texto,
+ * 2º texto) pode ser arrastado, redimensionado e girado — quem não mexe fica
+ * com a posição automática; quem mexe manda o layout para a IA seguir.
  */
 export function PreviaImageStage({
 	image,
@@ -82,9 +97,15 @@ export function PreviaImageStage({
 	productLabel,
 	darkProduct,
 	text,
+	text2,
+	fontFamily,
 	tamanho,
 	posicao,
 	rotacao,
+	editable,
+	layout,
+	onLayoutChange,
+	onResolvedLayout,
 }: {
 	image: string | null;
 	onImageChange: (dataUrl: string | null) => void;
@@ -92,13 +113,27 @@ export function PreviaImageStage({
 	productLabel: string | null;
 	darkProduct: string | null;
 	text: string;
+	text2: string;
+	fontFamily?: string;
 	tamanho: string;
 	posicao: string;
 	rotacao: number;
+	/** Falso no 360° e no modo lentes: a posição é sempre automática. */
+	editable: boolean;
+	/** Layout do aluno; null = automático. */
+	layout: PreviaLayout | null;
+	onLayoutChange: (layout: PreviaLayout | null) => void;
+	/** O layout que está na tela (automático ou do aluno), para o payload. */
+	onResolvedLayout: (layout: PreviaLayout) => void;
 }) {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [dragging, setDragging] = useState(false);
 	const [loading, setLoading] = useState(false);
+	const [selected, setSelected] = useState<LayoutKey | null>(null);
+	const [productWidth, setProductWidth] = useState<{
+		url: string;
+		value: number | null;
+	} | null>(null);
 
 	const handleFile = useCallback(
 		async (file: File) => {
@@ -137,11 +172,78 @@ export function PreviaImageStage({
 		return () => window.removeEventListener('paste', onPaste);
 	}, [handleFile]);
 
-	const width =
-		posicao === 'envolvente-360' ? 70 : (WIDTH_BY_SIZE[tamanho] ?? 34);
-	const center = CENTER_BY_POSITION[posicao] ?? CENTER_BY_POSITION.central;
+	// Largura real do produto na foto → "X% do produto" e tamanhos P/M/G certos.
+	useEffect(() => {
+		if (!productImageUrl) return;
+		let alive = true;
+		void measureProductWidth(productImageUrl).then((value) => {
+			if (alive) setProductWidth({ url: productImageUrl, value });
+		});
+		return () => {
+			alive = false;
+		};
+	}, [productImageUrl]);
+	const measuredWidth =
+		productWidth?.url === productImageUrl ? productWidth.value : null;
+
+	const frameAspect = useImageAspect(productImageUrl) ?? 1;
+	const logoAspect = useImageAspect(image);
 	const dark = isDarkHex(darkProduct);
-	const hasArt = !!image || !!text.trim();
+	const hasArt = !!image || !!text.trim() || !!text2.trim();
+
+	const auto = useMemo(
+		() =>
+			autoLayout({
+				logoAspect: image ? (logoAspect ?? 1) : null,
+				texto: text,
+				texto2: text2,
+				tamanho,
+				posicao,
+				rotacao,
+				frameAspect,
+			}),
+		[image, logoAspect, text, text2, tamanho, posicao, rotacao, frameAspect],
+	);
+	// Na tela: a caixa do aluno onde houver. Elemento novo depois que o aluno
+	// já mexeu entra logo abaixo do que ele montou, sem cair por cima.
+	const boxes = useMemo(() => {
+		const out: PreviaLayout = {};
+		let bottom = 0;
+		for (const k of LAYOUT_KEYS) {
+			const b = layout?.[k];
+			if (auto[k] && b) bottom = Math.max(bottom, b.y + b.h / 2);
+		}
+		for (const k of LAYOUT_KEYS) {
+			const a = auto[k];
+			if (!a) continue;
+			const mine = layout?.[k];
+			if (mine) out[k] = mine;
+			else if (layout && bottom > 0) {
+				const y = Math.min(1 - a.h / 2, bottom + 0.02 + a.h / 2);
+				out[k] = { ...a, y, rot: 0 };
+				bottom = y + a.h / 2;
+			} else out[k] = a;
+		}
+		return out;
+	}, [auto, layout]);
+
+	useEffect(() => {
+		onResolvedLayout(boxes);
+	}, [boxes, onResolvedLayout]);
+
+	const canEdit = editable && !!productImageUrl && hasArt;
+	// Mudanças em sequência (teclas) somam em cima da última, não da tela.
+	const latestBoxes = useRef(boxes);
+	useEffect(() => {
+		latestBoxes.current = boxes;
+	}, [boxes]);
+	const handleBoxChange = useCallback(
+		(key: LayoutKey, box: PreviaLayoutBox) => {
+			latestBoxes.current = { ...latestBoxes.current, [key]: box };
+			onLayoutChange(latestBoxes.current);
+		},
+		[onLayoutChange],
+	);
 
 	return (
 		<div className="space-y-2">
@@ -160,78 +262,69 @@ export function PreviaImageStage({
 				className={`relative aspect-square w-full overflow-hidden rounded-2xl border-2 transition-colors ${
 					dragging
 						? 'border-violet-500 bg-violet-50 dark:bg-violet-500/10'
-						: image
+						: hasArt || productImageUrl
 							? 'border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/30'
 							: 'border-dashed border-slate-300 dark:border-white/20 bg-slate-50 dark:bg-white/[0.03]'
 				}`}
 			>
 				{productImageUrl ? (
-					<img
-						src={productImageUrl}
-						alt={productLabel ? `Produto: ${productLabel}` : 'Produto'}
-						className={`absolute inset-0 h-full w-full object-cover ${
-							hasArt ? '' : 'opacity-40'
-						}`}
-					/>
-				) : (
-					image && (
-						<div className="absolute inset-0 flex items-center justify-center">
-							<Package
-								className="h-10 w-10 text-slate-300 dark:text-slate-600"
-								aria-hidden="true"
+					// A moldura tem a proporção da foto: as caixas ficam em % da
+					// FOTO, o mesmo referencial que o motor usa.
+					<div className="absolute inset-0 flex items-center justify-center">
+						<div
+							className="relative max-h-full max-w-full"
+							style={{
+								aspectRatio: frameAspect,
+								...(frameAspect >= 1 ? { width: '100%' } : { height: '100%' }),
+							}}
+						>
+							<img
+								src={productImageUrl}
+								alt={productLabel ? `Produto: ${productLabel}` : 'Produto'}
+								className={`absolute inset-0 h-full w-full object-contain ${
+									hasArt ? '' : 'opacity-40'
+								}`}
 							/>
+							{hasArt && (
+								<LayoutCanvas
+									boxes={boxes}
+									content={{ logo: image, texto: text, texto2: text2 }}
+									dark={dark}
+									fontFamily={fontFamily}
+									editable={canEdit}
+									selected={selected}
+									onSelect={setSelected}
+									onChange={handleBoxChange}
+									productWidth={measuredWidth}
+								/>
+							)}
+						</div>
+					</div>
+				) : (
+					hasArt && (
+						<div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-8">
+							{image ? (
+								<img
+									src={image}
+									alt="Sua arte"
+									className="max-h-[70%] max-w-[80%] object-contain"
+								/>
+							) : (
+								<Package
+									className="h-10 w-10 text-slate-300 dark:text-slate-600"
+									aria-hidden="true"
+								/>
+							)}
+							{text.trim() && (
+								<span className="max-w-full truncate text-sm font-semibold text-slate-700 dark:text-slate-200">
+									{text}
+								</span>
+							)}
 						</div>
 					)
 				)}
 
-				{hasArt && (
-					<div
-						className="absolute flex flex-col items-center gap-1 pointer-events-none"
-						style={{
-							left: `${center.left}%`,
-							top: `${center.top}%`,
-							width: `${width}%`,
-							transform: `translate(-50%, -50%) rotate(${rotacao || 0}deg)`,
-							// A mistura fica na camada inteira: o `transform` isola o
-							// contexto, então na <img> ela não enxergaria o produto.
-							...(productImageUrl
-								? { mixBlendMode: dark ? 'screen' : 'multiply', opacity: 0.85 }
-								: {}),
-						}}
-					>
-						{image && (
-							<img
-								src={image}
-								alt="Sua arte posicionada no produto"
-								className="w-full h-auto"
-								style={
-									productImageUrl
-										? {
-												filter: dark
-													? 'grayscale(1) invert(1) contrast(1.4)'
-													: 'grayscale(1) contrast(1.3)',
-											}
-										: undefined
-								}
-							/>
-						)}
-						{text.trim() && (
-							<span
-								className={`max-w-[160%] truncate text-center text-[clamp(10px,3.2cqw,18px)] font-semibold ${
-									productImageUrl
-										? dark
-											? 'text-slate-100/90'
-											: 'text-slate-900/80'
-										: 'text-slate-700 dark:text-slate-200'
-								}`}
-							>
-								{text}
-							</span>
-						)}
-					</div>
-				)}
-
-				{!image && (
+				{!image && !hasArt && (
 					<button
 						type="button"
 						onClick={() => inputRef.current?.click()}
@@ -253,31 +346,57 @@ export function PreviaImageStage({
 				)}
 			</div>
 
-			{image ? (
-				<div className="flex items-center justify-between gap-2">
-					<p className="text-xs text-slate-600 dark:text-gray-400">
-						Posição aproximada — a IA faz a foto final.
-					</p>
+			{canEdit && (
+				<LayoutToolbar
+					boxes={boxes}
+					selected={selected}
+					onSelect={setSelected}
+					onChange={handleBoxChange}
+					productWidth={measuredWidth}
+					manual={!!layout}
+					onReset={() => {
+						onLayoutChange(null);
+						setSelected(null);
+					}}
+				/>
+			)}
+			{!canEdit && hasArt && productImageUrl && !editable && (
+				<p className="text-xs text-slate-600 dark:text-gray-400">
+					Nesta opção a posição é automática.
+				</p>
+			)}
+
+			<div className="flex items-center justify-between gap-2">
+				<span className="text-xs text-slate-600 dark:text-gray-400">
+					{!image && hasArt ? 'Só texto — pode enviar uma imagem também.' : ''}
+				</span>
+				{(image || hasArt) && (
 					<div className="flex shrink-0 gap-1.5">
 						<button
 							type="button"
 							onClick={() => inputRef.current?.click()}
 							className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-white/10 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5"
 						>
-							<RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
-							Trocar imagem
+							{image ? (
+								<RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+							) : (
+								<ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
+							)}
+							{image ? 'Trocar imagem' : 'Enviar imagem'}
 						</button>
-						<button
-							type="button"
-							onClick={() => onImageChange(null)}
-							aria-label="Remover imagem"
-							className="inline-flex items-center rounded-lg border border-slate-200 dark:border-white/10 px-2 py-1.5 text-slate-600 dark:text-slate-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
-						>
-							<X className="h-3.5 w-3.5" aria-hidden="true" />
-						</button>
+						{image && (
+							<button
+								type="button"
+								onClick={() => onImageChange(null)}
+								aria-label="Remover imagem"
+								className="inline-flex items-center rounded-lg border border-slate-200 dark:border-white/10 px-2 py-1.5 text-slate-600 dark:text-slate-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
+							>
+								<X className="h-3.5 w-3.5" aria-hidden="true" />
+							</button>
+						)}
 					</div>
-				</div>
-			) : null}
+				)}
+			</div>
 
 			<input
 				ref={inputRef}
