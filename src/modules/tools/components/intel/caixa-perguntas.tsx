@@ -142,10 +142,10 @@ export function CaixaPerguntas({
 						<MessagesSquare className="h-4 w-4" />
 					</span>
 					<div className="min-w-0">
-						<h3 className="font-display text-[15px] font-bold text-slate-100">
+						<h3 className="font-display text-[15px] font-bold text-slate-900 dark:text-slate-100">
 							Ficou alguma dúvida?
 						</h3>
-						<p className="text-[12px] leading-snug text-slate-400">
+						<p className="text-[12px] leading-snug text-slate-600 dark:text-slate-400">
 							Pergunte ao time sobre{' '}
 							{tipo === 'produto' ? 'este produto' : 'este mercado'} — a
 							resposta usa a pesquisa deste dossiê.
@@ -153,7 +153,7 @@ export function CaixaPerguntas({
 					</div>
 				</div>
 				{restantes !== null ? (
-					<span className="shrink-0 rounded-full border border-white/10 px-2.5 py-1 font-mono text-[11px] tabular-nums text-slate-400">
+					<span className="shrink-0 rounded-full border border-slate-200 dark:border-white/10 px-2.5 py-1 font-mono text-[11px] tabular-nums text-slate-600 dark:text-slate-400">
 						{restantes} pergunta{restantes === 1 ? '' : 's'} restante
 						{restantes === 1 ? '' : 's'}
 					</span>
@@ -172,7 +172,7 @@ export function CaixaPerguntas({
 							transition={{ duration: 0.2 }}
 							className="space-y-2"
 						>
-							<p className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-white/[0.06] px-3.5 py-2 text-[13px] leading-snug text-slate-200">
+							<p className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2 text-[13px] leading-snug text-slate-800 dark:text-slate-200">
 								{t.p}
 							</p>
 							<div className="flex gap-2.5">
@@ -186,7 +186,7 @@ export function CaixaPerguntas({
 								>
 									<Sparkles className="h-3.5 w-3.5" />
 								</span>
-								<p className="min-w-0 whitespace-pre-wrap text-[13px] leading-relaxed text-slate-300">
+								<p className="min-w-0 whitespace-pre-wrap text-[13px] leading-relaxed text-slate-700 dark:text-slate-300">
 									{t.r}
 								</p>
 							</div>
@@ -213,7 +213,7 @@ export function CaixaPerguntas({
 								setTexto(s);
 								campo.current?.focus();
 							}}
-							className="rounded-full border border-white/10 px-3 py-1.5 text-[12px] text-slate-400 transition-colors hover:border-white/25 hover:text-[var(--screen-accent)]"
+							className="rounded-full border border-slate-200 dark:border-white/10 px-3 py-1.5 text-[12px] text-slate-600 dark:text-slate-400 transition-colors hover:border-slate-300 dark:hover:border-white/25 hover:text-[var(--screen-accent)]"
 						>
 							{s}
 						</button>
@@ -221,7 +221,7 @@ export function CaixaPerguntas({
 				</div>
 			) : null}
 
-			<div className="mt-4 flex items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-2 transition-colors focus-within:border-white/25">
+			<div className="mt-4 flex items-end gap-2 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.03] p-2 transition-colors focus-within:border-slate-300 dark:focus-within:border-white/25">
 				<textarea
 					ref={campo}
 					value={texto}
@@ -248,14 +248,14 @@ export function CaixaPerguntas({
 							? 'Suas perguntas desta análise acabaram.'
 							: 'Escreva sua pergunta sobre o dossiê…'
 					}
-					className="min-h-[3rem] flex-1 resize-none bg-transparent px-2 py-1.5 text-[13px] leading-relaxed text-slate-200 placeholder:text-slate-600 focus:outline-none disabled:opacity-50"
+					className="min-h-[3rem] flex-1 resize-none bg-transparent px-2 py-1.5 text-[13px] leading-relaxed text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none disabled:opacity-50"
 				/>
 				<button
 					type="button"
 					onClick={enviar}
 					disabled={enviando || acabou || curta}
 					aria-label="Enviar pergunta"
-					className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-[#08080a] transition-opacity disabled:cursor-not-allowed disabled:opacity-30"
+					className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-white dark:text-[#08080a] transition-opacity disabled:cursor-not-allowed disabled:opacity-30"
 					style={{ backgroundColor: 'var(--screen-accent)' }}
 				>
 					{enviando ? (
@@ -266,7 +266,7 @@ export function CaixaPerguntas({
 				</button>
 			</div>
 
-			<div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-slate-600">
+			<div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-slate-400 dark:text-slate-600">
 				<span>
 					{acabou
 						? 'Rode uma nova análise para perguntar de novo.'

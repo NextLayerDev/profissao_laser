@@ -274,7 +274,11 @@ function estiloFaixa(n: number, larguraMesa: number): React.CSSProperties {
  * Cantos de mira. É o detalhe que faz um painel escuro virar HUD — e custa
  * quatro divs, nenhuma imagem e nenhum frame de animação.
  */
-function Cantos({ cor = 'rgba(255,255,255,0.18)' }: { cor?: string }) {
+function Cantos({
+	cor = 'color-mix(in srgb, var(--intel-tinta) 18%, transparent)',
+}: {
+	cor?: string;
+}) {
 	return (
 		<>
 			{(
@@ -320,7 +324,7 @@ function Metrica({
 }) {
 	return (
 		<div className="text-right">
-			<p className="font-mono text-xl tabular-nums leading-none text-slate-100 md:text-2xl">
+			<p className="font-mono text-xl tabular-nums leading-none text-slate-900 dark:text-slate-100 md:text-2xl">
 				{valor}
 			</p>
 			<p className="mt-1 text-[9px] uppercase tracking-[0.16em] text-slate-500 md:text-[10px]">
@@ -400,7 +404,7 @@ const Estacao = memo(function Estacao({
 	 * verde, porque entregou exatamente o que foi contratado para entregar.
 	 */
 	const borda = rodando
-		? 'border-white/25'
+		? 'border-slate-300 dark:border-white/25'
 		: ok
 			? cegoFim
 				? 'border-amber-500/30'
@@ -409,7 +413,7 @@ const Estacao = memo(function Estacao({
 				? 'border-dashed border-sky-500/30'
 				: falhou
 					? 'border-amber-500/35'
-					: 'border-white/10';
+					: 'border-slate-200 dark:border-white/10';
 
 	/**
 	 * Fundo OPACO, não translúcido — e a cor é exatamente a que o translúcido
@@ -423,16 +427,16 @@ const Estacao = memo(function Estacao({
 	 * reaparece do outro lado, que é como cabo passando por baixo de uma mesa.
 	 */
 	const fundo = rodando
-		? 'bg-[#15151a]'
+		? 'bg-white dark:bg-[#15151a]'
 		: ok
 			? cegoFim
-				? 'bg-[#100d0a]'
-				: 'bg-[#080f0f]'
+				? 'bg-amber-50 dark:bg-[#100d0a]'
+				: 'bg-emerald-50 dark:bg-[#080f0f]'
 			: aproveitado
-				? 'bg-[#070d13]'
+				? 'bg-sky-50 dark:bg-[#070d13]'
 				: falhou
-					? 'bg-[#100d0a]'
-					: 'bg-[#0b0b0d]';
+					? 'bg-amber-50 dark:bg-[#100d0a]'
+					: 'bg-slate-50 dark:bg-[#0b0b0d]';
 
 	const legenda = falhou
 		? (a.erro ?? 'não consegui desta vez')
@@ -564,7 +568,7 @@ const Estacao = memo(function Estacao({
 						 * iguala a altura da linha inteira.
 						 */}
 						<p
-							className={`font-semibold leading-tight text-slate-100 ${compacto ? 'line-clamp-2 text-[11.5px]' : 'truncate text-[12.5px]'}`}
+							className={`font-semibold leading-tight text-slate-900 dark:text-slate-100 ${compacto ? 'line-clamp-2 text-[11.5px]' : 'truncate text-[12.5px]'}`}
 						>
 							{a.nome}
 						</p>
@@ -578,12 +582,12 @@ const Estacao = memo(function Estacao({
 					<p
 						className={`line-clamp-2 ${compacto ? 'mt-0.5 text-[10px] leading-[1.3]' : 'mt-1 text-[10.5px] leading-snug'} ${
 							falhou || cegoFim || cegoAgora
-								? 'text-amber-400/90'
+								? 'text-amber-700/90 dark:text-amber-400/90'
 								: aproveitado
-									? 'text-sky-300/80'
+									? 'text-sky-700/80 dark:text-sky-300/80'
 									: ok
-										? 'text-emerald-300/80'
-										: 'text-slate-400'
+										? 'text-emerald-700/80 dark:text-emerald-300/80'
+										: 'text-slate-600 dark:text-slate-400'
 						}`}
 					>
 						{legenda}
@@ -596,17 +600,19 @@ const Estacao = memo(function Estacao({
 				    execução não deixou, e o que ele respondeu ficou sem uma
 				    página para conferir. */}
 					{cegoFim || cegoAgora ? (
-						<span className="text-[9px] text-amber-400">SEM BUSCA</span>
+						<span className="text-[9px] text-amber-700 dark:text-amber-400">
+							SEM BUSCA
+						</span>
 					) : ok ? (
-						<span className="text-emerald-400">OK</span>
+						<span className="text-emerald-600 dark:text-emerald-400">OK</span>
 					) : aproveitado ? (
-						<span className="text-sky-400">CACHE</span>
+						<span className="text-sky-600 dark:text-sky-400">CACHE</span>
 					) : falhou ? (
-						<span className="text-amber-400">!</span>
+						<span className="text-amber-700 dark:text-amber-400">!</span>
 					) : rodando ? (
-						<span className="text-slate-400">···</span>
+						<span className="text-slate-600 dark:text-slate-400">···</span>
 					) : (
-						<span className="text-slate-600">—</span>
+						<span className="text-slate-400 dark:text-slate-600">—</span>
 					)}
 				</span>
 			</div>
@@ -660,11 +666,14 @@ const Nucleo = memo(function Nucleo({
 				<span
 					aria-hidden="true"
 					className="absolute inset-[18px] rounded-full border"
-					style={{ borderColor: 'rgba(255,255,255,0.10)' }}
+					style={{
+						borderColor:
+							'color-mix(in srgb, var(--intel-tinta) 10%, transparent)',
+					}}
 				/>
 
 				{/* O alvo de verdade: a foto que o aluno mandou, ou a inicial do ramo. */}
-				<div className="relative grid h-24 w-24 place-items-center overflow-hidden rounded-full border border-white/10 bg-black/50">
+				<div className="relative grid h-24 w-24 place-items-center overflow-hidden rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/50">
 					{alvo.imagem ? (
 						/* `img` cru de propósito: é um object URL de um `File` local, que
 						   o otimizador do Next não consegue processar. */
@@ -694,7 +703,7 @@ const Nucleo = memo(function Nucleo({
 				</div>
 			</div>
 
-			<p className="mt-3 max-w-[15rem] truncate text-center text-[13px] font-semibold text-slate-100">
+			<p className="mt-3 max-w-[15rem] truncate text-center text-[13px] font-semibold text-slate-900 dark:text-slate-100">
 				{alvo.titulo || (alvo.escopo === 'produto' ? 'sua peça' : 'seu ramo')}
 			</p>
 			<p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
@@ -707,7 +716,7 @@ const Nucleo = memo(function Nucleo({
 					cruzando
 						? {
 								borderColor: 'rgba(56,189,248,0.35)',
-								color: '#7dd3fc',
+								color: 'var(--intel-ceu)',
 								backgroundColor: 'rgba(56,189,248,0.08)',
 							}
 						: {
@@ -768,7 +777,7 @@ const Divisor = memo(function Divisor({
 		<div className="relative mb-2 mt-4 flex items-center gap-2 sm:gap-3">
 			<span
 				className="shrink-0 text-[9.5px] font-semibold uppercase tracking-[0.2em]"
-				style={{ color: ativo ? '#7dd3fc' : '#64748b' }}
+				style={{ color: ativo ? 'var(--intel-ceu)' : '#64748b' }}
 			>
 				Onda {numero} · {titulo}
 			</span>
@@ -778,14 +787,14 @@ const Divisor = memo(function Divisor({
 			    página inteira para fora. Medido no Chrome headless a 390 px: a mesa
 			    ficava ~470 px de largura, os cartões saíam cortados pela direita e as
 			    faixas ainda abriam duas colunas por causa da largura falsa. */}
-			<span className="relative hidden h-px flex-1 overflow-hidden bg-white/[0.08] sm:block">
+			<span className="relative hidden h-px flex-1 overflow-hidden bg-slate-200 dark:bg-white/[0.08] sm:block">
 				{ativo && !semMovimento ? (
 					<span
 						aria-hidden="true"
 						className="intel-trilho absolute inset-y-0 left-0"
 						style={{
 							background:
-								'linear-gradient(90deg, transparent, #7dd3fc, transparent)',
+								'linear-gradient(90deg, transparent, var(--intel-ceu), transparent)',
 						}}
 					/>
 				) : null}
@@ -801,15 +810,15 @@ const Divisor = memo(function Divisor({
 					style={{
 						borderColor: ativo
 							? 'rgba(56,189,248,0.7)'
-							: 'rgba(255,255,255,0.2)',
+							: 'color-mix(in srgb, var(--intel-tinta) 20%, transparent)',
 						backgroundColor: ativo
 							? 'rgba(56,189,248,0.25)'
-							: 'rgba(255,255,255,0.05)',
+							: 'color-mix(in srgb, var(--intel-tinta) 5%, transparent)',
 					}}
 				/>
 			) : null}
 
-			<span className="relative h-px flex-1 overflow-hidden bg-white/[0.08]">
+			<span className="relative h-px flex-1 overflow-hidden bg-slate-200 dark:bg-white/[0.08]">
 				{ativo && !semMovimento ? (
 					<span
 						aria-hidden="true"
@@ -817,7 +826,7 @@ const Divisor = memo(function Divisor({
 						style={{
 							animationDelay: '0.5s',
 							background:
-								'linear-gradient(90deg, transparent, #7dd3fc, transparent)',
+								'linear-gradient(90deg, transparent, var(--intel-ceu), transparent)',
 						}}
 					/>
 				) : null}
@@ -1163,9 +1172,14 @@ const CamadaFeixes = memo(function CamadaFeixes({
 						<path
 							d={f.d}
 							fill="none"
-							stroke={
-								entregou || cache || rodando || descendo ? cor : '#ffffff'
-							}
+							// `style` e não o atributo: o feixe ocioso segue a tinta do tema
+							// (`--intel-tinta`), e variável CSS só é garantida na propriedade.
+							style={{
+								stroke:
+									entregou || cache || rodando || descendo
+										? cor
+										: 'var(--intel-tinta)',
+							}}
 							strokeWidth={entregou ? 1.4 : 1}
 							strokeOpacity={opacidade}
 							strokeDasharray={cache ? '3 4' : undefined}
@@ -1236,10 +1250,10 @@ const Console = memo(function Console({
 	}, [buscas.length, semMovimento]);
 
 	return (
-		<div className="relative rounded-xl border border-white/10 bg-black/40 p-3">
+		<div className="relative rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/40 p-3">
 			<Cantos />
 			<div className="mb-2 flex items-baseline justify-between">
-				<p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+				<p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-400">
 					Buscas disparadas
 				</p>
 				<span className="font-mono text-[11px] tabular-nums text-slate-500">
@@ -1270,18 +1284,20 @@ const Console = memo(function Console({
 									style={{ backgroundColor: a?.cor ?? '#64748b' }}
 								/>
 								<span className="truncate">{a?.nome ?? b.chave}</span>
-								<span className="ml-auto shrink-0 rounded border border-white/10 px-1 text-[9px] uppercase text-slate-500">
+								<span className="ml-auto shrink-0 rounded border border-slate-200 dark:border-white/10 px-1 text-[9px] uppercase text-slate-500">
 									{rotuloMotor(b.motor)}
 								</span>
 							</p>
 							<p
-								className="mt-0.5 break-words pl-3 text-slate-300"
+								className="mt-0.5 break-words pl-3 text-slate-700 dark:text-slate-300"
 								style={{
 									color:
-										'color-mix(in srgb, var(--screen-accent) 70%, #e2e8f0)',
+										'color-mix(in srgb, var(--screen-accent) 70%, var(--intel-texto))',
 								}}
 							>
-								<span className="text-slate-600">&gt; </span>
+								<span className="text-slate-400 dark:text-slate-600">
+									&gt;{' '}
+								</span>
 								{b.query}
 							</p>
 						</div>
@@ -1300,13 +1316,13 @@ const Fontes = memo(function Fontes({
 	porChave: Map<string, Especialista>;
 }) {
 	return (
-		<div className="relative rounded-xl border border-white/10 bg-white/[0.02] p-3">
+		<div className="relative rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.02] p-3">
 			<Cantos />
 			<div className="mb-2 flex items-baseline justify-between">
-				<p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+				<p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-400">
 					Fontes encontradas
 				</p>
-				<span className="font-mono text-[11px] tabular-nums text-slate-300">
+				<span className="font-mono text-[11px] tabular-nums text-slate-700 dark:text-slate-300">
 					{fontes.length}
 				</span>
 			</div>
@@ -1320,7 +1336,7 @@ const Fontes = memo(function Fontes({
 							href={f.url}
 							target="_blank"
 							rel="noopener noreferrer"
-							className="intel-entra flex items-start gap-2 rounded-lg px-1.5 py-1.5 transition-colors hover:bg-white/5"
+							className="intel-entra flex items-start gap-2 rounded-lg px-1.5 py-1.5 transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
 						>
 							{/* Favicon público: dá identidade à fonte sem nenhum asset
 								    nosso. Falha em silêncio quando o site não tem. */}
@@ -1332,7 +1348,7 @@ const Fontes = memo(function Fontes({
 								loading="lazy"
 							/>
 							<span className="min-w-0 flex-1">
-								<span className="block truncate text-[11.5px] leading-tight text-slate-200">
+								<span className="block truncate text-[11.5px] leading-tight text-slate-800 dark:text-slate-200">
 									{f.titulo || dominio(f.url)}
 								</span>
 								<span className="flex items-center gap-1.5 truncate text-[9.5px] text-slate-500">
@@ -1514,7 +1530,7 @@ export function WarRoom({
 		 * metade da altura da coluna de buscas e fontes ao lado. Ela é resolvida lá
 		 * embaixo, dentro da linha da grade, sem mexer no topo.
 		 */
-		<div className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-[#07070a]">
+		<div className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-slate-50 [--intel-ceu:#0369a1] [--intel-texto:#1e293b] [--intel-tinta:#0f172a] dark:bg-[#07070a] dark:[--intel-ceu:#7dd3fc] dark:[--intel-texto:#e2e8f0] dark:[--intel-tinta:#fff]">
 			<div className="bg-grid pointer-events-none absolute inset-0 opacity-[0.045]" />
 			<div
 				className="pointer-events-none absolute -top-40 left-1/2 h-96 w-[52rem] -translate-x-1/2 rounded-full blur-3xl"
@@ -1526,7 +1542,7 @@ export function WarRoom({
 
 			<div className="relative mx-auto w-full max-w-[1560px] px-3 py-5 md:px-7 md:py-7">
 				{/* ── barra de telemetria ── */}
-				<div className="relative mb-4 flex flex-wrap items-end justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3">
+				<div className="relative mb-4 flex flex-wrap items-end justify-between gap-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.02] px-4 py-3">
 					<Cantos cor="color-mix(in srgb, var(--screen-accent) 45%, transparent)" />
 					<div className="min-w-0">
 						<p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
@@ -1536,7 +1552,7 @@ export function WarRoom({
 							/>
 							Mesa de operações
 						</p>
-						<h2 className="font-display mt-1 truncate text-xl font-bold text-slate-50 md:text-2xl">
+						<h2 className="font-display mt-1 truncate text-xl font-bold text-slate-900 dark:text-slate-50 md:text-2xl">
 							{etapa}
 						</h2>
 					</div>
@@ -1560,7 +1576,7 @@ export function WarRoom({
 
 				{/* Barra DETERMINÍSTICA: sabemos o denominador desde o começo. Barra
 				    indeterminada aqui seria preguiça — e mentira sobre o que se sabe. */}
-				<div className="mb-4 h-[3px] w-full overflow-hidden rounded-full bg-white/[0.06]">
+				<div className="mb-4 h-[3px] w-full overflow-hidden rounded-full bg-slate-100 dark:bg-white/[0.06]">
 					<div
 						className="h-full rounded-full transition-[width] duration-500"
 						style={{
@@ -1610,7 +1626,7 @@ export function WarRoom({
 									).map((i) => (
 										<div
 											key={i}
-											className={`h-[62px] rounded-lg border border-white/10 bg-white/[0.035] ${semMovimento ? '' : 'animate-pulse'}`}
+											className={`h-[62px] rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.035] ${semMovimento ? '' : 'animate-pulse'}`}
 										/>
 									))}
 									<p className="col-span-full mt-1 text-center text-[12px] text-slate-500">
@@ -1798,11 +1814,11 @@ export function WarRoom({
 						<button
 							type="button"
 							onClick={onSegundoPlano}
-							className="text-[12px] text-slate-500 underline-offset-4 transition-colors hover:text-slate-300 hover:underline"
+							className="text-[12px] text-slate-500 underline-offset-4 transition-colors hover:text-slate-700 dark:hover:text-slate-300 hover:underline"
 						>
 							Deixar rodando em segundo plano
 						</button>
-						<p className="mt-1 text-[11px] text-slate-600">
+						<p className="mt-1 text-[11px] text-slate-400 dark:text-slate-600">
 							O resultado fica salvo — você pode fechar esta aba.
 						</p>
 					</div>
