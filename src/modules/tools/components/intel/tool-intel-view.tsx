@@ -492,12 +492,14 @@ export function ToolIntelView({
 		[tipo, descricao, foto, preview],
 	);
 
-	const accent = { '--screen-accent': '#f59e0b' } as React.CSSProperties;
+	// Âmbar escurecido no claro (#b45309 tem contraste de texto no branco);
+	// no escuro segue o #f59e0b original.
+	const accent = '[--screen-accent:#b45309] dark:[--screen-accent:#f59e0b]';
 
 	/* ═══════════════ ② SALA DE GUERRA ═══════════════ */
 	if (fase === 'trabalhando') {
 		return (
-			<div style={accent}>
+			<div className={accent}>
 				<WarRoom
 					especialistas={especialistas}
 					fontes={fontes}
@@ -520,7 +522,7 @@ export function ToolIntelView({
 	/* ═══════════════ ③ DOSSIÊ ═══════════════ */
 	if (fase === 'dossie' && output) {
 		return (
-			<div style={accent}>
+			<div className={accent}>
 				<Dossie
 					output={output}
 					modo={modo}
@@ -540,8 +542,7 @@ export function ToolIntelView({
 	/* ═══════════════ ① ENTRADA — um campo só ═══════════════ */
 	return (
 		<div
-			style={accent}
-			className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-[#08080a]"
+			className={`relative min-h-[calc(100vh-4rem)] overflow-hidden bg-slate-50 dark:bg-[#08080a] ${accent}`}
 		>
 			<div className="bg-grid pointer-events-none absolute inset-0 opacity-[0.05]" />
 			<div
@@ -558,12 +559,12 @@ export function ToolIntelView({
 						<p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-500/70">
 							Central de Inteligência
 						</p>
-						<h1 className="font-display mt-2 text-3xl font-bold text-slate-50 md:text-4xl">
+						<h1 className="font-display mt-2 text-3xl font-bold text-slate-900 dark:text-slate-50 md:text-4xl">
 							{tipo === 'produto'
 								? 'Tem um produto em mente?'
 								: 'Não sabe o que vender?'}
 						</h1>
-						<p className="mt-2 text-[15px] text-slate-400">
+						<p className="mt-2 text-[15px] text-slate-600 dark:text-slate-400">
 							{tipo === 'produto'
 								? 'Um time de especialistas descobre quanto vale, quem já vende e onde.'
 								: 'Diga o ramo. O time descobre o que está vendendo mais em Mercado Livre, Shopee, Amazon e TikTok Shop.'}
@@ -575,7 +576,7 @@ export function ToolIntelView({
 					 * pena; quem não tem quer saber o que fazer. Eram a mesma tela e a
 					 * segunda pergunta simplesmente não existia.
 					 */}
-					<div className="mb-6 grid grid-cols-2 gap-1 rounded-2xl border border-white/10 bg-white/[0.02] p-1">
+					<div className="mb-6 grid grid-cols-2 gap-1 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.02] p-1">
 						{(
 							[
 								['produto', 'Tenho um produto'],
@@ -588,8 +589,8 @@ export function ToolIntelView({
 								onClick={() => setTipo(k)}
 								className={`rounded-xl px-4 py-2.5 text-[13px] font-medium transition-colors ${
 									tipo === k
-										? 'bg-amber-500/15 text-amber-300'
-										: 'text-slate-400 hover:text-slate-200'
+										? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+										: 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
 								}`}
 							>
 								{label}
@@ -603,7 +604,7 @@ export function ToolIntelView({
 								value={descricao}
 								onChange={(e) => setDescricao(e.target.value)}
 								placeholder="qual ramo? ex: brindes corporativos, decoração infantil, lembrancinha de casamento"
-								className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 text-[15px] text-slate-200 placeholder:text-slate-600 focus:border-amber-500/40 focus:outline-none"
+								className="w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.03] px-5 py-4 text-[15px] text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-amber-500/40 focus:outline-none"
 							/>
 							<div className="mt-3 flex flex-wrap gap-2">
 								{[
@@ -618,7 +619,7 @@ export function ToolIntelView({
 										key={sug}
 										type="button"
 										onClick={() => setDescricao(sug)}
-										className="rounded-full border border-white/10 px-3 py-1.5 text-[12px] text-slate-400 transition-colors hover:border-amber-500/30 hover:text-amber-300"
+										className="rounded-full border border-slate-200 dark:border-white/10 px-3 py-1.5 text-[12px] text-slate-600 dark:text-slate-400 transition-colors hover:border-amber-500/30 hover:text-amber-700 dark:hover:text-amber-300"
 									>
 										{sug}
 									</button>
@@ -645,11 +646,10 @@ export function ToolIntelView({
 									className={`grid aspect-[16/9] place-items-center overflow-hidden rounded-3xl border-2 border-dashed transition-colors ${
 										foto
 											? 'border-amber-500/40 bg-amber-500/[0.04]'
-											: 'border-white/12 bg-white/[0.02] group-hover:border-amber-500/35'
+											: 'border-slate-200 dark:border-white/12 bg-white dark:bg-white/[0.02] group-hover:border-amber-500/35'
 									}`}
 								>
 									{preview ? (
-										// biome-ignore lint/performance/noImgElement: preview local de um File, sem otimizador
 										<img
 											src={preview}
 											alt="Produto escolhido"
@@ -680,7 +680,7 @@ export function ToolIntelView({
 													/>
 												</svg>
 											</div>
-											<p className="text-[15px] font-medium text-slate-200">
+											<p className="text-[15px] font-medium text-slate-800 dark:text-slate-200">
 												Arraste a foto aqui ou clique para escolher
 											</p>
 											<p className="mt-1 text-[12px] text-slate-500">
@@ -696,7 +696,7 @@ export function ToolIntelView({
 									value={descricao}
 									onChange={(e) => setDescricao(e.target.value)}
 									placeholder="ou descreva em uma frase: copo térmico personalizado gravado a laser"
-									className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-[14px] text-slate-200 placeholder:text-slate-600 focus:border-amber-500/40 focus:outline-none"
+									className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.03] px-4 py-3 text-[14px] text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-amber-500/40 focus:outline-none"
 								/>
 							</div>
 						</>
@@ -717,11 +717,11 @@ export function ToolIntelView({
 									className={`rounded-2xl border p-4 text-left transition-colors ${
 										ativo
 											? 'border-amber-500/50 bg-amber-500/[0.06]'
-											: 'border-white/10 bg-white/[0.02] hover:border-white/20'
+											: 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.02] hover:border-slate-300 dark:hover:border-white/20'
 									}`}
 								>
 									<div className="flex items-baseline justify-between">
-										<span className="text-[15px] font-semibold text-slate-100">
+										<span className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">
 											{m.label}
 										</span>
 										{/*
@@ -738,21 +738,21 @@ export function ToolIntelView({
 										 * sozinha, some da vista no dia em que os dois coincidem e
 										 * volta a morder no próximo relógio quebrado.
 										 */}
-										<span className="font-mono text-[11px] tabular-nums text-slate-400">
+										<span className="font-mono text-[11px] tabular-nums text-slate-600 dark:text-slate-400">
 											~
 											{m.segundos < 60
 												? `${m.segundos}s`
 												: `${Math.ceil(m.segundos / 60)}min`}
 											{' · '}
-											{(billing.effectiveCost /
-												(modoSel?.variation_count ?? 1)) *
-												m.variation_count}{' '}
-											voxxys
+											{`${(billing.effectiveCost / (modoSel?.variation_count ?? 1)) * m.variation_count} voxxys`}
 										</span>
 									</div>
 									<ul className="mt-2 space-y-0.5">
 										{m.bullets.map((b) => (
-											<li key={b} className="text-[12px] text-slate-400">
+											<li
+												key={b}
+												className="text-[12px] text-slate-600 dark:text-slate-400"
+											>
 												· {b}
 											</li>
 										))}
@@ -767,7 +767,7 @@ export function ToolIntelView({
 						onClick={analisar}
 						disabled={!podeRodar || billing.insufficient}
 						className="mt-5 w-full rounded-xl px-6 py-3.5 text-[15px] font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
-						style={{ backgroundColor: '#f59e0b' }}
+						style={{ backgroundColor: 'var(--screen-accent)' }}
 					>
 						Analisar produto
 					</button>

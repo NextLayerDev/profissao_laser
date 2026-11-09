@@ -418,7 +418,7 @@ function PainelNumeros({ celulas }: { celulas: Celula[] }) {
 						className={`rounded-2xl border p-4 ${
 							c.tom === 'aviso'
 								? 'border-amber-500/30 bg-amber-500/[0.06]'
-								: 'border-white/8 bg-white/[0.02]'
+								: 'border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02]'
 						}`}
 					>
 						<div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-500">
@@ -428,10 +428,10 @@ function PainelNumeros({ celulas }: { celulas: Celula[] }) {
 						<p
 							className={`mt-2 ${tamanho} ${
 								c.tom === 'aviso'
-									? 'text-amber-300'
+									? 'text-amber-700 dark:text-amber-300'
 									: c.tom === 'accent'
 										? 'text-[var(--screen-accent)]'
-										: 'text-slate-50'
+										: 'text-slate-900 dark:text-slate-50'
 							}`}
 						>
 							{c.valor}
@@ -522,14 +522,14 @@ function Indice({ itens }: { itens: { id: string; curto: string }[] }) {
 			    abaixo do veredito, como mapa do que vem pela frente. */}
 			<nav
 				aria-label="Seções do dossiê"
-				className="mb-6 -mx-4 overflow-x-auto border-y border-white/8 bg-white/[0.02] px-4 py-2 print:hidden lg:hidden"
+				className="mb-6 -mx-4 overflow-x-auto border-y border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] px-4 py-2 print:hidden lg:hidden"
 			>
 				<ul className="flex min-w-max items-center gap-1">
 					{itens.map((i) => (
 						<li key={i.id}>
 							<a
 								href={`#${i.id}`}
-								className="block rounded-lg px-2.5 py-1 text-[11px] font-medium uppercase tracking-wider text-slate-500 transition-colors hover:bg-white/5 hover:text-[var(--screen-accent)]"
+								className="block rounded-lg px-2.5 py-1 text-[11px] font-medium uppercase tracking-wider text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-white/5 hover:text-[var(--screen-accent)]"
 							>
 								{i.curto}
 							</a>
@@ -589,7 +589,7 @@ function Indice({ itens }: { itens: { id: string; curto: string }[] }) {
 												className={`block rounded-lg px-2 py-1.5 text-right text-[13px] font-semibold uppercase tracking-wider transition-colors ${
 													aqui
 														? 'text-[var(--screen-accent)]'
-														: 'text-slate-500 hover:text-slate-300'
+														: 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
 												}`}
 											>
 												{i.curto}
@@ -614,14 +614,14 @@ function Indice({ itens }: { itens: { id: string; curto: string }[] }) {
 				   shrink-to-fit trava aí: medido em 1280 px, a barra parava em 640 e
 				   quebrava em três linhas mesmo com `max-w` de 1100. A translação só
 				   move depois que a largura já foi decidida. */
-				className="fixed inset-x-0 bottom-6 z-30 mx-auto hidden w-fit max-w-[min(92vw,1100px)] rounded-3xl border border-white/10 bg-[#0d0d10]/90 px-2 py-1.5 shadow-2xl shadow-black/50 backdrop-blur print:hidden lg:block xl:hidden"
+				className="fixed inset-x-0 bottom-6 z-30 mx-auto hidden w-fit max-w-[min(92vw,1100px)] rounded-3xl border border-slate-200 dark:border-white/10 bg-white/90 dark:bg-[#0d0d10]/90 px-2 py-1.5 shadow-2xl shadow-slate-900/10 dark:shadow-black/50 backdrop-blur print:hidden lg:block xl:hidden"
 			>
 				<ul className="flex flex-wrap items-center justify-center gap-1">
 					{itens.map((i) => (
 						<li key={i.id}>
 							<a
 								href={`#${i.id}`}
-								className="block rounded-full px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-slate-400 transition-colors hover:bg-white/8 hover:text-[var(--screen-accent)]"
+								className="block rounded-full px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-slate-600 dark:text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-white/8 hover:text-[var(--screen-accent)]"
 							>
 								{i.curto}
 							</a>
@@ -655,13 +655,13 @@ function Indice({ itens }: { itens: { id: string; curto: string }[] }) {
 			    já dispara `click` no Enter, então dedo e teclado fecham a lista pelo
 			    mesmo caminho. */}
 			<details className="fixed bottom-4 right-4 z-30 print:hidden lg:hidden">
-				<summary className="flex list-none items-center gap-1.5 rounded-full border border-white/10 bg-[#0d0d10]/95 px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-300 shadow-2xl shadow-black/60 backdrop-blur [&::-webkit-details-marker]:hidden">
+				<summary className="flex list-none items-center gap-1.5 rounded-full border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#0d0d10]/95 px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 shadow-2xl shadow-slate-900/10 dark:shadow-black/60 backdrop-blur [&::-webkit-details-marker]:hidden">
 					<ListChecks className="h-4 w-4 text-[var(--screen-accent)]" />
 					Seções
 				</summary>
 				<nav
 					aria-label="Seções do dossiê"
-					className="absolute bottom-full right-0 mb-2 max-h-[65vh] w-56 overflow-y-auto rounded-2xl border border-white/10 bg-[#0d0d10] p-1.5 shadow-2xl shadow-black/60"
+					className="absolute bottom-full right-0 mb-2 max-h-[65vh] w-56 overflow-y-auto rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0d0d10] p-1.5 shadow-2xl shadow-slate-900/10 dark:shadow-black/60"
 				>
 					<ul>
 						{itens.map((i) => (
@@ -671,7 +671,7 @@ function Indice({ itens }: { itens: { id: string; curto: string }[] }) {
 									onClick={(e) =>
 										e.currentTarget.closest('details')?.removeAttribute('open')
 									}
-									className="block rounded-xl px-3 py-2 text-[12px] font-medium text-slate-300 transition-colors hover:bg-white/8 hover:text-[var(--screen-accent)]"
+									className="block rounded-xl px-3 py-2 text-[12px] font-medium text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-white/8 hover:text-[var(--screen-accent)]"
 								>
 									{i.curto}
 								</a>
@@ -710,10 +710,10 @@ function Etapa({
 				<span className="font-mono text-[11px] tabular-nums text-[var(--screen-accent)]">
 					{String(n).padStart(2, '0')}
 				</span>
-				<h2 className="font-display text-[15px] font-bold text-slate-100">
+				<h2 className="font-display text-[15px] font-bold text-slate-900 dark:text-slate-100">
 					{titulo}
 				</h2>
-				<span className="h-px flex-1 bg-white/8" />
+				<span className="h-px flex-1 bg-slate-200 dark:bg-white/8" />
 				{sub ? (
 					<span className="shrink-0 text-[11px] text-slate-500">{sub}</span>
 				) : null}
@@ -739,7 +739,7 @@ function Bloco({
 	const Icon = icone ? resolveToolIcon(icone) : null;
 	return (
 		<section
-			className={`rounded-2xl border border-white/8 bg-white/[0.02] p-5 ${largo ? 'lg:col-span-2' : ''}`}
+			className={`rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-5 ${largo ? 'lg:col-span-2' : ''}`}
 		>
 			<div className="mb-3 flex items-center gap-2">
 				{Icon ? (
@@ -750,7 +750,7 @@ function Bloco({
 						<Icon className="h-3.5 w-3.5" />
 					</span>
 				) : null}
-				<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+				<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
 					{titulo}
 				</h3>
 			</div>
@@ -778,15 +778,15 @@ function Lista({ itens, tom }: { itens: unknown; tom?: 'bom' | 'ruim' }) {
 			{lista.slice(0, 8).map((x, i) => (
 				<li
 					key={`${x.slice(0, 24)}-${i}`}
-					className="flex gap-2 text-[13px] leading-snug text-slate-300"
+					className="flex gap-2 text-[13px] leading-snug text-slate-700 dark:text-slate-300"
 				>
 					<span
 						className={
 							tom === 'bom'
-								? 'text-emerald-400'
+								? 'text-emerald-600 dark:text-emerald-400'
 								: tom === 'ruim'
-									? 'text-amber-400'
-									: 'text-slate-600'
+									? 'text-amber-700 dark:text-amber-400'
+									: 'text-slate-400 dark:text-slate-600'
 						}
 					>
 						{tom === 'bom' ? '+' : tom === 'ruim' ? '−' : '·'}
@@ -869,9 +869,9 @@ function ListaApurada({
 			{linhas.slice(0, 8).map((l) => (
 				<li
 					key={l.chave}
-					className="flex gap-2 text-[13px] leading-snug text-slate-300"
+					className="flex gap-2 text-[13px] leading-snug text-slate-700 dark:text-slate-300"
 				>
-					<span className="text-slate-600">·</span>
+					<span className="text-slate-400 dark:text-slate-600">·</span>
 					<span className="min-w-0">
 						{l.texto}
 						{l.link ? (
@@ -922,7 +922,7 @@ function EscadaPreco({ ps }: { ps: Record<string, number> }) {
 		<div className="pt-2">
 			<div className="relative h-12">
 				{/* faixa entre p25 e p75 — onde a maioria dos anúncios está */}
-				<div className="absolute inset-x-0 top-5 h-2 rounded-full bg-white/5 print:border" />
+				<div className="absolute inset-x-0 top-5 h-2 rounded-full bg-slate-100 dark:bg-white/5 print:border" />
 				<div
 					className="absolute top-5 h-2 rounded-full print:border"
 					style={{
@@ -934,11 +934,11 @@ function EscadaPreco({ ps }: { ps: Record<string, number> }) {
 				/>
 				{/* mediana */}
 				<div
-					className="absolute top-3 h-6 w-0.5 rounded bg-white print:border-l"
+					className="absolute top-3 h-6 w-0.5 rounded bg-slate-900 dark:bg-white print:border-l"
 					style={{ left: pos(ps.medianaCents) }}
 				/>
 				<div
-					className="absolute top-0 -translate-x-1/2 whitespace-nowrap font-mono text-[11px] tabular-nums text-white"
+					className="absolute top-0 -translate-x-1/2 whitespace-nowrap font-mono text-[11px] tabular-nums text-slate-900 dark:text-white"
 					style={{ left: pos(ps.medianaCents) }}
 				>
 					{money(ps.medianaCents)}
@@ -1067,8 +1067,8 @@ function CopyPronto({ c }: { c: Record<string, unknown> }) {
 	return (
 		<section className="rounded-2xl border border-purple-500/20 bg-purple-500/[0.03] p-5">
 			<div className="mb-4 flex items-center gap-2">
-				<PenLine className="h-4 w-4 text-purple-400" />
-				<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+				<PenLine className="h-4 w-4 text-brand-primary dark:text-purple-400" />
+				<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
 					Anúncio pronto para publicar
 				</h3>
 			</div>
@@ -1084,9 +1084,11 @@ function CopyPronto({ c }: { c: Record<string, unknown> }) {
 								key={t}
 								type="button"
 								onClick={() => copiar(t, t)}
-								className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/8 bg-white/[0.02] p-3 text-left transition-colors hover:border-purple-500/30"
+								className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-3 text-left transition-colors hover:border-purple-500/30"
 							>
-								<span className="text-[13px] text-slate-200">{t}</span>
+								<span className="text-[13px] text-slate-800 dark:text-slate-200">
+									{t}
+								</span>
 								<span className="shrink-0 text-[11px] text-slate-500">
 									{copiado === t ? 'copiado' : `${t.length} car.`}
 								</span>
@@ -1104,7 +1106,10 @@ function CopyPronto({ c }: { c: Record<string, unknown> }) {
 						</p>
 						<ul className="space-y-1">
 							{bullets.slice(0, 6).map((b) => (
-								<li key={b} className="text-[13px] leading-snug text-slate-300">
+								<li
+									key={b}
+									className="text-[13px] leading-snug text-slate-700 dark:text-slate-300"
+								>
 									• {b}
 								</li>
 							))}
@@ -1119,7 +1124,10 @@ function CopyPronto({ c }: { c: Record<string, unknown> }) {
 						</p>
 						<ul className="space-y-1">
 							{fotos.slice(0, 6).map((f) => (
-								<li key={f} className="text-[13px] leading-snug text-slate-300">
+								<li
+									key={f}
+									className="text-[13px] leading-snug text-slate-700 dark:text-slate-300"
+								>
 									📷 {f}
 								</li>
 							))}
@@ -1136,7 +1144,7 @@ function CopyPronto({ c }: { c: Record<string, unknown> }) {
 					<button
 						type="button"
 						onClick={() => copiar(legenda, 'insta')}
-						className="w-full rounded-xl border border-white/8 bg-white/[0.02] p-3 text-left text-[13px] leading-relaxed text-slate-300 transition-colors hover:border-purple-500/30"
+						className="w-full rounded-xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-3 text-left text-[13px] leading-relaxed text-slate-700 dark:text-slate-300 transition-colors hover:border-purple-500/30"
 					>
 						{legenda}
 						<span className="mt-2 block text-[11px] text-slate-500">
@@ -1151,7 +1159,7 @@ function CopyPronto({ c }: { c: Record<string, unknown> }) {
 					{chaves.slice(0, 12).map((k) => (
 						<span
 							key={k}
-							className="rounded-full bg-white/5 px-2.5 py-1 text-[11px] text-slate-400"
+							className="rounded-full bg-slate-100 dark:bg-white/5 px-2.5 py-1 text-[11px] text-slate-600 dark:text-slate-400"
 						>
 							{k}
 						</span>
@@ -1193,8 +1201,8 @@ function PrecoSugerido({ p }: { p: Record<string, unknown> }) {
 	const porQue = frase(p.por_que, TETO_PROSA);
 
 	return (
-		<section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">
-			<h3 className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+		<section className="rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-5">
+			<h3 className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
 				Por quanto você deve vender
 			</h3>
 			<div className="grid gap-3 sm:grid-cols-3">
@@ -1206,7 +1214,7 @@ function PrecoSugerido({ p }: { p: Record<string, unknown> }) {
 							className={`rounded-xl border p-4 ${
 								d.destaque
 									? 'border-amber-500/35 bg-amber-500/[0.06]'
-									: 'border-white/8 bg-white/[0.02]'
+									: 'border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02]'
 							}`}
 						>
 							<p className="text-[11px] uppercase tracking-wider text-slate-500">
@@ -1215,8 +1223,8 @@ function PrecoSugerido({ p }: { p: Record<string, unknown> }) {
 							<p
 								className={`mt-1 font-mono tabular-nums ${
 									d.destaque
-										? 'text-2xl font-bold text-amber-300'
-										: 'text-xl text-slate-200'
+										? 'text-2xl font-bold text-amber-700 dark:text-amber-300'
+										: 'text-xl text-slate-800 dark:text-slate-200'
 								}`}
 							>
 								{Number.isFinite(v) && v > 0 ? BRL.format(v) : '—'}
@@ -1229,7 +1237,7 @@ function PrecoSugerido({ p }: { p: Record<string, unknown> }) {
 				})}
 			</div>
 			{porQue ? (
-				<p className="mt-3 text-[13px] leading-relaxed text-slate-400">
+				<p className="mt-3 text-[13px] leading-relaxed text-slate-600 dark:text-slate-400">
 					{porQue}
 				</p>
 			) : null}
@@ -1361,7 +1369,7 @@ function CardProduto({
 			initial={{ opacity: 0, y: 10 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.25, delay: Math.min(pos, 12) * 0.03 }}
-			className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/8 bg-white/[0.02] transition-colors hover:border-white/20"
+			className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] transition-colors hover:border-slate-300 dark:hover:border-white/20"
 		>
 			{url ? (
 				<a
@@ -1387,7 +1395,7 @@ function CardProduto({
 			    canal viram uma faixa de uma linha no topo, o texto sobe, e o cartão
 			    fica com cara de ficha, que é o que ele é. */}
 			{temFoto ? (
-				<div className="relative aspect-[4/3] w-full overflow-hidden bg-white/[0.03]">
+				<div className="relative aspect-[4/3] w-full overflow-hidden bg-white dark:bg-white/[0.03]">
 					<Foto
 						url={foto}
 						pagina={url}
@@ -1415,7 +1423,7 @@ function CardProduto({
 
 					{vendidos ? (
 						<div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-2.5 pt-10">
-							<span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 font-mono text-[11px] font-semibold tabular-nums text-emerald-300 ring-1 ring-emerald-500/30">
+							<span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 font-mono text-[11px] font-semibold tabular-nums text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/30">
 								<TrendingUp className="h-3 w-3" />
 								{vendidos}
 							</span>
@@ -1423,8 +1431,8 @@ function CardProduto({
 					) : null}
 				</div>
 			) : (
-				<div className="flex items-center gap-2 border-b border-white/8 px-4 py-2.5">
-					<span className="font-mono text-[10px] tabular-nums text-slate-600">
+				<div className="flex items-center gap-2 border-b border-slate-200 dark:border-white/8 px-4 py-2.5">
+					<span className="font-mono text-[10px] tabular-nums text-slate-400 dark:text-slate-600">
 						{String(pos).padStart(2, '0')}
 					</span>
 					{selo.rot ? (
@@ -1439,7 +1447,10 @@ function CardProduto({
 							{selo.rot}
 						</span>
 					) : (
-						<Store className="h-3.5 w-3.5 text-slate-700" strokeWidth={1.5} />
+						<Store
+							className="h-3.5 w-3.5 text-slate-300 dark:text-slate-700"
+							strokeWidth={1.5}
+						/>
 					)}
 				</div>
 			)}
@@ -1459,8 +1470,8 @@ function CardProduto({
 							<p
 								className={`font-mono font-bold leading-none tabular-nums ${
 									preco > 0
-										? 'text-2xl text-slate-50'
-										: 'text-lg text-slate-600'
+										? 'text-2xl text-slate-900 dark:text-slate-50'
+										: 'text-lg text-slate-400 dark:text-slate-600'
 								}`}
 							>
 								{preco > 0 ? BRL.format(preco) : '—'}
@@ -1470,7 +1481,7 @@ function CardProduto({
 						    da linha e ficava encostado na direita, solto, parecendo sobra de
 						    um layout que perdeu a peça da esquerda. */}
 						{p.da_para_fazer_a_laser === false ? (
-							<span className="shrink-0 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-400 ring-1 ring-amber-500/25">
+							<span className="shrink-0 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-700 dark:text-amber-400 ring-1 ring-amber-500/25">
 								não é a laser
 							</span>
 						) : null}
@@ -1478,7 +1489,7 @@ function CardProduto({
 				) : null}
 
 				{titulo ? (
-					<div className="rounded-xl border border-white/8 bg-white/[0.03] p-2.5">
+					<div className="rounded-xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.03] p-2.5">
 						<div className="mb-1 flex items-center justify-between gap-2">
 							{/* "Real" é uma afirmação, e ela vale só do lado provado. */}
 							<span className="text-[10px] uppercase tracking-wider text-slate-500">
@@ -1489,17 +1500,17 @@ function CardProduto({
 							<button
 								type="button"
 								onClick={copiar}
-								className="relative z-[2] flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-100"
+								className="relative z-[2] flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] text-slate-600 dark:text-slate-400 transition-colors hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-slate-100"
 							>
 								{copiado ? (
-									<Check className="h-3 w-3 text-emerald-400" />
+									<Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
 								) : (
 									<Copy className="h-3 w-3" />
 								)}
 								{copiado ? 'copiado' : 'copiar'}
 							</button>
 						</div>
-						<p className="line-clamp-2 text-[13px] leading-snug text-slate-200">
+						<p className="line-clamp-2 text-[13px] leading-snug text-slate-800 dark:text-slate-200">
 							{titulo}
 						</p>
 					</div>
@@ -1512,7 +1523,7 @@ function CardProduto({
 				) : null}
 
 				{url ? (
-					<span className="mt-auto flex items-center gap-1 pt-1 text-[11px] text-slate-600 transition-colors group-hover:text-[var(--screen-accent)]">
+					<span className="mt-auto flex items-center gap-1 pt-1 text-[11px] text-slate-400 dark:text-slate-600 transition-colors group-hover:text-[var(--screen-accent)]">
 						ver anúncio em {dominio(url)}
 						<ExternalLink className="h-3 w-3" />
 					</span>
@@ -1595,12 +1606,12 @@ function BarrasComissao({
 	const maior = Math.max(...linhas.map((l) => l.valor));
 
 	return (
-		<div className="mb-4 rounded-xl border border-white/8 bg-white/[0.02] p-4">
+		<div className="mb-4 rounded-xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-4">
 			<div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
 				<p className="text-[11px] uppercase tracking-wider text-slate-500">
 					Quanto o canal fica
 				</p>
-				<span className="text-[11px] text-slate-600">
+				<span className="text-[11px] text-slate-400 dark:text-slate-600">
 					barra maior = comissão maior
 				</span>
 			</div>
@@ -1613,8 +1624,8 @@ function BarrasComissao({
 							<span
 								className={`w-28 shrink-0 truncate text-[12px] sm:w-40 ${
 									recomendado
-										? 'font-semibold text-slate-100'
-										: 'text-slate-400'
+										? 'font-semibold text-slate-900 dark:text-slate-100'
+										: 'text-slate-600 dark:text-slate-400'
 								}`}
 							>
 								{l.nome}
@@ -1625,7 +1636,7 @@ function BarrasComissao({
 							    nenhuma, que é a tela descrevendo no papel algo que o papel
 							    não tem. Com a borda, cada canal volta a ter comprimento e a
 							    legenda volta a ser verdade. */}
-							<span className="h-2 flex-1 overflow-hidden rounded-full bg-white/5 print:border">
+							<span className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-white/5 print:border">
 								<span
 									className="block h-full rounded-full print:border"
 									style={{
@@ -1634,7 +1645,7 @@ function BarrasComissao({
 									}}
 								/>
 							</span>
-							<span className="w-16 shrink-0 text-right font-mono text-[12px] tabular-nums text-slate-300">
+							<span className="w-16 shrink-0 text-right font-mono text-[12px] tabular-nums text-slate-700 dark:text-slate-300">
 								{l.rotulo}
 							</span>
 						</li>
@@ -1742,9 +1753,9 @@ function Brechas({
 	if (!itens.length && !bemServido && !observacao) return null;
 
 	return (
-		<section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">
+		<section className="rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-5">
 			<div className="mb-4">
-				<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+				<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
 					Onde ainda falta gente vendendo bem
 				</h3>
 				<p className="mt-1 max-w-3xl text-[12px] leading-relaxed text-slate-500">
@@ -1757,7 +1768,7 @@ function Brechas({
 			</div>
 
 			{bemServido ? (
-				<p className="mb-4 rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-3 text-[12.5px] leading-relaxed text-amber-200/90">
+				<p className="mb-4 rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-3 text-[12.5px] leading-relaxed text-amber-800/90 dark:text-amber-200/90">
 					O time olhou e disse que este ramo já está bem servido: quem está lá
 					atende bem. Dá para entrar — mas contando com disputa de preço, não
 					com uma vaga aberta.
@@ -1769,10 +1780,10 @@ function Brechas({
 					{itens.map((b, i) => (
 						<li
 							key={`${b.produto}-${i}`}
-							className="flex flex-col gap-2 rounded-xl border border-white/8 bg-white/[0.02] p-4"
+							className="flex flex-col gap-2 rounded-xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-4"
 						>
 							<div>
-								<p className="text-[14px] font-semibold leading-snug text-slate-100">
+								<p className="text-[14px] font-semibold leading-snug text-slate-900 dark:text-slate-100">
 									{b.produto}
 								</p>
 								<div className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -1790,13 +1801,15 @@ function Brechas({
 							</div>
 
 							{b.falta ? (
-								<p className="text-[12.5px] leading-snug text-slate-400">
-									<span className="text-slate-600">Falta ali: </span>
+								<p className="text-[12.5px] leading-snug text-slate-600 dark:text-slate-400">
+									<span className="text-slate-400 dark:text-slate-600">
+										Falta ali:{' '}
+									</span>
 									{b.falta}
 								</p>
 							) : null}
 							{b.ganhar ? (
-								<p className="text-[12.5px] leading-snug text-emerald-200/85">
+								<p className="text-[12.5px] leading-snug text-emerald-800/85 dark:text-emerald-200/85">
 									{b.ganhar}
 								</p>
 							) : null}
@@ -1804,7 +1817,7 @@ function Brechas({
 							{b.link ? (
 								<div className="mt-auto flex flex-wrap items-baseline justify-between gap-2 pt-1">
 									{b.preco !== null ? (
-										<span className="font-mono text-[13px] font-bold tabular-nums text-slate-100">
+										<span className="font-mono text-[13px] font-bold tabular-nums text-slate-900 dark:text-slate-100">
 											{reais(b.preco)}
 										</span>
 									) : null}
@@ -1821,7 +1834,7 @@ function Brechas({
 							) : (
 								/* Sem a página que comprova, isto é leitura do especialista —
 								   e leitura não recebe número nem tom de fato. */
-								<p className="mt-auto pt-1 text-[11px] leading-snug text-amber-300/80">
+								<p className="mt-auto pt-1 text-[11px] leading-snug text-amber-700/80 dark:text-amber-300/80">
 									sem link que comprove — é leitura do especialista
 								</p>
 							)}
@@ -1913,9 +1926,9 @@ function RamoECanais({
 	return (
 		<>
 			{comAnuncio.length > 0 ? (
-				<section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">
+				<section className="rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-5">
 					<div className="mb-4">
-						<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+						<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
 							O que está vendendo neste ramo
 						</h3>
 						<p className="mt-1 text-[12px] text-slate-500">
@@ -1938,9 +1951,9 @@ function RamoECanais({
 			) : null}
 
 			{semAnuncio.length > 0 ? (
-				<section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">
+				<section className="rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-5">
 					<div className="mb-4">
-						<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+						<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
 							Ideias que o time levantou neste ramo
 						</h3>
 						<p className="mt-1 max-w-3xl text-[12px] leading-relaxed text-slate-500">
@@ -1968,13 +1981,13 @@ function RamoECanais({
 			<Brechas j={jsonDe('brechas')} citadas={citadas} />
 
 			{canais.length > 0 ? (
-				<section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">
+				<section className="rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-5">
 					<div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-						<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+						<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
 							Onde vender
 						</h3>
 						{comecarPor ? (
-							<span className="text-[12px] text-amber-300">
+							<span className="text-[12px] text-amber-700 dark:text-amber-300">
 								comece por {comecarPor}
 							</span>
 						) : null}
@@ -1987,10 +2000,10 @@ function RamoECanais({
 						{canais.slice(0, 6).map((c, i) => (
 							<div
 								key={`${campo(c, 'canal')}-${i}`}
-								className="rounded-xl border border-white/8 bg-white/[0.02] p-4"
+								className="rounded-xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-4"
 							>
 								<div className="flex items-baseline justify-between gap-2">
-									<span className="text-[14px] font-semibold text-slate-100">
+									<span className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">
 										{campo(c, 'canal')}
 									</span>
 									{c.comissao_pct !== null && c.comissao_pct !== undefined ? (
@@ -2004,7 +2017,7 @@ function RamoECanais({
 										 * usa no rótulo, então os dois passam a dizer a mesma coisa
 										 * do mesmo jeito.
 										 */
-										<span className="font-mono text-[12px] tabular-nums text-slate-400">
+										<span className="font-mono text-[12px] tabular-nums text-slate-600 dark:text-slate-400">
 											{rotuloPct(c.comissao_pct, pct(c.comissao_pct))} de
 											comissão
 										</span>
@@ -2021,8 +2034,12 @@ function RamoECanais({
 									).map(([rot, val]) =>
 										val ? (
 											<div key={rot} className="flex gap-2">
-												<dt className="shrink-0 text-slate-600">{rot}:</dt>
-												<dd className="text-slate-400">{val}</dd>
+												<dt className="shrink-0 text-slate-400 dark:text-slate-600">
+													{rot}:
+												</dt>
+												<dd className="text-slate-600 dark:text-slate-400">
+													{val}
+												</dd>
 											</div>
 										) : null,
 									)}
@@ -2031,7 +2048,7 @@ function RamoECanais({
 						))}
 					</div>
 					{porQueCanais ? (
-						<p className="mt-3 text-[13px] leading-relaxed text-slate-400">
+						<p className="mt-3 text-[13px] leading-relaxed text-slate-600 dark:text-slate-400">
 							{porQueCanais}
 						</p>
 					) : null}
@@ -2109,10 +2126,10 @@ function paraComecarDe(
 type Tom = 'bom' | 'ok' | 'ruim' | 'aviso';
 
 const TOM_SELO: Record<Tom, string> = {
-	bom: 'bg-emerald-500/15 text-emerald-300 ring-emerald-500/30',
-	ok: 'bg-white/5 text-slate-300 ring-white/10',
-	ruim: 'bg-rose-500/10 text-rose-300 ring-rose-500/25',
-	aviso: 'bg-amber-500/10 text-amber-300 ring-amber-500/30',
+	bom: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-emerald-500/30',
+	ok: 'bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 ring-slate-200 dark:ring-white/10',
+	ruim: 'bg-rose-500/10 text-rose-600 dark:text-rose-300 ring-rose-500/25',
+	aviso: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 ring-amber-500/30',
 };
 
 /** "Média", "MEDIA" e "media" são a mesma classe — o enum do contrato é um acordo, não uma garantia. */
@@ -2375,7 +2392,7 @@ function CardOportunidade({
 			className={`group relative flex flex-col overflow-hidden rounded-2xl border transition-colors ${
 				destaque
 					? 'border-emerald-500/40 bg-emerald-500/[0.045] shadow-[0_18px_44px_-26px_rgba(16,185,129,0.65)]'
-					: 'border-white/8 bg-white/[0.02] hover:border-white/20'
+					: 'border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] hover:border-slate-300 dark:hover:border-white/20'
 			}`}
 		>
 			{/* ═══ SEM FOTO, SEM MOLDURA ═══
@@ -2389,7 +2406,7 @@ function CardOportunidade({
 			    ao lado do nome e o card começa pelo que ele tem de melhor, que é o
 			    nome do produto. */}
 			{temFoto ? (
-				<div className="relative aspect-[16/10] w-full overflow-hidden bg-white/[0.03]">
+				<div className="relative aspect-[16/10] w-full overflow-hidden bg-white dark:bg-white/[0.03]">
 					<Foto
 						url={foto}
 						pagina={url}
@@ -2404,9 +2421,9 @@ function CardOportunidade({
 
 			<div className="flex flex-1 flex-col gap-3 p-4">
 				<div>
-					<h4 className="flex items-baseline gap-2 font-display text-[15px] font-bold leading-snug text-slate-50">
+					<h4 className="flex items-baseline gap-2 font-display text-[15px] font-bold leading-snug text-slate-900 dark:text-slate-50">
 						{temFoto ? null : (
-							<span className="shrink-0 font-mono text-[11px] font-normal tabular-nums text-slate-600">
+							<span className="shrink-0 font-mono text-[11px] font-normal tabular-nums text-slate-400 dark:text-slate-600">
 								{String(pos).padStart(2, '0')}
 							</span>
 						)}
@@ -2426,22 +2443,22 @@ function CardOportunidade({
 				</div>
 
 				{porQueAgora ? (
-					<p className="text-[12.5px] leading-snug text-slate-400">
+					<p className="text-[12.5px] leading-snug text-slate-600 dark:text-slate-400">
 						{porQueAgora}
 					</p>
 				) : null}
 
 				<div className="grid grid-cols-2 gap-2">
-					<div className="rounded-xl border border-white/8 bg-white/[0.02] p-2.5">
+					<div className="rounded-xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-2.5">
 						<p className="text-[10px] uppercase tracking-wider text-slate-500">
 							Você cobra
 						</p>
 						{venda ? (
-							<p className="mt-1 font-mono text-[15px] font-bold leading-tight tabular-nums text-slate-50">
+							<p className="mt-1 font-mono text-[15px] font-bold leading-tight tabular-nums text-slate-900 dark:text-slate-50">
 								{venda}
 							</p>
 						) : (
-							<p className="mt-1 text-[12px] font-semibold leading-tight text-amber-300">
+							<p className="mt-1 text-[12px] font-semibold leading-tight text-amber-700 dark:text-amber-300">
 								não apurado
 							</p>
 						)}
@@ -2463,7 +2480,7 @@ function CardOportunidade({
 					<div
 						className={`rounded-xl border p-2.5 ${
 							temSobra
-								? 'border-white/8 bg-white/[0.02]'
+								? 'border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02]'
 								: 'border-amber-500/25 bg-amber-500/[0.05]'
 						}`}
 					>
@@ -2473,13 +2490,15 @@ function CardOportunidade({
 						{temSobra ? (
 							<p
 								className={`mt-1 font-mono text-[15px] font-bold leading-tight tabular-nums ${
-									sobra > 0 ? 'text-emerald-300' : 'text-rose-300'
+									sobra > 0
+										? 'text-emerald-700 dark:text-emerald-300'
+										: 'text-rose-600 dark:text-rose-300'
 								}`}
 							>
 								{Math.round(sobra)}%
 							</p>
 						) : (
-							<p className="mt-1 text-[12px] font-semibold leading-tight text-amber-300">
+							<p className="mt-1 text-[12px] font-semibold leading-tight text-amber-700 dark:text-amber-300">
 								não apurado
 							</p>
 						)}
@@ -2494,7 +2513,7 @@ function CardOportunidade({
 				{/* "Pouca briga" sem o motivo é opinião. Com o motivo do lado, o aluno
 				    consegue conferir se a brecha continua aberta quando for vender. */}
 				{briga.tom === 'bom' && porQuePoucaBriga ? (
-					<p className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] p-2.5 text-[12px] leading-snug text-emerald-200/90">
+					<p className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] p-2.5 text-[12px] leading-snug text-emerald-800/90 dark:text-emerald-200/90">
 						{porQuePoucaBriga}
 					</p>
 				) : null}
@@ -2503,8 +2522,12 @@ function CardOportunidade({
 					{linhas.map(([rot, val]) =>
 						val ? (
 							<div key={rot} className="flex gap-2">
-								<dt className="shrink-0 text-slate-600">{rot}:</dt>
-								<dd className="min-w-0 text-slate-400">{val}</dd>
+								<dt className="shrink-0 text-slate-400 dark:text-slate-600">
+									{rot}:
+								</dt>
+								<dd className="min-w-0 text-slate-600 dark:text-slate-400">
+									{val}
+								</dd>
 							</div>
 						) : null,
 					)}
@@ -2526,12 +2549,12 @@ function CardOportunidade({
 			{/* O primeiro passo fica no rodapé, atravessando o card inteiro: é a única
 			    linha que pede AÇÃO, e ela não pode disputar espaço com o preço. */}
 			{passo ? (
-				<div className="flex items-start gap-2 border-t border-white/8 bg-white/[0.03] p-3.5">
+				<div className="flex items-start gap-2 border-t border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.03] p-3.5">
 					<Rocket
 						className="mt-0.5 h-3.5 w-3.5 shrink-0"
 						style={{ color: 'var(--screen-accent)' }}
 					/>
-					<p className="text-[12px] leading-snug text-slate-300">
+					<p className="text-[12px] leading-snug text-slate-700 dark:text-slate-300">
 						<span className="text-slate-500">Primeiro passo: </span>
 						{passo}
 					</p>
@@ -2554,9 +2577,9 @@ function ComecePorEstes({
 	// realce que não está ali manda o aluno procurar o que não tem.
 	const destacados = itens.filter(ehDestaque).length;
 	return (
-		<section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">
+		<section className="rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-5">
 			<div className="mb-4">
-				<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+				<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
 					O que dá para fabricar e vender já
 				</h3>
 				<p className="mt-1 max-w-3xl text-[12px] leading-relaxed text-slate-500">
@@ -2565,7 +2588,7 @@ function ComecePorEstes({
 					disputando. Na ordem — o primeiro é a melhor combinação dos dois.
 				</p>
 				{destacados > 0 ? (
-					<p className="mt-1.5 max-w-3xl text-[12px] leading-relaxed text-emerald-300/80">
+					<p className="mt-1.5 max-w-3xl text-[12px] leading-relaxed text-emerald-700/80 dark:text-emerald-300/80">
 						{destacados === 1
 							? 'Em verde, o produto que tem'
 							: `Em verde, os ${destacados} produtos que têm`}{' '}
@@ -2889,10 +2912,10 @@ function CustoDoMaterial({
 	}
 
 	return (
-		<section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">
+		<section className="rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-5">
 			<div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
 				<div>
-					<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+					<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
 						{titulo}
 					</h3>
 					<p className="mt-1 max-w-2xl text-[12px] leading-relaxed text-slate-500">
@@ -2902,7 +2925,7 @@ function CustoDoMaterial({
 				<div
 					className={`rounded-xl border px-3 py-2 ${
 						temCustoPeca
-							? 'border-white/8 bg-white/[0.02]'
+							? 'border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02]'
 							: 'border-amber-500/25 bg-amber-500/[0.05]'
 					}`}
 				>
@@ -2910,11 +2933,11 @@ function CustoDoMaterial({
 						Material por peça
 					</p>
 					{temCustoPeca ? (
-						<p className="mt-0.5 font-mono text-[17px] font-bold tabular-nums text-slate-50">
+						<p className="mt-0.5 font-mono text-[17px] font-bold tabular-nums text-slate-900 dark:text-slate-50">
 							{reais(custoPeca)}
 						</p>
 					) : (
-						<p className="mt-0.5 text-[12px] font-semibold text-amber-300">
+						<p className="mt-0.5 text-[12px] font-semibold text-amber-700 dark:text-amber-300">
 							não apurado
 						</p>
 					)}
@@ -2922,7 +2945,7 @@ function CustoDoMaterial({
 			</div>
 
 			{motivoSemNumero ? (
-				<p className="mb-4 rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-3 text-[12.5px] leading-relaxed text-amber-200/90">
+				<p className="mb-4 rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-3 text-[12.5px] leading-relaxed text-amber-800/90 dark:text-amber-200/90">
 					<AlertTriangle className="mr-1.5 inline h-3.5 w-3.5 align-[-2px]" />
 					{motivoSemNumero}
 				</p>
@@ -2933,7 +2956,7 @@ function CustoDoMaterial({
 					{insumos.slice(0, 10).map((i, n) => (
 						<li
 							key={`${i.item}-${n}`}
-							className="rounded-xl border border-white/8 bg-white/[0.02] p-3"
+							className="rounded-xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-3"
 						>
 							{i.produto ? (
 								<p className="mb-1 text-[10px] uppercase tracking-wider text-slate-500">
@@ -2941,15 +2964,15 @@ function CustoDoMaterial({
 								</p>
 							) : null}
 							<div className="flex items-baseline justify-between gap-2">
-								<span className="min-w-0 text-[13px] font-semibold leading-snug text-slate-100">
+								<span className="min-w-0 text-[13px] font-semibold leading-snug text-slate-900 dark:text-slate-100">
 									{i.item}
 								</span>
 								{i.preco !== null ? (
-									<span className="shrink-0 font-mono text-[13px] font-bold tabular-nums text-slate-50">
+									<span className="shrink-0 font-mono text-[13px] font-bold tabular-nums text-slate-900 dark:text-slate-50">
 										{reais(i.preco)}
 									</span>
 								) : (
-									<span className="shrink-0 text-[11px] font-semibold text-amber-300">
+									<span className="shrink-0 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
 										sem preço com fonte
 									</span>
 								)}
@@ -2983,8 +3006,10 @@ function CustoDoMaterial({
 			) : null}
 
 			{oQueEncarece ? (
-				<p className="mt-3 text-[12.5px] leading-relaxed text-slate-400">
-					<span className="text-slate-600">O que encarece: </span>
+				<p className="mt-3 text-[12.5px] leading-relaxed text-slate-600 dark:text-slate-400">
+					<span className="text-slate-400 dark:text-slate-600">
+						O que encarece:{' '}
+					</span>
 					{oQueEncarece}
 				</p>
 			) : null}
@@ -3409,7 +3434,7 @@ function Caixa({
 	children: ReactNode;
 }) {
 	return (
-		<section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">
+		<section className="rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-5">
 			<div className="mb-4 flex items-start gap-2.5">
 				<span
 					className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg"
@@ -3418,7 +3443,7 @@ function Caixa({
 					<Icon className="h-3.5 w-3.5" />
 				</span>
 				<div className="min-w-0">
-					<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+					<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
 						{titulo}
 					</h3>
 					{intro ? (
@@ -3450,7 +3475,7 @@ function Rodape({ texto }: { texto: string }) {
  */
 function SemProva() {
 	return (
-		<p className="mt-auto pt-1 text-[11px] leading-snug text-amber-300/80">
+		<p className="mt-auto pt-1 text-[11px] leading-snug text-amber-700/80 dark:text-amber-300/80">
 			sem link que comprove — é leitura do especialista
 		</p>
 	);
@@ -3553,7 +3578,7 @@ function CardConcorrente({ c }: { c: Concorrente }) {
 	];
 
 	return (
-		<li className="flex flex-col gap-3 rounded-2xl border border-white/8 bg-white/[0.02] p-4">
+		<li className="flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-4">
 			<div className="flex items-start gap-3">
 				<span
 					className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-display text-[12px] font-black"
@@ -3565,7 +3590,7 @@ function CardConcorrente({ c }: { c: Concorrente }) {
 					{selo.sigla || <Store className="h-4 w-4" />}
 				</span>
 				<div className="min-w-0 flex-1">
-					<p className="text-[14px] font-semibold leading-snug text-slate-100">
+					<p className="text-[14px] font-semibold leading-snug text-slate-900 dark:text-slate-100">
 						{c.loja}
 					</p>
 					{selo.rot ? (
@@ -3580,11 +3605,11 @@ function CardConcorrente({ c }: { c: Concorrente }) {
 				<div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
 					{c.nota ? (
 						<span className="inline-flex items-center gap-1.5">
-							<Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-							<span className="font-mono text-[14px] font-bold tabular-nums text-slate-50">
+							<Star className="h-3.5 w-3.5 fill-amber-400 text-amber-700 dark:text-amber-400" />
+							<span className="font-mono text-[14px] font-bold tabular-nums text-slate-900 dark:text-slate-50">
 								{c.nota.texto}
 							</span>
-							<span className="h-1.5 w-14 overflow-hidden rounded-full bg-white/8">
+							<span className="h-1.5 w-14 overflow-hidden rounded-full bg-slate-200 dark:bg-white/8">
 								<span
 									className="block h-full rounded-full bg-amber-400"
 									style={{ width: `${Math.round(c.nota.frac * 100)}%` }}
@@ -3598,8 +3623,8 @@ function CardConcorrente({ c }: { c: Concorrente }) {
 						</span>
 					) : null}
 					{c.anuncios !== null ? (
-						<span className="inline-flex items-center gap-1 font-mono text-[11px] tabular-nums text-slate-400">
-							<Boxes className="h-3.5 w-3.5 text-slate-600" />
+						<span className="inline-flex items-center gap-1 font-mono text-[11px] tabular-nums text-slate-600 dark:text-slate-400">
+							<Boxes className="h-3.5 w-3.5 text-slate-400 dark:text-slate-600" />
 							{inteiro(c.anuncios)} anúncios
 						</span>
 					) : null}
@@ -3607,7 +3632,7 @@ function CardConcorrente({ c }: { c: Concorrente }) {
 			) : null}
 
 			{c.posicionamento ? (
-				<p className="text-[12.5px] leading-snug text-slate-400">
+				<p className="text-[12.5px] leading-snug text-slate-600 dark:text-slate-400">
 					{c.posicionamento}
 				</p>
 			) : null}
@@ -3616,8 +3641,12 @@ function CardConcorrente({ c }: { c: Concorrente }) {
 				{linhas.map(([rot, val]) =>
 					val ? (
 						<div key={rot} className="flex gap-2">
-							<dt className="shrink-0 text-slate-600">{rot}:</dt>
-							<dd className="min-w-0 text-slate-400">{val}</dd>
+							<dt className="shrink-0 text-slate-400 dark:text-slate-600">
+								{rot}:
+							</dt>
+							<dd className="min-w-0 text-slate-600 dark:text-slate-400">
+								{val}
+							</dd>
 						</div>
 					) : null,
 				)}
@@ -3718,7 +3747,7 @@ function MiniProduto({ p }: { p: Campeao }) {
 	const corpo =
 		p.imagem && !fotoMorreu ? (
 			<>
-				<div className="relative aspect-square w-full overflow-hidden rounded-xl bg-white/[0.03]">
+				<div className="relative aspect-square w-full overflow-hidden rounded-xl bg-white dark:bg-white/[0.03]">
 					<Foto
 						url={p.imagem}
 						pagina={p.link}
@@ -3731,21 +3760,21 @@ function MiniProduto({ p }: { p: Campeao }) {
 						</span>
 					) : null}
 				</div>
-				<p className="mt-2 line-clamp-2 text-[12px] leading-snug text-slate-300">
+				<p className="mt-2 line-clamp-2 text-[12px] leading-snug text-slate-700 dark:text-slate-300">
 					{p.titulo || p.produto}
 				</p>
 				{p.preco !== null ? (
-					<p className="mt-1 font-mono text-[14px] font-bold tabular-nums text-slate-50">
+					<p className="mt-1 font-mono text-[14px] font-bold tabular-nums text-slate-900 dark:text-slate-50">
 						{reais(p.preco)}
 					</p>
 				) : (
-					<p className="mt-1 text-[11px] font-semibold text-amber-300">
+					<p className="mt-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
 						preço sem link que comprove
 					</p>
 				)}
 			</>
 		) : (
-			<div className="flex h-full flex-col gap-1.5 rounded-xl border border-white/8 bg-white/[0.02] p-3 transition-colors group-hover:border-white/20">
+			<div className="flex h-full flex-col gap-1.5 rounded-xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-3 transition-colors group-hover:border-slate-300 dark:group-hover:border-white/20">
 				<div className="flex items-center gap-1.5">
 					{selo.rot ? (
 						<span
@@ -3760,20 +3789,20 @@ function MiniProduto({ p }: { p: Campeao }) {
 						</span>
 					) : null}
 					{p.vendidos ? (
-						<span className="shrink-0 font-mono text-[10px] font-semibold tabular-nums text-emerald-300">
+						<span className="shrink-0 font-mono text-[10px] font-semibold tabular-nums text-emerald-700 dark:text-emerald-300">
 							{p.vendidos}
 						</span>
 					) : null}
 				</div>
-				<p className="line-clamp-2 text-[12px] leading-snug text-slate-300">
+				<p className="line-clamp-2 text-[12px] leading-snug text-slate-700 dark:text-slate-300">
 					{p.titulo || p.produto}
 				</p>
 				{p.preco !== null ? (
-					<p className="mt-auto font-mono text-[14px] font-bold tabular-nums text-slate-50">
+					<p className="mt-auto font-mono text-[14px] font-bold tabular-nums text-slate-900 dark:text-slate-50">
 						{reais(p.preco)}
 					</p>
 				) : (
-					<p className="mt-auto text-[11px] font-semibold text-amber-300">
+					<p className="mt-auto text-[11px] font-semibold text-amber-700 dark:text-amber-300">
 						preço sem link que comprove
 					</p>
 				)}
@@ -3816,12 +3845,12 @@ function OQueElesVendem({
 			{grupos.map((g) => (
 				<div key={g.loja || '__sem_loja__'}>
 					<div className="mb-2.5 flex items-center gap-2">
-						<Crown className="h-3.5 w-3.5 text-amber-400" />
-						<p className="text-[12px] font-semibold text-slate-200">
+						<Crown className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" />
+						<p className="text-[12px] font-semibold text-slate-800 dark:text-slate-200">
 							{g.loja || 'Campeões do ramo, sem loja identificada'}
 						</p>
-						<span className="h-px flex-1 bg-white/8" />
-						<span className="shrink-0 text-[11px] text-slate-600">
+						<span className="h-px flex-1 bg-slate-200 dark:bg-white/8" />
+						<span className="shrink-0 text-[11px] text-slate-400 dark:text-slate-600">
 							{g.itens.length} produto{g.itens.length === 1 ? '' : 's'}
 						</span>
 					</div>
@@ -3924,7 +3953,7 @@ function Referencia({ r, onMorreu }: { r: Referencia; onMorreu: () => void }) {
 	// normaliza enum de LLM), e sombrear o nome dentro de um componente é o tipo
 	// de armadilha que só aparece quando alguém for usar a função aqui dentro.
 	const estilo =
-		'group relative aspect-square overflow-hidden rounded-xl border border-white/8 bg-white/[0.03]';
+		'group relative aspect-square overflow-hidden rounded-xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.03]';
 
 	/**
 	 * SEMPRE `<a>`: não existe mais ladrilho sem página nesta grade.
@@ -4157,15 +4186,15 @@ function ProdutosDeReferencia({ itens }: { itens: ProdutoDeReferencia[] }) {
 			{itens.slice(0, 12).map((r) => (
 				<li
 					key={r.chave}
-					className="flex flex-col gap-2 rounded-xl border border-white/8 bg-white/[0.02] p-4"
+					className="flex flex-col gap-2 rounded-xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-4"
 				>
 					{r.produto ? (
-						<p className="text-[14px] font-semibold leading-snug text-slate-100">
+						<p className="text-[14px] font-semibold leading-snug text-slate-900 dark:text-slate-100">
 							{r.produto}
 						</p>
 					) : null}
 					{r.oQueE ? (
-						<p className="text-[12.5px] leading-snug text-slate-400">
+						<p className="text-[12.5px] leading-snug text-slate-600 dark:text-slate-400">
 							{r.oQueE}
 						</p>
 					) : null}
@@ -4224,32 +4253,36 @@ function ParaQuemVender({ itens }: { itens: Perfil[] }) {
 			{itens.slice(0, 9).map((p) => (
 				<li
 					key={p.chave}
-					className="flex flex-col gap-2 rounded-xl border border-white/8 bg-white/[0.02] p-4"
+					className="flex flex-col gap-2 rounded-xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-4"
 				>
 					<div className="flex items-start justify-between gap-2">
-						<p className="min-w-0 text-[14px] font-semibold leading-snug text-slate-100">
+						<p className="min-w-0 text-[14px] font-semibold leading-snug text-slate-900 dark:text-slate-100">
 							{p.quem}
 						</p>
 						{p.ticket !== null ? (
-							<span className="shrink-0 rounded-lg bg-white/5 px-2 py-0.5 font-mono text-[12px] font-bold tabular-nums text-slate-100">
+							<span className="shrink-0 rounded-lg bg-slate-100 dark:bg-white/5 px-2 py-0.5 font-mono text-[12px] font-bold tabular-nums text-slate-900 dark:text-slate-100">
 								{reais(p.ticket)}
 							</span>
 						) : null}
 					</div>
 					{p.ocasiao ? (
-						<p className="text-[12.5px] leading-snug text-slate-400">
-							<span className="text-slate-600">Compra quando: </span>
+						<p className="text-[12.5px] leading-snug text-slate-600 dark:text-slate-400">
+							<span className="text-slate-400 dark:text-slate-600">
+								Compra quando:{' '}
+							</span>
 							{p.ocasiao}
 						</p>
 					) : null}
 					{p.decide ? (
-						<p className="text-[12.5px] leading-snug text-emerald-200/85">
+						<p className="text-[12.5px] leading-snug text-emerald-800/85 dark:text-emerald-200/85">
 							{p.decide}
 						</p>
 					) : null}
 					{p.onde ? (
 						<p className="text-[12px] leading-snug text-slate-500">
-							<span className="text-slate-600">Onde achar: </span>
+							<span className="text-slate-400 dark:text-slate-600">
+								Onde achar:{' '}
+							</span>
 							{p.onde}
 						</p>
 					) : null}
@@ -4347,13 +4380,13 @@ function QuemCompraEmQuantidade({ itens }: { itens: Comprador[] }) {
 			{itens.slice(0, 9).map((c) => (
 				<li
 					key={c.chave}
-					className="flex flex-col gap-2 rounded-xl border border-white/8 bg-white/[0.02] p-4"
+					className="flex flex-col gap-2 rounded-xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-4"
 				>
-					<p className="text-[14px] font-semibold leading-snug text-slate-100">
+					<p className="text-[14px] font-semibold leading-snug text-slate-900 dark:text-slate-100">
 						{c.tipo}
 					</p>
 					{c.porQue ? (
-						<p className="text-[12.5px] leading-snug text-slate-400">
+						<p className="text-[12.5px] leading-snug text-slate-600 dark:text-slate-400">
 							{c.porQue}
 						</p>
 					) : null}
@@ -4363,7 +4396,7 @@ function QuemCompraEmQuantidade({ itens }: { itens: Comprador[] }) {
 					    unidades ou mais", "lotes de 50 a 500"), e texto não vira selo
 					    numérico nesta tela. Fica em destaque de leitura, não de conta. */}
 					{c.pedido ? (
-						<p className="rounded-lg border border-white/8 bg-white/[0.03] px-2.5 py-1.5 text-[12px] leading-snug text-slate-200">
+						<p className="rounded-lg border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.03] px-2.5 py-1.5 text-[12px] leading-snug text-slate-800 dark:text-slate-200">
 							<span className="text-slate-500">Pedido típico: </span>
 							{c.pedido}
 						</p>
@@ -4373,13 +4406,13 @@ function QuemCompraEmQuantidade({ itens }: { itens: Comprador[] }) {
 					    aluno lê ANTES de prometer prazo a uma empresa. `amber-200/85`
 					    saiu mais apagado que o corpo do cartão na conferência visual. */}
 					{c.exige ? (
-						<p className="text-[12px] leading-snug text-amber-300/90">
+						<p className="text-[12px] leading-snug text-amber-700/90 dark:text-amber-300/90">
 							<span className="text-slate-500">Exige: </span>
 							{c.exige}
 						</p>
 					) : null}
 					{c.comoChegar ? (
-						<p className="text-[12px] leading-snug text-emerald-200/85">
+						<p className="text-[12px] leading-snug text-emerald-800/85 dark:text-emerald-200/85">
 							<span className="text-slate-500">Como chegar: </span>
 							{c.comoChegar}
 						</p>
@@ -4493,7 +4526,7 @@ function CalendarioDoAno({
 			    Ressalva ESCRITA continua na tela: "procurei e o ramo não tem data
 			    forte" é uma frase, passa por `SEM_DADO` inteira e sobrevive. */}
 			{epocaForte ? (
-				<p className="mb-4 rounded-xl border border-white/8 bg-white/[0.02] p-3 text-[12.5px] leading-relaxed text-slate-300">
+				<p className="mb-4 rounded-xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-3 text-[12.5px] leading-relaxed text-slate-700 dark:text-slate-300">
 					<span className="text-slate-500">
 						O que o time viu de época forte:{' '}
 					</span>
@@ -4506,13 +4539,13 @@ function CalendarioDoAno({
 					{itens.map((d) => (
 						<li
 							key={d.chave}
-							className="flex flex-col gap-2 rounded-xl border border-white/8 bg-white/[0.02] p-3 sm:flex-row sm:items-baseline sm:gap-4"
+							className="flex flex-col gap-2 rounded-xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-3 sm:flex-row sm:items-baseline sm:gap-4"
 						>
 							<span className="w-24 shrink-0 font-mono text-[11px] uppercase tracking-wider text-[var(--screen-accent)]">
 								{d.rotuloMes || '—'}
 							</span>
 							<div className="min-w-0 flex-1">
-								<p className="text-[13.5px] font-semibold leading-snug text-slate-100">
+								<p className="text-[13.5px] font-semibold leading-snug text-slate-900 dark:text-slate-100">
 									{d.nome}
 									{d.forca ? (
 										<span className="ml-2 text-[11px] font-normal text-slate-500">
@@ -4521,12 +4554,12 @@ function CalendarioDoAno({
 									) : null}
 								</p>
 								{d.vende ? (
-									<p className="mt-0.5 text-[12.5px] leading-snug text-slate-400">
+									<p className="mt-0.5 text-[12.5px] leading-snug text-slate-600 dark:text-slate-400">
 										{d.vende}
 									</p>
 								) : null}
 								{d.antecedencia ? (
-									<p className="mt-0.5 text-[12px] leading-snug text-emerald-200/85">
+									<p className="mt-0.5 text-[12px] leading-snug text-emerald-800/85 dark:text-emerald-200/85">
 										Comece a produzir: {d.antecedencia}
 									</p>
 								) : null}
@@ -4634,24 +4667,26 @@ function ChipTermo({ t }: { t: Termo }) {
 		<button
 			type="button"
 			onClick={copiar}
-			className="group inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5 text-left transition-colors hover:border-[var(--screen-accent)]/40"
+			className="group inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.03] px-3 py-1.5 text-left transition-colors hover:border-[var(--screen-accent)]/40"
 		>
-			<Search className="h-3 w-3 shrink-0 text-slate-600" />
-			<span className="text-[12.5px] text-slate-200">{t.termo}</span>
+			<Search className="h-3 w-3 shrink-0 text-slate-400 dark:text-slate-600" />
+			<span className="text-[12.5px] text-slate-800 dark:text-slate-200">
+				{t.termo}
+			</span>
 			{t.volume ? (
 				<span className="font-mono text-[11px] tabular-nums text-slate-500">
 					{t.volume}
 				</span>
 			) : null}
 			{t.briga ? (
-				<span className="text-[10px] uppercase tracking-wider text-slate-600">
+				<span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-600">
 					{t.briga}
 				</span>
 			) : null}
 			{copiado ? (
-				<Check className="h-3 w-3 shrink-0 text-emerald-400" />
+				<Check className="h-3 w-3 shrink-0 text-emerald-600 dark:text-emerald-400" />
 			) : (
-				<Copy className="h-3 w-3 shrink-0 text-slate-700 transition-colors group-hover:text-slate-400" />
+				<Copy className="h-3 w-3 shrink-0 text-slate-300 dark:text-slate-700 transition-colors group-hover:text-slate-600 dark:group-hover:text-slate-400" />
 			)}
 		</button>
 	);
@@ -4773,11 +4808,11 @@ function DoQueReclamam({ itens }: { itens: Reclamacao[] }) {
 			{itens.slice(0, 10).map((r) => (
 				<li
 					key={r.chave}
-					className="flex flex-col gap-2 rounded-xl border border-white/8 bg-white/[0.02] p-4"
+					className="flex flex-col gap-2 rounded-xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-4"
 				>
 					<div className="flex items-start gap-2">
-						<ThumbsDown className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
-						<p className="min-w-0 text-[13px] leading-snug text-amber-100/90">
+						<ThumbsDown className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700 dark:text-amber-400" />
+						<p className="min-w-0 text-[13px] leading-snug text-amber-900/90 dark:text-amber-100/90">
 							{r.queixa}
 						</p>
 					</div>
@@ -4787,7 +4822,7 @@ function DoQueReclamam({ itens }: { itens: Reclamacao[] }) {
 						</p>
 					) : null}
 					{r.promessa ? (
-						<p className="flex items-start gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.05] p-2.5 text-[12.5px] leading-snug text-emerald-200/90">
+						<p className="flex items-start gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.05] p-2.5 text-[12.5px] leading-snug text-emerald-800/90 dark:text-emerald-200/90">
 							<ArrowRight className="mt-0.5 h-3.5 w-3.5 shrink-0" />
 							<span className="min-w-0">{r.promessa}</span>
 						</p>
@@ -4897,7 +4932,7 @@ function QuantoOFreteCome({ itens }: { itens: LinhaFrete[] }) {
 	return (
 		<ul className="space-y-2">
 			{semNenhumFrete ? (
-				<li className="rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-3 text-[12.5px] leading-relaxed text-amber-200/85">
+				<li className="rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-3 text-[12.5px] leading-relaxed text-amber-800/85 dark:text-amber-200/85">
 					O time não achou o valor do frete de nenhum destes itens numa página
 					que o mostre — nos marketplaces ele depende do CEP de quem compra. O
 					que dá para usar agora é o peso e o tamanho de cada um: são eles que
@@ -4907,10 +4942,10 @@ function QuantoOFreteCome({ itens }: { itens: LinhaFrete[] }) {
 			{itens.slice(0, 10).map((f) => (
 				<li
 					key={f.chave}
-					className="flex flex-col gap-2 rounded-xl border border-white/8 bg-white/[0.02] p-3 sm:flex-row sm:items-center sm:gap-4"
+					className="flex flex-col gap-2 rounded-xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-3 sm:flex-row sm:items-center sm:gap-4"
 				>
 					<div className="min-w-0 flex-1">
-						<p className="text-[13.5px] font-semibold leading-snug text-slate-100">
+						<p className="text-[13.5px] font-semibold leading-snug text-slate-900 dark:text-slate-100">
 							{f.produto || 'Item sem nome'}
 						</p>
 						<p className="mt-0.5 text-[11.5px] leading-snug text-slate-500">
@@ -4918,7 +4953,7 @@ function QuantoOFreteCome({ itens }: { itens: LinhaFrete[] }) {
 								'medidas não apuradas'}
 						</p>
 						{f.fragilidade ? (
-							<p className="mt-0.5 text-[11.5px] leading-snug text-amber-300/80">
+							<p className="mt-0.5 text-[11.5px] leading-snug text-amber-700/80 dark:text-amber-300/80">
 								{f.fragilidade}
 							</p>
 						) : null}
@@ -4927,15 +4962,15 @@ function QuantoOFreteCome({ itens }: { itens: LinhaFrete[] }) {
 					{semNenhumFrete ? null : (
 						<div className="flex shrink-0 items-center gap-4">
 							<div className="text-right">
-								<p className="text-[10px] uppercase tracking-wider text-slate-600">
+								<p className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-600">
 									Frete
 								</p>
 								{f.frete !== null ? (
-									<p className="font-mono text-[14px] font-bold tabular-nums text-slate-50">
+									<p className="font-mono text-[14px] font-bold tabular-nums text-slate-900 dark:text-slate-50">
 										{reais(f.frete)}
 									</p>
 								) : (
-									<p className="text-[11px] font-semibold text-amber-300">
+									<p className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">
 										não apurado
 									</p>
 								)}
@@ -5007,21 +5042,21 @@ function OndeComprar({ itens }: { itens: Fornecedor[] }) {
 			{itens.slice(0, 9).map((f) => (
 				<li
 					key={f.chave}
-					className="flex flex-col gap-2 rounded-xl border border-white/8 bg-white/[0.02] p-4"
+					className="flex flex-col gap-2 rounded-xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-4"
 				>
 					<div className="flex items-start justify-between gap-2">
-						<p className="min-w-0 text-[14px] font-semibold leading-snug text-slate-100">
+						<p className="min-w-0 text-[14px] font-semibold leading-snug text-slate-900 dark:text-slate-100">
 							{f.loja}
 						</p>
 						{f.preco !== null ? (
-							<span className="shrink-0 font-mono text-[13px] font-bold tabular-nums text-slate-50">
+							<span className="shrink-0 font-mono text-[13px] font-bold tabular-nums text-slate-900 dark:text-slate-50">
 								{reais(f.preco)}
 							</span>
 						) : null}
 					</div>
 
 					{f.vende ? (
-						<p className="text-[12.5px] leading-snug text-slate-400">
+						<p className="text-[12.5px] leading-snug text-slate-600 dark:text-slate-400">
 							{f.vende}
 						</p>
 					) : null}
@@ -5047,8 +5082,12 @@ function OndeComprar({ itens }: { itens: Fornecedor[] }) {
 						).map(([rot, val]) =>
 							val ? (
 								<div key={rot} className="flex gap-2">
-									<dt className="shrink-0 text-slate-600">{rot}:</dt>
-									<dd className="min-w-0 text-slate-400">{val}</dd>
+									<dt className="shrink-0 text-slate-400 dark:text-slate-600">
+										{rot}:
+									</dt>
+									<dd className="min-w-0 text-slate-600 dark:text-slate-400">
+										{val}
+									</dd>
 								</div>
 							) : null,
 						)}
@@ -5649,7 +5688,7 @@ export function Dossie({
 	};
 
 	return (
-		<div className="dossie-impressao relative min-h-[calc(100vh-4rem)] bg-[#08080a] print:bg-white">
+		<div className="dossie-impressao relative min-h-[calc(100vh-4rem)] bg-slate-50 dark:bg-[#08080a] print:bg-white dark:print:bg-white">
 			{/* `lg:pb-28` abre espaço para a barra flutuante não cobrir os botões
 			    de ação, que são a última coisa da página. Subiu de 24 quando a barra
 			    passou a quebrar em duas linhas no dossiê longo do Profundo.
@@ -5663,7 +5702,7 @@ export function Dossie({
 				{/* ═══ HERÓI: o veredito e a nota ═══ */}
 				<div
 					id="veredito"
-					className="relative mb-6 scroll-mt-24 overflow-hidden rounded-3xl border border-white/10 p-6 md:p-8"
+					className="relative mb-6 scroll-mt-24 overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10 p-6 md:p-8"
 				>
 					<div
 						className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full blur-3xl"
@@ -5687,7 +5726,7 @@ export function Dossie({
 									de 100
 								</p>
 							</div>
-							<div className="h-16 w-px bg-white/10" />
+							<div className="h-16 w-px bg-slate-200 dark:bg-white/10" />
 						</div>
 
 						<div className="min-w-0 flex-1">
@@ -5700,10 +5739,10 @@ export function Dossie({
 							>
 								{tomNota.rot}
 							</span>
-							<h1 className="font-display mt-2 text-xl font-bold leading-snug text-slate-50 md:text-2xl">
+							<h1 className="font-display mt-2 text-xl font-bold leading-snug text-slate-900 dark:text-slate-50 md:text-2xl">
 								{temNota ? veredito : 'A pesquisa saiu; o veredito não'}
 							</h1>
-							<p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-slate-300">
+							<p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-slate-700 dark:text-slate-300">
 								{temNota
 									? resumoDoVeredito
 									: 'O especialista que dá a nota não conseguiu fechar a conclusão desta vez. Tudo o que o resto do time apurou continua abaixo, e vale — só não há nota nem veredito. Rodar de novo costuma resolver.'}
@@ -5774,13 +5813,13 @@ export function Dossie({
 						{precoSugerido ? <PrecoSugerido p={precoSugerido} /> : null}
 						{redator ? <CopyPronto c={redator} /> : null}
 						{plano.length > 0 ? (
-							<section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">
+							<section className="rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-5">
 								<div className="mb-4 flex items-center gap-2">
 									<CalendarCheck
 										className="h-4 w-4"
 										style={{ color: 'var(--screen-accent)' }}
 									/>
-									<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+									<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
 										Próximos 7 dias
 									</h3>
 								</div>
@@ -5788,7 +5827,7 @@ export function Dossie({
 									{plano.map((p, i) => (
 										<li
 											key={`dia-${p.dia}-${i}`}
-											className="flex gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-3"
+											className="flex gap-3 rounded-xl border border-slate-200 dark:border-white/5 bg-white dark:bg-white/[0.02] p-3"
 										>
 											<span
 												className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg font-mono text-[11px] tabular-nums"
@@ -5800,7 +5839,7 @@ export function Dossie({
 											>
 												{p.dia}
 											</span>
-											<span className="text-[13px] leading-snug text-slate-300">
+											<span className="text-[13px] leading-snug text-slate-700 dark:text-slate-300">
 												{p.acao}
 											</span>
 										</li>
@@ -5830,9 +5869,9 @@ export function Dossie({
 					    maior. Com `min-w-0` a coluna volta a valer a largura da tela e
 					    o `truncate` faz o que promete. */}
 					<div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-						<section className="min-w-0 rounded-2xl border border-white/8 bg-white/[0.02] p-5">
+						<section className="min-w-0 rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-5">
 							<div className="mb-1 flex items-baseline justify-between gap-2">
-								<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+								<h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
 									Preço de mercado
 								</h3>
 								{ps ? (
@@ -5847,11 +5886,11 @@ export function Dossie({
 							) : (
 								/* A regra nº 1 desta tela, em ação. */
 								<div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-4">
-									<p className="flex items-center gap-2 text-[13px] font-semibold text-amber-300">
+									<p className="flex items-center gap-2 text-[13px] font-semibold text-amber-700 dark:text-amber-300">
 										<AlertTriangle className="h-4 w-4" />
 										Não achei anúncios suficientes para cravar um preço
 									</p>
-									<p className="mt-1 text-[12px] leading-relaxed text-amber-200/80">
+									<p className="mt-1 text-[12px] leading-relaxed text-amber-800/80 dark:text-amber-200/80">
 										{ps?.motivo ??
 											'A busca não trouxe anúncios com preço e link para este produto.'}{' '}
 										Preferimos dizer isso a chutar um número que você usaria
@@ -5862,8 +5901,8 @@ export function Dossie({
 						</section>
 
 						{/* Cada anúncio, clicável. É o que torna o dossiê verificável. */}
-						<section className="min-w-0 rounded-2xl border border-white/8 bg-white/[0.02] p-5">
-							<h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+						<section className="min-w-0 rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-5">
+							<h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
 								Anúncios encontrados
 							</h3>
 							<div className="max-h-64 space-y-1 overflow-y-auto pr-1">
@@ -5873,7 +5912,7 @@ export function Dossie({
 										href={o.url}
 										target="_blank"
 										rel="noopener noreferrer"
-										className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-white/5"
+										className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
 									>
 										{/* Lista montada pelo SERVIDOR a partir das citações, então a
 										    página é citada por construção — e mesmo aqui ela passa pelo
@@ -5888,10 +5927,10 @@ export function Dossie({
 												...CAMPOS_DE_PAGINA,
 											)}
 										/>
-										<span className="min-w-0 flex-1 truncate text-[12px] text-slate-400">
+										<span className="min-w-0 flex-1 truncate text-[12px] text-slate-600 dark:text-slate-400">
 											{o.title || dominio(o.url)}
 										</span>
-										<span className="shrink-0 font-mono text-[12px] tabular-nums text-slate-200">
+										<span className="shrink-0 font-mono text-[12px] tabular-nums text-slate-800 dark:text-slate-200">
 											{money(o.brlCents)}
 										</span>
 									</a>
@@ -5909,11 +5948,11 @@ export function Dossie({
 											    escrito aqui não passou por página nenhuma. Ver
 											    `imagemDe`. A `Foto` da lista de cima fica: lá o campo
 											    vem da lista que o SERVIDOR monta. */}
-											<span className="min-w-0 flex-1 truncate text-[12px] text-slate-400">
+											<span className="min-w-0 flex-1 truncate text-[12px] text-slate-600 dark:text-slate-400">
 												{o.title || (o.url ? dominio(o.url) : 'anúncio')}
 											</span>
 											{o.preco !== null && o.preco > 0 ? (
-												<span className="shrink-0 font-mono text-[12px] tabular-nums text-slate-200">
+												<span className="shrink-0 font-mono text-[12px] tabular-nums text-slate-800 dark:text-slate-200">
 													{reais(o.preco)}
 												</span>
 											) : null}
@@ -5925,7 +5964,7 @@ export function Dossie({
 											href={o.url}
 											target="_blank"
 											rel="noopener noreferrer"
-											className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-white/5"
+											className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
 										>
 											{conteudo}
 										</a>
@@ -5939,7 +5978,7 @@ export function Dossie({
 									);
 								})}
 								{obs.length === 0 && anunciosCrus.length === 0 ? (
-									<p className="py-6 text-center text-[12px] text-slate-600">
+									<p className="py-6 text-center text-[12px] text-slate-400 dark:text-slate-600">
 										nenhum anúncio com preço
 									</p>
 								) : null}
@@ -6145,8 +6184,8 @@ export function Dossie({
 									</div>
 								) : null}
 								{busca.padrao ? (
-									<p className="mt-4 text-[12.5px] leading-relaxed text-slate-400">
-										<span className="text-slate-600">
+									<p className="mt-4 text-[12.5px] leading-relaxed text-slate-600 dark:text-slate-400">
+										<span className="text-slate-400 dark:text-slate-600">
 											Como o título que vende é escrito:{' '}
 										</span>
 										{busca.padrao}
@@ -6157,7 +6196,7 @@ export function Dossie({
 										{busca.exemplos.slice(0, 6).map((e) => (
 											<li
 												key={e}
-												className="rounded-lg border border-white/8 bg-white/[0.02] p-2.5 text-[12.5px] leading-snug text-slate-300"
+												className="rounded-lg border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-2.5 text-[12.5px] leading-snug text-slate-700 dark:text-slate-300"
 											>
 												{e}
 											</li>
@@ -6240,7 +6279,7 @@ export function Dossie({
 					{...etapa('fontes')}
 					sub={`${fontes.length} link${fontes.length === 1 ? '' : 's'}`}
 				>
-					<section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">
+					<section className="rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-5">
 						<div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
 							{fontes.map((f) => (
 								/* `min-w-0` NO LINK, e não só o `truncate` no texto dentro.
@@ -6259,7 +6298,7 @@ export function Dossie({
 									href={f.url}
 									target="_blank"
 									rel="noopener noreferrer"
-									className="flex min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] text-slate-400 transition-colors hover:bg-white/5 hover:text-slate-200"
+									className="flex min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] text-slate-600 dark:text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-slate-200"
 								>
 									<ExternalLink className="h-3 w-3 shrink-0 opacity-50" />
 									<span className="min-w-0 truncate">
@@ -6268,7 +6307,7 @@ export function Dossie({
 								</a>
 							))}
 							{fontes.length === 0 ? (
-								<p className="py-2 text-[12px] text-slate-600">
+								<p className="py-2 text-[12px] text-slate-400 dark:text-slate-600">
 									nenhuma fonte registrada nesta execução
 								</p>
 							) : null}
@@ -6279,18 +6318,22 @@ export function Dossie({
 				{/* ═══ HONESTIDADE: auditoria, lacunas e avisos ═══ */}
 				{temRessalvas ? (
 					<Etapa {...etapa('ressalvas')}>
-						<section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">
-							<div className="grid gap-x-6 gap-y-2 text-[12px] leading-relaxed text-slate-400 md:grid-cols-2">
+						<section className="rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/[0.02] p-5">
+							<div className="grid gap-x-6 gap-y-2 text-[12px] leading-relaxed text-slate-600 dark:text-slate-400 md:grid-cols-2">
 								{confiancaGeral ? (
 									<p>
 										Confiança geral apurada pelo Auditor:{' '}
-										<strong className="text-slate-200">{confiancaGeral}</strong>
+										<strong className="text-slate-800 dark:text-slate-200">
+											{confiancaGeral}
+										</strong>
 										.
 									</p>
 								) : null}
 								{semFonte.length > 0 ? (
 									<div>
-										<p className="text-slate-300">Afirmações sem fonte:</p>
+										<p className="text-slate-700 dark:text-slate-300">
+											Afirmações sem fonte:
+										</p>
 										<Lista itens={semFonte} />
 									</div>
 								) : null}
@@ -6300,7 +6343,7 @@ export function Dossie({
 								    material. Ver `oQueFalta`. */}
 								{oQueFalta.length > 0 ? (
 									<div className="md:col-span-2">
-										<p className="text-slate-300">
+										<p className="text-slate-700 dark:text-slate-300">
 											O que o time não conseguiu apurar:
 										</p>
 										<Lista itens={oQueFalta} />
@@ -6308,14 +6351,17 @@ export function Dossie({
 								) : null}
 								{semProdutosPorque ? (
 									<p className="md:col-span-2">
-										<span className="text-slate-300">
+										<span className="text-slate-700 dark:text-slate-300">
 											Sobre por quais produtos começar:{' '}
 										</span>
 										{semProdutosPorque}
 									</p>
 								) : null}
 								{falhas.map((f) => (
-									<p key={f.nome} className="text-amber-400/90">
+									<p
+										key={f.nome}
+										className="text-amber-700/90 dark:text-amber-400/90"
+									>
 										{f.nome} não respondeu desta vez.
 									</p>
 								))}
@@ -6356,7 +6402,7 @@ export function Dossie({
 						<button
 							type="button"
 							onClick={onOrcamentoExato}
-							className="flex items-center gap-2 rounded-xl border border-white/10 px-5 py-3 text-sm font-medium text-slate-300 transition-colors hover:bg-white/5"
+							className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 px-5 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
 						>
 							Quero o preço exato <ArrowRight className="h-4 w-4" />
 						</button>
@@ -6365,7 +6411,7 @@ export function Dossie({
 						<button
 							type="button"
 							onClick={onAtualizarPesquisa}
-							className="flex items-center gap-2 rounded-xl border border-white/10 px-5 py-3 text-sm font-medium text-slate-400 transition-colors hover:bg-white/5"
+							className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 px-5 py-3 text-sm font-medium text-slate-600 dark:text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
 						>
 							<RefreshCw className="h-4 w-4" /> Atualizar pesquisa
 						</button>
@@ -6373,7 +6419,7 @@ export function Dossie({
 					<button
 						type="button"
 						onClick={() => window.print()}
-						className="flex items-center gap-2 rounded-xl border border-white/10 px-5 py-3 text-sm font-medium text-slate-400 transition-colors hover:bg-white/5"
+						className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 px-5 py-3 text-sm font-medium text-slate-600 dark:text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
 					>
 						<Printer className="h-4 w-4" /> Imprimir
 					</button>
