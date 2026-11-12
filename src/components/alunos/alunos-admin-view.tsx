@@ -532,7 +532,14 @@ function BlockedBadge({ blocked }: { blocked: boolean }) {
 function PlanCell({ student }: { student: Student }) {
 	const status = student.subscription_status;
 	const colorClass = statusColor(status);
-	const renewal = formatPeriodDate(student.current_period_end);
+	const periodEnd = formatPeriodDate(student.current_period_end);
+	// Cancelado não renova; marcado para encerrar só vale até a data.
+	const periodLabel =
+		!periodEnd || status === 'canceled'
+			? null
+			: student.cancel_at_period_end
+				? `Acesso até ${periodEnd}`
+				: `Renova ${periodEnd}`;
 
 	return (
 		<div className="flex flex-col gap-1">
@@ -545,9 +552,9 @@ function PlanCell({ student }: { student: Student }) {
 				>
 					{statusLabel(status)}
 				</span>
-				{renewal && (
+				{periodLabel && (
 					<span className="text-xs text-slate-500 dark:text-gray-500">
-						Renova {renewal}
+						{periodLabel}
 					</span>
 				)}
 			</div>

@@ -22,6 +22,8 @@ export const studentSchema = z.object({
 	plan: studentPlanSchema.nullable(),
 	subscription_status: z.string().nullable(),
 	current_period_end: z.string().nullable(),
+	// Default: a API sobe antes/depois do front sem quebrar a listagem.
+	cancel_at_period_end: z.boolean().default(false),
 	voxes_balance: z.number(),
 });
 export type Student = z.infer<typeof studentSchema>;
