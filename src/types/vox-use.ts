@@ -23,7 +23,8 @@ export const voxUseSummarySchema = z.object({
 	reserved_cents: z.number(),
 	use_cap_bps: z.number(),
 	netting_cap_bps: z.number(),
-	statements: z.array(voxUseStatementSchema),
+	savings_cents: z.number().default(0),
+	statements: z.array(voxUseStatementSchema).default([]),
 });
 
 export type VoxUseStatement = z.infer<typeof voxUseStatementSchema>;
