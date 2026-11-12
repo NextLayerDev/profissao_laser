@@ -112,22 +112,18 @@ export function VoxUseSection({ from, to }: { from?: string; to?: string }) {
 					Icon={Coins}
 					label="Voxes usados"
 					value={voxes(data.used_voxes)}
-					hint={brl(data.used_cents)}
 				/>
 				<Stat
 					Icon={Wallet}
-					label="A descontar"
-					value={brl(data.to_discount_cents)}
-					hint={
-						data.reserved_cents > 0
-							? `${brl(data.reserved_cents)} reservado no próximo repasse`
-							: 'Sai do próximo repasse'
-					}
+					label="Cobrado no uso"
+					value={brl(data.used_cents)}
+					hint="Entra na fatura"
 				/>
 				<Stat
 					Icon={ReceiptText}
-					label="Já descontado"
-					value={brl(data.discounted_cents)}
+					label="Economia"
+					value={brl(data.savings_cents)}
+					hint="vs. cobrar na concessão"
 				/>
 			</div>
 
