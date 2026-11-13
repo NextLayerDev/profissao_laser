@@ -69,6 +69,25 @@ export interface LaserSettings {
 	modoLentes: boolean;
 	textoLenteDireita: string;
 	textoLenteEsquerda: string;
+	/** Posição marcada pelo aluno no editor. Ausente/null = automática. */
+	layout?: PreviaLayout | null;
+	/** 2º texto (frase, data…) — vai com a caixa `layout.texto2`. */
+	texto2?: string;
+}
+
+/** Caixa sobre a foto do produto, 0–1 (x, y = centro; rot em graus). */
+export interface PreviaLayoutBox {
+	x: number;
+	y: number;
+	w: number;
+	h: number;
+	rot: number;
+}
+
+export interface PreviaLayout {
+	logo?: PreviaLayoutBox | null;
+	texto?: PreviaLayoutBox | null;
+	texto2?: PreviaLayoutBox | null;
 }
 
 export interface Previa {
