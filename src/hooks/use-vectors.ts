@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import {
 	aiLineartVectorize,
 	analyzeVectorize,
+	autoVectorize,
 	type InvertMode,
 	invertVector,
 	previewVectorize,
@@ -65,6 +66,24 @@ export function useVectorizeImage() {
  * Line-art com IA (foto → gravura via IA → vetor). Cobrada NA GERAÇÃO. Demora
  * ~30–40s. O `useRunTool` orquestra o invoke/settle; aqui só a chamada do motor.
  */
+export function useAutoVectorize() {
+	return useMutation({
+		mutationFn: ({
+			file,
+			...opts
+		}: {
+			file: File;
+			invocationId?: string;
+			kind?: 'photo' | 'logo';
+			darkCup?: boolean;
+			widthMm?: number;
+		}) => autoVectorize(file, opts),
+		onSuccess: () => {
+			toast.success('Vetor pronto!');
+		},
+	});
+}
+
 export function useAiLineartVectorize() {
 	return useMutation({
 		mutationFn: ({

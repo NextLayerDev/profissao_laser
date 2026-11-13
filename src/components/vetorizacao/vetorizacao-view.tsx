@@ -13,7 +13,6 @@ import {
 	Headphones,
 	HelpCircle,
 	Image,
-	Layers,
 	Loader2,
 	PenLine,
 	Play,
@@ -33,22 +32,17 @@ import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/page-header';
 import { useEntitlements } from '@/hooks/use-entitlements';
 import {
-	useAiLineartVectorize,
-	useAnalyzeVectorize,
+	useAutoVectorize,
 	useCustomerVectors,
 	useInvertVector,
 	useSaveVector,
-	useVectorizeImage,
-	useVectorizePreview,
 } from '@/hooks/use-vectors';
 import { useToolBilling } from '@/modules/tools/hooks/use-tool-billing';
 import type {
-	ImageProfile,
+	AutoVectorizeInfo,
 	InvertedVector,
 	InvertMode,
 	VectorFormat,
-	VectorizeParams,
-	VectorizePreset,
 	VectorizeResult,
 } from '@/services/vectorize';
 import { chargeVectorFormat, openExistingVector } from '@/services/vectorize';
@@ -64,118 +58,8 @@ type BgMode = 'transparent' | 'white' | 'black';
 /** Polaridade do ARQUIVO (SVG/PNG/DXF que o cliente baixa). */
 type Polarity = 'normal' | 'inverted';
 
-/* ─────────────── Presets de qualidade ─────────────── */
-
-const DEFAULT_PARAMS: VectorizeParams = {
-	mode: 'trace',
-	threshold: 128,
-	invert: false,
-	blur: null,
-	sharpen: false,
-	brightness: null,
-	contrast: null,
-	gamma: null,
-	edgeDetection: 'none',
-	turdSize: 5,
-	optTolerance: 0.2,
-	alphaMax: 1,
-	turnPolicy: null,
-	blackOnWhite: true,
-	posterizeLevels: 4,
-	posterizeFillStrategy: 'dominant',
-	posterizeRangeDistribution: 'auto',
-	ditherAlgorithm: null,
-	drawingStyle: 'fill',
-	color: '#000000',
-	strokeWidth: 1,
-	nonScalingStroke: false,
-	linePattern: 'none',
-	lineSpacing: 3,
-	lineAngle: null,
-	dpi: null,
-	outputWidth: null,
-	outputHeight: null,
-	svgOptimize: false,
-};
-
-const PRESET_PARAMS: Record<VectorizePreset, Partial<VectorizeParams>> = {
-	// Automático = ponto de partida; a análise da imagem sobrescreve com os
-	// parâmetros ideais (router + image analytics) assim que chega.
-	automatico: { mode: 'trace', threshold: 128, turdSize: 3, optTolerance: 0.2 },
-	// Rápido = traço P&B simples → cai no fast-path da API
-	rapido: { mode: 'trace', threshold: 128, turdSize: 5, optTolerance: 0.4 },
-	// Detalhado = trace limpo de alta qualidade (não posterize). Posterize
-	// empilhava N camadas por forma → "linhas sobrepostas" e fontes quebradas.
-	// O motor faz supersampling antes de traçar; sharpen recupera bordas.
-	detalhado: {
-		mode: 'trace',
-		threshold: 128,
-		turdSize: 2,
-		optTolerance: 0.2,
-		alphaMax: 1.0,
-		sharpen: true,
-	},
-	// Apenas SVG = traço puro e limpo, sem pós-processamento
-	svg: {
-		mode: 'trace',
-		threshold: 128,
-		turdSize: 2,
-		optTolerance: 0.2,
-		svgOptimize: true,
-		linePattern: 'none',
-	},
-};
-
-function presetParams(preset: VectorizePreset): VectorizeParams {
-	return { ...DEFAULT_PARAMS, ...PRESET_PARAMS[preset], preset };
-}
-
-/* ─────────────── Cor vs P&B (Automático) ─────────────── */
-
-type ColorChoice = 'auto' | 'color' | 'bw';
-
-/**
- * Traduz o botão Cor / P&B (do modo Automático) em parâmetros do motor, usando a
- * classe detectada pela análise. É o "P&B inteligente": foto/tonal em P&B vira
- * meio-tom (posterize) preservando os tons — em vez do limiar 1-bit duro que
- * "saía muito ruim"; logo/linha/texto seguem em traço limpo.
- */
-function colorOverrideParams(
-	choice: ColorChoice,
-	analysis: ImageProfile | null,
-): Partial<VectorizeParams> {
-	if (choice === 'color') {
-		return {
-			mode: 'color',
-			edgeDetection: 'none',
-			maxColors: analysis?.recommendedParams?.maxColors ?? 8,
-			ditherAlgorithm: null,
-		};
-	}
-	if (choice === 'bw') {
-		const cls = analysis?.class;
-		// Foto / imagem colorida → o P&B usa LINE-ART com IA (o botão "Vetorizar" vira
-		// "Gerar com IA"). Estes params só preparam o trace do resultado da IA.
-		if (cls === 'photo' || cls === 'grayscale_tonal' || cls === 'color_flat') {
-			return {
-				mode: 'trace',
-				edgeDetection: 'none',
-				ditherAlgorithm: null,
-				turdSize: 3,
-			};
-		}
-		// Logo / linha / texto → traço limpo (limiar Otsu; formas chapadas crispas).
-		const otsu = analysis?.metrics?.otsuThreshold;
-		return {
-			mode: 'trace',
-			edgeDetection: 'none',
-			ditherAlgorithm: null,
-			...(otsu != null ? { threshold: otsu } : {}),
-		};
-	}
-	// 'auto' → recomendação da análise (reset do edgeDetection p/ não vazar 'lineart').
-	return { edgeDetection: 'none', ...(analysis?.recommendedParams ?? {}) };
-}
+/** Tipo forçado nas opções avançadas; 'auto' = o servidor decide. */
+type AutoKind = 'auto' | 'photo' | 'logo';
 
 /* ─────────────── Download helpers ─────────────── */
 
@@ -225,7 +109,7 @@ function formatFileSize(bytes: number): string {
 function StepIndicator({ current }: { current: WizardStep }) {
 	const steps = [
 		{ num: 1 as const, label: 'Envie sua imagem' },
-		{ num: 2 as const, label: 'Ajuste os parâmetros' },
+		{ num: 2 as const, label: 'Vetorizar' },
 		{ num: 3 as const, label: 'Resultado' },
 	];
 
@@ -388,522 +272,101 @@ function StepUpload({
 	);
 }
 
-/* ─────────────── Controles reutilizáveis ─────────────── */
+/* ─────────────── Step 2: Automático ─────────────── */
 
-function Switch({
-	checked,
-	onChange,
-	disabled,
-}: {
-	checked: boolean;
-	onChange: (v: boolean) => void;
-	disabled?: boolean;
-}) {
-	return (
-		<button
-			type="button"
-			role="switch"
-			aria-checked={checked}
-			disabled={disabled}
-			onClick={() => onChange(!checked)}
-			className={`relative w-11 h-6 rounded-full transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed ${
-				checked ? 'bg-violet-600' : 'bg-slate-300 dark:bg-white/20'
-			}`}
-		>
-			<span
-				className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform shadow-sm ${
-					checked ? 'translate-x-5' : 'translate-x-0'
-				}`}
-			/>
-		</button>
-	);
-}
+/** Largura útil aceita pelo backend (mm). */
+const VECTOR_FORMATS: VectorFormat[] = ['svg', 'png', 'dxf'];
+const WIDTH_MM_MIN = 5;
+const WIDTH_MM_MAX = 1000;
+const DEFAULT_WIDTH_MM = 120;
 
-function ToggleRow({
-	label,
-	checked,
-	onChange,
-	disabled,
-}: {
-	label: string;
-	checked: boolean;
-	onChange: (v: boolean) => void;
-	disabled?: boolean;
-}) {
-	return (
-		<div
-			className={`flex items-center justify-between py-2 ${disabled ? 'opacity-60' : ''}`}
-		>
-			<span className="text-sm text-slate-600 dark:text-gray-400">{label}</span>
-			<Switch checked={checked} onChange={onChange} disabled={disabled} />
-		</div>
-	);
-}
+const KIND_OPTIONS: { value: AutoKind; label: string; desc: string }[] = [
+	{ value: 'auto', label: 'Detectar', desc: 'Foto ou logo, sozinho' },
+	{ value: 'photo', label: 'Foto', desc: 'Pessoa, pet, cena' },
+	{ value: 'logo', label: 'Logo', desc: 'Arte, texto, ícone' },
+];
 
-function RangeRow({
-	label,
-	value,
-	min,
-	max,
-	step,
-	onChange,
-	fmt,
-}: {
-	label: string;
-	value: number;
-	min: number;
-	max: number;
-	step: number;
-	onChange: (v: number) => void;
-	fmt?: (v: number) => string;
-}) {
-	return (
-		<div className="py-2">
-			<div className="flex justify-between mb-1 text-sm">
-				<span className="text-slate-600 dark:text-gray-400">{label}</span>
-				<span className="font-medium text-slate-700 dark:text-slate-300">
-					{fmt ? fmt(value) : value}
-				</span>
-			</div>
-			<input
-				type="range"
-				min={min}
-				max={max}
-				step={step}
-				value={value}
-				onChange={(e) => onChange(Number(e.target.value))}
-				className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-200 dark:bg-white/10 accent-violet-600"
-			/>
-		</div>
-	);
-}
-
-function OptionalRangeRow({
-	label,
-	value,
-	min,
-	max,
-	step,
-	def,
-	onChange,
-}: {
-	label: string;
-	value: number | null;
-	min: number;
-	max: number;
-	step: number;
-	def: number;
-	onChange: (v: number | null) => void;
-}) {
-	const enabled = value !== null;
-	return (
-		<div className="py-2">
-			<div className="flex justify-between items-center mb-1 text-sm">
-				<label className="flex items-center gap-2 text-slate-600 dark:text-gray-400 cursor-pointer">
-					<input
-						type="checkbox"
-						checked={enabled}
-						onChange={(e) => onChange(e.target.checked ? def : null)}
-						className="accent-violet-600"
-					/>
-					{label}
-				</label>
-				<span className="font-medium text-slate-700 dark:text-slate-300">
-					{enabled ? value : '—'}
-				</span>
-			</div>
-			<input
-				type="range"
-				min={min}
-				max={max}
-				step={step}
-				value={enabled ? value : def}
-				disabled={!enabled}
-				onChange={(e) => onChange(Number(e.target.value))}
-				className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-200 dark:bg-white/10 accent-violet-600 disabled:opacity-40"
-			/>
-		</div>
-	);
-}
-
-function OptionalNumberRow({
-	label,
-	value,
-	def,
-	suffix,
-	onChange,
-}: {
-	label: string;
-	value: number | null;
-	def: number;
-	suffix?: string;
-	onChange: (v: number | null) => void;
-}) {
-	const enabled = value !== null;
-	return (
-		<div className="flex items-center justify-between py-2 gap-2">
-			<label className="flex items-center gap-2 text-sm text-slate-600 dark:text-gray-400 cursor-pointer">
-				<input
-					type="checkbox"
-					checked={enabled}
-					onChange={(e) => onChange(e.target.checked ? def : null)}
-					className="accent-violet-600"
-				/>
-				{label}
-			</label>
-			<div className="flex items-center gap-1">
-				<input
-					type="number"
-					value={enabled ? value : ''}
-					disabled={!enabled}
-					onChange={(e) =>
-						onChange(e.target.value === '' ? null : Number(e.target.value))
-					}
-					className="w-24 px-2 py-1 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111] text-slate-700 dark:text-slate-300 disabled:opacity-40"
-				/>
-				{suffix && <span className="text-xs text-slate-400">{suffix}</span>}
-			</div>
-		</div>
-	);
-}
-
-function SelectRow({
-	label,
-	value,
-	options,
-	onChange,
-}: {
-	label: string;
-	value: string;
-	options: { value: string; label: string }[];
-	onChange: (v: string) => void;
-}) {
-	return (
-		<div className="flex items-center justify-between py-2 gap-2">
-			<span className="text-sm text-slate-600 dark:text-gray-400">{label}</span>
-			<select
-				value={value}
-				onChange={(e) => onChange(e.target.value)}
-				className="px-2 py-1 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111] text-slate-700 dark:text-slate-300"
-			>
-				{options.map((o) => (
-					<option key={o.value} value={o.value}>
-						{o.label}
-					</option>
-				))}
-			</select>
-		</div>
-	);
-}
-
-function Group({
-	title,
-	children,
-}: {
-	title: string;
-	children: React.ReactNode;
-}) {
-	return (
-		<div className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
-			<h5 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400 mb-1">
-				{title}
-			</h5>
-			<div className="divide-y divide-slate-100 dark:divide-white/5">
-				{children}
-			</div>
-		</div>
-	);
-}
-
-/* ─────────────── Step 2: Presets + Parâmetros ─────────────── */
-
-function StepParams({
-	preset,
-	params,
-	set,
+function StepAuto({
+	originalUrl,
+	isVectorizing,
 	onVectorize,
 	onBack,
-	isVectorizing,
-	file,
-	originalUrl,
-	analysis,
-	analyzing,
-	colorChoice,
-	onColorChoice,
-	isAiLineart,
-	wantInverted,
-	onWantInverted,
+	kind,
+	onKind,
+	darkCup,
+	onDarkCup,
+	widthMm,
+	onWidthMm,
 }: {
-	preset: VectorizePreset;
-	params: VectorizeParams;
-	set: <K extends keyof VectorizeParams>(
-		key: K,
-		value: VectorizeParams[K],
-	) => void;
+	originalUrl: string | null;
+	isVectorizing: boolean;
 	onVectorize: () => void;
 	onBack: () => void;
-	isVectorizing: boolean;
-	file: File | null;
-	originalUrl: string | null;
-	analysis: ImageProfile | null;
-	analyzing: boolean;
-	colorChoice: ColorChoice;
-	onColorChoice: (c: ColorChoice) => void;
-	isAiLineart: boolean;
-	wantInverted: boolean;
-	onWantInverted: (v: boolean) => void;
+	kind: AutoKind;
+	onKind: (k: AutoKind) => void;
+	darkCup: boolean;
+	onDarkCup: (v: boolean) => void;
+	widthMm: number;
+	onWidthMm: (v: number) => void;
 }) {
 	const [advancedOpen, setAdvancedOpen] = useState(false);
-
-	// Preview ao vivo (NÃO cobrado): re-renderiza conforme os sliders mudam.
-	// Desligado na line-art com IA (não dá pra rodar IA ao vivo/grátis a cada slider).
-	const { data: preview, isFetching: previewLoading } = useVectorizePreview(
-		file,
-		{ ...params, preset },
-		!isAiLineart,
-	);
-
-	// 3 modos por finalidade (o modo JÁ define cor/P&B — sem toggle separado).
-	const modes: {
-		choice: ColorChoice;
-		label: string;
-		desc: string;
-		icon: React.ReactNode;
-	}[] = [
-		{
-			choice: 'auto',
-			label: 'Automático (IA)',
-			desc: 'Detecta e escolhe o melhor sozinho',
-			icon: <Wand2 className="w-6 h-6" />,
-		},
-		{
-			choice: 'bw',
-			label: 'Laser (P&B)',
-			desc: 'Gravação P&B — foto vira gravura premium com IA',
-			icon: <Zap className="w-6 h-6" />,
-		},
-		{
-			choice: 'color',
-			label: 'Laser + UV (Cores)',
-			desc: 'Vetor colorido em alta definição (p/ impressão UV)',
-			icon: <Layers className="w-6 h-6" />,
-		},
-	];
+	const customized = kind !== 'auto' || darkCup || widthMm !== DEFAULT_WIDTH_MM;
 
 	return (
 		<div className="space-y-4">
-			<style>{`@keyframes aiScan{0%{transform:translateY(-60%)}100%{transform:translateY(320%)}}@keyframes aiDot{0%,80%,100%{opacity:.3;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}`}</style>
-			{/* Preview: original × resultado (compacto, cabe na tela) */}
-			<div>
-				<div className="flex items-center justify-between mb-2">
-					<h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-						Pré-visualização ao vivo
-					</h4>
-					{previewLoading && !isVectorizing && (
-						<span className="flex items-center gap-1.5 text-xs text-violet-600 dark:text-violet-400">
-							<Loader2 className="w-3.5 h-3.5 animate-spin" /> atualizando…
-						</span>
-					)}
-				</div>
-				<div className="grid grid-cols-2 gap-3">
-					{/* Original */}
-					<div className="relative rounded-xl border border-slate-200 dark:border-white/10 bg-[repeating-conic-gradient(#f1f5f9_0_25%,#fff_0_50%)] dark:bg-[#1a1a1d] bg-[length:16px_16px] overflow-hidden h-[34vh] min-h-[190px] flex items-center justify-center">
-						{originalUrl ? (
-							// biome-ignore lint/performance/noImgElement: preview local (blob/data URL)
-							<img
-								src={originalUrl}
-								alt="Original"
-								className="max-w-full max-h-full object-contain"
-							/>
-						) : null}
-						<span className="absolute top-2 left-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400 bg-white/70 dark:bg-black/50 px-1.5 py-0.5 rounded">
-							Original
-						</span>
-					</div>
-					{/* Resultado / prévia */}
-					<div className="relative rounded-xl border border-slate-200 dark:border-white/10 bg-[repeating-conic-gradient(#f1f5f9_0_25%,#fff_0_50%)] dark:bg-[#0d0d0f] bg-[length:16px_16px] overflow-hidden h-[34vh] min-h-[190px] flex items-center justify-center">
-						{isVectorizing ? (
-							<>
-								{originalUrl ? (
-									// biome-ignore lint/performance/noImgElement: preview local
-									<img
-										src={originalUrl}
-										alt=""
-										className="absolute inset-0 w-full h-full object-contain opacity-20"
-									/>
-								) : null}
-								<div
-									className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-transparent via-violet-400/40 to-transparent"
-									style={{ animation: 'aiScan 1.8s ease-in-out infinite' }}
-								/>
-								<div className="relative z-10 flex flex-col items-center gap-2 text-center px-4">
-									<div className="relative">
-										<div className="absolute inset-0 rounded-full bg-violet-500/30 blur-xl animate-pulse" />
-										<Wand2 className="relative w-9 h-9 text-violet-600 dark:text-violet-400" />
-										<Sparkles className="absolute -top-1.5 -right-1.5 w-4 h-4 text-fuchsia-500 animate-ping" />
-									</div>
-									<p className="text-sm font-bold text-violet-700 dark:text-violet-300">
-										{isAiLineart ? 'Gerando com IA…' : 'Vetorizando…'}
-									</p>
-									{isAiLineart && (
-										<p className="text-[11px] text-slate-500 dark:text-gray-400">
-											Redesenhando sua imagem · ~30s
-										</p>
-									)}
-									<div className="flex gap-1 mt-0.5">
-										{[0, 0.15, 0.3].map((d) => (
-											<span
-												key={d}
-												className="w-1.5 h-1.5 rounded-full bg-violet-500"
-												style={{
-													animation: 'aiDot 1s infinite',
-													animationDelay: `${d}s`,
-												}}
-											/>
-										))}
-									</div>
-								</div>
-							</>
-						) : isAiLineart ? (
-							<span className="text-xs text-slate-500 dark:text-gray-400 px-4 text-center leading-relaxed">
-								Gravura <strong>P&B com IA</strong> — clique{' '}
-								<strong>Gerar com IA</strong>. A prévia ao vivo não roda IA.
-							</span>
-						) : preview?.svgContent ? (
-							// biome-ignore lint/performance/noImgElement: SVG vetorizado local
-							<img
-								src={svgToDataUrl(preview.svgContent)}
-								alt="Pré-visualização do vetor"
-								className={`max-w-full max-h-full object-contain transition-opacity ${
-									previewLoading ? 'opacity-60' : 'opacity-100'
-								}`}
-							/>
-						) : (
-							<span className="text-xs text-slate-400 dark:text-gray-500 px-3 text-center">
-								{previewLoading
-									? 'Gerando pré-visualização…'
-									: 'Ajuste os parâmetros para ver o resultado'}
-							</span>
-						)}
-						<span className="absolute top-2 left-2 z-10 text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400 bg-white/70 dark:bg-black/50 px-1.5 py-0.5 rounded">
-							{isVectorizing ? 'Gerando' : 'Prévia'}
-						</span>
-					</div>
-				</div>
-			</div>
-
-			{/* Presets */}
-			<div>
-				<h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
-					Modo de vetorização
-				</h4>
-				<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-					{modes.map((m) => (
-						<button
-							key={m.choice}
-							type="button"
-							onClick={() => onColorChoice(m.choice)}
-							className={`rounded-xl border-2 p-3 text-left transition-all ${
-								colorChoice === m.choice
-									? 'border-violet-600 bg-violet-50 dark:bg-violet-500/10'
-									: 'border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1d] hover:border-slate-300 dark:hover:border-white/20'
-							}`}
-						>
-							<div className="flex items-center gap-2 mb-0.5">
-								<span
-									className={
-										colorChoice === m.choice
-											? 'text-violet-600 dark:text-violet-400'
-											: 'text-slate-400 dark:text-gray-500'
-									}
-								>
-									{m.icon}
-								</span>
-								<p
-									className={`font-semibold text-sm ${
-										colorChoice === m.choice
-											? 'text-violet-700 dark:text-violet-400'
-											: 'text-slate-700 dark:text-slate-300'
-									}`}
-								>
-									{m.label}
-								</p>
-							</div>
-							<p className="text-[11px] text-slate-500 dark:text-gray-400 leading-snug">
-								{m.desc}
-							</p>
-						</button>
-					))}
-				</div>
-
-				{/* Resultado da análise automática (router + image analytics) */}
-				{preset === 'automatico' && (
-					<div className="mt-2 rounded-xl border border-violet-200 dark:border-violet-500/20 bg-violet-50 dark:bg-violet-500/10 p-3">
-						{analyzing && !analysis ? (
-							<p className="flex items-center gap-2 text-sm text-violet-700 dark:text-violet-300">
-								<Loader2 className="w-4 h-4 animate-spin" /> Analisando a
-								imagem…
-							</p>
-						) : analysis ? (
-							<>
-								<div className="flex items-center gap-2">
-									<Wand2 className="w-4 h-4 text-violet-600 dark:text-violet-400 shrink-0" />
-									<p className="text-sm text-slate-700 dark:text-slate-200">
-										Detectamos:{' '}
-										<strong className="text-violet-700 dark:text-violet-300">
-											{analysis.label}
-										</strong>
-									</p>
-								</div>
-								<p className="text-xs text-slate-500 dark:text-gray-400 mt-1">
-									{analysis.reason} Ajustamos os parâmetros automaticamente —
-									você pode refinar nos controles abaixo.
-								</p>
-								{isAiLineart && (
-									<p className="text-xs text-violet-700 dark:text-violet-300 mt-2 font-medium">
-										Geramos uma <strong>gravura P&B com IA</strong> (alta
-										qualidade, fundo removido). É só clicar{' '}
-										<strong>Gerar com IA</strong> abaixo. Pra colorido, use o
-										modo <strong>Laser + UV</strong>.
-									</p>
-								)}
-							</>
-						) : (
-							<p className="text-sm text-slate-500 dark:text-gray-400">
-								Suba uma imagem para a análise automática ajustar tudo.
-							</p>
-						)}
-					</div>
-				)}
-
-				{/* Já entregar invertido. É a MESMA polaridade do passo 3 (grátis e
-				    reversível lá) — aqui só poupa um clique. */}
-				<div className="mt-3 rounded-xl border border-slate-200 dark:border-white/10 p-3">
-					<ToggleRow
-						label="Vetor invertido (fundo na silhueta)"
-						checked={wantInverted}
-						onChange={onWantInverted}
-						disabled={colorChoice === 'color'}
+			<style>{`@keyframes aiScan{0%{transform:translateY(-60%)}100%{transform:translateY(320%)}}`}</style>
+			<div className="relative rounded-xl border border-slate-200 dark:border-white/10 bg-[repeating-conic-gradient(#f1f5f9_0_25%,#fff_0_50%)] dark:bg-[#1a1a1d] bg-[length:16px_16px] overflow-hidden h-[38vh] min-h-[200px] flex items-center justify-center">
+				{originalUrl ? (
+					<img
+						src={originalUrl}
+						alt="Sua imagem"
+						className={`max-w-full max-h-full object-contain transition-opacity ${isVectorizing ? 'opacity-30' : ''}`}
 					/>
-					<p className="text-[11px] text-slate-500 dark:text-gray-400 leading-snug mt-1">
-						{colorChoice === 'color'
-							? 'Indisponível no modo Cores: vetor colorido não tem negativo geométrico. Use Laser (P&B) ou Automático.'
-							: 'O resultado já vem com a polaridade trocada — o fundo preenchido fica delimitado pela silhueta do desenho, com um contorno fino (nunca um retângulo). No resultado dá pra alternar entre normal e invertido, sem custo.'}
-					</p>
-				</div>
+				) : null}
+				{isVectorizing && (
+					<>
+						<div
+							className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-transparent via-violet-400/40 to-transparent"
+							style={{ animation: 'aiScan 1.8s ease-in-out infinite' }}
+						/>
+						<div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-4">
+							<Wand2 className="w-9 h-9 text-violet-600 dark:text-violet-400" />
+							<p className="text-sm font-bold text-violet-700 dark:text-violet-300">
+								Vetorizando…
+							</p>
+							<p className="text-[11px] text-slate-600 dark:text-gray-300">
+								Logo pronto sai em segundos · foto leva ~30–60s
+							</p>
+						</div>
+					</>
+				)}
 			</div>
 
-			{/* Configurações avançadas */}
-			<div className="rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden">
+			<div className="rounded-xl border border-violet-200 dark:border-violet-500/30 bg-violet-50/60 dark:bg-violet-500/10 px-4 py-3 flex items-start gap-3">
+				<Sparkles className="w-5 h-5 text-violet-600 dark:text-violet-400 shrink-0 mt-0.5" />
+				<p className="text-sm text-slate-700 dark:text-gray-300">
+					<strong>Automático.</strong> Detectamos se é foto ou logo. Logo limpo
+					é traçado direto; se precisar, a IA redesenha. Foto tem o fundo
+					removido e vira gravura nanquim pronta para o laser.
+				</p>
+			</div>
+
+			<div className="rounded-xl border border-slate-200 dark:border-white/10">
 				<button
 					type="button"
-					onClick={() => setAdvancedOpen(!advancedOpen)}
-					className="w-full flex items-center justify-between p-4 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+					onClick={() => setAdvancedOpen((v) => !v)}
+					aria-expanded={advancedOpen}
+					className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-300"
 				>
-					<div className="flex items-center gap-2">
+					<span className="flex items-center gap-2">
 						<Settings className="w-4 h-4" />
-						Configurações avançadas
-					</div>
+						Opções avançadas
+						{customized && !advancedOpen && (
+							<span className="text-[10px] font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-500/20 px-1.5 py-0.5 rounded">
+								alteradas
+							</span>
+						)}
+					</span>
 					{advancedOpen ? (
 						<ChevronUp className="w-4 h-4" />
 					) : (
@@ -911,339 +374,87 @@ function StepParams({
 					)}
 				</button>
 				{advancedOpen && (
-					<div className="p-4 pt-0 grid grid-cols-1 lg:grid-cols-2 gap-4">
-						<Group title="Pré-processamento">
-							<RangeRow
-								label="Limiar (threshold)"
-								value={params.threshold ?? 128}
-								min={0}
-								max={255}
-								step={1}
-								onChange={(v) => set('threshold', v)}
-							/>
-							<OptionalRangeRow
-								label="Brilho"
-								value={params.brightness ?? null}
-								min={0.1}
-								max={3}
-								step={0.1}
-								def={1}
-								onChange={(v) => set('brightness', v)}
-							/>
-							<OptionalRangeRow
-								label="Contraste"
-								value={params.contrast ?? null}
-								min={0.1}
-								max={3}
-								step={0.1}
-								def={1.2}
-								onChange={(v) => set('contrast', v)}
-							/>
-							<OptionalRangeRow
-								label="Gamma"
-								value={params.gamma ?? null}
-								min={1}
-								max={3}
-								step={0.1}
-								def={1.5}
-								onChange={(v) => set('gamma', v)}
-							/>
-							<OptionalRangeRow
-								label="Desfoque (blur)"
-								value={params.blur ?? null}
-								min={0.3}
-								max={20}
-								step={0.1}
-								def={1}
-								onChange={(v) => set('blur', v)}
-							/>
-							<ToggleRow
-								label="Nitidez (sharpen)"
-								checked={params.sharpen ?? false}
-								onChange={(v) => set('sharpen', v)}
-							/>
-							{/* NÃO confundir com "Polaridade: Invertido" do resultado: este
-						    negativa o RASTER antes do limiar (muda o que vira traço);
-						    aquele inverte o VETOR pronto (negativo real, delimitado
-						    pela silhueta com contorno fino). */}
-							<ToggleRow
-								label="Inverter cores (antes do limiar)"
-								checked={params.invert ?? false}
-								onChange={(v) => set('invert', v)}
-							/>
-							<SelectRow
-								label="Detecção de bordas"
-								value={params.edgeDetection ?? 'none'}
-								options={[
-									{ value: 'none', label: 'Nenhuma' },
-									{ value: 'sobel', label: 'Sobel' },
-									{ value: 'canny', label: 'Canny' },
-								]}
-								onChange={(v) =>
-									set('edgeDetection', v as VectorizeParams['edgeDetection'])
-								}
-							/>
-						</Group>
-
-						<Group title="Traçado (Potrace)">
-							<RangeRow
-								label="Suprimir manchas (turdSize)"
-								value={params.turdSize ?? 5}
-								min={0}
-								max={50}
-								step={1}
-								onChange={(v) => set('turdSize', v)}
-							/>
-							<RangeRow
-								label="Tolerância (optTolerance)"
-								value={params.optTolerance ?? 0.2}
-								min={0}
-								max={1}
-								step={0.05}
-								fmt={(v) => v.toFixed(2)}
-								onChange={(v) => set('optTolerance', v)}
-							/>
-							<RangeRow
-								label="Limiar de canto (alphaMax)"
-								value={params.alphaMax ?? 1}
-								min={0}
-								max={1.334}
-								step={0.034}
-								fmt={(v) => v.toFixed(2)}
-								onChange={(v) => set('alphaMax', v)}
-							/>
-							<SelectRow
-								label="Política de curva (turnPolicy)"
-								value={params.turnPolicy ?? ''}
-								options={[
-									{ value: '', label: 'Padrão' },
-									{ value: 'minority', label: 'Minoria' },
-									{ value: 'majority', label: 'Maioria' },
-									{ value: 'black', label: 'Preto' },
-									{ value: 'white', label: 'Branco' },
-									{ value: 'left', label: 'Esquerda' },
-									{ value: 'right', label: 'Direita' },
-								]}
-								onChange={(v) =>
-									set(
-										'turnPolicy',
-										v === '' ? null : (v as VectorizeParams['turnPolicy']),
-									)
-								}
-							/>
-							<ToggleRow
-								label="Preto sobre branco"
-								checked={params.blackOnWhite ?? true}
-								onChange={(v) => set('blackOnWhite', v)}
-							/>
-						</Group>
-
-						<Group title="Algoritmo">
-							<SelectRow
-								label="Modo"
-								value={params.mode ?? 'trace'}
-								options={[
-									{ value: 'trace', label: 'Traço (P&B)' },
-									{ value: 'color', label: 'Cores (camadas)' },
-									{ value: 'posterize', label: 'Posterize (tons)' },
-								]}
-								onChange={(v) => set('mode', v as VectorizeParams['mode'])}
-							/>
-							{params.mode === 'color' && (
-								<RangeRow
-									label="Cores"
-									value={params.maxColors ?? 8}
-									min={2}
-									max={16}
-									step={1}
-									onChange={(v) => set('maxColors', v)}
-								/>
-							)}
-							<RangeRow
-								label="Níveis (posterize)"
-								value={params.posterizeLevels ?? 4}
-								min={2}
-								max={10}
-								step={1}
-								onChange={(v) => set('posterizeLevels', v)}
-							/>
-							<SelectRow
-								label="Estratégia de preenchimento"
-								value={params.posterizeFillStrategy ?? 'dominant'}
-								options={[
-									{ value: 'dominant', label: 'Dominante' },
-									{ value: 'mean', label: 'Média' },
-									{ value: 'median', label: 'Mediana' },
-									{ value: 'spread', label: 'Espalhada' },
-								]}
-								onChange={(v) =>
-									set(
-										'posterizeFillStrategy',
-										v as VectorizeParams['posterizeFillStrategy'],
-									)
-								}
-							/>
-							<SelectRow
-								label="Distribuição de faixas"
-								value={params.posterizeRangeDistribution ?? 'auto'}
-								options={[
-									{ value: 'auto', label: 'Automática' },
-									{ value: 'equal', label: 'Igual' },
-								]}
-								onChange={(v) =>
-									set(
-										'posterizeRangeDistribution',
-										v as VectorizeParams['posterizeRangeDistribution'],
-									)
-								}
-							/>
-						</Group>
-
-						<Group title="Estilo">
-							<SelectRow
-								label="Estilo de desenho"
-								value={params.drawingStyle ?? 'fill'}
-								options={[
-									{ value: 'fill', label: 'Preenchido' },
-									{ value: 'stroke', label: 'Traço' },
-									{ value: 'outline', label: 'Contorno' },
-								]}
-								onChange={(v) =>
-									set('drawingStyle', v as VectorizeParams['drawingStyle'])
-								}
-							/>
-							<div className="flex items-center justify-between py-2">
-								<span className="text-sm text-slate-600 dark:text-gray-400">
-									Cor
-								</span>
-								<input
-									type="color"
-									value={params.color ?? '#000000'}
-									onChange={(e) => set('color', e.target.value)}
-									className="h-8 w-12 rounded border border-slate-200 dark:border-white/10 bg-transparent cursor-pointer"
-								/>
+					<div className="px-4 pb-4 space-y-4 border-t border-slate-200 dark:border-white/10 pt-4">
+						<fieldset>
+							<legend className="text-xs font-semibold text-slate-600 dark:text-gray-400 mb-2">
+								Tipo de imagem
+							</legend>
+							<div className="grid grid-cols-3 gap-2">
+								{KIND_OPTIONS.map((o) => (
+									<button
+										key={o.value}
+										type="button"
+										aria-pressed={kind === o.value}
+										onClick={() => onKind(o.value)}
+										className={`rounded-lg border px-3 py-2 text-left transition-colors ${
+											kind === o.value
+												? 'border-violet-500 bg-violet-50 dark:bg-violet-500/15'
+												: 'border-slate-200 dark:border-white/10 hover:border-violet-300'
+										}`}
+									>
+										<span className="block text-sm font-semibold text-slate-800 dark:text-white">
+											{o.label}
+										</span>
+										<span className="block text-[11px] text-slate-500 dark:text-gray-400">
+											{o.desc}
+										</span>
+									</button>
+								))}
 							</div>
-							<RangeRow
-								label="Largura do traço"
-								value={params.strokeWidth ?? 1}
-								min={0.1}
-								max={10}
-								step={0.1}
-								fmt={(v) => v.toFixed(1)}
-								onChange={(v) => set('strokeWidth', v)}
-							/>
-							<ToggleRow
-								label="Traço não-escalável"
-								checked={params.nonScalingStroke ?? false}
-								onChange={(v) => set('nonScalingStroke', v)}
-							/>
-						</Group>
+						</fieldset>
 
-						<Group title="Dithering">
-							<SelectRow
-								label="Algoritmo"
-								value={params.ditherAlgorithm ?? 'none'}
-								options={[
-									{ value: 'none', label: 'Nenhum' },
-									{ value: 'floydSteinberg', label: 'Floyd-Steinberg' },
-									{ value: 'atkinson', label: 'Atkinson' },
-									{ value: 'stucki', label: 'Stucki' },
-									{ value: 'jarvis', label: 'Jarvis' },
-									{ value: 'sierra', label: 'Sierra' },
-									{ value: 'ordered', label: 'Ordered (Bayer)' },
-									{ value: 'halftone', label: 'Halftone' },
-								]}
-								onChange={(v) =>
-									set(
-										'ditherAlgorithm',
-										v === 'none'
-											? null
-											: (v as VectorizeParams['ditherAlgorithm']),
-									)
-								}
+						<label className="flex items-start justify-between gap-4 cursor-pointer">
+							<span>
+								<span className="block text-sm font-medium text-slate-800 dark:text-white">
+									Copo escuro (negativo)
+								</span>
+								<span className="block text-xs text-slate-500 dark:text-gray-400">
+									Grava os claros, recortado pela silhueta — sem quadrado de
+									fundo.
+								</span>
+							</span>
+							<input
+								type="checkbox"
+								checked={darkCup}
+								onChange={(e) => onDarkCup(e.target.checked)}
+								className="mt-1 h-5 w-5 accent-violet-600"
 							/>
-						</Group>
+						</label>
 
-						<Group title="Padrões de linha">
-							<SelectRow
-								label="Padrão"
-								value={params.linePattern ?? 'none'}
-								options={[
-									{ value: 'none', label: 'Nenhum' },
-									{ value: 'horizontal', label: 'Horizontal' },
-									{ value: 'vertical', label: 'Vertical' },
-									{ value: 'diagonal45', label: 'Diagonal 45°' },
-									{ value: 'diagonal135', label: 'Diagonal 135°' },
-									{ value: 'crosshatch', label: 'Hachura cruzada' },
-									{ value: 'diamondHatch', label: 'Hachura diamante' },
-								]}
-								onChange={(v) =>
-									set('linePattern', v as VectorizeParams['linePattern'])
-								}
-							/>
-							<RangeRow
-								label="Espaçamento"
-								value={params.lineSpacing ?? 3}
-								min={0.5}
-								max={10}
-								step={0.5}
-								fmt={(v) => v.toFixed(1)}
-								onChange={(v) => set('lineSpacing', v)}
-							/>
-							<OptionalRangeRow
-								label="Ângulo"
-								value={params.lineAngle ?? null}
-								min={0}
-								max={360}
-								step={5}
-								def={45}
-								onChange={(v) => set('lineAngle', v)}
-							/>
-						</Group>
-
-						<Group title="Saída / dimensões">
-							<OptionalRangeRow
-								label="DPI"
-								value={params.dpi ?? null}
-								min={72}
-								max={360}
+						<label className="block">
+							<span className="block text-sm font-medium text-slate-800 dark:text-white">
+								Largura da gravação (mm)
+							</span>
+							<span className="block text-xs text-slate-500 dark:text-gray-400 mb-1.5">
+								O SVG sai nessa medida; a altura segue a proporção.
+							</span>
+							<input
+								type="number"
+								inputMode="decimal"
+								min={WIDTH_MM_MIN}
+								max={WIDTH_MM_MAX}
 								step={1}
-								def={96}
-								onChange={(v) => set('dpi', v)}
+								value={widthMm}
+								onChange={(e) => {
+									const v = Number(e.target.value);
+									if (Number.isFinite(v)) onWidthMm(v);
+								}}
+								className="w-32 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111113] px-3 py-2 text-sm text-slate-900 dark:text-white"
 							/>
-							<OptionalNumberRow
-								label="Largura"
-								value={params.outputWidth ?? null}
-								def={100}
-								suffix="mm"
-								onChange={(v) => set('outputWidth', v)}
-							/>
-							<OptionalNumberRow
-								label="Altura"
-								value={params.outputHeight ?? null}
-								def={100}
-								suffix="mm"
-								onChange={(v) => set('outputHeight', v)}
-							/>
-							<ToggleRow
-								label="Otimizar SVG"
-								checked={params.svgOptimize ?? false}
-								onChange={(v) => set('svgOptimize', v)}
-							/>
-						</Group>
+						</label>
 					</div>
 				)}
 			</div>
 
-			{/* Ações */}
-			<div className="flex items-center justify-between">
+			<div className="flex items-center justify-between gap-3">
 				<button
 					type="button"
 					onClick={onBack}
-					className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-medium rounded-xl transition-colors hover:bg-slate-50 dark:hover:bg-white/5"
+					disabled={isVectorizing}
+					className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-50"
 				>
 					<ArrowLeft className="w-4 h-4" />
-					Voltar
+					Trocar imagem
 				</button>
 				<button
 					type="button"
@@ -1252,16 +463,11 @@ function StepParams({
 					className="flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-colors disabled:opacity-60"
 				>
 					{isVectorizing ? (
-						<>
-							<Loader2 className="w-4 h-4 animate-spin" />
-							{isAiLineart ? 'Gerando com IA…' : 'Vetorizando...'}
-						</>
+						<Loader2 className="w-4 h-4 animate-spin" />
 					) : (
-						<>
-							<Wand2 className="w-4 h-4" />
-							{isAiLineart ? 'Gerar com IA' : 'Vetorizar'}
-						</>
+						<Wand2 className="w-4 h-4" />
 					)}
+					{isVectorizing ? 'Vetorizando…' : 'Vetorizar'}
 				</button>
 			</div>
 		</div>
@@ -1269,6 +475,35 @@ function StepParams({
 }
 
 /* ─────────────── Step 3: Result ─────────────── */
+
+const AUTO_ROUTE_LABEL: Record<string, string> = {
+	'logo-local': 'traço direto, sem IA',
+	'logo-ai-laser': 'redesenhado pela IA',
+	'logo-negative': 'negativo para copo escuro',
+	'photo-fotogravacao': 'gravura nanquim com IA',
+	'photo-local-positive': 'gravura nanquim com IA',
+	'photo-local-negative': 'negativo para copo escuro com IA',
+	'photo-negative': 'negativo para copo escuro com IA',
+};
+
+/** O que o Automático decidiu — uma linha, sem jargão de motor. */
+function AutoSummary({ info }: { info: AutoVectorizeInfo }) {
+	const fmt = (n: number) =>
+		n.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+	return (
+		<p className="text-xs text-slate-500 dark:text-gray-400">
+			<span className="font-semibold text-slate-700 dark:text-gray-200">
+				{info.kind === 'photo' ? 'Foto' : 'Logo'}
+			</span>
+			{' · '}
+			{AUTO_ROUTE_LABEL[info.route] ?? 'vetorizado'}
+			{' · '}
+			{fmt(info.widthMm)} × {fmt(info.heightMm)} mm
+			{' · '}
+			{fmt(info.timeMs / 1000)} s
+		</p>
+	);
+}
 
 function StepResult({
 	result,
@@ -1375,6 +610,8 @@ function StepResult({
 				</div>
 			)}
 
+			{result.auto && <AutoSummary info={result.auto} />}
+
 			{/* Polaridade: muda o ARQUIVO (não é a cor da prévia) */}
 			<div className="flex items-center gap-2 flex-wrap">
 				<span className="text-sm text-slate-500 dark:text-gray-400 mr-2">
@@ -1382,7 +619,10 @@ function StepResult({
 				</span>
 				{[
 					{ key: 'normal' as const, label: 'Normal' },
-					{ key: 'inverted' as const, label: 'Invertido (silhueta)' },
+					{
+						key: 'inverted' as const,
+						label: result.auto ? 'Invertido' : 'Invertido (silhueta)',
+					},
 				].map((p) => {
 					// Multi-cor não tem negativo geométrico — o backend também recusa.
 					const blocked = p.key === 'inverted' && result.isColor;
@@ -1413,7 +653,14 @@ function StepResult({
 				})}
 			</div>
 
-			{showingInverted && (
+			{showingInverted && inverted.mode === 'geometric' && result.auto && (
+				<p className="rounded-lg bg-slate-100 dark:bg-white/5 px-3 py-2 text-xs text-slate-600 dark:text-gray-400">
+					Negativo real: o fundo vira preto e a arte fica vazada, num vetor só.
+					O Corel/LightBurn e o laser leem a polaridade trocada.
+				</p>
+			)}
+
+			{showingInverted && !result.auto && (
 				<div className="rounded-lg bg-slate-100 dark:bg-white/5 px-3 py-2 space-y-1">
 					<p className="text-xs text-slate-600 dark:text-gray-400">
 						Negativo real: o Corel/LightBurn e o laser leem a polaridade
@@ -1462,12 +709,14 @@ function StepResult({
 
 			{/* Downloads — cobrança POR FORMATO (a geração foi grátis) */}
 			<div>
-				{billed && perFormatCost > 0 && (
-					<p className="text-xs text-slate-500 dark:text-gray-400 mb-2">
-						Cada formato baixado consome {perFormatCost} voxxys. Formatos já
-						pagos podem ser baixados de novo sem custo.
-					</p>
-				)}
+				{billed &&
+					perFormatCost > 0 &&
+					!VECTOR_FORMATS.every((f) => result.paidFormats?.includes(f)) && (
+						<p className="text-xs text-slate-500 dark:text-gray-400 mb-2">
+							Cada formato baixado consome {perFormatCost} voxxys. Formatos já
+							pagos podem ser baixados de novo sem custo.
+						</p>
+					)}
 				<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
 					{(
 						[
@@ -1532,7 +781,7 @@ function StepResult({
 					className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-medium rounded-xl transition-colors hover:bg-slate-50 dark:hover:bg-white/5"
 				>
 					<Sliders className="w-4 h-4" />
-					Ajustes finos
+					Mudar opções
 				</button>
 				<button
 					type="button"
@@ -1695,12 +944,10 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 		undefined,
 	);
 
-	const [preset, setPreset] = useState<VectorizePreset>('automatico');
-	const [params, setParams] = useState<VectorizeParams>(() =>
-		presetParams('automatico'),
-	);
-	// Botão Cor / P&B do Automático (override manual sobre a detecção da IA).
-	const [colorChoice, setColorChoice] = useState<ColorChoice>('auto');
+	// Opções avançadas do Automático (recolhidas por padrão).
+	const [kind, setKind] = useState<AutoKind>('auto');
+	const [darkCup, setDarkCup] = useState(false);
+	const [widthMm, setWidthMm] = useState(DEFAULT_WIDTH_MM);
 	// Formato em cobrança agora (serializa os downloads → sem corrida no paid_formats).
 	const [chargingFormat, setChargingFormat] = useState<VectorFormat | null>(
 		null,
@@ -1710,9 +957,6 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 	// StepResult) porque o handler de download precisa do conteúdo ativo.
 	const [inverted, setInverted] = useState<InvertedVector | null>(null);
 	const [polarity, setPolarity] = useState<Polarity>('normal');
-	// Escolha feita LÁ NO PASSO 2 ("já quero invertido"). Não é um parâmetro de
-	// geração — só diz qual polaridade aplicar assim que o vetor existir.
-	const [wantInverted, setWantInverted] = useState(false);
 	const invertMutation = useInvertVector();
 	// Descarta o invertido sempre que o VETOR muda (nova geração, novo arquivo,
 	// reset). Ancorado no id em vez de espalhado pelos setResult: atualizar
@@ -1752,11 +996,6 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 			.finally(() => setImporting(false));
 	}, []);
 
-	// Análise automática (router + image analytics) — não cobrada.
-	const { data: analysis, isFetching: analyzing } = useAnalyzeVectorize(file);
-	// Garante aplicar a recomendação uma vez por imagem (não clobbera tweaks).
-	const autoAppliedFor = useRef<string | null>(null);
-
 	// portal só após montar (evita mismatch de hidratação)
 	const [mounted, setMounted] = useState(false);
 	useEffect(() => setMounted(true), []);
@@ -1775,112 +1014,41 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 		search: vecSearch || undefined,
 	});
 
-	const vectorizeMutation = useVectorizeImage();
-	const aiLineartMutation = useAiLineartVectorize();
+	const autoMutation = useAutoVectorize();
 	// Billing padrão pelo hook: cobra se a funcionalidade existir (confirma/debita/
 	// modal saem dele, igual a Prévia/Parâmetros); roda livre se não houver.
 	const { courses } = useEntitlements();
 	const courseSlug = courses[0]?.slug;
 	const billing = useToolBilling('vectorize', courseSlug);
 
-	// Automático e Laser (P&B) sempre passam pela IA antes de vetorizar —
-	// nunca só pelo motor gráfico, mesmo pra logo colorido/texto/line art
-	// (cobrada na geração). O modo Laser + UV (cor) é SEM IA de propósito:
-	// motor de cor melhorado (grátis, cobra por formato no download).
-	const isAi = colorChoice !== 'color';
-
-	const set = useCallback(
-		<K extends keyof VectorizeParams>(key: K, value: VectorizeParams[K]) => {
-			setParams((p) => ({ ...p, [key]: value }));
-		},
-		[],
-	);
-
-	// Os 3 modos (Automático / Laser / Laser+UV) traduzem a escolha em params
-	// usando a classe detectada. Foto em Auto/Laser → `isAiLineart` (Gerar com IA).
-	const applyColorChoice = useCallback(
-		(choice: ColorChoice) => {
-			setColorChoice(choice);
-			setParams((p) => ({
-				...p,
-				...colorOverrideParams(choice, analysis ?? null),
-			}));
-		},
-		[analysis],
-	);
-
-	// Modo Automático: aplica os parâmetros recomendados pela análise — uma vez
-	// por imagem. Tweaks manuais não são sobrescritos (a análise não muda sem
-	// novo arquivo); trocar/voltar p/ Automático reaplica.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: dispara na chegada da análise
-	useEffect(() => {
-		if (preset !== 'automatico' || !analysis?.recommendedParams || !file)
-			return;
-		const key = `${file.name}:${file.size}:${file.lastModified}`;
-		if (autoAppliedFor.current === key) return;
-		autoAppliedFor.current = key;
-		// No modo Automático: aplica a recomendação da análise. Foto é tratada pelo
-		// `isAiLineart` (vira "Gerar com IA") sem precisar mexer no modo.
-		setParams((p) => ({
-			...p,
-			...analysis.recommendedParams,
-			preset: 'automatico',
-		}));
-	}, [analysis, preset, file]);
-
+	// Fluxo único Automático, COBRADO NA GERAÇÃO (invoke→motor→settle; falha
+	// estorna no backend). O resultado já vem com todos os formatos pagos.
 	const runVectorize = useCallback(async () => {
 		if (!file) return;
-		// Vetorização com IA (foto→gravura P&B, ou colorida→vetor de cores): COBRADA
-		// na geração (invoke→motor→settle). Resultado já vem com todos os formatos
-		// pagos → download não recobra.
-		if (isAi) {
-			// Automático e Laser (P&B) sempre em P&B via IA (redrawAsNanquim) —
-			// nunca caem no motor gráfico puro. Colorido só existe hoje no botão
-			// explícito "Laser + UV (Cores)" (colorChoice==='color'), que é não-IA
-			// e fica de fora do isAi. A variant 'color' da IA (redrawAsColorVector)
-			// tem um bug conhecido de colapso de detalhe/fundo opaco em logos
-			// complexos — não expor até o motor ser corrigido.
-			await billing.runEngine((invocationId) =>
-				aiLineartMutation
-					.mutateAsync({
-						file,
-						invocationId,
-						variant: 'lineart',
-						params: { ...params, preset },
-					})
-					.then((res) => {
-						setResult(res);
-						setStep(3);
-						refetchVectors();
-						return res;
-					}),
-			);
-			return;
-		}
-		// Não-IA (só Laser + UV/Cores): geração NÃO cobrada — o cliente vê o
-		// resultado de graça e só paga ao baixar cada formato (handleDownloadFormat).
-		try {
-			const res = await vectorizeMutation.mutateAsync({
-				file,
-				params: { ...params, preset },
-			});
-			setResult(res);
-			setStep(3);
-			refetchVectors();
-		} catch {
-			// erro já tratado pela mutation (toast)
-		}
-	}, [
-		file,
-		isAi,
-		billing,
-		aiLineartMutation,
-		vectorizeMutation,
-		params,
-		preset,
-		refetchVectors,
-	]);
+		const clampedWidth = Math.min(
+			WIDTH_MM_MAX,
+			Math.max(WIDTH_MM_MIN, widthMm || DEFAULT_WIDTH_MM),
+		);
+		await billing.runEngine((invocationId) =>
+			autoMutation
+				.mutateAsync({
+					file,
+					invocationId,
+					kind: kind === 'auto' ? undefined : kind,
+					darkCup,
+					widthMm: clampedWidth,
+				})
+				.then((res) => {
+					setResult(res);
+					setStep(3);
+					refetchVectors();
+					return res;
+				}),
+		);
+	}, [file, billing, autoMutation, kind, darkCup, widthMm, refetchVectors]);
 
+	// Vetores antigos (gerados antes do Automático) ainda cobram POR FORMATO no
+	// download; os novos já chegam com tudo pago e baixam direto.
 	// Cobrança POR FORMATO no download. Já pago (ou sem cobrança) → baixa direto;
 	// senão invoca a tool (debita) → grava/liquida no backend → baixa. `chargingFormat`
 	// serializa (desabilita todos os botões durante a cobrança) p/ não haver corrida.
@@ -1967,26 +1135,6 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 		);
 	}, [inverted, handleSetPolarity]);
 
-	/**
-	 * Aplica a escolha do passo 2 assim que o vetor existe. O ref garante UMA
-	 * aplicação automática por vetor — sem ele, `handleSetPolarity` muda de
-	 * identidade ao gravar o resultado e o efeito se reinvocaria em loop. Só
-	 * rastreia o que foi automático, então trocar a polaridade na mão no passo 3
-	 * continua valendo.
-	 */
-	const autoInvertedFor = useRef<string | null>(null);
-	// biome-ignore lint/correctness/useExhaustiveDependencies: dispara na chegada do vetor
-	useEffect(() => {
-		// Vetor colorido não tem negativo geométrico — o backend recusa com 422.
-		if (!result || result.isColor) return;
-		if (wantInverted && autoInvertedFor.current !== result.id) {
-			autoInvertedFor.current = result.id;
-			handleSetPolarity('inverted');
-		} else if (!wantInverted && autoInvertedFor.current === result.id) {
-			autoInvertedFor.current = null;
-			handleSetPolarity('normal');
-		}
-	}, [result?.id, result?.isColor, wantInverted]);
 	const saveMutation = useSaveVector();
 
 	const handleFileSelected = useCallback((selectedFile: File) => {
@@ -2000,7 +1148,6 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 		}
 		setFile(selectedFile);
 		setResult(null);
-		setColorChoice('auto');
 		setOriginalPreviewUrl(URL.createObjectURL(selectedFile));
 		setStep(2); // vai direto p/ os ajustes (mais prático — menos um clique)
 	}, []);
@@ -2016,10 +1163,9 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 		setFile(null);
 		setResult(null);
 		setOriginalPreviewUrl(null);
-		setPreset('automatico');
-		setParams(presetParams('automatico'));
-		setColorChoice('auto');
-		setWantInverted(false);
+		setKind('auto');
+		setDarkCup(false);
+		setWidthMm(DEFAULT_WIDTH_MM);
 	}, []);
 
 	const handleSave = useCallback(async () => {
@@ -2117,38 +1263,27 @@ export function VetorizacaoView({ onRefetch }: { onRefetch?: () => void }) {
 				)}
 
 				{step === 2 && (
-					<StepParams
-						preset={preset}
-						params={params}
-						set={set}
+					<StepAuto
+						originalUrl={originalPreviewUrl}
+						isVectorizing={autoMutation.isPending || billing.pending}
 						onVectorize={handleVectorize}
 						onBack={() => setStep(1)}
-						isVectorizing={
-							vectorizeMutation.isPending ||
-							aiLineartMutation.isPending ||
-							(isAi && billing.pending)
-						}
-						file={file}
-						originalUrl={originalPreviewUrl}
-						analysis={analysis ?? null}
-						analyzing={analyzing}
-						colorChoice={colorChoice}
-						onColorChoice={applyColorChoice}
-						isAiLineart={isAi}
-						wantInverted={wantInverted}
-						onWantInverted={setWantInverted}
+						kind={kind}
+						onKind={setKind}
+						darkCup={darkCup}
+						onDarkCup={setDarkCup}
+						widthMm={widthMm}
+						onWidthMm={setWidthMm}
 					/>
 				)}
 
-				{/* Aviso de custo/saldo — sem ele, clicar "Gerar com IA" sem saldo
-				    não dava sinal nenhum na tela. */}
+				{/* Aviso de custo/saldo — sem ele, clicar "Vetorizar" sem saldo não
+				    dava sinal nenhum na tela. */}
 				{step === 2 && billing.notice}
 
 				{step === 2 && billing.billed && billing.cost > 0 && (
 					<p className="mt-3 text-xs text-slate-500 dark:text-gray-400">
-						{isAi
-							? `Gerar com IA custa ${billing.cost} voxxys e já libera SVG, PNG e DXF (~30–40s).`
-							: `A geração é grátis — você paga só ao baixar, ${billing.cost} voxxys por formato (SVG, PNG ou DXF).`}
+						{`Vetorizar custa ${billing.cost} voxxys e já libera SVG, PNG e DXF. Se falhar, o valor volta.`}
 					</p>
 				)}
 
