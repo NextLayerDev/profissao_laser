@@ -12,9 +12,11 @@ import type { MySubscription } from '@/types/my-subscription';
 
 /** A assinatura ativa do customer agora vive no upvox (não mais na base legada). */
 function pickActive(subs: Subscription[]): Subscription | null {
+	// Pacote vitalício não é "assinatura": não cancela, não troca, não renova.
+	const recurring = subs.filter((s) => s.interval !== 'lifetime');
 	return (
-		subs.find((s) => s.status === 'active' || s.status === 'trialing') ??
-		subs[0] ??
+		recurring.find((s) => s.status === 'active' || s.status === 'trialing') ??
+		recurring[0] ??
 		null
 	);
 }
@@ -36,6 +38,7 @@ export async function getMySubscription(): Promise<MySubscription | null> {
 		id: active.id,
 		status: active.status,
 		product_name: ent?.subscription?.plan?.name ?? 'Seu plano',
+		planKey: ent?.subscription?.plan?.key ?? null,
 		amount: active.price_cents / 100,
 		currency: 'BRL',
 		interval: active.interval === 'yearly' ? 'year' : 'month',

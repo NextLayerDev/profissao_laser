@@ -1,7 +1,12 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getBillingPortalUrl } from '@/modules/subscriptions/services/subscriptions.service';
+import {
+	changePlan,
+	getBillingPortalUrl,
+	previewPlanChange,
+} from '@/modules/subscriptions/services/subscriptions.service';
+import type { PlanChangePayload } from '@/modules/subscriptions/types/subscriptions';
 import {
 	cancelMySubscription,
 	getMySubscription,
@@ -40,6 +45,41 @@ export function useRefundMySubscription() {
 export function useBillingPortal() {
 	return useMutation({
 		mutationFn: getBillingPortalUrl,
+	});
+}
+
+/** Prévia da troca de plano: valor exato que sai do cartão (ou data da troca). */
+export function usePlanChangePreview(
+	subscriptionId: string | null,
+	payload: PlanChangePayload | null,
+) {
+	return useQuery({
+		queryKey: ['plan-change-preview', subscriptionId, payload],
+		queryFn: () =>
+			previewPlanChange(subscriptionId as string, payload as PlanChangePayload),
+		enabled: !!subscriptionId && !!payload,
+		// Sempre recalcula ao abrir: o crédito muda a cada dia de uso.
+		staleTime: 0,
+		gcTime: 0,
+		retry: false,
+	});
+}
+
+export function useChangePlan() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			subscriptionId,
+			payload,
+		}: {
+			subscriptionId: string;
+			payload: PlanChangePayload;
+		}) => changePlan(subscriptionId, payload),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ['my-subscription'] });
+			qc.invalidateQueries({ queryKey: ['entitlements'] });
+			qc.invalidateQueries({ queryKey: ['customer-plans'] });
+		},
 	});
 }
 

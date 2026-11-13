@@ -4,6 +4,8 @@ export const mySubscriptionSchema = z.object({
 	id: z.string(),
 	status: z.string(),
 	product_name: z.string(),
+	/** Chave do plano no upvox (para a troca de plano). */
+	planKey: z.string().nullable(),
 	amount: z.number(),
 	currency: z.string(),
 	interval: z.enum(['month', 'year']),

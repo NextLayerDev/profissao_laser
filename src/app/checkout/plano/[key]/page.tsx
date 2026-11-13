@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
 import {
 	ArrowLeft,
 	Check,
@@ -11,7 +12,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { CouponCodeInput } from '@/components/checkout/coupon-code-input';
@@ -34,6 +35,7 @@ const TRUST = [
 export default function PlanCheckoutPage() {
 	const params = useParams<{ key: string }>();
 	const search = useSearchParams();
+	const router = useRouter();
 	const planKey = params.key;
 	const interval: PlanInterval =
 		search.get('interval') === 'monthly' ? 'monthly' : 'yearly';
@@ -66,8 +68,22 @@ export default function PlanCheckoutPage() {
 		checkout.mutate(
 			{ plan_key: planKey, interval, coupon_code: couponCode ?? undefined },
 			{
-				onError: () =>
-					toast.error('Erro ao iniciar o pagamento. Tente novamente.'),
+				onError: (err) => {
+					// Já assina um plano: não abre 2ª assinatura — leva para a troca,
+					// onde paga só a diferença.
+					if (
+						isAxiosError(err) &&
+						(err.response?.data as { message?: string } | undefined)
+							?.message === 'already_subscribed'
+					) {
+						toast.info('Você já tem um plano. Troque e pague só a diferença.');
+						router.push(
+							`/course/assinatura?trocar=${planKey}&periodo=${interval === 'yearly' ? 'anual' : 'mensal'}`,
+						);
+						return;
+					}
+					toast.error('Erro ao iniciar o pagamento. Tente novamente.');
+				},
 			},
 		);
 	}

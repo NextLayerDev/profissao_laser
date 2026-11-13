@@ -19,6 +19,12 @@ function PlanColumn({
 	const router = useRouter();
 	const { plan, tools } = coursePlan;
 	const isOwned = currentPlanKey === plan.key;
+	// Quem já assina outro plano TROCA (paga só a diferença) em vez de abrir uma
+	// 2ª assinatura. Quem não assina vai ao checkout no mensal — o preço do card.
+	const isSwitch = currentPlanKey != null && !isOwned;
+	const target = isSwitch
+		? `/course/assinatura?trocar=${plan.key}`
+		: `/checkout/plano/${plan.key}?interval=monthly`;
 
 	const price =
 		plan.price_monthly_cents != null
@@ -87,15 +93,14 @@ function PlanColumn({
 				{plan.price_monthly_cents != null && (
 					<p className="text-[10px] text-slate-400 dark:text-gray-500 mb-3">
 						/mês
+						{plan.price_yearly_cents
+							? ` · ou ${formatCurrency(plan.price_yearly_cents / 100, 'BRL')}/ano`
+							: ''}
 					</p>
 				)}
 				<button
 					type="button"
-					onClick={
-						isOwned
-							? undefined
-							: () => router.push(`/checkout/plano/${plan.key}`)
-					}
+					onClick={isOwned ? undefined : () => router.push(target)}
 					disabled={isOwned}
 					className={`w-full flex items-center justify-center gap-2 font-bold py-3 rounded-xl text-sm transition-all duration-300 ${
 						isOwned
@@ -112,7 +117,7 @@ function PlanColumn({
 						</>
 					) : (
 						<>
-							Começar agora
+							{isSwitch ? 'Trocar para este plano' : 'Começar agora'}
 							<ArrowRight className="w-4 h-4" />
 						</>
 					)}

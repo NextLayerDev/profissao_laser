@@ -3,34 +3,32 @@
 import { isAxiosError } from 'axios';
 import {
 	AlertTriangle,
-	ArrowDown,
-	ArrowUp,
 	BookOpen,
 	CreditCard,
 	Loader2,
 	Wallet,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { AddonsSection } from '@/components/assinatura/addons-section';
 import { CancelSubscriptionModal } from '@/components/assinatura/cancel-subscription-modal';
 import { ChangePlanModal } from '@/components/assinatura/change-plan-modal';
+import { ChangePlanSection } from '@/components/assinatura/change-plan-section';
 import { RefundSubscriptionModal } from '@/components/assinatura/refund-subscription-modal';
 import { PageHeader } from '@/components/ui/page-header';
 import { SubscriptionSkeleton } from '@/components/ui/skeletons/subscription-skeleton';
+import { useLandingPlans } from '@/hooks/use-landing-plans';
 import {
 	useBillingPortal,
 	useCancelMySubscription,
-	useDowngradeMySubscription,
 	useMySubscription,
 	useRefundMySubscription,
-	useUpgradeMySubscription,
 } from '@/hooks/use-my-subscription';
-import { useProducts } from '@/hooks/use-products';
 import { getCurrentUser } from '@/lib/auth';
+import type { SubscriptionInterval } from '@/modules/subscriptions/types/subscriptions';
 import type { MySubscription } from '@/types/my-subscription';
-import type { Product } from '@/types/products';
 
 const REFUND_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -248,74 +246,21 @@ function SubscriptionCard({
 	);
 }
 
-function PlanOption({
-	product,
-	type,
-	onSelect,
-}: {
-	product: Product;
-	type: 'upgrade' | 'downgrade';
-	onSelect: (product: Product, type: 'upgrade' | 'downgrade') => void;
-}) {
-	const isUpgrade = type === 'upgrade';
-
-	return (
-		<div className="rounded-lg border border-slate-200 dark:border-white/10 overflow-hidden flex flex-col">
-			<div
-				className={`h-1 ${isUpgrade ? 'bg-emerald-500' : 'bg-violet-600'}`}
-			/>
-
-			<div className="bg-white dark:bg-[#1a1a1d] p-5 flex flex-col flex-1">
-				<h3 className="font-display font-bold text-slate-900 dark:text-slate-100 text-base leading-snug mb-1">
-					{product.name}
-				</h3>
-				<p className="mb-5">
-					<span className="font-mono text-2xl font-bold text-slate-900 dark:text-slate-100">
-						{formatCurrency(product.price)}
-					</span>
-					<span className="text-sm text-slate-500 dark:text-gray-400">
-						/mes
-					</span>
-				</p>
-
-				<div className="flex-1" />
-
-				<button
-					type="button"
-					onClick={() => onSelect(product, type)}
-					className={`w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all ${
-						isUpgrade
-							? 'bg-violet-600 hover:bg-violet-400 text-white'
-							: 'border border-slate-200 dark:border-white/10 hover:border-violet-500/50 text-slate-700 dark:text-slate-200 hover:text-violet-700 dark:hover:text-violet-400'
-					}`}
-				>
-					{isUpgrade ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
-					{isUpgrade ? 'Fazer upgrade' : 'Fazer downgrade'}
-				</button>
-			</div>
-		</div>
-	);
-}
-
-export default function CourseAssinaturaPage() {
+function CourseAssinaturaContent() {
 	const [name, setName] = useState('');
-	const [planTab, setPlanTab] = useState<'upgrade' | 'downgrade'>('upgrade');
 	const [cancelModalOpen, setCancelModalOpen] = useState(false);
 	const [refundModalOpen, setRefundModalOpen] = useState(false);
-	const [changePlanModal, setChangePlanModal] = useState<{
-		open: boolean;
-		product: Product | null;
-		type: 'upgrade' | 'downgrade';
-	}>({ open: false, product: null, type: 'upgrade' });
-
+	const [changeTarget, setChangeTarget] = useState<{
+		planKey: string;
+		planName: string;
+		interval: SubscriptionInterval;
+	} | null>(null);
+	const router = useRouter();
+	const searchParams = useSearchParams();
+	const { data: plans } = useLandingPlans();
 	const { data, isLoading, isError } = useMySubscription();
-	const { products } = useProducts();
 	const { mutate: cancelSubscription, isPending: isCanceling } =
 		useCancelMySubscription();
-	const { mutate: upgradePlan, isPending: isUpgrading } =
-		useUpgradeMySubscription();
-	const { mutate: downgradePlan, isPending: isDowngrading } =
-		useDowngradeMySubscription();
 	const { mutate: refundSubscription, isPending: isRefunding } =
 		useRefundMySubscription();
 	const { mutate: openBillingPortal, isPending: isOpeningBillingPortal } =
@@ -326,37 +271,33 @@ export default function CourseAssinaturaPage() {
 		setName(user?.name ?? '');
 	}, []);
 
-	const currentProduct = data
-		? (products?.find(
-				(p) => p.name === data.product_name && p.price === data.amount,
-			) ?? products?.find((p) => p.name === data.product_name))
-		: undefined;
+	// Vindo da loja ("Trocar para este plano"): /course/assinatura?trocar=pro&periodo=mensal
+	// abre direto a troca com o valor da diferença.
+	const trocar = searchParams.get('trocar');
+	const periodo = searchParams.get('periodo');
+	useEffect(() => {
+		if (!trocar || !data || !plans) return;
+		const plan = plans.find((p) => p.key === trocar);
+		if (plan)
+			setChangeTarget({
+				planKey: plan.key,
+				planName: plan.name,
+				interval:
+					periodo === 'mensal'
+						? 'monthly'
+						: periodo === 'anual'
+							? 'yearly'
+							: data.interval === 'year'
+								? 'yearly'
+								: 'monthly',
+			});
+		router.replace('/course/assinatura');
+	}, [trocar, periodo, data, plans, router]);
 
-	const relatedPlans = currentProduct
-		? (products?.filter(
-				(p) =>
-					p.status === 'ativo' &&
-					p.stripeProductId !== null &&
-					p.name === currentProduct.name &&
-					p.machine === currentProduct.machine &&
-					p.software === currentProduct.software &&
-					p.id !== currentProduct.id,
-			) ?? [])
-		: [];
-
-	const upgradePlans = relatedPlans.filter(
-		(p) => p.price > (data?.amount ?? 0),
-	);
-	const downgradePlans = relatedPlans.filter(
-		(p) => p.price < (data?.amount ?? 0),
-	);
-
-	const effectiveTab =
-		planTab === 'upgrade' &&
-		upgradePlans.length === 0 &&
-		downgradePlans.length > 0
-			? 'downgrade'
-			: planTab;
+	const canChangePlan =
+		!!data &&
+		(data.status === 'active' || data.status === 'trialing') &&
+		!data.cancelAtPeriodEnd;
 
 	function handleConfirmCancel() {
 		cancelSubscription(undefined, {
@@ -395,46 +336,9 @@ export default function CourseAssinaturaPage() {
 		});
 	}
 
-	function handleSelectPlan(product: Product, type: 'upgrade' | 'downgrade') {
-		setChangePlanModal({ open: true, product, type });
-	}
-
-	function handleConfirmChangePlan() {
-		if (!changePlanModal.product) return;
-
-		const mutate =
-			changePlanModal.type === 'upgrade' ? upgradePlan : downgradePlan;
-
-		mutate(
-			{ productId: changePlanModal.product.id },
-			{
-				onSuccess: () => {
-					setChangePlanModal({ open: false, product: null, type: 'upgrade' });
-					toast.success(
-						changePlanModal.type === 'upgrade'
-							? 'Upgrade realizado com sucesso!'
-							: 'Downgrade realizado com sucesso!',
-					);
-				},
-				onError: (error: unknown) => {
-					const msg = error instanceof Error ? error.message.toLowerCase() : '';
-					if (msg.includes('not higher')) {
-						toast.error('Este plano nao e superior ao atual.');
-					} else if (msg.includes('tenant')) {
-						toast.error('Nenhuma conta ativa encontrada.');
-					} else {
-						toast.error('Erro ao alterar plano. Tente novamente.');
-					}
-				},
-			},
-		);
-	}
-
 	const periodEndFormatted = data?.currentPeriodEnd
 		? formatDate(data.currentPeriodEnd)
 		: '';
-
-	const isChangingPlan = isUpgrading || isDowngrading;
 
 	const withinRefundWindow = data?.currentPeriodStart
 		? Date.now() - new Date(data.currentPeriodStart).getTime() <=
@@ -496,93 +400,20 @@ export default function CourseAssinaturaPage() {
 							isPaymentMethodPending={isOpeningBillingPortal}
 						/>
 
-						{(upgradePlans.length > 0 || downgradePlans.length > 0) && (
-							<div className="bg-white dark:bg-[#1a1a1d] border border-slate-200 dark:border-white/10 rounded-lg overflow-hidden">
-								<div className="flex items-center gap-3 px-6 pt-6 pb-4">
-									<div className="bg-violet-500/10 dark:bg-violet-500/20 rounded-lg p-2.5">
-										<ArrowUp className="w-5 h-5 text-violet-600 dark:text-violet-400" />
-									</div>
-									<div>
-										<h3 className="font-display font-bold text-slate-900 dark:text-slate-100">
-											Alterar plano
-										</h3>
-										<p className="text-xs text-slate-500 dark:text-gray-400">
-											Faca upgrade para mais recursos ou downgrade quando
-											precisar
-										</p>
-									</div>
-								</div>
-
-								<div className="flex border-b border-slate-200 dark:border-white/10 px-6">
-									{upgradePlans.length > 0 && (
-										<button
-											type="button"
-											onClick={() => setPlanTab('upgrade')}
-											className={`flex items-center gap-1.5 pb-3 px-1 mr-6 text-sm font-semibold border-b-2 transition-colors ${
-												planTab === 'upgrade'
-													? 'border-violet-600 text-violet-700 dark:text-violet-400'
-													: 'border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-slate-200'
-											}`}
-										>
-											<ArrowUp size={14} />
-											Upgrade
-											<span
-												className={`font-mono text-xs px-1.5 py-0.5 rounded-full ${
-													planTab === 'upgrade'
-														? 'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300'
-														: 'bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-gray-400'
-												}`}
-											>
-												{upgradePlans.length}
-											</span>
-										</button>
-									)}
-									{downgradePlans.length > 0 && (
-										<button
-											type="button"
-											onClick={() => setPlanTab('downgrade')}
-											className={`flex items-center gap-1.5 pb-3 px-1 mr-6 text-sm font-semibold border-b-2 transition-colors ${
-												planTab === 'downgrade'
-													? 'border-violet-600 text-violet-700 dark:text-violet-400'
-													: 'border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-slate-200'
-											}`}
-										>
-											<ArrowDown size={14} />
-											Downgrade
-											<span
-												className={`font-mono text-xs px-1.5 py-0.5 rounded-full ${
-													planTab === 'downgrade'
-														? 'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300'
-														: 'bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-gray-400'
-												}`}
-											>
-												{downgradePlans.length}
-											</span>
-										</button>
-									)}
-								</div>
-
-								<div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-									{effectiveTab === 'upgrade' &&
-										upgradePlans.map((product) => (
-											<PlanOption
-												key={product.id}
-												product={product}
-												type="upgrade"
-												onSelect={handleSelectPlan}
-											/>
-										))}
-									{effectiveTab === 'downgrade' &&
-										downgradePlans.map((product) => (
-											<PlanOption
-												key={product.id}
-												product={product}
-												type="downgrade"
-												onSelect={handleSelectPlan}
-											/>
-										))}
-								</div>
-							</div>
+						{canChangePlan && (
+							<ChangePlanSection
+								currentPlanKey={data.planKey}
+								currentInterval={
+									data.interval === 'year' ? 'yearly' : 'monthly'
+								}
+								onSelect={(plan, interval) =>
+									setChangeTarget({
+										planKey: plan.key,
+										planName: plan.name,
+										interval,
+									})
+								}
+							/>
 						)}
 					</div>
 				)}
@@ -605,20 +436,19 @@ export default function CourseAssinaturaPage() {
 			/>
 
 			<ChangePlanModal
-				isOpen={changePlanModal.open}
-				onClose={() =>
-					setChangePlanModal({ open: false, product: null, type: 'upgrade' })
-				}
-				type={changePlanModal.type}
-				productName={changePlanModal.product?.name ?? ''}
-				price={
-					changePlanModal.product
-						? `${formatCurrency(changePlanModal.product.price)}/mes`
-						: ''
-				}
-				onConfirm={handleConfirmChangePlan}
-				isPending={isChangingPlan}
+				subscriptionId={data?.id ?? null}
+				target={changeTarget}
+				onClose={() => setChangeTarget(null)}
 			/>
 		</>
+	);
+}
+
+/** `useSearchParams` (link "trocar de plano" vindo da loja) exige Suspense. */
+export default function CourseAssinaturaPage() {
+	return (
+		<Suspense fallback={null}>
+			<CourseAssinaturaContent />
+		</Suspense>
 	);
 }
