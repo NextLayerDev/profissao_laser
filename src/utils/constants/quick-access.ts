@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { Voxxys3DIcon } from '@/components/ui/voxxys-icon';
+import { isDisabledToolLink } from '@/modules/tools/enabled-tools';
 import type { FeatureKey } from '@/types/classes';
 import { TOOL_COLORS } from './tool-colors';
 
@@ -211,3 +212,11 @@ export const quickAccessItems: QuickAccessItem[] = [
 		...TOOL_COLORS.fornecedoresVendas,
 	},
 ];
+
+/**
+ * Atalhos da área do aluno sem as ferramentas desligadas pela allowlist
+ * (`NEXT_PUBLIC_ENABLED_TOOLS`). `quickAccessItems` segue completo para o admin
+ * (editor de features do plano, ferramentas grátis).
+ */
+export const visibleQuickAccessItems: QuickAccessItem[] =
+	quickAccessItems.filter((i) => !isDisabledToolLink(i.href));
