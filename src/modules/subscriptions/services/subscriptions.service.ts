@@ -6,6 +6,11 @@ import {
 	type CheckoutResponse,
 	type CreateSubscriptionPayload,
 	checkoutResponseSchema,
+	type PlanChangePayload,
+	type PlanChangePreview,
+	type PlanChangeResult,
+	planChangePreviewSchema,
+	planChangeResultSchema,
 	type Subscription,
 	type SubscriptionRefundResult,
 	subscriptionRefundResultSchema,
@@ -34,6 +39,27 @@ export async function downgradeSubscription(
 ): Promise<Subscription> {
 	const { data } = await api.post(`/v1/subscription/${id}/downgrade`, payload);
 	return subscriptionSchema.parse(data);
+}
+
+/** Quanto a troca custa agora (ou quando vale, se for para a renovação). */
+export async function previewPlanChange(
+	id: string,
+	payload: PlanChangePayload,
+): Promise<PlanChangePreview> {
+	const { data } = await api.post(
+		`/v1/subscription/${id}/change/preview`,
+		payload,
+	);
+	return planChangePreviewSchema.parse(data);
+}
+
+/** Confirma a troca: cobra a diferença no cartão ou agenda para a renovação. */
+export async function changePlan(
+	id: string,
+	payload: PlanChangePayload,
+): Promise<PlanChangeResult> {
+	const { data } = await api.post(`/v1/subscription/${id}/change`, payload);
+	return planChangeResultSchema.parse(data);
 }
 
 export async function cancelSubscription(id: string): Promise<Subscription> {
