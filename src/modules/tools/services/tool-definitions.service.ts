@@ -133,6 +133,32 @@ export const screenUiSchema = z
 	.passthrough();
 export type ScreenUi = z.infer<typeof screenUiSchema>;
 
+/**
+ * Molde físico de um formato (espelho de `CreationTemplate` no motor). Em mm,
+ * origem no canto superior esquerdo da face da peça. Tem de estar declarado:
+ * o schema das creations faz `strip`, e campo desconhecido some no salvar.
+ */
+export const creationZoneSchema = z.object({
+	label: z.string().optional(),
+	shape: z.enum(['rect', 'ellipse']),
+	x: z.number(),
+	y: z.number(),
+	w: z.number(),
+	h: z.number(),
+	r: z.number().optional(),
+});
+export type CreationZone = z.infer<typeof creationZoneSchema>;
+
+export const creationTemplateSchema = z.object({
+	width_mm: z.number(),
+	height_mm: z.number(),
+	outline: z.enum(['rect', 'ellipse']).optional(),
+	corner_radius_mm: z.number().optional(),
+	safe_margin_mm: z.number().optional(),
+	zones: z.array(creationZoneSchema).optional(),
+});
+export type CreationTemplate = z.infer<typeof creationTemplateSchema>;
+
 export const toolDefinitionDocSchema = z
 	.object({
 		schemaVersion: z.number().optional(),
@@ -231,6 +257,27 @@ export const toolDefinitionDocSchema = z
 					height: z.number(),
 					active: z.boolean().optional(),
 					transparent: z.boolean().optional(),
+					/**
+					 * Molde da peça (mm): contorno + zonas proibidas. O motor tira
+					 * dele a proporção, a instrução à IA e o recorte no pós.
+					 */
+					template: creationTemplateSchema.optional(),
+					/** Variantes que o aluno escolhe (ex.: modelo do celular). */
+					models: z
+						.array(
+							z.object({
+								id: z.string(),
+								label: z.string(),
+								brand: z.string().optional(),
+								active: z.boolean().optional(),
+								template: creationTemplateSchema,
+							}),
+						)
+						.optional(),
+					/** Recortar no pós (default: sim quando há molde). */
+					mask: z.boolean().optional(),
+					/** Instrução extra deste formato para a IA. */
+					prompt_hint: z.string().optional(),
 				}),
 			)
 			.optional(),
@@ -255,6 +302,7 @@ export const toolDefinitionDocSchema = z
 	.passthrough();
 export type ToolDefinitionDoc = z.infer<typeof toolDefinitionDocSchema>;
 export type Creation = NonNullable<ToolDefinitionDoc['creations']>[number];
+export type CreationModel = NonNullable<Creation['models']>[number];
 
 export const aiToolDefinitionSchema = z
 	.object({
